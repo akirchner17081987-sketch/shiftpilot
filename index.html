@@ -50,7 +50,7 @@ button,input,select,textarea{font:inherit} button{cursor:pointer}
 
 <section id="landingPage">
   <header class="landing-nav">
-    <img src="assets/shiftpilot-logo.svg" alt="ShiftPilot – Dienstplanung. Smart. Effizient." class="landing-logo">
+    <a href="#" onclick="showLanding();return false" aria-label="Zur ShiftPilot Startseite" style="display:inline-flex;align-items:center;text-decoration:none"><img src="assets/shiftpilot-logo.svg" alt="ShiftPilot – Dienstplanung. Smart. Effizient." class="landing-logo"></a>
     <nav class="landing-links"><a href="#features">Funktionen</a><a href="#advantages">Vorteile</a><a href="#features">Lösung</a><a href="#contact">Kontakt</a></nav>
     <div class="landing-actions"><button class="landing-btn" onclick="openApp('overview')">Anmelden</button><button class="landing-btn primary" onclick="openApp('overview')">Dashboard öffnen →</button></div>
   </header>
@@ -72,7 +72,7 @@ button,input,select,textarea{font:inherit} button{cursor:pointer}
 
 <div class="app" id="appShell" style="display:none">
   <aside class="sidebar">
-    <div class="brand"><img src="assets/shiftpilot-logo.svg" alt="ShiftPilot" class="app-brand-img"></div>
+    <div class="brand home-link" onclick="showLanding()" title="Zur Startseite" style="cursor:pointer"><img src="assets/shiftpilot-logo.svg" alt="ShiftPilot" class="app-brand-img"></div>
     <div class="company-card"><div class="company-icon">N</div><div><b>Nordstern Security GmbH</b><small>Berlin · Zentrale</small></div><span>⌄</span></div>
     <nav class="nav" id="nav">
       <button data-view="overview"><span>⌂</span><span>Übersicht</span></button>
@@ -212,6 +212,15 @@ window.addEventListener('load',()=>{if(location.hash==='#app')openApp('overview'
 renderLibrary();renderPlanEmployeePool();renderCalendar();renderEmployees();renderShiftChecks([]);renderQualificationChecks([]);renderEmployeeSummary(null);renderEmployeeAbsences();renderAbsences();renderSettings();renderOverview();if(selectedEmployeeId)selectEmployee(selectedEmployeeId);
 
 function renderOverviewStats(){renderOverview()}
+
+function showLanding(){
+  const landing=document.getElementById('landingPage')||document.querySelector('.landing-page')||document.querySelector('.landing');
+  const app=document.querySelector('.app');
+  if(landing) landing.style.display='block';
+  if(app) app.style.display='none';
+  window.scrollTo({top:0,behavior:'smooth'});
+  try{history.replaceState(null,'',location.pathname)}catch(e){}
+}
 </script>
   <div id="saveToast" class="save-toast" role="status" aria-live="polite">
     <div class="toast-icon">✓</div>
