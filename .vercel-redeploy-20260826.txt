@@ -1,0 +1,2 @@
+Redeploy trigger for ShiftPilot time tracking build.
+Target commit includes: Zeiterfassung: Basis mit SOLL/IST und Abweichungen.
