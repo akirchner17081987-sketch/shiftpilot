@@ -1,0 +1,21 @@
+name: Apply General Shift Times
+on:
+  push:
+    paths:
+      - 'scripts/apply_general_shift_times.py'
+      - '.github/workflows/apply-general-shift-times.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python scripts/apply_general_shift_times.py
+      - run: |
+          git config user.name "shiftpilot-bot"
+          git config user.email "shiftpilot-bot@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "Einstellungen: allgemeine Schichtzeiten ergänzen"
+          git push
