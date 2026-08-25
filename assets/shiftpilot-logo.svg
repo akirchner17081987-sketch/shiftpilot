@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 260" role="img" aria-labelledby="t d">
+<title id="t">ShiftPilot</title><desc id="d">Dienstplanung. Smart. Effizient.</desc>
+<defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#21efe2"/><stop offset="1" stop-color="#1687ff"/></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#dff7ff"/><stop offset=".55" stop-color="#fff"/><stop offset="1" stop-color="#9bb5c8"/></linearGradient><filter id="glow"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+<g transform="translate(18 16)" filter="url(#glow)">
+<path d="M40 118C40 52 95 8 160 8s120 44 120 110" fill="none" stroke="url(#g1)" stroke-width="16" stroke-linecap="round"/>
+<rect x="76" y="44" width="132" height="104" rx="18" fill="#0b1b2a" stroke="#91eaf1" stroke-width="6"/>
+<path d="M104 24v32M180 24v32" stroke="#d8f7ff" stroke-width="12" stroke-linecap="round"/>
+<rect x="96" y="70" width="28" height="26" rx="5" fill="#8ed9ee"/><rect x="134" y="70" width="28" height="26" rx="5" fill="#4e9fd1"/><rect x="172" y="70" width="28" height="26" rx="5" fill="#2ad8bd"/>
+<rect x="96" y="106" width="28" height="26" rx="5" fill="#4a8dbb"/><rect x="134" y="106" width="28" height="26" rx="5" fill="#6aaed0"/><path d="M178 119l8 8 16-20" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="92" cy="164" r="54" fill="#071421" stroke="url(#g1)" stroke-width="10"/><path d="M92 128v38l27 19" fill="none" stroke="#42e7e1" stroke-width="8" stroke-linecap="round"/><circle cx="92" cy="164" r="7" fill="#e8ffff"/>
+<path d="M14 183h54M18 203h77M30 223h82" stroke="url(#g1)" stroke-width="9" stroke-linecap="round" opacity=".9"/>
+</g>
+<g transform="translate(300 42)">
+<text x="0" y="120" font-family="Arial,Helvetica,sans-serif" font-size="112" font-weight="900" font-style="italic" letter-spacing="-7" fill="url(#g2)">Shift</text>
+<text x="300" y="120" font-family="Arial,Helvetica,sans-serif" font-size="112" font-weight="900" font-style="italic" letter-spacing="-7" fill="url(#g1)">Pilot</text>
+<text x="18" y="176" font-family="Arial,Helvetica,sans-serif" font-size="27" font-weight="700" letter-spacing="9" fill="#f6fbff">DIENSTPLANUNG. SMART. EFFIZIENT.</text>
+</g></svg>
