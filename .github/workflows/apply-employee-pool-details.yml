@@ -1,0 +1,21 @@
+name: Apply Employee Pool Details
+on:
+  push:
+    paths:
+      - 'scripts/apply_employee_pool_details.py'
+      - '.github/workflows/apply-employee-pool-details.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python scripts/apply_employee_pool_details.py
+      - run: |
+          git config user.name "shiftpilot-bot"
+          git config user.email "shiftpilot-bot@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "Dienstplan: Mitarbeiter-Pool um Schichten und Abwesenheiten erweitern"
+          git push
