@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'scripts/apply_dragdrop.py'
+      - 'scripts/trigger_dragdrop.txt'
 
 permissions:
   contents: write
