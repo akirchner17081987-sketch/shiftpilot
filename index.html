@@ -150,7 +150,7 @@ button,input,select,textarea{font:inherit} button{cursor:pointer}
     </div>
   </section>
 
-  <section id="view-overview" class="view"><div class="page-head"><div><div class="eyebrow">ÜBERSICHT</div><h1>Planungs-Dashboard</h1><p>Besetzung, Personal und Handlungsbedarf der aktuellen Woche auf einen Blick.</p></div><button class="primary" onclick="showView('schedule')">Dienstplan öffnen</button></div><div class="stats" id="overviewStats"></div><div class="panel-grid overview-grid" style="margin-top:14px"><div class="card table-card"><div class="table-head"><h3>Handlungsbedarf</h3><span class="badge" id="overviewIssueCount">0</span></div><div id="overviewIssues"></div></div><div class="card table-card"><div class="table-head"><h3>Abwesenheiten diese Woche</h3></div><div id="overviewAbsences"></div></div></div><div class="panel-grid overview-grid" style="margin-top:14px"><div class="card table-card"><div class="table-head"><h3>Mitarbeiter-Auslastung</h3></div><div id="overviewWorkload"></div></div><div class="card table-card"><div class="table-head"><h3>Schichtverteilung</h3></div><div id="overviewShiftMix"></div></div></div><div class="card table-card" style="margin-top:14px"><div class="table-head"><h3>Schnellaktionen</h3></div><div class="form-actions"><button class="primary" onclick="showView('schedule')">▣ Dienstplan öffnen</button><button class="ghost" onclick="showView('employees');document.getElementById('addEmployeeBtn').click()">＋ Mitarbeiter anlegen</button><button class="ghost" onclick="showView('absence')">☼ Abwesenheit eintragen</button><button class="ghost" onclick="showView('auto')">✦ Auto-Planung</button></div></div></section>
+  <section id="view-overview" class="view"><div class="page-head"><div><div class="eyebrow">ÜBERSICHT</div><h1>Planungs-Dashboard</h1><p>Besetzung, Personal und Handlungsbedarf der aktuellen Woche auf einen Blick.</p></div><button class="primary" onclick="openScheduleFromDashboard()">Dienstplan öffnen</button></div><div class="stats" id="overviewStats"></div><div class="panel-grid overview-grid" style="margin-top:14px"><div class="card table-card"><div class="table-head"><h3>Handlungsbedarf</h3><span class="badge" id="overviewIssueCount">0</span></div><div id="overviewIssues"></div></div><div class="card table-card"><div class="table-head"><h3>Abwesenheiten diese Woche</h3></div><div id="overviewAbsences"></div></div></div><div class="panel-grid overview-grid" style="margin-top:14px"><div class="card table-card"><div class="table-head"><h3>Mitarbeiter-Auslastung</h3></div><div id="overviewWorkload"></div></div><div class="card table-card"><div class="table-head"><h3>Schichtverteilung</h3></div><div id="overviewShiftMix"></div></div></div><div class="card table-card" style="margin-top:14px"><div class="table-head"><h3>Schnellaktionen</h3></div><div class="form-actions"><button class="primary" onclick="openScheduleFromDashboard()">▣ Dienstplan öffnen</button><button class="ghost" onclick="showView('employees');document.getElementById('addEmployeeBtn').click()">＋ Mitarbeiter anlegen</button><button class="ghost" onclick="showView('absence')">☼ Abwesenheit eintragen</button><button class="ghost" onclick="showView('auto')">✦ Auto-Planung</button></div></div></section>
   <section id="view-time" class="view"><div class="page-head"><div><div class="eyebrow">ARBEITSZEIT</div><h1>Zeiterfassung</h1><p>Geplante und tatsächliche Arbeitszeiten im Blick behalten.</p></div></div><div class="card table-card"><div class="empty">Zeiterfassung ist für die nächste Ausbaustufe vorbereitet.</div></div></section>
   <section id="view-absence" class="view"><div class="page-head"><div><div class="eyebrow">VERFÜGBARKEIT</div><h1>Abwesenheiten</h1><p>Urlaub, Krankheit und Sperrzeiten verwalten.</p></div></div><div class="card table-card" id="absencePanel"></div></section>
   <section id="view-auto" class="view"><div class="page-head"><div><div class="eyebrow">AUTOMATISIERUNG</div><h1>Auto-Planung</h1><p>Besetze offene Positionen automatisch anhand von Freigaben und Verfügbarkeit.</p></div><button class="primary" onclick="runAutoPlan()">Planung starten</button></div><div class="card table-card"><div class="notice">Die Auto-Planung berücksichtigt Schichtfreigaben, Aktivstatus, Abwesenheiten und Doppelbelegungen.</div></div></section>
@@ -301,26 +301,47 @@ function renderOverview(){
   const stats=document.getElementById('overviewStats');
   if(stats){stats.className='preview-kpis';stats.innerHTML=`
     <div class="preview-kpi" onclick="showView('employees')"><strong>${active.length}</strong><small>Aktive Mitarbeiter</small></div>
-    <div class="preview-kpi" onclick="showView('schedule')"><strong>${coverage}%</strong><small>Planungsfortschritt</small></div>
-    <div class="preview-kpi" onclick="showView('schedule')"><strong>${open}</strong><small>Offene Positionen</small></div>
-    <div class="preview-kpi" onclick="showView('schedule')"><strong>${warnings.length}</strong><small>Warnungen</small></div>`}
+    <div class="preview-kpi" onclick="openScheduleFromDashboard()"><strong>${coverage}%</strong><small>Planungsfortschritt</small></div>
+    <div class="preview-kpi" onclick="openScheduleFromDashboard()"><strong>${open}</strong><small>Offene Positionen</small></div>
+    <div class="preview-kpi" onclick="openScheduleFromDashboard()"><strong>${warnings.length}</strong><small>Warnungen</small></div>`}
   let issues=[];
   dates.forEach((d,di)=>TYPES.forEach(t=>{const so=getSoll(d,t.id),is=assignmentsFor(d,t.id).length;if(is<so)issues.push({d,di,type:t.id,so,is,missing:so-is})}));
   issues.sort((a,b)=>b.missing-a.missing||a.d.localeCompare(b.d));
   const issueBox=document.getElementById('overviewIssues');
-  if(issueBox){issueBox.innerHTML=issues.length?issues.slice(0,8).map(x=>`<div class="preview-issue" onclick="showView('schedule')"><div><b>${DAYS[x.di]} · ${x.type}</b><small style="display:block;color:#7890aa;margin-top:3px">SOLL ${x.so} · IST ${x.is}</small></div><span class="preview-open">${x.missing} offen</span></div>`).join(''):'<div class="notice">✓ Keine Unterbesetzung in dieser Woche.</div>'}
+  if(issueBox){issueBox.innerHTML=issues.length?issues.slice(0,8).map(x=>`<div class="preview-issue" onclick="openScheduleFromDashboard()"><div><b>${DAYS[x.di]} · ${x.type}</b><small style="display:block;color:#7890aa;margin-top:3px">SOLL ${x.so} · IST ${x.is}</small></div><span class="preview-open">${x.missing} offen</span></div>`).join(''):'<div class="notice">✓ Keine Unterbesetzung in dieser Woche.</div>'}
   const issueCount=document.getElementById('overviewIssueCount');if(issueCount)issueCount.textContent=issues.length;
   const weekA=assignments.filter(a=>dates.includes(a.date));
   const mix=TYPES.map(t=>({id:t.id,n:weekA.filter(a=>a.type===t.id).length}));
   const max=Math.max(1,...mix.map(x=>x.n));
   const mixBox=document.getElementById('overviewShiftMix');
-  if(mixBox){mixBox.innerHTML=`<div class="preview-bars">${mix.map(x=>`<div class="preview-bar-wrap" title="${x.id}: ${x.n} Zuweisungen"><div class="preview-bar" style="height:${Math.max(5,Math.round(x.n/max*100))}%"></div><div class="preview-bar-label">${x.id}<br>${x.n}</div></div>`).join('')}</div><span class="preview-link" onclick="showView('schedule')">Zur Schichtplanung →</span>`}
+  if(mixBox){mixBox.innerHTML=`<div class="preview-bars">${mix.map(x=>`<div class="preview-bar-wrap" title="${x.id}: ${x.n} Zuweisungen"><div class="preview-bar" style="height:${Math.max(5,Math.round(x.n/max*100))}%"></div><div class="preview-bar-label">${x.id}<br>${x.n}</div></div>`).join('')}</div><span class="preview-link" onclick="openScheduleFromDashboard()">Zur Schichtplanung →</span>`}
   const absBox=document.getElementById('overviewAbsences');
   if(absBox){const weekAbs=absences.filter(a=>dates.includes(a.date));absBox.innerHTML=weekAbs.length?weekAbs.map(a=>{const e=employees.find(x=>x.id===a.employeeId);return `<div class="section-box" style="margin-bottom:7px"><b>${e?e.first+' '+e.last:'Mitarbeiter'}</b><small style="display:block;color:#7890aa">${a.type} · ${new Date(a.date+'T00:00:00').toLocaleDateString('de-DE')}</small></div>`}).join(''):'<div class="notice">✓ Keine Abwesenheiten in dieser Woche.</div>'}
   const workBox=document.getElementById('overviewWorkload');
   if(workBox){const workload=active.map(e=>({e,h:plannedHoursForEmployee(e.id),target:Number(e.weeklyHours)||0})).sort((a,b)=>b.h-a.h);workBox.innerHTML=workload.slice(0,8).map(x=>`<div class="section-box" style="margin-bottom:7px;display:flex;justify-content:space-between"><b>${x.e.first} ${x.e.last}</b><span class="${x.target&&x.h>x.target?'warning-detail':''}">${x.h.toFixed(1)} / ${x.target} Std.</span></div>`).join('')}
   const page=document.getElementById('view-overview');
   if(page){const firstGrid=page.querySelector('.overview-grid');if(firstGrid)firstGrid.classList.add('preview-main-grid');}
+}
+</script>
+
+
+<!-- FIX_DASHBOARD_SCHEDULE_NAV -->
+<script>
+function openScheduleFromDashboard(){
+  const scheduleBtn=document.querySelector('#nav button[data-view="schedule"]');
+  if(scheduleBtn){
+    scheduleBtn.click();
+  }else{
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    const scheduleView=document.getElementById('view-schedule');
+    if(scheduleView)scheduleView.classList.add('active');
+    document.querySelectorAll('#nav button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view==='schedule'));
+    if(typeof renderCalendar==='function')renderCalendar();
+    if(typeof renderLibrary==='function')renderLibrary();
+    if(typeof renderPlanEmployeePool==='function')renderPlanEmployeePool();
+  }
+  const main=document.querySelector('.main');
+  if(main)main.scrollTop=0;
 }
 </script>
 
