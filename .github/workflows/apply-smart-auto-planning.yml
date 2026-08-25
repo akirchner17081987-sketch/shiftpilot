@@ -1,0 +1,21 @@
+name: Apply Smart Auto Planning
+on:
+  push:
+    paths:
+      - 'scripts/apply_smart_auto_planning.py'
+      - '.github/workflows/apply-smart-auto-planning.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python scripts/apply_smart_auto_planning.py
+      - run: |
+          git config user.name "shiftpilot-bot"
+          git config user.email "shiftpilot-bot@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "Auto-Planung: Vorschläge, Regeln und Vorschau ergänzen"
+          git push
