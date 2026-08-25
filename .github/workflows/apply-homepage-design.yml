@@ -1,0 +1,21 @@
+name: Apply Homepage Design
+on:
+  push:
+    paths:
+      - 'scripts/apply_homepage_design.py'
+      - '.github/workflows/apply-homepage-design.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python scripts/apply_homepage_design.py
+      - run: |
+          git config user.name "shiftpilot-bot"
+          git config user.email "shiftpilot-bot@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "Homepage: neues ShiftPilot Landingpage-Design integrieren"
+          git push
