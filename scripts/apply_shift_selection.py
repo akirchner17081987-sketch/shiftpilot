@@ -28,3 +28,4 @@ elif 'selectedType=t;renderLibrary();showSaveToast' not in s:
 
 p.write_text(s,encoding='utf-8')
 print('Auswahlmarkierung der Schichtbibliothek eingebaut')
+# trigger: 2026-08-25
