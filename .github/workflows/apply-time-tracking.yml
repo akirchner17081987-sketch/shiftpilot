@@ -1,0 +1,21 @@
+name: Apply Time Tracking
+on:
+  push:
+    paths:
+      - 'scripts/apply_time_tracking.py'
+      - '.github/workflows/apply-time-tracking.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python scripts/apply_time_tracking.py
+      - run: |
+          git config user.name "shiftpilot-bot"
+          git config user.email "shiftpilot-bot@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "Zeiterfassung: Basis mit SOLL/IST und Abweichungen"
+          git push
