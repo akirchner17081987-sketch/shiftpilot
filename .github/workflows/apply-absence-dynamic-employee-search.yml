@@ -1,0 +1,35 @@
+name: Apply Absence Dynamic Employee Search
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/apply_absence_dynamic_employee_search.py'
+      - '.github/workflows/apply-absence-dynamic-employee-search.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - run: python scripts/apply_absence_dynamic_employee_search.py
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else
+            git commit -m "Abwesenheiten: dynamische Mitarbeitersuche aktivieren"
+            git push
+          fi
