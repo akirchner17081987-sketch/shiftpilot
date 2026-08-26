@@ -1,0 +1,32 @@
+name: Fix Overview Schedule Buttons
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/fix_overview_schedule_buttons.py'
+      - '.github/workflows/fix-overview-schedule-buttons.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Fix overview Dienstplan buttons
+        run: python scripts/fix_overview_schedule_buttons.py
+      - name: Commit change
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "Übersicht: Dienstplan-Buttons direkt verknüpfen"
+          git push
