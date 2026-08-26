@@ -1,0 +1,32 @@
+name: Apply Overview Quick Actions
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/apply_overview_quick_actions.py'
+      - '.github/workflows/apply-overview-quick-actions.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Apply quick action links
+        run: python scripts/apply_overview_quick_actions.py
+      - name: Commit change
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "Übersicht: Schnellaktionen vollständig verknüpfen"
+          git push
