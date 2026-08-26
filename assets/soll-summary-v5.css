@@ -1,0 +1,18 @@
+/* ShiftPilot SOLL/IST Summary V5 */
+#view-schedule .soll-day{padding:9px 8px;min-height:72px}
+#view-schedule .sp-soll-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:7px}
+#view-schedule .sp-soll-head small{margin:0;color:#93a9c1;font-size:10.5px}
+#view-schedule .sp-soll-toggle{border:1px solid #2b4059;background:#0c1827;color:#b7c8db;border-radius:6px;padding:4px 7px;font-size:10.5px;white-space:nowrap}
+#view-schedule .sp-soll-toggle:hover{border-color:#3a5878;color:#e8f3ff}
+#view-schedule .sp-soll-list{display:flex;flex-direction:column;gap:5px}
+#view-schedule .sp-soll-line{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid #684b1e;background:#2b2418;border-radius:7px;padding:5px 7px;color:#ffd08a;font-size:10.5px;line-height:1.2}
+#view-schedule .sp-soll-line.good{border-color:#1e6857;background:#113028;color:#90eed0}
+#view-schedule .sp-soll-line b{font-size:10.5px;color:inherit}
+#view-schedule .sp-soll-line span{white-space:nowrap}
+#view-schedule .sp-soll-ok-summary{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid #1e6857;background:#113028;color:#90eed0;border-radius:7px;padding:5px 7px;font-size:10.5px}
+#view-schedule .sp-soll-all{display:none;flex-direction:column;gap:5px;margin-top:5px}
+#view-schedule .soll-day.sp-soll-expanded .sp-soll-all{display:flex}
+#view-schedule .soll-day.sp-soll-expanded .sp-soll-compact{display:none}
+#view-schedule .sp-soll-empty{border:1px solid #1e6857;background:#113028;color:#90eed0;border-radius:7px;padding:6px 7px;font-size:10.5px}
+#view-schedule .sp-soll-click{cursor:pointer}
+#view-schedule .sp-soll-click:hover{filter:brightness(1.08)}
