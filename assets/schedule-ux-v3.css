@@ -1,0 +1,50 @@
+/* ShiftPilot Dienstplan UX V3: kompakter Mitarbeiter-Pool, bessere Lesbarkeit, Kalender priorisieren */
+#view-schedule .library{padding:13px 14px;margin-top:8px}
+#view-schedule .library-head{margin-bottom:9px}
+#view-schedule .library h3{font-size:16px}
+#view-schedule .library p{font-size:12.5px;color:#a8bad0}
+#view-schedule .shift-row{gap:8px}
+#view-schedule .shift-chip{min-width:132px;padding:9px 10px}
+#view-schedule .shift-chip b{font-size:14px}
+#view-schedule .shift-chip small{font-size:11px;margin-top:4px}
+
+#view-schedule .employee-pool{padding:12px 14px;margin-top:10px}
+#view-schedule .employee-pool-head{margin-bottom:9px;flex-wrap:wrap}
+#view-schedule .employee-pool-head h3{font-size:16px}
+#view-schedule .employee-pool-head small{font-size:12px;color:#a8bad0}
+#view-schedule .employee-pool-head input{font-size:13px;min-width:210px}
+#view-schedule .sp-pool-toggle{margin-left:8px;white-space:nowrap}
+#view-schedule .employee-pool-list{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;overflow-y:auto!important;overflow-x:hidden!important;transition:max-height .22s ease;padding-right:4px;padding-bottom:0}
+#view-schedule .employee-pool.sp-pool-compact .employee-pool-list{max-height:126px;overflow-y:hidden!important}
+#view-schedule .employee-pool:not(.sp-pool-compact) .employee-pool-list{max-height:330px}
+#view-schedule .employee-drag{min-width:0!important;width:100%;padding:10px 11px;gap:9px}
+#view-schedule .employee-drag b{font-size:13px;line-height:1.25}
+#view-schedule .employee-drag small{font-size:11.5px;line-height:1.35;color:#9fb3c9}
+#view-schedule .employee-drag .avatar{width:30px;height:30px;font-size:11px}
+#view-schedule .pool-detail-label{font-size:10.5px;margin-top:7px;margin-bottom:5px;color:#9eb0c5}
+#view-schedule .pool-shifts{gap:4px}
+#view-schedule .pool-shift-tag{font-size:10.5px;padding:3px 6px}
+#view-schedule .pool-absence{font-size:11px;padding:5px 7px;margin-top:7px}
+#view-schedule .employee-drag.selected:after{font-size:9px}
+
+#view-schedule .calendar{margin-top:10px;min-height:660px}
+#view-schedule .cal-toolbar{padding:9px 11px}
+#view-schedule .date-label{font-size:14px}
+#view-schedule .time-head,#view-schedule .day-head{font-size:12px}
+#view-schedule .day-head b{font-size:14px}
+#view-schedule .time-slot{font-size:11px}
+#view-schedule .assignment{font-size:12px}
+#view-schedule .pill{font-size:11px;padding:4px 7px}
+
+@media (max-width:1200px){
+  #view-schedule .employee-pool-list{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media (max-width:900px){
+  #view-schedule .employee-pool-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #view-schedule .employee-pool-head input{margin-left:0;width:100%;min-width:0}
+  #view-schedule .sp-pool-toggle{margin-left:0}
+}
+@media (max-width:620px){
+  #view-schedule .employee-pool-list{grid-template-columns:1fr}
+  #view-schedule .employee-pool.sp-pool-compact .employee-pool-list{max-height:132px}
+}
