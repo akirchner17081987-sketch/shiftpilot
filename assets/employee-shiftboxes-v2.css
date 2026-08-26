@@ -1,0 +1,71 @@
+/* ShiftPilot Mitarbeiter – Schichtfreigaben einheitlich groß */
+#view-employees #shiftChecks{
+  display:grid;
+  grid-template-columns:repeat(7,minmax(78px,1fr));
+  gap:8px;
+  align-items:stretch;
+}
+#view-employees #shiftChecks .check{
+  min-width:0;
+  width:100%;
+  height:76px;
+  padding:9px 6px;
+  border:1px solid #2a3e55;
+  border-radius:8px;
+  background:#0d1928;
+  color:#c7d5e6;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  text-align:center;
+  font-size:12px;
+  line-height:1.15;
+  transition:border-color .16s ease,background .16s ease,box-shadow .16s ease;
+}
+#view-employees #shiftChecks .check input[type="checkbox"]{
+  width:16px;
+  height:16px;
+  margin:0;
+  flex:0 0 auto;
+  accent-color:#1688ff;
+}
+#view-employees #shiftChecks .check:has(input:checked){
+  border-color:#247fd7;
+  background:#10233a;
+  color:#f1f7ff;
+  box-shadow:inset 0 0 0 1px rgba(36,127,215,.12);
+}
+#view-employees #shiftChecks .check:hover{
+  border-color:#3b5b78;
+}
+#view-employees #shiftChecks .check:has(input:checked):hover{
+  border-color:#3295ef;
+}
+
+/* Qualifikationen bleiben kompakt und gleichmäßig */
+#view-employees #qualificationChecks{
+  gap:8px;
+}
+#view-employees #qualificationChecks .check{
+  min-height:44px;
+  padding:9px 10px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+#view-employees #qualificationChecks .check input[type="checkbox"]{
+  width:15px;
+  height:15px;
+  margin:0;
+  flex:0 0 auto;
+  accent-color:#1688ff;
+}
+
+@media(max-width:1200px){
+  #view-employees #shiftChecks{grid-template-columns:repeat(4,minmax(82px,1fr))}
+}
+@media(max-width:700px){
+  #view-employees #shiftChecks{grid-template-columns:repeat(2,minmax(90px,1fr))}
+}
