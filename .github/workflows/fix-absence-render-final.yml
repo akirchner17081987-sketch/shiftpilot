@@ -1,0 +1,21 @@
+name: Fix Absence Render Final
+on:
+  push:
+    paths:
+      - 'scripts/fix_absence_render_final.py'
+      - '.github/workflows/fix-absence-render-final.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python scripts/fix_absence_render_final.py
+      - run: |
+          git config user.name "shiftpilot-bot"
+          git config user.email "shiftpilot-bot@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "Abwesenheiten: altes Rendering entfernen"
+          git push
