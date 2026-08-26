@@ -14,13 +14,16 @@
       btn.type='button';
       btn.className='ghost sp-pool-toggle';
       btn.setAttribute('aria-expanded','false');
-      btn.textContent='Alle anzeigen';
+      btn.textContent='Pool erweitern ↓';
       head.appendChild(btn);
+    }else{
+      btn.textContent='Pool erweitern ↓';
+      btn.setAttribute('aria-expanded','false');
     }
 
     btn.onclick=()=>{
       const compact=pool.classList.toggle('sp-pool-compact');
-      btn.textContent=compact?'Alle anzeigen':'Weniger anzeigen';
+      btn.textContent=compact?'Pool erweitern ↓':'Pool einklappen ↑';
       btn.setAttribute('aria-expanded',String(!compact));
       if(compact){
         const calendar=view.querySelector('.calendar');
