@@ -1,0 +1,41 @@
+name: Apply Employee Shiftboxes V2
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'assets/employee-shiftboxes-v2.css'
+      - '.github/workflows/apply-employee-shiftboxes-v2.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Link employee shiftbox styles
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          css='<link rel="stylesheet" href="assets/employee-shiftboxes-v2.css">'
+          changed=False
+          if css not in s:
+              s=s.replace('</head>',css+'\n</head>');changed=True
+          if changed:p.write_text(s,encoding='utf-8')
+      - name: Basic checks
+        run: |
+          grep -q 'employee-shiftboxes-v2.css' index.html
+          grep -q '#view-employees #shiftChecks' assets/employee-shiftboxes-v2.css
+      - name: Commit changes
+        run: |
+          if git diff --quiet; then
+            echo "Employee Shiftboxes V2 already linked."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Mitarbeiter: Schichtfreigaben V2 aktivieren"
+          git push
