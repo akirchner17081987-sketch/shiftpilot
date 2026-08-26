@@ -1,0 +1,34 @@
+name: Apply Template Manager
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'assets/template-manager.js'
+      - 'assets/template-manager.css'
+      - 'scripts/apply_template_manager_assets.py'
+      - '.github/workflows/apply-template-manager.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Bind template manager assets
+        run: python scripts/apply_template_manager_assets.py
+      - name: Commit change
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "ShiftPilot: echte Vorlagenverwaltung aktivieren"
+          git push
