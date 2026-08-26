@@ -1,0 +1,21 @@
+name: Apply Absence Dashboard
+on:
+  push:
+    paths:
+      - 'scripts/apply_absence_dashboard.py'
+      - '.github/workflows/apply-absence-dashboard.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python scripts/apply_absence_dashboard.py
+      - run: |
+          git config user.name "shiftpilot-bot"
+          git config user.email "shiftpilot-bot@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "Abwesenheiten: Zeitraum, Status, Kalender und Konflikte"
+          git push
