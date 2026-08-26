@@ -1,0 +1,24 @@
+name: Fix Absence Button Runtime
+on:
+  push:
+    paths:
+      - 'scripts/fix_absence_button_runtime.py'
+      - '.github/workflows/fix-absence-button-runtime.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Apply runtime fix
+        run: python scripts/fix_absence_button_runtime.py
+      - name: Commit updated index
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "Abwesenheiten: Button-Laufzeitfehler beheben"
+          git push
