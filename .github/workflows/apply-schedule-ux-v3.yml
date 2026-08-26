@@ -1,0 +1,44 @@
+name: Apply schedule UX V3
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'assets/schedule-ux-v3.css'
+      - 'assets/schedule-ux-v3.js'
+      - '.github/workflows/apply-schedule-ux-v3.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Link UX assets into index
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          css='<link rel="stylesheet" href="assets/schedule-ux-v3.css">'
+          js='<script src="assets/schedule-ux-v3.js"></script>'
+          changed=False
+          if css not in s:
+              s=s.replace('</head>', css+'\n</head>')
+              changed=True
+          if js not in s:
+              s=s.replace('</body>', js+'\n</body>')
+              changed=True
+          if changed:
+              p.write_text(s,encoding='utf-8')
+      - name: Commit changes
+        run: |
+          if git diff --quiet; then
+            echo "UX V3 already linked."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Dienstplan: UX V3 aktivieren"
+          git push
