@@ -1,0 +1,56 @@
+name: Expand template manager
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/expand-template-manager.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add template manager
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          old="document.getElementById('newTemplateBtn').onclick=()=>alert('Die sieben Schichtvorlagen sind bereits angelegt. Eigene Vorlagen werden als nächster Schritt ergänzt.');"
+          new=r'''const templateStoreKey='shiftpilotCustomTemplates';
+function getCustomTemplates(){try{return JSON.parse(localStorage.getItem(templateStoreKey)||'[]')}catch(e){return []}}
+function saveCustomTemplates(v){localStorage.setItem(templateStoreKey,JSON.stringify(v));renderOverview()}
+function openTemplateManager(){
+  document.getElementById('templateManagerModal')?.remove();
+  const modal=document.createElement('div');modal.id='templateManagerModal';modal.className='tpl-overlay';
+  modal.innerHTML=`<div class="tpl-modal"><div class="tpl-head"><div><div class="eyebrow">VORLAGEN</div><h2>Neue Vorlage</h2><p>Wiederverwendbare Planungsmuster für deine Dienstplanung erstellen.</p></div><button class="iconbtn" id="tplClose">✕</button></div><div class="tpl-types"><button data-tpltype="shift"><b>◫ Schichtvorlage</b><span>Eine einzelne Schicht mit Zeiten und SOLL-Stärke.</span></button><button data-tpltype="day"><b>▦ Tagesvorlage</b><span>Komplette Besetzung eines typischen Tages.</span></button><button data-tpltype="week"><b>▤ Wochenvorlage</b><span>Eine vollständige Standardwoche vorbereiten.</span></button><button data-tpltype="current"><b>✦ Aktuellen Dienstplan übernehmen</b><span>Die aktuelle Woche direkt als Vorlage speichern.</span></button></div><div id="tplForm"></div><div class="tpl-existing"><div class="tpl-existing-head"><h3>Gespeicherte Vorlagen</h3><span id="tplCount"></span></div><div id="tplList"></div></div></div>`;
+  document.body.appendChild(modal);document.body.classList.add('tpl-open');
+  const close=()=>{modal.remove();document.body.classList.remove('tpl-open')};document.getElementById('tplClose').onclick=close;
+  modal.addEventListener('click',e=>{if(e.target===modal)close()});
+  modal.querySelectorAll('[data-tpltype]').forEach(b=>b.onclick=()=>renderTemplateForm(b.dataset.tpltype));renderTemplateList();
+}
+function renderTemplateForm(type){
+  const box=document.getElementById('tplForm');if(!box)return;
+  const labels={shift:'Schichtvorlage',day:'Tagesvorlage',week:'Wochenvorlage',current:'Aktuellen Dienstplan übernehmen'};
+  box.innerHTML=`<div class="tpl-form"><div class="tpl-form-title"><b>${labels[type]}</b><small>Vorlage konfigurieren und speichern</small></div><label>Name der Vorlage<input id="tplName" placeholder="z. B. Standardwoche"></label>${type==='shift'?`<div class="tpl-two"><label>Schicht<select id="tplShift">${TYPES.map(t=>`<option value="${t.id}">${t.id}</option>`).join('')}</select></label><label>SOLL-Stärke<input id="tplSoll" type="number" min="0" value="1"></label></div><div class="tpl-two"><label>Beginn<input id="tplStart" type="time" value="06:00"></label><label>Ende<input id="tplEnd" type="time" value="14:00"></label></div>`:''}${type==='day'?`<label>Wochentag<select id="tplDay">${DAYS.map((d,i)=>`<option value="${i}">${d}</option>`).join('')}</select></label>`:''}<div class="tpl-actions"><button class="ghost" id="tplCancel">Abbrechen</button><button class="primary" id="tplSave">Vorlage speichern</button></div></div>`;
+  document.getElementById('tplCancel').onclick=()=>box.innerHTML='';
+  document.getElementById('tplSave').onclick=()=>{const name=document.getElementById('tplName').value.trim();if(!name){document.getElementById('tplName').focus();return}const data={id:Date.now(),name,type,active:true,created:new Date().toISOString()};if(type==='shift'){data.shift=document.getElementById('tplShift').value;data.soll=Number(document.getElementById('tplSoll').value||0);data.start=document.getElementById('tplStart').value;data.end=document.getElementById('tplEnd').value}if(type==='day')data.day=Number(document.getElementById('tplDay').value);if(type==='current')data.assignments=assignments.filter(a=>currentWeekDates().map(iso).includes(a.date));if(type==='week')data.soll=JSON.parse(JSON.stringify(globalSoll));const all=getCustomTemplates();all.push(data);saveCustomTemplates(all);box.innerHTML='';renderTemplateList();showSaveToast('Vorlage gespeichert',`„${name}“ wurde erfolgreich angelegt.`)};
+}
+function renderTemplateList(){const list=document.getElementById('tplList'),count=document.getElementById('tplCount');if(!list)return;const all=getCustomTemplates();count.textContent=`${all.filter(x=>x.active).length} aktiv`;if(!all.length){list.innerHTML='<div class="tpl-empty">Noch keine eigenen Vorlagen gespeichert.</div>';return}const names={shift:'Schicht',day:'Tag',week:'Woche',current:'Dienstplan'};list.innerHTML=all.map(t=>`<div class="tpl-row"><div><b>${t.name}</b><small>${names[t.type]||'Vorlage'} · ${t.active?'Aktiv':'Deaktiviert'}</small></div><div class="tpl-row-actions"><button class="ghost" onclick="toggleTemplate(${t.id})">${t.active?'Deaktivieren':'Aktivieren'}</button><button class="ghost" onclick="duplicateTemplate(${t.id})">Duplizieren</button><button class="tpl-delete" onclick="deleteTemplate(${t.id})">Löschen</button></div></div>`).join('')}
+function toggleTemplate(id){const a=getCustomTemplates();const t=a.find(x=>x.id===id);if(t)t.active=!t.active;saveCustomTemplates(a);renderTemplateList()}
+function duplicateTemplate(id){const a=getCustomTemplates(),t=a.find(x=>x.id===id);if(!t)return;const c=JSON.parse(JSON.stringify(t));c.id=Date.now();c.name=t.name+' – Kopie';c.created=new Date().toISOString();a.push(c);saveCustomTemplates(a);renderTemplateList()}
+function deleteTemplate(id){saveCustomTemplates(getCustomTemplates().filter(x=>x.id!==id));renderTemplateList()}
+document.getElementById('newTemplateBtn').onclick=openTemplateManager;
+(()=>{const st=document.createElement('style');st.textContent=`.tpl-open{overflow:hidden}.tpl-overlay{position:fixed;inset:0;background:rgba(2,8,15,.78);backdrop-filter:blur(8px);z-index:9999;display:grid;place-items:center;padding:24px}.tpl-modal{width:min(900px,94vw);max-height:90vh;overflow:auto;background:#0d1a2a;border:1px solid #29405a;border-radius:16px;box-shadow:0 30px 90px rgba(0,0,0,.55)}.tpl-head{display:flex;justify-content:space-between;gap:20px;padding:22px 24px;border-bottom:1px solid #21334a}.tpl-head h2{margin:5px 0 4px;font-size:24px}.tpl-head p{margin:0;color:var(--muted);font-size:13px}.tpl-types{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:20px 24px}.tpl-types button{background:#101f31;border:1px solid #28415b;border-radius:11px;color:#eef7ff;text-align:left;padding:16px}.tpl-types button:hover{border-color:var(--teal);background:#12302d}.tpl-types b,.tpl-types span{display:block}.tpl-types span{color:var(--muted);font-size:12px;margin-top:6px}.tpl-form{margin:0 24px 20px;padding:16px;background:#0a1624;border:1px solid #263b53;border-radius:12px;display:grid;gap:12px}.tpl-form-title{display:flex;justify-content:space-between}.tpl-form-title small{color:var(--muted)}.tpl-form label{display:grid;gap:6px;color:#9db0c6;font-size:12px;font-weight:700}.tpl-form input,.tpl-form select{background:#0d1b2b;border:1px solid #29415b;color:#f4f8ff;border-radius:8px;padding:10px}.tpl-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.tpl-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}.tpl-existing{padding:0 24px 24px}.tpl-existing-head{display:flex;align-items:center;justify-content:space-between;border-top:1px solid #21334a;padding-top:18px}.tpl-existing-head h3{margin:0}.tpl-existing-head span{color:var(--teal);font-size:12px}.tpl-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #1c2e43}.tpl-row small{display:block;color:var(--muted);margin-top:4px}.tpl-row-actions{display:flex;gap:6px}.tpl-delete{border:1px solid #6d2c39;background:#351821;color:#ff8794;border-radius:7px;padding:7px 9px}.tpl-empty{color:var(--muted);padding:16px 0}@media(max-width:700px){.tpl-types,.tpl-two{grid-template-columns:1fr}.tpl-row{align-items:flex-start;flex-direction:column}.tpl-row-actions{flex-wrap:wrap}}`;document.head.appendChild(st)})();'''
+          if old not in s:
+              raise SystemExit('Target handler not found')
+          s=s.replace(old,new)
+          p.write_text(s)
+          PY
+      - name: Commit changes
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html
+          git commit -m "Vorlagen: Verwaltung und Erstellungsdialog ergänzen"
+          git push
