@@ -1,0 +1,47 @@
+name: ShiftPilot Quality Pass
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/quality_pass.py'
+      - '.github/workflows/quality-pass.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  quality-pass:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Apply quality pass
+        run: python3 scripts/quality_pass.py
+      - name: Verify critical views
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          required=['view-overview','view-schedule','view-employees','view-time','view-absence','view-auto','view-reports','view-settings','SHIFTPILOT_QUALITY_PASS_V1']
+          missing=[x for x in required if x not in s]
+          if missing:
+              raise SystemExit('Fehlende Kernbereiche: '+', '.join(missing))
+          if "switchView('plan')" in s:
+              raise SystemExit("Veraltete Navigation switchView('plan') noch vorhanden")
+          print('Kernbereiche und Navigation geprüft.')
+          PY
+      - name: Commit changes
+        run: |
+          if git diff --quiet -- index.html; then
+            echo 'Keine weiteren Änderungen notwendig.'
+            exit 0
+          fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html
+          git commit -m "Qualität: Lesbarkeit, Navigation und Bedienbarkeit verbessern"
+          git push origin main
