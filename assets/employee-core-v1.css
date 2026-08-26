@@ -1,0 +1,40 @@
+/* ShiftPilot Mitarbeiter Core UX V1 */
+#view-employees .sp-employee-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 14px}
+#view-employees .sp-employee-stat{background:#0f1c2d;border:1px solid #21334a;border-radius:11px;padding:12px 13px;display:flex;align-items:center;gap:10px}
+#view-employees .sp-employee-stat i{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:#12382f;color:#70e6be;font-style:normal;font-weight:800}
+#view-employees .sp-employee-stat:nth-child(2) i{background:#2c2731;color:#c8b8c8}
+#view-employees .sp-employee-stat:nth-child(3) i{background:#182b49;color:#a9c5ff}
+#view-employees .sp-employee-stat:nth-child(4) i{background:#302414;color:#ffd08a}
+#view-employees .sp-employee-stat small{display:block;color:#a8bad0;font-size:12px}
+#view-employees .sp-employee-stat strong{display:block;font-size:20px;margin-top:2px}
+#view-employees .emp{cursor:pointer;transition:border-color .15s ease,background .15s ease,transform .15s ease}
+#view-employees .emp:hover{border-color:#31506c;transform:translateY(-1px)}
+#view-employees .emp.sp-selected{border-color:#2ed9b8;background:#12302d;box-shadow:inset 3px 0 0 #2ed9b8}
+#view-employees .emp b{font-size:13px}
+#view-employees .emp small{font-size:11.5px;color:#a8bad0}
+#view-employees .tag{font-size:11px;padding:4px 7px}
+#view-employees .table-head{flex-wrap:wrap}
+#view-employees .table-head select,#view-employees .table-head input{font-size:13px}
+#view-employees .sp-availability-wrap{grid-column:1/-1;border:1px solid #203248;background:#0c1725;border-radius:10px;padding:12px}
+#view-employees .sp-availability-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
+#view-employees .sp-availability-head b{font-size:13px;color:#dce8f6}
+#view-employees .sp-availability-head small{font-size:11px;color:#8fa4bf}
+#view-employees .sp-availability-days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+#view-employees .sp-day-check{border:1px solid #2a3e55;border-radius:8px;padding:8px 5px;display:flex!important;align-items:center;justify-content:center;gap:5px;color:#aebed0!important;font-size:11.5px!important;background:#101d2d}
+#view-employees .sp-day-check:has(input:checked){border-color:#2ed9b8;background:#123127;color:#c9fff0!important}
+#view-employees .sp-day-check input{margin:0}
+#view-employees .profile-summary{padding:16px}
+#view-employees .profile-summary p{font-size:13px;color:#a8bad0}
+#view-employees .profile-metric small{font-size:11.5px}
+#view-employees .profile-metric strong{font-size:16px}
+#view-employees .sp-profile-foot{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+#view-employees .sp-profile-chip{font-size:11.5px;border:1px solid #29435a;background:#102033;color:#b9cde0;border-radius:999px;padding:4px 8px}
+#view-employees .sp-profile-chip.good{border-color:#1d6d57;background:#123127;color:#9ef4d4}
+#view-employees .sp-profile-chip.warn{border-color:#76532a;background:#302414;color:#ffd08a}
+#view-employees .form label{font-size:12.5px;color:#a9bbce}
+#view-employees .form input,#view-employees .form select,#view-employees .form textarea{font-size:13.5px;min-height:39px}
+#view-employees .check{font-size:12.5px;padding:8px 10px}
+#view-employees .absence-item b{font-size:13px}
+#view-employees .absence-item small{font-size:11.5px}
+@media(max-width:1050px){#view-employees .sp-employee-stats{grid-template-columns:repeat(2,1fr)}#view-employees .panel-grid{grid-template-columns:1fr}}
+@media(max-width:700px){#view-employees .sp-employee-stats{grid-template-columns:1fr 1fr}#view-employees .sp-availability-days{grid-template-columns:repeat(4,1fr)}#view-employees .table-head input{width:100%;min-width:0;margin-left:0}}
