@@ -1,4 +1,4 @@
-// SchichtFunk Rebranding Layer
+// SchichtFunk Rebranding Layer – safe mode
 (function(){
   const OLD='ShiftPilot';
   const NEW='SchichtFunk';
@@ -11,14 +11,17 @@
       if(!p || ['SCRIPT','STYLE','TEXTAREA'].includes(p.tagName)) return NodeFilter.FILTER_REJECT;
       return node.nodeValue && node.nodeValue.includes(OLD) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
     }});
-    const nodes=[]; while(walker.nextNode()) nodes.push(walker.currentNode);
-    nodes.forEach(n=>n.nodeValue=n.nodeValue.split(OLD).join(NEW));
+    const nodes=[];
+    while(walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(n=>{ n.nodeValue=n.nodeValue.split(OLD).join(NEW); });
   }
 
   function replaceAttributes(root=document){
+    if(!root?.querySelectorAll) return;
     root.querySelectorAll('[title],[aria-label],[placeholder],[alt]').forEach(el=>{
       ['title','aria-label','placeholder','alt'].forEach(a=>{
-        const v=el.getAttribute(a); if(v && v.includes(OLD)) el.setAttribute(a,v.split(OLD).join(NEW));
+        const v=el.getAttribute(a);
+        if(v && v.includes(OLD)) el.setAttribute(a,v.split(OLD).join(NEW));
       });
     });
   }
@@ -34,32 +37,15 @@
     });
   }
 
-  function ensureBranding(){
+  function init(){
     document.title='SchichtFunk – Dienstplanung';
-    replaceText();
-    replaceAttributes();
+    replaceText(document.body);
+    replaceAttributes(document);
     replaceLogos();
-
-    const footer=[...document.querySelectorAll('footer,.landing-footer')].find(x=>/©\s*2026/i.test(x.textContent||''));
-    if(footer && !footer.textContent.includes(NEW)) footer.textContent='© 2026 SchichtFunk – '+SLOGAN;
   }
 
-  function migrateStorageKeys(){
-    try{
-      const pairs=[];
-      for(let i=0;i<localStorage.length;i++){
-        const k=localStorage.key(i); if(k && /shiftpilot/i.test(k)) pairs.push(k);
-      }
-      pairs.forEach(k=>{
-        const nk=k.replace(/shiftpilot/ig,'schichtfunk');
-        if(localStorage.getItem(nk)==null) localStorage.setItem(nk,localStorage.getItem(k));
-      });
-    }catch(e){}
-  }
-
-  function init(){migrateStorageKeys();ensureBranding();}
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
-
-  const observer=new MutationObserver(()=>ensureBranding());
-  if(document.documentElement) observer.observe(document.documentElement,{subtree:true,childList:true});
+  // Nur einmal nach vollständigem DOM-Aufbau ausführen.
+  // Keine MutationObserver, keine Storage-Migration, keine strukturellen DOM-Änderungen.
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true});
+  else init();
 })();
