@@ -57,6 +57,7 @@
     try{
       const detected=selectedShift();
       if(detected) activeShift=detected;
+      else if(!schedule.querySelector('.shift-chip.selected')) activeShift=null;
       const cards=[...schedule.querySelectorAll('#planEmployeePool .employee-drag')];
       const info=ensureUi();
       let visible=0;
@@ -91,10 +92,20 @@
     } finally {applying=false;}
   }
 
-  // Nach Auswahl einer Schicht die bestehende App-Logik zuerst ausführen lassen.
+  // Toggle-Verhalten: Eine bereits ausgewählte Schicht kann durch erneuten Klick abgewählt werden.
   schedule.addEventListener('click',e=>{
-    if(e.target.closest('.shift-chip')) setTimeout(apply,0);
+    const chip=e.target.closest('.shift-chip');
+    if(!chip) return;
+    const wasSelected=chip.classList.contains('selected');
+    setTimeout(()=>{
+      if(wasSelected){
+        chip.classList.remove('selected');
+        activeShift=null;
+      }
+      apply();
+    },0);
   });
+
   // Suchfeld bleibt nutzbar; nach jedem Rerender wird der Schichtfilter erneut angewendet.
   schedule.querySelector('#planEmployeeSearch')?.addEventListener('input',()=>setTimeout(apply,0));
 
