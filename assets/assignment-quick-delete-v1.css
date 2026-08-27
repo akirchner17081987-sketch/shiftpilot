@@ -1,0 +1,7 @@
+/* SchichtFunk – Schnelllöschung an geplanten Schichten */
+#view-schedule .assignment{position:absolute;padding-right:27px}
+#view-schedule .sp-assignment-x{position:absolute;top:4px;right:4px;width:20px;height:20px;min-width:20px;padding:0;border:1px solid rgba(255,255,255,.2);border-radius:6px;background:rgba(5,11,18,.46);color:rgba(255,255,255,.72);font-size:16px;line-height:17px;font-weight:700;display:grid;place-items:center;opacity:.45;transition:opacity .15s,background .15s,border-color .15s,color .15s;z-index:3}
+#view-schedule .assignment:hover .sp-assignment-x,#view-schedule .sp-assignment-x:focus-visible{opacity:1}
+#view-schedule .sp-assignment-x:hover{background:#7a2431;border-color:#d85364;color:#fff}
+#view-schedule .sp-assignment-x:focus-visible{outline:2px solid #ff8290;outline-offset:1px}
+@media (hover:none){#view-schedule .sp-assignment-x{opacity:.85}}
