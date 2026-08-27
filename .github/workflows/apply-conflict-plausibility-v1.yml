@@ -1,0 +1,41 @@
+name: Apply Conflict Plausibility V1
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'assets/conflict-plausibility-v1.js'
+      - '.github/workflows/apply-conflict-plausibility-v1.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Link conflict plausibility asset
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          js='<script src="assets/conflict-plausibility-v1.js"></script>'
+          if js not in s:
+              s=s.replace('</body>',js+'\n</body>')
+              p.write_text(s,encoding='utf-8')
+      - name: Checks
+        run: |
+          grep -q 'conflict-plausibility-v1.js' index.html
+          grep -q 'SchichtFunkConflictAudit' assets/conflict-plausibility-v1.js
+          grep -q 'Ruhezeit' assets/conflict-plausibility-v1.js
+      - name: Commit changes
+        run: |
+          if git diff --quiet; then
+            echo "Conflict plausibility already linked."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Dienstplan: Konflikt- und Plausibilitätsprüfung aktivieren"
+          git push
