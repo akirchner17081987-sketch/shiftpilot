@@ -1,4 +1,4 @@
-// ShiftPilot Schichtzuweisung UX V4
+// SchichtFunk Schichtzuweisung UX V4
 (function(){
   const pad=n=>String(n).padStart(2,'0');
   const esc=s=>String(s??'').replace(/[&<>'\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','\"':'&quot;'}[c]));
@@ -52,6 +52,14 @@
   function closeModal(){document.getElementById('spAssignModal')?.remove()}
   window.spCloseAssignModal=closeModal;
 
+  function refreshAfterChange(){
+    if(typeof saveAll==='function')saveAll();
+    if(typeof renderCalendar==='function')renderCalendar();
+    if(typeof renderPlanEmployeePool==='function')renderPlanEmployeePool();
+    if(typeof renderOverview==='function')renderOverview();
+    if(typeof updateStats==='function')updateStats();
+  }
+
   function saveAssignment(emp,type,date,start,end,extra={}){
     const t=typeById(type);const check=conflictFor(emp,type,date,start,end,extra.ignoreId||null);
     if(check.hard.length){notice('Zuweisung nicht möglich',check.hard.join(' '),'danger');return false}
@@ -59,7 +67,7 @@
       const a=assignments.find(x=>x.id===extra.ignoreId);if(!a)return false;
       Object.assign(a,{employeeId:emp.id,type,date,start,end,pause:Number(extra.pause||0),note:extra.note||''});
     }else assignments.push({id:'as'+Date.now()+Math.random().toString(36).slice(2,6),date,type,employeeId:emp.id,start,end,pause:Number(extra.pause||0),note:extra.note||''});
-    saveAll();renderCalendar();renderPlanEmployeePool();if(typeof renderOverview==='function')renderOverview();
+    refreshAfterChange();
     const title=extra.ignoreId?'Schicht aktualisiert':'Schicht zugewiesen';
     const msg=`${emp.first} ${emp.last} · ${type} · ${new Date(date+'T00:00:00').toLocaleDateString('de-DE')} · ${start}–${end}${check.soft.length?' · Hinweis: '+check.soft.join(' '):''}`;
     if(typeof showSaveToast==='function')showSaveToast(title,msg);else notice(title,msg,'good');
@@ -90,21 +98,34 @@
     search.addEventListener('input',render);render();search.focus();
   };
 
+  function deleteAssignmentWithConfirm(a,emp){
+    const t=typeById(a.type);const start=a.start||t?.start||'',end=a.end||t?.end||'';
+    const dateLabel=new Date(a.date+'T00:00:00').toLocaleDateString('de-DE',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'});
+    const ok=confirm(`Schicht wirklich löschen?\n\n${a.type} · ${emp.first} ${emp.last}\n${dateLabel} · ${start}–${end}\n\nDie Zuweisung wird aus dem Dienstplan entfernt.`);
+    if(!ok)return false;
+    assignments=assignments.filter(x=>x.id!==a.id);
+    refreshAfterChange();
+    closeModal();
+    if(typeof showSaveToast==='function')showSaveToast('Schicht gelöscht',`${emp.first} ${emp.last} wurde am ${dateLabel} aus ${a.type} entfernt.`);else notice('Schicht gelöscht',`${a.type} · ${emp.first} ${emp.last}`,'good');
+    return true;
+  }
+
   window.editAssignment=function(id){
     const a=assignments.find(x=>x.id===id);if(!a)return;const t=typeById(a.type),emp=employees.find(e=>e.id===a.employeeId);if(!t||!emp)return;closeModal();
     const types=TYPES.map(x=>`<option value="${esc(x.id)}" ${x.id===a.type?'selected':''}>${esc(x.id)}</option>`).join('');
     const emps=employees.filter(e=>e.status==='active'||e.id===emp.id).map(e=>`<option value="${esc(e.id)}" ${e.id===emp.id?'selected':''}>${esc(e.first+' '+e.last+(e.personnelNo?' · '+e.personnelNo:''))}</option>`).join('');
     const m=document.createElement('div');m.id='spAssignModal';m.className='sp-assign-backdrop';
-    m.innerHTML=`<div class="sp-assign-modal sp-assign-edit" role="dialog" aria-modal="true"><div class="sp-assign-head"><div><div class="eyebrow">SCHICHT BEARBEITEN</div><h2>${esc(a.type)} · ${esc(emp.first+' '+emp.last)}</h2><p>Zeit, Mitarbeiter oder Schicht nachträglich anpassen.</p></div><button class="sp-assign-close" onclick="spCloseAssignModal()">✕</button></div><div class="sp-assign-body"><div class="sp-edit-grid"><label>Mitarbeiter<select id="spEditEmp">${emps}</select></label><label>Schicht<select id="spEditType">${types}</select></label><label>Datum<input id="spEditDate" type="date" value="${esc(a.date)}"></label><label>Beginn<input id="spEditStart" type="time" value="${esc(a.start||t.start)}"></label><label>Ende<input id="spEditEnd" type="time" value="${esc(a.end||t.end)}"></label><label>Pause (Min.)<input id="spEditPause" type="number" min="0" step="5" value="${Number(a.pause||0)}"></label></div><label class="sp-edit-note">Bemerkung<textarea id="spEditNote" rows="3" placeholder="Optionaler Hinweis zur Schicht ...">${esc(a.note||'')}</textarea></label><div id="spEditCheck" class="sp-edit-check"></div></div><div class="sp-assign-foot"><button type="button" class="danger" id="spDeleteAssign">Schicht entfernen</button><span></span><button type="button" class="ghost" onclick="spCloseAssignModal()">Abbrechen</button><button type="button" class="primary" id="spSaveAssign">Änderungen speichern</button></div></div>`;
+    m.innerHTML=`<div class="sp-assign-modal sp-assign-edit" role="dialog" aria-modal="true" aria-labelledby="spEditTitle"><div class="sp-assign-head"><div><div class="eyebrow">SCHICHT BEARBEITEN</div><h2 id="spEditTitle">${esc(a.type)} · ${esc(emp.first+' '+emp.last)}</h2><p>Zeit, Mitarbeiter oder Schicht anpassen oder die Zuweisung löschen.</p></div><button type="button" class="sp-assign-close" onclick="spCloseAssignModal()">✕</button></div><div class="sp-assign-body"><div class="sp-edit-grid"><label>Mitarbeiter<select id="spEditEmp">${emps}</select></label><label>Schicht<select id="spEditType">${types}</select></label><label>Datum<input id="spEditDate" type="date" value="${esc(a.date)}"></label><label>Beginn<input id="spEditStart" type="time" value="${esc(a.start||t.start)}"></label><label>Ende<input id="spEditEnd" type="time" value="${esc(a.end||t.end)}"></label><label>Pause (Min.)<input id="spEditPause" type="number" min="0" step="5" value="${Number(a.pause||0)}"></label></div><label class="sp-edit-note">Bemerkung<textarea id="spEditNote" rows="3" placeholder="Optionaler Hinweis zur Schicht ...">${esc(a.note||'')}</textarea></label><div id="spEditCheck" class="sp-edit-check"></div></div><div class="sp-assign-foot"><button type="button" class="danger sp-delete-assignment" id="spDeleteAssign">🗑 Schicht löschen</button><span></span><button type="button" class="ghost" onclick="spCloseAssignModal()">Abbrechen</button><button type="button" class="primary" id="spSaveAssign">Änderungen speichern</button></div></div>`;
     document.body.appendChild(m);const val=id=>m.querySelector('#'+id).value;
     const validate=()=>{const e=employees.find(x=>x.id===val('spEditEmp')),type=val('spEditType'),tt=typeById(type),date=val('spEditDate'),start=val('spEditStart')||tt?.start,end=val('spEditEnd')||tt?.end,c=e&&tt?conflictFor(e,type,date,start,end,a.id):{hard:['Ungültige Eingabe'],soft:[]};const box=m.querySelector('#spEditCheck');box.className='sp-edit-check '+(c.hard.length?'bad':c.soft.length?'warn':'good');box.innerHTML=c.hard.length?'⚠ '+esc(c.hard.join(' ')):c.soft.length?'⚠ '+esc(c.soft.join(' ')):'✓ Keine Konflikte erkannt.';return {e,type,date,start,end,c}};
     ['spEditEmp','spEditType','spEditDate','spEditStart','spEditEnd'].forEach(x=>m.querySelector('#'+x).addEventListener('change',validate));validate();
     m.querySelector('#spSaveAssign').onclick=()=>{const v=validate();if(!v.e||v.c.hard.length)return;const ok=saveAssignment(v.e,v.type,v.date,v.start,v.end,{ignoreId:a.id,pause:val('spEditPause'),note:val('spEditNote')});if(ok)closeModal()};
-    m.querySelector('#spDeleteAssign').onclick=()=>{assignments=assignments.filter(x=>x.id!==a.id);saveAll();renderCalendar();renderPlanEmployeePool();if(typeof renderOverview==='function')renderOverview();closeModal();showSaveToast('Schicht entfernt',`${emp.first} ${emp.last} wurde aus ${a.type} entfernt.`)};
+    m.querySelector('#spDeleteAssign').onclick=()=>deleteAssignmentWithConfirm(a,emp);
+    m.addEventListener('click',e=>{if(e.target===m)closeModal()});
   };
 
   const baseRenderAssignments=window.renderAssignments;
-  window.renderAssignments=function(date){const html=baseRenderAssignments(date);const wrap=document.createElement('div');wrap.innerHTML=html;wrap.querySelectorAll('.assignment').forEach(el=>{const onclick=el.getAttribute('onclick')||'';const id=(onclick.match(/editAssignment\('([^']+)'\)/)||[])[1];const a=id&&assignments.find(x=>x.id===id);if(a){const bits=[];if(Number(a.pause)>0)bits.push(`Pause ${a.pause} Min.`);if(a.note)bits.push(a.note);if(bits.length)el.setAttribute('title',bits.join(' · '));el.setAttribute('tabindex','0');el.setAttribute('role','button');el.setAttribute('aria-label',el.textContent.trim()+' – bearbeiten')}});return wrap.innerHTML};
+  window.renderAssignments=function(date){const html=baseRenderAssignments(date);const wrap=document.createElement('div');wrap.innerHTML=html;wrap.querySelectorAll('.assignment').forEach(el=>{const onclick=el.getAttribute('onclick')||'';const id=(onclick.match(/editAssignment\('([^']+)'\)/)||[])[1];const a=id&&assignments.find(x=>x.id===id);if(a){const bits=['Klicken zum Bearbeiten oder Löschen'];if(Number(a.pause)>0)bits.push(`Pause ${a.pause} Min.`);if(a.note)bits.push(a.note);el.setAttribute('title',bits.join(' · '));el.setAttribute('tabindex','0');el.setAttribute('role','button');el.setAttribute('aria-label',el.textContent.trim()+' – bearbeiten oder löschen');el.addEventListener?.('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();window.editAssignment(a.id)}})}});return wrap.innerHTML};
 
   window.renderSoll=function(ds){let html='<div></div>';for(const d of ds){const date=iso(d);html+=`<div class="soll-day"><small>SOLL / IST · klicken oder Mitarbeiter ablegen</small><div class="pillline">${TYPES.map(t=>{const so=getSoll(date,t.id),is=assignmentsFor(date,t.id).length,miss=Math.max(0,so-is);return `<button type="button" class="pill drop-target ${is>=so?'good':'warn'}" data-date="${date}" data-type="${t.id}" title="${t.id} am ${date} besetzen">${t.id}: SOLL ${so} · IST ${is}${miss?' · FEHLT '+miss:' · OK'}</button>`}).join('')}</div></div>`}document.getElementById('sollList').innerHTML=html;document.querySelectorAll('.pill.drop-target').forEach(p=>{p.addEventListener('click',()=>openAssign(p.dataset.type,p.dataset.date));p.addEventListener('dragover',e=>{e.preventDefault();p.classList.add('drop-ready')});p.addEventListener('dragleave',()=>p.classList.remove('drop-ready'));p.addEventListener('drop',e=>{e.preventDefault();e.stopPropagation();p.classList.remove('drop-ready');const data=e.dataTransfer.getData('text/plain');if(data.startsWith('employee:'))assignEmployeeByDrop(data.slice(9),p.dataset.type,p.dataset.date)})})};
 
