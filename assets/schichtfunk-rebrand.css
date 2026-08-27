@@ -1,0 +1,5 @@
+/* SchichtFunk Branding */
+.schichtfunk-brand-logo,.app-brand-img{width:190px!important;height:auto!important;max-height:62px!important;object-fit:contain!important;object-position:left center!important;display:block!important}
+.landing-logo.schichtfunk-brand-logo{width:min(360px,62vw)!important;max-height:100px!important;object-position:left center!important}
+.brand.home-link{padding-top:0!important;padding-bottom:14px!important}
+@media(max-width:700px){.landing-logo.schichtfunk-brand-logo{width:250px!important;max-width:72vw!important}}
