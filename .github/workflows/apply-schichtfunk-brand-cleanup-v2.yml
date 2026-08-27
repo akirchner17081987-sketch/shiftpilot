@@ -1,0 +1,35 @@
+name: Apply SchichtFunk Brand Cleanup V2
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'assets/schichtfunk-brand-cleanup-v2.js'
+      - '.github/workflows/apply-schichtfunk-brand-cleanup-v2.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Link cleanup asset
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          js='<script src="assets/schichtfunk-brand-cleanup-v2.js"></script>'
+          if js not in s:
+              s=s.replace('</body>',js+'\n</body>')
+              p.write_text(s,encoding='utf-8')
+      - name: Verify
+        run: grep -q 'schichtfunk-brand-cleanup-v2.js' index.html
+      - name: Commit changes
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Branding: SchichtFunk Cleanup V2 aktivieren"
+          git push
