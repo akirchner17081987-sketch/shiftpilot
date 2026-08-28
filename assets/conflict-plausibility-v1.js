@@ -12,12 +12,13 @@
     'assets/supabase-legacy-review-v1.js',
     'assets/supabase-auto-plan-guard-v1.js',
     'assets/supabase-delete-bridge-v1.js',
+    'assets/supabase-employee-access-v1.js',
     'assets/supabase-compliance-bridge-v1.js'
   ];
   const load=i=>{
     if(i>=files.length)return;
     const s=document.createElement('script');
-    s.src=files[i]+'?v=20260828k';
+    s.src=files[i]+'?v=20260828m';
     s.onload=()=>load(i+1);
     s.onerror=()=>console.error('SchichtFunk-Modul konnte nicht geladen werden:',files[i]);
     document.body.appendChild(s);
