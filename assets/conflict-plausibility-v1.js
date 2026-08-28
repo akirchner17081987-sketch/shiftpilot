@@ -8,13 +8,14 @@
     'assets/supabase-auth-redirect-v1.js',
     'assets/supabase-data-v1.js',
     'assets/supabase-legacy-import-v2.js',
+    'assets/supabase-legacy-review-v1.js',
     'assets/supabase-delete-bridge-v1.js',
     'assets/supabase-compliance-bridge-v1.js'
   ];
   const load=i=>{
     if(i>=files.length)return;
     const s=document.createElement('script');
-    s.src=files[i]+'?v=20260828e';
+    s.src=files[i]+'?v=20260828f';
     s.onload=()=>load(i+1);
     s.onerror=()=>console.error('SchichtFunk-Modul konnte nicht geladen werden:',files[i]);
     document.body.appendChild(s);
