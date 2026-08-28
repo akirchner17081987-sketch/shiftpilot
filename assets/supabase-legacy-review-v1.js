@@ -69,8 +69,9 @@
       card.id='sfLegacyReviewCard';
       card.className='card table-card';
       card.style.marginTop='14px';
-      const quick=page.querySelector('.card.table-card:last-child');
-      if(quick)page.insertBefore(card,quick);else page.appendChild(card);
+      const directCards=[...page.children].filter(el=>el.classList?.contains('card')&&el.classList?.contains('table-card'));
+      const quick=directCards.length?directCards[directCards.length-1]:null;
+      if(quick&&quick.parentNode===page)page.insertBefore(card,quick);else page.appendChild(card);
     }
     const items=B.legacyReviewItems||[];
     card.innerHTML=`<div class="table-head" style="align-items:center"><h3>Altbestand prüfen</h3><span class="badge" style="${items.length?'background:#8a5a18':'background:#17654f'}">${items.length}</span><span style="margin-left:auto;color:var(--muted);font-size:11px">Aus PostgreSQL · Audit-Log</span></div>${items.length?`<div style="display:flex;flex-direction:column;gap:8px">${items.map(x=>{const emp=x.employee?`${x.employee.first||''} ${x.employee.last||''}`.trim():'Mitarbeiter nicht zugeordnet';return `<div class="section-box sf-legacy-row"><div><b>${esc(emp)}</b><small style="display:block;color:#caa87a;margin-top:3px">${esc(x.shiftCode)} · ${esc(fmtDate(x.startsAt))}</small></div><div><b>${esc(fmtTime(x.startsAt))} – ${esc(fmtTime(x.endsAt))}</b><small class="sf-legacy-muted">übernommener Altbestand</small></div><div><span class="sf-legacy-reason">⚠ ${esc(reason(x.warning))}</span><small class="sf-legacy-muted">Neue Schichten werden weiterhin durch PostgreSQL blockiert, wenn diese Regel verletzt wird.</small></div><button class="ghost" onclick="SFBackend.openLegacyAssignment('${esc(x.legacyId)}')">Im Dienstplan anzeigen</button></div>`}).join('')}</div>`:'<div class="notice">✓ Keine prüfpflichtigen Alt-Schichten vorhanden.</div>'}`;
