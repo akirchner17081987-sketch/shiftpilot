@@ -53,6 +53,22 @@
     try{if(typeof selectedEmployeeId!=='undefined')return selectedEmployeeId}catch{}
     return window.selectedEmployeeId||null;
   };
+  const accessMarkup=(email,active,status,label,buttonId)=>{
+    if(typeof B.employeeAccessMarkup==='function')return B.employeeAccessMarkup(email,active,status,label,buttonId);
+    return `
+      <div class="sf-access-head">
+        <div class="sf-access-title">
+          <b><span aria-hidden="true">🔐</span> Mitarbeiterzugang</b>
+          <small>${esc(email||'Keine E-Mail hinterlegt')}</small>
+        </div>
+        <span class="sf-access-status ${active?'active':status==='INVITED'?'invited':''}">${esc(label)}</span>
+      </div>
+      <div class="sf-access-actions">
+        ${active
+          ?'<span class="sf-access-note">✓ Eigener SchichtFunk-Zugang ist verknüpft.</span>'
+          :`<button class="primary" type="button" id="${buttonId}">${status==='INVITED'?'Einladung neu erstellen':'Zugang einrichten'}</button>`}
+      </div>`;
+  };
 
   async function renderFor(id){
     installStyles();
@@ -73,19 +89,7 @@
     const active=!!q.data.auth_user_id;
     const status=active?'ACTIVE':(q.data.access_status||'NONE');
     const label=active?'Aktiv':status==='INVITED'?'Eingeladen':'Nicht eingerichtet';
-    d.innerHTML=`
-      <div class="sf-access-head">
-        <div class="sf-access-title">
-          <b><span aria-hidden="true">🔐</span> Mitarbeiterzugang</b>
-          <small>${esc(q.data.email||'Keine E-Mail hinterlegt')}</small>
-        </div>
-        <span class="sf-access-status ${active?'active':status==='INVITED'?'invited':''}">${esc(label)}</span>
-      </div>
-      <div class="sf-access-actions">
-        ${active
-          ?'<span class="sf-access-note">✓ Eigener SchichtFunk-Zugang ist verknüpft.</span>'
-          :`<button class="primary" type="button" id="sfCreateEmployeeAccessFix">${status==='INVITED'?'Einladung neu erstellen':'Zugang einrichten'}</button>`}
-      </div>`;
+    d.innerHTML=accessMarkup(q.data.email,active,status,label,'sfCreateEmployeeAccessFix');
     d.querySelector('#sfCreateEmployeeAccessFix')?.addEventListener('click',()=>B.createEmployeeInvite?.(e.id));
   }
 
