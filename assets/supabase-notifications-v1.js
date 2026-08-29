@@ -6,7 +6,7 @@
   let rows=[],loaded=false,panelOpen=false,known=new Set(),busy=false;
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const dt=v=>{if(!v)return'';try{return new Date(v).toLocaleString('de-DE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}catch{return String(v)}};
-  const icon=k=>({SCHEDULE_PUBLISHED:'▣',SHIFT_CHANGE_REQUEST:'↺',SHIFT_CHANGE_APPLIED:'✓',ABSENCE_REQUESTED:'☼',ABSENCE_DECISION:'☼',SHIFT_CHANGE_RESPONSE:'↺',ABSENCE_CONFLICT:'⚠',SYSTEM_ENABLED:'◉'}[k]||'•');
+  const icon=k=>({SCHEDULE_PUBLISHED:'▣',SHIFT_CHANGE_REQUEST:'↺',SHIFT_CHANGE_APPLIED:'✓',ABSENCE_REQUESTED:'☼',ABSENCE_DECISION:'☼',SHIFT_CHANGE_RESPONSE:'↺',ABSENCE_CONFLICT:'⚠',SHIFT_SWAP_COLLEAGUE:'↺',SHIFT_SWAP_COLLEAGUE_ACCEPTED:'↺',SHIFT_SWAP_MANAGER:'↺',SHIFT_SWAP_APPLIED:'✓',TIME_ENTRY_REVIEW:'◷',TIME_ENTRY_CONFIRMED:'✓',TIME_ENTRY_UPDATED:'◷',TIME_ENTRY_CORRECTION:'⚠',SYSTEM_ENABLED:'◉'}[k]||'•');
 
   function css(){
     if(document.getElementById('sfNotifyCss'))return;
@@ -18,85 +18,19 @@
   }
 
   function unread(){return rows.filter(x=>!x.is_read).length}
-  function updateBadge(){
-    const n=unread();document.querySelectorAll('.sf-notify-count').forEach(b=>{b.textContent=n>99?'99+':String(n);b.classList.toggle('show',n>0)});
-  }
-
-  function targetHost(){
-    if(B.role==='EMPLOYEE')return document.querySelector('#sfEmployeePortal .sf-portal-top');
-    return document.querySelector('.topbar .top-actions');
-  }
-
-  function ensureButton(){
-    css();const host=targetHost();if(!host)return;
-    let wrap=host.querySelector('.sf-notify-wrap');
-    if(!wrap){
-      wrap=document.createElement('div');wrap.className='sf-notify-wrap';wrap.innerHTML='<button type="button" class="ghost sf-notify-btn" aria-label="Benachrichtigungen" title="Benachrichtigungen">🔔<span class="sf-notify-count"></span></button>';
-      if(B.role==='EMPLOYEE'){const logout=host.querySelector('#sfEmployeeLogout');logout?host.insertBefore(wrap,logout):host.appendChild(wrap)}
-      else host.prepend(wrap);
-      wrap.querySelector('.sf-notify-btn').addEventListener('click',ev=>{ev.stopPropagation();togglePanel()});
-    }
-    updateBadge();
-  }
-
-  function showToast(r){
-    document.querySelector('.sf-notify-toast')?.remove();const t=document.createElement('div');t.className='sf-notify-toast';t.innerHTML=`<b>${esc(r.title)}</b><span>${esc(r.message)}</span>`;document.body.appendChild(t);setTimeout(()=>t.remove(),5000);
-  }
-
-  async function refresh(opts={}){
-    if(busy||!B.client||!B.user?.id)return;busy=true;
-    try{
-      const q=await B.client.from('notifications').select('id,kind,title,message,link_view,entity_type,entity_id,is_read,read_at,created_at,metadata').order('created_at',{ascending:false}).limit(40);
-      if(q.error)throw q.error;
-      const next=q.data||[];
-      if(loaded&&!opts.silent){const fresh=next.filter(x=>!x.is_read&&!known.has(x.id));if(fresh.length&&document.visibilityState==='visible')showToast(fresh[0])}
-      rows=next;known=new Set(next.map(x=>x.id));loaded=true;ensureButton();if(panelOpen)renderPanel();
-    }catch(e){console.warn('Benachrichtigungen konnten nicht geladen werden',e)}finally{busy=false}
-  }
-
+  function updateBadge(){const n=unread();document.querySelectorAll('.sf-notify-count').forEach(b=>{b.textContent=n>99?'99+':String(n);b.classList.toggle('show',n>0)})}
+  function targetHost(){if(B.role==='EMPLOYEE')return document.querySelector('#sfEmployeePortal .sf-portal-top');return document.querySelector('.topbar .top-actions')}
+  function ensureButton(){css();const host=targetHost();if(!host)return;let wrap=host.querySelector('.sf-notify-wrap');if(!wrap){wrap=document.createElement('div');wrap.className='sf-notify-wrap';wrap.innerHTML='<button type="button" class="ghost sf-notify-btn" aria-label="Benachrichtigungen" title="Benachrichtigungen">🔔<span class="sf-notify-count"></span></button>';if(B.role==='EMPLOYEE'){const logout=host.querySelector('#sfEmployeeLogout');logout?host.insertBefore(wrap,logout):host.appendChild(wrap)}else host.prepend(wrap);wrap.querySelector('.sf-notify-btn').addEventListener('click',ev=>{ev.stopPropagation();togglePanel()})}updateBadge()}
+  function showToast(r){document.querySelector('.sf-notify-toast')?.remove();const t=document.createElement('div');t.className='sf-notify-toast';t.innerHTML=`<b>${esc(r.title)}</b><span>${esc(r.message)}</span>`;document.body.appendChild(t);setTimeout(()=>t.remove(),5000)}
+  async function refresh(opts={}){if(busy||!B.client||!B.user?.id)return;busy=true;try{const q=await B.client.from('notifications').select('id,kind,title,message,link_view,entity_type,entity_id,is_read,read_at,created_at,metadata').order('created_at',{ascending:false}).limit(40);if(q.error)throw q.error;const next=q.data||[];if(loaded&&!opts.silent){const fresh=next.filter(x=>!x.is_read&&!known.has(x.id));if(fresh.length&&document.visibilityState==='visible')showToast(fresh[0])}rows=next;known=new Set(next.map(x=>x.id));loaded=true;ensureButton();if(panelOpen)renderPanel()}catch(e){console.warn('Benachrichtigungen konnten nicht geladen werden',e)}finally{busy=false}}
   function closePanel(){panelOpen=false;document.getElementById('sfNotifyPanel')?.remove()}
   function togglePanel(){if(panelOpen){closePanel();return}panelOpen=true;renderPanel()}
-
-  function renderPanel(){
-    css();document.getElementById('sfNotifyPanel')?.remove();const p=document.createElement('div');p.id='sfNotifyPanel';p.className='sf-notify-panel'+(B.role==='EMPLOYEE'?' employee':'');
-    const list=rows.length?rows.map(r=>`<button type="button" class="sf-notify-item ${r.is_read?'':'unread'} ${r.kind==='ABSENCE_CONFLICT'?'warn':''}" data-id="${r.id}">${r.is_read?'':'<span class="sf-notify-dot"></span>'}<span class="sf-notify-icon">${icon(r.kind)}</span><span class="sf-notify-main"><b>${esc(r.title)}</b><p>${esc(r.message)}</p></span><span class="sf-notify-time">${esc(dt(r.created_at))}</span></button>`).join(''):'<div class="sf-notify-empty">Noch keine Benachrichtigungen vorhanden.</div>';
-    p.innerHTML=`<div class="sf-notify-head"><div><h3>Benachrichtigungen</h3><small>${unread()} ungelesen</small></div><span class="spacer"></span>${unread()?'<button type="button" class="sf-notify-all">Alle gelesen</button>':''}</div><div class="sf-notify-list">${list}</div><div class="sf-notify-foot">Die letzten 40 Meldungen · automatisch aktualisiert</div>`;
-    document.body.appendChild(p);
-    p.querySelector('.sf-notify-all')?.addEventListener('click',async ev=>{ev.stopPropagation();await markAll()});
-    p.querySelectorAll('.sf-notify-item').forEach(b=>b.addEventListener('click',async()=>{const r=rows.find(x=>x.id===b.dataset.id);if(!r)return;await markRead(r.id);closePanel();await navigate(r)}));
-  }
-
-  async function markRead(id){
-    const r=rows.find(x=>x.id===id);if(!r||r.is_read)return;
-    const when=new Date().toISOString();const q=await B.client.from('notifications').update({is_read:true,read_at:when}).eq('id',id);if(q.error){console.warn(q.error);return}r.is_read=true;r.read_at=when;updateBadge();
-  }
-
-  async function markAll(){
-    if(!unread())return;const when=new Date().toISOString();const q=await B.client.from('notifications').update({is_read:true,read_at:when}).eq('is_read',false);if(q.error){console.warn(q.error);return}rows.forEach(r=>{r.is_read=true;r.read_at=when});updateBadge();renderPanel();
-  }
-
-  function switchAdmin(view){
-    try{if(typeof switchView==='function')switchView(view);else window.switchView?.(view)}catch{window.switchView?.(view)}
-    if(view==='absence')setTimeout(()=>B.renderAbsenceManagerV2?.(),80);
-    window.scrollTo({top:0,behavior:'smooth'});
-  }
-
-  async function navigate(r){
-    if(B.role!=='EMPLOYEE'){if(r.link_view==='absence'||r.link_view==='schedule')switchAdmin(r.link_view);return}
-    try{if(typeof B.hydrateEmployee==='function')await B.hydrateEmployee();if(typeof B.openEmployeePortal==='function')B.openEmployeePortal()}catch{}
-    setTimeout(()=>{
-      ensureButton();const map={'employee-shifts':'Meine Schichten','employee-changes':'Schichtänderungen','employee-absences':'Abwesenheiten'},title=map[r.link_view];if(!title)return;const root=document.getElementById('sfEmployeePortal'),section=[...(root?.querySelectorAll('.sf-portal-card')||[])].find(x=>x.querySelector('h3')?.textContent.trim()===title);section?.scrollIntoView({behavior:'smooth',block:'center'});
-    },80);
-  }
-
-  document.addEventListener('click',e=>{if(panelOpen&&!e.target.closest('#sfNotifyPanel')&&!e.target.closest('.sf-notify-wrap'))closePanel()},true);
-  document.addEventListener('keydown',e=>{if(e.key==='Escape')closePanel()});
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});
-  window.addEventListener('focus',()=>refresh());
-
+  function renderPanel(){css();document.getElementById('sfNotifyPanel')?.remove();const p=document.createElement('div');p.id='sfNotifyPanel';p.className='sf-notify-panel'+(B.role==='EMPLOYEE'?' employee':'');const list=rows.length?rows.map(r=>`<button type="button" class="sf-notify-item ${r.is_read?'':'unread'} ${r.kind==='ABSENCE_CONFLICT'||r.kind==='TIME_ENTRY_CORRECTION'?'warn':''}" data-id="${r.id}">${r.is_read?'':'<span class="sf-notify-dot"></span>'}<span class="sf-notify-icon">${icon(r.kind)}</span><span class="sf-notify-main"><b>${esc(r.title)}</b><p>${esc(r.message)}</p></span><span class="sf-notify-time">${esc(dt(r.created_at))}</span></button>`).join(''):'<div class="sf-notify-empty">Noch keine Benachrichtigungen vorhanden.</div>';p.innerHTML=`<div class="sf-notify-head"><div><h3>Benachrichtigungen</h3><small>${unread()} ungelesen</small></div><span class="spacer"></span>${unread()?'<button type="button" class="sf-notify-all">Alle gelesen</button>':''}</div><div class="sf-notify-list">${list}</div><div class="sf-notify-foot">Die letzten 40 Meldungen · automatisch aktualisiert</div>`;document.body.appendChild(p);p.querySelector('.sf-notify-all')?.addEventListener('click',async ev=>{ev.stopPropagation();await markAll()});p.querySelectorAll('.sf-notify-item').forEach(b=>b.addEventListener('click',async()=>{const r=rows.find(x=>x.id===b.dataset.id);if(!r)return;await markRead(r.id);closePanel();await navigate(r)}))}
+  async function markRead(id){const r=rows.find(x=>x.id===id);if(!r||r.is_read)return;const when=new Date().toISOString(),q=await B.client.from('notifications').update({is_read:true,read_at:when}).eq('id',id);if(q.error){console.warn(q.error);return}r.is_read=true;r.read_at=when;updateBadge()}
+  async function markAll(){if(!unread())return;const when=new Date().toISOString(),q=await B.client.from('notifications').update({is_read:true,read_at:when}).eq('is_read',false);if(q.error){console.warn(q.error);return}rows.forEach(r=>{r.is_read=true;r.read_at=when});updateBadge();renderPanel()}
+  function switchAdmin(view){try{if(typeof switchView==='function')switchView(view);else window.switchView?.(view)}catch{window.switchView?.(view)}if(view==='absence')setTimeout(()=>B.renderAbsenceManagerV2?.(),80);if(view==='time')setTimeout(()=>B.timeTracking?.refreshManager?.(),80);window.scrollTo({top:0,behavior:'smooth'})}
+  async function navigate(r){if(B.role!=='EMPLOYEE'){if(['absence','schedule','time','employees','overview','auto','reports','settings'].includes(r.link_view))switchAdmin(r.link_view);return}try{if(typeof B.hydrateEmployee==='function')await B.hydrateEmployee();if(typeof B.openEmployeePortal==='function')B.openEmployeePortal()}catch{}setTimeout(()=>{ensureButton();const map={'employee-shifts':'Meine Schichten','employee-changes':'Schichtänderungen','employee-absences':'Abwesenheiten','employee-times':'Arbeitszeit','employee-swaps':'Schichttausch'},title=map[r.link_view];if(!title)return;const root=document.getElementById('sfEmployeePortal'),section=[...(root?.querySelectorAll('.sf-portal-card')||[])].find(x=>x.querySelector('h3')?.textContent.trim()===title);section?.scrollIntoView({behavior:'smooth',block:'center'})},100)}
+  document.addEventListener('click',e=>{if(panelOpen&&!e.target.closest('#sfNotifyPanel')&&!e.target.closest('.sf-notify-wrap'))closePanel()},true);document.addEventListener('keydown',e=>{if(e.key==='Escape')closePanel()});document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});window.addEventListener('focus',()=>refresh());
   const basePortal=B.openEmployeePortal;if(typeof basePortal==='function')B.openEmployeePortal=function(){const r=basePortal.apply(this,arguments);setTimeout(()=>{ensureButton();refresh({silent:true})},0);return r};
-
-  B.notifications={refresh:()=>refresh(),open:()=>{panelOpen=true;renderPanel()},markAll};
-  setInterval(ensureButton,1400);setInterval(()=>refresh(),15000);
-  setTimeout(()=>{ensureButton();refresh({silent:true})},500);setTimeout(()=>{ensureButton();refresh({silent:true})},1800);
+  B.notifications={refresh:()=>refresh(),open:()=>{panelOpen=true;renderPanel()},markAll};setInterval(ensureButton,1400);setInterval(()=>refresh(),15000);setTimeout(()=>{ensureButton();refresh({silent:true})},500);setTimeout(()=>{ensureButton();refresh({silent:true})},1800);
 })();
