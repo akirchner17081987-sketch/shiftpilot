@@ -1,0 +1,102 @@
+// SchichtFunk – Benachrichtigungszentrale V1
+(function(){
+  const B=window.SFBackend=window.SFBackend||{};
+  if(B.__notificationsV1)return;B.__notificationsV1=true;
+
+  let rows=[],loaded=false,panelOpen=false,known=new Set(),busy=false;
+  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const dt=v=>{if(!v)return'';try{return new Date(v).toLocaleString('de-DE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}catch{return String(v)}};
+  const icon=k=>({SCHEDULE_PUBLISHED:'▣',SHIFT_CHANGE_REQUEST:'↺',SHIFT_CHANGE_APPLIED:'✓',ABSENCE_REQUESTED:'☼',ABSENCE_DECISION:'☼',SHIFT_CHANGE_RESPONSE:'↺',ABSENCE_CONFLICT:'⚠',SYSTEM_ENABLED:'◉'}[k]||'•');
+
+  function css(){
+    if(document.getElementById('sfNotifyCss'))return;
+    const s=document.createElement('style');s.id='sfNotifyCss';s.textContent=`
+      .sf-notify-wrap{position:relative;display:flex;align-items:center}.sf-notify-btn{position:relative;min-width:38px;height:38px;padding:0 10px!important;display:inline-grid;place-items:center;font-size:15px}.sf-notify-count{position:absolute;right:-5px;top:-5px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#ff6677;color:#fff;border:2px solid #0d1828;font-size:9px;font-weight:900;display:none;align-items:center;justify-content:center}.sf-portal-top .sf-notify-count{border-color:#0a1725}.sf-notify-count.show{display:flex}
+      .sf-notify-panel{position:fixed;z-index:33000;right:24px;top:62px;width:min(410px,calc(100vw - 28px));max-height:min(620px,calc(100vh - 80px));display:flex;flex-direction:column;background:linear-gradient(180deg,#101e2d,#091521);border:1px solid #2a465f;border-radius:15px;box-shadow:0 28px 90px rgba(0,0,0,.56);overflow:hidden}.sf-notify-panel.employee{top:76px}.sf-notify-head{display:flex;align-items:center;gap:10px;padding:15px 16px;border-bottom:1px solid #20364a}.sf-notify-head h3{margin:0;font-size:15px}.sf-notify-head small{color:#7f96aa;font-size:10px}.sf-notify-head .spacer{margin-left:auto}.sf-notify-all{border:1px solid #29455e;background:#0b1926;color:#9fb4c7;border-radius:7px;padding:6px 8px;font-size:9px;font-weight:800}.sf-notify-list{overflow:auto;min-height:90px}.sf-notify-item{position:relative;display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:flex-start;padding:12px 14px;border:0;border-bottom:1px solid #1b3043;background:transparent;color:#dce9f5;text-align:left;width:100%}.sf-notify-item:hover{background:#102336}.sf-notify-item.unread{background:#102a34}.sf-notify-icon{width:34px;height:34px;border-radius:9px;background:#133b35;color:#72e6ce;display:grid;place-items:center;font-weight:900}.sf-notify-item.warn .sf-notify-icon{background:#351d24;color:#ff9aaa}.sf-notify-main{min-width:0}.sf-notify-main b{display:block;font-size:11px;line-height:1.35}.sf-notify-main p{margin:4px 0 0;color:#8ea4b8;font-size:10px;line-height:1.45}.sf-notify-time{font-size:8px;color:#70869a;white-space:nowrap;padding-top:2px}.sf-notify-dot{position:absolute;left:5px;top:17px;width:5px;height:5px;border-radius:50%;background:#2ed9b8}.sf-notify-empty{padding:30px 18px;text-align:center;color:#7f96aa;font-size:11px}.sf-notify-foot{padding:9px 14px;border-top:1px solid #20364a;color:#70869a;font-size:9px;text-align:center}.sf-notify-toast{position:fixed;z-index:34000;right:24px;bottom:24px;width:min(340px,calc(100vw - 28px));padding:12px 14px;border:1px solid #2a6759;background:#0d2c26;color:#dffbf4;border-radius:11px;box-shadow:0 18px 55px rgba(0,0,0,.4);font-size:11px}.sf-notify-toast b{display:block;margin-bottom:3px}.sf-notify-toast span{color:#96c9bd;font-size:10px}
+      @media(max-width:620px){.sf-notify-panel{right:14px;top:58px}.sf-notify-panel.employee{top:72px}.sf-notify-time{display:none}.sf-notify-item{grid-template-columns:34px 1fr}.sf-notify-toast{right:14px;bottom:14px}}
+    `;document.head.appendChild(s);
+  }
+
+  function unread(){return rows.filter(x=>!x.is_read).length}
+  function updateBadge(){
+    const n=unread();document.querySelectorAll('.sf-notify-count').forEach(b=>{b.textContent=n>99?'99+':String(n);b.classList.toggle('show',n>0)});
+  }
+
+  function targetHost(){
+    if(B.role==='EMPLOYEE')return document.querySelector('#sfEmployeePortal .sf-portal-top');
+    return document.querySelector('.topbar .top-actions');
+  }
+
+  function ensureButton(){
+    css();const host=targetHost();if(!host)return;
+    let wrap=host.querySelector('.sf-notify-wrap');
+    if(!wrap){
+      wrap=document.createElement('div');wrap.className='sf-notify-wrap';wrap.innerHTML='<button type="button" class="ghost sf-notify-btn" aria-label="Benachrichtigungen" title="Benachrichtigungen">🔔<span class="sf-notify-count"></span></button>';
+      if(B.role==='EMPLOYEE'){const logout=host.querySelector('#sfEmployeeLogout');logout?host.insertBefore(wrap,logout):host.appendChild(wrap)}
+      else host.prepend(wrap);
+      wrap.querySelector('.sf-notify-btn').addEventListener('click',ev=>{ev.stopPropagation();togglePanel()});
+    }
+    updateBadge();
+  }
+
+  function showToast(r){
+    document.querySelector('.sf-notify-toast')?.remove();const t=document.createElement('div');t.className='sf-notify-toast';t.innerHTML=`<b>${esc(r.title)}</b><span>${esc(r.message)}</span>`;document.body.appendChild(t);setTimeout(()=>t.remove(),5000);
+  }
+
+  async function refresh(opts={}){
+    if(busy||!B.client||!B.user?.id)return;busy=true;
+    try{
+      const q=await B.client.from('notifications').select('id,kind,title,message,link_view,entity_type,entity_id,is_read,read_at,created_at,metadata').order('created_at',{ascending:false}).limit(40);
+      if(q.error)throw q.error;
+      const next=q.data||[];
+      if(loaded&&!opts.silent){const fresh=next.filter(x=>!x.is_read&&!known.has(x.id));if(fresh.length&&document.visibilityState==='visible')showToast(fresh[0])}
+      rows=next;known=new Set(next.map(x=>x.id));loaded=true;ensureButton();if(panelOpen)renderPanel();
+    }catch(e){console.warn('Benachrichtigungen konnten nicht geladen werden',e)}finally{busy=false}
+  }
+
+  function closePanel(){panelOpen=false;document.getElementById('sfNotifyPanel')?.remove()}
+  function togglePanel(){if(panelOpen){closePanel();return}panelOpen=true;renderPanel()}
+
+  function renderPanel(){
+    css();document.getElementById('sfNotifyPanel')?.remove();const p=document.createElement('div');p.id='sfNotifyPanel';p.className='sf-notify-panel'+(B.role==='EMPLOYEE'?' employee':'');
+    const list=rows.length?rows.map(r=>`<button type="button" class="sf-notify-item ${r.is_read?'':'unread'} ${r.kind==='ABSENCE_CONFLICT'?'warn':''}" data-id="${r.id}">${r.is_read?'':'<span class="sf-notify-dot"></span>'}<span class="sf-notify-icon">${icon(r.kind)}</span><span class="sf-notify-main"><b>${esc(r.title)}</b><p>${esc(r.message)}</p></span><span class="sf-notify-time">${esc(dt(r.created_at))}</span></button>`).join(''):'<div class="sf-notify-empty">Noch keine Benachrichtigungen vorhanden.</div>';
+    p.innerHTML=`<div class="sf-notify-head"><div><h3>Benachrichtigungen</h3><small>${unread()} ungelesen</small></div><span class="spacer"></span>${unread()?'<button type="button" class="sf-notify-all">Alle gelesen</button>':''}</div><div class="sf-notify-list">${list}</div><div class="sf-notify-foot">Die letzten 40 Meldungen · automatisch aktualisiert</div>`;
+    document.body.appendChild(p);
+    p.querySelector('.sf-notify-all')?.addEventListener('click',async ev=>{ev.stopPropagation();await markAll()});
+    p.querySelectorAll('.sf-notify-item').forEach(b=>b.addEventListener('click',async()=>{const r=rows.find(x=>x.id===b.dataset.id);if(!r)return;await markRead(r.id);closePanel();await navigate(r)}));
+  }
+
+  async function markRead(id){
+    const r=rows.find(x=>x.id===id);if(!r||r.is_read)return;
+    const when=new Date().toISOString();const q=await B.client.from('notifications').update({is_read:true,read_at:when}).eq('id',id);if(q.error){console.warn(q.error);return}r.is_read=true;r.read_at=when;updateBadge();
+  }
+
+  async function markAll(){
+    if(!unread())return;const when=new Date().toISOString();const q=await B.client.from('notifications').update({is_read:true,read_at:when}).eq('is_read',false);if(q.error){console.warn(q.error);return}rows.forEach(r=>{r.is_read=true;r.read_at=when});updateBadge();renderPanel();
+  }
+
+  function switchAdmin(view){
+    try{if(typeof switchView==='function')switchView(view);else window.switchView?.(view)}catch{window.switchView?.(view)}
+    if(view==='absence')setTimeout(()=>B.renderAbsenceManagerV2?.(),80);
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  async function navigate(r){
+    if(B.role!=='EMPLOYEE'){if(r.link_view==='absence'||r.link_view==='schedule')switchAdmin(r.link_view);return}
+    try{if(typeof B.hydrateEmployee==='function')await B.hydrateEmployee();if(typeof B.openEmployeePortal==='function')B.openEmployeePortal()}catch{}
+    setTimeout(()=>{
+      ensureButton();const map={'employee-shifts':'Meine Schichten','employee-changes':'Schichtänderungen','employee-absences':'Abwesenheiten'},title=map[r.link_view];if(!title)return;const root=document.getElementById('sfEmployeePortal'),section=[...(root?.querySelectorAll('.sf-portal-card')||[])].find(x=>x.querySelector('h3')?.textContent.trim()===title);section?.scrollIntoView({behavior:'smooth',block:'center'});
+    },80);
+  }
+
+  document.addEventListener('click',e=>{if(panelOpen&&!e.target.closest('#sfNotifyPanel')&&!e.target.closest('.sf-notify-wrap'))closePanel()},true);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')closePanel()});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});
+  window.addEventListener('focus',()=>refresh());
+
+  const basePortal=B.openEmployeePortal;if(typeof basePortal==='function')B.openEmployeePortal=function(){const r=basePortal.apply(this,arguments);setTimeout(()=>{ensureButton();refresh({silent:true})},0);return r};
+
+  B.notifications={refresh:()=>refresh(),open:()=>{panelOpen=true;renderPanel()},markAll};
+  setInterval(ensureButton,1400);setInterval(()=>refresh(),15000);
+  setTimeout(()=>{ensureButton();refresh({silent:true})},500);setTimeout(()=>{ensureButton();refresh({silent:true})},1800);
+})();
