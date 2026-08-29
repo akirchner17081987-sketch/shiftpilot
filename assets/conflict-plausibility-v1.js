@@ -22,6 +22,7 @@
     'assets/supabase-publish-v1.js',
     'assets/supabase-employee-change-response-v1.js',
     'assets/supabase-absence-workflow-v1.js',
+    'assets/supabase-absence-manager-v2.js',
     'assets/supabase-absence-planning-guard-v2.js',
     'assets/supabase-compliance-bridge-v1.js',
     'assets/supabase-absence-employee-v3.js',
@@ -30,7 +31,7 @@
   const load=i=>{
     if(i>=files.length)return;
     const s=document.createElement('script');
-    s.src=files[i]+'?v=20260829j';
+    s.src=files[i]+'?v=20260829k';
     s.onload=()=>load(i+1);
     s.onerror=()=>console.error('SchichtFunk-Modul konnte nicht geladen werden:',files[i]);
     document.body.appendChild(s);
