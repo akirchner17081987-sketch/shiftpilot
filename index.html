@@ -308,7 +308,7 @@ function showLanding(){
   window.scrollTo({top:0,behavior:'smooth'});
   try{history.replaceState(null,'',location.pathname)}catch(e){}
 }
-let absenceEditingId=null;
+window.absenceEditingId=window.absenceEditingId??null;
 function absenceDates(a){const start=a.startDate||a.date,end=a.endDate||a.date||start;if(!start)return[];let d=new Date(start+'T00:00:00'),e=new Date(end+'T00:00:00'),out=[];while(d<=e){out.push(iso(d));d=addDays(d,1)}return out}
 function absenceOn(a,date){return absenceDates(a).includes(date)}
 function absenceStatus(a){return a.status||((a.type==='Krank')?'Erfasst':'Genehmigt')}
@@ -396,7 +396,7 @@ function renderOverview(){
   const page=document.getElementById('view-overview');
   if(page){const firstGrid=page.querySelector('.overview-grid');if(firstGrid)firstGrid.classList.add('preview-main-grid');}
 }
-let absenceEditingId=null;
+window.absenceEditingId=window.absenceEditingId??null;
 function absenceDates(a){const start=a.startDate||a.date,end=a.endDate||a.date||start;if(!start)return[];let d=new Date(start+'T00:00:00'),e=new Date(end+'T00:00:00'),out=[];while(d<=e){out.push(iso(d));d=addDays(d,1)}return out}
 function absenceOn(a,date){return absenceDates(a).includes(date)}
 function absenceStatus(a){return a.status||((a.type==='Krank')?'Erfasst':'Genehmigt')}
@@ -427,7 +427,7 @@ function openScheduleFromDashboard(){
   const main=document.querySelector('.main');
   if(main)main.scrollTop=0;
 }
-let absenceEditingId=null;
+window.absenceEditingId=window.absenceEditingId??null;
 function absenceDates(a){const start=a.startDate||a.date,end=a.endDate||a.date||start;if(!start)return[];let d=new Date(start+'T00:00:00'),e=new Date(end+'T00:00:00'),out=[];while(d<=e){out.push(iso(d));d=addDays(d,1)}return out}
 function absenceOn(a,date){return absenceDates(a).includes(date)}
 function absenceStatus(a){return a.status||((a.type==='Krank')?'Erfasst':'Genehmigt')}
@@ -812,3 +812,4 @@ table th,table td{font-size:13px;line-height:1.35}
 <script src="assets/conflict-plausibility-v1.js"></script>
 </body>
 </html>
+
