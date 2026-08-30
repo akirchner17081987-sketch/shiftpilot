@@ -16,6 +16,12 @@
     const s=document.createElement('style');s.id='sfEmployeePortalVerticalLayoutV1';s.textContent=`
       #sfEmployeePortal .sf-portal-main{max-width:1380px;padding:30px 34px 46px}
       #sfEmployeePortal{overflow-anchor:none}
+      #sfEmployeePortal .sf-portal-logo{
+        width:188px;height:48px;border-radius:0;background:transparent;color:inherit;
+        display:flex;align-items:center;justify-content:flex-start;overflow:visible;
+      }
+      #sfEmployeePortal .sf-portal-logo img{display:block;width:180px;max-width:100%;height:46px;object-fit:contain;object-position:left center}
+      #sfEmployeePortal .sf-portal-brand b{display:none}
       #sfEmployeePortal .sf-portal-welcome{max-width:780px}
       #sfEmployeePortal .sf-portal-stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:20px 0 16px}
       #sfEmployeePortal .sf-portal-grid{
@@ -57,6 +63,8 @@
   }
   function arrange(){
     const portal=document.getElementById('sfEmployeePortal');if(!portal)return false;css();
+    const logo=portal.querySelector('.sf-portal-logo');
+    if(logo&&!logo.querySelector('img'))logo.innerHTML='<img src="assets/schichtfunk-logo.svg" alt="SchichtFunk">';
     const grid=portal.querySelector('.sf-portal-grid');if(!grid)return false;
     const source=[...grid.children].find(x=>x.matches('div[style*="display:grid"]'));
     source?.classList.add('sf-portal-layout-source');
