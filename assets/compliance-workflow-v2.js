@@ -14,11 +14,35 @@
     return 'READY_TO_APPLY';
   };
 
+  C.openPlausibilityDialog=(items,onConfirm)=>{
+    document.getElementById('sfPlausibilityDialog')?.remove();
+    if(!document.getElementById('sfPlausibilityDialogCss')){
+      const style=document.createElement('style');style.id='sfPlausibilityDialogCss';style.textContent=`
+        .sf-pd-backdrop{position:fixed;inset:0;z-index:14000;display:grid;place-items:center;padding:20px;background:rgba(2,8,15,.72);backdrop-filter:blur(6px)}
+        .sf-pd-modal{width:min(520px,100%);overflow:hidden;border:1px solid #314a62;border-radius:14px;background:linear-gradient(180deg,#102235,#0b1826);box-shadow:0 28px 90px rgba(0,0,0,.58);color:#edf6ff}
+        .sf-pd-head{display:flex;gap:14px;padding:20px 22px 17px;border-bottom:1px solid #24394e;background:linear-gradient(180deg,rgba(255,189,79,.08),transparent)}
+        .sf-pd-icon{flex:none;width:40px;height:40px;display:grid;place-items:center;border:1px solid #7c5b24;border-radius:10px;background:#302719;color:#ffd08a;font-size:20px}
+        .sf-pd-head h2{margin:1px 0 4px;font-size:18px}.sf-pd-head p{margin:0;color:#91a7bd;font-size:12px;line-height:1.45}
+        .sf-pd-body{padding:18px 22px}.sf-pd-label{display:block;margin-bottom:9px;color:#718ba5;font-size:10px;font-weight:800;letter-spacing:.09em}
+        .sf-pd-list{display:grid;gap:8px}.sf-pd-item{display:grid;grid-template-columns:22px 1fr;gap:9px;align-items:start;padding:11px 12px;border:1px solid #594621;border-radius:8px;background:#282218;color:#f3d29c;font-size:12px;line-height:1.45}.sf-pd-item i{font-style:normal;font-weight:900;color:#ffbd4f}
+        .sf-pd-note{margin:14px 0 0;padding:10px 12px;border-left:3px solid #ffbd4f;background:#172334;color:#9db0c3;font-size:11px;line-height:1.5}
+        .sf-pd-foot{display:flex;justify-content:flex-end;gap:9px;padding:14px 22px;border-top:1px solid #22384c;background:#0b1724}.sf-pd-foot button{border-radius:8px;padding:9px 14px;font-size:12px;font-weight:800}
+        .sf-pd-cancel{border:1px solid #34495d;background:#132335;color:#afc1d2}.sf-pd-confirm{border:1px solid #8a6123;background:#3a2c18;color:#ffd28d}.sf-pd-confirm:hover{background:#49371b}
+      `;document.head.appendChild(style);
+    }
+    const esc=C.esc||((s)=>String(s??''));
+    const back=document.createElement('div');back.id='sfPlausibilityDialog';back.className='sf-pd-backdrop';
+    back.innerHTML=`<section class="sf-pd-modal" role="alertdialog" aria-modal="true" aria-labelledby="sfPdTitle" aria-describedby="sfPdNote"><header class="sf-pd-head"><div class="sf-pd-icon">⚠</div><div><h2 id="sfPdTitle">Plausibilitätsprüfung</h2><p>Die Zuweisung ist möglich, benötigt aber deine Aufmerksamkeit.</p></div></header><div class="sf-pd-body"><span class="sf-pd-label">BITTE PRÜFEN</span><div class="sf-pd-list">${items.map(x=>`<div class="sf-pd-item"><i>!</i><span>${esc(x)}</span></div>`).join('')}</div><p class="sf-pd-note" id="sfPdNote">Wenn du fortfährst, wird die Schicht trotz dieser Hinweise gespeichert.</p></div><footer class="sf-pd-foot"><button type="button" class="sf-pd-cancel">Abbrechen</button><button type="button" class="sf-pd-confirm">Trotzdem speichern</button></footer></section>`;
+    document.body.appendChild(back);const close=()=>back.remove();
+    back.querySelector('.sf-pd-cancel').onclick=close;back.querySelector('.sf-pd-confirm').onclick=()=>{close();onConfirm()};
+    back.onclick=e=>{if(e.target===back)close()};back.onkeydown=e=>{if(e.key==='Escape')close()};back.querySelector('.sf-pd-confirm').focus();
+  };
+
   C.directSave=(emp,type,date,start,end,extra={})=>{
     const existing=extra.ignoreId?assignments.find(x=>x.id===extra.ignoreId):null;
     const c=C.check(emp,type,date,start,end,existing?.id||null);
     if(c.hard.length){alert('Zuweisung nicht möglich:\n\n'+c.hard.join('\n'));return false}
-    if(c.soft.length&&!confirm('Plausibilitätsprüfung:\n\n'+c.soft.join('\n')+'\n\nTrotzdem speichern?'))return false;
+    if(c.soft.length&&!extra.softConfirmed){C.openPlausibilityDialog(c.soft,()=>C.directSave(emp,type,date,start,end,{...extra,softConfirmed:true}));return false}
     if(existing){
       Object.assign(existing,{employeeId:emp.id,type,date,start,end,pause:Number(extra.pause||0),note:extra.note||'',version:Number(existing.version||1)+1});
     }else{
@@ -27,6 +51,7 @@
     C.audit(existing?'SHIFT_UPDATED_DRAFT':'SHIFT_CREATED_DRAFT',existing?.id||null,{employeeId:emp.id,type,date,start,end});
     C.refresh();
     C.toast(existing?'Schicht aktualisiert':'Schicht zugewiesen',`${emp.first} ${emp.last} · ${type} · ${C.fmt(date)} · ${start}–${end}`);
+    extra.onSaved?.(existing||assignments[assignments.length-1]);
     return true;
   };
 
@@ -164,3 +189,4 @@
     window.applyAutoPlanPreview=function(){if(C.isWeekPublished(C.iso(weekStart))){alert('Der Dienstplan dieser Woche ist bereits veröffentlicht. Auto-Planung darf veröffentlichte Pläne nicht direkt überschreiben. Bitte Änderungen einzeln prüfen.');return}return baseAuto.apply(this,arguments)};
   }
 })();
+
