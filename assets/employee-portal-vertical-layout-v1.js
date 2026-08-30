@@ -15,6 +15,7 @@
     if(document.getElementById('sfEmployeePortalVerticalLayoutV1'))return;
     const s=document.createElement('style');s.id='sfEmployeePortalVerticalLayoutV1';s.textContent=`
       #sfEmployeePortal .sf-portal-main{max-width:1380px;padding:30px 34px 46px}
+      #sfEmployeePortal{overflow-anchor:none}
       #sfEmployeePortal .sf-portal-welcome{max-width:780px}
       #sfEmployeePortal .sf-portal-stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:20px 0 16px}
       #sfEmployeePortal .sf-portal-grid{
@@ -66,7 +67,12 @@
     portal.dataset.sfVerticalLayout='1';return true;
   }
   const old=B.openEmployeePortal;
-  if(typeof old==='function')B.openEmployeePortal=function(){const r=old.apply(this,arguments);setTimeout(arrange,0);setTimeout(arrange,180);setTimeout(arrange,700);return r};
+  if(typeof old==='function')B.openEmployeePortal=function(){
+    const existing=document.getElementById('sfEmployeePortal'),scrollY=existing?window.scrollY:0;
+    const r=old.apply(this,arguments);
+    const finish=()=>{arrange();if(existing&&scrollY>0&&Math.abs(window.scrollY-scrollY)>1)window.scrollTo(0,scrollY)};
+    requestAnimationFrame(finish);setTimeout(finish,180);setTimeout(finish,700);return r
+  };
   let queued=false;const observer=new MutationObserver(()=>{if(queued||!document.getElementById('sfEmployeePortal'))return;queued=true;requestAnimationFrame(()=>{queued=false;arrange()})});
   observer.observe(document.documentElement,{childList:true,subtree:true});
   setTimeout(arrange,0);setTimeout(arrange,600);
