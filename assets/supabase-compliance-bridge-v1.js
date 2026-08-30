@@ -12,5 +12,6 @@
     C.cancelRequest=function(id){const r=C.findRequest(id);if(!r)return;cancel.call(C,id);(async()=>{try{if(!r._dbId)await B.persistRequest(r);const q=await B.client.from('shift_change_requests').update({status:'CANCELLED'}).eq('id',r._dbId);if(q.error)throw q.error;await B.hydrate();C.openComplianceCenter?.()}catch(e){console.error(e)}})()};
     window.spApplyChangeRequest=id=>C.applyRequest(id);window.spApproveRequest=(id,k)=>C.approveRequest(id,k);window.spRejectRequest=(id,k)=>C.rejectRequest(id,k);window.spCancelChangeRequest=id=>C.cancelRequest(id);
   };
-  B.init?.().catch(e=>{B.hideLoading?.();console.error('SchichtFunk Supabase init',e);B.updateState?.()});
+  // Der Loader startet B.init erst, nachdem alle Erweiterungen installiert sind.
 })();
+
