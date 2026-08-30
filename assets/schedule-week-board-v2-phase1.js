@@ -1,4 +1,4 @@
-// SchichtFunk – Wochenansicht V2 · Phase 1: reine Darstellung
+// SchichtFunk – Wochenansicht V2 · Phase 2: direkte Planung
 (function(){
   if(window.__sfWeekBoardV2Phase1)return;
   window.__sfWeekBoardV2Phase1=true;
@@ -7,6 +7,7 @@
   const ORDER=['OT1','OT2','OT','O1','Teamleiter','O2','O3'];
   const accent={teal:'#2ed9b8',cyan:'#38d7d4',violet:'#8f7dff',blue:'#62a0ff',amber:'#ffbd4f',pink:'#ff6f9d',red:'#ff6677'};
   let mode=sessionStorage.getItem(MODE_KEY)||'board';
+  let dragPayload=null,undoTimer=null;
 
   const css=document.createElement('style');
   css.textContent=`
@@ -35,6 +36,9 @@
     .sf-week-shift-cell.is-today{background:linear-gradient(180deg,rgba(46,217,184,.045),#0d1928);border-left-color:rgba(46,217,184,.34);border-right-color:rgba(46,217,184,.34)}
     .sf-week-shift-cell.row-start{border-top:1px solid #20344b;border-top-left-radius:10px;border-top-right-radius:10px}
     .sf-week-shift-cell.row-end{border-bottom:1px solid #20344b;border-bottom-left-radius:10px;border-bottom-right-radius:10px}
+    .sf-week-shift-cell.is-drop-target{outline:2px solid rgba(46,217,184,.74);outline-offset:-3px;background:rgba(46,217,184,.11)}
+    .sf-week-shift-cell.is-drop-warning{outline:2px solid rgba(255,189,79,.8);outline-offset:-3px;background:rgba(255,189,79,.10)}
+    .sf-week-shift-cell.is-drop-blocked{outline:2px solid rgba(255,102,119,.78);outline-offset:-3px;background:rgba(255,102,119,.09)}
     .sf-week-shift{--sf-shift-accent:#62a0ff;height:100%;box-sizing:border-box;background:#101f30;border:1px solid #24384f;border-left:3px solid var(--sf-shift-accent);border-radius:8px;overflow:hidden}
     .sf-week-shift-head{display:flex;align-items:center;justify-content:space-between;gap:7px;padding:8px 9px;background:rgba(255,255,255,.012)}
     .sf-week-shift-main{min-width:0}
@@ -46,15 +50,22 @@
     .sf-week-shift.under .sf-week-shift-count b,.sf-week-shift.empty .sf-week-shift-count b{border-color:#74531c;background:#2c2518;color:#ffd19a}
     .sf-week-shift.over .sf-week-shift-count b{border-color:#514786;background:#292345;color:#c9bfff}
     .sf-week-employees{padding:0 7px 7px;display:flex;flex-direction:column;gap:5px}
-    .sf-week-employee{display:grid;grid-template-columns:29px minmax(0,1fr);gap:7px;align-items:center;min-height:39px;padding:6px 7px;border-radius:7px;background:#14283a;border:1px solid #213a50}
+    .sf-week-employee{display:grid;grid-template-columns:29px minmax(0,1fr);gap:7px;align-items:center;width:100%;min-height:39px;padding:6px 7px;border-radius:7px;background:#14283a;border:1px solid #213a50;color:inherit;text-align:left;cursor:grab}
+    .sf-week-employee:hover{border-color:#3a5872;background:#173047}
+    .sf-week-employee:focus-visible{outline:2px solid var(--teal);outline-offset:1px}
+    .sf-week-employee.is-dragging{opacity:.48;cursor:grabbing}
     .sf-week-avatar{width:29px;height:29px;border-radius:50%;display:grid;place-items:center;background:#1e3a54;color:#e6f2ff;font-size:10px;font-weight:800}
     .sf-week-employee-info{min-width:0}
     .sf-week-employee-info b{display:block;font-size:11px;line-height:1.25;color:#edf5ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .sf-week-employee-info small{display:block;margin-top:2px;font-size:9px;color:#8ea4bd;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .sf-week-open{margin:0 7px 7px;padding:7px;border:1px dashed #8a6123;border-radius:6px;background:#302719;color:#ffd08a;font-size:10px;font-weight:700;text-align:center}
+    .sf-week-open{display:block;width:calc(100% - 14px);margin:0 7px 7px;padding:7px;border:1px dashed #8a6123;border-radius:6px;background:#302719;color:#ffd08a;font-size:10px;font-weight:700;text-align:center;cursor:pointer}
+    .sf-week-open:hover,.sf-week-open:focus-visible{border-color:#ffbd4f;background:#3b2e19;outline:none}
     .sf-week-over{margin:0 6px 6px;padding:5px 7px;border:1px solid #514786;border-radius:6px;background:#292345;color:#c9bfff;font-size:9px;text-align:center}
     .sf-week-shift.is-inactive{display:grid;place-items:center;min-height:58px;border-left-color:#31445a;background:rgba(16,31,48,.48)}
     .sf-week-shift-empty{font-size:15px;color:#536a82}
+    .sf-week-undo{position:fixed;left:50%;bottom:24px;z-index:13000;display:flex;align-items:center;gap:16px;max-width:min(560px,calc(100vw - 32px));padding:12px 14px 12px 16px;border:1px solid #31506a;border-radius:10px;background:#102235;color:#e9f4ff;box-shadow:0 18px 50px rgba(0,0,0,.46);font-size:12px}
+    .sf-week-undo span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .sf-week-undo button{flex:none;border:1px solid #2d7967;border-radius:7px;background:#173c33;color:#aaf4db;padding:7px 10px;font-weight:800}
     @media(max-width:1500px){.sf-week-board{grid-template-columns:repeat(7,190px);min-width:max-content}}
   `;
   document.head.appendChild(css);
@@ -78,7 +89,7 @@
     const emp=employees.find(e=>e.id===a.employeeId);
     if(!emp)return'';
     const start=a.start||t.start,end=a.end||t.end;
-    return `<div class="sf-week-employee" title="${esc(emp.first+' '+emp.last)}"><span class="sf-week-avatar">${esc(initials(emp))}</span><span class="sf-week-employee-info"><b>${esc(emp.first)} ${esc(emp.last)}</b><small>${esc(start)} – ${esc(end)}</small></span></div>`;
+    return `<button type="button" class="sf-week-employee" draggable="true" data-assignment-id="${esc(a.id)}" title="${esc(emp.first+' '+emp.last)} verschieben oder bearbeiten"><span class="sf-week-avatar">${esc(initials(emp))}</span><span class="sf-week-employee-info"><b>${esc(emp.first)} ${esc(emp.last)}</b><small>${esc(start)} – ${esc(end)}</small></span></button>`;
   }
   function shiftBlock(date,id){
     const t=typeById(id);if(!t)return'';
@@ -88,7 +99,7 @@
     const st=statusFor(soll,ist),open=Math.max(0,soll-ist),over=Math.max(0,ist-soll);
     const color=accent[t.cls]||'#62a0ff';
     const rows=list.map(a=>employeeRow(a,t)).join('');
-    return `<section class="sf-week-shift ${st}" data-date="${esc(date)}" data-type="${esc(id)}" style="--sf-shift-accent:${color}"><header class="sf-week-shift-head"><div class="sf-week-shift-main"><strong>${esc(id)}</strong><small>${esc(t.start)} – ${esc(t.end)}</small></div><div class="sf-week-shift-count"><b title="IST / SOLL">${ist} / ${soll}</b></div></header><div class="sf-week-employees">${rows}</div>${open?`<div class="sf-week-open">＋ ${open} Position${open===1?'':'en'} offen</div>`:''}${over?`<div class="sf-week-over">＋ ${over} über SOLL</div>`:''}</section>`;
+    return `<section class="sf-week-shift ${st}" data-date="${esc(date)}" data-type="${esc(id)}" style="--sf-shift-accent:${color}"><header class="sf-week-shift-head"><div class="sf-week-shift-main"><strong>${esc(id)}</strong><small>${esc(t.start)} – ${esc(t.end)}</small></div><div class="sf-week-shift-count"><b title="IST / SOLL">${ist} / ${soll}</b></div></header><div class="sf-week-employees">${rows}</div>${open?`<button type="button" class="sf-week-open" data-open-assign>＋ ${open} Position${open===1?'':'en'} offen</button>`:''}${over?`<div class="sf-week-over">＋ ${over} über SOLL</div>`:''}</section>`;
   }
   function dayHeader(d,index){
     const date=iso(d),today=date===iso(new Date()),weekend=index>4;
@@ -99,6 +110,53 @@
   function shiftCell(d,index,id,rowIndex,rowCount){
     const date=iso(d),today=date===iso(new Date()),weekend=index>4;
     return `<div class="sf-week-shift-cell ${today?'is-today':''} ${weekend?'is-weekend':''} ${rowIndex===0?'row-start':''} ${rowIndex===rowCount-1?'row-end':''}" data-date="${esc(date)}" data-shift-row="${esc(id)}">${shiftBlock(date,id)}</div>`;
+  }
+  function refreshAll(){
+    if(typeof saveAll==='function')saveAll();
+    if(typeof renderCalendar==='function')renderCalendar();
+    if(typeof renderPlanEmployeePool==='function')renderPlanEmployeePool();
+    if(typeof renderOverview==='function')renderOverview();
+    if(typeof updateStats==='function')updateStats();
+  }
+  function showUndo(message,action){
+    clearTimeout(undoTimer);document.getElementById('sfWeekUndo')?.remove();
+    const bar=document.createElement('div');bar.id='sfWeekUndo';bar.className='sf-week-undo';bar.setAttribute('role','status');
+    bar.innerHTML=`<span>${esc(message)}</span><button type="button">Rückgängig</button>`;document.body.appendChild(bar);
+    bar.querySelector('button').onclick=()=>{bar.remove();clearTimeout(undoTimer);action()};
+    undoTimer=setTimeout(()=>bar.remove(),8000);
+  }
+  function clearDropState(wrap){wrap.querySelectorAll('.is-drop-target,.is-drop-warning,.is-drop-blocked').forEach(x=>x.classList.remove('is-drop-target','is-drop-warning','is-drop-blocked'))}
+  function dropCheck(cell){
+    if(!dragPayload)return null;const date=cell.dataset.date,type=cell.dataset.shiftRow,t=typeById(type);if(!t)return null;
+    if(dragPayload.kind==='employee'){const emp=employees.find(e=>e.id===dragPayload.id);return typeof spAssignmentConflict==='function'?spAssignmentConflict(emp,type,date,t.start,t.end):{hard:[],soft:[]}}
+    const a=assignments.find(x=>x.id===dragPayload.id),emp=a&&employees.find(e=>e.id===a.employeeId);return a&&emp&&typeof spAssignmentConflict==='function'?spAssignmentConflict(emp,type,date,t.start,t.end,a.id):{hard:[],soft:[]};
+  }
+  function moveAssignment(id,type,date){
+    const a=assignments.find(x=>x.id===id),emp=a&&employees.find(e=>e.id===a.employeeId),t=typeById(type);if(!a||!emp||!t)return;
+    if(a.type===type&&a.date===date)return;
+    const before={...a},ok=window.SFCompliance?.save?.(emp,type,date,t.start,t.end,{ignoreId:a.id,pause:a.pause,note:a.note});
+    if(!ok)return;
+    const label=`${emp.first} ${emp.last}: ${before.type} → ${type}`;
+    showUndo(label,()=>{const current=assignments.find(x=>x.id===id);if(!current)return;Object.assign(current,before,{version:Number(current.version||1)+1});window.SFCompliance?.audit?.('SHIFT_MOVE_UNDONE',id,{from:{type,date},to:{type:before.type,date:before.date}});refreshAll()});
+  }
+  function addEmployee(employeeId,type,date){
+    const before=new Set(assignments.map(a=>a.id));assignEmployeeByDrop(employeeId,type,date);
+    const added=assignments.find(a=>!before.has(a.id));if(!added)return;
+    const emp=employees.find(e=>e.id===employeeId);showUndo(`${emp?.first||'Mitarbeiter'} ${emp?.last||''} aus ${type} entfernen`,()=>{assignments=assignments.filter(a=>a.id!==added.id);window.SFCompliance?.audit?.('SHIFT_CREATE_UNDONE',added.id,{type,date});refreshAll()});
+  }
+  function installInteractions(wrap){
+    wrap.querySelectorAll('.sf-week-employee').forEach(card=>{
+      card.onclick=()=>{if(!dragPayload)window.editAssignment?.(card.dataset.assignmentId)};
+      card.ondragstart=e=>{dragPayload={kind:'assignment',id:card.dataset.assignmentId};card.classList.add('is-dragging');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain','assignment:'+dragPayload.id)};
+      card.ondragend=()=>{card.classList.remove('is-dragging');dragPayload=null;clearDropState(wrap)};
+    });
+    wrap.querySelectorAll('.sf-week-shift-cell').forEach(cell=>{
+      cell.ondragenter=e=>{if(!dragPayload){const raw=e.dataTransfer?.getData('text/plain')||'';if(raw.startsWith('employee:'))dragPayload={kind:'employee',id:raw.slice(9)}}const check=dropCheck(cell);if(!check)return;e.preventDefault();clearDropState(wrap);cell.classList.add(check.hard.length?'is-drop-blocked':check.soft.length?'is-drop-warning':'is-drop-target')};
+      cell.ondragover=e=>{if(dragPayload){e.preventDefault();e.dataTransfer.dropEffect=dropCheck(cell)?.hard?.length?'none':dragPayload.kind==='assignment'?'move':'copy'}};
+      cell.ondragleave=e=>{if(!cell.contains(e.relatedTarget))cell.classList.remove('is-drop-target','is-drop-warning','is-drop-blocked')};
+      cell.ondrop=e=>{e.preventDefault();e.stopPropagation();const payload=dragPayload,check=dropCheck(cell);clearDropState(wrap);dragPayload=null;if(!payload||check?.hard?.length){if(check?.hard?.length&&typeof showSaveToast==='function')showSaveToast('Verschieben nicht möglich',check.hard.join(' '));return}const type=cell.dataset.shiftRow,date=cell.dataset.date;if(payload.kind==='assignment')moveAssignment(payload.id,type,date);else addEmployee(payload.id,type,date)};
+      cell.querySelector('[data-open-assign]')?.addEventListener('click',()=>window.openAssign?.(cell.dataset.shiftRow,cell.dataset.date));
+    });
   }
 
   function ensureUi(){
@@ -134,12 +192,16 @@
     const headers=ds.map((d,i)=>dayHeader(d,i)).join('');
     const rows=ids.map((id,rowIndex)=>ds.map((d,i)=>shiftCell(d,i,id,rowIndex,ids.length)).join('')).join('');
     wrap.innerHTML=`<div class="sf-week-board">${headers}${rows}</div>`;
+    installInteractions(wrap);
     applyMode();
   }
 
   const original=window.renderCalendar;
+  document.addEventListener('dragstart',e=>{const card=e.target.closest?.('.employee-drag');if(card?.dataset.employeeId)dragPayload={kind:'employee',id:card.dataset.employeeId}});
+  document.addEventListener('dragend',e=>{if(e.target.closest?.('.employee-drag')){dragPayload=null;const wrap=document.getElementById('sfWeekBoardV2');if(wrap)clearDropState(wrap)}});
   if(typeof original==='function'){
     window.renderCalendar=function(){const r=original.apply(this,arguments);try{renderBoard()}catch(e){console.warn('Wochenansicht V2 konnte nicht gerendert werden',e)}return r};
   }
   try{renderBoard()}catch(e){console.warn('Wochenansicht V2 konnte nicht initialisiert werden',e)}
 })();
+
