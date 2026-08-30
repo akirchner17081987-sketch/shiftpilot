@@ -53,12 +53,13 @@
     'assets/supabase-notifications-v1.js',
     'assets/supabase-personnel-notification-navigation-v1.js',
     'assets/supabase-notifications-delete-v1.js',
-    'assets/schedule-auto-plan-navigation-v1.js'
+    'assets/schedule-auto-plan-navigation-v1.js',
+    'assets/schedule-week-board-v2-phase1.js'
   ];
   const load=i=>{
     if(i>=files.length)return;
     const s=document.createElement('script');
-    s.src=files[i]+'?v=20260830af';
+    s.src=files[i]+'?v=20260830ag';
     s.onload=()=>load(i+1);
     s.onerror=()=>console.error('SchichtFunk-Modul konnte nicht geladen werden:',files[i]);
     document.body.appendChild(s);
