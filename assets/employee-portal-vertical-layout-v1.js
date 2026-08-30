@@ -31,6 +31,8 @@
         align-items:start;
         gap:16px;
       }
+      #sfEmployeePortal.sf-portal-layout-pending .sf-portal-grid{visibility:hidden;opacity:0}
+      #sfEmployeePortal .sf-portal-grid{transition:opacity .16s ease}
       #sfEmployeePortal .sf-portal-grid>.sf-portal-layout-source{display:contents!important}
       #sfEmployeePortal .sf-portal-card{
         min-width:0;
@@ -74,12 +76,20 @@
     });
     portal.dataset.sfVerticalLayout='1';return true;
   }
+  function dataSignature(){
+    const d=B.employeePortalData||{},pick=list=>(list||[]).map(x=>[x.id,x.updated_at,x.status,x.published_at]);
+    try{return JSON.stringify([d.employee?.id,d.employee?.updated_at,pick(d.shifts),pick(d.absences),pick(d.requests),pick(d.approvals),pick(d.timeEntries),pick(d.templates)])}catch{return String(Date.now())}
+  }
   const old=B.openEmployeePortal;
   if(typeof old==='function')B.openEmployeePortal=function(){
-    const existing=document.getElementById('sfEmployeePortal'),scrollY=existing?window.scrollY:0;
+    const existing=document.getElementById('sfEmployeePortal'),signature=dataSignature();
+    if(existing?.dataset.sfRenderSignature===signature){arrange();return existing}
+    const scrollY=existing?window.scrollY:0;
     const r=old.apply(this,arguments);
+    const portal=document.getElementById('sfEmployeePortal');
+    if(portal){portal.dataset.sfRenderSignature=signature;portal.classList.add('sf-portal-layout-pending')}
     const finish=()=>{arrange();if(existing&&scrollY>0&&Math.abs(window.scrollY-scrollY)>1)window.scrollTo(0,scrollY)};
-    requestAnimationFrame(finish);setTimeout(finish,180);setTimeout(finish,700);return r
+    requestAnimationFrame(finish);setTimeout(finish,180);setTimeout(()=>{finish();document.getElementById('sfEmployeePortal')?.classList.remove('sf-portal-layout-pending')},700);return r
   };
   let queued=false;const observer=new MutationObserver(()=>{if(queued||!document.getElementById('sfEmployeePortal'))return;queued=true;requestAnimationFrame(()=>{queued=false;arrange()})});
   observer.observe(document.documentElement,{childList:true,subtree:true});
