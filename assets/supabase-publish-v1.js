@@ -1,58 +1,30 @@
-// SchichtFunk – atomare Wochenveröffentlichung über Supabase/PostgreSQL
+// SchichtFunk – geprüfte, atomare Wochenveröffentlichung
 (function(){
-  const B=window.SFBackend=window.SFBackend||{};
-  const C=window.SFCompliance=window.SFCompliance||{};
-  const fallback=typeof C.publishCurrentWeek==='function'?C.publishCurrentWeek.bind(C):null;
-  let publishing=false;
-
-  function currentWeekKey(){
-    try{
-      if(typeof weekStart!=='undefined'&&weekStart){
-        const d=weekStart instanceof Date?weekStart:new Date(weekStart);
-        return C.weekKey(C.iso(d));
-      }
-    }catch{}
-    const d=new Date();
-    return C.weekKey(C.iso(d));
+  const B=window.SFBackend=window.SFBackend||{},C=window.SFCompliance=window.SFCompliance||{};
+  const fallback=typeof C.publishCurrentWeek==='function'?C.publishCurrentWeek.bind(C):null;let publishing=false;
+  const esc=x=>C.esc?C.esc(String(x??'')):String(x??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  function weekKey(){try{if(typeof weekStart!=='undefined'&&weekStart)return C.weekKey(C.iso(weekStart instanceof Date?weekStart:new Date(weekStart)))}catch{}return C.weekKey(C.iso(new Date()))}
+  function dates(key){const start=new Date(`${key}T12:00:00`);return Array.from({length:7},(_,i)=>{const d=new Date(start);d.setDate(start.getDate()+i);return C.iso(d)})}
+  function minutes(time){const [h,m]=String(time||'00:00').split(':').map(Number);return h*60+m}
+  function duration(a){let n=minutes(a.end)-minutes(a.start);if(n<=0)n+=1440;return n-Number(a.pause||0)}
+  function preflight(key){
+    const weekDates=dates(key),allAssignments=typeof assignments!=='undefined'?assignments:[],weekAssignments=allAssignments.filter(a=>weekDates.includes(a.date));let under=0,open=0,over=0,long=0,overlaps=0;
+    const types=(typeof TYPES!=='undefined'?TYPES:[]).map(t=>t.id),daily=typeof dailySoll!=='undefined'?dailySoll:{},global=typeof globalSoll!=='undefined'?globalSoll:{};
+    weekDates.forEach(date=>types.forEach(type=>{const actual=weekAssignments.filter(a=>a.date===date&&a.type===type).length,required=Number(daily?.[date]?.[type]??global?.[type]??0);if(actual<required){under++;open+=required-actual}else if(required>0&&actual>required)over+=actual-required}));
+    weekAssignments.forEach(a=>{const t=typeof window.typeById==='function'?window.typeById(a.type):null;if(duration({...a,start:a.start||t?.start,end:a.end||t?.end})>=600)long++});
+    const groups={};weekAssignments.forEach(a=>(groups[`${a.employeeId}|${a.date}`]||(groups[`${a.employeeId}|${a.date}`]=[])).push(a));
+    Object.values(groups).forEach(list=>{for(let i=0;i<list.length;i++)for(let j=i+1;j<list.length;j++){const a=list[i],b=list[j],ta=typeof typeById==='function'?typeById(a.type):null,tb=typeof typeById==='function'?typeById(b.type):null;let as=minutes(a.start||ta?.start),ae=minutes(a.end||ta?.end),bs=minutes(b.start||tb?.start),be=minutes(b.end||tb?.end);if(ae<=as)ae+=1440;if(be<=bs)be+=1440;if(Math.max(as,bs)<Math.min(ae,be))overlaps++}});
+    return{assignments:weekAssignments.length,under,open,over,long,overlaps};
   }
-
+  function css(){if(document.getElementById('sfPublishCss'))return;const s=document.createElement('style');s.id='sfPublishCss';s.textContent=`
+    .sf-pub-back{position:fixed;inset:0;z-index:24000;display:grid;place-items:center;padding:18px;background:rgba(2,7,13,.76);backdrop-filter:blur(6px)}.sf-pub-modal{width:min(650px,96vw);overflow:hidden;border:1px solid #29465f;border-radius:16px;background:linear-gradient(180deg,#0e1c2b,#091522);color:#eaf5ff;box-shadow:0 28px 90px rgba(0,0,0,.6)}
+    .sf-pub-head{display:flex;justify-content:space-between;gap:16px;padding:21px 23px;border-bottom:1px solid #21384d}.sf-pub-head h2{margin:4px 0;font-size:22px}.sf-pub-head p{margin:0;color:#8da4b9;font-size:12px}.sf-pub-x{width:38px;height:38px;border:1px solid #2b465e;border-radius:9px;background:#102030;color:#a9bfd2}.sf-pub-body{padding:20px 23px}.sf-pub-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.sf-pub-stat{padding:13px;border:1px solid #29445b;border-radius:11px;background:#0b1926}.sf-pub-stat small{display:block;color:#8299ad;font-size:10px;font-weight:800;text-transform:uppercase}.sf-pub-stat b{display:block;margin-top:5px;font-size:20px}.sf-pub-stat.bad{border-color:#81512c;background:#302218}.sf-pub-stat.bad b{color:#ffc06c}.sf-pub-stat.danger{border-color:#783243;background:#301923}.sf-pub-stat.danger b{color:#ff8798}.sf-pub-info{margin-top:14px;padding:12px 13px;border:1px solid #285d52;border-radius:10px;background:#0d2a25;color:#a8e9d8;font-size:12px;line-height:1.5}.sf-pub-info.warn{border-color:#76552a;background:#302416;color:#ffd08c}.sf-pub-foot{display:flex;justify-content:flex-end;gap:9px;padding:16px 23px;border-top:1px solid #21384d}.sf-pub-foot button{min-height:40px;padding:9px 14px;border-radius:9px;font-weight:800}.sf-pub-cancel{border:1px solid #2a455d;background:#0d1c2b;color:#b8cbe0}.sf-pub-confirm{border:1px solid #31d8b7;background:#2ed9b8;color:#05251e}@media(max-width:620px){.sf-pub-grid{grid-template-columns:1fr 1fr}}
+  `;document.head.appendChild(s)}
+  function confirmDialog(key,summary){css();document.getElementById('sfPublishDialog')?.remove();return new Promise(resolve=>{const b=document.createElement('div');b.id='sfPublishDialog';b.className='sf-pub-back';const warnings=summary.under+summary.overlaps+summary.long;b.innerHTML=`<section class="sf-pub-modal" role="dialog" aria-modal="true" aria-labelledby="sfPubTitle"><header class="sf-pub-head"><div><div class="eyebrow">DIENSTPLAN · WOCHENPRÜFUNG</div><h2 id="sfPubTitle">Woche veröffentlichen</h2><p>${esc(C.fmt(key))} bis ${esc(C.fmt(dates(key)[6]))}</p></div><button type="button" class="sf-pub-x" aria-label="Schließen">✕</button></header><div class="sf-pub-body"><div class="sf-pub-grid"><div class="sf-pub-stat"><small>Schichten</small><b>${summary.assignments}</b></div><div class="sf-pub-stat ${summary.under?'bad':''}"><small>Unterbesetzte Bereiche</small><b>${summary.under}</b></div><div class="sf-pub-stat ${summary.open?'bad':''}"><small>Offene Positionen</small><b>${summary.open}</b></div><div class="sf-pub-stat ${summary.over?'bad':''}"><small>Über Soll</small><b>${summary.over}</b></div><div class="sf-pub-stat ${summary.overlaps?'danger':''}"><small>Überschneidungen</small><b>${summary.overlaps}</b></div><div class="sf-pub-stat ${summary.long?'bad':''}"><small>Schichten ab 10 Std.</small><b>${summary.long}</b></div></div><div class="sf-pub-info ${warnings?'warn':''}">${warnings?'⚠ Die Woche enthält Hinweise. Du kannst zurückgehen und die Planung korrigieren oder sie bewusst veröffentlichen.':'✓ Die Wochenprüfung hat keine kritischen Hinweise gefunden.'}<br>Nach der Veröffentlichung werden weitere Änderungen dokumentiert und über den Freigabeworkflow geführt.</div></div><footer class="sf-pub-foot"><button type="button" class="sf-pub-cancel">Zurück zur Planung</button><button type="button" class="sf-pub-confirm">${warnings?'Trotzdem veröffentlichen':'Woche veröffentlichen'}</button></footer></section>`;document.body.appendChild(b);const done=v=>{b.remove();resolve(v)};b.querySelector('.sf-pub-x').onclick=()=>done(false);b.querySelector('.sf-pub-cancel').onclick=()=>done(false);b.querySelector('.sf-pub-confirm').onclick=()=>done(true);b.onclick=e=>{if(e.target===b)done(false)}})}
   C.publishCurrentWeek=async function(){
-    if(publishing)return;
-    if(!B.ready||!B.client){
-      if(fallback)return fallback();
-      return;
-    }
-
-    const key=currentWeekKey();
-    if(C.publications?.[key]?.publishedAt){
-      C.toast?.('Dienstplan bereits veröffentlicht',new Date(C.publications[key].publishedAt).toLocaleString('de-DE'));
-      return;
-    }
-
-    if(!confirm('Dienstplan für die aktuelle Woche veröffentlichen?\n\nAb diesem Zeitpunkt laufen spätere Änderungen über die Compliance-Prüfung und werden protokolliert.'))return;
-
-    publishing=true;
-    try{
-      B.showLoading?.('Dienstplan wird veröffentlicht …');
-      const {data,error}=await B.client.rpc('publish_schedule_week',{p_week_start:key});
-      if(error)throw error;
-      const result=Array.isArray(data)?data[0]:data;
-
-      // Erst NACH erfolgreicher Server-Transaktion den Browserzustand neu laden.
-      // Dadurch gibt es keinen halbfertigen lokalen Veröffentlichungsstatus und
-      // keinen Bulk-Upsert des gesamten Dienstplans mehr.
-      await B.hydrate();
-      C.updateScheduleControls?.();
-      const count=Number(result?.assignment_count||0);
-      C.toast?.('Dienstplan veröffentlicht',`${count} Schichten wurden sicher in PostgreSQL veröffentlicht.`);
-    }catch(e){
-      console.error('SchichtFunk Veröffentlichung',e);
-      C.toast?.('Veröffentlichung fehlgeschlagen',e?.message||String(e));
-    }finally{
-      B.hideLoading?.();
-      publishing=false;
-    }
-  };
-
-  window.spPublishCurrentWeek=C.publishCurrentWeek;
+    if(publishing)return;if(!B.ready||!B.client){if(fallback)return fallback();return}
+    const key=weekKey();if(C.publications?.[key]?.publishedAt){C.toast?.('Dienstplan bereits veröffentlicht',new Date(C.publications[key].publishedAt).toLocaleString('de-DE'));return}
+    if(!await confirmDialog(key,preflight(key)))return;
+    publishing=true;try{B.showLoading?.('Dienstplan wird veröffentlicht …');const {data,error}=await B.client.rpc('publish_schedule_week',{p_week_start:key});if(error)throw error;const result=Array.isArray(data)?data[0]:data;await B.hydrate();C.updateScheduleControls?.();C.toast?.('Dienstplan veröffentlicht',`${Number(result?.assignment_count||0)} Schichten wurden sicher veröffentlicht.`)}catch(e){console.error('SchichtFunk Veröffentlichung',e);if(typeof showSaveToast==='function')showSaveToast('Veröffentlichung fehlgeschlagen',e?.message||String(e),'error');else C.toast?.('Veröffentlichung fehlgeschlagen',e?.message||String(e))}finally{B.hideLoading?.();publishing=false}
+  };window.spPublishCurrentWeek=C.publishCurrentWeek;
 })();
