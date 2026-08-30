@@ -84,11 +84,11 @@
   if(typeof old==='function')B.openEmployeePortal=function(){
     const existing=document.getElementById('sfEmployeePortal'),signature=dataSignature();
     if(existing?.dataset.sfRenderSignature===signature){arrange();return existing}
-    const scrollY=existing?window.scrollY:0;
+    const portalScroll=existing?existing.scrollTop:0;
     const r=old.apply(this,arguments);
     const portal=document.getElementById('sfEmployeePortal');
     if(portal){portal.dataset.sfRenderSignature=signature;portal.classList.add('sf-portal-layout-pending')}
-    const finish=()=>{arrange();if(existing&&scrollY>0&&Math.abs(window.scrollY-scrollY)>1)window.scrollTo(0,scrollY)};
+    const finish=()=>{arrange();const current=document.getElementById('sfEmployeePortal');if(existing&&current&&portalScroll>0&&Math.abs(current.scrollTop-portalScroll)>1)current.scrollTop=portalScroll};
     requestAnimationFrame(finish);setTimeout(finish,180);setTimeout(()=>{finish();document.getElementById('sfEmployeePortal')?.classList.remove('sf-portal-layout-pending')},700);return r
   };
   let queued=false;const observer=new MutationObserver(()=>{if(queued||!document.getElementById('sfEmployeePortal'))return;queued=true;requestAnimationFrame(()=>{queued=false;arrange()})});
