@@ -62,12 +62,17 @@
     'assets/schedule-employee-pool-polish-v1.js',
     'assets/employee-portal-vertical-layout-v1.js'
   ];
+  const start=()=>{
+    const B=window.SFBackend=window.SFBackend||{};
+    if(B.__loaderInitStarted)return;B.__loaderInitStarted=true;
+    Promise.resolve(B.init?.()).catch(e=>{B.hideLoading?.();console.error('SchichtFunk Supabase init',e);B.updateState?.()});
+  };
   const load=i=>{
-    if(i>=files.length)return;
+    if(i>=files.length){start();return}
     const s=document.createElement('script');
-    s.src=files[i]+'?v=20260830au';
+    s.src=files[i]+'?v=20260830av';
     s.onload=()=>load(i+1);
-    s.onerror=()=>console.error('SchichtFunk-Modul konnte nicht geladen werden:',files[i]);
+    s.onerror=()=>{console.error('SchichtFunk-Modul konnte nicht geladen werden:',files[i]);load(i+1)};
     document.body.appendChild(s);
   };
   load(0);
