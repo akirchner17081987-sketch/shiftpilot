@@ -134,10 +134,8 @@
   function moveAssignment(id,type,date){
     const a=assignments.find(x=>x.id===id),emp=a&&employees.find(e=>e.id===a.employeeId),t=typeById(type);if(!a||!emp||!t)return;
     if(a.type===type&&a.date===date)return;
-    const before={...a},ok=window.SFCompliance?.save?.(emp,type,date,t.start,t.end,{ignoreId:a.id,pause:a.pause,note:a.note});
-    if(!ok)return;
-    const label=`${emp.first} ${emp.last}: ${before.type} → ${type}`;
-    showUndo(label,()=>{const current=assignments.find(x=>x.id===id);if(!current)return;Object.assign(current,before,{version:Number(current.version||1)+1});window.SFCompliance?.audit?.('SHIFT_MOVE_UNDONE',id,{from:{type,date},to:{type:before.type,date:before.date}});refreshAll()});
+    const before={...a},afterSave=()=>{const label=`${emp.first} ${emp.last}: ${before.type} → ${type}`;showUndo(label,()=>{const current=assignments.find(x=>x.id===id);if(!current)return;Object.assign(current,before,{version:Number(current.version||1)+1});window.SFCompliance?.audit?.('SHIFT_MOVE_UNDONE',id,{from:{type,date},to:{type:before.type,date:before.date}});refreshAll()})};
+    window.SFCompliance?.save?.(emp,type,date,t.start,t.end,{ignoreId:a.id,pause:a.pause,note:a.note,onSaved:afterSave});
   }
   function addEmployee(employeeId,type,date){
     const before=new Set(assignments.map(a=>a.id));assignEmployeeByDrop(employeeId,type,date);
