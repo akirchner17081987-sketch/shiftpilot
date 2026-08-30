@@ -33,7 +33,10 @@
       }
       #sfEmployeePortal.sf-portal-layout-pending .sf-portal-grid{visibility:hidden;opacity:0}
       #sfEmployeePortal .sf-portal-grid{transition:opacity .16s ease}
-      #sfEmployeePortal .sf-portal-grid>.sf-portal-layout-source{display:contents!important}
+      #sfEmployeePortal .sf-portal-grid>.sf-portal-layout-source{display:none!important}
+      #sfEmployeePortal .sf-portal-column{display:grid;align-content:start;gap:16px;min-width:0}
+      #sfEmployeePortal .sf-portal-column-left{grid-column:1;order:10}
+      #sfEmployeePortal .sf-portal-column-right{grid-column:2;order:20}
       #sfEmployeePortal .sf-portal-card{
         min-width:0;
         height:auto!important;
@@ -45,16 +48,15 @@
       #sfEmployeePortal .sf-portal-card[data-sf-portal-section="time"]{order:20}
       #sfEmployeePortal .sf-portal-card[data-sf-portal-section="changes"]{order:30}
       #sfEmployeePortal .sf-portal-card[data-sf-portal-section="swaps"]{order:40}
-      #sfEmployeePortal .sf-portal-card[data-sf-portal-section="absences"]{order:50;grid-column:2}
-      #sfEmployeePortal .sf-portal-card[data-sf-portal-section="account"]{order:60;grid-column:2}
-      #sfEmployeePortal .sf-portal-card[data-sf-portal-section="profile"]{order:70;grid-column:1/-1}
+      #sfEmployeePortal .sf-portal-card[data-sf-portal-section="absences"]{order:50}
+      #sfEmployeePortal .sf-portal-card[data-sf-portal-section="account"]{order:60}
+      #sfEmployeePortal .sf-portal-card[data-sf-portal-section="profile"]{order:30;grid-column:1/-1}
       #sfEmployeePortal .sf-portal-card h3{font-size:16px;margin-bottom:14px}
       #sfEmployeePortal .sf-profile-list{grid-template-columns:repeat(3,minmax(0,1fr))}
       @media(max-width:980px){
         #sfEmployeePortal .sf-portal-main{padding:24px 20px 38px}
         #sfEmployeePortal .sf-portal-grid{grid-template-columns:1fr}
-        #sfEmployeePortal .sf-portal-card[data-sf-portal-section="absences"],
-        #sfEmployeePortal .sf-portal-card[data-sf-portal-section="account"]{grid-column:auto}
+        #sfEmployeePortal .sf-portal-column-left,#sfEmployeePortal .sf-portal-column-right{grid-column:auto}
         #sfEmployeePortal .sf-portal-card[data-sf-portal-section="profile"]{grid-column:auto}
         #sfEmployeePortal .sf-profile-list{grid-template-columns:repeat(2,minmax(0,1fr))}
       }
@@ -72,9 +74,16 @@
     const grid=portal.querySelector('.sf-portal-grid');if(!grid)return false;
     const source=[...grid.children].find(x=>x.matches('div[style*="display:grid"]'));
     source?.classList.add('sf-portal-layout-source');
+    let left=grid.querySelector(':scope>.sf-portal-column-left'),right=grid.querySelector(':scope>.sf-portal-column-right');
+    if(!left){left=document.createElement('div');left.className='sf-portal-column sf-portal-column-left';grid.appendChild(left)}
+    if(!right){right=document.createElement('div');right.className='sf-portal-column sf-portal-column-right';grid.appendChild(right)}
     portal.querySelectorAll('.sf-portal-card').forEach(card=>{
       const title=card.querySelector('h3')?.textContent.trim(),meta=sections[title];
-      if(meta){card.dataset.sfPortalSection=meta[0];card.style.order=String(meta[1])}
+      if(meta){
+        card.dataset.sfPortalSection=meta[0];card.style.order=String(meta[1]);
+        const target=['shifts','changes'].includes(meta[0])?left:['time','swaps','absences','account'].includes(meta[0])?right:grid;
+        if(card.parentElement!==target)target.appendChild(card)
+      }
     });
     portal.dataset.sfVerticalLayout='1';return true;
   }
