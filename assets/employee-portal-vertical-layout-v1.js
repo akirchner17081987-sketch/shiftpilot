@@ -45,14 +45,16 @@
       #sfEmployeePortal .sf-portal-card[data-sf-portal-section="time"]{order:20}
       #sfEmployeePortal .sf-portal-card[data-sf-portal-section="changes"]{order:30}
       #sfEmployeePortal .sf-portal-card[data-sf-portal-section="swaps"]{order:40}
-      #sfEmployeePortal .sf-portal-card[data-sf-portal-section="absences"]{order:50}
-      #sfEmployeePortal .sf-portal-card[data-sf-portal-section="account"]{order:60}
+      #sfEmployeePortal .sf-portal-card[data-sf-portal-section="absences"]{order:50;grid-column:2}
+      #sfEmployeePortal .sf-portal-card[data-sf-portal-section="account"]{order:60;grid-column:2}
       #sfEmployeePortal .sf-portal-card[data-sf-portal-section="profile"]{order:70;grid-column:1/-1}
       #sfEmployeePortal .sf-portal-card h3{font-size:16px;margin-bottom:14px}
       #sfEmployeePortal .sf-profile-list{grid-template-columns:repeat(3,minmax(0,1fr))}
       @media(max-width:980px){
         #sfEmployeePortal .sf-portal-main{padding:24px 20px 38px}
         #sfEmployeePortal .sf-portal-grid{grid-template-columns:1fr}
+        #sfEmployeePortal .sf-portal-card[data-sf-portal-section="absences"],
+        #sfEmployeePortal .sf-portal-card[data-sf-portal-section="account"]{grid-column:auto}
         #sfEmployeePortal .sf-portal-card[data-sf-portal-section="profile"]{grid-column:auto}
         #sfEmployeePortal .sf-profile-list{grid-template-columns:repeat(2,minmax(0,1fr))}
       }
