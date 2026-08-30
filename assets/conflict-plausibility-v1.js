@@ -57,12 +57,13 @@
     'assets/schedule-auto-plan-navigation-v1.js',
     'assets/schedule-week-board-v2-phase1.js',
     'assets/schedule-month-view-v1.js',
-    'assets/schedule-status-history-v1.js'
+    'assets/schedule-status-history-v1.js',
+    'assets/schedule-toolbar-polish-v1.js'
   ];
   const load=i=>{
     if(i>=files.length)return;
     const s=document.createElement('script');
-    s.src=files[i]+'?v=20260830ao';
+    s.src=files[i]+'?v=20260830ap';
     s.onload=()=>load(i+1);
     s.onerror=()=>console.error('SchichtFunk-Modul konnte nicht geladen werden:',files[i]);
     document.body.appendChild(s);
