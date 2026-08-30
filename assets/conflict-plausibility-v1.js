@@ -40,6 +40,7 @@
     'assets/supabase-personnel-file-modal-lock-v1.js',
     'assets/supabase-personnel-file-enhancements-v1.js',
     'assets/supabase-personnel-reminders-ui-v1.js',
+    'assets/supabase-personnel-deadline-dashboard-v1.js',
     'assets/workspace-state-v2.js',
     'assets/supabase-notifications-v1.js',
     'assets/supabase-personnel-notification-navigation-v1.js',
@@ -48,7 +49,7 @@
   const load=i=>{
     if(i>=files.length)return;
     const s=document.createElement('script');
-    s.src=files[i]+'?v=20260830t';
+    s.src=files[i]+'?v=20260830u';
     s.onload=()=>load(i+1);
     s.onerror=()=>console.error('SchichtFunk-Modul konnte nicht geladen werden:',files[i]);
     document.body.appendChild(s);
