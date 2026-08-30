@@ -90,7 +90,7 @@
 
   B.hydrateEmployee=async function(){
     const [emp,company,shifts,abs,req,apv,te,tpl]=await Promise.all([
-      B.client.from('employees').select('*').eq('auth_user_id',B.user.id).single(),B.client.from('companies').select('id,name,timezone').eq('id',B.companyId).single(),B.client.from('shift_assignments').select('*').eq('employee_id',B.employeeDbId).neq('status','CANCELLED').order('starts_at'),B.client.from('absences').select('*').eq('employee_id',B.employeeDbId).order('start_date',{ascending:false}),B.client.from('shift_change_requests').select('*').eq('employee_id',B.employeeDbId).order('requested_at',{ascending:false}),B.client.from('shift_change_approvals').select('*').eq('company_id',B.companyId),B.client.from('time_entries').select('*').eq('company_id',B.companyId),B.client.from('shift_templates').select('code,name,default_start,default_end').eq('company_id',B.companyId).eq('active',true)
+      B.client.from('employees').select('*').eq('auth_user_id',B.user.id).single(),B.client.from('companies').select('id,name,timezone').eq('id',B.companyId).single(),B.client.from('shift_assignments').select('*').eq('employee_id',B.employeeDbId).eq('status','PUBLISHED').not('published_at','is',null).order('starts_at'),B.client.from('absences').select('*').eq('employee_id',B.employeeDbId).order('start_date',{ascending:false}),B.client.from('shift_change_requests').select('*').eq('employee_id',B.employeeDbId).order('requested_at',{ascending:false}),B.client.from('shift_change_approvals').select('*').eq('company_id',B.companyId),B.client.from('time_entries').select('*').eq('company_id',B.companyId),B.client.from('shift_templates').select('code,name,default_start,default_end').eq('company_id',B.companyId).eq('active',true)
     ]);for(const q of [emp,company,shifts,abs,req,apv,te,tpl])if(q.error)throw q.error;B.employeePortalData={employee:emp.data,company:company.data,shifts:shifts.data||[],absences:abs.data||[],requests:req.data||[],approvals:apv.data||[],timeEntries:te.data||[],templates:tpl.data||[]};
   };
 
@@ -111,3 +111,4 @@
   const baseInit=B.init;if(typeof baseInit==='function')B.init=async function(){const r=await baseInit.apply(this,arguments);const token=currentInviteToken();if(token&&!B.ready)employeeRegisterDialog(token);return r};
   css();
 })();
+
