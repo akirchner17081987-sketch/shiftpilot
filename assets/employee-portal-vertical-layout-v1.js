@@ -9,6 +9,7 @@
     'Schichttausch':['swaps',40],
     'Abwesenheiten':['absences',50],
     'Stundenkonto':['account',60],
+    'Lohnvorschau':['wage',70],
     'Mein Profil':['profile',70]
   };
   function css(){
@@ -81,7 +82,7 @@
       const title=card.querySelector('h3')?.textContent.trim(),meta=sections[title];
       if(meta){
         card.dataset.sfPortalSection=meta[0];card.style.order=String(meta[1]);
-        const target=['shifts','changes'].includes(meta[0])?left:['time','swaps','absences','account'].includes(meta[0])?right:grid;
+        const target=['shifts','changes'].includes(meta[0])?left:['time','swaps','absences','account','wage'].includes(meta[0])?right:grid;
         if(card.parentElement!==target)target.appendChild(card)
       }
     });
