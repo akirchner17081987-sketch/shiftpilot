@@ -1,4 +1,4 @@
--- SchichtFunk / ShiftPilot – Server-side Compliance schema (PostgreSQL/Supabase-ready)
+-- SchichtFunk – Server-side Compliance schema (PostgreSQL/Supabase-ready)
 -- Version 2, 2026-08-28
 -- IMPORTANT: The current web app still uses LocalStorage. This migration is the backend target
 -- for the next phase. Wire company/user membership and RLS policies before production use.

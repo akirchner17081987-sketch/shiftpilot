@@ -1,4 +1,4 @@
-// ShiftPilot – Dynamischer Mitarbeiter-Pool V1
+// SchichtFunk – Dynamischer Mitarbeiter-Pool V1
 (function(){
   const schedule=document.getElementById('view-schedule');
   if(!schedule) return;

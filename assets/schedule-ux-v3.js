@@ -1,4 +1,4 @@
-// ShiftPilot Dienstplan UX V3
+// SchichtFunk Dienstplan UX V3
 (function(){
   function setupPoolToggle(){
     const view=document.getElementById('view-schedule');

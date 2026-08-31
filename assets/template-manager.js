@@ -1,6 +1,10 @@
 (()=>{
-  const K='shiftpilot_templates_v1';
-  const PK='shiftpilot_shift_template_prefs_v2';
+  const K='schichtfunk_templates_v1';
+  const PK='schichtfunk_shift_template_prefs_v2';
+  const LEGACY_K='shiftpilot_templates_v1';
+  const LEGACY_PK='shiftpilot_shift_template_prefs_v2';
+  if(localStorage.getItem(K)===null&&localStorage.getItem(LEGACY_K)!==null)localStorage.setItem(K,localStorage.getItem(LEGACY_K));
+  if(localStorage.getItem(PK)===null&&localStorage.getItem(LEGACY_PK)!==null)localStorage.setItem(PK,localStorage.getItem(LEGACY_PK));
   let mode='shift',editId=null,standardEditId=null;
   const read=()=>{try{return JSON.parse(localStorage.getItem(K)||'[]')}catch{return[]}};
   const write=v=>localStorage.setItem(K,JSON.stringify(v));

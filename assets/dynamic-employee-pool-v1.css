@@ -1,4 +1,4 @@
-/* ShiftPilot – Dynamischer Mitarbeiter-Pool V1 */
+/* SchichtFunk – Dynamischer Mitarbeiter-Pool V1 */
 #view-schedule .sp-dynpool-info{display:flex;align-items:center;gap:8px;margin-left:auto;order:2}
 #view-schedule .sp-dynpool-info+.employee-pool-head input,#view-schedule .employee-pool-head input{order:3}
 #view-schedule .sp-dynpool-count{font-size:12px;color:#8fa8c0;white-space:nowrap}

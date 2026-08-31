@@ -1,4 +1,4 @@
-// ShiftPilot Mitarbeiter Core UX V1
+// SchichtFunk Mitarbeiter Core UX V1
 (function(){
   const DAYS_SHORT=['Mo','Di','Mi','Do','Fr','Sa','So'];
   const allDays=[0,1,2,3,4,5,6];

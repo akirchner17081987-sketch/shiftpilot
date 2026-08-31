@@ -22,7 +22,7 @@
     return{start:s.getTime()+sm*60000,end:e.getTime()+em*60000+(s.getTime()===e.getTime()&&em<=sm?DAY:0)};
   };
   C.roleAllows=(emp,type)=>String(type).toLowerCase()!=='teamleiter'||/teamleiter|schichtleiter/i.test(emp?.role||'');
-  C.otAllowed=date=>window.SchichtFunkScheduleCore?.isOTDay?!!window.SchichtFunkScheduleCore.isOTDay(date):(typeof shiftPilotOtApplies==='function'?!!shiftPilotOtApplies(date):[0,6].includes(C.parseDate(date)?.getDay()));
+  C.otAllowed=date=>window.SchichtFunkScheduleCore?.isOTDay?!!window.SchichtFunkScheduleCore.isOTDay(date):(typeof schichtFunkOtApplies==='function'?!!schichtFunkOtApplies(date):[0,6].includes(C.parseDate(date)?.getDay()));
   C.weekHours=(empId,date,ignoreId)=>{
     const m=C.monday(date);if(!m)return 0;const end=new Date(m);end.setDate(end.getDate()+7);
     return assignments.filter(a=>a.employeeId===empId&&a.id!==ignoreId).reduce((n,a)=>{const iv=C.shiftInterval(a);return !iv||iv.start<m.getTime()||iv.start>=end.getTime()?n:n+(iv.end-iv.start)/HOUR},0);

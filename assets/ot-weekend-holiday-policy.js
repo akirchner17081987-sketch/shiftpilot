@@ -1,4 +1,4 @@
-// ShiftPilot: OT zählt nur Samstag, Sonntag und Berliner gesetzliche Feiertage.
+// SchichtFunk: OT zählt nur Samstag, Sonntag und Berliner gesetzliche Feiertage.
 (function(){
   function pad(n){return String(n).padStart(2,'0')}
   function isoDate(d){return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`}
@@ -38,7 +38,7 @@
     if(weekday===0||weekday===6)return true;
     return berlinHolidaySet(d.getFullYear()).has(isoDate(d));
   }
-  window.shiftPilotOtApplies=otApplies;
+  window.schichtFunkOtApplies=otApplies;
 
   function installPolicy(){
     if(typeof window.getSoll!=='function'||window.getSoll.__otPolicy)return false;

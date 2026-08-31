@@ -1,4 +1,4 @@
-// ShiftPilot SOLL/IST Summary V5
+// SchichtFunk SOLL/IST Summary V5
 (function(){
   function esc(s){return String(s??'').replace(/[&<>'\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','\"':'&quot;'}[c]))}
   function line(t,date){

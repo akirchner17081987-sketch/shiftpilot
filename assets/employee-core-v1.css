@@ -1,4 +1,4 @@
-/* ShiftPilot Mitarbeiter Core UX V1 */
+/* SchichtFunk Mitarbeiter Core UX V1 */
 #view-employees .sp-employee-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 14px}
 #view-employees .sp-employee-stat{background:#0f1c2d;border:1px solid #21334a;border-radius:11px;padding:12px 13px;display:flex;align-items:center;gap:10px}
 #view-employees .sp-employee-stat i{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:#12382f;color:#70e6be;font-style:normal;font-weight:800}

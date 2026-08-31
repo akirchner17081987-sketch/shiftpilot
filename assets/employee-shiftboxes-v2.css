@@ -1,4 +1,4 @@
-/* ShiftPilot Mitarbeiter – Schichtfreigaben einheitlich groß */
+/* SchichtFunk Mitarbeiter – Schichtfreigaben einheitlich groß */
 #view-employees #shiftChecks{
   display:grid;
   grid-template-columns:repeat(7,minmax(78px,1fr));

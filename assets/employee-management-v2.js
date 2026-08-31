@@ -1,4 +1,4 @@
-// ShiftPilot – integrierte Mitarbeiterverwaltung V2
+// SchichtFunk – integrierte Mitarbeiterverwaltung V2
 (function(){
   if(window.__employeeManagementV2)return;window.__employeeManagementV2=true;
   const Q=['O1','O2','O3','OT1','OT2','OT','Teamleiter'];
