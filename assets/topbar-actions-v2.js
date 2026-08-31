@@ -10,6 +10,8 @@
       .topbar .top-actions>.iconbtn{width:40px;padding:0;font-size:15px}
       .topbar .top-actions>.sp-legacy-action{display:none!important}
       .topbar #sfCloudState{height:40px;padding:0 12px!important;border-radius:10px!important;letter-spacing:.01em}
+      .topbar #sfCloudState.sp-cloud-passive{cursor:default;pointer-events:none;box-shadow:inset 0 0 0 1px rgba(83,224,188,.04)}
+      .topbar #sfCloudState.sp-cloud-passive:hover{background:#0d2b25!important;color:#74e8ca!important}
       .topbar #newTemplateBtn{height:40px;padding:0 15px;margin-left:3px;box-shadow:0 5px 16px rgba(39,215,184,.12)}
       .sp-topbar-logout{height:40px!important;padding:0 13px!important;gap:7px;border:1px solid #55313d!important;background:#1d1722!important;color:#ff9aaa!important;font-size:12px;font-weight:800}
       .sp-topbar-logout:hover{border-color:#874151!important;background:#301923!important;color:#ffc1c9!important}
@@ -30,6 +32,9 @@
     const legacy=[...host.children].filter(x=>x.matches?.('.iconbtn'));
     if(legacy[0]){legacy[0].setAttribute('aria-label','Hilfe');legacy[0].title='Hilfe'}
     if(legacy[1]){legacy[1].classList.add('sp-legacy-action');legacy[1].setAttribute('aria-hidden','true');legacy[1].tabIndex=-1}
+    const cloud=document.getElementById('sfCloudState');
+    if(cloud&&B.ready){if(cloud.textContent!=='✓ Cloud verbunden')cloud.textContent='✓ Cloud verbunden';cloud.classList.add('sp-cloud-passive');cloud.setAttribute('role','status');cloud.setAttribute('aria-label','Cloud verbunden und synchronisiert');cloud.title='Cloud verbunden · Daten werden synchronisiert';cloud.tabIndex=-1;cloud.onclick=e=>{e.preventDefault();e.stopPropagation()}}
+    else if(cloud){cloud.classList.remove('sp-cloud-passive');cloud.removeAttribute('role');cloud.title='Mit der ShiftPilot Cloud anmelden';cloud.tabIndex=0}
     let btn=document.getElementById('spTopbarLogout');
     if(!btn){btn=document.createElement('button');btn.id='spTopbarLogout';btn.type='button';btn.className='ghost sp-topbar-logout';btn.innerHTML='<i>↪</i><span>Abmelden</span>';btn.title='Sicher abmelden';btn.setAttribute('aria-label','Abmelden');host.appendChild(btn);btn.onclick=async()=>{if(btn.disabled||!B.ready||!B.client)return;if(!confirm(`ShiftPilot Cloud\n${B.user?.email||''}\n\nJetzt sicher abmelden?`))return;btn.disabled=true;btn.innerHTML='<i>◌</i><span>Wird abgemeldet …</span>';try{B.showLoading?.('Sichere Abmeldung läuft …');const {error}=await B.client.auth.signOut();if(error)throw error}catch(e){B.hideLoading?.();btn.disabled=false;btn.innerHTML='<i>↪</i><span>Abmelden</span>';alert('Abmelden fehlgeschlagen: '+(e?.message||String(e)))}}}
     btn.style.display=B.ready?'inline-flex':'none';
