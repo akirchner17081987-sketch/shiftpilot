@@ -154,7 +154,8 @@ test('disruption workflow is tenant-isolated and resolves the first acceptance a
 test('employee portal uses a categorized workspace with company header and right navigation', () => {
   assert.match(moduleLoader, /assets\/employee-portal-workspace-v2\.js/);
   assert.match(employeePortalLayout, /sf-employee-side/);
-  assert.match(employeePortalLayout, /right:0;top:0;bottom:0/);
+  assert.match(employeePortalLayout, /sf-employee-side\{position:absolute;z-index:10;left:0;top:0;bottom:0/);
+  assert.match(employeePortalLayout, /sf-portal-main\{position:absolute;left:var\(--sf-employee-nav\);right:0/);
   assert.match(employeePortalLayout, /d\.company\?\.name/);
   assert.match(employeePortalLayout, /MITARBEITERPORTAL ·/);
   assert.match(employeePortalLayout, /data-sf-employee-view/);

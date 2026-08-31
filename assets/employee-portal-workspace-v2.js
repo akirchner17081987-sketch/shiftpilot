@@ -19,15 +19,15 @@
     if(document.getElementById('sfEmployeePortalWorkspaceV2'))return;
     const s=document.createElement('style');s.id='sfEmployeePortalWorkspaceV2';s.textContent=`
       #sfEmployeePortal{--sf-employee-nav:286px;--sf-employee-head:88px;overflow:hidden;background:#07111d}
-      #sfEmployeePortal .sf-portal-top{position:absolute;z-index:8;left:0;right:var(--sf-employee-nav);top:0;height:var(--sf-employee-head);padding:0 30px;border-bottom:1px solid #21384f;background:linear-gradient(110deg,#0d1d2d,#0a1725);box-shadow:0 8px 28px #02081155}
+      #sfEmployeePortal .sf-portal-top{position:absolute;z-index:8;left:var(--sf-employee-nav);right:0;top:0;height:var(--sf-employee-head);padding:0 30px;border-bottom:1px solid #21384f;background:linear-gradient(110deg,#0d1d2d,#0a1725);box-shadow:0 8px 28px #02081155}
       #sfEmployeePortal .sf-portal-logo{width:48px;height:48px;border-radius:14px;background:linear-gradient(145deg,#2dd7b7,#159a83);color:#03251f;display:grid;place-items:center;font-size:15px;font-weight:1000;letter-spacing:.04em;box-shadow:0 8px 24px #28d7b53b}
       #sfEmployeePortal .sf-portal-brand b{display:block;font-size:17px;letter-spacing:.01em;color:#f4f9ff}
       #sfEmployeePortal .sf-portal-brand small{display:block;margin-top:3px;color:#8ea5ba;font-size:11px}
       #sfEmployeePortal .sf-company-context{display:flex;align-items:center;gap:9px;margin-left:18px;padding-left:18px;border-left:1px solid #274057;color:#9cb2c6;font-size:11px}
       #sfEmployeePortal .sf-company-context i{width:8px;height:8px;border-radius:50%;background:#2bd6b4;box-shadow:0 0 0 5px #2bd6b41a}
       #sfEmployeePortal .sf-portal-top .ghost{border-color:#29445d;background:#0a1928;color:#c8d8e7;min-height:40px;padding:0 15px}
-      #sfEmployeePortal .sf-portal-main{position:absolute;left:0;right:var(--sf-employee-nav);top:var(--sf-employee-head);bottom:0;max-width:none;margin:0;padding:30px clamp(22px,3vw,52px) 48px;overflow:auto;scrollbar-gutter:stable}
-      #sfEmployeePortal .sf-employee-side{position:absolute;z-index:10;right:0;top:0;bottom:0;width:var(--sf-employee-nav);display:flex;flex-direction:column;background:#0a1725;border-left:1px solid #22394f;box-shadow:-16px 0 36px #02081138}
+      #sfEmployeePortal .sf-portal-main{position:absolute;left:var(--sf-employee-nav);right:0;top:var(--sf-employee-head);bottom:0;max-width:none;margin:0;padding:30px clamp(22px,3vw,52px) 48px;overflow:auto;scrollbar-gutter:stable}
+      #sfEmployeePortal .sf-employee-side{position:absolute;z-index:10;left:0;top:0;bottom:0;width:var(--sf-employee-nav);display:flex;flex-direction:column;background:#0a1725;border-right:1px solid #22394f;box-shadow:16px 0 36px #02081138}
       #sfEmployeePortal .sf-employee-side-head{min-height:88px;padding:17px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #20364b}
       #sfEmployeePortal .sf-employee-avatar{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;background:#123b36;color:#72ead1;font-weight:1000}
       #sfEmployeePortal .sf-employee-side-head b,#sfEmployeePortal .sf-employee-side-head small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -82,7 +82,7 @@
       @media(max-width:1100px){#sfEmployeePortal{--sf-employee-nav:246px}#sfEmployeePortal .sf-employee-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
       @media(max-width:820px){
         #sfEmployeePortal{--sf-employee-head:76px;overflow:hidden}
-        #sfEmployeePortal .sf-portal-top{position:absolute;right:0;height:var(--sf-employee-head);padding:0 14px}
+        #sfEmployeePortal .sf-portal-top{position:absolute;left:0;right:0;height:var(--sf-employee-head);padding:0 14px}
         #sfEmployeePortal .sf-company-context{display:none}#sfEmployeePortal .sf-portal-logo{width:42px;height:42px}
         #sfEmployeePortal .sf-employee-side{position:absolute;left:0;right:0;top:var(--sf-employee-head);bottom:auto;width:100%;height:62px;border-left:0;border-bottom:1px solid #22394f;box-shadow:0 12px 26px #02081166}
         #sfEmployeePortal .sf-employee-side-head,#sfEmployeePortal .sf-employee-side-foot,#sfEmployeePortal .sf-employee-nav-group>span{display:none}
