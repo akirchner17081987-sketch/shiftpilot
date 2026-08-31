@@ -31,7 +31,7 @@
     css();
     const box=document.createElement('div');
     box.className='sf-prm-banner';
-    box.innerHTML='<span class="sf-prm-icon">🔔</span><span class="sf-prm-copy"><b>Automatische Erinnerungen aktiv</b><span>Tägliche serverseitige Prüfung · Meldungen nur für OWNER/ADMIN · je Friststufe nur einmal</span></span><span class="sf-prm-chips"><span class="sf-prm-chip">90 Tage</span><span class="sf-prm-chip">60</span><span class="sf-prm-chip">30</span><span class="sf-prm-chip">14</span><span class="sf-prm-chip">7</span><span class="sf-prm-chip">1</span><span class="sf-prm-chip">Ablauf</span></span>';
+    box.innerHTML='<span class="sf-prm-icon">🔔</span><span class="sf-prm-copy"><b>Automatische Erinnerungen aktiv</b><span>Tägliche serverseitige Prüfung · Meldungen nur für Führungskräfte und Administratoren · je Friststufe nur einmal</span></span><span class="sf-prm-chips"><span class="sf-prm-chip">90 Tage</span><span class="sf-prm-chip">60</span><span class="sf-prm-chip">30</span><span class="sf-prm-chip">14</span><span class="sf-prm-chip">7</span><span class="sf-prm-chip">1</span><span class="sf-prm-chip">Ablauf</span></span>';
     body.insertBefore(box,body.firstChild);
   }
 
