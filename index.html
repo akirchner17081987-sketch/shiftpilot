@@ -260,7 +260,17 @@ document.getElementById('globalSearch').addEventListener('input',e=>{const q=e.t
 
 function openApp(view='overview'){const landing=document.getElementById('landingPage'),app=document.getElementById('appShell');if(landing)landing.style.display='none';if(app)app.style.display='grid';switchView(view);window.scrollTo({top:0,behavior:'instant'});history.replaceState(null,'','#app')}
 function openLanding(){const landing=document.getElementById('landingPage'),app=document.getElementById('appShell');if(app)app.style.display='none';if(landing)landing.style.display='block';history.replaceState(null,'','#home');window.scrollTo({top:0,behavior:'instant'})}
-window.addEventListener('load',()=>{if(location.hash==='#app')openApp('overview')})
+window.addEventListener('load',()=>{
+  if(location.hash!=='#app')return;
+  let view='overview';
+  try{
+    const direct=sessionStorage.getItem('sf_active_view_v1');
+    const workspace=JSON.parse(sessionStorage.getItem('sf_workspace_state_v2')||'{}')||{};
+    const saved=direct||workspace.view;
+    if(saved&&document.getElementById('view-'+saved))view=saved;
+  }catch{}
+  openApp(view);
+})
 
 renderLibrary();renderPlanEmployeePool();renderCalendar();renderEmployees();renderTimeTracking();renderShiftChecks([]);renderQualificationChecks([]);renderEmployeeSummary(null);renderEmployeeAbsences();renderAbsenceDashboard();renderSettings();renderOverview();if(selectedEmployeeId)selectEmployee(selectedEmployeeId);
 
