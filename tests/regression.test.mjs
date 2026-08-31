@@ -16,6 +16,9 @@ const securityHardening = read('database/security_hardening_v1.sql');
 const mobileCss = read('assets/mobile-responsive-v1.css');
 const readiness = read('assets/readiness-traffic-light-v1.js');
 const readinessMigration = read('database/shift_readiness_v1.sql');
+const disruption = read('assets/disruption-autopilot-v1.js');
+const disruptionMigration = read('database/disruption_autopilot_v1.sql');
+const notifications = read('assets/supabase-notifications-v1.js');
 
 test('all local scripts and styles referenced by index.html exist', () => {
   const references = [...index.matchAll(/<(?:script|link)\b[^>]+(?:src|href)=["']([^"']+)["']/gi)]
@@ -39,7 +42,7 @@ test('all JavaScript assets pass the Node syntax check', () => {
 
 test('every static sidebar destination has a matching view', () => {
   const destinations = [...index.matchAll(/data-view=["']([^"']+)["']/g)].map(match => match[1]);
-  const dynamicViews = new Set(['marketplace']);
+  const dynamicViews = new Set(['marketplace', 'disruptions']);
   const missing = [...new Set(destinations)]
     .filter(view => !dynamicViews.has(view))
     .filter(view => !index.includes(`id="view-${view}"`) && !index.includes(`id='view-${view}'`));
@@ -119,4 +122,29 @@ test('shift confirmations are protected by least-privilege RLS', () => {
   assert.match(readinessMigration, /for update[\s\S]*using \([\s\S]*with check \(/i);
   assert.match(readinessMigration, /e\.auth_user_id = \(select auth\.uid\(\)\)/i);
   assert.match(readinessMigration, /sa\.status = 'PUBLISHED'/i);
+});
+
+test('disruption autopilot ranks candidates and provides manager and employee workflows', () => {
+  assert.match(index, /assets\/disruption-autopilot-v1\.js/);
+  assert.match(disruption, /Störfall-Autopilot/);
+  assert.match(disruption, /manager_list_disruption_candidates/);
+  assert.match(disruption, /manager_send_disruption_offers/);
+  assert.match(disruption, /employee_respond_disruption_offer/);
+  assert.match(disruption, /Top 3 anfragen/);
+  assert.match(disruption, /Schicht verbindlich übernehmen/);
+  assert.match(notifications, /DISRUPTION_OFFER:'⚡'/);
+  assert.match(notifications, /employee-disruptions':'⚡ Dringende Ersatzanfragen'/);
+  assert.match(notifications, /SFDisruptionAutopilot\?\.open/);
+});
+
+test('disruption workflow is tenant-isolated and resolves the first acceptance atomically', () => {
+  assert.match(disruptionMigration, /alter table public\.disruption_incidents enable row level security/i);
+  assert.match(disruptionMigration, /alter table public\.disruption_offers enable row level security/i);
+  assert.match(disruptionMigration, /revoke all on table public\.disruption_incidents, public\.disruption_offers from public, anon, authenticated/i);
+  assert.match(disruptionMigration, /where id=v_pre\.incident_id for update/i);
+  assert.match(disruptionMigration, /where id=v_incident\.assignment_id for update/i);
+  assert.match(disruptionMigration, /private\.sf_swap_candidate_reason\(v_assignment\.id,v_employee\.id\)/i);
+  assert.match(disruptionMigration, /update public\.disruption_offers set status='EXPIRED'[\s\S]*id<>v_offer\.id/i);
+  assert.match(disruptionMigration, /public\.apply_shift_change\(v_change_id\)/i);
+  assert.match(disruptionMigration, /cm\.user_id=v_uid[\s\S]*cm\.status='ACTIVE'[\s\S]*cm\.role in \('OWNER','ADMIN','DISPATCHER','PLANNER'\)/i);
 });
