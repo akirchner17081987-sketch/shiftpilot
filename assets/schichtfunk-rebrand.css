@@ -3,3 +3,53 @@
 .landing-logo.schichtfunk-brand-logo{width:min(360px,62vw)!important;max-height:100px!important;object-position:left center!important}
 .brand.home-link{padding-top:0!important;padding-bottom:14px!important}
 @media(max-width:700px){.landing-logo.schichtfunk-brand-logo{width:250px!important;max-width:72vw!important}}
+
+/* Moderne SchichtFunk Startseite */
+#landingPage{position:relative;overflow:hidden;background:radial-gradient(circle at 74% 13%,rgba(30,211,201,.13),transparent 27%),radial-gradient(circle at 92% 38%,rgba(45,113,255,.11),transparent 28%),linear-gradient(180deg,#030a11 0%,#06121d 64%,#08131e 100%)!important;color:#eff8ff}
+#landingPage:before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.22;background-image:linear-gradient(rgba(94,168,190,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(94,168,190,.035) 1px,transparent 1px);background-size:44px 44px;mask-image:linear-gradient(to bottom,#000,transparent 64%)}
+.landing-nav{height:82px!important;padding:9px clamp(24px,5vw,76px)!important;gap:28px!important;border-bottom:1px solid rgba(100,174,198,.13)!important;background:rgba(3,10,17,.76)!important;backdrop-filter:blur(22px) saturate(145%)!important;box-shadow:0 12px 35px rgba(0,0,0,.14)}
+.landing-nav>a{height:60px}
+.landing-logo.schichtfunk-brand-logo{width:250px!important;max-width:29vw!important;max-height:60px!important;filter:drop-shadow(0 6px 18px rgba(22,214,201,.11))}
+.landing-links{gap:9px!important}
+.landing-links a{position:relative;padding:10px 12px;border-radius:8px;color:#a9bdce!important;font-size:13px!important;font-weight:700!important;transition:color .18s ease,background .18s ease}
+.landing-links a:hover{color:#effffc!important;background:rgba(39,214,180,.07)}
+.landing-links a:after{content:"";position:absolute;left:12px;right:12px;bottom:4px;height:2px;border-radius:99px;background:#2cdabb;transform:scaleX(0);transition:transform .18s ease}
+.landing-links a:hover:after{transform:scaleX(1)}
+.landing-actions{gap:9px!important}
+.landing-btn{min-height:44px;padding:0 18px!important;border:1px solid #29445b!important;border-radius:10px!important;background:rgba(11,26,40,.78)!important;color:#dceaf5!important;box-shadow:none!important;transition:transform .18s ease,border-color .18s ease,background .18s ease,box-shadow .18s ease}
+.landing-btn:hover{transform:translateY(-2px);border-color:#3f657e!important;background:#102438!important}
+.landing-btn.primary{border-color:transparent!important;background:linear-gradient(135deg,#2bdabd 0%,#18bfc6 46%,#278cf2 100%)!important;color:#031e20!important;box-shadow:0 11px 30px rgba(22,190,197,.20)!important}
+.landing-btn.primary:hover{box-shadow:0 15px 36px rgba(27,199,199,.30)!important}
+.landing-hero{position:relative;z-index:1;max-width:1480px!important;min-height:calc(100vh - 82px);grid-template-columns:minmax(430px,.88fr) minmax(600px,1.12fr)!important;gap:clamp(42px,5vw,82px)!important;padding:clamp(54px,6vw,88px) clamp(28px,5vw,74px) 76px!important}
+.hero-copy{max-width:650px}
+.hero-kicker{padding:8px 13px!important;border-color:rgba(55,222,202,.28)!important;background:rgba(25,196,180,.07)!important;color:#63e8d4!important;font-size:10px!important;letter-spacing:.14em!important;box-shadow:inset 0 0 20px rgba(37,209,190,.025)}
+.hero-copy h1{max-width:640px;margin:20px 0 18px!important;font-size:clamp(48px,4.8vw,72px)!important;line-height:1.035!important;letter-spacing:-.048em!important;text-wrap:balance}
+.hero-copy h1 span{background:linear-gradient(90deg,#43e7cd 0%,#27c7d1 46%,#4b9cff 100%)!important;-webkit-background-clip:text!important;background-clip:text!important}
+.hero-copy>p{max-width:590px!important;margin:0!important;color:#9db2c5!important;font-size:17px!important;line-height:1.75!important}
+.hero-buttons{margin:25px 0 27px!important}
+.hero-buttons .landing-btn{min-height:48px;padding-inline:20px!important}
+.hero-points{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px 14px!important;margin-top:0!important}
+.hero-point{padding:10px 11px;border:1px solid rgba(48,80,104,.38);border-radius:11px;background:rgba(8,22,34,.45);color:#c9d8e4!important;transition:border-color .18s ease,background .18s ease}
+.hero-point:hover{border-color:rgba(50,209,183,.24);background:rgba(12,35,45,.66)}
+.hero-point i{width:30px!important;height:30px!important;border-color:rgba(48,214,191,.20)!important;background:rgba(20,99,94,.23)!important;color:#55e2ca!important}
+.hero-point b{font-size:12px}.hero-point small{font-size:10px!important;color:#7891a5!important}
+.hero-preview{align-self:center;filter:drop-shadow(0 35px 55px rgba(0,0,0,.28))}
+.preview-glow{inset:10% 5% 5% 10%!important;filter:blur(70px)!important;background:linear-gradient(130deg,rgba(0,220,208,.16),rgba(57,121,255,.13))!important}
+.preview-shell{padding:11px!important;border-radius:19px!important;border-color:rgba(53,130,153,.36)!important;background:linear-gradient(145deg,rgba(13,35,49,.97),rgba(5,17,28,.98))!important;box-shadow:0 35px 90px rgba(0,0,0,.48),0 0 0 1px rgba(89,214,212,.035) inset!important;transform:perspective(1500px) rotateY(-1.2deg) rotateX(.5deg)!important}
+.preview-window{border-radius:12px!important}.preview-top{height:51px!important;padding-inline:14px!important}.preview-top img{width:150px!important;height:40px!important}.preview-body{grid-template-columns:136px 1fr!important;min-height:430px!important}.preview-side{padding:15px 10px!important}.preview-menu span{padding:8px 9px!important}.preview-main{padding:16px!important}.preview-stats{gap:7px!important}.preview-stat{padding:10px!important}.preview-card{min-height:148px!important;padding:11px!important}
+.landing-features{position:relative;z-index:1;padding:84px clamp(28px,5vw,74px) 94px!important;border-top:1px solid rgba(77,137,161,.15);background:radial-gradient(circle at 14% 12%,rgba(38,205,190,.075),transparent 24%),linear-gradient(180deg,#081521,#07121c)!important;color:#edf7ff!important}
+.features-wrap{max-width:1340px!important}
+.features-head{grid-template-columns:minmax(390px,.85fr) minmax(420px,1.15fr)!important;gap:70px!important;align-items:center!important;margin-bottom:38px!important}
+.features-head .ey{color:#48dbc6!important;font-size:10px!important;letter-spacing:.16em!important}
+.features-head h2{margin-top:10px!important;font-size:clamp(35px,3.3vw,48px)!important;letter-spacing:-.035em;line-height:1.08!important}.features-head h2 span{color:#35d9c1!important}
+.features-head p{max-width:620px!important;margin:0;color:#91a8bb!important;font-size:15px;line-height:1.75!important}
+.feature-grid{display:grid!important;grid-template-columns:repeat(12,1fr)!important;gap:14px!important}
+.feature-card{position:relative;grid-column:span 4;min-height:210px;padding:22px!important;overflow:hidden;border:1px solid #1d394e!important;border-radius:15px!important;background:linear-gradient(145deg,rgba(14,31,46,.96),rgba(9,23,36,.96))!important;box-shadow:0 18px 42px rgba(0,0,0,.16)!important;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
+.feature-card:nth-child(4),.feature-card:nth-child(5){grid-column:span 6;min-height:190px}
+.feature-card:after{content:"";position:absolute;width:120px;height:120px;right:-55px;bottom:-65px;border-radius:50%;background:rgba(37,214,180,.055);filter:blur(2px)}
+.feature-card:hover{transform:translateY(-4px);border-color:#2a5d68!important;box-shadow:0 24px 55px rgba(0,0,0,.24)!important}
+.feature-icon{width:43px!important;height:43px!important;margin-bottom:22px!important;border:1px solid rgba(51,218,192,.15);border-radius:11px!important;background:rgba(25,159,151,.12)!important;color:#55e0cb!important}
+.feature-card h3{font-size:16px!important;color:#edf7ff;margin-bottom:9px!important}.feature-card p{max-width:320px;color:#8fa6b9!important;font-size:12.5px!important;line-height:1.65!important}
+.landing-footer{position:relative;z-index:1;padding:25px!important;border-top:1px solid rgba(64,111,137,.16);background:#050e17!important;color:#6f879a!important}
+@media(max-width:1180px){.landing-hero{min-height:auto;grid-template-columns:1fr!important;padding-top:58px!important}.hero-copy{max-width:760px}.hero-copy h1{max-width:720px}.hero-preview{max-width:980px!important}.features-head{grid-template-columns:1fr!important;gap:18px!important}.feature-card{grid-column:span 6}.feature-card:nth-child(5){grid-column:1/-1}.landing-links{display:none!important}}
+@media(max-width:760px){.landing-nav{height:72px!important;padding:7px 16px!important;flex-wrap:nowrap!important}.landing-nav>a{height:52px}.landing-logo.schichtfunk-brand-logo{width:190px!important;max-width:52vw!important}.landing-actions .landing-btn:first-child{display:none}.landing-actions .landing-btn.primary{min-height:40px;padding-inline:12px!important;font-size:11px}.landing-hero{padding:42px 18px 54px!important;gap:38px!important}.hero-copy h1{font-size:clamp(40px,12vw,55px)!important}.hero-copy>p{font-size:15px!important}.hero-buttons{display:grid!important;grid-template-columns:1fr!important}.hero-points{grid-template-columns:1fr!important}.preview-shell{padding:7px!important;transform:none!important}.preview-top span{display:none}.preview-body{grid-template-columns:1fr!important;min-height:390px!important}.preview-side{display:none!important}.preview-stats{grid-template-columns:repeat(2,1fr)!important}.preview-row{grid-template-columns:1fr!important}.preview-row .preview-card:last-child{display:none}.landing-features{padding:60px 18px 68px!important}.features-head h2{font-size:36px!important}.feature-grid{grid-template-columns:1fr!important}.feature-card,.feature-card:nth-child(4),.feature-card:nth-child(5){grid-column:1!important;min-height:auto}.feature-card{padding:20px!important}}
