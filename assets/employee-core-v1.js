@@ -46,7 +46,8 @@
       if(note)form.insertBefore(wrap,note);else form.appendChild(wrap);
       wrap.querySelector('#spAvailAll').onclick=()=>renderAvailability(allDays);
     }
-    if(!wrap.querySelector('#spAvailabilityDays').children.length)renderAvailability(allDays);
+    const box=wrap.querySelector('#spAvailabilityDays');
+    if(box&&!box.children.length)box.innerHTML=DAYS_SHORT.map((d,i)=>`<label class="sp-day-check"><input type="checkbox" value="${i}" checked>${d}</label>`).join('');
   }
 
   function renderAvailability(selected=allDays){
