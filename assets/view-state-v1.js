@@ -34,7 +34,11 @@
   }
 
   function stored(){
-    try{return normalize(sessionStorage.getItem(KEY)||'')}catch{return ''}
+    try{
+      const direct=sessionStorage.getItem(KEY);
+      const workspace=JSON.parse(sessionStorage.getItem('sf_workspace_state_v2')||'{}')||{};
+      return normalize(direct||workspace.view||'');
+    }catch{return ''}
   }
 
   // Jede Navigation sofort merken. Der Capture-Handler läuft vor den bestehenden Klick-Handlern.
@@ -88,6 +92,11 @@
   window.addEventListener('pagehide',snapshot);
   window.addEventListener('pageshow',()=>setTimeout(restore,100));
 
-  // Bestehende Ansicht übernehmen, ohne bei einem normalen Seitenaufruf die Navigation zu verändern.
-  setTimeout(snapshot,0);
+  // Beim ersten Laden darf die im HTML voreingestellte Dienstplan-Ansicht einen
+  // bereits gesicherten Bereich nicht überschreiben.
+  const initial=stored();
+  if(isValid(initial)){
+    const B=window.SFBackend;
+    if(B)B.pendingView=initial;
+  }else setTimeout(snapshot,0);
 })();
