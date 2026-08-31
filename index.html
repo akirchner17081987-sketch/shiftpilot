@@ -253,7 +253,7 @@ function saveGeneralShiftTimes(){TYPES.forEach(t=>{const st=document.querySelect
 function saveSoll(){document.querySelectorAll('[data-soll]').forEach(i=>globalSoll[i.dataset.soll]=Number(i.value||0));saveAll();renderLibrary();renderCalendar();showSaveToast('Einstellungen gespeichert','Die globalen SOLL-Stärken wurden erfolgreich übernommen.')}
 function saveDailySoll(){dailySoll={...dailySoll};document.querySelectorAll('[data-day][data-type]').forEach(i=>{const d=i.dataset.day,t=i.dataset.type;if(!dailySoll[d])dailySoll[d]={};if(i.value==='')delete dailySoll[d][t];else dailySoll[d][t]=Number(i.value)});saveAll();renderCalendar();showSaveToast('Tageswerte gespeichert','Die individuellen SOLL-Stärken für die Wochentage wurden übernommen.')}
 function renderOverview(){const active=employees.filter(e=>e.status==='active').length;const dates=currentWeekDates().map(iso);const planned=assignments.filter(a=>dates.includes(a.date)).length;const absentCount=absences.filter(a=>dates.includes(a.date)).length;document.getElementById('overviewStats').innerHTML=`<div class="stat"><div class="stat-icon">♧</div><div><small>Aktive Mitarbeiter</small><strong>${active}</strong><em>verfügbar</em></div></div><div class="stat"><div class="stat-icon">▣</div><div><small>Besetzungen</small><strong>${planned}</strong><em>diese Woche</em></div></div><div class="stat"><div class="stat-icon">△</div><div><small>Abwesenheiten</small><strong>${absentCount}</strong><em>in dieser Woche</em></div></div><div class="stat"><div class="stat-icon">◉</div><div><small>Vorlagen</small><strong>7</strong><em>aktiv</em></div></div>`;document.getElementById('reportStats').innerHTML=document.getElementById('overviewStats').innerHTML}
-function switchView(name){const appMain=document.querySelector('.main');if(appMain)appMain.scrollTop=0;document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById('view-'+name)?.classList.add('active');document.querySelectorAll('#nav button,.side-bottom button').forEach(b=>b.classList.toggle('active',b.dataset.view===name));if(name==='schedule'){if(typeof renderLibrary==='function')renderLibrary();if(typeof renderCalendar==='function')renderCalendar();if(typeof renderPlanEmployeePool==='function')renderPlanEmployeePool();}if(name==='employees'){renderEmployees();if(selectedEmployeeId)selectEmployee(selectedEmployeeId)}if(name==='time')renderTimeTracking();if(name==='absence')renderAbsenceDashboard();if(name==='auto')renderAutoPlanning();if(name==='settings')renderSettings();if(name==='overview')renderOverview();if(name==='reports')renderReports()}
+function switchView(name){const appMain=document.querySelector('.main');if(appMain)appMain.scrollTop=0;window.scrollTo(0,0);document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById('view-'+name)?.classList.add('active');document.querySelectorAll('#nav button,.side-bottom button').forEach(b=>b.classList.toggle('active',b.dataset.view===name));if(name==='schedule'){if(typeof renderLibrary==='function')renderLibrary();if(typeof renderCalendar==='function')renderCalendar();if(typeof renderPlanEmployeePool==='function')renderPlanEmployeePool();}if(name==='employees'){renderEmployees();if(selectedEmployeeId)selectEmployee(selectedEmployeeId)}if(name==='time')renderTimeTracking();if(name==='absence')renderAbsenceDashboard();if(name==='auto')renderAutoPlanning();if(name==='settings')renderSettings();if(name==='overview')renderOverview();if(name==='reports')renderReports()}
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.view)));
 document.getElementById('prevWeek').onclick=()=>{weekStart=addDays(weekStart,-7);renderCalendar();renderSettings()};document.getElementById('nextWeek').onclick=()=>{weekStart=addDays(weekStart,7);renderCalendar();renderSettings()};document.getElementById('todayBtn').onclick=()=>{weekStart=currentMonday();renderCalendar();renderSettings()};document.getElementById('empSearch').addEventListener('input',renderEmployees);document.getElementById('empFilter').addEventListener('change',renderEmployees);document.getElementById('saveEmployeeBtn').onclick=saveEmployee;document.getElementById('deleteEmployeeBtn').onclick=deleteEmployee;document.getElementById('addEmployeeBtn').onclick=clearEmployeeForm;document.getElementById('addEmployeeAbsenceBtn').onclick=addAbsenceForSelected;document.getElementById('autoPlanBtn').onclick=runAutoPlan;document.getElementById('newTemplateBtn').onclick=()=>alert('Die sieben Schichtvorlagen sind bereits angelegt. Eigene Vorlagen werden als nächster Schritt ergänzt.');
 document.getElementById('planEmployeeSearch')?.addEventListener('input',renderPlanEmployeePool);
@@ -681,7 +681,8 @@ table th,table td{font-size:13px;line-height:1.35}
     const target=VIEW[name]||name;
     if(typeof switchView==='function')switchView(target);
     const main=document.querySelector('.main');
-    if(main)main.scrollTo({top:0,behavior:'instant'}); else window.scrollTo({top:0,behavior:'instant'});
+    if(main)main.scrollTo({top:0,behavior:'instant'});
+    window.scrollTo({top:0,behavior:'instant'});
   };
 
   function emptyState(id,text){
@@ -891,7 +892,8 @@ table th,table td{font-size:13px;line-height:1.35}
     const target=VIEW[name]||name;
     if(typeof switchView==='function')switchView(target);
     const main=document.querySelector('.main');
-    if(main)main.scrollTo({top:0,behavior:'instant'}); else window.scrollTo({top:0,behavior:'instant'});
+    if(main)main.scrollTo({top:0,behavior:'instant'});
+    window.scrollTo({top:0,behavior:'instant'});
   };
 
   function emptyState(id,text){
