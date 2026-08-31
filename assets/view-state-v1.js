@@ -22,7 +22,12 @@
   function remember(name){
     const target=normalize(name);
     if(!isValid(target))return target;
-    try{sessionStorage.setItem(KEY,target)}catch{}
+    try{
+      sessionStorage.setItem(KEY,target);
+      const workspace=JSON.parse(sessionStorage.getItem('sf_workspace_state_v2')||'{}')||{};
+      workspace.view=target;workspace.savedAt=Date.now();
+      sessionStorage.setItem('sf_workspace_state_v2',JSON.stringify(workspace));
+    }catch{}
     const B=window.SFBackend;
     if(B)B.pendingView=target;
     return target;
