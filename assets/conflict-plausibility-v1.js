@@ -70,6 +70,7 @@
     'assets/team-admin-v1.js',
     'assets/settings-management-v2.js',
     'assets/dashboard-final-v1.js',
+    'assets/reports-final-v1.js',
     'assets/schedule-final-v1.js',
     'assets/absence-management-v3.js',
     'assets/time-workspace-v2.js',
