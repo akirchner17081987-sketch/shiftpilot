@@ -19,7 +19,8 @@ const readinessMigration = read('database/shift_readiness_v1.sql');
 const disruption = read('assets/disruption-autopilot-v1.js');
 const disruptionMigration = read('database/disruption_autopilot_v1.sql');
 const notifications = read('assets/supabase-notifications-v1.js');
-const employeePortalLayout = read('assets/employee-portal-vertical-layout-v1.js');
+const employeePortalLayout = read('assets/employee-portal-workspace-v2.js');
+const moduleLoader = read('assets/conflict-plausibility-v1.js');
 
 test('all local scripts and styles referenced by index.html exist', () => {
   const references = [...index.matchAll(/<(?:script|link)\b[^>]+(?:src|href)=["']([^"']+)["']/gi)]
@@ -134,7 +135,7 @@ test('disruption autopilot ranks candidates and provides manager and employee wo
   assert.match(disruption, /Top 3 anfragen/);
   assert.match(disruption, /Schicht verbindlich übernehmen/);
   assert.match(notifications, /DISRUPTION_OFFER:'⚡'/);
-  assert.match(notifications, /employee-disruptions':'⚡ Dringende Ersatzanfragen'/);
+  assert.match(notifications, /employee-disruptions':'disruptions'/);
   assert.match(notifications, /SFDisruptionAutopilot\?\.open/);
 });
 
@@ -150,10 +151,14 @@ test('disruption workflow is tenant-isolated and resolves the first acceptance a
   assert.match(disruptionMigration, /cm\.user_id=v_uid[\s\S]*cm\.status='ACTIVE'[\s\S]*cm\.role in \('OWNER','ADMIN','DISPATCHER','PLANNER'\)/i);
 });
 
-test('employee portal uses a compact responsive three-column layout', () => {
-  assert.match(employeePortalLayout, /grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
-  assert.match(employeePortalLayout, /sf-portal-column-center/);
-  assert.match(employeePortalLayout, /data-sf-portal-section="disruptions"/);
-  assert.match(employeePortalLayout, /max-height:560px;overflow:auto/);
-  assert.match(employeePortalLayout, /@media\(max-width:820px\)[\s\S]*grid-template-columns:1fr/);
+test('employee portal uses a categorized workspace with company header and right navigation', () => {
+  assert.match(moduleLoader, /assets\/employee-portal-workspace-v2\.js/);
+  assert.match(employeePortalLayout, /sf-employee-side/);
+  assert.match(employeePortalLayout, /right:0;top:0;bottom:0/);
+  assert.match(employeePortalLayout, /d\.company\?\.name/);
+  assert.match(employeePortalLayout, /MITARBEITERPORTAL ·/);
+  assert.match(employeePortalLayout, /data-sf-employee-view/);
+  assert.match(employeePortalLayout, /sfEmployeePortalView/);
+  assert.match(employeePortalLayout, /@media\(max-width:820px\)/);
+  assert.match(notifications, /employeePortalNavigate\?\.\(target\)/);
 });

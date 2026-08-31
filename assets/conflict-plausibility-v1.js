@@ -74,7 +74,7 @@
     'assets/schedule-final-v1.js',
     'assets/absence-management-v3.js',
     'assets/time-workspace-v2.js',
-    'assets/employee-portal-vertical-layout-v1.js'
+    'assets/employee-portal-workspace-v2.js'
   ];
   const start=()=>{
     const B=window.SFBackend=window.SFBackend||{};
@@ -84,7 +84,7 @@
   const load=i=>{
     if(i>=files.length){start();return}
     const s=document.createElement('script');
-    s.src=files[i]+'?v=20260831r';
+    s.src=files[i]+'?v=20260831s';
     s.onload=()=>load(i+1);
     s.onerror=()=>{console.error('SchichtFunk-Modul konnte nicht geladen werden:',files[i]);load(i+1)};
     document.body.appendChild(s);
