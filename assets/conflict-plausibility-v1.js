@@ -63,6 +63,7 @@
     'assets/schedule-status-history-v1.js',
     'assets/schedule-toolbar-polish-v1.js',
     'assets/schedule-employee-pool-polish-v1.js',
+    'assets/schedule-readability-v1.js',
     'assets/employee-management-v2.js',
     'assets/employee-portal-vertical-layout-v1.js'
   ];
@@ -74,7 +75,7 @@
   const load=i=>{
     if(i>=files.length){start();return}
     const s=document.createElement('script');
-    s.src=files[i]+'?v=20260831l';
+    s.src=files[i]+'?v=20260831m';
     s.onload=()=>load(i+1);
     s.onerror=()=>{console.error('SchichtFunk-Modul konnte nicht geladen werden:',files[i]);load(i+1)};
     document.body.appendChild(s);
