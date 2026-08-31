@@ -84,7 +84,7 @@
   const load=i=>{
     if(i>=files.length){start();return}
     const s=document.createElement('script');
-    s.src=files[i]+'?v=20260831p';
+    s.src=files[i]+'?v=20260831q';
     s.onload=()=>load(i+1);
     s.onerror=()=>{console.error('SchichtFunk-Modul konnte nicht geladen werden:',files[i]);load(i+1)};
     document.body.appendChild(s);
