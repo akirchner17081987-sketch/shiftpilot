@@ -14,6 +14,8 @@ const supabaseData = read('assets/supabase-data-v1.js');
 const roleEscalationFix = read('database/fix_company_member_role_escalation.sql');
 const securityHardening = read('database/security_hardening_v1.sql');
 const mobileCss = read('assets/mobile-responsive-v1.css');
+const readiness = read('assets/readiness-traffic-light-v1.js');
+const readinessMigration = read('database/shift_readiness_v1.sql');
 
 test('all local scripts and styles referenced by index.html exist', () => {
   const references = [...index.matchAll(/<(?:script|link)\b[^>]+(?:src|href)=["']([^"']+)["']/gi)]
@@ -96,4 +98,25 @@ test('mobile layout constrains the app shell and keeps primary controls usable',
   assert.match(mobileCss, /#newTemplateBtn[\s\S]*display:\s*none\s*!important/);
   assert.match(mobileCss, /\.calendar,[\s\S]*overflow-x:\s*auto/);
   assert.match(index, /function switchView\(name\)\{const appMain=document\.querySelector\('\.main'\);if\(appMain\)appMain\.scrollTop=0;window\.scrollTo\(0,0\)/);
+});
+
+test('readiness traffic light explains staffing, permissions, compliance and confirmations', () => {
+  assert.match(index, /assets\/readiness-traffic-light-v1\.js/);
+  assert.match(readiness, /Besetzung \$\{actual\}\/\$\{slot\.required\}/);
+  assert.match(readiness, /emp\.shifts\|\|\[\]\)\.includes\(slot\.type\)/);
+  assert.match(readiness, /C\.roleAllows\(emp,slot\.type\)/);
+  assert.match(readiness, /C\.check\(emp,slot\.type,slot\.date/);
+  assert.match(readiness, /ISSUE_REPORTED/);
+  assert.match(readiness, /Bestätigung ausstehend/);
+  assert.match(readiness, /Einsatzbereitschaft ·/);
+});
+
+test('shift confirmations are protected by least-privilege RLS', () => {
+  assert.match(readinessMigration, /alter table public\.shift_assignment_confirmations enable row level security/i);
+  assert.match(readinessMigration, /revoke all on table public\.shift_assignment_confirmations from public, anon, authenticated/i);
+  assert.match(readinessMigration, /grant select, insert, update on table public\.shift_assignment_confirmations to authenticated/i);
+  assert.doesNotMatch(readinessMigration, /grant delete/i);
+  assert.match(readinessMigration, /for update[\s\S]*using \([\s\S]*with check \(/i);
+  assert.match(readinessMigration, /e\.auth_user_id = \(select auth\.uid\(\)\)/i);
+  assert.match(readinessMigration, /sa\.status = 'PUBLISHED'/i);
 });
