@@ -56,6 +56,7 @@
     'assets/supabase-personnel-notification-navigation-v1.js',
     'assets/supabase-notifications-delete-v1.js',
     'assets/topbar-actions-v2.js',
+    'assets/sidebar-design-v1.js',
     'assets/schedule-auto-plan-navigation-v1.js',
     'assets/schedule-week-board-v2-phase1.js',
     'assets/schedule-month-view-v1.js',
@@ -73,7 +74,7 @@
   const load=i=>{
     if(i>=files.length){start();return}
     const s=document.createElement('script');
-    s.src=files[i]+'?v=20260831j';
+    s.src=files[i]+'?v=20260831k';
     s.onload=()=>load(i+1);
     s.onerror=()=>{console.error('SchichtFunk-Modul konnte nicht geladen werden:',files[i]);load(i+1)};
     document.body.appendChild(s);
