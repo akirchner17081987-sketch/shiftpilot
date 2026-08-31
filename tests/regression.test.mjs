@@ -19,6 +19,7 @@ const readinessMigration = read('database/shift_readiness_v1.sql');
 const disruption = read('assets/disruption-autopilot-v1.js');
 const disruptionMigration = read('database/disruption_autopilot_v1.sql');
 const notifications = read('assets/supabase-notifications-v1.js');
+const employeePortalLayout = read('assets/employee-portal-vertical-layout-v1.js');
 
 test('all local scripts and styles referenced by index.html exist', () => {
   const references = [...index.matchAll(/<(?:script|link)\b[^>]+(?:src|href)=["']([^"']+)["']/gi)]
@@ -147,4 +148,12 @@ test('disruption workflow is tenant-isolated and resolves the first acceptance a
   assert.match(disruptionMigration, /update public\.disruption_offers set status='EXPIRED'[\s\S]*id<>v_offer\.id/i);
   assert.match(disruptionMigration, /public\.apply_shift_change\(v_change_id\)/i);
   assert.match(disruptionMigration, /cm\.user_id=v_uid[\s\S]*cm\.status='ACTIVE'[\s\S]*cm\.role in \('OWNER','ADMIN','DISPATCHER','PLANNER'\)/i);
+});
+
+test('employee portal uses a compact responsive three-column layout', () => {
+  assert.match(employeePortalLayout, /grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+  assert.match(employeePortalLayout, /sf-portal-column-center/);
+  assert.match(employeePortalLayout, /data-sf-portal-section="disruptions"/);
+  assert.match(employeePortalLayout, /max-height:560px;overflow:auto/);
+  assert.match(employeePortalLayout, /@media\(max-width:820px\)[\s\S]*grid-template-columns:1fr/);
 });
