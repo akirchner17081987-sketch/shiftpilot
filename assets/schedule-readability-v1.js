@@ -42,33 +42,31 @@
   #view-schedule .sf-readability-key.good:before{background:#36d7ae;box-shadow:0 0 8px rgba(54,215,174,.28)}
   #view-schedule .sf-readability-key.warn:before{background:#ffbd4f}
   #view-schedule .sf-readability-key.over:before{background:#a78bfa}
-  #view-schedule .sf-week-board-wrap{max-height:calc(100vh - 150px);padding:13px;scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:#3a5b73 #07131f}
-  #view-schedule .sf-week-board-wrap::-webkit-scrollbar{width:11px;height:11px}
-  #view-schedule .sf-week-board-wrap::-webkit-scrollbar-track{background:#07131f;border-radius:999px}
-  #view-schedule .sf-week-board-wrap::-webkit-scrollbar-thumb{background:#36566e;border:2px solid #07131f;border-radius:999px}
-  #view-schedule .sf-week-board{grid-template-columns:repeat(7,minmax(220px,1fr));gap:10px;min-width:1600px}
+  #view-schedule .sf-week-board-wrap{max-height:none;overflow:visible;padding:11px}
+  #view-schedule .sf-week-board{grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;min-width:0;width:100%}
   #view-schedule .sf-week-day{border-color:#29445c;box-shadow:0 8px 18px rgba(0,0,0,.22)}
   #view-schedule .sf-week-day-head{padding:11px 12px 10px}
   #view-schedule .sf-week-day-title strong{font-size:14px}
   #view-schedule .sf-week-day-title span{font-size:12px}
   #view-schedule .sf-week-day-coverage{font-size:11.5px;line-height:1.35}
-  #view-schedule .sf-week-shift-cell{padding:8px}
+  #view-schedule .sf-week-shift-cell{padding:6px}
   #view-schedule .sf-week-shift{border-radius:9px;background:#101f30}
-  #view-schedule .sf-week-shift-head{padding:9px 10px}
-  #view-schedule .sf-week-shift-main strong{font-size:13.5px}
-  #view-schedule .sf-week-shift-main small{font-size:11.5px;color:#a0b4c8}
-  #view-schedule .sf-week-shift-count b{font-size:11.5px;padding:4px 7px}
-  #view-schedule .sf-week-employees{gap:6px;padding:0 8px 8px}
-  #view-schedule .sf-week-employee{grid-template-columns:32px minmax(0,1fr);gap:8px;min-height:47px;padding:7px 8px;border-color:#29465f;background:#142a3d}
-  #view-schedule .sf-week-avatar{width:32px;height:32px;font-size:10.5px}
-  #view-schedule .sf-week-employee-info b{font-size:12.5px;line-height:1.3}
-  #view-schedule .sf-week-employee-info small{font-size:11px;color:#9fb4c8}
-  #view-schedule .sf-shift-status{font-size:9.5px!important;padding:3px 6px!important;letter-spacing:.02em}
+  #view-schedule .sf-week-shift-head{padding:8px}
+  #view-schedule .sf-week-shift-main strong{font-size:13px}
+  #view-schedule .sf-week-shift-main small{font-size:10.5px;color:#a0b4c8}
+  #view-schedule .sf-week-shift-count b{font-size:11px;padding:3px 6px}
+  #view-schedule .sf-week-employees{gap:5px;padding:0 6px 6px}
+  #view-schedule .sf-week-employee{grid-template-columns:29px minmax(0,1fr);gap:6px;min-height:42px;padding:6px;border-color:#29465f;background:#142a3d}
+  #view-schedule .sf-week-avatar{width:29px;height:29px;font-size:10px}
+  #view-schedule .sf-week-employee-info b{font-size:11.5px;line-height:1.25}
+  #view-schedule .sf-week-employee-info small{font-size:10px;color:#9fb4c8}
+  #view-schedule .sf-week-employee .sf-shift-status{display:none}
   #view-schedule .sf-week-open{font-size:11.5px;padding:8px}
   #view-schedule .sf-week-over{font-size:10.5px;padding:6px 8px}
   #view-schedule .sf-week-shift.is-inactive{min-height:44px;border-style:dashed;background:repeating-linear-gradient(135deg,rgba(30,50,68,.16),rgba(30,50,68,.16) 7px,rgba(11,24,37,.30) 7px,rgba(11,24,37,.30) 14px)}
   #view-schedule .sf-week-shift-empty{font-size:12px;color:#617990}
-  @media(max-width:1500px){#view-schedule .sf-week-board{grid-template-columns:repeat(7,220px);min-width:max-content}}
+  @media(max-width:1500px){#view-schedule .sf-week-board{grid-template-columns:repeat(7,minmax(0,1fr));min-width:0;gap:7px}#view-schedule .sf-week-day-head{padding-inline:9px}#view-schedule .sf-week-day-coverage>span:last-child{display:none}}
+  @media(max-width:1180px){#view-schedule .sf-week-board-wrap{overflow-x:auto}#view-schedule .sf-week-board{grid-template-columns:repeat(7,150px);min-width:max-content}}
   @media(max-width:1180px){#view-schedule .employee-pool-head{grid-template-columns:1fr auto}#view-schedule .employee-pool-head input{grid-column:1/-1;grid-row:2}#view-schedule .employee-pool-head .sp-dynpool-info{grid-column:1/-1}#view-schedule .cal-toolbar #sfComplianceToolbar,#view-schedule .cal-toolbar #sfPlanStatusTools{margin-left:0!important}}
   @media(max-width:720px){#view-schedule .sf-readability-legend{overflow-x:auto;flex-wrap:nowrap}#view-schedule .cal-toolbar .date-label{order:1;flex:1 0 calc(100% - 128px)}#view-schedule .cal-toolbar #prevWeek,#view-schedule .cal-toolbar #todayBtn,#view-schedule .cal-toolbar #nextWeek{order:1}}
   `;
