@@ -3,6 +3,7 @@
   const B=window.SFBackend=window.SFBackend||{};
   if(B.__employeePortalVerticalLayoutV1)return;B.__employeePortalVerticalLayoutV1=true;
   const sections={
+    'Schicht-Marktplatz':['marketplace',5],
     'Meine Schichten':['shifts',10],
     'Arbeitszeit':['time',20],
     'Schichtänderungen':['changes',30],
@@ -52,6 +53,7 @@
         border-radius:14px;
       }
       #sfEmployeePortal .sf-portal-card[data-sf-portal-section="shifts"]{order:10}
+      #sfEmployeePortal .sf-portal-card[data-sf-portal-section="marketplace"]{order:5;grid-column:1/-1}
       #sfEmployeePortal .sf-portal-card[data-sf-portal-section="time"]{order:20}
       #sfEmployeePortal .sf-portal-card[data-sf-portal-section="changes"]{order:30}
       #sfEmployeePortal .sf-portal-card[data-sf-portal-section="swaps"]{order:40}
