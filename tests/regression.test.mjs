@@ -13,6 +13,7 @@ const marketplace = read('assets/supabase-shift-marketplace-v1.js');
 const supabaseData = read('assets/supabase-data-v1.js');
 const roleEscalationFix = read('database/fix_company_member_role_escalation.sql');
 const securityHardening = read('database/security_hardening_v1.sql');
+const mobileCss = read('assets/mobile-responsive-v1.css');
 
 test('all local scripts and styles referenced by index.html exist', () => {
   const references = [...index.matchAll(/<(?:script|link)\b[^>]+(?:src|href)=["']([^"']+)["']/gi)]
@@ -86,4 +87,12 @@ test('privileged database functions and grants remain hardened', () => {
   assert.match(securityHardening, /revoke all on table public\.company_member_invites from anon/i);
   assert.match(securityHardening, /revoke all on table public\.employee_access_invites from anon/i);
   assert.match(securityHardening, /revoke truncate, references, trigger on all tables in schema public from authenticated, anon/i);
+});
+
+test('mobile layout constrains the app shell and keeps primary controls usable', () => {
+  assert.match(index, /assets\/mobile-responsive-v1\.css/);
+  assert.match(mobileCss, /grid-template-columns:\s*var\(--sidebar\)\s+minmax\(0,\s*1fr\)/);
+  assert.match(mobileCss, /@media\s*\(max-width:\s*560px\)/);
+  assert.match(mobileCss, /#newTemplateBtn[\s\S]*display:\s*none\s*!important/);
+  assert.match(mobileCss, /\.calendar,[\s\S]*overflow-x:\s*auto/);
 });
