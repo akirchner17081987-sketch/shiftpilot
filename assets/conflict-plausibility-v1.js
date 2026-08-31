@@ -65,6 +65,7 @@
     'assets/schedule-employee-pool-polish-v1.js',
     'assets/schedule-readability-v1.js',
     'assets/employee-management-v2.js',
+    'assets/settings-management-v2.js',
     'assets/employee-portal-vertical-layout-v1.js'
   ];
   const start=()=>{
