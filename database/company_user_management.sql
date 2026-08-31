@@ -24,6 +24,7 @@ returns boolean language sql stable security definer set search_path='public','p
   select exists(select 1 from public.company_members cm where cm.company_id=p_company_id and cm.user_id=auth.uid() and cm.status='ACTIVE' and cm.role in ('OWNER','ADMIN'));
 $$;
 revoke all on function private.can_manage_company_users(uuid) from public,anon,authenticated;
+grant execute on function private.can_manage_company_users(uuid) to authenticated;
 
 drop policy if exists company_member_invites_manage on public.company_member_invites;
 create policy company_member_invites_manage on public.company_member_invites for all to authenticated
@@ -35,12 +36,12 @@ returns table(record_id uuid,user_id uuid,email text,role text,status text,kind 
 language plpgsql security definer set search_path='public','auth','pg_temp' as $$
 begin
   if not private.can_manage_company_users(p_company_id) then raise exception 'Nicht berechtigt'; end if;
-  update public.company_member_invites set status='EXPIRED' where company_id=p_company_id and status='INVITED' and expires_at<=now();
+  update public.company_member_invites i set status='EXPIRED' where i.company_id=p_company_id and i.status='INVITED' and i.expires_at<=now();
   return query
-    select cm.user_id,cm.user_id,coalesce(u.email,''),cm.role,cm.status,'MEMBER',cm.created_at,null::timestamptz,cm.user_id=auth.uid()
+    select cm.user_id,cm.user_id,coalesce(u.email,'')::text,cm.role,cm.status,'MEMBER'::text,cm.created_at,null::timestamptz,cm.user_id=auth.uid()
     from public.company_members cm join auth.users u on u.id=cm.user_id where cm.company_id=p_company_id
     union all
-    select i.id,null::uuid,i.email,i.role,i.status,'INVITE',i.created_at,i.expires_at,false
+    select i.id,null::uuid,i.email,i.role,i.status,'INVITE'::text,i.created_at,i.expires_at,false
     from public.company_member_invites i where i.company_id=p_company_id and i.status in ('INVITED','EXPIRED')
     order by created_at;
 end $$;
