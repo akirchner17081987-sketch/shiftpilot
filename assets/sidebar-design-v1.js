@@ -3,8 +3,8 @@
   if(window.__sfSidebarDesignV1)return;window.__sfSidebarDesignV1=true;
   const labels={overview:'Übersicht',schedule:'Dienstplan',employees:'Mitarbeiter',time:'Zeiterfassung',absence:'Abwesenheiten',auto:'Auto-Planung',reports:'Auswertungen',settings:'Einstellungen'};
   const css=`
-  .sidebar{position:relative;isolation:isolate;padding:18px 14px 16px;background:radial-gradient(circle at 50% -4%,rgba(35,215,190,.10),transparent 24%),linear-gradient(180deg,#07121e 0%,#050e18 100%);border-right:1px solid #183149;box-shadow:14px 0 42px rgba(0,0,0,.14)}
-  .sidebar:after{content:"";position:absolute;inset:0 0 auto;height:180px;z-index:-1;pointer-events:none;background:linear-gradient(180deg,rgba(51,224,202,.035),transparent)}
+  .sidebar{position:relative;isolation:isolate;padding:18px 14px 16px;background:#07121e!important;background-image:none!important;border-right:1px solid #183149;box-shadow:14px 0 42px rgba(0,0,0,.14)}
+  .sidebar:after{content:none!important;display:none!important}
   .brand.home-link{min-height:58px;margin:0 3px 13px;padding:0 8px 12px!important;border-bottom:1px solid rgba(94,143,173,.13)}
   .brand.home-link .app-brand-img{width:178px!important;max-height:55px!important;filter:drop-shadow(0 5px 16px rgba(30,219,201,.10));transition:filter .2s ease,transform .2s ease}
   .brand.home-link:hover .app-brand-img{filter:drop-shadow(0 6px 19px rgba(35,224,203,.22));transform:translateY(-1px)}
