@@ -12,6 +12,7 @@ const employeeManagement = read('assets/employee-management-v2.js');
 const marketplace = read('assets/supabase-shift-marketplace-v1.js');
 const supabaseData = read('assets/supabase-data-v1.js');
 const roleEscalationFix = read('database/fix_company_member_role_escalation.sql');
+const securityHardening = read('database/security_hardening_v1.sql');
 
 test('all local scripts and styles referenced by index.html exist', () => {
   const references = [...index.matchAll(/<(?:script|link)\b[^>]+(?:src|href)=["']([^"']+)["']/gi)]
@@ -69,4 +70,20 @@ test('company members cannot directly promote or reactivate themselves', () => {
   assert.match(roleEscalationFix, /drop policy if exists company_members_update on public\.company_members/i);
   assert.match(roleEscalationFix, /revoke update on table public\.company_members from authenticated/i);
   assert.doesNotMatch(roleEscalationFix, /grant update on (?:table )?public\.company_members to authenticated/i);
+});
+
+test('privileged database functions and grants remain hardened', () => {
+  for (const name of [
+    'employee_respond_to_shift_change',
+    'manager_create_company_invite',
+    'manager_list_company_users',
+    'manager_revoke_company_invite',
+    'manager_update_company_member'
+  ]) {
+    assert.match(securityHardening, new RegExp(`alter function public\\.${name}\\([^;]+\\) set search_path = ''`, 'i'));
+    assert.match(securityHardening, new RegExp(`revoke all on function public\\.${name}\\([^;]+\\) from public, anon`, 'i'));
+  }
+  assert.match(securityHardening, /revoke all on table public\.company_member_invites from anon/i);
+  assert.match(securityHardening, /revoke all on table public\.employee_access_invites from anon/i);
+  assert.match(securityHardening, /revoke truncate, references, trigger on all tables in schema public from authenticated, anon/i);
 });
