@@ -56,6 +56,7 @@
     'assets/supabase-personnel-notification-navigation-v1.js',
     'assets/supabase-notifications-delete-v1.js',
     'assets/topbar-actions-v2.js',
+    'assets/help-center-v1.js',
     'assets/sidebar-design-v1.js',
     'assets/schedule-auto-plan-navigation-v1.js',
     'assets/schedule-week-board-v2-phase1.js',
