@@ -83,23 +83,11 @@ table th,table td{font-size:13px;line-height:1.35}
   }
   function improveOverview(){
     const stats=[...document.querySelectorAll('#view-overview #overviewStats .stat')];
-    const actions=[
-      ()=>spNavigate('employees'),
-      ()=>spNavigate('schedule'),
-      ()=>spNavigate('absence'),
-      ()=>{ if(typeof openTemplateManager==='function')openTemplateManager(); }
-    ];
-    const labels=['Mitarbeiter öffnen','Dienstplan öffnen','Abwesenheiten öffnen','Vorlagen verwalten'];
-    stats.forEach((card,i)=>{
-      if(!actions[i])return;
-      card.classList.add('sp-clickable');card.tabIndex=0;card.setAttribute('role','button');card.setAttribute('aria-label',labels[i]);card.title=labels[i];
-      card.onclick=actions[i];card.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();actions[i]();}};
+    // Ziele werden vom Dashboard selbst ueber data-db-action verwaltet.
+    stats.forEach(card=>{
+      if(!card.dataset.dbAction)return;
+      card.classList.add('sp-clickable');
     });
-    // 7 Standardvorlagen + aktive eigene Vorlagen anzeigen.
-    if(stats[3]){
-      const strong=stats[3].querySelector('strong');
-      if(strong && typeof getCustomTemplates==='function')strong.textContent=7+getCustomTemplates().filter(x=>x.active).length;
-    }
     emptyState('overviewIssues','Aktuell besteht kein Handlungsbedarf.');
     emptyState('overviewAbsences','Für den gewählten Zeitraum liegen keine weiteren Abwesenheiten vor.');
     emptyState('overviewWorkload','Noch keine Auslastungsdaten für diesen Zeitraum.');
