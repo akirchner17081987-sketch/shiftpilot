@@ -11,6 +11,7 @@ const index = read('index.html');
 const employeeManagement = read('assets/employee-management-v2.js');
 const marketplace = read('assets/supabase-shift-marketplace-v1.js');
 const supabaseData = read('assets/supabase-data-v1.js');
+const roleEscalationFix = read('database/fix_company_member_role_escalation.sql');
 
 test('all local scripts and styles referenced by index.html exist', () => {
   const references = [...index.matchAll(/<(?:script|link)\b[^>]+(?:src|href)=["']([^"']+)["']/gi)]
@@ -62,4 +63,10 @@ test('employee email is preserved from form through cloud hydration', () => {
   assert.match(employeeManagement, /if\(email\)email\.value=e\.email\|\|''/);
   assert.match(supabaseData, /email:e\.email\|\|null/);
   assert.match(supabaseData, /email:x\.email\|\|''/);
+});
+
+test('company members cannot directly promote or reactivate themselves', () => {
+  assert.match(roleEscalationFix, /drop policy if exists company_members_update on public\.company_members/i);
+  assert.match(roleEscalationFix, /revoke update on table public\.company_members from authenticated/i);
+  assert.doesNotMatch(roleEscalationFix, /grant update on (?:table )?public\.company_members to authenticated/i);
 });
