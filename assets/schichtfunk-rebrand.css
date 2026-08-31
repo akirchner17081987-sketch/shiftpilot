@@ -1,4 +1,19 @@
 /* SchichtFunk Branding */
+
+/* Polished landing footer */
+#landingPage .landing-footer{padding:34px clamp(28px,5vw,74px) 20px!important;background:radial-gradient(circle at 18% 0,rgba(33,205,188,.055),transparent 32%),#040d15!important}
+#landingPage .footer-wrap{max-width:1240px;display:grid;grid-template-columns:minmax(320px,1fr) auto;align-items:center;gap:72px}
+#landingPage .footer-brand{display:grid;grid-template-columns:190px minmax(190px,340px);align-items:center;gap:28px}
+#landingPage .footer-brand img{width:190px;height:64px}
+#landingPage .footer-brand p{margin:0;padding-left:28px;border-left:1px solid rgba(80,134,157,.22);color:#8198aa;font-size:12px;line-height:1.6}
+#landingPage .footer-links{grid-template-columns:repeat(2,minmax(150px,180px));gap:30px}
+#landingPage .footer-links>div{gap:5px}
+#landingPage .footer-links b{margin-bottom:7px;color:#c3d4df;font-size:9px;letter-spacing:.14em}
+#landingPage .footer-links a,#landingPage .footer-links button{display:inline-flex;align-items:center;min-height:25px;color:#8299ab;font-size:11px;transition:color .18s ease,transform .18s ease}
+#landingPage .footer-links a:hover,#landingPage .footer-links button:hover{color:#55dfca;transform:translateX(3px)}
+#landingPage .footer-bottom{max-width:1240px;margin-top:22px;padding-top:15px;color:#5d7689}
+@media(max-width:900px){#landingPage .footer-wrap{grid-template-columns:1fr;align-items:start;gap:28px}#landingPage .footer-links{width:100%;grid-template-columns:repeat(2,1fr)}#landingPage .footer-brand{grid-template-columns:180px 1fr}}
+@media(max-width:560px){#landingPage .landing-footer{padding:30px 18px 18px!important}#landingPage .footer-brand{grid-template-columns:1fr;gap:12px}#landingPage .footer-brand p{max-width:none;padding:0;border-left:0}#landingPage .footer-links{grid-template-columns:1fr 1fr;gap:24px}#landingPage .footer-bottom{flex-direction:column;gap:5px}}
 .schichtfunk-brand-logo,.app-brand-img{width:190px!important;height:auto!important;max-height:62px!important;object-fit:contain!important;object-position:left center!important;display:block!important}
 .landing-logo.schichtfunk-brand-logo{width:min(360px,62vw)!important;max-height:100px!important;object-position:left center!important}
 .brand.home-link{padding-top:0!important;padding-bottom:14px!important}
