@@ -22,6 +22,10 @@
     // Normale Navigation wird bereits vom Workspace-State behandelt.
     if(el.dataset?.view){persist(el.dataset.view);return}
 
+    // Dashboard-Schnellaktionen besitzen eigene Aktionsnamen.
+    const dashboardTarget={schedule:'schedule',employee:'employees',absence:'absence',auto:'auto'}[el.dataset?.dbAction];
+    if(dashboardTarget){persist(dashboardTarget);return}
+
     // Inline-Schnellaktionen wie „Dienstplan öffnen“ im Planungs-Dashboard.
     const inline=el.getAttribute?.('onclick')||'';
     const m=inline.match(/switchView\(\s*['\"]([^'\"]+)['\"]\s*\)/);
