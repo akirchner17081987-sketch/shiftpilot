@@ -8,7 +8,8 @@
   const listAssignments=()=>{try{return typeof assignments!=='undefined'&&Array.isArray(assignments)?assignments:(Array.isArray(window.assignments)?window.assignments:[])}catch{return Array.isArray(window.assignments)?window.assignments:[]}};
   const listEmployees=()=>{try{return typeof employees!=='undefined'&&Array.isArray(employees)?employees:(Array.isArray(window.employees)?window.employees:[])}catch{return Array.isArray(window.employees)?window.employees:[]}};
   const typeFor=id=>{try{return typeof typeById==='function'?typeById(id):null}catch{return null}};
-  const addDay=s=>{const d=new Date(String(s).slice(0,10)+'T00:00:00');d.setDate(d.getDate()+1);return d.toISOString().slice(0,10)};
+  const localIso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const addDay=s=>{const d=new Date(String(s).slice(0,10)+'T00:00:00');d.setDate(d.getDate()+1);return localIso(d)};
   const fmtDate=s=>{try{return new Date(String(s).slice(0,10)+'T00:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'})}catch{return String(s)}};
   const effective=a=>EFFECTIVE.has(a?.status);
 
@@ -44,7 +45,7 @@
       }
       let d=new Date(from+'T00:00:00'),last=new Date(to+'T00:00:00');
       while(d<=last){
-        const key=d.toISOString().slice(0,10),ai=absenceIntervalOnDate(a,key);
+        const key=localIso(d),ai=absenceIntervalOnDate(a,key);
         if(ai&&overlaps(target,ai))return a;
         d.setDate(d.getDate()+1);
       }
@@ -141,7 +142,7 @@
   function weekKeys(){try{return currentWeekDates().map(d=>iso(d))}catch{return[]}}
   function currentWeekConflicts(){const keys=weekKeys();if(!keys.length)return[];return listAssignments().filter(a=>keys.includes(a.date)&&assignmentConflict(a)).map(a=>({a,c:assignmentConflict(a)}))}
   function renderBanner(){
-    css();const cal=document.querySelector('#view-plan .calendar');if(!cal)return;let b=document.getElementById('sfAbsencePlanBanner');const rows=currentWeekConflicts();if(!rows.length){b?.remove();return}
+    css();const cal=document.querySelector('#view-schedule .calendar');if(!cal)return;let b=document.getElementById('sfAbsencePlanBanner');const rows=currentWeekConflicts();if(!rows.length){b?.remove();return}
     if(!b){b=document.createElement('div');b.id='sfAbsencePlanBanner';b.className='sf-absence-plan-banner';cal.insertAdjacentElement('beforebegin',b)}
     b.innerHTML=`<b>⚠ ${rows.length} Planungskonflikt${rows.length===1?'':'e'} mit genehmigten Abwesenheiten.</b> Betroffene Schichten sind im Kalender rot markiert. Bitte bewusst neu besetzen oder ändern.`;
   }
