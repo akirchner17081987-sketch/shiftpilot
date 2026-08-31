@@ -1,0 +1,10 @@
+{
+  "name": "schichtfunk",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/regression.test.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
