@@ -1,10 +1,8 @@
-// SchichtFunk – kompaktes, logisch gruppiertes Mitarbeiterportal V2
+// SchichtFunk – vertikales, logisch gepaartes Mitarbeiterportal V1
 (function(){
   const B=window.SFBackend=window.SFBackend||{};
   if(B.__employeePortalVerticalLayoutV1)return;B.__employeePortalVerticalLayoutV1=true;
   const sections={
-    '⚡ Dringende Ersatzanfragen':['disruptions',1],
-    'Schicht-Marktplatz':['marketplace',5],
     'Meine Schichten':['shifts',10],
     'Arbeitszeit':['time',20],
     'Schichtänderungen':['changes',30],
@@ -17,7 +15,7 @@
   function css(){
     if(document.getElementById('sfEmployeePortalVerticalLayoutV1'))return;
     const s=document.createElement('style');s.id='sfEmployeePortalVerticalLayoutV1';s.textContent=`
-      #sfEmployeePortal .sf-portal-main{max-width:1680px;padding:26px 30px 42px}
+      #sfEmployeePortal .sf-portal-main{max-width:1380px;padding:30px 34px 46px}
       #sfEmployeePortal{overflow-anchor:none}
       #sfEmployeePortal .sf-portal-logo{
         width:188px;height:48px;border-radius:0;background:transparent;color:inherit;
@@ -29,7 +27,7 @@
       #sfEmployeePortal .sf-portal-stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:20px 0 16px}
       #sfEmployeePortal .sf-portal-grid{
         display:grid;
-        grid-template-columns:repeat(3,minmax(0,1fr));
+        grid-template-columns:repeat(2,minmax(0,1fr));
         grid-auto-flow:row;
         align-items:start;
         gap:16px;
@@ -39,10 +37,9 @@
       #sfEmployeePortal .sf-portal-grid>.sf-portal-layout-source{display:none!important}
       #sfEmployeePortal .sf-portal-column{display:grid;align-content:start;gap:16px;min-width:0}
       #sfEmployeePortal .sf-portal-column-left{grid-column:1;order:10}
-      #sfEmployeePortal .sf-portal-column-center{grid-column:2;order:20}
-      #sfEmployeePortal .sf-portal-column-right{grid-column:3;order:30}
+      #sfEmployeePortal .sf-portal-column-right{grid-column:2;order:20}
       #sfEmployeePortal .sf-portal-finance-row{
-        grid-column:1/-1;order:40;display:grid;
+        grid-column:1/-1;order:30;display:grid;
         grid-template-columns:repeat(2,minmax(0,1fr));
         align-items:start;gap:16px;min-width:0;
       }
@@ -55,41 +52,21 @@
         border-radius:14px;
       }
       #sfEmployeePortal .sf-portal-card[data-sf-portal-section="shifts"]{order:10}
-      #sfEmployeePortal .sf-portal-card[data-sf-portal-section="disruptions"]{order:1;grid-column:1}
-      #sfEmployeePortal .sf-portal-card[data-sf-portal-section="marketplace"]{order:5;grid-column:2/-1}
       #sfEmployeePortal .sf-portal-card[data-sf-portal-section="time"]{order:20}
       #sfEmployeePortal .sf-portal-card[data-sf-portal-section="changes"]{order:30}
       #sfEmployeePortal .sf-portal-card[data-sf-portal-section="swaps"]{order:40}
       #sfEmployeePortal .sf-portal-card[data-sf-portal-section="absences"]{order:50}
       #sfEmployeePortal .sf-portal-card[data-sf-portal-section="account"]{order:60}
-      #sfEmployeePortal .sf-portal-card[data-sf-portal-section="profile"]{order:60}
-      #sfEmployeePortal .sf-portal-card[data-sf-portal-section="changes"],
-      #sfEmployeePortal .sf-portal-card[data-sf-portal-section="time"]{
-        max-height:560px;overflow:auto;scrollbar-gutter:stable;
-      }
-      #sfEmployeePortal .sf-portal-card[data-sf-portal-section="changes"]>h3,
-      #sfEmployeePortal .sf-portal-card[data-sf-portal-section="time"] .sf-time-card-head{
-        position:sticky;top:-18px;z-index:1;background:#0d1b2a;padding:18px 0 10px;
-      }
+      #sfEmployeePortal .sf-portal-card[data-sf-portal-section="profile"]{order:30;grid-column:1/-1}
       #sfEmployeePortal .sf-portal-card h3{font-size:16px;margin-bottom:14px}
       #sfEmployeePortal .sf-profile-list{grid-template-columns:repeat(3,minmax(0,1fr))}
-      @media(max-width:1180px){
+      @media(max-width:980px){
         #sfEmployeePortal .sf-portal-main{padding:24px 20px 38px}
-        #sfEmployeePortal .sf-portal-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-        #sfEmployeePortal .sf-portal-column-left{grid-column:1}
-        #sfEmployeePortal .sf-portal-column-center{grid-column:2}
-        #sfEmployeePortal .sf-portal-column-right{grid-column:1/-1;grid-template-columns:repeat(2,minmax(0,1fr))}
-        #sfEmployeePortal .sf-portal-finance-row{grid-column:1/-1}
-        #sfEmployeePortal .sf-portal-card[data-sf-portal-section="disruptions"]{grid-column:1}
-        #sfEmployeePortal .sf-portal-card[data-sf-portal-section="marketplace"]{grid-column:2}
-        #sfEmployeePortal .sf-profile-list{grid-template-columns:repeat(2,minmax(0,1fr))}
-      }
-      @media(max-width:820px){
         #sfEmployeePortal .sf-portal-grid{grid-template-columns:1fr}
-        #sfEmployeePortal .sf-portal-column-left,#sfEmployeePortal .sf-portal-column-center,#sfEmployeePortal .sf-portal-column-right{grid-column:auto;grid-template-columns:1fr}
+        #sfEmployeePortal .sf-portal-column-left,#sfEmployeePortal .sf-portal-column-right{grid-column:auto}
         #sfEmployeePortal .sf-portal-finance-row{grid-column:auto;grid-template-columns:1fr}
-        #sfEmployeePortal .sf-portal-card[data-sf-portal-section="disruptions"],#sfEmployeePortal .sf-portal-card[data-sf-portal-section="marketplace"]{grid-column:auto}
-        #sfEmployeePortal .sf-portal-card[data-sf-portal-section="changes"],#sfEmployeePortal .sf-portal-card[data-sf-portal-section="time"]{max-height:none;overflow:visible}
+        #sfEmployeePortal .sf-portal-card[data-sf-portal-section="profile"]{grid-column:auto}
+        #sfEmployeePortal .sf-profile-list{grid-template-columns:repeat(2,minmax(0,1fr))}
       }
       @media(max-width:640px){
         #sfEmployeePortal .sf-portal-main{padding:18px 14px 32px}
@@ -102,12 +79,13 @@
     const portal=document.getElementById('sfEmployeePortal');if(!portal)return false;css();
     const logo=portal.querySelector('.sf-portal-logo');
     if(logo&&!logo.querySelector('img'))logo.innerHTML='<img src="assets/schichtfunk-logo.svg" alt="SchichtFunk">';
+    const logout=portal.querySelector('#sfEmployeeLogout');
+    if(logout&&!logout.dataset.sfSafeLogout){logout.dataset.sfSafeLogout='1';logout.onclick=e=>B.signOutSafely(e.currentTarget)}
     const grid=portal.querySelector('.sf-portal-grid');if(!grid)return false;
     const source=[...grid.children].find(x=>x.matches('div[style*="display:grid"]'));
     source?.classList.add('sf-portal-layout-source');
-    let left=grid.querySelector(':scope>.sf-portal-column-left'),center=grid.querySelector(':scope>.sf-portal-column-center'),right=grid.querySelector(':scope>.sf-portal-column-right');
+    let left=grid.querySelector(':scope>.sf-portal-column-left'),right=grid.querySelector(':scope>.sf-portal-column-right');
     if(!left){left=document.createElement('div');left.className='sf-portal-column sf-portal-column-left';grid.appendChild(left)}
-    if(!center){center=document.createElement('div');center.className='sf-portal-column sf-portal-column-center';grid.appendChild(center)}
     if(!right){right=document.createElement('div');right.className='sf-portal-column sf-portal-column-right';grid.appendChild(right)}
     let finance=grid.querySelector(':scope>.sf-portal-finance-row');
     if(!finance){finance=document.createElement('div');finance.className='sf-portal-finance-row';grid.appendChild(finance)}
@@ -115,7 +93,7 @@
       const title=card.querySelector('h3')?.textContent.trim(),meta=sections[title];
       if(meta){
         card.dataset.sfPortalSection=meta[0];card.style.order=String(meta[1]);
-        const target=['account','wage'].includes(meta[0])?finance:['shifts','changes'].includes(meta[0])?left:['time','swaps'].includes(meta[0])?center:['absences','profile'].includes(meta[0])?right:grid;
+        const target=['account','wage'].includes(meta[0])?finance:['shifts','changes'].includes(meta[0])?left:['time','swaps','absences'].includes(meta[0])?right:grid;
         if(card.parentElement!==target)target.appendChild(card)
       }
     });
@@ -140,4 +118,5 @@
   observer.observe(document.documentElement,{childList:true,subtree:true});
   setTimeout(arrange,0);setTimeout(arrange,600);
 })();
+
 
