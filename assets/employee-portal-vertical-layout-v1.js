@@ -80,7 +80,7 @@
     const logo=portal.querySelector('.sf-portal-logo');
     if(logo&&!logo.querySelector('img'))logo.innerHTML='<img src="assets/schichtfunk-logo.svg" alt="SchichtFunk">';
     const logout=portal.querySelector('#sfEmployeeLogout');
-    if(logout&&!logout.dataset.sfSafeLogout){logout.dataset.sfSafeLogout='1';logout.onclick=e=>B.signOutSafely(e.currentTarget)}
+    if(logout&&!logout.dataset.sfSafeLogout){logout.dataset.sfSafeLogout='1';logout.onclick=e=>B.confirmSignOut(e.currentTarget)}
     const grid=portal.querySelector('.sf-portal-grid');if(!grid)return false;
     const source=[...grid.children].find(x=>x.matches('div[style*="display:grid"]'));
     source?.classList.add('sf-portal-layout-source');
