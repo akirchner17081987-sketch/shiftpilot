@@ -3,7 +3,7 @@
   const B=window.SFBackend=window.SFBackend||{},C=window.SFCompliance=window.SFCompliance||{};
   const MANAGER=new Set(['OWNER','ADMIN','DISPATCHER','PLANNER']);
   const LEVEL={green:0,amber:1,red:2};
-  let confirmations=new Map(),lastModel=null,loading=false;
+  let confirmations=new Map(),changeRequestsByAssignment=new Map(),lastModel=null,loading=false;
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const key=(assignmentId,employeeId)=>`${assignmentId}|${employeeId}`;
   const fmtDate=v=>new Intl.DateTimeFormat('de-DE',{weekday:'short',day:'2-digit',month:'2-digit'}).format(new Date(`${v}T12:00:00`));
@@ -13,6 +13,14 @@
   const allAssignments=()=>typeof assignments==='undefined'?[]:assignments;
   const allEmployees=()=>typeof employees==='undefined'?[]:employees;
   const allTypes=()=>typeof TYPES==='undefined'?[]:TYPES;
+  const confirmationReason=(a,requests=C.requests||[],threshold=Number(C.policy?.employeeConfirmationUnderHours||24))=>{
+    const date=a.date||String(a.starts_at||'').slice(0,10),time=a.start||String(a.starts_at||'').slice(11,16)||'00:00';
+    const start=new Date(`${date}T${time}:00`).getTime(),published=new Date(a.publishedAt||a.published_at||0).getTime();
+    const changeId=a.lastChangeRequestId||a.last_change_request_id||changeRequestsByAssignment.get(String(dbAssignment(a)||a.id));
+    const changed=(requests||[]).some(r=>[r.id,r._dbId].some(id=>id&&String(id)===String(changeId))&&/CREATE|UPDATE/i.test(r.action||'')&&r.status==='APPLIED');
+    const lead=(start-published)/3600000,shortNotice=Number.isFinite(lead)&&lead>=0&&lead<threshold;
+    return changed?'nachträgliche Änderung':shortNotice?'kurzfristig veröffentlicht':'';
+  };
 
   function css(){
     if(document.getElementById('sfReadinessCss'))return;
@@ -33,10 +41,10 @@
     try{
       const weekDates=typeof currentWeekDates==='function'?currentWeekDates().map(iso):[];
       const ids=allAssignments().filter(a=>weekDates.includes(a.date)).map(dbAssignment).filter(Boolean);
-      if(!ids.length){confirmations=new Map();return confirmations}
-      const q=await B.client.from('shift_assignment_confirmations').select('assignment_id,employee_id,status,note,responded_at').eq('company_id',B.companyId).in('assignment_id',ids);
-      if(q.error)throw q.error;
-      confirmations=new Map((q.data||[]).map(x=>[key(x.assignment_id,x.employee_id),x]));
+      if(!ids.length){confirmations=new Map();changeRequestsByAssignment=new Map();return confirmations}
+      const [q,changes]=await Promise.all([B.client.from('shift_assignment_confirmations').select('assignment_id,employee_id,status,note,responded_at').eq('company_id',B.companyId).in('assignment_id',ids),B.client.from('shift_assignments').select('id,last_change_request_id').eq('company_id',B.companyId).in('id',ids)]);
+      if(q.error)throw q.error;if(changes.error)throw changes.error;
+      confirmations=new Map((q.data||[]).map(x=>[key(x.assignment_id,x.employee_id),x]));changeRequestsByAssignment=new Map((changes.data||[]).filter(x=>x.last_change_request_id).map(x=>[String(x.id),x.last_change_request_id]));
     }catch(e){console.warn('Einsatzbereitschaft: Bestätigungen konnten nicht geladen werden',e)}finally{loading=false}
     return confirmations;
   }
@@ -62,11 +70,11 @@
         }
         const published=a._dbStatus==='PUBLISHED'||!!a.publishedAt;
         if(!published)findings.push({level:'amber',text:`${name}: Schicht noch nicht veröffentlicht`});
-        else if(new Date(`${a.date}T${a.start||'00:00'}:00`).getTime()>Date.now()){
+        else if(new Date(`${a.date}T${a.start||'00:00'}:00`).getTime()>Date.now()&&confirmationReason(a)){
           const response=confirmations.get(key(dbAssignment(a),dbEmployee(emp)));
           if(response?.status==='ISSUE_REPORTED')findings.push({level:'red',text:`${name}: Problem gemeldet${response.note?' – '+response.note:''}`});
           else if(response?.status==='CONFIRMED')findings.push({level:'green',text:`${name}: Schicht bestätigt`});
-          else findings.push({level:'amber',text:`${name}: Bestätigung ausstehend`});
+          else findings.push({level:'amber',text:`${name}: Bestätigung ausstehend (${confirmationReason(a)})`});
         }
         const openRequest=(C.requests||[]).some(r=>String(r.assignmentId)===String(a.id)&&!/APPLIED|REJECTED|CANCELLED/i.test(r.status||''));
         if(openRequest)findings.push({level:'amber',text:`${name}: Schichtänderung noch offen`});
@@ -110,11 +118,11 @@
     const shifts=(B.employeePortalData.shifts||[]).filter(s=>new Date(s.ends_at).getTime()>=Date.now()).sort((a,b)=>new Date(a.starts_at)-new Date(b.starts_at)).slice(0,20),ids=shifts.map(s=>s.id);
     let map=new Map();if(ids.length){const q=await B.client.from('shift_assignment_confirmations').select('assignment_id,status,note,responded_at').eq('employee_id',B.employeePortalData.employee.id).in('assignment_id',ids);if(!q.error)map=new Map((q.data||[]).map(x=>[x.assignment_id,x]))}
     const rows=[...root.querySelectorAll('.sf-portal-card')].find(x=>x.querySelector('h3')?.textContent.trim()==='Meine Schichten')?.querySelectorAll('.sf-shift-item')||[];
-    rows.forEach((row,i)=>{const shift=shifts[i];if(!shift)return;const old=row.querySelector('.sf-item-state'),response=map.get(shift.id),wrap=document.createElement('div');wrap.className='sf-readiness-response';wrap.innerHTML=`<small>${response?.status==='CONFIRMED'?'✓ Bestätigt':response?.status==='ISSUE_REPORTED'?'⚠ Problem gemeldet':'Rückmeldung offen'}</small><div class="sf-readiness-response-buttons"><button class="ghost confirmed" data-confirm type="button">Bestätigen</button><button class="ghost issue" data-issue type="button">Problem</button></div>`;old?.replaceWith(wrap);wrap.querySelector('[data-confirm]').onclick=()=>saveResponse(shift,'CONFIRMED','');wrap.querySelector('[data-issue]').onclick=()=>issueDialog(shift)});
+    rows.forEach((row,i)=>{const shift=shifts[i];if(!shift||!confirmationReason(shift,d.requests,Number(d.policy?.employee_confirmation_under_hours||24)))return;const old=row.querySelector('.sf-item-state'),response=map.get(shift.id),wrap=document.createElement('div');wrap.className='sf-readiness-response';wrap.innerHTML=`<small>${response?.status==='CONFIRMED'?'✓ Bestätigt':response?.status==='ISSUE_REPORTED'?'⚠ Problem gemeldet':'Rückmeldung offen'}</small><div class="sf-readiness-response-buttons"><button class="ghost confirmed" data-confirm type="button">Bestätigen</button><button class="ghost issue" data-issue type="button">Problem</button></div>`;old?.replaceWith(wrap);wrap.querySelector('[data-confirm]').onclick=()=>saveResponse(shift,'CONFIRMED','');wrap.querySelector('[data-issue]').onclick=()=>issueDialog(shift)});
   }
 
   function refresh(){if(MANAGER.has(B.role)&&document.getElementById('view-schedule')?.classList.contains('active'))loadManagerConfirmations().then(render);else if(B.role==='EMPLOYEE')augmentEmployee()}
   const boot=setInterval(()=>{if(!B.client||!B.role)return;clearInterval(boot);const oldRender=window.renderCalendar;if(typeof oldRender==='function'&&!oldRender.__readinessWrapped){window.renderCalendar=function(){const r=oldRender.apply(this,arguments);setTimeout(refresh,50);return r};window.renderCalendar.__readinessWrapped=true}const oldPortal=B.openEmployeePortal;if(typeof oldPortal==='function'&&!oldPortal.__readinessWrapped){B.openEmployeePortal=function(){const r=oldPortal.apply(this,arguments);setTimeout(augmentEmployee,80);return r};B.openEmployeePortal.__readinessWrapped=true}refresh();setInterval(refresh,20000)},250);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});
-  window.SFReadiness={evaluate,refresh};
+  window.SFReadiness={evaluate,refresh,confirmationReason};
 })();

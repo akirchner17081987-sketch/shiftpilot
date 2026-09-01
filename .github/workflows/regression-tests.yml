@@ -12,12 +12,20 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: npm
-      - name: Regressionstests ausführen
-        run: npm test
+      - name: Abhängigkeiten installieren
+        run: npm ci
+      - name: Chromium für Portaltests installieren
+        run: npx playwright install --with-deps chromium
+      - name: Regressionstests und Browserabläufe ausführen
+        run: npm run test:all
+        env:
+          E2E_BASE_URL: https://shiftpilot-two.vercel.app
+          SF_E2E_EMAIL: ${{ secrets.SF_E2E_EMAIL }}
+          SF_E2E_PASSWORD: ${{ secrets.SF_E2E_PASSWORD }}

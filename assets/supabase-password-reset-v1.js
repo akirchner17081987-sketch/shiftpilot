@@ -3,6 +3,15 @@
   const B=window.SFBackend=window.SFBackend||{};
   const PROD='https://shiftpilot-two.vercel.app/';
   const RESET_PARAM='passwordReset';
+  function normalizeLegacyRecoveryUrl(){
+    try{
+      const u=new URL(location.href),marker='#app#';
+      if(u.hash.startsWith(marker)&&/\b(?:access_token|error)=/i.test(u.hash.slice(marker.length))){
+        history.replaceState(null,'',u.pathname+(u.search||'')+'#'+u.hash.slice(marker.length));
+      }
+    }catch{}
+  }
+  normalizeLegacyRecoveryUrl();
   const recoveryHint=(()=>{
     try{
       const u=new URL(location.href);
@@ -59,7 +68,7 @@
       if(!email)return say('Bitte eine E-Mail-Adresse eingeben.','bad');
       try{
         B.showLoading?.('Reset-Link wird gesendet …');
-        const {error}=await B.client.auth.resetPasswordForEmail(email,{redirectTo:PROD+'?'+RESET_PARAM+'=1#app'});
+        const {error}=await B.client.auth.resetPasswordForEmail(email,{redirectTo:PROD+'?'+RESET_PARAM+'=1'});
         if(error)throw error;
         B.hideLoading?.();
         say('Wenn für diese E-Mail ein SchichtFunk-Konto besteht, wurde ein Link zum Zurücksetzen des Passworts versendet. Bitte prüfe auch den Spam-Ordner.','good');
@@ -94,6 +103,13 @@
     };
   };
 
+  B.passwordResetInvalidDialog=function(){
+    B.closeAuth?.();
+    const m=dialogShell('Link nicht mehr gültig','Die sichere Wiederherstellungssitzung fehlt oder ist abgelaufen. Fordere bitte einen neuen Link an und verwende ausschließlich die neueste E-Mail.','<div class="sf-reset-msg show bad">Das Passwort wurde nicht geändert.</div>',`<button class="ghost" id="sfResetBackLogin">Zur Anmeldung</button><button class="primary" id="sfResetRetry">Neuen Link anfordern</button>`);
+    m.querySelector('#sfResetBackLogin').onclick=()=>{cleanRecoveryUrl();close();B.authDialog?.('login')};
+    m.querySelector('#sfResetRetry').onclick=()=>{cleanRecoveryUrl();B.passwordResetRequestDialog()};
+  };
+
   function enhanceLogin(){
     css();
     const modal=document.getElementById('sfAuthBackdrop');if(!modal)return;
@@ -114,7 +130,10 @@
   const baseInit=B.init;
   if(typeof baseInit==='function')B.init=async function(){
     const r=await baseInit.apply(this,arguments);
-    if(recoveryHint)setTimeout(()=>B.passwordResetNewDialog(),60);
+    if(recoveryHint){
+      const {data}=await B.client.auth.getSession();
+      setTimeout(()=>data?.session?B.passwordResetNewDialog():B.passwordResetInvalidDialog(),60);
+    }
     return r;
   };
 

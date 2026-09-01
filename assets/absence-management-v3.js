@@ -12,6 +12,13 @@
   const plans=()=>{try{return Array.isArray(assignments)?assignments:[]}catch{return[]}};
   const dates=a=>{const from=a.startDate||a.date,to=a.endDate||a.date||from;if(!from)return[];let d=new Date(from+'T00:00:00'),end=new Date(to+'T00:00:00'),out=[];while(d<=end&&out.length<370){out.push(typeof iso==='function'?iso(d):d.toISOString().slice(0,10));d.setDate(d.getDate()+1)}return out};
   const status=a=>a.status||((a.type==='Krank')?'Erfasst':'Genehmigt');
+  const absenceRange=a=>{
+    const start=a.startDate||a.date,end=a.endDate||a.date||start,full=a.fullDay!==false;
+    if(!start||!end)return null;
+    if(full){const next=new Date(end+'T00:00:00Z');next.setUTCDate(next.getUTCDate()+1);return[start+'T00:00',next.toISOString().slice(0,10)+'T00:00']}
+    return[start+'T'+(a.startTime||'00:00'),end+'T'+(a.endTime||'23:59')];
+  };
+  const overlaps=(a,b)=>{const x=absenceRange(a),y=absenceRange(b);return!!(x&&y&&x[0]<y[1]&&y[0]<x[1])};
   const editingId=()=>{try{return typeof absenceEditingId!=='undefined'?absenceEditingId:null}catch{return null}};
   const selectedType=()=>{try{return typeof absenceModalType!=='undefined'?absenceModalType:'Urlaub'}catch{return'Urlaub'}};
   function styles(){if(document.getElementById('sfAbsenceV3Css'))return;const s=document.createElement('style');s.id='sfAbsenceV3Css';s.textContent=`
@@ -48,7 +55,7 @@
   function validate(){
     const employeeId=document.getElementById('absEmp')?.value,start=document.getElementById('absStart')?.value,end=document.getElementById('absEnd')?.value,full=document.getElementById('absFullDay')?.checked!==false,st=document.getElementById('absStartTime')?.value||'',en=document.getElementById('absEndTime')?.value||'',note=document.getElementById('absNote')?.value.trim()||'';
     if(!employeeId)return fail('Bitte einen aktiven Mitarbeiter aus der Suche auswählen.','absEmpSearch');const emp=staff().find(e=>String(e.id)===String(employeeId)),existing=rows().find(a=>String(a.id)===String(editingId()));if(!emp||(emp.status!=='active'&&String(existing?.employeeId)!==String(employeeId)))return fail('Dieser Mitarbeiter ist inaktiv und kann nicht neu ausgewählt werden.','absEmpSearch');if(!start||!end)return fail('Bitte Beginn und Ende des Zeitraums angeben.','absStart');if(end<start)return fail('Das Enddatum darf nicht vor dem Startdatum liegen.','absEnd');if(!full&&start!==end)return fail('Teilabwesenheiten bitte für einen einzelnen Tag erfassen.','absEnd');if(!full&&(!st||!en))return fail('Bitte Beginn und Ende der Teilabwesenheit angeben.','absStartTime');if(!full&&en<=st)return fail('Das Ende der Teilabwesenheit muss nach dem Beginn liegen.','absEndTime');if(note.length>2000)return fail('Die Bemerkung darf höchstens 2.000 Zeichen enthalten.','absNote');
-    const overlap=rows().find(a=>String(a.id)!==String(editingId())&&String(a.employeeId)===String(employeeId)&&(a.startDate||a.date)<=end&&(a.endDate||a.date)>=start&&status(a)!=='Abgelehnt');if(overlap)return fail(`Für diesen Mitarbeiter besteht bereits ${overlap.type} vom ${fmt(overlap.startDate||overlap.date)} bis ${fmt(overlap.endDate||overlap.date)}.`,'absStart');return{employeeId,start,end,full,st,en,note};
+    const candidate={employeeId,startDate:start,endDate:end,fullDay:full,startTime:st,endTime:en};const overlap=rows().find(a=>String(a.id)!==String(editingId())&&String(a.employeeId)===String(employeeId)&&status(a)!=='Abgelehnt'&&overlaps(a,candidate));if(overlap)return fail(`Für diesen Mitarbeiter besteht bereits ${overlap.type} vom ${fmt(overlap.startDate||overlap.date)} bis ${fmt(overlap.endDate||overlap.date)}.`,'absStart');return{employeeId,start,end,full,st,en,note};
   }
   function enhanceModal(){
     const modal=document.getElementById('absenceModal');if(!modal)return;styles();addFormError();const a=rows().find(x=>String(x.id)===String(editingId()));let meta=modal.querySelector('.sf-abs-v3-meta');if(!meta){meta=document.createElement('div');meta.className='sf-abs-v3-meta';modal.querySelector('.abs-modal-body')?.appendChild(meta)}meta.textContent=a?`Datensatz: ${a.type} · Status ${status(a)}${a._dbId?' · Cloud gespeichert':''}`:'Neue Abwesenheit – wird nach dem Speichern mit der Cloud synchronisiert.';

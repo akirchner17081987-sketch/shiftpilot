@@ -20,7 +20,28 @@ const disruption = read('assets/disruption-autopilot-v1.js');
 const disruptionMigration = read('database/disruption_autopilot_v1.sql');
 const notifications = read('assets/supabase-notifications-v1.js');
 const employeePortalLayout = read('assets/employee-portal-workspace-v2.js');
+const employeeWagePreview = read('assets/employee-wage-preview-v1.js');
+const supabaseAuth = read('assets/supabase-auth-v1.js');
 const moduleLoader = read('assets/conflict-plausibility-v1.js');
+const complianceCore = read('assets/compliance-core-v2.js');
+const schedulePublish = read('assets/supabase-publish-v1.js');
+const absenceConcurrencyMigration = read('supabase/migrations/20260901100613_prevent_concurrent_duplicate_absence_requests.sql');
+const absenceOverlapMigration = read('supabase/migrations/20260901101217_enforce_absence_overlap_rules.sql');
+const employeeCompletenessMigration = read('supabase/migrations/20260901102256_require_complete_active_employee_identity.sql');
+const absenceManagement = read('assets/absence-management-v3.js');
+const employeeAbsence = read('assets/supabase-absence-employee-v3.js');
+
+test('private hourly wage recalculates while the value is entered', () => {
+  assert.match(employeeWagePreview, /rateInput\.oninput=.*setTimeout\(saveRate,250\)/);
+  assert.match(employeeWagePreview, /rateInput\.onchange=saveRate/);
+});
+const employeeAccess = read('assets/supabase-employee-access-v1.js');
+const shiftSwap = read('assets/supabase-shift-swap-v1.js');
+const timeTracking = read('assets/supabase-time-tracking-v1.js');
+const employeeIsolation = read('database/employee_portal_data_isolation_v1.sql');
+const passwordReset = read('assets/supabase-password-reset-v1.js');
+const webManifest = JSON.parse(read('site.webmanifest'));
+const vercelConfig = JSON.parse(read('vercel.json'));
 
 test('all local scripts and styles referenced by index.html exist', () => {
   const references = [...index.matchAll(/<(?:script|link)\b[^>]+(?:src|href)=["']([^"']+)["']/gi)]
@@ -28,8 +49,33 @@ test('all local scripts and styles referenced by index.html exist', () => {
     .filter(path => path && !/^(?:https?:|data:|#)/i.test(path));
 
   assert.ok(references.length > 0, 'No local assets were found in index.html');
-  const missing = [...new Set(references)].filter(path => !existsSync(resolve(root, path)));
+  const missing = [...new Set(references)].filter(path => !existsSync(resolve(root, path.replace(/^\//, ''))));
   assert.deepEqual(missing, [], `Missing assets: ${missing.join(', ')}`);
+});
+
+test('SchichtFunk favicon and installable app icons are complete', () => {
+  assert.match(index, /rel="icon" href="\/favicon\.ico" sizes="any"/);
+  assert.match(index, /rel="apple-touch-icon" sizes="180x180"/);
+  assert.match(index, /rel="manifest" href="\/site\.webmanifest"/);
+  assert.equal(webManifest.short_name, 'SchichtFunk');
+  assert.equal(webManifest.theme_color, '#08111f');
+  assert.deepEqual(webManifest.icons.map(icon => icon.sizes), ['192x192', '512x512', '512x512']);
+  for (const path of ['favicon.ico', 'assets/favicon-16x16.png', 'assets/favicon-32x32.png', 'assets/apple-touch-icon.png', 'assets/schichtfunk-app-icon-192.png', 'assets/schichtfunk-app-icon-512.png', 'assets/schichtfunk-app-icon-maskable-512.png']) {
+    assert.ok(existsSync(resolve(root, path)), `${path} fehlt`);
+  }
+});
+
+test('production responses are protected by restrictive security headers', () => {
+  const globalHeaders = vercelConfig.headers.find(rule => rule.source === '/(.*)')?.headers ?? [];
+  const values = Object.fromEntries(globalHeaders.map(header => [header.key, header.value]));
+
+  assert.match(values['Content-Security-Policy'], /default-src 'self'/);
+  assert.match(values['Content-Security-Policy'], /frame-ancestors 'none'/);
+  assert.match(values['Content-Security-Policy'], /connect-src 'self' https:\/\/zbvloohfjleadjnqhbbh\.supabase\.co wss:\/\/zbvloohfjleadjnqhbbh\.supabase\.co/);
+  assert.equal(values['X-Content-Type-Options'], 'nosniff');
+  assert.equal(values['X-Frame-Options'], 'DENY');
+  assert.equal(values['Referrer-Policy'], 'strict-origin-when-cross-origin');
+  assert.match(values['Permissions-Policy'], /camera=\(\)/);
 });
 
 test('all JavaScript assets pass the Node syntax check', () => {
@@ -53,10 +99,25 @@ test('every static sidebar destination has a matching view', () => {
 });
 
 test('marketplace navigation is rebound and opens its dashboard', () => {
-  assert.match(marketplace, /marketButton\.onclick=openDashboard/);
-  assert.match(marketplace, /closest\('\[data-view="marketplace"\]'\).*openDashboard\(\)/);
-  assert.match(marketplace, /window\.switchView\?\.\('marketplace'\)/);
-  assert.match(marketplace, /id='view-marketplace'/);
+  assert.match(marketplace, /marketButton\.onclick\s*=\s*openDashboard/);
+  assert.match(marketplace, /closest\(["']\[data-view="marketplace"\]["']\)[\s\S]{0,80}openDashboard\(\)/);
+  assert.match(marketplace, /window\.switchView\?\.\(["']marketplace["']\)/);
+  assert.match(marketplace, /v\.id\s*=\s*["']view-marketplace["']/);
+});
+
+test('employee portal loads only employee-owned approvals and time entries', () => {
+  assert.match(employeeAccess, /\.eq\('auth_user_id',B\.user\.id\)\.eq\('status','active'\)/);
+  assert.match(employeeAccess, /\.in\('change_request_id',requestIds\)/);
+  assert.match(employeeAccess, /\.in\('assignment_id',assignmentIds\)/);
+  assert.doesNotMatch(employeeAccess, /from\('shift_change_approvals'\)\.select\('\*'\)\.eq\('company_id',B\.companyId\)/);
+  assert.doesNotMatch(employeeAccess, /from\('time_entries'\)\.select\('\*'\)\.eq\('company_id',B\.companyId\)/);
+});
+
+test('employee portal RLS requires an active employee and matching ownership chain', () => {
+  assert.match(employeeIsolation, /auth_user_id = \(select auth\.uid\(\)\)[\s\S]*status = 'active'/);
+  assert.match(employeeIsolation, /cr\.company_id = shift_change_approvals\.company_id/);
+  assert.match(employeeIsolation, /sa\.company_id = time_entries\.company_id/);
+  assert.match(employeeIsolation, /e\.company_id = time_entries\.company_id/);
 });
 
 test('Teamleiter permission survives normalization and qualification saving', () => {
@@ -103,6 +164,11 @@ test('mobile layout constrains the app shell and keeps primary controls usable',
   assert.match(mobileCss, /#newTemplateBtn[\s\S]*display:\s*none\s*!important/);
   assert.match(mobileCss, /\.calendar,[\s\S]*overflow-x:\s*auto/);
   assert.match(index, /function switchView\(name\)\{const appMain=document\.querySelector\('\.main'\);if\(appMain\)appMain\.scrollTop=0;window\.scrollTo\(0,0\)/);
+  assert.match(employeePortalLayout, /sf-employee-nav-btn\{[^}]*min-height:44px!important/);
+  assert.match(employeePortalLayout, /sf-portal-top \.ghost\{min-height:44px/);
+  assert.match(employeePortalLayout, /scroll-snap-type:x proximity/);
+  assert.match(employeePortalLayout, /sf-employee-nav-scroll::\-webkit-scrollbar\{height:6px\}/);
+  assert.match(notifications, /sf-notify-btn\{[^}]*min-width:44px;height:44px/);
 });
 
 test('readiness traffic light explains staffing, permissions, compliance and confirmations', () => {
@@ -161,5 +227,187 @@ test('employee portal uses a categorized workspace with company header and right
   assert.match(employeePortalLayout, /data-sf-employee-view/);
   assert.match(employeePortalLayout, /sfEmployeePortalView/);
   assert.match(employeePortalLayout, /@media\(max-width:820px\)/);
+  assert.match(employeePortalLayout, /assets\/schichtfunk-company-logo\.png/);
+  assert.match(employeePortalLayout, /width="1500" height="436"/);
+  assert.match(employeePortalLayout, /object-fit:contain/);
+  assert.doesNotMatch(employeePortalLayout, /logo\.textContent=initials\(company\)/);
   assert.match(notifications, /employeePortalNavigate\?\.\(target\)/);
+});
+
+test('employee portal reports offline and reconnecting cloud states', () => {
+  assert.match(employeePortalLayout, /navigator\.onLine!==false/);
+  assert.match(employeePortalLayout, /Keine Netzwerkverbindung/);
+  assert.match(employeePortalLayout, /Cloud-Verbindung wird hergestellt/);
+  assert.match(employeePortalLayout, /addEventListener\('offline',updateConnectionState\)/);
+  assert.match(employeePortalLayout, /addEventListener\('online'/);
+});
+
+test('expired sessions clear protected state and reopen login with an explanation', () => {
+  assert.match(supabaseAuth, /signOut\(\{scope:'local'\}\)/);
+  assert.match(supabaseAuth, /event!=='SIGNED_OUT'/);
+  assert.match(supabaseAuth, /intentionalSignOut/);
+  assert.match(supabaseAuth, /Deine Anmeldung ist abgelaufen\. Bitte melde dich erneut an\./);
+  assert.match(supabaseAuth, /document\.getElementById\('sfEmployeePortal'\)\?\.remove\(\)/);
+});
+
+test('concurrent absence requests are serialized per employee before overlap validation', () => {
+  assert.match(absenceConcurrencyMigration, /pg_advisory_xact_lock/);
+  assert.match(absenceConcurrencyMigration, /absence-request:' \|\| v_employee\.id::text/);
+  const lockPosition = absenceConcurrencyMigration.indexOf('pg_advisory_xact_lock');
+  const overlapPosition = absenceConcurrencyMigration.indexOf('if exists (');
+  assert.ok(lockPosition >= 0 && lockPosition < overlapPosition);
+  assert.match(absenceConcurrencyMigration, /status in \('Beantragt','Genehmigt','Erfasst'\)/);
+  assert.match(absenceConcurrencyMigration, /daterange\(a\.start_date,a\.end_date,'\[\]'\).*daterange\(p_start_date,p_end_date,'\[\]'\)/s);
+});
+
+test('absence overlap rules are enforced in the database and respect partial-day times', () => {
+  assert.match(absenceOverlapMigration, /before insert or update of employee_id, start_date, end_date, full_day, start_time, end_time, status/);
+  assert.match(absenceOverlapMigration, /pg_advisory_xact_lock/);
+  assert.match(absenceOverlapMigration, /tsrange\([\s\S]*'\[\)'[\s\S]*\) && tsrange\(v_new_start, v_new_end, '\[\)'\)/);
+  assert.match(absenceOverlapMigration, /a\.id is distinct from new\.id/);
+  assert.match(absenceOverlapMigration, /new\.status not in \('Beantragt', 'Genehmigt', 'Erfasst'\)/);
+  assert.match(absenceManagement, /const overlaps=\(a,b\)=>/);
+  assert.match(absenceManagement, /x\[0\]<y\[1\]&&y\[0\]<x\[1\]/);
+  assert.match(absenceManagement, /status\(a\)!=='Abgelehnt'&&overlaps\(a,candidate\)/);
+});
+
+test('exactly ten hours is neutral while longer shifts remain flagged', () => {
+  assert.match(complianceCore, /if\(duration>10\)hard\.push/);
+  assert.doesNotMatch(complianceCore, /duration>=10|duration>8/);
+  assert.match(schedulePublish, /if\(mins>600\)\{long\+\+/);
+  assert.doesNotMatch(schedulePublish, /mins>=600|Ab 10 Stunden/);
+  assert.match(schedulePublish, /Über 10 Stunden/);
+});
+
+test('regular published shifts do not require individual employee confirmation', () => {
+  assert.match(readiness, /changed\?'nachträgliche Änderung':shortNotice\?'kurzfristig veröffentlicht':''/);
+  assert.match(readiness, /Date\.now\(\)&&confirmationReason\(a\)/);
+  assert.match(readiness, /if\(!shift\|\|!confirmationReason\(shift,d\.requests/);
+  assert.match(readiness, /shift_assignments'\)\.select\('id,last_change_request_id'/);
+  assert.match(employeeAccess, /company_compliance_policy.*employee_confirmation_under_hours/);
+});
+
+test('employee portal falls back safely when compliance policy is not readable', () => {
+  assert.match(employeeAccess, /company_compliance_policy.*maybeSingle\(\)/);
+  assert.match(employeeAccess, /for\(const q of \[emp,company,shifts,abs,req,tpl\]\)/);
+  assert.match(employeeAccess, /for\(const q of \[apv,te\]\)/);
+  assert.doesNotMatch(employeeAccess, /for\(const q of \[[^\]]*policy[^\]]*\]\)/);
+  assert.match(employeeAccess, /policy\.error\?\{employee_confirmation_under_hours:24\}/);
+  assert.match(employeeAccess, /finally\{B\.hideLoading\?\.\(\)\}/);
+});
+
+test('employee shift swaps refresh only on demand', () => {
+  assert.match(shiftSwap, /class="sf-swap-refresh">↻ Aktualisieren<\/button>/);
+  assert.match(shiftSwap, /sf-swap-refresh'\)\.addEventListener\('click'/);
+  assert.doesNotMatch(shiftSwap, /setInterval\(\(\)=>\{if\(B\.role==='EMPLOYEE'/);
+  assert.doesNotMatch(shiftSwap, /visibilitychange[\s\S]{0,160}B\.role==='EMPLOYEE'/);
+  assert.match(shiftSwap, /setInterval\(\(\)=>\{if\(MANAGER\.has\(B\.role\)/);
+  assert.doesNotMatch(shiftSwap, /querySelector\('#sfEmployeeSwapCard'\)\?\.remove/);
+  assert.doesNotMatch(marketplace, /querySelector\("#sfEmployeeSwapCard"\)\?\.remove/);
+  assert.doesNotMatch(marketplace, /#sfEmployeePortal #sfEmployeeSwapCard\s*\{\s*display:block!important\s*\}/);
+  assert.match(marketplace, /if \(MANAGER\.has\(B\.role\)\) refresh\(\)/);
+  assert.match(employeePortalLayout, /setHtmlIfChanged\(head,/);
+  assert.match(employeePortalLayout, /setHtmlIfChanged\(brand,/);
+  const renderStateSource = employeePortalLayout.slice(employeePortalLayout.indexOf('function renderState'), employeePortalLayout.indexOf('function navigate'));
+  assert.doesNotMatch(renderStateSource, /scrollTop/);
+  assert.match(shiftSwap, /#sfEmployeeSwapCard \.sf-swap-main\{display:flex;flex-direction:column;gap:6px;line-height:1\.6\}/);
+  assert.match(employeePortalLayout, /function integrateAddedCards\(cards\)/);
+  assert.match(employeePortalLayout, /cards\.forEach\(card=>\{if\(!portal\.contains\(card\)\)return/);
+  assert.doesNotMatch(employeePortalLayout, /MutationObserver\(\(\)=>[\s\S]{0,250}arrange\(\)/);
+});
+
+test('stale marketplace offers close and refresh after another employee claims them', () => {
+  assert.match(marketplace, /nicht mehr verfügbar\|bereits vergeben/i);
+  assert.match(marketplace, /await employeeLoad\(\);[\s\S]*unavailable\.code = "OFFER_UNAVAILABLE"/);
+  assert.match(marketplace, /x\?\.code === "OFFER_UNAVAILABLE"/);
+  assert.match(marketplace, /close\(\);[\s\S]*"Angebot bereits vergeben"/);
+  assert.match(marketplace, /x\?\.code === "OFFER_UNAVAILABLE"[\s\S]*?close\(\);[\s\S]*?return;[\s\S]*?b\.disabled = false/);
+});
+
+test('active employees require core identity data and incomplete profiles are explained', () => {
+  assert.match(employeeCompletenessMigration, /employees_active_identity_complete_check/);
+  assert.match(employeeCompletenessMigration, /status <> 'active'/);
+  assert.match(employeeCompletenessMigration, /btrim\(first_name\) <> ''/);
+  assert.match(employeeCompletenessMigration, /btrim\(last_name\) <> ''/);
+  assert.match(employeeCompletenessMigration, /btrim\(coalesce\(personnel_no, ''\)\) <> ''/);
+  assert.match(employeeAccess, /Stammdaten unvollständig/);
+  assert.match(employeeAccess, /Schichtberechtigungen/);
+  assert.match(employeeAccess, /\$\{profileWarning\}<div class="sf-portal-stats">/);
+  assert.match(employeeAccess, /first_name\|\|name\|\|'Mitarbeiter'/);
+  assert.match(employeeAccess, /work_time_model\|\|'–'/);
+});
+
+test('employee dates and overnight shifts use the company timezone', () => {
+  assert.match(employeeAccess, /company\?\.timezone\|\|B\.companyTimeZone\|\|'Europe\/Berlin'/);
+  assert.match(employeeAccess, /timeZone:timeZone\(\)/);
+  assert.match(employeeAccess, /dateKey\(start\)!==dateKey\(end\)\?' \(Folgetag\)'/);
+  assert.match(employeeAccess, /B\.companyTimeZone=company\.data\?\.timezone\|\|'Europe\/Berlin'/);
+  assert.match(shiftSwap, /B\.sfShiftTimeRange/);
+  assert.match(marketplace, /timeZone: B\.companyTimeZone \|\| "Europe\/Berlin"/);
+  assert.match(timeTracking, /const tz=\(\)=>B\.companyTimeZone\|\|'Europe\/Berlin'/);
+  assert.match(timeTracking, /function zonedParts\(v\)/);
+  assert.match(timeTracking, /check===v\?new Date\(instant\)\.toISOString\(\):null/);
+
+  const format = (value, options) => new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', ...options }).format(new Date(value));
+  assert.equal(format('2026-10-24T20:00:00.000Z', { hour: '2-digit', minute: '2-digit' }), '22:00');
+  assert.equal(format('2026-10-25T05:00:00.000Z', { hour: '2-digit', minute: '2-digit' }), '06:00');
+  assert.equal((new Date('2026-10-25T05:00:00.000Z') - new Date('2026-10-24T20:00:00.000Z')) / 3600000, 9);
+});
+
+test('employee dialogs trap focus, close with Escape and announce errors', () => {
+  assert.match(employeePortalLayout, /B\.bindAccessibleModal=function/);
+  assert.match(employeePortalLayout, /event\.key==='Escape'/);
+  assert.match(employeePortalLayout, /event\.key!=='Tab'/);
+  assert.match(employeePortalLayout, /opener\?\.isConnected/);
+  for (const source of [shiftSwap, marketplace, timeTracking, employeeAbsence]) {
+    assert.match(source, /role="alert" aria-live="assertive"/);
+    assert.match(source, /aria-labelledby=/);
+    assert.match(source, /bindAccessibleModal/);
+  }
+});
+
+test('employee portal navigation and notification badge use hardened contrast colors', () => {
+  assert.match(employeePortalLayout, /color:#7894aa/);
+  assert.match(employeePortalLayout, /active \.sf-employee-nav-copy small\{color:#a7c8c2\}/);
+  assert.match(notifications, /background:#a92343;color:#fff/);
+});
+
+test('employee forms expose clear labels, required fields, help and live status messages', () => {
+  assert.match(employeeAbsence, /label\.htmlFor=id/);
+  assert.match(employeeAbsence, /Mit \* gekennzeichnete Felder sind Pflichtfelder/);
+  assert.match(employeeAbsence, /field\.setAttribute\('aria-describedby','sfAe3Help'\)/);
+  assert.match(employeeAbsence, /field\.setAttribute\('aria-required',String\(partial\)\)/);
+  assert.match(shiftSwap, /label for="sfSwapCandidate"/);
+  assert.match(shiftSwap, /role="status" aria-live="polite"/);
+  assert.match(shiftSwap, /aria-describedby="sfSwapCandidateInfo"/);
+  assert.match(shiftSwap, /label for="sfSwapComment"/);
+  assert.match(marketplace, /label for="sfMarketNote"/);
+  assert.match(marketplace, /aria-describedby="sfMarketDescription"/);
+  assert.match(timeTracking, /label for="sfTimeStart"/);
+  assert.match(timeTracking, /label for="sfTimeEnd"/);
+  assert.match(timeTracking, /label for="sfTimeBreak"/);
+  assert.match(timeTracking, /label for="sfTimeNote"/);
+  assert.match(timeTracking, /required aria-required="true"/);
+  assert.match(index, /id="saveToast" class="save-toast" role="status" aria-live="polite"/);
+});
+
+test('employee startup skips manager-only modules and detaches inactive application shells', () => {
+  assert.match(moduleLoader, /const managerStart=files\.indexOf\('assets\/supabase-time-month-close-v1\.js'\)/);
+  assert.match(moduleLoader, /if\(B\.role!==\'EMPLOYEE\'\)await loadManager\(\)/);
+  assert.match(moduleLoader, /const present=file=>/);
+  assert.match(moduleLoader, /if\(present\(file\)\)\{next\(\);return\}/);
+  assert.match(moduleLoader, /if\(i>=managerStart\)\{start\(\);return\}/);
+  assert.match(employeeAccess, /const detachNonEmployeeShell=/);
+  assert.match(employeeAccess, /detachNonEmployeeShell\(\);document\.getElementById\('sfEmployeePortal'\)/);
+  assert.match(employeeAccess, /event==='SIGNED_OUT'\)restoreNonEmployeeShell\(\)/);
+});
+
+test('password recovery uses a parseable callback and requires a valid session', () => {
+  assert.match(passwordReset, /redirectTo:PROD\+'\?'\+RESET_PARAM\+'=1'/);
+  assert.doesNotMatch(passwordReset, /redirectTo:[^\n]+#app/);
+  assert.match(passwordReset, /normalizeLegacyRecoveryUrl\(\)/);
+  assert.match(passwordReset, /u\.hash\.startsWith\(marker\)/);
+  assert.match(passwordReset, /const \{data\}=await B\.client\.auth\.getSession\(\)/);
+  assert.match(passwordReset, /data\?\.session\?B\.passwordResetNewDialog\(\):B\.passwordResetInvalidDialog\(\)/);
+  assert.match(passwordReset, /Neuen Link anfordern/);
 });

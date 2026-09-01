@@ -1,0 +1,9 @@
+.vercel
+.env*
+node_modules/
+playwright-report/
+test-results/
+supabase/.temp/
+documentation/qa_test_release*/page-*.png
+documentation/qa_test_release/
+documentation/qa_test_release_v2/

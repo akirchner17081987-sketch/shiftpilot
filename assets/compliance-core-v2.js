@@ -47,7 +47,6 @@
     if(rest.assignment&&rest.hours<11)hard.push(`Standard-Ruhezeit unterschritten: ${rest.hours.toFixed(1)} Std. (Standardprüfung 11 Std.). Ausnahmefälle müssen gesondert geprüft werden.`);
     const duration=(p.end-p.start)/HOUR;
     if(duration>10)hard.push(`Schichtdauer ${duration.toFixed(1)} Std. überschreitet die Standard-Höchstgrenze 10 Std. Ausnahmefälle müssen gesondert geprüft werden.`);
-    else if(duration>8)soft.push(`Schichtdauer ${duration.toFixed(1)} Std.: Ausgleichszeitraum prüfen.`);
     const current=C.weekHours(emp.id,date,ignoreId),target=Number(emp.weeklyHours)||0;
     if(target&&current+duration>target+.01)soft.push(`Wochen-SOLL würde auf ${(current+duration).toFixed(1)} / ${target.toFixed(1)} Std. steigen.`);
     const so=Number(getSoll(date,type)||0),ist=assignmentsFor(date,type).filter(a=>a.id!==ignoreId).length;if(so&&ist>=so)soft.push(`SOLL-Stärke ${so} ist bereits erreicht.`);

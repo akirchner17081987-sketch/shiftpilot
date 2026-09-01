@@ -2,7 +2,7 @@
 (function(){
   const B=window.SFBackend=window.SFBackend||{};
   if(B.__employeeWagePreviewV1)return;B.__employeeWagePreviewV1=true;
-  let renderSeq=0;
+  let renderSeq=0,rateInputTimer=0;
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const money=n=>Number(n||0).toLocaleString('de-DE',{style:'currency',currency:'EUR'});
   const hours=m=>(Number(m||0)/60).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' Std.';
@@ -29,7 +29,7 @@
     const seq=++renderSeq,month=financeMonth();card.dataset.month=month;let account=null;try{const q=await B.client.rpc('employee_my_time_account_month',{p_month:`${month}-01`});if(!q.error)account=typeof q.data==='string'?JSON.parse(q.data):q.data}catch{}if(seq!==renderSeq)return;
     const s=minuteSummary(month,holidaysFrom(account)),r=rate(),baseMinutes=s.base+s.night+s.sunday+s.holiday,base=baseMinutes/60*r,night=s.night/60*r*.2,sunday=s.sunday/60*r*.5,holiday=s.holiday/60*r,total=base+night+sunday+holiday;
     card.innerHTML=`<div class="sf-wage-head"><div><h3>Lohnvorschau</h3><p class="sf-wage-private">Privat auf diesem Gerät · wird nicht an den Arbeitgeber übertragen</p></div><span class="sf-wage-spacer"></span><input class="sf-wage-month" type="month" value="${esc(month)}" aria-label="Monat"><input class="sf-wage-rate" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Stundenlohn €" value="${r||''}" aria-label="Privater Stundenlohn"></div><div class="sf-wage-grid"><div class="sf-wage-kpi"><small>Bestätigte Arbeit</small><b>${hours(baseMinutes)}</b></div><div class="sf-wage-kpi"><small>Grundlohn</small><b>${r?money(base):'–'}</b></div><div class="sf-wage-kpi sf-wage-total"><small>Voraussichtliches Brutto</small><b>${r?money(total):'Stundenlohn eingeben'}</b></div></div><div class="sf-wage-detail"><div class="sf-wage-row"><span>Nacht 22–06 Uhr · 20 % · ${hours(s.night)}</span><b>${r?money(night):'–'}</b></div><div class="sf-wage-row"><span>Sonntag · 50 % · ${hours(s.sunday)}</span><b>${r?money(sunday):'–'}</b></div><div class="sf-wage-row"><span>Feiertag · 100 % · ${hours(s.holiday)}</span><b>${r?money(holiday):'–'}</b></div></div><div class="sf-wage-note">Unverbindliche private Vorschau, keine Lohnabrechnung. Es zählen ausschließlich bestätigte IST-Zeiten. Zuschläge werden nicht addiert; je Minute gilt nur der höchste Satz. Pausen werden mangels genauer Pausenlage vom Schichtende abgezogen.</div>`;
-    card.querySelector('.sf-wage-month').onchange=e=>setFinanceMonth(e.target.value);card.querySelector('.sf-wage-rate').onchange=e=>{const n=Number(e.target.value);if(Number.isFinite(n)&&n>0)localStorage.setItem(storageKey(),String(n));else localStorage.removeItem(storageKey());render()};
+    card.querySelector('.sf-wage-month').onchange=e=>setFinanceMonth(e.target.value);const rateInput=card.querySelector('.sf-wage-rate'),saveRate=()=>{clearTimeout(rateInputTimer);const n=Number(rateInput.value);if(Number.isFinite(n)&&n>0)localStorage.setItem(storageKey(),String(n));else localStorage.removeItem(storageKey());render()};rateInput.oninput=()=>{clearTimeout(rateInputTimer);rateInputTimer=setTimeout(saveRate,250)};rateInput.onchange=saveRate;
   }
   const old=B.openEmployeePortal;if(typeof old==='function')B.openEmployeePortal=function(){const x=old.apply(this,arguments);setTimeout(render,180);return x};B.wagePreview={render};setTimeout(render,1600);
   document.addEventListener('sf:employee-finance-month-change',()=>{if(B.role==='EMPLOYEE')render()});
