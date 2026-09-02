@@ -63,6 +63,9 @@ test('Audit-Logs are an administrator-only filtered detail workspace', () => {
   assert.match(auditLogs, /ABSENCE_REQUEST_APPROVED:'Abwesenheitsantrag genehmigt'/);
   assert.match(auditLogs, /schedule:'Dienstplan'/);
   assert.match(auditLogs, /absence:'Abwesenheit'/);
+  assert.doesNotMatch(auditLogs, /r\.id\.slice\(0,8\)/);
+  assert.match(auditLogs, />Audit-ID<\/b><code>\$\{esc\(r\.id\)\}/);
+  assert.match(auditLogs, />Objekt-ID<\/b><code>\$\{esc\(r\.entity_id\)\}/);
 });
 
 test('Audit backend is append-only, tenant-scoped and captured by database triggers', () => {
