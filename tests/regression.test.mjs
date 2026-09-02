@@ -215,6 +215,21 @@ test('employee email is preserved from form through cloud hydration', () => {
   assert.match(supabaseData, /email:x\.email\|\|''/);
 });
 
+test('employee profile saves do not trigger a full absence synchronization', () => {
+  assert.match(supabaseData, /B\.persistEmployee=async e=>/);
+  assert.match(employeeManagement, /async function persistEmployeeOnly\(e\)/);
+  assert.match(employeeManagement, /await persistEmployeeOnly\(e\)/);
+  const saveOverviewSource = employeeManagement.slice(employeeManagement.indexOf('async function saveOverview'), employeeManagement.indexOf('function openShiftModal'));
+  assert.doesNotMatch(saveOverviewSource, /saveAll\(\)/);
+});
+
+test('cloud-native absences keep their database identity during later syncs', () => {
+  assert.match(supabaseData, /const cloudNative=a\._dbId&&String\(a\.id\)===String\(a\._dbId\)/);
+  assert.match(supabaseData, /legacy_id:cloudNative\?null:String\(a\.id\)/);
+  assert.match(supabaseData, /from\('absences'\)\.update\(payload\).*\.eq\('id',dbId\)/);
+  assert.match(supabaseData, /await B\.persistAbsences\(absences\)/);
+});
+
 test('company members cannot directly promote or reactivate themselves', () => {
   assert.match(roleEscalationFix, /drop policy if exists company_members_update on public\.company_members/i);
   assert.match(roleEscalationFix, /revoke update on table public\.company_members from authenticated/i);
