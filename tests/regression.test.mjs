@@ -54,6 +54,10 @@ test('Audit-Logs are an administrator-only filtered detail workspace', () => {
   assert.match(auditLogs, /AUDIT-DETAIL/);
   assert.match(auditLogs, /Vorher/);
   assert.match(auditLogs, /Nachher/);
+  assert.match(auditLogs, /function changeRows\(oldValues,newValues\)/);
+  assert.match(auditLogs, /Technische Details anzeigen/);
+  assert.match(auditLogs, /REQUESTED:'Beantragt'/);
+  assert.match(auditLogs, /APPROVED:'Genehmigt'/);
 });
 
 test('Audit backend is append-only, tenant-scoped and captured by database triggers', () => {
