@@ -36,6 +36,8 @@
     'assets/supabase-time-accounts-v1.js',
     'assets/supabase-time-account-holidays-v1.js',
     'assets/employee-wage-preview-v1.js',
+    'assets/employee-portal-workspace-v2.js',
+    'assets/employee-portal-vertical-layout-v1.js',
     'assets/supabase-time-month-close-v1.js',
     'assets/supabase-report-export-v2.js',
     'assets/supabase-report-pdf-style-v3.js',
@@ -61,21 +63,27 @@
     'assets/schedule-status-history-v1.js',
     'assets/schedule-toolbar-polish-v1.js',
     'assets/schedule-employee-pool-polish-v1.js',
-    'assets/schichtfunk-help-center-v1.js',
-    'assets/employee-portal-vertical-layout-v1.js'
+    'assets/schichtfunk-help-center-v1.js'
   ];
+  const managerStart=files.indexOf('assets/supabase-time-month-close-v1.js');
+  let managerPromise=null;
+  const present=file=>[...document.scripts].some(s=>{try{return new URL(s.src,location.href).pathname===new URL(file,location.href).pathname}catch{return false}});
+  const append=(file,next)=>{if(present(file)){next();return}const s=document.createElement('script');s.src=file+'?v=20260902loader1';s.onload=next;s.onerror=()=>{console.error('SchichtFunk-Modul konnte nicht geladen werden:',file);next()};document.body.appendChild(s)};
+  const loadManager=()=>{
+    if(managerPromise)return managerPromise;
+    managerPromise=new Promise(resolve=>{const next=i=>{if(i>=files.length){resolve();return}append(files[i],()=>next(i+1))};next(managerStart)}).then(()=>{const B=window.SFBackend;if(B?.ready&&B.role!=='EMPLOYEE')B.baseOpenApp?.(B.pendingView||'overview')});
+    return managerPromise;
+  };
   const start=()=>{
     const B=window.SFBackend=window.SFBackend||{};
     if(B.__loaderInitStarted)return;B.__loaderInitStarted=true;
+    const baseBoot=B.boot;
+    if(typeof baseBoot==='function'&&!B.__roleLoaderWrapped){B.__roleLoaderWrapped=true;B.boot=async function(){const result=await baseBoot.apply(this,arguments);if(B.role!=='EMPLOYEE')await loadManager();return result}};
     Promise.resolve(B.init?.()).catch(e=>{B.hideLoading?.();console.error('SchichtFunk Supabase init',e);B.updateState?.()});
   };
   const load=i=>{
-    if(i>=files.length){start();return}
-    const s=document.createElement('script');
-    s.src=files[i]+'?v=20260901f';
-    s.onload=()=>load(i+1);
-    s.onerror=()=>{console.error('SchichtFunk-Modul konnte nicht geladen werden:',files[i]);load(i+1)};
-    document.body.appendChild(s);
+    if(i>=managerStart){start();return}
+    append(files[i],()=>load(i+1));
   };
   load(0);
 })();

@@ -25,9 +25,9 @@ const supabaseAuth = read('assets/supabase-auth-v1.js');
 const moduleLoader = read('assets/conflict-plausibility-v1.js');
 const complianceCore = read('assets/compliance-core-v2.js');
 const schedulePublish = read('assets/supabase-publish-v1.js');
-const absenceConcurrencyMigration = read('supabase/migrations/20260901100613_prevent_concurrent_duplicate_absence_requests.sql');
-const absenceOverlapMigration = read('supabase/migrations/20260901101217_enforce_absence_overlap_rules.sql');
-const employeeCompletenessMigration = read('supabase/migrations/20260901102256_require_complete_active_employee_identity.sql');
+const absenceConcurrencyMigration = read('supabase/migrations/20260901155037_prevent_concurrent_duplicate_absence_requests.sql');
+const absenceOverlapMigration = read('supabase/migrations/20260901155043_enforce_absence_overlap_rules.sql');
+const employeeCompletenessMigration = read('supabase/migrations/20260901102727_require_complete_active_employee_identity.sql');
 const absenceManagement = read('assets/absence-management-v3.js');
 const employeeAbsence = read('assets/supabase-absence-employee-v3.js');
 
@@ -244,8 +244,8 @@ test('employee portal reports offline and reconnecting cloud states', () => {
 
 test('expired sessions clear protected state and reopen login with an explanation', () => {
   assert.match(supabaseAuth, /signOut\(\{scope:'local'\}\)/);
-  assert.match(supabaseAuth, /event!=='SIGNED_OUT'/);
-  assert.match(supabaseAuth, /intentionalSignOut/);
+  assert.match(supabaseAuth, /event==='SIGNED_OUT'\)B\.handleSignedOut\(\)/);
+  assert.match(supabaseAuth, /__explicitSignOut/);
   assert.match(supabaseAuth, /Deine Anmeldung ist abgelaufen\. Bitte melde dich erneut an\./);
   assert.match(supabaseAuth, /document\.getElementById\('sfEmployeePortal'\)\?\.remove\(\)/);
 });
