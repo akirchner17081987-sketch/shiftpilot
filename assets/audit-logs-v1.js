@@ -84,6 +84,8 @@
   }
   document.addEventListener('DOMContentLoaded',()=>{
     css();ensureAccess();
+    let attempts=0;
+    const accessTimer=setInterval(()=>{ensureAccess();attempts+=1;if(B.role||attempts>=40)clearInterval(accessTimer)},250);
     document.getElementById('sfAuditApply')?.addEventListener('click',load);
     document.getElementById('sfAuditReset')?.addEventListener('click',()=>{['sfAuditFrom','sfAuditTo','sfAuditActor','sfAuditAction'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});load()});
   });

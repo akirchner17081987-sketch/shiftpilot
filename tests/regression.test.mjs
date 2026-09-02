@@ -49,6 +49,8 @@ test('Audit-Logs are an administrator-only filtered detail workspace', () => {
   assert.match(auditLogs, /ADMIN=new Set\(\['OWNER','ADMIN'\]\)/);
   assert.match(auditLogs, /manager_list_audit_events/);
   assert.match(auditLogs, /manager_list_company_users/);
+  assert.match(auditLogs, /const accessTimer=setInterval/);
+  assert.match(auditLogs, /if\(B\.role\|\|attempts>=40\)clearInterval\(accessTimer\)/);
   assert.match(auditLogs, /AUDIT-DETAIL/);
   assert.match(auditLogs, /Vorher/);
   assert.match(auditLogs, /Nachher/);
