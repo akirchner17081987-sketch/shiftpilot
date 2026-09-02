@@ -31,6 +31,53 @@ const employeeCompletenessMigration = read('supabase/migrations/20260901102727_r
 const absenceManagement = read('assets/absence-management-v3.js');
 const employeeAbsence = read('assets/supabase-absence-employee-v3.js');
 const autoPlanPeriodCss = read('assets/auto-plan-period-v1.css');
+const settingsManagement = read('assets/settings-management-v2.js');
+const complianceUi = read('assets/compliance-ui-v2.js');
+const auditLogs = read('assets/audit-logs-v1.js');
+const auditMigration = read('supabase/migrations/20260901202710_add_secure_audit_logs.sql');
+const auditReaderHardening = read('supabase/migrations/20260901202920_harden_audit_log_reader.sql');
+const auditPolicyHardening = read('supabase/migrations/20260902112933_restrict_audit_events_to_admins.sql');
+
+test('Audit-Logs are an administrator-only filtered detail workspace', () => {
+  assert.match(index, /data-view="audit" id="sfAuditNav" hidden/);
+  assert.match(index, /id="view-audit"/);
+  assert.match(index, /id="sfAuditFrom" type="date"/);
+  assert.match(index, /id="sfAuditTo" type="date"/);
+  assert.match(index, /id="sfAuditActor"/);
+  assert.match(index, /id="sfAuditAction"/);
+  assert.match(index, /name==='audit'&&!\['OWNER','ADMIN'\]\.includes\(B\?\.role\)/);
+  assert.match(auditLogs, /ADMIN=new Set\(\['OWNER','ADMIN'\]\)/);
+  assert.match(auditLogs, /manager_list_audit_events/);
+  assert.match(auditLogs, /manager_list_company_users/);
+  assert.match(auditLogs, /AUDIT-DETAIL/);
+  assert.match(auditLogs, /Vorher/);
+  assert.match(auditLogs, /Nachher/);
+});
+
+test('Audit backend is append-only, tenant-scoped and captured by database triggers', () => {
+  assert.match(auditMigration, /alter table public\.audit_events force row level security/);
+  assert.match(auditMigration, /revoke all on table public\.audit_events from anon, authenticated/);
+  assert.match(auditMigration, /grant select on table public\.audit_events to authenticated/);
+  assert.match(auditMigration, /private\.can_manage_company_users\(company_id\)/);
+  assert.match(auditMigration, /before update or delete on public\.audit_events/);
+  assert.match(auditMigration, /after insert or update or delete/);
+  assert.match(auditMigration, /backendCaptured/);
+  assert.match(auditMigration, /if not private\.can_manage_company_users\(p_company_id\)/);
+  assert.match(auditMigration, /limit least\(greatest\(coalesce\(p_limit, 250\), 1\), 1000\)/);
+  assert.match(auditReaderHardening, /security invoker/);
+  assert.doesNotMatch(auditReaderHardening, /join auth\.users/);
+  assert.match(auditPolicyHardening, /drop policy if exists audit_select/);
+  assert.match(auditPolicyHardening, /revoke insert, update, delete on table public\.audit_events from anon, authenticated/);
+});
+
+test('administrators can open Audit & Compliance from the settings navigation', () => {
+  assert.match(settingsManagement, /\['compliance','🛡','Audit & Compliance'\]/);
+  assert.match(settingsManagement, /compliance:\['Audit & Compliance','Änderungsverlauf, Audit-Ereignisse/);
+  assert.match(settingsManagement, /C\.renderComplianceSettings\(b\)/);
+  assert.match(complianceUi, /C\.renderComplianceSettings=target=>/);
+  assert.match(complianceUi, /host\.appendChild\(card\)/);
+  assert.match(complianceUi, /Audit-Logs öffnen/);
+});
 
 test('auto planning supports a selected week, calendar month, or exact date', () => {
   assert.match(index, /id="autoPlanPeriod"[^>]*>[\s\S]*?<option value="week">Wöchentliche Planung<\/option><option value="month">Monatliche Planung<\/option><option value="date">Genaues Datum der Planung<\/option>/);
