@@ -30,6 +30,25 @@ const absenceOverlapMigration = read('supabase/migrations/20260901155043_enforce
 const employeeCompletenessMigration = read('supabase/migrations/20260901102727_require_complete_active_employee_identity.sql');
 const absenceManagement = read('assets/absence-management-v3.js');
 const employeeAbsence = read('assets/supabase-absence-employee-v3.js');
+const autoPlanPeriodCss = read('assets/auto-plan-period-v1.css');
+
+test('auto planning supports a selected week, calendar month, or exact date', () => {
+  assert.match(index, /id="autoPlanPeriod"[^>]*>[\s\S]*?<option value="week">Wöchentliche Planung<\/option><option value="month">Monatliche Planung<\/option><option value="date">Genaues Datum der Planung<\/option>/);
+  assert.match(index, /id="autoPlanWeekDate" type="date"/);
+  assert.match(index, /id="autoPlanDate" type="date"/);
+  assert.match(index, /id="autoPlanMonth" type="month"/);
+  assert.match(index, /function autoPlanningDates\(\)/);
+  assert.match(index, /function autoMonday\(value\)/);
+  assert.match(index, /if\(mode==='date'\)return\[document\.getElementById\('autoPlanDate'\)/);
+  assert.match(index, /autoPlannedHours\(e\.id,simulated,date\)/);
+  assert.match(index, /function autoOpenSlots\(\)\{const dates=autoPlanningDates\(\)/);
+});
+
+test('long auto-planning result lists scroll inside their cards', () => {
+  assert.match(autoPlanPeriodCss, /#autoSuggestions,#autoUnresolved\{max-height:min\(58vh,680px\);overflow-y:auto/);
+  assert.match(autoPlanPeriodCss, /overscroll-behavior:contain/);
+  assert.match(autoPlanPeriodCss, /scrollbar-gutter:stable/);
+});
 
 test('private hourly wage recalculates while the value is entered', () => {
   assert.match(employeeWagePreview, /rateInput\.oninput=.*setTimeout\(saveRate,250\)/);

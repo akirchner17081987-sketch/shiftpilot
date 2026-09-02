@@ -1,0 +1,18 @@
+.auto-period-card{margin:0 0 14px;padding:16px 18px;background:linear-gradient(180deg,#102033,#0d1b2b);border-color:#29445e}
+.auto-period-card .table-head{margin-bottom:13px}
+.auto-period-card .table-head h3{margin:0}
+.auto-period-card .table-head small{display:block;margin-top:3px;color:#8299ae;font-size:11px}
+.auto-period-grid{display:grid;grid-template-columns:190px minmax(220px,320px) minmax(260px,1fr);gap:12px;align-items:end}
+.auto-period-grid label{display:flex;flex-direction:column;gap:6px;color:#9bb0c4;font-size:11px;font-weight:800}
+.auto-period-grid input,.auto-period-grid select{width:100%;min-height:42px;padding:9px 11px;border:1px solid #294159;border-radius:9px;background:#081624;color:#edf6ff;outline:none}
+.auto-period-grid input:focus,.auto-period-grid select:focus{border-color:#45dfc5;box-shadow:0 0 0 3px rgba(69,223,197,.13)}
+.auto-period-result{min-height:42px;display:flex;flex-direction:column;justify-content:center;padding:7px 12px;border:1px solid #246454;border-radius:9px;background:#0d2c26}
+.auto-period-result small{color:#78a99d;font-size:9px;font-weight:850;text-transform:uppercase;letter-spacing:.06em}
+.auto-period-result strong{display:block;margin-top:2px;color:#83ead2;font-size:12px}
+#autoSuggestions,#autoUnresolved{max-height:min(58vh,680px);overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding-right:6px}
+#autoSuggestions::-webkit-scrollbar,#autoUnresolved::-webkit-scrollbar{width:10px}
+#autoSuggestions::-webkit-scrollbar-track,#autoUnresolved::-webkit-scrollbar-track{background:#081522;border-radius:999px}
+#autoSuggestions::-webkit-scrollbar-thumb,#autoUnresolved::-webkit-scrollbar-thumb{background:#29475e;border:2px solid #081522;border-radius:999px}
+#autoSuggestions::-webkit-scrollbar-thumb:hover,#autoUnresolved::-webkit-scrollbar-thumb:hover{background:#3a657d}
+@media(max-width:900px){.auto-period-grid{grid-template-columns:1fr 1fr}.auto-period-result{grid-column:1/-1}}
+@media(max-width:560px){.auto-period-grid{grid-template-columns:1fr}.auto-period-result{grid-column:auto}.auto-period-card{padding:14px}#autoSuggestions,#autoUnresolved{max-height:54vh}}
