@@ -178,6 +178,21 @@ test('every static sidebar destination has a matching view', () => {
   assert.deepEqual(missing, [], `Navigation without a view: ${missing.join(', ')}`);
 });
 
+test('manager navigation follows planning, personnel, and analysis workflows', () => {
+  const nav = index.slice(index.indexOf('<nav class="nav" id="nav">'), index.indexOf('</nav>', index.indexOf('<nav class="nav" id="nav">')));
+  const expected = ['data-view="overview"', 'data-nav-group="planning"', 'data-view="schedule"', 'data-view="auto"', 'data-nav-group="personal"', 'data-view="employees"', 'data-view="absence"', 'data-view="time"', 'data-nav-group="analysis"', 'data-view="reports"', 'data-view="audit"'];
+  let cursor = -1;
+  for (const marker of expected) {
+    const next = nav.indexOf(marker);
+    assert.ok(next > cursor, `${marker} is not in the expected navigation order`);
+    cursor = next;
+  }
+  assert.match(index, /\.nav-group-label\{[^}]*text-transform:uppercase/);
+  assert.match(index, /\.company-card,\.nav-group-label\{display:none\}/);
+  assert.match(marketplace, /querySelector\('\[data-nav-group="personal"\]'\)/);
+  assert.match(disruption, /querySelector\('\[data-view="marketplace"\]'\)\|\|nav\.querySelector\('\[data-nav-group="personal"\]'\)/);
+});
+
 test('marketplace navigation is rebound and opens its dashboard', () => {
   assert.match(marketplace, /marketButton\.onclick\s*=\s*openDashboard/);
   assert.match(marketplace, /closest\(["']\[data-view="marketplace"\]["']\)[\s\S]{0,80}openDashboard\(\)/);

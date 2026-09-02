@@ -293,7 +293,7 @@
       b.type = "button";
       b.dataset.view = "marketplace";
       b.innerHTML = "<span>↺</span><span>Schicht-Marktplatz</span>";
-      const before = nav.querySelector('[data-view="reports"]');
+      const before = nav.querySelector('[data-nav-group="personal"]') || nav.querySelector('[data-view="reports"]');
       before ? nav.insertBefore(b, before) : nav.appendChild(b);
     }
     const marketButton = nav?.querySelector('[data-view="marketplace"]');
