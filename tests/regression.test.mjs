@@ -58,6 +58,11 @@ test('Audit-Logs are an administrator-only filtered detail workspace', () => {
   assert.match(auditLogs, /Technische Details anzeigen/);
   assert.match(auditLogs, /REQUESTED:'Beantragt'/);
   assert.match(auditLogs, /APPROVED:'Genehmigt'/);
+  assert.match(auditLogs, /FULL_SCHEDULE_RESET:'Gesamten Dienstplan gelöscht'/);
+  assert.match(auditLogs, /PLAN_PUBLISHED:'Dienstplan veröffentlicht'/);
+  assert.match(auditLogs, /ABSENCE_REQUEST_APPROVED:'Abwesenheitsantrag genehmigt'/);
+  assert.match(auditLogs, /schedule:'Dienstplan'/);
+  assert.match(auditLogs, /absence:'Abwesenheit'/);
 });
 
 test('Audit backend is append-only, tenant-scoped and captured by database triggers', () => {
