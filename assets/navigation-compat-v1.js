@@ -60,4 +60,8 @@
   // Die Segmentsteuerung „Woche / Monat“ war in der ursprünglichen Oberfläche nur
   // visuell vorhanden. Diese Integration stellt beide echten Kalenderansichten bereit.
   loadIntegration('/assets/calendar-view-switch-v1.js?v=20260904-1','data-sf-calendar-view');
+
+  // Native Browser-Bestätigungen bei der Dienstplan-Veröffentlichung werden durch
+  // einen SchichtFunk-eigenen Dialog ersetzt. Der Cloud-Weg bleibt unverändert.
+  loadIntegration('/assets/publish-dialog-design-v1.js?v=20260904-1','data-sf-publish-dialog-design');
 })();
