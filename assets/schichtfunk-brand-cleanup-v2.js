@@ -67,10 +67,20 @@
     document.head.appendChild(s);
   }
 
+  function loadTimeMonthPicker(){
+    if(document.getElementById('sfTimeMonthPickerScript'))return;
+    const s=document.createElement('script');
+    s.id='sfTimeMonthPickerScript';
+    s.src='assets/time-month-picker-v1.js?v=20260903-month1';
+    s.async=true;
+    document.head.appendChild(s);
+  }
+
   function init(){
     run();
     ensureDatevHost();
     loadDatev();
+    loadTimeMonthPicker();
     const observer=new MutationObserver(()=>enhanceDatevPanel());
     observer.observe(document.documentElement,{childList:true,subtree:true});
     document.addEventListener('click',e=>{
