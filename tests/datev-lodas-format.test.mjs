@@ -7,6 +7,11 @@ const source=fs.readFileSync(new URL('../assets/datev-lodas-core-v1.js',import.m
 const sandbox={};vm.createContext(sandbox);vm.runInContext(source,sandbox);
 const C=sandbox.SFDatevLodasCore;
 
+test('DATEV browser export module has valid JavaScript syntax',()=>{
+  const ui=fs.readFileSync(new URL('../assets/datev-lodas-export-v1.js',import.meta.url),'utf8');
+  assert.doesNotThrow(()=>new vm.Script(ui,{filename:'datev-lodas-export-v1.js'}));
+});
+
 test('DATEV LODAS header and movement lines match the binding SchichtFunk pattern',()=>{
   const content=C.formatContent({
     beraterNr:'1103899',
