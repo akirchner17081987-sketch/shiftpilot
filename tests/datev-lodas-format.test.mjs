@@ -52,7 +52,7 @@ test('rules aggregate confirmed work and keep the configured own wage type',()=>
     employees:[{employee_id:'e1',employee_name:'Test',personnel_no:'26',confirmed_work_minutes:7800}],
     details:[],entries:[]
   });
-  assert.deepEqual(result.errors,[]);
+  assert.equal(result.errors.length,0);
   assert.equal(result.rows.length,1);
   assert.equal(result.rows[0].minutes,7800);
   assert.equal(result.rows[0].pnr,'26');
