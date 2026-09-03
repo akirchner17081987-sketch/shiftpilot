@@ -4,9 +4,9 @@
   if(B.__timeMonthPickerV1)return;B.__timeMonthPickerV1=true;
 
   const KEY='sf.time.selectedMonth';
-  let wrapped=false;
-  let originalRender=null;
   let ensureTimer=0;
+  let wrapper=null;
+  let wrappedBase=null;
 
   const pad=n=>String(n).padStart(2,'0');
   const currentMonth=()=>{const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}`};
@@ -49,10 +49,9 @@
   }
 
   function ensureControls(){
-    clearTimeout(ensureTimer);
     const view=document.getElementById('view-time');
     const select=document.getElementById('timePeriod');
-    if(!view||!select)return scheduleEnsure(300);
+    if(!view||!select)return;
     css();
 
     const monthOption=[...select.options].find(o=>o.value==='month');
@@ -64,6 +63,7 @@
       controls.id='sfTimePeriodControls';
       controls.className='sf-time-period-controls';
       select.insertAdjacentElement('beforebegin',controls);
+
       const periodField=document.createElement('label');
       periodField.className='sf-time-period-field';
       periodField.innerHTML='<span>Zeitraum</span>';
@@ -86,11 +86,10 @@
 
     if(select.dataset.sfMonthPickerBound!=='1'){
       select.dataset.sfMonthPickerBound='1';
-      select.addEventListener('change',async()=>{
+      select.addEventListener('change',()=>{
         if(select.value==='month'){
           const m=selectedMonth();saveMonth(m);syncDatevMonth(m);
         }
-        await window.renderTimeTracking?.();
       });
     }
 
@@ -107,37 +106,42 @@
   }
 
   function wrapRender(){
-    if(wrapped)return;
     const current=window.renderTimeTracking;
-    if(typeof current!=='function')return scheduleEnsure(250);
-    originalRender=current;
-    window.renderTimeTracking=async function(){
+    if(typeof current!=='function'||current===wrapper)return;
+    wrappedBase=current;
+    wrapper=async function(){
       ensureControls();
       const select=document.getElementById('timePeriod');
-      if(select?.value!=='month')return originalRender.apply(this,arguments);
+      const base=wrappedBase;
+      if(typeof base!=='function')return;
+      if(select?.value!=='month')return base.apply(this,arguments);
 
       const month=selectedMonth();
       const prior=window.currentWeekDates;
       window.currentWeekDates=()=>monthDates(month);
-      try{return await originalRender.apply(this,arguments)}
+      try{return await base.apply(this,arguments)}
       finally{window.currentWeekDates=prior}
     };
-    window.renderTimeTracking.__sfTimeMonthPickerWrapped=true;
-    wrapped=true;
+    wrapper.__sfTimeMonthPickerWrapped=true;
+    window.renderTimeTracking=wrapper;
   }
 
-  function scheduleEnsure(ms=200){clearTimeout(ensureTimer);ensureTimer=setTimeout(()=>{ensureControls();wrapRender()},ms)}
+  function scheduleEnsure(ms=200){
+    clearTimeout(ensureTimer);
+    ensureTimer=setTimeout(()=>{ensureControls();wrapRender()},ms);
+  }
 
   document.addEventListener('click',e=>{
     if(e.target.closest?.('[data-view="time"]'))scheduleEnsure(120);
   },true);
+
   const mo=new MutationObserver(records=>{
-    if(records.some(r=>[...r.addedNodes].some(n=>n.nodeType===1&&(n.matches?.('#view-time,#timePeriod')||n.querySelector?.('#view-time,#timePeriod')))))scheduleEnsure(80);
+    const relevant=records.some(r=>[...r.addedNodes].some(n=>n.nodeType===1&&(n.matches?.('#view-time,#timePeriod')||n.querySelector?.('#view-time,#timePeriod'))));
+    if(relevant)scheduleEnsure(80);
   });
   mo.observe(document.documentElement,{childList:true,subtree:true});
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>scheduleEnsure(0),{once:true});
   else scheduleEnsure(0);
-  setTimeout(()=>scheduleEnsure(0),1200);
-  setTimeout(()=>scheduleEnsure(0),2600);
+  [500,1200,2200,4000,7000].forEach(ms=>setTimeout(()=>{ensureControls();wrapRender()},ms));
 })();
