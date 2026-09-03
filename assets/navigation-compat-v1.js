@@ -64,4 +64,8 @@
   // Native Browser-Bestätigungen bei der Dienstplan-Veröffentlichung werden durch
   // einen SchichtFunk-eigenen Dialog ersetzt. Der Cloud-Weg bleibt unverändert.
   loadIntegration('/assets/publish-dialog-design-v1.js?v=20260904-1','data-sf-publish-dialog-design');
+
+  // Demo-Nutzer können ausschließlich ihre isolierte Präsentations-Sitzung auf den
+  // jeweils aktuellen Demo-Ausgangsstand zurücksetzen. Produktivdaten bleiben unberührt.
+  loadIntegration('/assets/demo-reset-v1.js?v=20260904-1','data-sf-demo-reset');
 })();
