@@ -102,11 +102,11 @@
   function renderDemoState(){
     document.documentElement.dataset.sfDemo='1';
     document.querySelectorAll('.sf-auth-backdrop,#spAuthDialog,#sfAuthBackdrop').forEach(el=>el.remove());
-    const company=document.querySelector('.company-card b');if(company)company.textContent=DEMO_COMPANY;
-    const companyIcon=document.querySelector('.company-icon');if(companyIcon)companyIcon.textContent='D';
+    const company=document.querySelector('.company-card b');if(company&&company.textContent!==DEMO_COMPANY)company.textContent=DEMO_COMPANY;
+    const companyIcon=document.querySelector('.company-icon');if(companyIcon&&companyIcon.textContent!=='D')companyIcon.textContent='D';
     const userRow=document.querySelector('.user-row');
-    if(userRow){const b=userRow.querySelector('b'),small=userRow.querySelector('small'),avatar=userRow.querySelector('.avatar');if(b)b.textContent=DEMO_USER;if(small)small.textContent='Demo-Administrator';if(avatar)avatar.textContent='DA'}
-    const cloud=document.getElementById('sfCloudState');if(cloud){cloud.textContent='● Demo-Modus';cloud.classList.remove('off');cloud.title='Lokale Präsentations-Sandbox – keine Produktivdaten'}
+    if(userRow){const b=userRow.querySelector('b'),small=userRow.querySelector('small'),avatar=userRow.querySelector('.avatar');if(b&&b.textContent!==DEMO_USER)b.textContent=DEMO_USER;if(small&&small.textContent!=='Demo-Administrator')small.textContent='Demo-Administrator';if(avatar&&avatar.textContent!=='DA')avatar.textContent='DA'}
+    const cloud=document.getElementById('sfCloudState');if(cloud){if(cloud.textContent!=='● Demo-Modus')cloud.textContent='● Demo-Modus';cloud.classList.remove('off');cloud.title='Lokale Präsentations-Sandbox – keine Produktivdaten'}
     const audit=document.getElementById('sfAuditNav');if(audit)audit.hidden=true;
     const top=document.querySelector('.top-actions');
     if(top&&!document.getElementById('sfDemoExitBtn')){
