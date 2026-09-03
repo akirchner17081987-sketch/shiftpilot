@@ -47,13 +47,13 @@
     });
   });
 
-  // O1S is a first-class SchichtFunk shift type. Load its compatibility/integration
-  // layer before the remaining workspace modules finish initialising.
-  if(!document.querySelector('script[data-sf-o1s-integration]')){
-    const script=document.createElement('script');
-    script.src='/assets/o1s-integration-v1.js?v=20260904-1';
-    script.async=false;
-    script.dataset.sfO1sIntegration='1';
-    document.head.appendChild(script);
+  function loadShiftIntegration(src,marker){
+    if(document.querySelector(`script[${marker}]`))return;
+    const script=document.createElement('script');script.src=src;script.async=false;script.setAttribute(marker,'1');document.head.appendChild(script);
   }
+
+  // Zusätzliche produktive Schichtarten, die in älteren UI-Baselines noch nicht in
+  // der statischen TYPES-Liste enthalten waren.
+  loadShiftIntegration('/assets/o1s-integration-v1.js?v=20260904-1','data-sf-o1s-integration');
+  loadShiftIntegration('/assets/qa-integration-v1.js?v=20260904-1','data-sf-qa-integration');
 })();
