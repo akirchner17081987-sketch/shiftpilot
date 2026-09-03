@@ -67,6 +67,16 @@
   function clearDemoState(){
     Object.keys(sessionStorage).filter(k=>k.startsWith('sf_demo_')&&k!=='sf_demo_auth_backup_v1').forEach(k=>sessionStorage.removeItem(k));
   }
+  async function launchSandbox(){
+    const response=await fetch('/?sf_demo_source=1',{cache:'no-store',credentials:'same-origin'});
+    if(!response.ok)throw new Error('SchichtFunk Oberfläche konnte nicht geladen werden.');
+    let html=await response.text();
+    const loader='<script src="/assets/demo-mode-v1.js?v=20260903-1"><\/script>';
+    html=/<\/body>/i.test(html)?html.replace(/<\/body>/i,loader+'</body>'):html+loader;
+    document.open();
+    document.write(html);
+    document.close();
+  }
   form.addEventListener('submit',async e=>{
     e.preventDefault();submit.disabled=true;submit.textContent='Demo wird vorbereitet …';msg.className='msg';
     try{
@@ -78,7 +88,7 @@
       sessionStorage.setItem('sf_demo_session_v1','active');
       sessionStorage.setItem('sf_demo_started_at_v1',new Date().toISOString());
       say('Zugang bestätigt. Demo wird geöffnet …','good');
-      location.replace('/?demo=1#app');
+      await launchSandbox();
     }catch(err){say('Der Demo-Zugang konnte nicht gestartet werden. Bitte die Seite neu laden.');console.error(err)}finally{submit.disabled=false;submit.textContent='Demo öffnen →'}
   });
 })();
