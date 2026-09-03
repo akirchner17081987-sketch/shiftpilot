@@ -67,6 +67,15 @@
     document.head.appendChild(s);
   }
 
+  function loadDatevSicDownload(){
+    if(document.getElementById('sfDatevSicDownloadScript'))return;
+    const s=document.createElement('script');
+    s.id='sfDatevSicDownloadScript';
+    s.src='assets/datev-sic-download-v1.js?v=20260903-sic1';
+    s.async=true;
+    document.head.appendChild(s);
+  }
+
   function loadTimeMonthPicker(){
     if(document.getElementById('sfTimeMonthPickerScript'))return;
     const s=document.createElement('script');
@@ -79,6 +88,7 @@
   function init(){
     run();
     ensureDatevHost();
+    loadDatevSicDownload();
     loadDatev();
     loadTimeMonthPicker();
     const observer=new MutationObserver(()=>enhanceDatevPanel());
