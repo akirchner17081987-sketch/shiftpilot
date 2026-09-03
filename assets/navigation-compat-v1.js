@@ -47,13 +47,17 @@
     });
   });
 
-  function loadShiftIntegration(src,marker){
+  function loadIntegration(src,marker){
     if(document.querySelector(`script[${marker}]`))return;
     const script=document.createElement('script');script.src=src;script.async=false;script.setAttribute(marker,'1');document.head.appendChild(script);
   }
 
   // Zusätzliche produktive Schichtarten, die in älteren UI-Baselines noch nicht in
   // der statischen TYPES-Liste enthalten waren.
-  loadShiftIntegration('/assets/o1s-integration-v1.js?v=20260904-1','data-sf-o1s-integration');
-  loadShiftIntegration('/assets/qa-integration-v1.js?v=20260904-1','data-sf-qa-integration');
+  loadIntegration('/assets/o1s-integration-v1.js?v=20260904-1','data-sf-o1s-integration');
+  loadIntegration('/assets/qa-integration-v1.js?v=20260904-1','data-sf-qa-integration');
+
+  // Die Segmentsteuerung „Woche / Monat“ war in der ursprünglichen Oberfläche nur
+  // visuell vorhanden. Diese Integration stellt beide echten Kalenderansichten bereit.
+  loadIntegration('/assets/calendar-view-switch-v1.js?v=20260904-1','data-sf-calendar-view');
 })();
