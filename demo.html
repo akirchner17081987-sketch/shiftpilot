@@ -71,7 +71,7 @@
     const response=await fetch('/?sf_demo_source=1',{cache:'no-store',credentials:'same-origin'});
     if(!response.ok)throw new Error('SchichtFunk Oberfläche konnte nicht geladen werden.');
     let html=await response.text();
-    const loader='<script src="/assets/demo-mode-v1.js?v=20260903-2"><\/script>';
+    const loader='<script src="/assets/demo-marketplace-v1.js?v=20260903-1"><\/script><script src="/assets/demo-mode-v1.js?v=20260903-3"><\/script>';
     html=/<\/body>/i.test(html)?html.replace(/<\/body>/i,loader+'</body>'):html+loader;
     document.open();
     document.write(html);
