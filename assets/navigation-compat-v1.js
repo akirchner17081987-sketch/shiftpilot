@@ -68,4 +68,8 @@
   // Demo-Nutzer können ausschließlich ihre isolierte Präsentations-Sitzung auf den
   // jeweils aktuellen Demo-Ausgangsstand zurücksetzen. Produktivdaten bleiben unberührt.
   loadIntegration('/assets/demo-reset-v1.js?v=20260904-1','data-sf-demo-reset');
+
+  // Abgeschlossener Referenzmonat für Präsentationen und den DATEV-LODAS-Workflow.
+  // Das Modul beendet sich außerhalb des isolierten Demo-Modus sofort selbst.
+  loadIntegration('/assets/demo-august-2026-v1.js?v=20260904-1','data-sf-demo-august-2026');
 })();
