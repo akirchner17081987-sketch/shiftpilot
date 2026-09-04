@@ -8,6 +8,7 @@
   const DEMO_EMAIL='demo@schichtfunk.de';
   const DEMO_COMPANY='SchichtFunk Demo GmbH';
   const DEMO_USER='Demo Administrator';
+  const PERSPECTIVE_KEY='sf_demo_perspective_v1';
   const DATA_PREFIX='sf_demo_data_';
   const pad=n=>String(n).padStart(2,'0');
   const localIso=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
@@ -142,7 +143,7 @@
   }
 
   function patchAuthLayer(){
-    B.demo=true;B.demoMode=true;B.role='ADMIN';B.companyId='demo-local-company';B.user={id:'demo-local-user',email:DEMO_EMAIL,user_metadata:{name:DEMO_USER}};B.ready=false;
+    B.demo=true;B.demoMode=true;B.role=sessionStorage.getItem(PERSPECTIVE_KEY)==='employee'?'EMPLOYEE':'ADMIN';B.companyId='demo-local-company';B.user={id:'demo-local-user',email:DEMO_EMAIL,user_metadata:{name:DEMO_USER}};B.ready=false;
     B.authDialog=()=>demoOpen('overview');
     B.showAuth=()=>demoOpen('overview');
     B.updateState=()=>renderDemoState();
