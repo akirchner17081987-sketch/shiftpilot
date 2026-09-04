@@ -1,0 +1,79 @@
+/* SchichtFunk – zentrale Datums-/Monatsfelder V1
+   Einzige Style-Quelle für input[type=date] und input[type=month]. */
+:root{
+  --sf-date-control-bg:#0a1826;
+  --sf-date-control-border:#294057;
+  --sf-date-control-text:#e5f0fb;
+  --sf-date-control-muted:#8fa5ba;
+  --sf-date-control-focus:#27d6b4;
+  --sf-calendar-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2327d6b4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='16' rx='2'/%3E%3Cpath d='M16 3v4M8 3v4M3 10h18'/%3E%3C/svg%3E");
+}
+
+html body input[type="date"],
+html body input[type="month"]{
+  color-scheme:dark!important;
+  min-height:38px;
+  background-color:var(--sf-date-control-bg)!important;
+  border:1px solid var(--sf-date-control-border)!important;
+  border-radius:8px!important;
+  color:var(--sf-date-control-text)!important;
+  -webkit-text-fill-color:var(--sf-date-control-text)!important;
+  padding:7px 36px 7px 10px!important;
+  font:inherit;
+  line-height:1.2;
+  outline:none;
+  background-repeat:no-repeat!important;
+  background-position:right 9px center!important;
+  background-size:16px 16px!important;
+  background-image:var(--sf-calendar-icon)!important;
+  transition:border-color .16s ease,box-shadow .16s ease,background-color .16s ease;
+}
+
+html body input[type="date"]:hover,
+html body input[type="month"]:hover{
+  border-color:#356079!important;
+}
+
+html body input[type="date"]:focus,
+html body input[type="month"]:focus{
+  border-color:var(--sf-date-control-focus)!important;
+  box-shadow:0 0 0 2px rgba(39,214,180,.16)!important;
+}
+
+html body input[type="date"]:disabled,
+html body input[type="month"]:disabled{
+  opacity:.62;
+  cursor:not-allowed;
+}
+
+/* Das native Symbol bleibt klickbar, wird aber optisch durch das SchichtFunk-Icon ersetzt. */
+html body input[type="date"]::-webkit-calendar-picker-indicator,
+html body input[type="month"]::-webkit-calendar-picker-indicator{
+  opacity:0!important;
+  cursor:pointer;
+  width:22px;
+  height:22px;
+  padding:2px;
+}
+
+/* Monatsfelder: die native Langform wird durch unsere kompakte deutsche Anzeige ersetzt. */
+html body input[type="month"].sf-month-shortened{
+  color:transparent!important;
+  -webkit-text-fill-color:transparent!important;
+  caret-color:transparent!important;
+  background-image:var(--sf-month-label-image),var(--sf-calendar-icon)!important;
+  background-repeat:no-repeat,no-repeat!important;
+  background-position:left 10px center,right 9px center!important;
+  background-size:124px 20px,16px 16px!important;
+}
+
+html body input[type="month"].sf-month-shortened:disabled{
+  filter:saturate(.72);
+}
+
+@media(max-width:520px){
+  html body input[type="date"],
+  html body input[type="month"]{
+    min-height:40px;
+  }
+}
