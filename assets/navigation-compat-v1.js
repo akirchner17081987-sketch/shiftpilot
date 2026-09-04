@@ -50,26 +50,12 @@
   }
 
   // Öffentliche Startseite: klarer Demo-Einstieg getrennt von der Produktiv-Anmeldung.
-  loadIntegration('/assets/landing-demo-cta-v1.js?v=20260904-1','data-sf-landing-demo-cta');
+  loadIntegration('/assets/landing-demo-cta-v1.js?v=20260904-2','data-sf-landing-demo-cta');
 
-  // Zusätzliche produktive Schichtarten, die in älteren UI-Baselines noch nicht in
-  // der statischen TYPES-Liste enthalten waren.
   loadIntegration('/assets/o1s-integration-v1.js?v=20260904-1','data-sf-o1s-integration');
   loadIntegration('/assets/qa-integration-v1.js?v=20260904-1','data-sf-qa-integration');
-
-  // Die Segmentsteuerung „Woche / Monat“ war in der ursprünglichen Oberfläche nur
-  // visuell vorhanden. Diese Integration stellt beide echten Kalenderansichten bereit.
   loadIntegration('/assets/calendar-view-switch-v1.js?v=20260904-1','data-sf-calendar-view');
-
-  // Native Browser-Bestätigungen bei der Dienstplan-Veröffentlichung werden durch
-  // einen SchichtFunk-eigenen Dialog ersetzt. Der Cloud-Weg bleibt unverändert.
   loadIntegration('/assets/publish-dialog-design-v1.js?v=20260904-1','data-sf-publish-dialog-design');
-
-  // Demo-Nutzer können ausschließlich ihre isolierte Präsentations-Sitzung auf den
-  // jeweils aktuellen Demo-Ausgangsstand zurücksetzen. Produktivdaten bleiben unberührt.
   loadIntegration('/assets/demo-reset-v1.js?v=20260904-1','data-sf-demo-reset');
-
-  // Abgeschlossener Referenzmonat für Präsentationen und den DATEV-LODAS-Workflow.
-  // Das Modul beendet sich außerhalb des isolierten Demo-Modus sofort selbst.
   loadIntegration('/assets/demo-august-2026-v1.js?v=20260904-1','data-sf-demo-august-2026');
 })();
