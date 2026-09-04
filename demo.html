@@ -5,51 +5,58 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="theme-color" content="#07111d">
-<title>SchichtFunk – Demo-Zugang</title>
+<title>SchichtFunk – Demo live ausprobieren</title>
 <link rel="icon" href="/favicon.ico" sizes="any">
 <style>
-:root{--bg:#06101b;--panel:#0d1b2a;--line:#294159;--text:#eef7ff;--muted:#91a8bf;--teal:#2ed9b8;--danger:#ff9aa8}
+:root{--bg:#06101b;--panel:#0d1b2a;--line:#294159;--text:#eef7ff;--muted:#91a8bf;--teal:#2ed9b8;--blue:#298cf0;--danger:#ff9aa8}
 *{box-sizing:border-box}html,body{min-height:100%}body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(circle at 70% 18%,rgba(32,213,203,.13),transparent 28%),linear-gradient(180deg,#02070d,#071521);color:var(--text);display:grid;place-items:center;padding:24px}
-.demo-shell{width:min(980px,100%);display:grid;grid-template-columns:1.05fr .95fr;overflow:hidden;border:1px solid #19374b;border-radius:22px;background:rgba(7,18,29,.92);box-shadow:0 34px 100px rgba(0,0,0,.5)}
-.demo-intro{padding:54px;background:linear-gradient(145deg,#071a29,#06121e);border-right:1px solid #19374b;display:flex;flex-direction:column;justify-content:center}.demo-intro img{width:min(330px,88%);height:auto;margin-bottom:36px}.eyebrow{color:var(--teal);font-size:11px;letter-spacing:.16em;font-weight:900}.demo-intro h1{font-size:42px;line-height:1.06;margin:10px 0 16px;letter-spacing:-.035em}.demo-intro h1 span{color:#36e2d0}.demo-intro p{color:#a5b8ca;line-height:1.65;margin:0;max-width:520px}.points{display:grid;gap:10px;margin-top:30px}.point{display:flex;gap:10px;align-items:center;color:#cfdeeb;font-size:13px}.point i{font-style:normal;width:28px;height:28px;display:grid;place-items:center;border-radius:50%;background:#10352e;color:#65e6cc;border:1px solid #226858}
-.demo-login{padding:50px 44px;display:flex;flex-direction:column;justify-content:center}.demo-login h2{font-size:27px;margin:7px 0 6px}.demo-login>p{color:var(--muted);font-size:13px;line-height:1.55;margin:0 0 24px}.field{display:flex;flex-direction:column;gap:7px;margin:12px 0}.field label{font-size:11px;color:#a7bbce;font-weight:800}.field input{width:100%;min-height:46px;border:1px solid var(--line);border-radius:10px;background:#081522;color:#fff;padding:11px 13px;outline:none}.field input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(46,217,184,.12)}button{font:inherit}.submit{width:100%;min-height:48px;margin-top:16px;border:0;border-radius:10px;background:linear-gradient(135deg,#23d5bd,#298cf0);color:#fff;font-weight:900;cursor:pointer;box-shadow:0 12px 28px rgba(36,181,202,.18)}.submit:hover{filter:brightness(1.05)}.submit:disabled{opacity:.65;cursor:wait}.msg{display:none;margin-top:14px;padding:10px 12px;border-radius:9px;font-size:12px}.msg.show{display:block}.msg.bad{border:1px solid #7a3340;background:#301923;color:var(--danger)}.msg.good{border:1px solid #276d5d;background:#0e2a24;color:#8be9d1}.hint{margin-top:20px;padding-top:18px;border-top:1px solid #1d3447;color:#7690a7;font-size:11px;line-height:1.55}.back{margin-top:18px;color:#6fdcca;text-decoration:none;font-size:12px}.back:hover{text-decoration:underline}
-@media(max-width:780px){.demo-shell{grid-template-columns:1fr}.demo-intro{padding:34px;border-right:0;border-bottom:1px solid #19374b}.demo-intro h1{font-size:34px}.demo-login{padding:34px}.demo-intro img{width:250px;margin-bottom:24px}}
+.demo-shell{width:min(1040px,100%);display:grid;grid-template-columns:1.08fr .92fr;overflow:hidden;border:1px solid #19374b;border-radius:22px;background:rgba(7,18,29,.92);box-shadow:0 34px 100px rgba(0,0,0,.5)}
+.demo-intro{padding:54px;background:linear-gradient(145deg,#071a29,#06121e);border-right:1px solid #19374b;display:flex;flex-direction:column;justify-content:center}.demo-intro img{width:min(330px,88%);height:auto;margin-bottom:36px}.eyebrow{color:var(--teal);font-size:11px;letter-spacing:.16em;font-weight:900}.demo-intro h1{font-size:42px;line-height:1.06;margin:10px 0 16px;letter-spacing:-.035em}.demo-intro h1 span{color:#36e2d0}.demo-intro p{color:#a5b8ca;line-height:1.65;margin:0;max-width:550px}.points{display:grid;gap:10px;margin-top:30px}.point{display:flex;gap:10px;align-items:center;color:#cfdeeb;font-size:13px}.point i{font-style:normal;width:28px;height:28px;display:grid;place-items:center;border-radius:50%;background:#10352e;color:#65e6cc;border:1px solid #226858}
+.demo-start{padding:50px 44px;display:flex;flex-direction:column;justify-content:center}.demo-start h2{font-size:29px;margin:7px 0 8px}.demo-start>p{color:var(--muted);font-size:13px;line-height:1.62;margin:0 0 22px}.demo-card{border:1px solid #27455b;background:#091825;border-radius:14px;padding:18px}.demo-card strong{display:block;font-size:14px;margin-bottom:10px}.demo-features{display:grid;grid-template-columns:1fr 1fr;gap:8px}.demo-feature{border:1px solid #203d50;background:#0c202d;border-radius:9px;padding:9px 10px;color:#b9cdda;font-size:11px}.submit{width:100%;min-height:51px;margin-top:19px;border:0;border-radius:10px;background:linear-gradient(135deg,#23d5bd,#298cf0);color:#fff;font-weight:900;cursor:pointer;box-shadow:0 12px 28px rgba(36,181,202,.18);font-size:14px}.submit:hover{filter:brightness(1.06)}.submit:disabled{opacity:.65;cursor:wait}.trust{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 12px;margin-top:12px;color:#7490a6;font-size:10px}.trust span:before{content:'✓';color:#45ddc4;margin-right:5px}.msg{display:none;margin-top:14px;padding:10px 12px;border-radius:9px;font-size:12px}.msg.show{display:block}.msg.bad{border:1px solid #7a3340;background:#301923;color:var(--danger)}.msg.good{border:1px solid #276d5d;background:#0e2a24;color:#8be9d1}.hint{margin-top:20px;padding-top:18px;border-top:1px solid #1d3447;color:#7690a7;font-size:11px;line-height:1.55}.back{margin-top:18px;color:#6fdcca;text-decoration:none;font-size:12px}.back:hover{text-decoration:underline}
+@media(max-width:780px){.demo-shell{grid-template-columns:1fr}.demo-intro{padding:34px;border-right:0;border-bottom:1px solid #19374b}.demo-intro h1{font-size:34px}.demo-start{padding:34px}.demo-intro img{width:250px;margin-bottom:24px}.demo-features{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <main class="demo-shell">
   <section class="demo-intro">
     <img src="/assets/schichtfunk-logo.svg" alt="SchichtFunk – Klar geplant. Stark besetzt.">
-    <div class="eyebrow">PRÄSENTATIONSZUGANG</div>
-    <h1>SchichtFunk<br><span>live ausprobieren.</span></h1>
-    <p>Dieser Zugang öffnet eine abgeschottete Präsentationsumgebung mit fiktiven Beispieldaten. Produktivmandanten und reale Mitarbeiterdaten bleiben davon vollständig getrennt.</p>
+    <div class="eyebrow">LIVE-DEMO · BEISPIELDATEN</div>
+    <h1>SchichtFunk<br><span>selbst ausprobieren.</span></h1>
+    <p>Öffnen Sie eine abgeschottete Präsentationsumgebung und testen Sie die wichtigsten SchichtFunk-Abläufe direkt im Browser. Produktivmandanten und reale Mitarbeiterdaten bleiben vollständig getrennt.</p>
     <div class="points">
-      <div class="point"><i>✓</i><span>Vorbereitete Mitarbeiter- und Dienstplandaten</span></div>
-      <div class="point"><i>✓</i><span>Dienstplanung, SOLL/IST, Abwesenheiten und Auswertungen testen</span></div>
-      <div class="point"><i>✓</i><span>Lokale Sandbox ohne Schreibzugriff auf Produktivdaten</span></div>
+      <div class="point"><i>✓</i><span>Vorbereiteter Dienstplan inklusive vollständigem August 2026</span></div>
+      <div class="point"><i>✓</i><span>Zeiterfassung, SOLL/IST, O1S, QA und Schicht-Marktplatz</span></div>
+      <div class="point"><i>✓</i><span>Abgeschlossener Referenzmonat für DATEV-LODAS-Demo</span></div>
+      <div class="point"><i>✓</i><span>Jederzeit auf den Präsentationsstandard zurücksetzbar</span></div>
     </div>
   </section>
-  <section class="demo-login">
+  <section class="demo-start">
     <div class="eyebrow">DEMO-MODUS</div>
-    <h2>Demo anmelden</h2>
-    <p>Bitte die für die Präsentation bereitgestellten Zugangsdaten verwenden.</p>
-    <form id="demoForm" autocomplete="off">
-      <div class="field"><label for="demoEmail">Benutzer</label><input id="demoEmail" type="email" autocomplete="username" required autofocus></div>
-      <div class="field"><label for="demoPassword">Passwort</label><input id="demoPassword" type="password" autocomplete="current-password" required></div>
-      <button class="submit" id="demoSubmit" type="submit">Demo öffnen →</button>
-      <div id="demoMsg" class="msg" role="status" aria-live="polite"></div>
-    </form>
-    <div class="hint">Beim Start wird die Demo auf einen definierten Beispieldatenstand zurückgesetzt. Änderungen bleiben nur in dieser Browser-Sitzung erhalten.</div>
+    <h2>Unverbindlich starten</h2>
+    <p>Keine Registrierung und keine Zugangsdaten erforderlich. Die Demo verwendet ausschließlich fiktive Beispieldaten in einer isolierten Browser-Sandbox.</p>
+    <div class="demo-card">
+      <strong>In der Demo enthalten</strong>
+      <div class="demo-features">
+        <div class="demo-feature">▣ Wochen- & Monatsplanung</div>
+        <div class="demo-feature">◷ Zeiterfassung</div>
+        <div class="demo-feature">↔ Schicht-Marktplatz</div>
+        <div class="demo-feature">DATEV · LODAS</div>
+        <div class="demo-feature">♧ Mitarbeiterverwaltung</div>
+        <div class="demo-feature">✓ Compliance-Prüfungen</div>
+      </div>
+    </div>
+    <button class="submit" id="demoStart" type="button">▶ Demo jetzt starten</button>
+    <div class="trust"><span>Keine Registrierung</span><span>Keine echten Daten</span><span>Jederzeit zurücksetzbar</span></div>
+    <div id="demoMsg" class="msg" role="status" aria-live="polite"></div>
+    <div class="hint">Beim Start wird die Demo auf den aktuell definierten Präsentationsstand vorbereitet. Änderungen des Demo-Nutzers bleiben nur in dieser Browser-Sitzung erhalten und können über „Demo zurücksetzen“ verworfen werden.</div>
     <a class="back" href="/">← Zur SchichtFunk Startseite</a>
   </section>
 </main>
 <script>
 (function(){
-  const EMAIL='demo@schichtfunk.de';
-  const PASSWORD_SHA256='73ea495445d86ecaa6a985e0c5ffd46270da403a4d779803f72af8acff03e915';
-  const form=document.getElementById('demoForm'),email=document.getElementById('demoEmail'),password=document.getElementById('demoPassword'),submit=document.getElementById('demoSubmit'),msg=document.getElementById('demoMsg');
+  const start=document.getElementById('demoStart'),msg=document.getElementById('demoMsg');
   const say=(text,type='bad')=>{msg.className='msg show '+type;msg.textContent=text};
-  const digest=async value=>{const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value));return Array.from(new Uint8Array(bytes)).map(b=>b.toString(16).padStart(2,'0')).join('')};
+
   function isolateAuth(){
     const backup={local:{},session:{}};
     for(const storage of [localStorage,sessionStorage]){
@@ -73,24 +80,19 @@
     let html=await response.text();
     const loader='<script src="/assets/demo-marketplace-v1.js?v=20260903-2"><\/script><script src="/assets/demo-mode-v1.js?v=20260903-3"><\/script>';
     html=/<\/body>/i.test(html)?html.replace(/<\/body>/i,loader+'</body>'):html+loader;
-    document.open();
-    document.write(html);
-    document.close();
+    document.open();document.write(html);document.close();
   }
-  form.addEventListener('submit',async e=>{
-    e.preventDefault();submit.disabled=true;submit.textContent='Demo wird vorbereitet …';msg.className='msg';
+  async function begin(){
+    start.disabled=true;start.textContent='Demo wird vorbereitet …';msg.className='msg';
     try{
-      const emailOk=email.value.trim().toLowerCase()===EMAIL;
-      const passwordOk=(await digest(password.value))===PASSWORD_SHA256;
-      if(!emailOk||!passwordOk){say('Benutzer oder Passwort ist nicht korrekt.');return}
-      clearDemoState();
-      isolateAuth();
+      clearDemoState();isolateAuth();
       sessionStorage.setItem('sf_demo_session_v1','active');
       sessionStorage.setItem('sf_demo_started_at_v1',new Date().toISOString());
-      say('Zugang bestätigt. Demo wird geöffnet …','good');
+      say('Demo wird mit Beispieldaten geöffnet …','good');
       await launchSandbox();
-    }catch(err){say('Der Demo-Zugang konnte nicht gestartet werden. Bitte die Seite neu laden.');console.error(err)}finally{submit.disabled=false;submit.textContent='Demo öffnen →'}
-  });
+    }catch(err){say('Die Demo konnte nicht gestartet werden. Bitte die Seite neu laden.');console.error(err);start.disabled=false;start.textContent='▶ Demo jetzt starten'}
+  }
+  start.addEventListener('click',begin);
 })();
 </script>
 </body>
