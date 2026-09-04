@@ -58,12 +58,12 @@
     }
     sessionStorage.setItem('sf_demo_auth_backup_v1',JSON.stringify(backup));
   }
-  function clearDemoState(){Object.keys(sessionStorage).filter(k=>k.startsWith('sf_demo_')&&k!=='sf_demo_auth_backup_v1').forEach(k=>sessionStorage.removeItem(k))}
+  function clearDemoState(preserveTour=false){Object.keys(sessionStorage).filter(k=>k.startsWith('sf_demo_')&&k!=='sf_demo_auth_backup_v1'&&(!preserveTour||k!=='sf_demo_tour_seen_v1')).forEach(k=>sessionStorage.removeItem(k))}
   async function launchSandbox(){
     const response=await fetch('/?sf_demo_source=1',{cache:'no-store',credentials:'same-origin'});
     if(!response.ok)throw new Error('SchichtFunk Oberfläche konnte nicht geladen werden.');
     let html=await response.text();
-    const loader='<script src="/assets/demo-marketplace-v1.js?v=20260903-2"><\/script><script src="/assets/demo-mode-v1.js?v=20260904-4"><\/script><script src="/assets/demo-session-v1.js?v=20260904-1"><\/script>';
+    const loader='<script src="/assets/demo-marketplace-v1.js?v=20260903-2"><\/script><script src="/assets/demo-mode-v1.js?v=20260904-4"><\/script><script src="/assets/demo-session-v1.js?v=20260904-1"><\/script><script src="/assets/demo-tour-v1.js?v=20260904-1"><\/script>';
     html=/<\/body>/i.test(html)?html.replace(/<\/body>/i,loader+'</body>'):html+loader;
     document.open();document.write(html);document.close();
   }
@@ -71,7 +71,7 @@
     try{
       const response=await fetch('/api/demo-auth',{cache:'no-store',credentials:'same-origin'});
       if(!response.ok)return;
-      clearDemoState();isolateAuth();
+      clearDemoState(true);isolateAuth();
       sessionStorage.setItem('sf_demo_session_v1','active');
       await launchSandbox();
     }catch{}
