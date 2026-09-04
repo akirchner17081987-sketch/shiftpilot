@@ -37,13 +37,10 @@
     return true;
   };
 
-  // Sanity check: every sidebar navigation target must have a matching view.
   document.addEventListener('DOMContentLoaded',()=>{
     document.querySelectorAll('[data-view]').forEach(btn=>{
       const target=normalize(btn.dataset.view);
-      if(!document.getElementById('view-'+target)){
-        console.warn('[SchichtFunk Navigation] Zielansicht fehlt:',btn.dataset.view,btn);
-      }
+      if(!document.getElementById('view-'+target))console.warn('[SchichtFunk Navigation] Zielansicht fehlt:',btn.dataset.view,btn);
     });
   });
 
@@ -51,6 +48,9 @@
     if(document.querySelector(`script[${marker}]`))return;
     const script=document.createElement('script');script.src=src;script.async=false;script.setAttribute(marker,'1');document.head.appendChild(script);
   }
+
+  // Öffentliche Startseite: klarer Demo-Einstieg getrennt von der Produktiv-Anmeldung.
+  loadIntegration('/assets/landing-demo-cta-v1.js?v=20260904-1','data-sf-landing-demo-cta');
 
   // Zusätzliche produktive Schichtarten, die in älteren UI-Baselines noch nicht in
   // der statischen TYPES-Liste enthalten waren.
