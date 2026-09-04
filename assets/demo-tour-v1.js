@@ -34,8 +34,9 @@
 
   function cleanTarget(){if(target){target.classList.remove('sf-demo-tour-target');target=null}}
   function remove(){clearTimeout(renderTimer);cleanTarget();document.getElementById('sfDemoTourLayer')?.remove();document.getElementById('sfDemoTourCard')?.remove();active=false}
-  function finish(){sessionStorage.setItem(SEEN_KEY,'complete');remove()}
-  function skip(){sessionStorage.setItem(SEEN_KEY,'skipped');remove()}
+  function announce(state){document.dispatchEvent(new CustomEvent('sf:demo-tour',{detail:{state}}))}
+  function finish(){sessionStorage.setItem(SEEN_KEY,'complete');announce('completed');remove()}
+  function skip(){sessionStorage.setItem(SEEN_KEY,'skipped');announce('skipped');remove()}
 
   function goToView(view){
     if(!view)return;
@@ -82,7 +83,7 @@
     },step.selector==='#sfDatevPanel'?800:240);
   }
 
-  function start(startAt=0){css();remove();index=Math.max(0,Math.min(steps.length-1,Number(startAt)||0));active=true;draw()}
+  function start(startAt=0){css();remove();index=Math.max(0,Math.min(steps.length-1,Number(startAt)||0));active=true;announce('started');draw()}
 
   function ensureHelp(){
     const buttons=[...document.querySelectorAll('#appShell .top-actions button,.topbar button')];

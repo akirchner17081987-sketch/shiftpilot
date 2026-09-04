@@ -6,8 +6,8 @@ const demo=fs.readFileSync(new URL('../assets/demo-mode-v1.js',import.meta.url),
 const completion=fs.readFileSync(new URL('../demo-abschluss.html',import.meta.url),'utf8');
 
 test('voluntary demo exit opens the dedicated completion page',()=>{
-  assert.match(demo,/function exitDemo\(\)\{finishDemo\('\/demo-abschluss'\)\}/);
-  assert.match(demo,/function expireDemo\(reason\)\{finishDemo\(`\/demo\?expired=/);
+  assert.match(demo,/function exitDemo\(\)\{finishDemo\('\/demo-abschluss','manual'\)\}/);
+  assert.match(demo,/function expireDemo\(reason\)\{if\(reason==='manual'\)return exitDemo\(\)/);
 });
 
 test('completion page offers all four requested next steps',()=>{

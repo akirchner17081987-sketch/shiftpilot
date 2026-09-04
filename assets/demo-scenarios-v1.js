@@ -156,9 +156,11 @@
   }
   function apply(key){
     if(applying||!scenarios[key])return;applying=true;clearPreparedData();sessionStorage.setItem(ACTIVE_KEY,key);
+    document.dispatchEvent(new CustomEvent('sf:demo-scenario',{detail:{action:'selected',scenario:key}}));
     if(key==='understaffing')prepareUnderstaffing();if(key==='vacation')prepareVacation();if(key==='outage')disruptionState();patchRpc();closeDialog();ensureButtons();showTarget(key);applying=false;
   }
   function reset(){
+    document.dispatchEvent(new CustomEvent('sf:demo-scenario',{detail:{action:'reset'}}));
     clearPreparedData();sessionStorage.removeItem(ACTIVE_KEY);sessionStorage.removeItem(DISRUPTION_KEY);closeDialog();document.querySelectorAll('.sf-demo-scenario-banner').forEach(x=>x.remove());ensureButtons();window.SFDemoPerspective?.set?.('manager');setTimeout(()=>{window.switchView?.('overview');window.renderOverview?.();window.renderCalendar?.();window.renderAbsenceDashboard?.();showSaveToast?.('Ausgangslage wiederhergestellt','Das vorbereitete Szenario wurde beendet.')},80);
   }
   function boot(){css();patchRpc();ensureButtons();if(active())showTarget(active())}

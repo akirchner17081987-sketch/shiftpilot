@@ -174,13 +174,14 @@
     sessionStorage.removeItem('sf_demo_auth_backup_v1');
   }
 
-  function finishDemo(target){
+  function finishDemo(target,reason){
+    document.dispatchEvent(new CustomEvent('sf:demo-finish',{detail:{reason}}));
     clearLocalDemo();
     fetch('/api/demo-auth',{method:'DELETE',credentials:'same-origin',keepalive:true}).catch(()=>{});
     location.replace(target);
   }
-  function exitDemo(){finishDemo('/demo-abschluss')}
-  function expireDemo(reason){finishDemo(`/demo?expired=${encodeURIComponent(reason==='maximum'?'maximum':'idle')}`)}
+  function exitDemo(){finishDemo('/demo-abschluss','manual')}
+  function expireDemo(reason){if(reason==='manual')return exitDemo();const value=reason==='maximum'?'maximum':'idle';finishDemo(`/demo?expired=${encodeURIComponent(value)}`,value)}
   window.sfExitDemo=exitDemo;
   window.sfExpireDemo=expireDemo;
 

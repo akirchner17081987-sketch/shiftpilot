@@ -43,6 +43,7 @@
   }
 
   function resetNow(){
+    document.dispatchEvent(new CustomEvent('sf:demo-reset'));
     clearDemoState();
     try{history.replaceState(null,'',location.pathname+'?demo=1#app')}catch{}
     location.reload();
