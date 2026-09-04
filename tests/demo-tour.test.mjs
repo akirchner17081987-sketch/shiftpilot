@@ -14,6 +14,7 @@ test('demo loads the guided tour only inside the protected sandbox',()=>{
 test('tour covers six core demo stations',()=>{
   assert.match(tour,/Willkommen bei SchichtFunk/);
   assert.match(tour,/Alles Wichtige auf einen Blick/);
+  assert.match(tour,/view:'overview',selector:'#view-overview #overviewStats'/);
   assert.match(tour,/Dienstplan und Besetzung/);
   assert.match(tour,/Auf Ausfälle sofort reagieren/);
   assert.match(tour,/Zeiten prüfen und freigeben/);
@@ -43,4 +44,7 @@ test('tour dialog and highlighted targets are accessible and responsive',()=>{
   assert.match(tour,/aria-labelledby','sfDemoTourTitle'/);
   assert.match(tour,/scrollIntoView/);
   assert.match(tour,/@media\(max-width:680px\)/);
+  assert.match(tour,/visualViewport/);
+  assert.match(tour,/max-height:calc\(100dvh - 28px\)/);
+  assert.match(tour,/setProperty\('top',`\$\{top\}px`,'important'\)/);
 });
