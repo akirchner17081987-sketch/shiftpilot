@@ -26,7 +26,7 @@
     const login=existing.find(b=>/anmelden/i.test(b.textContent||''));
     if(login){login.textContent='Anmelden';login.title='Zum bestehenden SchichtFunk-Konto anmelden'}
     let demo=actions.querySelector('.sf-demo-top');
-    if(!demo){demo=button('Demo testen →','landing-btn sf-demo-top');actions.appendChild(demo)}
+    if(!demo){demo=button('Demo-Zugang →','landing-btn sf-demo-top');actions.appendChild(demo)}
     const dashboard=existing.find(b=>/dashboard öffnen/i.test(b.textContent||''));if(dashboard)dashboard.remove();
   }
 
@@ -34,10 +34,10 @@
     const hero=document.querySelector('#landingPage .hero-copy'),buttons=hero?.querySelector('.hero-buttons');if(!hero||!buttons)return;
     const primary=buttons.querySelector('.landing-btn.primary');
     if(primary&&!primary.dataset.sfDemoCta){
-      primary.textContent='Demo kostenlos testen →';primary.dataset.sfDemoCta='1';primary.onclick=null;primary.addEventListener('click',goDemo);
+      primary.textContent='Geschützte Demo ansehen →';primary.dataset.sfDemoCta='1';primary.onclick=null;primary.addEventListener('click',goDemo);
     }
     if(!hero.querySelector('.sf-demo-trust')){
-      const trust=document.createElement('div');trust.className='sf-demo-trust';trust.innerHTML='<span><i>✓</i>Keine Registrierung</span><span><i>✓</i>Keine echten Daten</span><span><i>✓</i>Jederzeit zurücksetzbar</span>';
+      const trust=document.createElement('div');trust.className='sf-demo-trust';trust.innerHTML='<span><i>✓</i>Zugangsdaten erforderlich</span><span><i>✓</i>Keine echten Daten</span><span><i>✓</i>Jederzeit zurücksetzbar</span>';
       buttons.insertAdjacentElement('afterend',trust);
     }
   }
@@ -45,21 +45,17 @@
   function addDemoSection(){
     const landing=document.getElementById('landingPage'),features=document.getElementById('features');if(!landing||!features||document.getElementById('sfPublicDemoSection'))return;
     const section=document.createElement('section');section.id='sfPublicDemoSection';section.className='sf-demo-public';
-    section.innerHTML=`<div class="sf-demo-public-inner"><div><div class="sf-demo-public-kicker">SCHICHTFUNK LIVE AUSPROBIEREN</div><h2>Erleben Sie SchichtFunk mit <span>vorbereiteten Beispieldaten.</span></h2><p>Öffnen Sie eine geschützte Präsentationsumgebung und testen Sie die wichtigsten Abläufe selbst – vom Dienstplan über Zeiterfassung und Schicht-Marktplatz bis zum DATEV-LODAS-Export.</p><div class="sf-demo-public-list"><span class="sf-demo-public-chip">Dienstplan Woche & Monat</span><span class="sf-demo-public-chip">O1S & QA</span><span class="sf-demo-public-chip">SOLL / IST</span><span class="sf-demo-public-chip">Zeiterfassung</span><span class="sf-demo-public-chip">Schicht-Marktplatz</span><span class="sf-demo-public-chip">DATEV-LODAS</span></div></div><aside class="sf-demo-public-action"><strong>Unverbindlich direkt starten</strong><p>Die Demo läuft vollständig getrennt von echten Kunden- und Mitarbeiterdaten und kann jederzeit auf den vorbereiteten Ausgangsstand zurückgesetzt werden.</p><button type="button" class="landing-btn primary" id="sfPublicDemoStart">▶ Demo jetzt starten</button><div class="sf-demo-public-fine"><span>Keine Registrierung</span><span>·</span><span>Beispieldaten</span><span>·</span><span>Sandbox</span></div></aside></div>`;
+    section.innerHTML=`<div class="sf-demo-public-inner"><div><div class="sf-demo-public-kicker">GESCHÜTZTE SCHICHTFUNK LIVE-DEMO</div><h2>Erleben Sie SchichtFunk mit <span>vorbereiteten Beispieldaten.</span></h2><p>Die Präsentationsumgebung ist für ausgewählte Interessenten vorgesehen. Mit persönlich bereitgestellten Zugangsdaten können die wichtigsten Abläufe getestet werden – vom Dienstplan über Zeiterfassung und Schicht-Marktplatz bis zum DATEV-LODAS-Export.</p><div class="sf-demo-public-list"><span class="sf-demo-public-chip">Dienstplan Woche & Monat</span><span class="sf-demo-public-chip">O1S & QA</span><span class="sf-demo-public-chip">SOLL / IST</span><span class="sf-demo-public-chip">Zeiterfassung</span><span class="sf-demo-public-chip">Schicht-Marktplatz</span><span class="sf-demo-public-chip">DATEV-LODAS</span></div></div><aside class="sf-demo-public-action"><strong>Demo-Zugang für Interessenten</strong><p>Die Demo läuft vollständig getrennt von echten Kunden- und Mitarbeiterdaten. Zum Öffnen werden die von SchichtFunk bereitgestellten Zugangsdaten benötigt.</p><button type="button" class="landing-btn primary" id="sfPublicDemoStart">🔒 Zum Demo-Zugang</button><div class="sf-demo-public-fine"><span>Zugangsdaten erforderlich</span><span>·</span><span>Beispieldaten</span><span>·</span><span>Sandbox</span></div></aside></div>`;
     features.parentNode.insertBefore(section,features);
     section.querySelector('#sfPublicDemoStart').addEventListener('click',goDemo);
   }
 
   function enhanceFeatureFooter(){
     const b=document.querySelector('#landingPage .features-finish .landing-btn.primary');if(!b||b.dataset.sfDemoCta)return;
-    b.textContent='Demo testen →';b.dataset.sfDemoCta='1';b.onclick=null;b.addEventListener('click',goDemo);
+    b.textContent='Demo-Zugang →';b.dataset.sfDemoCta='1';b.onclick=null;b.addEventListener('click',goDemo);
   }
 
-  function boot(){
-    // Der Demo-Einstieg gehört immer auf die öffentliche Hauptseite – auch wenn
-    // derselbe Browser zuvor bereits eine Demo-Sitzung gestartet hatte.
-    ensureCss();enhanceHeader();enhanceHero();addDemoSection();enhanceFeatureFooter();
-  }
+  function boot(){ensureCss();enhanceHeader();enhanceHero();addDemoSection();enhanceFeatureFooter()}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
   [100,300,800].forEach(ms=>setTimeout(boot,ms));
   window.sfOpenPublicDemo=goDemo;
