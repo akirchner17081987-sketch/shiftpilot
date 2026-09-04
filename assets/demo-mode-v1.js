@@ -164,12 +164,17 @@
     for(const [k,v] of Object.entries(backup.session||{}))if(v!=null)sessionStorage.setItem(k,v);
   }
 
-  function exitDemo(){
+  function clearLocalDemo(){
     const backup=sessionStorage.getItem('sf_demo_auth_backup_v1');
     Object.keys(sessionStorage).filter(k=>k.startsWith('sf_demo_')).forEach(k=>sessionStorage.removeItem(k));
     if(backup)sessionStorage.setItem('sf_demo_auth_backup_v1',backup);
     restoreProductAuth();
     sessionStorage.removeItem('sf_demo_auth_backup_v1');
+  }
+
+  function exitDemo(){
+    clearLocalDemo();
+    fetch('/api/demo-auth',{method:'DELETE',credentials:'same-origin',keepalive:true}).catch(()=>{});
     location.replace('/demo');
   }
   window.sfExitDemo=exitDemo;
@@ -186,5 +191,18 @@
     observer.observe(document.body,{childList:true,subtree:true});
   }
 
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+  async function authorizeThenStart(){
+    try{
+      const response=await fetch('/api/demo-auth',{cache:'no-store',credentials:'same-origin'});
+      if(!response.ok)throw new Error('expired');
+      const result=await response.json();
+      if(result.expiresAt)sessionStorage.setItem('sf_demo_expires_at_v1',result.expiresAt);
+      start();
+    }catch{
+      clearLocalDemo();
+      location.replace('/demo?expired=1');
+    }
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',authorizeThenStart,{once:true});else authorizeThenStart();
 })();

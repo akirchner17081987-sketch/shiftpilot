@@ -27,14 +27,17 @@ test('demo page requires username and password before sandbox start',()=>{
   assert.match(demo,/id="demoForm"/);
   assert.match(demo,/id="demoUser"/);
   assert.match(demo,/type="password"/);
-  assert.match(demo,/USER_SHA256/);
-  assert.match(demo,/PASSWORD_SHA256/);
+  assert.match(demo,/fetch\('\/api\/demo-auth'/);
   assert.match(demo,/Benutzer oder Passwort ist nicht korrekt/);
+  assert.doesNotMatch(demo,/USER_SHA256/);
+  assert.doesNotMatch(demo,/PASSWORD_SHA256/);
+  assert.doesNotMatch(demo,/[a-f0-9]{64}/i);
   assert.doesNotMatch(demo,/demo@schichtfunk\.de/);
 });
 
 test('successful protected login preserves product auth only as an isolated backup',()=>{
   assert.match(demo,/sf_demo_auth_backup_v1/);
+  assert.match(demo,/if\(sessionStorage\.getItem\('sf_demo_auth_backup_v1'\)\)return/);
   assert.match(demo,/sf_demo_session_v1','active'/);
   assert.match(demo,/demo-marketplace-v1\.js/);
   assert.match(demo,/demo-mode-v1\.js/);

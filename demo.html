@@ -46,13 +46,11 @@
 </main>
 <script>
 (function(){
-  const USER_SHA256='b4f64a9f4afb1e660de403f8f5e9babd7a5cab3a20bc6debc657fdc0d988abd4';
-  const PASSWORD_SHA256='73ea495445d86ecaa6a985e0c5ffd46270da403a4d779803f72af8acff03e915';
   const form=document.getElementById('demoForm'),user=document.getElementById('demoUser'),password=document.getElementById('demoPassword'),submit=document.getElementById('demoSubmit'),msg=document.getElementById('demoMsg');
   const say=(text,type='bad')=>{msg.className='msg show '+type;msg.textContent=text};
-  const digest=async value=>{const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value));return Array.from(new Uint8Array(bytes)).map(b=>b.toString(16).padStart(2,'0')).join('')};
 
   function isolateAuth(){
+    if(sessionStorage.getItem('sf_demo_auth_backup_v1'))return;
     const backup={local:{},session:{}};
     for(const storage of [localStorage,sessionStorage]){
       const bucket=storage===localStorage?backup.local:backup.session;
@@ -69,18 +67,31 @@
     html=/<\/body>/i.test(html)?html.replace(/<\/body>/i,loader+'</body>'):html+loader;
     document.open();document.write(html);document.close();
   }
+  async function checkExistingSession(){
+    try{
+      const response=await fetch('/api/demo-auth',{cache:'no-store',credentials:'same-origin'});
+      if(!response.ok)return;
+      clearDemoState();isolateAuth();
+      sessionStorage.setItem('sf_demo_session_v1','active');
+      await launchSandbox();
+    }catch{}
+  }
   form.addEventListener('submit',async e=>{
     e.preventDefault();submit.disabled=true;submit.textContent='Zugang wird geprüft …';msg.className='msg';
     try{
-      const [userHash,passwordHash]=await Promise.all([digest(user.value.trim().toLowerCase()),digest(password.value)]);
-      if(userHash!==USER_SHA256||passwordHash!==PASSWORD_SHA256){say('Benutzer oder Passwort ist nicht korrekt.');return}
+      const response=await fetch('/api/demo-auth',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user.value,password:password.value})});
+      const result=await response.json().catch(()=>({}));
+      if(response.status===429){const minutes=Math.max(1,Math.ceil(Number(result.retryAfter||60)/60));say(`Zu viele Versuche. Bitte in ${minutes} Minute${minutes===1?'':'n'} erneut versuchen.`);return}
+      if(!response.ok){say(response.status===503?'Der Demo-Zugang wird gerade eingerichtet. Bitte später erneut versuchen.':'Benutzer oder Passwort ist nicht korrekt.');return}
       clearDemoState();isolateAuth();
       sessionStorage.setItem('sf_demo_session_v1','active');
       sessionStorage.setItem('sf_demo_started_at_v1',new Date().toISOString());
+      if(result.expiresAt)sessionStorage.setItem('sf_demo_expires_at_v1',result.expiresAt);
       say('Zugang bestätigt. Demo wird vorbereitet …','good');
       await launchSandbox();
     }catch(err){say('Der Demo-Zugang konnte nicht gestartet werden. Bitte die Seite neu laden.');console.error(err)}finally{submit.disabled=false;submit.textContent='Demo öffnen →'}
   });
+  checkExistingSession();
 })();
 </script>
 </body>
