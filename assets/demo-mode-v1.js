@@ -124,6 +124,7 @@
       #sfDemoBadge{position:fixed;right:18px;bottom:18px;z-index:30000;padding:8px 11px;border-radius:999px;border:1px solid #2a8b78;background:#0d332c;color:#8ff0d8;font:800 10px/1.2 Inter,system-ui,sans-serif;letter-spacing:.08em;box-shadow:0 10px 30px rgba(0,0,0,.28);pointer-events:none}
       html[data-sf-demo="1"] .company-card{border-color:#2b7566}html[data-sf-demo="1"] .company-icon{background:#2ed9b8}
       #sfDemoExitBtn{border-color:#2f6e62!important;color:#8ce9d4!important}
+      @media(max-width:560px){#sfDemoExitBtn{display:block!important;position:fixed;right:10px;bottom:66px;z-index:19051;min-height:40px;background:#10251f!important;box-shadow:0 10px 28px rgba(0,0,0,.42)}#sfDemoBadge{display:none}}
     `;document.head.appendChild(css);
   }
 
@@ -178,7 +179,7 @@
     fetch('/api/demo-auth',{method:'DELETE',credentials:'same-origin',keepalive:true}).catch(()=>{});
     location.replace(target);
   }
-  function exitDemo(){finishDemo('/demo')}
+  function exitDemo(){finishDemo('/demo-abschluss')}
   function expireDemo(reason){finishDemo(`/demo?expired=${encodeURIComponent(reason==='maximum'?'maximum':'idle')}`)}
   window.sfExitDemo=exitDemo;
   window.sfExpireDemo=expireDemo;

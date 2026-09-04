@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#071421">
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+<title>Vielen Dank für Ihre Demo – SchichtFunk</title>
+<style>
+:root{--bg:#06111d;--panel:#0d1d2d;--panel2:#102438;--line:#29465d;--text:#f2f8fc;--muted:#91a8ba;--teal:#2bd8b6;--blue:#49a3ff;--amber:#ffc06b}
+*{box-sizing:border-box}html{min-height:100%;background:var(--bg)}body{min-height:100vh;margin:0;padding:clamp(18px,3vw,44px);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:radial-gradient(circle at 78% 10%,#14384d88,transparent 34%),radial-gradient(circle at 15% 85%,#0e493d66,transparent 31%),linear-gradient(160deg,#02070d,#071522 58%,#06111d);display:grid;place-items:center}
+button,a,textarea{font:inherit}.finish-shell{width:min(1180px,100%);overflow:hidden;border:1px solid #26465c;border-radius:24px;background:#071522e8;box-shadow:0 34px 110px #0009}.finish-top{min-height:84px;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:10px 28px;border-bottom:1px solid #203a50;background:#0a1928cc}.finish-logo{width:min(280px,44vw);height:64px;object-fit:contain;object-position:left center}.finish-state{display:flex;align-items:center;gap:9px;color:#9bcabb;font-size:12px;font-weight:750}.finish-state i{width:9px;height:9px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 5px #2bd8b61a}
+.finish-main{padding:clamp(26px,4.2vw,58px)}.finish-intro{max-width:850px;margin:0 auto 30px;text-align:center}.eyebrow{color:var(--teal);font-size:11px;font-weight:900;letter-spacing:.16em}.finish-intro h1{margin:10px 0 12px;font-size:clamp(34px,4.4vw,58px);line-height:1.05;letter-spacing:-.045em}.finish-intro h1 span{color:var(--teal)}.finish-intro p{max-width:720px;margin:0 auto;color:#a6b9c9;font-size:clamp(14px,1.4vw,17px);line-height:1.65}.finish-check{display:inline-flex;align-items:center;gap:8px;margin-top:18px;padding:8px 12px;border:1px solid #28705f;border-radius:999px;background:#0e3029;color:#83e5cf;font-size:11px;font-weight:800}
+.finish-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.finish-option{min-height:188px;padding:19px;border:1px solid var(--line);border-radius:15px;background:linear-gradient(150deg,#102336,#0a1826);color:var(--text);text-align:left;cursor:pointer;transition:.16s ease}.finish-option:hover,.finish-option:focus-visible{transform:translateY(-3px);border-color:#38bda5;background:#122b3d;outline:none;box-shadow:0 17px 38px #0005}.finish-option[aria-pressed="true"]{border-color:var(--teal);background:linear-gradient(150deg,#12352f,#0d2130);box-shadow:inset 0 0 0 1px #2bd8b655}.finish-icon{width:43px;height:43px;display:grid;place-items:center;border:1px solid #2b7162;border-radius:11px;background:#113b34;color:#76ead0;font-size:20px}.finish-option b,.finish-option small{display:block}.finish-option b{margin-top:24px;font-size:15px}.finish-option small{margin-top:7px;color:#8fa7b9;font-size:11.5px;line-height:1.55}.finish-arrow{display:block;margin-top:13px;color:#6ce3ca;font-size:11px;font-weight:850}
+.finish-compose{display:none;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:end;margin-top:16px;padding:20px;border:1px solid #30604f;border-radius:15px;background:#0d2522}.finish-compose.show{display:grid}.finish-compose h2{margin:4px 0 7px;font-size:20px}.finish-compose p{margin:0 0 12px;color:#95adbd;font-size:12px;line-height:1.55}.finish-compose textarea{width:100%;min-height:92px;resize:vertical;padding:12px 13px;border:1px solid #31526a;border-radius:10px;background:#081624;color:#eaf4fa;line-height:1.55;outline:none}.finish-compose textarea:focus{border-color:var(--teal);box-shadow:0 0 0 3px #2bd8b61f}.finish-compose-actions{display:flex;flex-direction:column;gap:8px;min-width:190px}.primary,.secondary{min-height:43px;padding:0 14px;border-radius:9px;font-weight:850;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;cursor:pointer}.primary{border:1px solid var(--teal);background:var(--teal);color:#05261f}.secondary{border:1px solid #38566c;background:#0b1927;color:#c2d2df}.copy-status{min-height:18px;color:#80e0ca;font-size:10px;text-align:center}
+.finish-foot{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:24px;padding-top:20px;border-top:1px solid #20394d}.finish-foot p{margin:0;color:#768fa3;font-size:10.5px;line-height:1.5}.finish-links{display:flex;gap:8px;flex-wrap:wrap}.finish-link{min-height:40px;padding:0 13px;border:1px solid #314c62;border-radius:9px;background:#091725;color:#b8cad8;text-decoration:none;font-size:11px;font-weight:800;display:flex;align-items:center}.finish-link.demo{border-color:#276d5d;color:#80dfc9;background:#0e2b26}
+@media(max-width:950px){.finish-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.finish-compose{grid-template-columns:1fr}.finish-compose-actions{display:grid;grid-template-columns:1fr 1fr}.copy-status{grid-column:1/-1}.finish-option{min-height:166px}}
+@media(max-width:620px){body{padding:10px}.finish-shell{border-radius:17px}.finish-top{min-height:70px;padding:8px 16px}.finish-logo{width:210px;height:52px}.finish-state span{display:none}.finish-main{padding:24px 15px}.finish-intro{margin-bottom:22px}.finish-grid{grid-template-columns:1fr}.finish-option{min-height:0;padding:15px;display:grid;grid-template-columns:42px 1fr;column-gap:12px}.finish-option b{margin-top:2px}.finish-option small,.finish-option .finish-arrow{grid-column:2;margin-top:4px}.finish-compose{padding:16px}.finish-compose-actions{grid-template-columns:1fr}.copy-status{grid-column:auto}.finish-foot{align-items:stretch;flex-direction:column}.finish-links{display:grid;grid-template-columns:1fr}.finish-link{justify-content:center}}
+</style>
+</head>
+<body>
+<main class="finish-shell">
+  <header class="finish-top">
+    <img class="finish-logo" src="/assets/schichtfunk-logo.svg" alt="SchichtFunk – Klar geplant. Stark besetzt.">
+    <span class="finish-state"><i></i><span>Demo sicher beendet</span></span>
+  </header>
+  <section class="finish-main">
+    <div class="finish-intro">
+      <div class="eyebrow">VIELEN DANK FÜR IHRE ZEIT</div>
+      <h1>Wie dürfen wir Sie <span>weiter unterstützen?</span></h1>
+      <p>Wählen Sie den nächsten Schritt, der zu Ihnen passt. SchichtFunk bereitet Ihnen direkt eine kurze Nachricht vor.</p>
+      <span class="finish-check">✓ Ihre Demo-Daten wurden verworfen</span>
+    </div>
+    <div class="finish-grid" role="group" aria-label="Nächsten Schritt auswählen">
+      <button class="finish-option" type="button" data-next="conversation" aria-pressed="false"><span class="finish-icon">◉</span><b>Gespräch vereinbaren</b><small>Anforderungen und Einsatzmöglichkeiten unverbindlich besprechen.</small><span class="finish-arrow">Nachricht vorbereiten →</span></button>
+      <button class="finish-option" type="button" data-next="presentation" aria-pressed="false"><span class="finish-icon">▣</span><b>Persönliche Vorführung</b><small>SchichtFunk gemeinsam anhand Ihrer Abläufe und Fragen ansehen.</small><span class="finish-arrow">Vorführung anfragen →</span></button>
+      <button class="finish-option" type="button" data-next="trial" aria-pressed="false"><span class="finish-icon">◇</span><b>Eigenen Testzugang</b><small>Eine passende Testumgebung für Ihr Unternehmen anfragen.</small><span class="finish-arrow">Testzugang anfragen →</span></button>
+      <button class="finish-option" type="button" data-next="feedback" aria-pressed="false"><span class="finish-icon">♡</span><b>Feedback geben</b><small>Teilen Sie kurz mit, was überzeugt hat oder noch gefehlt hat.</small><span class="finish-arrow">Feedback formulieren →</span></button>
+    </div>
+    <section class="finish-compose" id="finishCompose" aria-live="polite">
+      <div>
+        <div class="eyebrow" id="finishComposeEyebrow">NÄCHSTER SCHRITT</div>
+        <h2 id="finishComposeTitle">Nachricht vorbereiten</h2>
+        <p>Sie können den Text anpassen und anschließend kopieren oder über Ihr Gerät teilen.</p>
+        <textarea id="finishMessage" aria-label="Vorbereitete Nachricht"></textarea>
+      </div>
+      <div class="finish-compose-actions">
+        <button class="primary" id="finishCopy" type="button">Nachricht kopieren</button>
+        <button class="secondary" id="finishShare" type="button">Über Gerät teilen</button>
+        <span class="copy-status" id="finishStatus" role="status"></span>
+      </div>
+    </section>
+    <footer class="finish-foot">
+      <p>Datenschutzfreundlich: Ihre Eingabe bleibt auf diesem Gerät und wird von dieser Seite nicht übertragen.</p>
+      <nav class="finish-links" aria-label="Weitere Möglichkeiten">
+        <a class="finish-link" href="/#contact">Zur Kontaktseite</a>
+        <a class="finish-link demo" href="/demo">Demo erneut starten</a>
+      </nav>
+    </footer>
+  </section>
+</main>
+<script>
+(function(){
+  const content={
+    conversation:['GESPRÄCH','Unverbindliches Gespräch','Guten Tag, ich habe die SchichtFunk-Demo angesehen und möchte gern unverbindlich besprechen, wie SchichtFunk zu unseren Anforderungen passt.'],
+    presentation:['PERSÖNLICHE VORFÜHRUNG','Vorführung anfragen','Guten Tag, ich wünsche mir eine persönliche SchichtFunk-Vorführung anhand unserer typischen Planungsabläufe und Fragen.'],
+    trial:['EIGENER TESTZUGANG','Testzugang anfragen','Guten Tag, ich möchte SchichtFunk gern mit einer eigenen Testumgebung für unser Unternehmen weiter ausprobieren.'],
+    feedback:['FEEDBACK','Rückmeldung zur Demo','Mein Eindruck von der SchichtFunk-Demo: ']
+  };
+  const compose=document.getElementById('finishCompose'),message=document.getElementById('finishMessage'),status=document.getElementById('finishStatus');
+  function choose(key){const item=content[key];if(!item)return;document.querySelectorAll('[data-next]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.next===key)));document.getElementById('finishComposeEyebrow').textContent=item[0];document.getElementById('finishComposeTitle').textContent=item[1];message.value=item[2];status.textContent='';compose.classList.add('show');requestAnimationFrame(()=>{compose.scrollIntoView({behavior:'smooth',block:'nearest'});message.focus();message.setSelectionRange(message.value.length,message.value.length)})}
+  async function copy(){try{await navigator.clipboard.writeText(message.value);status.textContent='✓ Nachricht kopiert';document.getElementById('finishCopy').textContent='✓ Kopiert'}catch{message.select();status.textContent='Text markiert – bitte kopieren.'}}
+  async function share(){if(navigator.share){try{await navigator.share({title:document.getElementById('finishComposeTitle').textContent,text:message.value});status.textContent='✓ Teilen geöffnet';return}catch(error){if(error?.name==='AbortError')return}}await copy()}
+  document.querySelectorAll('[data-next]').forEach(button=>button.addEventListener('click',()=>choose(button.dataset.next)));
+  document.getElementById('finishCopy').addEventListener('click',copy);document.getElementById('finishShare').addEventListener('click',share);
+})();
+</script>
+</body>
+</html>
