@@ -22,7 +22,15 @@ test('month inputs use compact logical German labels',()=>{
   assert.match(format,/sf-month-shortened/);
 });
 
+test('calendar icon area opens native date and month picker',()=>{
+  assert.match(format,/PICKER_ICON_HITBOX=40/);
+  assert.match(format,/input\.showPicker\(\)/);
+  assert.match(format,/pointerdown/);
+  assert.match(format,/input\.type==='month'\|\|input\.type==='date'/);
+  assert.match(format,/openPicker:openNativePicker/);
+});
+
 test('central date month controls are loaded together',()=>{
   assert.match(navigation,/date-month-controls-v1\.css/);
-  assert.match(navigation,/date-month-format-v1\.js/);
+  assert.match(navigation,/date-month-format-v1\.js\?v=20260904-2/);
 });
