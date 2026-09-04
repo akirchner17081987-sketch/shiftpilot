@@ -1,8 +1,13 @@
-// SchichtFunk – kompakte Monatsanzeige für alle input[type=month] V1
+// SchichtFunk – zentrale Datums-/Monatslogik V1
 (function(){
   if(window.__sfDateMonthFormatV1)return;window.__sfDateMonthFormatV1=true;
 
   const MONTHS=['Jan.','Feb.','Mär.','Apr.','Mai','Jun.','Jul.','Aug.','Sep.','Okt.','Nov.','Dez.'];
+  const PICKER_ICON_HITBOX=40;
+
+  function isPickerInput(input){
+    return input instanceof HTMLInputElement&&(input.type==='month'||input.type==='date');
+  }
 
   function formatMonthShort(value){
     const m=String(value||'').match(/^(\d{4})-(0[1-9]|1[0-2])$/);
@@ -37,9 +42,44 @@
     root.querySelectorAll?.('input[type="month"]').forEach(sync);
   }
 
+  function openNativePicker(input){
+    if(!isPickerInput(input)||input.disabled||input.readOnly)return false;
+    try{
+      input.focus({preventScroll:true});
+      if(typeof input.showPicker==='function'){
+        input.showPicker();
+        return true;
+      }
+    }catch(err){
+      // Browser kann showPicker blockieren; dann übernimmt das native Standardverhalten.
+    }
+    return false;
+  }
+
+  // Das sichtbare türkisfarbene Kalender-Symbol ist ein CSS-Hintergrund.
+  // Deshalb wird sein rechter 40px-Bereich zentral als echter Picker-Button behandelt.
+  document.addEventListener('pointerdown',e=>{
+    const input=e.target;
+    if(!isPickerInput(input)||input.disabled||input.readOnly)return;
+    const rect=input.getBoundingClientRect();
+    if(e.clientX<rect.right-PICKER_ICON_HITBOX)return;
+    if(openNativePicker(input)){
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  },true);
+
+  // Tastatur-/synthetische Klicks auf den rechten Symbolbereich bleiben als Fallback nutzbar.
+  document.addEventListener('click',e=>{
+    const input=e.target;
+    if(!isPickerInput(input)||input.disabled||input.readOnly)return;
+    if(e.detail===0)openNativePicker(input);
+  },true);
+
   window.SFDateMonthFormat={
     monthNamesShort:[...MONTHS],
     formatMonthShort,
+    openPicker:openNativePicker,
     refresh:syncAll
   };
 
