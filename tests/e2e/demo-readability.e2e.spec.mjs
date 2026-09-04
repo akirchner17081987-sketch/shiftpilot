@@ -6,6 +6,7 @@ test('demo readability is applied to manager and employee perspectives', async (
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
   });
   await page.goto('/demo');
+  await expect.poll(()=>page.locator('#appShell .content').evaluate(element=>getComputedStyle(element).maxWidth)).toBe('1720px');
 
   const manager=await page.locator('#appShell').evaluate(shell=>({
     contentMax:getComputedStyle(shell.querySelector('.content')).maxWidth,
