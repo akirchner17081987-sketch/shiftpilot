@@ -9,6 +9,10 @@
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
   }
 
+  function initialDatevMonth(){
+    return sessionStorage.getItem('sf_demo_session_v1')==='active'?'2026-08':currentMonth();
+  }
+
   function ensureDatevHost(){
     const view=document.getElementById('view-time');
     if(!view)return null;
@@ -50,9 +54,10 @@
       label.id='sfDatevMonthWrap';
       label.innerHTML='<span>Abrechnungsmonat</span><input id="sfTaMonth" type="month">';
       const input=label.querySelector('#sfTaMonth');
-      input.value=currentMonth();
+      input.value=initialDatevMonth();
       input.addEventListener('change',()=>input.dispatchEvent(new Event('input',{bubbles:true})));
       grid.insertBefore(label,grid.firstChild);
+      if(sessionStorage.getItem('sf_demo_session_v1')==='active')input.dispatchEvent(new Event('change',{bubbles:true}));
     }
   }
 

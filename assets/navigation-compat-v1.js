@@ -66,6 +66,6 @@
   loadIntegration('/assets/calendar-view-switch-v1.js?v=20260904-1','data-sf-calendar-view');
   loadIntegration('/assets/publish-dialog-design-v1.js?v=20260904-1','data-sf-publish-dialog-design');
   loadIntegration('/assets/demo-reset-v1.js?v=20260904-1','data-sf-demo-reset');
-  loadIntegration('/assets/demo-august-2026-v1.js?v=20260904-1','data-sf-demo-august-2026');
+  loadIntegration('/assets/demo-august-2026-v1.js?v=20260904-2','data-sf-demo-august-2026');
   loadIntegration('/assets/demo-datev-snapshot-fix-v1.js?v=20260904-2','data-sf-demo-datev-snapshot-fix');
 })();

@@ -5,6 +5,7 @@ import fs from 'node:fs';
 const source=fs.readFileSync(new URL('../assets/demo-august-2026-v1.js',import.meta.url),'utf8');
 const navigation=fs.readFileSync(new URL('../assets/navigation-compat-v1.js',import.meta.url),'utf8');
 const datevFix=fs.readFileSync(new URL('../assets/demo-datev-snapshot-fix-v1.js',import.meta.url),'utf8');
+const brandCleanup=fs.readFileSync(new URL('../assets/schichtfunk-brand-cleanup-v2.js',import.meta.url),'utf8');
 
 test('August 2026 demo module is loaded by the application',()=>{
   assert.match(navigation,/demo-august-2026-v1\.js/);
@@ -41,6 +42,8 @@ test('August is selected as the initial demo month without affecting production 
   assert.match(source,/TIME_MONTH_KEY='sf\.time\.selectedMonth'/);
   assert.match(source,/timeInput\.value=MONTH/);
   assert.match(source,/accountInput\.value=MONTH/);
+  assert.match(brandCleanup,/sf_demo_session_v1'\)==='active'\?'2026-08':currentMonth\(\)/);
+  assert.match(navigation,/demo-august-2026-v1\.js\?v=20260904-2/);
 });
 
 test('DATEV demo RPC bridge is patched only once and does not build recursive wrapper chains',()=>{
