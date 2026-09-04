@@ -1,11 +1,11 @@
-// SchichtFunk – Demo DATEV Snapshot-Konsistenz V1
+// SchichtFunk – Demo DATEV Snapshot-Konsistenz V2
 (function(){
   if(sessionStorage.getItem('sf_demo_session_v1')!=='active')return;
-  if(window.__sfDemoDatevSnapshotFixV1)return;window.__sfDemoDatevSnapshotFixV1=true;
+  if(window.__sfDemoDatevSnapshotFixV2)return;window.__sfDemoDatevSnapshotFixV2=true;
 
   const B=window.SFBackend=window.SFBackend||{};
   const MONTH='2026-08';
-  let wrapper=null,wrappedBase=null,timer=0;
+  let patched=false,retryTimer=0;
   const clone=v=>JSON.parse(JSON.stringify(v));
 
   function demoEmployees(){
@@ -55,35 +55,64 @@
     return bundle;
   }
 
+  function augustBundle(){
+    try{return repairBundle(window.SchichtFunkDemoAugust2026?.bundle?.()||{employees:[],details:[]})}
+    catch{return {employees:[],details:[]}}
+  }
+  function filterAugustEntries(args={}){
+    const start=String(args.p_start_date||'2026-08-01');
+    const end=String(args.p_end_date||'2026-08-31');
+    return demoEntries().filter(e=>{
+      const d=String(e.starts_at||'').slice(0,10);
+      return d>=start&&d<=end;
+    });
+  }
+  function requestMonth(name,args={}){
+    if(name==='manager_list_time_entries')return String(args.p_start_date||'').slice(0,7);
+    return String(args.p_month||'').slice(0,7);
+  }
+
   function patchApiBundle(){
     const api=window.SchichtFunkDemoAugust2026;
-    if(!api||api.__sfDatevSnapshotFixed)return;
+    if(!api||api.__sfDatevSnapshotFixedV2)return;
     const base=api.bundle;
     if(typeof base==='function')api.bundle=()=>repairBundle(base());
-    api.__sfDatevSnapshotFixed=true;
+    api.__sfDatevSnapshotFixedV2=true;
   }
 
   function patchRpc(){
-    const current=B.client?.rpc;
+    if(patched)return true;
+    const client=B.client,current=client?.rpc;
     if(typeof current!=='function')return false;
-    if(current===wrapper)return true;
-    wrappedBase=current.bind(B.client);
-    wrapper=async function(name,args={}){
-      const res=await wrappedBase(name,args);
-      if(name==='manager_time_report_bundle'&&String(args?.p_month||'').startsWith(MONTH)&&!res?.error){
-        return {...res,data:repairBundle(res?.data)};
+    if(current.__sfDemoDatevSnapshotFixV2){patched=true;return true}
+    const base=current.bind(client);
+    const wrapper=async function(name,args={}){
+      const month=requestMonth(name,args);
+      if(name==='manager_time_month_status'){
+        if(month===MONTH)return {data:{status:'CLOSED',closed_at:'2026-09-01T06:00:00+02:00',demo:true},error:null};
+        return {data:{status:'OPEN',closed_at:null,demo:true},error:null};
       }
-      return res;
+      if(name==='manager_time_report_bundle'){
+        if(month===MONTH)return {data:clone(augustBundle()),error:null};
+        return {data:{employees:[],details:[],demo:true},error:null};
+      }
+      if(name==='manager_list_time_entries'){
+        if(month===MONTH)return {data:clone(filterAugustEntries(args)),error:null};
+        return {data:[],error:null};
+      }
+      return base(name,args);
     };
     wrapper.__sfDemoCloudV2=true;
-    wrapper.__sfDemoDatevSnapshotFixV1=true;
-    B.client.rpc=wrapper;
+    wrapper.__sfDemoDatevSnapshotFixV2=true;
+    client.rpc=wrapper;
+    patched=true;
     return true;
   }
 
-  function ensure(){
-    patchApiBundle();patchRpc();
-    clearTimeout(timer);timer=setTimeout(ensure,500);
+  function boot(){
+    patchApiBundle();
+    if(patchRpc())return;
+    clearTimeout(retryTimer);retryTimer=setTimeout(boot,120);
   }
-  ensure();
+  boot();
 })();
