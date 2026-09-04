@@ -172,12 +172,15 @@
     sessionStorage.removeItem('sf_demo_auth_backup_v1');
   }
 
-  function exitDemo(){
+  function finishDemo(target){
     clearLocalDemo();
     fetch('/api/demo-auth',{method:'DELETE',credentials:'same-origin',keepalive:true}).catch(()=>{});
-    location.replace('/demo');
+    location.replace(target);
   }
+  function exitDemo(){finishDemo('/demo')}
+  function expireDemo(reason){finishDemo(`/demo?expired=${encodeURIComponent(reason==='maximum'?'maximum':'idle')}`)}
   window.sfExitDemo=exitDemo;
+  window.sfExpireDemo=expireDemo;
 
   function rerender(){
     try{if(typeof renderLibrary==='function')renderLibrary();if(typeof renderPlanEmployeePool==='function')renderPlanEmployeePool();if(typeof renderCalendar==='function')renderCalendar();if(typeof renderEmployees==='function')renderEmployees();if(typeof renderTimeTracking==='function')renderTimeTracking();if(typeof renderAbsenceDashboard==='function')renderAbsenceDashboard();if(typeof renderSettings==='function')renderSettings();if(typeof renderOverview==='function')renderOverview()}catch(err){console.error('SchichtFunk Demo Render',err)}
