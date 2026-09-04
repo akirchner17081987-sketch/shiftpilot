@@ -135,7 +135,7 @@
     const scenario=scenarios[key];if(!scenario)return;
     const needsManager=window.SFDemoPerspective?.current?.()!=='manager';
     if(needsManager)window.SFDemoPerspective?.set?.('manager');
-    setTimeout(()=>{
+    const open=()=>{
       if(key==='outage')window.SFDisruptionAutopilot?.open?.();
       else if(key==='swap'){
         const market=document.querySelector('#nav [data-view="marketplace"]');market?.click();window.switchView?.('marketplace');
@@ -150,7 +150,9 @@
         }
       }
       setTimeout(banner,220);window.scrollTo({top:0,behavior:'instant'});
-    },needsManager?140:20);
+    };
+    const delay=needsManager?140:20;setTimeout(open,delay);
+    [delay+360,delay+900].forEach(ms=>setTimeout(()=>{if(active()!==key)return;window.switchView?.(scenario.target);banner()},ms));
   }
   function apply(key){
     if(applying||!scenarios[key])return;applying=true;clearPreparedData();sessionStorage.setItem(ACTIVE_KEY,key);
@@ -161,7 +163,7 @@
   }
   function boot(){css();patchRpc();ensureButtons();if(active())showTarget(active())}
   const observer=new MutationObserver(()=>{ensureButtons();ensureScenarioDetail()});
-  function start(){boot();if(document.body)observer.observe(document.body,{childList:true,subtree:true});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDialog()});document.addEventListener('sf:demo-perspective-change',()=>setTimeout(ensureButtons,30))}
+  function start(){boot();if(document.body)observer.observe(document.body,{childList:true,subtree:true});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDialog()});document.addEventListener('sf:demo-perspective-change',()=>setTimeout(()=>{ensureButtons();const key=active();if(key)showTarget(key)},80))}
   window.SFDemoScenarios={open:openDialog,apply,reset,current:active,list:()=>Object.keys(scenarios)};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
