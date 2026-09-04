@@ -63,7 +63,7 @@
     const response=await fetch('/?sf_demo_source=1',{cache:'no-store',credentials:'same-origin'});
     if(!response.ok)throw new Error('SchichtFunk Oberfläche konnte nicht geladen werden.');
     let html=await response.text();
-    const loader='<script src="/assets/scrollbar-design-v1.js?v=20260904-1"><\/script><script src="/assets/demo-marketplace-v1.js?v=20260903-2"><\/script><script src="/assets/demo-mode-v1.js?v=20260904-5"><\/script><script src="/assets/demo-session-v1.js?v=20260904-1"><\/script><script src="/assets/demo-tour-v1.js?v=20260904-2"><\/script><script src="/assets/demo-role-switch-v1.js?v=20260904-1"><\/script>';
+    const loader='<script src="/assets/scrollbar-design-v1.js?v=20260904-1"><\/script><script src="/assets/demo-marketplace-v1.js?v=20260903-2"><\/script><script src="/assets/demo-mode-v1.js?v=20260904-5"><\/script><script src="/assets/demo-session-v1.js?v=20260904-1"><\/script><script src="/assets/demo-tour-v1.js?v=20260904-2"><\/script><script src="/assets/demo-role-switch-v1.js?v=20260904-1"><\/script><script src="/assets/demo-scenarios-v1.js?v=20260904-1"><\/script>';
     html=/<\/body>/i.test(html)?html.replace(/<\/body>/i,loader+'</body>'):html+loader;
     document.open();document.write(html);document.close();
   }
