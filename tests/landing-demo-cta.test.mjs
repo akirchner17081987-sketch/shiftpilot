@@ -12,26 +12,28 @@ test('public landing page loads the demo CTA integration',()=>{
 
 test('demo calls-to-action route only to the isolated demo endpoint',()=>{
   assert.match(cta,/const DEMO_URL='\/demo'/);
-  assert.match(cta,/Demo kostenlos testen/);
-  assert.match(cta,/Demo jetzt starten/);
-  assert.match(cta,/Keine Registrierung/);
+  assert.match(cta,/Geschützte Demo ansehen/);
+  assert.match(cta,/Zum Demo-Zugang/);
+  assert.match(cta,/Zugangsdaten erforderlich/);
   assert.match(cta,/Keine echten Daten/);
   assert.match(cta,/Jederzeit zurücksetzbar/);
 });
 
-test('production login stays separate from public demo',()=>{
+test('production login stays separate from protected demo',()=>{
   assert.match(cta,/login\.textContent='Anmelden'/);
 });
 
-test('demo page starts without public credentials',()=>{
-  assert.match(demo,/Demo jetzt starten/);
-  assert.match(demo,/Keine Registrierung und keine Zugangsdaten erforderlich/);
+test('demo page requires username and password before sandbox start',()=>{
+  assert.match(demo,/id="demoForm"/);
+  assert.match(demo,/id="demoUser"/);
+  assert.match(demo,/type="password"/);
+  assert.match(demo,/USER_SHA256/);
+  assert.match(demo,/PASSWORD_SHA256/);
+  assert.match(demo,/Benutzer oder Passwort ist nicht korrekt/);
   assert.doesNotMatch(demo,/demo@schichtfunk\.de/);
-  assert.doesNotMatch(demo,/PASSWORD_SHA256/);
-  assert.doesNotMatch(demo,/type="password"/);
 });
 
-test('one-click demo preserves product auth only as an isolated backup',()=>{
+test('successful protected login preserves product auth only as an isolated backup',()=>{
   assert.match(demo,/sf_demo_auth_backup_v1/);
   assert.match(demo,/sf_demo_session_v1','active'/);
   assert.match(demo,/demo-marketplace-v1\.js/);
