@@ -4,10 +4,13 @@ import fs from 'node:fs';
 
 const source=fs.readFileSync(new URL('../assets/demo-august-2026-v1.js',import.meta.url),'utf8');
 const navigation=fs.readFileSync(new URL('../assets/navigation-compat-v1.js',import.meta.url),'utf8');
+const datevFix=fs.readFileSync(new URL('../assets/demo-datev-snapshot-fix-v1.js',import.meta.url),'utf8');
 
 test('August 2026 demo module is loaded by the application',()=>{
   assert.match(navigation,/demo-august-2026-v1\.js/);
+  assert.match(navigation,/demo-datev-snapshot-fix-v1\.js\?v=20260904-2/);
   assert.doesNotThrow(()=>new Function(source));
+  assert.doesNotThrow(()=>new Function(datevFix));
 });
 
 test('demo reference month covers all 31 days and includes O1S and QA',()=>{
@@ -36,4 +39,17 @@ test('August is selected as the initial demo month without affecting production 
   assert.match(source,/sf_demo_session_v1/);
   assert.match(source,/input\.value=MONTH/);
   assert.match(source,/setMode\?\.\('month'\)/);
+});
+
+test('DATEV demo RPC bridge is patched only once and does not build recursive wrapper chains',()=>{
+  assert.match(datevFix,/if\(patched\)return true/);
+  assert.doesNotMatch(datevFix,/setTimeout\(ensure,500\)/);
+  assert.match(datevFix,/wrapper\.__sfDemoDatevSnapshotFixV2=true/);
+});
+
+test('DATEV demo isolates months outside August instead of calling product data',()=>{
+  assert.match(datevFix,/if\(name==='manager_time_month_status'\)/);
+  assert.match(datevFix,/return \{data:\{status:'OPEN'/);
+  assert.match(datevFix,/return \{data:\{employees:\[\],details:\[\],demo:true\},error:null\}/);
+  assert.match(datevFix,/return \{data:\[\],error:null\}/);
 });
