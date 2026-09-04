@@ -56,10 +56,11 @@
   }
 
   function boot(){
-    if(sessionStorage.getItem('sf_demo_session_v1')==='active')return;
+    // Der Demo-Einstieg gehört immer auf die öffentliche Hauptseite – auch wenn
+    // derselbe Browser zuvor bereits eine Demo-Sitzung gestartet hatte.
     ensureCss();enhanceHeader();enhanceHero();addDemoSection();enhanceFeatureFooter();
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
-  setTimeout(boot,250);
+  [100,300,800].forEach(ms=>setTimeout(boot,ms));
   window.sfOpenPublicDemo=goDemo;
 })();
