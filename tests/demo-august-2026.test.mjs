@@ -37,8 +37,10 @@ test('DATEV demo uses numeric personnel numbers and an absence example',()=>{
 
 test('August is selected as the initial demo month without affecting production mode',()=>{
   assert.match(source,/sf_demo_session_v1/);
-  assert.match(source,/input\.value=MONTH/);
-  assert.match(source,/setMode\?\.\('month'\)/);
+  assert.match(source,/calendar\.setMonth\(MONTH\)/);
+  assert.match(source,/TIME_MONTH_KEY='sf\.time\.selectedMonth'/);
+  assert.match(source,/timeInput\.value=MONTH/);
+  assert.match(source,/accountInput\.value=MONTH/);
 });
 
 test('DATEV demo RPC bridge is patched only once and does not build recursive wrapper chains',()=>{

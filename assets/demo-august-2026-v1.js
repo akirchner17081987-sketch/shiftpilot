@@ -8,7 +8,9 @@
   const FIRST='2026-08-01';
   const LAST='2026-08-31';
   const INIT_KEY='sf_demo_data_august_standard_v1';
-  const PICKER_KEY='sf_demo_data_august_picker_v1';
+  const PICKER_KEY='sf_demo_data_august_picker_v2';
+  const VIEW_KEY='sf_demo_data_august_view_initialized_v2';
+  const TIME_MONTH_KEY='sf.time.selectedMonth';
   const pad=n=>String(n).padStart(2,'0');
   const shiftTimes={
     O1:['07:00','15:00'],O1S:['18:00','04:00'],O2:['15:00','23:00'],QA:['20:00','06:00'],
@@ -98,19 +100,23 @@
 
   function setDefaultAugustView(){
     if(sessionStorage.getItem(INIT_KEY)!=='ready')return false;
-    if(sessionStorage.getItem('sf_demo_data_august_view_initialized_v1')==='1')return true;
-    try{if(typeof weekStart!=='undefined')weekStart=new Date(2026,7,3)}catch{}
-    try{window.SchichtFunkCalendarView?.setMode?.('month')}catch{}
-    sessionStorage.setItem('sf_demo_data_august_view_initialized_v1','1');
-    try{if(typeof renderCalendar==='function')renderCalendar()}catch{}
+    if(sessionStorage.getItem(VIEW_KEY)==='1')return true;
+    const calendar=window.SchichtFunkCalendarView;
+    if(typeof calendar?.setMonth!=='function')return false;
+    calendar.setMonth(MONTH);
+    sessionStorage.setItem(VIEW_KEY,'1');
     return true;
   }
 
   function setDefaultMonthPicker(){
-    if(sessionStorage.getItem(PICKER_KEY)==='1')return true;
-    const input=document.getElementById('sfTaMonth');if(!input)return false;
-    input.value=MONTH;sessionStorage.setItem(PICKER_KEY,'1');
-    input.dispatchEvent(new Event('change',{bubbles:true}));return true;
+    let state={};try{state=JSON.parse(sessionStorage.getItem(PICKER_KEY)||'{}')||{}}catch{}
+    sessionStorage.setItem(TIME_MONTH_KEY,MONTH);
+    const timeInput=document.getElementById('sfTimeMonthPicker');
+    if(timeInput&&!state.time){timeInput.value=MONTH;timeInput.dispatchEvent(new Event('change',{bubbles:true}));state.time=true}
+    const accountInput=document.getElementById('sfTaMonth');
+    if(accountInput&&!state.account){accountInput.value=MONTH;accountInput.dispatchEvent(new Event('change',{bubbles:true}));state.account=true}
+    sessionStorage.setItem(PICKER_KEY,JSON.stringify(state));
+    return state.time===true&&state.account===true;
   }
 
   function rangeTouchesAugust(args={}){
@@ -142,7 +148,7 @@
 
   function boot(){
     const ok=seedPlanning();if(ok){setDefaultAugustView();setDefaultMonthPicker();patchRpc();addDemoHint()}
-    if(!ok||!rpcPatched||sessionStorage.getItem(PICKER_KEY)!=='1')setTimeout(boot,120);
+    if(!ok||!rpcPatched||!setDefaultAugustView()||!setDefaultMonthPicker())setTimeout(boot,120);
   }
   const observer=new MutationObserver(()=>{setDefaultMonthPicker();addDemoHint()});
   function start(){boot();if(document.body)observer.observe(document.body,{childList:true,subtree:true})}
