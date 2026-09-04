@@ -15,7 +15,7 @@
   function css(){
     if(document.getElementById('sfEmployeePortalVerticalLayoutV1'))return;
     const s=document.createElement('style');s.id='sfEmployeePortalVerticalLayoutV1';s.textContent=`
-      #sfEmployeePortal .sf-portal-main{max-width:1380px;padding:30px 34px 46px}
+      #sfEmployeePortal .sf-portal-main{max-width:none;padding:26px 28px 40px}
       #sfEmployeePortal{overflow-anchor:none}
       #sfEmployeePortal .sf-portal-logo{
         width:188px;height:48px;border-radius:0;background:transparent;color:inherit;

@@ -19,6 +19,16 @@ test('demo switches between manager workspace and the existing employee portal',
   await expect(portal).not.toContainText('permission denied');
   await expect(page.locator('#appShell')).toHaveCount(0);
   await expect(portal.locator('[data-demo-perspective="employee"]')).toHaveAttribute('aria-pressed', 'true');
+  const scrollbar = await portal.locator('.sf-portal-main').evaluate(element => ({
+    firefox: getComputedStyle(element).scrollbarColor,
+    maxWidth: getComputedStyle(element).maxWidth,
+    width: getComputedStyle(element, '::-webkit-scrollbar').width,
+    thumb: getComputedStyle(element, '::-webkit-scrollbar-thumb').backgroundColor,
+  }));
+  expect(scrollbar.firefox).not.toBe('auto');
+  expect(scrollbar.maxWidth).toBe('none');
+  expect(['7px','9px']).toContain(scrollbar.width);
+  expect(scrollbar.thumb).not.toBe('rgba(0, 0, 0, 0)');
 
   await portal.locator('[data-demo-perspective="manager"]').click();
   await expect(portal).toHaveCount(0);

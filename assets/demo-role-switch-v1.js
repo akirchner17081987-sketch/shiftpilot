@@ -21,10 +21,12 @@
       .sf-demo-perspective button{min-height:34px!important;padding:0 11px!important;border:0!important;border-radius:8px!important;background:transparent!important;color:#91a9bc!important;font:800 11px/1 Inter,system-ui,sans-serif!important;cursor:pointer}
       .sf-demo-perspective button[aria-pressed="true"]{background:#163d37!important;color:#8cebd5!important;box-shadow:inset 0 0 0 1px #2d7869}
       .sf-demo-employee-context{color:#8da6b9;font:700 10px/1.3 Inter,system-ui,sans-serif;white-space:nowrap}.sf-demo-employee-context b{color:#dcebf5}
+      #sfEmployeePortal .sf-portal-main{max-width:none!important;padding:26px 28px 40px!important}
       #sfEmployeePortal .sf-demo-perspective{margin-left:auto}#sfEmployeePortal .sf-portal-top>.spacer{display:none}#sfEmployeePortal #sfEmployeeLogout{display:none!important}
       #sfDemoEmployeeExit{min-height:40px;padding:0 13px;border:1px solid #36556c;border-radius:9px;background:#0a1928;color:#b9cddd;font:800 11px Inter,system-ui,sans-serif;cursor:pointer}
       @media(max-width:850px){.sf-demo-perspective-label,.sf-demo-employee-context{display:none}.sf-demo-perspective button{padding:0 9px!important}}
-      @media(max-width:560px){.sf-demo-perspective{position:fixed;z-index:19050;left:10px;right:10px;bottom:12px;justify-content:center}.sf-demo-perspective button{flex:1}#sfDemoEmployeeExit{padding:0 9px}}
+      @media(max-width:820px){#sfEmployeePortal .sf-portal-main{padding:22px 20px 38px!important}}
+      @media(max-width:560px){#sfEmployeePortal .sf-portal-main{padding:18px 14px 72px!important}.sf-demo-perspective{position:fixed;z-index:19050;left:10px;right:10px;bottom:12px;justify-content:center}.sf-demo-perspective button{flex:1}#sfDemoEmployeeExit{padding:0 9px}}
     `;document.head.appendChild(style);
   }
 

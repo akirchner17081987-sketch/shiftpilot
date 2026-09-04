@@ -6,8 +6,10 @@ const page=fs.readFileSync(new URL('../demo.html',import.meta.url),'utf8');
 const demo=fs.readFileSync(new URL('../assets/demo-mode-v1.js',import.meta.url),'utf8');
 const roles=fs.readFileSync(new URL('../assets/demo-role-switch-v1.js',import.meta.url),'utf8');
 const access=fs.readFileSync(new URL('../assets/supabase-employee-access-v1.js',import.meta.url),'utf8');
+const portal=fs.readFileSync(new URL('../assets/employee-portal-vertical-layout-v1.js',import.meta.url),'utf8');
 
 test('protected demo loads the perspective switcher',()=>{
+  assert.match(page,/scrollbar-design-v1\.js/);
   assert.match(page,/demo-role-switch-v1\.js/);
   assert.match(roles,/sf_demo_session_v1/);
   assert.match(roles,/sf_demo_perspective_v1/);
@@ -37,4 +39,9 @@ test('perspective selector is clearly labelled and reports its state',()=>{
   assert.match(roles,/aria-pressed/);
   assert.match(roles,/Manager/);
   assert.match(roles,/Mitarbeiter/);
+});
+
+test('employee portal uses the full workspace width',()=>{
+  assert.match(portal,/#sfEmployeePortal \.sf-portal-main\{max-width:none/);
+  assert.match(roles,/#sfEmployeePortal \.sf-portal-main\{max-width:none!important/);
 });
