@@ -52,8 +52,8 @@
   // Öffentliche Startseite: geschützter Demo-Einstieg getrennt von der Produktiv-Anmeldung.
   loadIntegration('/assets/landing-demo-cta-v1.js?v=20260904-3','data-sf-landing-demo-cta');
 
-  // Datums- und Monatsfelder im Dark-UI bekommen ein klar sichtbares Kalender-Symbol.
-  loadIntegration('/assets/date-month-icon-visibility-v1.js?v=20260904-1','data-sf-date-month-icon');
+  // Datums- und Monatsfelder: Kalender-Symbol im SchichtFunk-Standardtürkis.
+  loadIntegration('/assets/date-month-icon-visibility-v1.js?v=20260904-2','data-sf-date-month-icon');
 
   loadIntegration('/assets/o1s-integration-v1.js?v=20260904-1','data-sf-o1s-integration');
   loadIntegration('/assets/qa-integration-v1.js?v=20260904-1','data-sf-qa-integration');
