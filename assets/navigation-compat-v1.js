@@ -49,8 +49,8 @@
     const script=document.createElement('script');script.src=src;script.async=false;script.setAttribute(marker,'1');document.head.appendChild(script);
   }
 
-  // Öffentliche Startseite: klarer Demo-Einstieg getrennt von der Produktiv-Anmeldung.
-  loadIntegration('/assets/landing-demo-cta-v1.js?v=20260904-2','data-sf-landing-demo-cta');
+  // Öffentliche Startseite: geschützter Demo-Einstieg getrennt von der Produktiv-Anmeldung.
+  loadIntegration('/assets/landing-demo-cta-v1.js?v=20260904-3','data-sf-landing-demo-cta');
 
   loadIntegration('/assets/o1s-integration-v1.js?v=20260904-1','data-sf-o1s-integration');
   loadIntegration('/assets/qa-integration-v1.js?v=20260904-1','data-sf-qa-integration');
