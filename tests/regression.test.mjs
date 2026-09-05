@@ -9,6 +9,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const read = path => readFileSync(resolve(root, path), 'utf8');
 const index = read('index.html');
 const employeeManagement = read('assets/employee-management-v2.js');
+const employeeRhythm = read('assets/employee-rhythm-v1.js');
 const marketplace = read('assets/supabase-shift-marketplace-v1.js');
 const supabaseData = read('assets/supabase-data-v1.js');
 const roleEscalationFix = read('database/fix_company_member_role_escalation.sql');
@@ -23,6 +24,7 @@ const employeePortalLayout = read('assets/employee-portal-workspace-v2.js');
 const employeeWagePreview = read('assets/employee-wage-preview-v1.js');
 const supabaseAuth = read('assets/supabase-auth-v1.js');
 const moduleLoader = read('assets/conflict-plausibility-v1.js');
+const timeAccounts = read('assets/supabase-time-accounts-v1.js');
 const complianceCore = read('assets/compliance-core-v2.js');
 const schedulePublish = read('assets/supabase-publish-v1.js');
 const absenceConcurrencyMigration = read('supabase/migrations/20260901155037_prevent_concurrent_duplicate_absence_requests.sql');
@@ -103,6 +105,57 @@ test('auto planning supports a selected week, calendar month, or exact date', ()
   assert.match(index, /if\(mode==='date'\)return\[document\.getElementById\('autoPlanDate'\)/);
   assert.match(index, /autoPlannedHours\(e\.id,simulated,date\)/);
   assert.match(index, /function autoOpenSlots\(\)\{const dates=autoPlanningDates\(\)/);
+});
+
+test('O1S and QA are available as fixed overnight shifts', () => {
+  assert.match(index, /\{id:'O1S',name:'O1S',start:'18:00',end:'04:00',cls:'violet'\}/);
+  assert.match(index, /\{id:'QA',name:'QA',start:'20:00',end:'06:00',cls:'blue'\}/);
+  assert.match(index, /globalSoll=store\.get\('globalSoll',\{O1:3,O1S:0,O2:2,QA:0,/);
+  assert.match(employeeManagement, /const Q=\['O1','O1S','O2','QA','O3','OT1','OT2','OT','Teamleiter'\]/);
+});
+
+test('individual monthly target hours are persisted and enforced during planning', () => {
+  const assignmentUx = read('assets/assignment-ux-v4.js');
+  assert.match(employeeManagement, /__sp:monthlyHours=/);
+  assert.match(employeeManagement, /id="spMonthlyHours"/);
+  assert.match(employeeManagement, /Monatliche Sollstunden/);
+  assert.match(employeeManagement, /employeeMonthlyTarget==='function'\?employeeMonthlyTarget\(e\)/);
+  assert.match(index, /function employeeMonthlyTarget\(employee\)/);
+  assert.match(index, /function plannedMonthlyHoursForEmployee\(employeeId,date,simulated=\[\],ignoreId=null\)/);
+  assert.match(index, /overMonth=!!\(respectHours&&monthTarget&&monthHours\+dur>monthTarget\+0\.01\)/);
+  assert.match(index, /filter\(x=>!respectHours\|\|\(!x\.overWeek&&!x\.overMonth\)\)/);
+  assert.match(index, /Wochen- und Monatsstunden berücksichtigen/);
+  assert.match(assignmentUx, /Monats-SOLL würde auf/);
+});
+
+test('employee overview is sorted alphabetically by last name and first name', () => {
+  assert.match(employeeManagement, /function employeeNameCompare\(a,b\)/);
+  assert.match(employeeManagement, /String\(a\.last\|\|''\)\.localeCompare\(String\(b\.last\|\|''\),'de-DE',options\)/);
+  assert.match(employeeManagement, /String\(a\.first\|\|''\)\.localeCompare\(String\(b\.first\|\|''\),'de-DE',options\)/);
+  assert.match(employeeManagement, /\.sort\(employeeNameCompare\)/);
+  assert.match(employeeManagement, /<b>\$\{esc\(e\.last\)\}, \$\{esc\(e\.first\)\}<\/b>/);
+  assert.match(index, /<b>\$\{e\.last\}, \$\{e\.first\}<\/b>/);
+});
+
+test('employee rhythm settings are visible, persisted and enforced by planning', () => {
+  assert.match(index, /assets\/employee-rhythm-v1\.js/);
+  assert.match(employeeManagement, /id="spWorkTimeModel"/);
+  assert.match(employeeManagement, /id="spRhythmMode"/);
+  assert.match(employeeManagement, /id="spRhythmStart"/);
+  assert.match(employeeManagement, /id="spRhythmPattern"/);
+  assert.match(employeeManagement, /__sp:rhythmMode=/);
+  assert.match(employeeManagement, /__sp:rhythmStart=/);
+  assert.match(employeeManagement, /__sp:rhythmPattern=/);
+  assert.match(employeeManagement, /rhythm\?\.mode==='required'&&!rhythm\.allowed/);
+  assert.match(index, /sfRhythmCheck\(e,type,date\)\.mode!==\'required\'/);
+  assert.match(index, /rhythmPenalty=rhythm&&!rhythm\.allowed&&rhythm\.mode===\'preferred\'\?40:0/);
+  const browserWindow = {};
+  Function('window', employeeRhythm)(browserWindow);
+  const required = {rhythmMode:'required',rhythmStart:'2026-09-01',rhythmPattern:'O1, O2, FREI'};
+  assert.equal(browserWindow.sfRhythmCheck(required,'O1','2026-09-01').allowed, true);
+  assert.equal(browserWindow.sfRhythmCheck(required,'O1','2026-09-02').allowed, false);
+  assert.equal(browserWindow.sfRhythmCheck(required,'O2','2026-09-05').allowed, true);
+  assert.equal(browserWindow.sfRhythmCheck(required,'O1','2026-09-03').expected, 'FREI');
 });
 
 test('long auto-planning result lists scroll inside their cards', () => {
@@ -510,6 +563,17 @@ test('employee startup skips manager-only modules and detaches inactive applicat
   assert.match(employeeAccess, /const detachNonEmployeeShell=/);
   assert.match(employeeAccess, /detachNonEmployeeShell\(\);document\.getElementById\('sfEmployeePortal'\)/);
   assert.match(employeeAccess, /event==='SIGNED_OUT'\)restoreNonEmployeeShell\(\)/);
+});
+
+test('manager time workspace loads in dependency order and repairs a DATEV-only placeholder', () => {
+  const closeIndex = moduleLoader.indexOf("'assets/supabase-time-month-close-v1.js'");
+  const workspaceIndex = moduleLoader.indexOf("'assets/time-workspace-v2.js'");
+  const datevIndex = moduleLoader.indexOf("'assets/datev-lodas-export-v1.js'");
+  assert.ok(closeIndex >= 0 && workspaceIndex > closeIndex && datevIndex > workspaceIndex);
+  assert.match(moduleLoader, /'assets\/time-month-picker-v1\.js'/);
+  assert.match(moduleLoader, /'assets\/datev-sic-download-v1\.js'/);
+  assert.match(timeAccounts, /matches\('\[data-datev-only-host\]'\)/);
+  assert.match(timeAccounts, /if\(preservedDatev\)wrap\.appendChild\(preservedDatev\)/);
 });
 
 test('password recovery uses a parseable callback and requires a valid session', () => {

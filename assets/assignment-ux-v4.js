@@ -37,6 +37,9 @@
     const current=typeof plannedHoursForEmployee==='function'?plannedHoursForEmployee(emp.id):0;
     const hrs=(ne-ns)/36e5;
     if(Number(emp.weeklyHours)>0&&current+hrs>Number(emp.weeklyHours)+0.01)soft.push(`Wochen-SOLL würde auf ${(current+hrs).toFixed(1)} / ${Number(emp.weeklyHours).toFixed(1)} Std. steigen.`);
+    const monthCurrent=typeof plannedMonthlyHoursForEmployee==='function'?plannedMonthlyHoursForEmployee(emp.id,date,[],ignoreId):0;
+    const monthTarget=typeof employeeMonthlyTarget==='function'?employeeMonthlyTarget(emp):0;
+    if(monthTarget>0&&monthCurrent+hrs>monthTarget+0.01)soft.push(`Monats-SOLL würde auf ${(monthCurrent+hrs).toFixed(1)} / ${monthTarget.toFixed(1)} Std. steigen.`);
     const so=typeof getSoll==='function'?getSoll(date,type):0,is=typeof assignmentsFor==='function'?assignmentsFor(date,type).filter(a=>a.id!==ignoreId).length:0;
     if(so>0&&is>=so)soft.push(`SOLL-Stärke ${so} ist bereits erreicht.`);
     return {hard,soft};
