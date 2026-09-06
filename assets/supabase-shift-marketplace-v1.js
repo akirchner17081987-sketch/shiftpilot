@@ -3,7 +3,8 @@
   const B = (window.SFBackend = window.SFBackend || {}),
     MANAGER = new Set(["OWNER", "ADMIN", "DISPATCHER", "PLANNER"]);
   let rows = [],
-    busy = false,
+    employeeBusy = false,
+    managerBusy = false,
     managerError = "",
     marketFilter = "active",
     marketSearch = "";
@@ -88,15 +89,16 @@
     return q.data;
   }
   async function employeeLoad() {
-    if (busy || B.role !== "EMPLOYEE") return;
-    busy = true;
+    if (employeeBusy || B.role !== "EMPLOYEE") return;
+    employeeBusy = true;
     try {
       rows = (await rpc("employee_list_shift_marketplace")) || [];
       renderEmployee();
     } catch (e) {
       console.warn("Marktplatz", e);
+      renderEmployeeError(e);
     } finally {
-      busy = false;
+      employeeBusy = false;
     }
   }
   function upcoming() {
@@ -225,9 +227,24 @@
     );
     addOfferButtons();
   }
+  function renderEmployeeError(error) {
+    const root = document.getElementById("sfEmployeePortal");
+    if (!root) return;
+    css();
+    root.querySelector("#sfMarketEmployee")?.remove();
+    const host = root.querySelector(".sf-portal-grid") || root;
+    const card = document.createElement("section");
+    card.id = "sfMarketEmployee";
+    card.className = "sf-portal-card sf-market";
+    card.dataset.sfPortalSection = "marketplace";
+    card.innerHTML = `<div class="sf-market-head"><div><h3>Schicht-Marktplatz</h3><p>Eigene Schichten anbieten und passende Angebote übernehmen</p></div></div><div class="sf-market-empty sf-market-block">Der Schicht-Marktplatz konnte nicht geladen werden.<br><button type="button" class="ghost" data-market-retry style="margin-top:12px">Erneut versuchen</button></div>`;
+    host.insertBefore(card, host.firstChild);
+    card.querySelector("[data-market-retry]").onclick = employeeLoad;
+    if (error?.message) card.title = String(error.message);
+  }
   async function managerLoad() {
-    if (!MANAGER.has(B.role) || !B.companyId || busy) return;
-    busy = true;
+    if (!MANAGER.has(B.role) || !B.companyId || managerBusy) return;
+    managerBusy = true;
     managerError = "";
     try {
       rows =
@@ -240,7 +257,7 @@
       console.warn("Marktplatz", e);
       renderDashboard();
     } finally {
-      busy = false;
+      managerBusy = false;
     }
   }
   function reviewButton(x) {
@@ -434,6 +451,10 @@
   document.addEventListener(
     "click",
     (e) => {
+      if (e.target.closest('[data-sf-employee-view="marketplace"]')) {
+        setTimeout(employeeLoad, 0);
+        return;
+      }
       if (e.target.closest('[data-view="marketplace"]')) {
         openDashboard();
         return;
@@ -443,4 +464,7 @@
     },
     true,
   );
+  document.addEventListener("sf:demo-perspective-change", (event) => {
+    if (event.detail?.perspective === "employee") setTimeout(employeeLoad, 0);
+  });
 })();

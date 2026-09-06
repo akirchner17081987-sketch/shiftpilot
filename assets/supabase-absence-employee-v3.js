@@ -54,7 +54,9 @@
         const btn=m.querySelector('#sfAe3Submit');btn.disabled=true;btn.textContent='Wird gesendet …';
         const {error}=await B.client.rpc('employee_submit_absence_request',{p_absence_type:type,p_start_date:from,p_end_date:to,p_note:note,p_full_day:full,p_start_time:full?null:st,p_end_time:full?null:en,p_time_note:''});
         if(error)throw error;
-        await B.hydrateEmployee();close();B.openEmployeePortal();setTimeout(()=>render(true),60);
+        await B.hydrateEmployee();close();
+        if(B.client?.__sfDemoLocalClientV1){render(true);B.employeePortalNavigate?.('absences')}
+        else{B.openEmployeePortal();setTimeout(()=>render(true),60)}
       }catch(e){const btn=m.querySelector('#sfAe3Submit');btn.disabled=false;btn.textContent='Antrag senden';fail(e?.message||String(e))}
     };
   }

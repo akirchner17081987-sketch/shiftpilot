@@ -148,3 +148,5 @@ $$;
 
 revoke all on function public.manager_list_audit_events(uuid,timestamptz,timestamptz,uuid,text,integer) from public, anon;
 grant execute on function public.manager_list_audit_events(uuid,timestamptz,timestamptz,uuid,text,integer) to authenticated;
+
+;

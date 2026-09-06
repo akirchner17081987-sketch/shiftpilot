@@ -88,7 +88,8 @@
       if(error)throw error;
       const result=Array.isArray(data)?data[0]:data;
       await B.hydrateEmployee();
-      B.openEmployeePortal();
+      if(B.client?.__sfDemoLocalClientV1){enhance();B.employeePortalNavigate?.('changes')}
+      else B.openEmployeePortal();
       B.hideLoading?.();
       toast(result?.message||(approve?'Änderung bestätigt.':'Änderung abgelehnt.'));
     }catch(e){
@@ -99,6 +100,7 @@
   }
 
   B.respondToShiftChange=respond;
+  B.refreshEmployeeShiftChanges=enhance;
   const base=B.openEmployeePortal;
   B.openEmployeePortal=function(){const r=base.apply(this,arguments);setTimeout(enhance,0);return r};
   setTimeout(enhance,0);

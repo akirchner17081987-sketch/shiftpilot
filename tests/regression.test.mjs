@@ -142,7 +142,8 @@ test('employee rhythm settings are visible, persisted and enforced by planning',
   assert.match(employeeManagement, /id="spWorkTimeModel"/);
   assert.match(employeeManagement, /id="spRhythmMode"/);
   assert.match(employeeManagement, /id="spRhythmStart"/);
-  assert.match(employeeManagement, /id="spRhythmPattern"/);
+  assert.match(employeeManagement, /data-rhythm-day/);
+  assert.match(employeeManagement, /WEEKDAYS=\['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'\]/);
   assert.match(employeeManagement, /__sp:rhythmMode=/);
   assert.match(employeeManagement, /__sp:rhythmStart=/);
   assert.match(employeeManagement, /__sp:rhythmPattern=/);
@@ -270,7 +271,7 @@ test('employee portal RLS requires an active employee and matching ownership cha
 
 test('Teamleiter permission survives normalization and qualification saving', () => {
   assert.match(employeeManagement, /e\.shifts=Array\.from\(new Set\(\[\.\.\.\(e\.shifts\|\|\[\]\)\.filter\(x=>Q\.includes\(x\)\),\.\.\.\(e\.role==='Teamleiter'\?\['Teamleiter'\]:\[\]\)\]\)\)/);
-  assert.match(employeeManagement, /e\.shifts=e\.qualifications\.filter\(x=>Q\.includes\(x\)\)/);
+  assert.match(employeeManagement, /e\.shifts=nextShifts/);
   assert.doesNotMatch(employeeManagement, /e\.shifts=e\.qualifications\.filter\(x=>x!=='Teamleiter'\)/);
   assert.match(supabaseData, /shift_permissions:e\.shifts\|\|\[\]/);
   assert.match(supabaseData, /shifts:x\.shift_permissions\|\|\[\]/);
@@ -363,6 +364,9 @@ test('disruption autopilot ranks candidates and provides manager and employee wo
   assert.match(disruption, /employee_respond_disruption_offer/);
   assert.match(disruption, /Top 3 anfragen/);
   assert.match(disruption, /Schicht verbindlich übernehmen/);
+  assert.match(disruption, /managerBusy=false,employeeBusy=false/);
+  assert.match(disruption, /data-sf-employee-view="disruptions"/);
+  assert.match(disruption, /sf:demo-perspective-change/);
   assert.match(notifications, /DISRUPTION_OFFER:'⚡'/);
   assert.match(notifications, /employee-disruptions':'disruptions'/);
   assert.match(notifications, /SFDisruptionAutopilot\?\.open/);

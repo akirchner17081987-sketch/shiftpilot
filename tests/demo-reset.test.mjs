@@ -17,6 +17,9 @@ test('demo reset is available only in an active demo session',()=>{
 test('reset removes isolated demo state but preserves demo session and auth backup',()=>{
   assert.match(reset,/sf_demo_data_/);
   assert.match(reset,/sf_demo_marketplace_v1/);
+  assert.match(reset,/sf_demo_disruption_offers_v1/);
+  assert.match(reset,/sf_demo_shift_changes_v1/);
+  assert.match(reset,/sf_demo_absence_requests_v1/);
   assert.match(reset,/sf_demo_time_tracking_v2/);
   assert.match(reset,/sf_demo_datev_v2/);
   assert.match(reset,/keepSession/);

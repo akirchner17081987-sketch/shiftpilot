@@ -154,3 +154,4 @@ grant execute on function public.manager_log_datev_lodas_export(uuid,date,intege
 
 grant select,insert,update on public.datev_lodas_settings to authenticated;
 grant select,insert,update,delete on public.datev_lodas_rules to authenticated;
+;

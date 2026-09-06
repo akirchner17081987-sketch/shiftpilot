@@ -1,0 +1,1 @@
+create index if not exists company_member_invites_created_by_idx on public.company_member_invites(created_by); create index if not exists company_member_invites_claimed_by_idx on public.company_member_invites(claimed_by) where claimed_by is not null;;

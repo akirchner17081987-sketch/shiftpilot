@@ -5,6 +5,9 @@
 
   const RESET_EXACT_KEYS=new Set([
     'sf_demo_marketplace_v1',
+    'sf_demo_disruption_offers_v1',
+    'sf_demo_shift_changes_v1',
+    'sf_demo_absence_requests_v1',
     'sf_demo_time_tracking_v2',
     'sf_demo_datev_v2',
     'sf_schedule_view_mode_v1'

@@ -73,4 +73,4 @@ using (exists (
   select 1 from public.company_members cm
   where cm.company_id=datev_lodas_rules.company_id
     and cm.user_id=(select auth.uid()) and cm.status='ACTIVE' and cm.role in ('OWNER','ADMIN')
-));
+));;

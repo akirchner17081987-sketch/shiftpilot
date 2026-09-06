@@ -81,3 +81,5 @@ before insert or update of employee_id, start_date, end_date, full_day, start_ti
 on public.absences
 for each row
 execute function private.enforce_absence_no_overlap();
+
+;

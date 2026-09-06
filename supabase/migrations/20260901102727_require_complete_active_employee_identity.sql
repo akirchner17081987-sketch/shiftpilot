@@ -16,4 +16,4 @@ alter table public.employees
   );
 
 comment on constraint employees_active_identity_complete_check on public.employees is
-  'Active employees require complete identity and core employment data. Optional contact and address fields remain nullable.';
+  'Active employees require complete identity and core employment data. Optional contact and address fields remain nullable.';;

@@ -75,6 +75,10 @@
       const sat=['D001','D004','D006','D008','D010','D011','D013','D014'];
       const sun=['D002','D007','D009','D012','D015'];
       for(const [day,nos] of [[5,sat],[6,sun]])for(const no of nos){const emp=employees.find(e=>e.personnelNo===no);if(emp)assignments.push(assignmentFor(emp,dates[day],day))}
+      // Das feste Demo-Profil D001 erhält zusätzlich zwei rollierende Vorschau-Schichten.
+      // So bleiben „Nächste Schicht“ und die 7-Tage-Vorschau auch am Wochenende aussagekräftig.
+      const previewEmployee=employees.find(e=>e.personnelNo==='D001')||employees[0];
+      for(const offset of [7,9]){const previewDate=localIso(plusDays(mon,offset));assignments.push(assignmentFor(previewEmployee,previewDate,offset))}
       timeEntries={};
       assignments.filter(a=>a.date===dates[0]).slice(0,8).forEach((a,i)=>{
         const [sh,sm]=a.start.split(':').map(Number),[eh,em]=a.end.split(':').map(Number);
@@ -144,7 +148,7 @@
   }
 
   function patchAuthLayer(){
-    B.demo=true;B.demoMode=true;B.role=sessionStorage.getItem(PERSPECTIVE_KEY)==='employee'?'EMPLOYEE':'ADMIN';B.companyId='demo-local-company';B.user={id:'demo-local-user',email:DEMO_EMAIL,user_metadata:{name:DEMO_USER}};B.ready=false;
+    B.demo=true;B.demoMode=true;B.role=sessionStorage.getItem(PERSPECTIVE_KEY)==='employee'?'EMPLOYEE':'ADMIN';B.companyId='demo-local-company';B.user={id:'demo-local-user',email:DEMO_EMAIL,user_metadata:{name:DEMO_USER}};B.ready=true;
     B.authDialog=()=>demoOpen('overview');
     B.showAuth=()=>demoOpen('overview');
     B.updateState=()=>renderDemoState();
