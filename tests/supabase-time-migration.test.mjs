@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import test from 'node:test';
 
 const sql=fs.readFileSync(new URL('../supabase/migrations/20260906164859_version_time_tracking_and_accounts.sql',import.meta.url),'utf8');
+const companyUserGrantRepair=fs.readFileSync(new URL('../supabase/migrations/20260906172659_restore_company_user_check_execute.sql',import.meta.url),'utf8');
 
 const rpcSignatures=[
   'manager_list_time_entries(uuid,date,date)',
@@ -58,4 +59,10 @@ test('German state codes used by the UI are supported',()=>{
     assert.ok(sql.includes(`'${state}'`),`${state} missing`);
   }
   assert.match(sql,/regexp_replace\(upper\(coalesce\(p_state,'DE'\)\),'\^DE-',''\)/);
+});
+
+test('authenticated company users retain the authorization helper required at login',()=>{
+  assert.match(companyUserGrantRepair,/grant usage on schema private to authenticated/i);
+  assert.match(companyUserGrantRepair,/revoke all on function private\.can_manage_company_users\(uuid\) from public, anon/i);
+  assert.match(companyUserGrantRepair,/grant execute on function private\.can_manage_company_users\(uuid\) to authenticated/i);
 });
