@@ -1,0 +1,158 @@
+/* SchichtFunk – readable secondary typography */
+:root{
+  --muted:#a9bbcf;
+  --sf-secondary-dark:#a9bbcf;
+  --sf-secondary-dark-strong:#bdcede;
+  --sf-secondary-light:#526579;
+}
+
+/* Manager workspace */
+#appShell .page-head p,
+#appShell .library p,
+#appShell .profile-summary p,
+#appShell .absence-summary-card p{
+  color:var(--sf-secondary-dark)!important;
+  line-height:1.55!important;
+}
+#appShell .main small{
+  color:var(--sf-secondary-dark)!important;
+  font-size:12px!important;
+  line-height:1.45!important;
+}
+#appShell .main label{
+  color:var(--sf-secondary-dark-strong)!important;
+  font-size:12px!important;
+  line-height:1.4!important;
+}
+#appShell .nav-group-label{
+  color:#91aac2!important;
+  font-size:11px!important;
+  line-height:1.4!important;
+}
+#appShell .company-card small,
+#appShell .user-row small,
+#appShell .nav button small{
+  color:var(--sf-secondary-dark)!important;
+  font-size:11.5px!important;
+  line-height:1.4!important;
+}
+#appShell :where(.empty,[class$="-empty"],[class$="-hint"],[class$="-sub"],[class$="-meta"]){
+  color:var(--sf-secondary-dark)!important;
+  font-size:12px!important;
+  line-height:1.5!important;
+}
+#appShell :where(.time-head,.day-head,.time-slot,.soll-day small,.pool-detail-label,.pool-shift-tag){
+  color:#a7bbcf!important;
+  font-size:11.5px!important;
+  line-height:1.4!important;
+}
+#appShell input::placeholder,
+#appShell textarea::placeholder{
+  color:#91a6bb!important;
+  opacity:1!important;
+}
+
+/* Dynamically rendered DATEV and employee workspaces */
+#appShell .sf-datev p,
+#appShell .sf-datev-status,
+#appShell .sf-datev-note,
+#appShell .sf-datev-empty{
+  color:var(--sf-secondary-dark)!important;
+  font-size:12px!important;
+  line-height:1.5!important;
+}
+#appShell .sf-datev label,
+#appShell .sf-datev-rule,
+#appShell .sf-datev-rule small,
+#appShell .sf-datev-rules-head small{
+  font-size:11.5px!important;
+  line-height:1.4!important;
+}
+#sfEmployeePortal p,
+#sfEmployeePortal small,
+#sfEmployeePortal label{
+  color:var(--sf-secondary-dark)!important;
+  font-size:12px!important;
+  line-height:1.5!important;
+}
+
+/* Demo-Hilfsskripte hängen eigene Styles erst nach dem Laden an. Die höhere
+   Spezifität hält die Lesbarkeit deshalb auch in den Demo-Ansichten stabil. */
+html[data-sf-demo="1"] body #appShell .main :where(p,small,label),
+html[data-sf-demo="1"] body #sfEmployeePortal :where(p,small,label){
+  color:var(--sf-secondary-dark)!important;
+  font-size:12px!important;
+  line-height:1.55!important;
+}
+#sfEmployeePortal :where([class$="-hint"],[class$="-sub"],[class$="-meta"],[class$="-empty"]){
+  color:var(--sf-secondary-dark)!important;
+  font-size:12px!important;
+  line-height:1.5!important;
+}
+
+/* Keep semantic states recognizable after the general contrast lift. */
+#appShell :where(.good,.success,.confirmed) small,
+#sfEmployeePortal :where(.good,.success,.confirmed){color:#8de7cf!important}
+#appShell :where(.warn,.warning) small,
+#sfEmployeePortal :where(.warn,.warning){color:#ffd391!important}
+#appShell :where(.bad,.error,.danger) small,
+#sfEmployeePortal :where(.bad,.error,.danger){color:#ffabb7!important}
+
+/* Public landing page – dark sections */
+#landingPage :where(.hero-point small,.preview-top span,.preview-main>p,.preview-stat small){
+  color:#b7c9da!important;
+  font-size:12px!important;
+  line-height:1.5!important;
+}
+#landingPage :where(.benefits-copy>p,.benefits-list p,.solution-head>p,.solution-flow p,.contact-copy>p,.contact-options p){
+  color:#a9bdcf!important;
+  font-size:13px!important;
+  line-height:1.65!important;
+}
+#landingPage :where(.benefit-proof span,.solution-flow small,.solution-step span,.solution-cta span,.contact-note){
+  color:#91a9bd!important;
+  font-size:11.5px!important;
+  line-height:1.5!important;
+}
+#landingPage :where(.footer-brand p,.footer-links a,.footer-links button,.footer-bottom){
+  color:#94aabd!important;
+  font-size:12px!important;
+  line-height:1.5!important;
+}
+
+/* Public landing page – light feature section */
+#landingPage .features-head p,
+#landingPage .feature-card p{
+  color:var(--sf-secondary-light)!important;
+  font-size:13px!important;
+  line-height:1.65!important;
+}
+
+/* Protected demo access */
+.demo-shell .demo-intro p,
+.demo-shell .demo-login>p{
+  color:#b7c9da!important;
+  font-size:14px!important;
+  line-height:1.65!important;
+}
+.demo-shell .field label{
+  color:#c0d0df!important;
+  font-size:12px!important;
+}
+.demo-shell .security-note{
+  color:#afc2d3!important;
+  font-size:12px!important;
+  line-height:1.6!important;
+}
+.demo-shell .back{
+  color:#83e8d5!important;
+  font-size:13px!important;
+}
+
+@media(max-width:760px){
+  #appShell .main small,
+  #appShell .main label,
+  #sfEmployeePortal p,
+  #sfEmployeePortal small,
+  #sfEmployeePortal label{font-size:12.5px!important}
+}

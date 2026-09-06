@@ -41,7 +41,6 @@
     'assets/supabase-time-month-close-v1.js',
     'assets/time-month-picker-v1.js',
     'assets/time-workspace-v2.js',
-    'assets/datev-sic-download-v1.js',
     'assets/datev-lodas-export-v1.js',
     'assets/supabase-report-export-v2.js',
     'assets/supabase-report-pdf-style-v3.js',

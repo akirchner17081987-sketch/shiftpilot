@@ -8,6 +8,8 @@ import test from 'node:test';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const read = path => readFileSync(resolve(root, path), 'utf8');
 const index = read('index.html');
+const demoPage = read('demo.html');
+const secondaryTextReadability = read('assets/secondary-text-readability-v1.css');
 const employeeManagement = read('assets/employee-management-v2.js');
 const employeeRhythm = read('assets/employee-rhythm-v1.js');
 const marketplace = read('assets/supabase-shift-marketplace-v1.js');
@@ -39,6 +41,17 @@ const auditLogs = read('assets/audit-logs-v1.js');
 const auditMigration = read('supabase/migrations/20260901202710_add_secure_audit_logs.sql');
 const auditReaderHardening = read('supabase/migrations/20260901202920_harden_audit_log_reader.sql');
 const auditPolicyHardening = read('supabase/migrations/20260902112933_restrict_audit_events_to_admins.sql');
+
+test('secondary text is readable across public, manager, demo and employee surfaces', () => {
+  assert.match(index, /secondary-text-readability-v1\.css\?v=20260906-1/);
+  assert.match(demoPage, /secondary-text-readability-v1\.css\?v=20260906-1/);
+  assert.match(secondaryTextReadability, /--muted:#a9bbcf/);
+  assert.match(secondaryTextReadability, /#appShell \.main small/);
+  assert.match(secondaryTextReadability, /#sfEmployeePortal p/);
+  assert.match(secondaryTextReadability, /#landingPage \.feature-card p/);
+  assert.match(secondaryTextReadability, /\.demo-shell \.security-note/);
+  assert.doesNotMatch(secondaryTextReadability, /font-size:(?:8|9|10)px!important/);
+});
 
 test('Audit-Logs are an administrator-only filtered detail workspace', () => {
   assert.match(index, /data-view="audit" id="sfAuditNav" hidden/);
@@ -575,7 +588,7 @@ test('manager time workspace loads in dependency order and repairs a DATEV-only 
   const datevIndex = moduleLoader.indexOf("'assets/datev-lodas-export-v1.js'");
   assert.ok(closeIndex >= 0 && workspaceIndex > closeIndex && datevIndex > workspaceIndex);
   assert.match(moduleLoader, /'assets\/time-month-picker-v1\.js'/);
-  assert.match(moduleLoader, /'assets\/datev-sic-download-v1\.js'/);
+  assert.doesNotMatch(moduleLoader, /'assets\/datev-sic-download-v1\.js'/);
   assert.match(timeAccounts, /matches\('\[data-datev-only-host\]'\)/);
   assert.match(timeAccounts, /if\(preservedDatev\)wrap\.appendChild\(preservedDatev\)/);
 });

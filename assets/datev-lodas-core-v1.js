@@ -7,8 +7,7 @@
   'use strict';
   const SATZBESCHREIBUNG='1;u_lod_bwd_buchung_standard;abrechnung_zeitraum#bwd;bs_wert_butab#bwd;pnr#bwd;la_eigene#bwd;bs_nr#bwd;kostenstelle#bwd;abw_lohnfaktor#bwd;bemerkung#bwd;';
   const SOURCE_TYPES=new Set(['WORK_TOTAL','SHIFT_CODE','ABSENCE_TYPE']);
-  const digits=v=>/^\d+$/.test(String(v??'').trim());
-  const safeToken=v=>!/[;\r\n]/.test(String(v??''));
+  const safeAsciiToken=v=>/^[\x20-\x7E]+$/.test(String(v??''))&&!/[;\r\n]/.test(String(v??''));
   const monthOk=v=>/^\d{4}-(0[1-9]|1[0-2])$/.test(String(v||''));
   const pad=n=>String(n).padStart(2,'0');
 
@@ -26,8 +25,8 @@
     const errors=[];
     const berater=String(settings?.berater_nr??settings?.beraterNr??'').trim();
     const mandant=String(settings?.mandanten_nr??settings?.mandantenNr??'').trim();
-    if(!/^\d{1,10}$/.test(berater))errors.push('BeraterNr fehlt oder ist nicht rein numerisch.');
-    if(!/^\d{1,10}$/.test(mandant))errors.push('MandantenNr fehlt oder ist nicht rein numerisch.');
+    if(!/^\d{4,7}$/.test(berater))errors.push('BeraterNr muss aus 4 bis 7 Ziffern bestehen.');
+    if(!/^\d{1,5}$/.test(mandant))errors.push('MandantenNr muss aus 1 bis 5 Ziffern bestehen.');
     return errors;
   }
   function normalizeRules(rules){
@@ -48,8 +47,8 @@
       const n=i+1;
       if(!SOURCE_TYPES.has(r.source_type))errors.push(`Regel ${n}: unbekannte Quelle.`);
       if(r.source_type!=='WORK_TOTAL'&&!r.source_key)errors.push(`Regel ${n}: Quelle/Schlüssel fehlt.`);
-      if(!/^\d{1,6}$/.test(r.wage_type))errors.push(`Regel ${n}: Lohnart muss numerisch sein.`);
-      if(r.cost_center&&!safeToken(r.cost_center))errors.push(`Regel ${n}: Kostenstelle enthält unzulässige Zeichen.`);
+      if(!/^\d{1,4}$/.test(r.wage_type))errors.push(`Regel ${n}: Lohnart muss aus 1 bis 4 Ziffern bestehen.`);
+      if(r.cost_center&&(r.cost_center.length>13||!safeAsciiToken(r.cost_center)))errors.push(`Regel ${n}: Kostenstelle darf höchstens 13 druckbare ASCII-Zeichen ohne Semikolon enthalten.`);
     });
     return errors;
   }
@@ -71,7 +70,7 @@
       const e=employeeById.get(String(id));
       const pnr=String(e?.personnel_no??'').trim();
       if(!e){employeeErrors.add(`Mitarbeiter ${id} ist im Monats-Snapshot nicht vorhanden.`);return null}
-      if(!digits(pnr)){employeeErrors.add(`${e.employee_name||'Mitarbeiter'}: Personalnummer „${pnr||'leer'}“ ist für das feste LODAS-Muster nicht rein numerisch.`);return null}
+      if(!/^\d{1,5}$/.test(pnr)){employeeErrors.add(`${e.employee_name||'Mitarbeiter'}: Personalnummer „${pnr||'leer'}“ muss für LODAS aus 1 bis 5 Ziffern bestehen.`);return null}
       return {e,pnr};
     }
     function add(employeeId,rule,minutes){
@@ -115,9 +114,9 @@
     const date=monthStartDmy(month);const out=[
       '[Allgemein]',
       'Ziel=LODAS',
+      'Version_SST=1.0',
       'Datumsformat=TT.MM.JJJJ',
       'Zahlenkomma=,',
-      'Version_=15.06',
       `BeraterNr=${String(beraterNr).trim()}`,
       `MandantenNr=${String(mandantenNr).trim()}`,
       '[Satzbeschreibung]',
@@ -126,9 +125,9 @@
     ];
     (rows||[]).forEach(r=>{
       const pnr=String(r.pnr||'').trim(),wage=String(r.wage_type||'').trim(),cost=String(r.cost_center||'NULL').trim()||'NULL';
-      if(!digits(pnr))throw new Error(`Ungültige Personalnummer: ${pnr||'leer'}`);
-      if(!/^\d{1,6}$/.test(wage))throw new Error(`Ungültige Lohnart: ${wage||'leer'}`);
-      if(!safeToken(cost))throw new Error('Kostenstelle enthält unzulässige Zeichen.');
+      if(!/^\d{1,5}$/.test(pnr))throw new Error(`Ungültige Personalnummer: ${pnr||'leer'}`);
+      if(!/^\d{1,4}$/.test(wage))throw new Error(`Ungültige Lohnart: ${wage||'leer'}`);
+      if(cost!=='NULL'&&(cost.length>13||!safeAsciiToken(cost)))throw new Error('Kostenstelle darf höchstens 13 druckbare ASCII-Zeichen ohne Semikolon enthalten.');
       out.push(`1;${date};${formatValueFromMinutes(r.minutes)};${pnr};${wage};1;${cost};`);
     });
     return out.join('\r\n');

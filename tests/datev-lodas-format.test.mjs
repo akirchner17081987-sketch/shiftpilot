@@ -10,6 +10,9 @@ const C=sandbox.SFDatevLodasCore;
 test('DATEV browser export module has valid JavaScript syntax',()=>{
   const ui=fs.readFileSync(new URL('../assets/datev-lodas-export-v1.js',import.meta.url),'utf8');
   assert.doesNotThrow(()=>new vm.Script(ui,{filename:'datev-lodas-export-v1.js'}));
+  assert.match(ui,/charset=us-ascii/);
+  assert.match(ui,/SchichtFunk_DATEV_LODAS_\$\{month\}\.txt/);
+  assert.doesNotMatch(ui,/\.sic/);
 });
 
 test('DATEV LODAS header and movement lines match the binding SchichtFunk pattern',()=>{
@@ -26,9 +29,9 @@ test('DATEV LODAS header and movement lines match the binding SchichtFunk patter
   const expected=[
     '[Allgemein]',
     'Ziel=LODAS',
+    'Version_SST=1.0',
     'Datumsformat=TT.MM.JJJJ',
     'Zahlenkomma=,',
-    'Version_=15.06',
     'BeraterNr=1103899',
     'MandantenNr=62069',
     '[Satzbeschreibung]',
@@ -67,5 +70,22 @@ test('non-numeric payroll personnel numbers block the fixed LODAS format',()=>{
     details:[],entries:[]
   });
   assert.equal(result.rows.length,0);
-  assert.ok(result.errors.some(x=>x.includes('nicht rein numerisch')));
+  assert.ok(result.errors.some(x=>x.includes('1 bis 5 Ziffern')));
+});
+
+test('current LODAS field limits are enforced',()=>{
+  assert.deepEqual(Array.from(C.validateSettings({berater_nr:'123',mandanten_nr:'123456'})),[
+    'BeraterNr muss aus 4 bis 7 Ziffern bestehen.',
+    'MandantenNr muss aus 1 bis 5 Ziffern bestehen.'
+  ]);
+  assert.ok(C.validateRules([{active:true,source_type:'WORK_TOTAL',wage_type:'12345',cost_center:null}]).some(x=>x.includes('1 bis 4 Ziffern')));
+  assert.ok(C.validateRules([{active:true,source_type:'WORK_TOTAL',wage_type:'100',cost_center:'KÖST'}]).some(x=>x.includes('ASCII')));
+  assert.throws(()=>C.formatContent({beraterNr:'28547',mandantenNr:'90909',month:'2026-08',rows:[{pnr:'123456',wage_type:'100',minutes:60,cost_center:'NULL'}]}),/Personalnummer/);
+});
+
+test('export uses the documented interface version key and no legacy key',()=>{
+  const content=C.formatContent({beraterNr:'28547',mandantenNr:'90909',month:'2026-08',rows:[]});
+  assert.match(content,/^Version_SST=1\.0$/m);
+  assert.doesNotMatch(content,/^Version_=/m);
+  assert.ok([...content].every(char=>char.charCodeAt(0)<=127));
 });

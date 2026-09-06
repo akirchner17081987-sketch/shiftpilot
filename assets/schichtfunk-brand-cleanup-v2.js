@@ -99,18 +99,9 @@
     if(document.getElementById('sfDatevLodasExportScript'))return;
     const s=document.createElement('script');
     s.id='sfDatevLodasExportScript';
-    s.src='assets/datev-lodas-export-v1.js?v=20260903-lodas2';
+    s.src='assets/datev-lodas-export-v1.js?v=20260906-lodas94';
     s.async=true;
     s.addEventListener('load',()=>{setTimeout(enhanceDatevPanel,50);setTimeout(enhanceDatevPanel,700)});
-    document.head.appendChild(s);
-  }
-
-  function loadDatevSicDownload(){
-    if(document.getElementById('sfDatevSicDownloadScript'))return;
-    const s=document.createElement('script');
-    s.id='sfDatevSicDownloadScript';
-    s.src='assets/datev-sic-download-v1.js?v=20260903-sic1';
-    s.async=true;
     document.head.appendChild(s);
   }
 
@@ -126,7 +117,6 @@
   function init(){
     run();
     ensureDatevHost();
-    loadDatevSicDownload();
     loadDatev();
     loadTimeMonthPicker();
     const observer=new MutationObserver(()=>enhanceDatevPanel());
