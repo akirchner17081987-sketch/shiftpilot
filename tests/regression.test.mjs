@@ -10,6 +10,7 @@ const read = path => readFileSync(resolve(root, path), 'utf8');
 const index = read('index.html');
 const demoPage = read('demo.html');
 const demoCompletionPage = read('demo-abschluss.html');
+const demoControlDock = read('assets/demo-control-dock-v1.js');
 const secondaryTextReadability = read('assets/secondary-text-readability-v1.css');
 const employeeManagement = read('assets/employee-management-v2.js');
 const employeeRhythm = read('assets/employee-rhythm-v1.js');
@@ -90,6 +91,17 @@ test('mobile employee navigation exposes three main areas and an accessible more
   assert.match(employeePortalLayout, /event\.key!=='Tab'/);
   assert.match(employeePortalLayout, /selected=!MOBILE_MAIN\.has\(active\)/);
   assert.match(employeePortalLayout, /min-height:58px!important/);
+});
+
+test('demo controls share a bottom dock and reserve content space', () => {
+  assert.match(demoPage, /demo-control-dock-v1\.js\?v=20260907-1/);
+  assert.match(demoControlDock, /id='sfDemoControlDock'/);
+  assert.match(demoControlDock, /role="toolbar" aria-label="Demo bedienen"/);
+  assert.match(demoControlDock, /#sfDemoBadge','#sfDemoPerspectiveSwitch','\[data-demo-scenarios\]','#sfDemoResetBtn','#sfDemoExitBtn'/);
+  assert.match(demoControlDock, /#appShell \.main\{margin-bottom:var\(--sf-demo-dock-space\)!important/);
+  assert.match(demoControlDock, /#sfEmployeePortal \.sf-portal-main\{bottom:var\(--sf-demo-dock-space\)!important/);
+  assert.match(demoControlDock, /@media\(max-width:560px\)/);
+  assert.match(demoControlDock, /--sf-demo-dock-space:132px/);
 });
 
 test('global search exposes a programmatic accessible name', () => {

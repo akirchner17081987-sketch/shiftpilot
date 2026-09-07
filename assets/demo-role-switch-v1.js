@@ -175,14 +175,14 @@
 
   function managerSwitch(){
     const top=document.querySelector('#appShell .top-actions');if(!top)return false;
-    top.querySelector('#sfDemoPerspectiveSwitch')?.remove();
+    document.getElementById('sfDemoPerspectiveSwitch')?.remove();document.getElementById('sfDemoEmployeeExit')?.remove();
     top.insertAdjacentHTML('afterbegin',switchMarkup('manager'));
     bindSwitch(top);return true;
   }
 
   function employeeSwitch(data){
     const top=document.querySelector('#sfEmployeePortal .sf-portal-top');if(!top)return false;
-    top.querySelector('#sfDemoPerspectiveSwitch')?.remove();top.querySelector('#sfDemoEmployeeExit')?.remove();
+    document.getElementById('sfDemoPerspectiveSwitch')?.remove();document.getElementById('sfDemoEmployeeExit')?.remove();
     const context=document.createElement('span');context.className='sf-demo-employee-context';context.innerHTML=`Demo-Profil: <b>${esc(data.employee.first_name)} ${esc(data.employee.last_name)}</b>`;
     top.querySelector('.sf-demo-employee-context')?.remove();top.appendChild(context);
     top.insertAdjacentHTML('beforeend',switchMarkup('employee')+'<button type="button" id="sfDemoEmployeeExit">Demo beenden</button>');

@@ -105,6 +105,8 @@
 
   function scenarioButton(){return '<button type="button" class="sf-demo-scenarios-button" data-demo-scenarios aria-haspopup="dialog">▦ Szenarien</button>'}
   function ensureButtons(){
+    const existing=document.querySelector('[data-demo-scenarios]');
+    if(existing){existing.classList.toggle('active',!!active());existing.onclick=openDialog;return}
     const manager=document.querySelector('#appShell .top-actions');
     if(manager&&!manager.querySelector('[data-demo-scenarios]'))manager.insertAdjacentHTML('afterbegin',scenarioButton());
     const employee=document.querySelector('#sfEmployeePortal .sf-portal-top');
