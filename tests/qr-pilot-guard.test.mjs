@@ -5,6 +5,7 @@ import test from 'node:test';
 const prelock=fs.readFileSync(new URL('../supabase/migrations/20260908004500_qr_time_pilot_prelock_v1.sql',import.meta.url),'utf8');
 const migration=fs.readFileSync(new URL('../supabase/migrations/20260908005000_qr_time_pilot_guard_v1.sql',import.meta.url),'utf8');
 const assignmentLock=fs.readFileSync(new URL('../supabase/migrations/20260908005100_qr_pilot_assignment_lock_v1.sql',import.meta.url),'utf8');
+const privateClock=fs.readFileSync(new URL('../supabase/migrations/20260908005200_qr_pilot_private_clock_base_v1.sql',import.meta.url),'utf8');
 const ui=fs.readFileSync(new URL('../assets/supabase-qr-pilot-guard-v1.js',import.meta.url),'utf8');
 const nav=fs.readFileSync(new URL('../assets/navigation-compat-v1.js',import.meta.url),'utf8');
 
@@ -23,8 +24,10 @@ test('employee QR status and clocking are protected by the server-side pilot gua
   assert.match(migration,/e\.status = 'active'/);
   assert.match(migration,/e\.auth_user_id is not null/);
   assert.match(migration,/employee_clock_from_qr_unchecked/);
-  assert.match(migration,/revoke all on function public\.employee_clock_from_qr_unchecked\(text,text\) from public, anon, authenticated/i);
   assert.match(migration,/time_qr_punches_pilot_guard/);
+  assert.match(privateClock,/alter function public\.employee_clock_from_qr_unchecked\(text,text\)[\s\S]*set schema private/i);
+  assert.match(privateClock,/revoke all on function private\.employee_clock_from_qr_unchecked\(text,text\)[\s\S]*from public, anon, authenticated/i);
+  assert.match(privateClock,/return private\.employee_clock_from_qr_unchecked\(p_token, p_expected_action\)/i);
 });
 
 test('pilot candidates expose only minimal fields and require active linked accounts',()=>{
