@@ -150,6 +150,7 @@
   }
 
   function patchAuthLayer(){
+    if(!B.client?.__sfDemoLocalClientV1&&window.SFDemoDataClient?.create)B.client=window.SFDemoDataClient.create();
     B.demo=true;B.demoMode=true;B.role=sessionStorage.getItem(PERSPECTIVE_KEY)==='employee'?'EMPLOYEE':'ADMIN';B.companyId='demo-local-company';B.user={id:'demo-local-user',email:DEMO_EMAIL,user_metadata:{name:DEMO_USER}};B.ready=true;
     B.authDialog=()=>demoOpen('overview');
     B.showAuth=()=>demoOpen('overview');
