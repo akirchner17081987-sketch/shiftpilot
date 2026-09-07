@@ -13,6 +13,7 @@
     'Schichtänderungen':'changes','Schichttausch':'swaps','Arbeitszeit':'time','Abwesenheiten':'absences',
     'Stundenkonto':'account','Lohnvorschau':'wage','Mein Profil':'profile'
   };
+  const MOBILE_MAIN=new Set(['dashboard','shifts','time']);
   let active='dashboard',queued=false,arranging=false;
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const setHtmlIfChanged=(node,html)=>{if(node&&node.innerHTML!==html)node.innerHTML=html};
@@ -67,6 +68,7 @@
       #sfEmployeePortal .sf-employee-nav-btn.active .sf-employee-nav-copy small{color:#a7c8c2}
       #sfEmployeePortal .sf-employee-nav-count{min-width:21px;height:21px;padding:0 6px;border-radius:999px;display:grid;place-items:center;background:#162b3e;color:#88a3b8;font-size:9px;font-weight:900}
       #sfEmployeePortal .sf-employee-side-foot{padding:14px 16px;border-top:1px solid #20364b;color:#6f879b;font-size:9px;line-height:1.5}
+      #sfEmployeePortal .sf-employee-more-toggle,#sfEmployeePortal .sf-employee-mobile-more-layer{display:none}
       #sfEmployeePortal .sf-portal-welcome{max-width:none;display:flex;align-items:flex-end;justify-content:space-between;gap:20px}
       #sfEmployeePortal .sf-portal-welcome h1{font-size:30px;margin:5px 0 6px}#sfEmployeePortal .sf-portal-welcome p{font-size:12px}
       #sfEmployeePortal .sf-portal-stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:22px 0}
@@ -112,20 +114,40 @@
         #sfEmployeePortal .sf-employee-avatar{width:34px;height:34px;border-radius:10px;font-size:11px}
         #sfEmployeePortal .sf-employee-side-head b{font-size:11px}#sfEmployeePortal .sf-employee-side-head small{font-size:8px;margin-top:2px}
         #sfEmployeePortal .sf-employee-side-foot,#sfEmployeePortal .sf-employee-nav-group>span{display:none}
-        #sfEmployeePortal .sf-employee-nav-scroll{display:flex;gap:7px;padding:9px 10px;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;scrollbar-color:#31536b #091725;overscroll-behavior-inline:contain;scroll-snap-type:x proximity}
-        #sfEmployeePortal .sf-employee-nav-scroll::-webkit-scrollbar{height:6px}#sfEmployeePortal .sf-employee-nav-scroll::-webkit-scrollbar-track{background:#091725;border-radius:999px}#sfEmployeePortal .sf-employee-nav-scroll::-webkit-scrollbar-thumb{background:#31536b;border-radius:999px}
-        #sfEmployeePortal .sf-employee-nav-group{display:contents}.sf-employee-nav-btn{min-width:max-content!important;width:auto!important;min-height:44px!important;display:flex!important;padding:7px 10px!important;scroll-snap-align:start}
+        #sfEmployeePortal .sf-employee-nav-scroll{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;padding:5px 8px 7px;overflow:visible}
+        #sfEmployeePortal .sf-employee-nav-group{display:contents}
+        #sfEmployeePortal .sf-employee-nav-scroll>.sf-employee-nav-group>.sf-employee-nav-btn:not([data-sf-mobile-main="true"]){display:none!important}
+        #sfEmployeePortal .sf-employee-nav-scroll>.sf-employee-nav-group>.sf-employee-nav-btn,#sfEmployeePortal .sf-employee-more-toggle{min-width:0!important;width:100%!important;min-height:50px!important;display:flex!important;flex-direction:column;justify-content:center;gap:2px;padding:3px!important;text-align:center;scroll-snap-align:none}
+        #sfEmployeePortal .sf-employee-nav-scroll .sf-employee-nav-icon,#sfEmployeePortal .sf-employee-more-toggle .sf-employee-nav-icon{width:25px;height:25px;border-radius:7px;font-size:12px}
+        #sfEmployeePortal .sf-employee-nav-scroll .sf-employee-nav-copy b,#sfEmployeePortal .sf-employee-more-toggle .sf-employee-nav-copy b{font-size:10px;line-height:1.15;white-space:normal}
         #sfEmployeePortal .sf-employee-nav-copy small,#sfEmployeePortal .sf-employee-nav-count{display:none!important}
+        #sfEmployeePortal .sf-employee-more-toggle{border:0;background:transparent;color:#9fb4c7;border-radius:11px;align-items:center;cursor:pointer}
+        #sfEmployeePortal .sf-employee-more-toggle.active{background:#12312f;color:#eafffa;box-shadow:inset 0 -3px #2bd6b4}
+        #sfEmployeePortal .sf-employee-mobile-more-layer{position:fixed;z-index:30;inset:0;display:block;background:#02081299;padding:12px}
+        #sfEmployeePortal .sf-employee-mobile-more-layer[hidden]{display:none!important}
+        #sfEmployeePortal .sf-employee-more-backdrop{position:absolute;inset:0;border:0;background:transparent;cursor:default}
+        #sfEmployeePortal .sf-employee-more-panel{position:absolute;left:12px;right:12px;bottom:12px;max-height:min(72vh,600px);overflow:auto;padding:16px;border:1px solid #2a465c;border-radius:18px;background:#0b1a28;box-shadow:0 24px 80px #000b;color:#eaf5fd}
+        #sfEmployeePortal .sf-employee-more-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+        #sfEmployeePortal .sf-employee-more-head b{font-size:16px}.sf-employee-more-head small{display:block;margin-top:3px;color:#91a8bb;font-size:11px}
+        #sfEmployeePortal .sf-employee-more-close{width:44px;height:44px;border:1px solid #2b4960;border-radius:12px;background:#102438;color:#eaf5fd;font-size:20px;cursor:pointer}
+        #sfEmployeePortal .sf-employee-more-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+        #sfEmployeePortal .sf-employee-more-panel .sf-employee-nav-btn{display:grid!important;grid-template-columns:32px minmax(0,1fr) auto!important;width:100%!important;min-height:58px!important;padding:9px!important;text-align:left!important}
+        #sfEmployeePortal .sf-employee-more-panel .sf-employee-nav-copy b{font-size:12px}
+        #sfEmployeePortal .sf-employee-more-panel .sf-employee-nav-copy small{display:block!important;font-size:10px}
+        #sfEmployeePortal .sf-employee-more-panel .sf-employee-nav-count{display:grid!important}
         #sfEmployeePortal .sf-portal-main{position:absolute;left:0;right:0;top:calc(var(--sf-employee-head) + 108px);bottom:0;padding:22px 14px 34px;overflow:auto}
         #sfEmployeePortal .sf-portal-welcome{display:block}#sfEmployeePortal .sf-portal-welcome h1{font-size:25px}
         #sfEmployeePortal .sf-portal-stats{grid-template-columns:1fr 1fr}.sf-employee-tiles{grid-template-columns:1fr 1fr!important}
       }
-      @media(max-width:560px){#sfEmployeePortal .sf-portal-top{gap:7px;padding:0 10px}#sfEmployeePortal .sf-portal-logo{width:min(184px,47vw);height:52px}#sfEmployeePortal .sf-company-context{margin-left:0;padding-left:7px}#sfEmployeePortal .sf-portal-top .ghost{min-height:44px;padding:0 9px;font-size:11px}.sf-portal-stats{grid-template-columns:1fr!important}.sf-employee-tiles{grid-template-columns:1fr!important}}
+      @media(max-width:560px){#sfEmployeePortal .sf-portal-top{gap:7px;padding:0 10px}#sfEmployeePortal .sf-portal-logo{width:min(184px,47vw);height:52px}#sfEmployeePortal .sf-company-context{margin-left:0;padding-left:7px}#sfEmployeePortal .sf-portal-top .ghost{min-height:44px;padding:0 9px;font-size:11px}.sf-portal-stats{grid-template-columns:1fr!important}.sf-employee-tiles{grid-template-columns:1fr!important}#sfEmployeePortal .sf-employee-more-grid{grid-template-columns:1fr}}
     `;document.head.appendChild(s)
   }
   function initials(value){return String(value||'U').split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase()||'U'}
   function flatNav(){return NAV.flatMap(g=>g.items)}
-  function navHtml(){return NAV.map(g=>`<div class="sf-employee-nav-group"><span>${g.group}</span>${g.items.map(([id,icon,label,desc])=>`<button type="button" class="sf-employee-nav-btn" data-sf-employee-view="${id}"><i class="sf-employee-nav-icon">${icon}</i><span class="sf-employee-nav-copy"><b>${label}</b><small>${desc}</small></span><em class="sf-employee-nav-count" data-count-for="${id}">0</em></button>`).join('')}</div>`).join('')}
+  function navButtonHtml([id,icon,label,desc],mobileMain=false){return `<button type="button" class="sf-employee-nav-btn" data-sf-employee-view="${id}"${mobileMain?' data-sf-mobile-main="true"':''}><i class="sf-employee-nav-icon">${icon}</i><span class="sf-employee-nav-copy"><b>${label}</b><small>${desc}</small></span><em class="sf-employee-nav-count" data-count-for="${id}">0</em></button>`}
+  function navHtml(){return NAV.map(g=>`<div class="sf-employee-nav-group"><span>${g.group}</span>${g.items.map(item=>navButtonHtml(item,MOBILE_MAIN.has(item[0]))).join('')}</div>`).join('')}
+  function mobileMoreHtml(){return flatNav().filter(item=>!MOBILE_MAIN.has(item[0])).map(item=>navButtonHtml(item)).join('')}
+  function mobileMoreControls(){return `<button type="button" class="sf-employee-more-toggle" aria-expanded="false" aria-controls="sfEmployeeMorePanel"><i class="sf-employee-nav-icon" aria-hidden="true">•••</i><span class="sf-employee-nav-copy"><b>Mehr</b></span></button><div class="sf-employee-mobile-more-layer" hidden><button type="button" class="sf-employee-more-backdrop" aria-label="Mehr-Menü schließen"></button><section class="sf-employee-more-panel" id="sfEmployeeMorePanel" role="dialog" aria-modal="true" aria-labelledby="sfEmployeeMoreTitle" tabindex="-1"><header class="sf-employee-more-head"><div><b id="sfEmployeeMoreTitle">Weitere Bereiche</b><small>Alle Funktionen des Mitarbeiterportals</small></div><button type="button" class="sf-employee-more-close" aria-label="Mehr-Menü schließen">×</button></header><div class="sf-employee-more-grid">${mobileMoreHtml()}</div></section></div>`}
   function tileHtml(){return flatNav().filter(x=>x[0]!=='dashboard').map(([id,icon,label,desc])=>`<button type="button" class="sf-employee-tile" data-sf-employee-view="${id}"><span class="sf-employee-tile-top"><i class="sf-employee-tile-icon">${icon}</i><em class="sf-employee-nav-count" data-count-for="${id}">0</em></span><b>${label}</b><small>${desc}</small></button>`).join('')}
   function sectionInfo(id){const x=flatNav().find(x=>x[0]===id);return x||['dashboard','⌂','Übersicht','Alles Wichtige auf einen Blick']}
   function updateConnectionState(){const context=document.querySelector('#sfEmployeePortal .sf-company-context');if(!context)return;const online=navigator.onLine!==false,connected=online&&B.ready,text=!online?'Keine Netzwerkverbindung':connected?'Sicher mit dem Unternehmen verbunden':'Cloud-Verbindung wird hergestellt';context.classList.toggle('offline',!online);context.classList.toggle('pending',online&&!connected);context.setAttribute('aria-label',text);context.title=text;const label=context.querySelector('span');if(label&&label.textContent!==text)label.textContent=text}
@@ -134,11 +156,14 @@
   function renderState(portal){
     const [,icon,label,desc]=sectionInfo(active);portal.dataset.sfPortalActive=active;
     portal.querySelectorAll('[data-sf-employee-view]').forEach(b=>b.classList.toggle('active',b.dataset.sfEmployeeView===active));
+    const more=portal.querySelector('.sf-employee-more-toggle');if(more){const selected=!MOBILE_MAIN.has(active);more.classList.toggle('active',selected);more.setAttribute('aria-label',selected?`Mehr, aktueller Bereich: ${label}`:'Weitere Bereiche')}
     const head=portal.querySelector('.sf-employee-view-head');setHtmlIfChanged(head,`<div class="eyebrow">MITARBEITERPORTAL · ${icon}</div><h1>${label}</h1><p>${desc}</p>`);
     const missing=active!=='dashboard'&&!portal.querySelector(`.sf-portal-card[data-sf-portal-section="${active}"]`);portal.classList.toggle('sf-employee-view-missing',missing);
     updateCounts(portal)
   }
   function navigate(id){const portal=document.getElementById('sfEmployeePortal');if(!portal)return;active=flatNav().some(x=>x[0]===id)?id:'dashboard';try{sessionStorage.setItem('sfEmployeePortalView',active)}catch{}renderState(portal);const main=portal.querySelector('.sf-portal-main');if(main)main.scrollTop=0}
+  function setMobileMore(portal,open,restoreFocus=true){const layer=portal.querySelector('.sf-employee-mobile-more-layer'),toggle=portal.querySelector('.sf-employee-more-toggle');if(!layer||!toggle)return;layer.hidden=!open;toggle.setAttribute('aria-expanded',String(open));document.body.classList.toggle('sf-employee-more-open',open);if(open)requestAnimationFrame(()=>layer.querySelector('.sf-employee-more-panel .sf-employee-nav-btn')?.focus());else if(restoreFocus)requestAnimationFrame(()=>toggle.focus())}
+  function bindMobileMore(portal){if(portal.dataset.sfEmployeeMoreBound)return;portal.dataset.sfEmployeeMoreBound='true';portal.addEventListener('click',event=>{if(event.target.closest('.sf-employee-more-toggle')){setMobileMore(portal,true);return}if(event.target.closest('.sf-employee-more-close,.sf-employee-more-backdrop')){setMobileMore(portal,false);return}if(event.target.closest('.sf-employee-more-panel [data-sf-employee-view]'))setMobileMore(portal,false,false)});portal.addEventListener('keydown',event=>{const layer=portal.querySelector('.sf-employee-mobile-more-layer');if(!layer||layer.hidden)return;if(event.key==='Escape'){event.preventDefault();setMobileMore(portal,false);return}if(event.key!=='Tab')return;const nodes=[...layer.querySelectorAll('button:not([disabled])')].filter(node=>node.offsetParent!==null),first=nodes[0],last=nodes[nodes.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}})}
   function integrateAddedCards(cards){
     const portal=document.getElementById('sfEmployeePortal'),grid=portal?.querySelector('.sf-portal-grid');if(!portal||!grid)return;
     cards.forEach(card=>{if(!portal.contains(card))return;const title=card.querySelector('h3')?.textContent.trim(),id=card.dataset.sfPortalSection||META[title];if(!id)return;card.dataset.sfPortalSection=id;if(card.parentElement!==grid)grid.appendChild(card)});
@@ -151,7 +176,8 @@
       const logo=portal.querySelector('.sf-portal-logo');setHtmlIfChanged(logo,'<img src="assets/schichtfunk-company-logo.png" alt="SchichtFunk – Klar geplant. Stark besetzt." width="1500" height="436" decoding="async">');
       const brand=portal.querySelector('.sf-portal-brand');setHtmlIfChanged(brand,`<b>${esc(company)}</b><small>Mitarbeiterportal · persönlicher Bereich</small>`);
       const top=portal.querySelector('.sf-portal-top');if(top&&!top.querySelector('.sf-company-context')){const context=document.createElement('div');context.className='sf-company-context';context.setAttribute('role','status');context.innerHTML='<i></i><span></span>';top.querySelector('.spacer')?.before(context)}updateConnectionState();
-      if(!portal.querySelector('.sf-employee-side')){const side=document.createElement('aside');side.className='sf-employee-side';side.innerHTML=`<div class="sf-employee-side-head"><span class="sf-employee-avatar">${initials(employee)}</span><div><b>${esc(employee)}</b><small>${esc(company)}</small></div></div><nav class="sf-employee-nav-scroll" aria-label="Mitarbeiterportal Bereiche">${navHtml()}</nav><div class="sf-employee-side-foot">Persönlicher und geschützter Arbeitsbereich<br>Nur deine eigenen Daten werden angezeigt.</div>`;portal.appendChild(side)}
+      if(!portal.querySelector('.sf-employee-side')){const side=document.createElement('aside');side.className='sf-employee-side';side.innerHTML=`<div class="sf-employee-side-head"><span class="sf-employee-avatar">${initials(employee)}</span><div><b>${esc(employee)}</b><small>${esc(company)}</small></div></div><nav class="sf-employee-nav-scroll" aria-label="Mitarbeiterportal Bereiche">${navHtml()}${mobileMoreControls()}</nav><div class="sf-employee-side-foot">Persönlicher und geschützter Arbeitsbereich<br>Nur deine eigenen Daten werden angezeigt.</div>`;portal.appendChild(side)}
+      bindMobileMore(portal);
       const main=portal.querySelector('.sf-portal-main'),grid=portal.querySelector('.sf-portal-grid');if(!main||!grid)return false;
       if(!main.querySelector('.sf-employee-view-head')){const h=document.createElement('header');h.className='sf-employee-view-head';grid.before(h)}
       if(!grid.querySelector('.sf-employee-dashboard')){const dash=document.createElement('section');dash.className='sf-employee-dashboard';dash.innerHTML=`<h2>Meine Bereiche</h2><p>Wähle einen Bereich aus. Es wird immer nur die aktuell benötigte Ansicht geöffnet.</p><div class="sf-employee-tiles">${tileHtml()}</div>`;grid.prepend(dash)}

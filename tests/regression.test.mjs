@@ -80,6 +80,18 @@ test('mobile manager navigation is labelled, expandable and keyboard dismissible
   assert.match(mobileManagerNavigation, /toggleAttribute\('inert'/);
 });
 
+test('mobile employee navigation exposes three main areas and an accessible more menu', () => {
+  assert.match(employeePortalLayout, /const MOBILE_MAIN=new Set\(\['dashboard','shifts','time'\]\)/);
+  assert.match(employeePortalLayout, /grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+  assert.match(employeePortalLayout, /class="sf-employee-more-toggle" aria-expanded="false" aria-controls="sfEmployeeMorePanel"/);
+  assert.match(employeePortalLayout, /role="dialog" aria-modal="true" aria-labelledby="sfEmployeeMoreTitle"/);
+  assert.match(employeePortalLayout, /Weitere Bereiche/);
+  assert.match(employeePortalLayout, /event\.key==='Escape'/);
+  assert.match(employeePortalLayout, /event\.key!=='Tab'/);
+  assert.match(employeePortalLayout, /selected=!MOBILE_MAIN\.has\(active\)/);
+  assert.match(employeePortalLayout, /min-height:58px!important/);
+});
+
 test('global search exposes a programmatic accessible name', () => {
   assert.match(index, /<div class="search" role="search">/);
   assert.match(index, /<input id="globalSearch" type="search" aria-label="Globale Suche nach Mitarbeitern oder Schichten"/);
@@ -374,10 +386,10 @@ test('mobile layout constrains the app shell and keeps primary controls usable',
   assert.match(mobileCss, /#newTemplateBtn[\s\S]*display:\s*none\s*!important/);
   assert.match(mobileCss, /\.calendar,[\s\S]*overflow-x:\s*auto/);
   assert.match(index, /function switchView\(name\)\{const appMain=document\.querySelector\('\.main'\);if\(appMain\)appMain\.scrollTop=0;window\.scrollTo\(0,0\)/);
-  assert.match(employeePortalLayout, /sf-employee-nav-btn\{[^}]*min-height:44px!important/);
+  assert.match(employeePortalLayout, /sf-employee-nav-btn[^}]*\{[^}]*min-height:50px!important/);
   assert.match(employeePortalLayout, /sf-portal-top \.ghost\{min-height:44px/);
-  assert.match(employeePortalLayout, /scroll-snap-type:x proximity/);
-  assert.match(employeePortalLayout, /sf-employee-nav-scroll::\-webkit-scrollbar\{height:6px\}/);
+  assert.match(employeePortalLayout, /sf-employee-more-close\{width:44px;height:44px/);
+  assert.match(employeePortalLayout, /sf-employee-nav-scroll\{display:grid;grid-template-columns:repeat\(4/);
   assert.match(notifications, /sf-notify-btn\{[^}]*min-width:44px;height:44px/);
 });
 
