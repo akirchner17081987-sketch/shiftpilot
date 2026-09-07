@@ -160,5 +160,14 @@
   const observer=new MutationObserver(()=>{setDefaultMonthPicker();addDemoHint()});
   function start(){boot();if(document.body)observer.observe(document.body,{childList:true,subtree:true})}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-  window.SchichtFunkDemoAugust2026={month:MONTH,assignments:()=>augustAssignments.slice(),entries:()=>augustEntries.slice(),bundle:()=>JSON.parse(JSON.stringify(augustBundle))};
+  function ensurePrepared(){
+    try{
+      const savedAssignments=JSON.parse(sessionStorage.getItem('sf_demo_data_assignments')||'[]');
+      const savedEntries=JSON.parse(sessionStorage.getItem('sf_demo_data_timeEntries')||'{}');
+      if(savedAssignments.some(a=>String(a.id||'').startsWith('demo-aug26-'))&&Object.keys(savedEntries).some(id=>id.startsWith('demo-aug26-')))return true;
+    }catch{}
+    seeded=false;
+    return seedPlanning();
+  }
+  window.SchichtFunkDemoAugust2026={month:MONTH,assignments:()=>augustAssignments.slice(),entries:()=>augustEntries.slice(),bundle:()=>JSON.parse(JSON.stringify(augustBundle)),ensurePrepared};
 })();

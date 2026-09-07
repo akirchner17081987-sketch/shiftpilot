@@ -202,8 +202,13 @@
     const stored=required.every(key=>sessionStorage.getItem(key)!==null);
     const august=sessionStorage.getItem('sf_demo_data_august_standard_v1')==='ready';
     const localClient=B.client?.__sfDemoLocalClientV1===true&&B.ready===true;
-    const savedEmployees=readDemo('employees',[]),savedAssignments=readDemo('assignments',[]),savedEntries=readDemo('timeEntries',{});
-    const records=Array.isArray(savedEmployees)&&savedEmployees.length>=15&&Array.isArray(savedAssignments)&&savedAssignments.some(a=>String(a.id||'').startsWith('demo-aug26-'))&&Object.keys(savedEntries||{}).some(id=>id.startsWith('demo-aug26-'));
+    let savedEmployees=readDemo('employees',[]),savedAssignments=readDemo('assignments',[]),savedEntries=readDemo('timeEntries',{});
+    let records=Array.isArray(savedEmployees)&&savedEmployees.length>=15&&Array.isArray(savedAssignments)&&savedAssignments.some(a=>String(a.id||'').startsWith('demo-aug26-'))&&Object.keys(savedEntries||{}).some(id=>id.startsWith('demo-aug26-'));
+    if(august&&!records&&typeof window.SchichtFunkDemoAugust2026?.ensurePrepared==='function'){
+      window.SchichtFunkDemoAugust2026.ensurePrepared();
+      savedEmployees=readDemo('employees',[]);savedAssignments=readDemo('assignments',[]);savedEntries=readDemo('timeEntries',{});
+      records=Array.isArray(savedEmployees)&&savedEmployees.length>=15&&Array.isArray(savedAssignments)&&savedAssignments.some(a=>String(a.id||'').startsWith('demo-aug26-'))&&Object.keys(savedEntries||{}).some(id=>id.startsWith('demo-aug26-'));
+    }
     const gate=document.getElementById('sfDemoBootGate');if(gate){gate.dataset.storedReady=String(stored);gate.dataset.augustReady=String(august);gate.dataset.clientReady=String(localClient);gate.dataset.recordsReady=String(records)}
     return stored&&august&&localClient&&records;
   }

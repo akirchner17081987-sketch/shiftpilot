@@ -43,9 +43,10 @@ test('August is selected as the initial demo month without affecting production 
   assert.match(source,/timeInput\.value=MONTH/);
   assert.match(source,/accountInput\.value=MONTH/);
   assert.match(brandCleanup,/sf_demo_session_v1'\)==='active'\?'2026-08':currentMonth\(\)/);
-  assert.match(navigation,/demo-august-2026-v1\.js\?v=20260907-startgate1/);
+  assert.match(navigation,/demo-august-2026-v1\.js\?v=20260907-startgate2/);
   assert.match(source,/sf_demo_data_assignments/);
   assert.match(source,/sf_demo_data_timeEntries/);
+  assert.match(source,/ensurePrepared/);
 });
 
 test('DATEV demo RPC bridge is patched only once and does not build recursive wrapper chains',()=>{
