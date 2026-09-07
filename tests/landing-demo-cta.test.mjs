@@ -5,6 +5,15 @@ import fs from 'node:fs';
 const cta=fs.readFileSync(new URL('../assets/landing-demo-cta-v1.js',import.meta.url),'utf8');
 const nav=fs.readFileSync(new URL('../assets/navigation-compat-v1.js',import.meta.url),'utf8');
 const demo=fs.readFileSync(new URL('../demo.html',import.meta.url),'utf8');
+const index=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
+const landing=index.match(/<section id="landingPage">[\s\S]*?<div class="app" id="appShell"/)?.[0]||'';
+
+test('public landing page consistently uses the formal Sie address',()=>{
+  assert.match(landing,/Alles, was Sie für eine/);
+  assert.match(landing,/SchichtFunk führt Sie durch den gesamten Planungsprozess/);
+  assert.match(landing,/melden Sie sich mit Ihrem bestehenden Zugang an/);
+  assert.doesNotMatch(landing,/\b(?:du|dein(?:e|er|em|en|es)?|dich|dir)\b/i);
+});
 
 test('public landing page loads the demo CTA integration',()=>{
   assert.match(nav,/landing-demo-cta-v1\.js/);
