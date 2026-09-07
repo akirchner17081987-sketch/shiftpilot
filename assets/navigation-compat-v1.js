@@ -68,4 +68,7 @@
   loadIntegration('/assets/demo-reset-v1.js?v=20260906-absences1','data-sf-demo-reset');
   loadIntegration('/assets/demo-august-2026-v1.js?v=20260907-startgate2','data-sf-demo-august-2026');
   loadIntegration('/assets/demo-datev-snapshot-fix-v1.js?v=20260904-2','data-sf-demo-datev-snapshot-fix');
+
+  // QR-Zeiterfassung: Verwaltung der Stempelstationen + Mitarbeiter-Scanfluss.
+  loadIntegration('/assets/supabase-qr-time-clock-v1.js?v=20260908-1','data-sf-qr-time-clock');
 })();
