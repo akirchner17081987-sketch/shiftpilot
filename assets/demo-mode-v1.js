@@ -207,7 +207,7 @@
     return stored&&august&&localClient&&records;
   }
   function controlsReady(){
-    return !!(window.SFDemoPerspective&&window.SFDemoScenarios&&window.SFDemoSession&&window.SFDemoTour&&window.sfResetDemo&&document.getElementById('sfDemoBadge'));
+    return document.querySelectorAll('[data-demo-perspective]').length>=2&&!!(document.querySelector('[data-demo-scenarios]')&&document.getElementById('sfDemoResetBtn')&&document.getElementById('sfDemoExitBtn')&&document.getElementById('sfDemoBadge'));
   }
   const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
   async function nextPaint(){await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))}
@@ -224,7 +224,8 @@
       if(coreDataReady()&&controlsReady())break;
       await wait(60);
     }
-    if(!coreDataReady()||!controlsReady()){failGate();return}
+    const dataReady=coreDataReady(),uiReady=controlsReady();
+    if(!dataReady||!uiReady){const gate=document.getElementById('sfDemoBootGate');if(gate){gate.dataset.dataReady=String(dataReady);gate.dataset.uiReady=String(uiReady)}failGate();return}
     gateStatus('Oberfläche wird abschließend aufgebaut …');
     const perspective=sessionStorage.getItem(PERSPECTIVE_KEY)==='employee'?'employee':'manager';
     window.SFDemoPerspective.set(perspective);

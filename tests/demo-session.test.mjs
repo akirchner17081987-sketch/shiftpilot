@@ -41,6 +41,7 @@ test('demo surface remains hidden until all presentation data is ready',()=>{
   assert.match(page,/Die Oberfläche erscheint, sobald alle Bereiche bereit sind/);
   assert.match(mode,/function coreDataReady\(\)/);
   assert.match(mode,/function controlsReady\(\)/);
+  assert.match(mode,/querySelectorAll\('\[data-demo-perspective\]'\)\.length>=2/);
   assert.match(mode,/sf_demo_data_august_standard_v1/);
   assert.match(mode,/B\.client=window\.SFDemoDataClient\.create\(\)/);
   assert.match(mode,/window\.__sfDemoReadyV1=true/);
