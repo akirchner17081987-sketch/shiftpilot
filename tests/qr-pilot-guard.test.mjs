@@ -20,7 +20,7 @@ test('existing and new QR terminals are locked before pilot activation',()=>{
 
 test('employee QR status and clocking are protected by the server-side pilot guard',()=>{
   assert.match(migration,/private\.sf_assert_qr_pilot_access\(p_token\)/);
-  assert.match(migration,/v_terminal\.pilot_employee_id <> v_employee_id/);
+  assert.match(migration,/v_pilot\.id <> v_employee_id/);
   assert.match(migration,/e\.status = 'active'/);
   assert.match(migration,/e\.auth_user_id is not null/);
   assert.match(migration,/employee_clock_from_qr_unchecked/);
