@@ -2,11 +2,14 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
 
+const prelock=fs.readFileSync(new URL('../supabase/migrations/20260908004500_qr_time_pilot_prelock_v1.sql',import.meta.url),'utf8');
 const migration=fs.readFileSync(new URL('../supabase/migrations/20260908005000_qr_time_pilot_guard_v1.sql',import.meta.url),'utf8');
+const assignmentLock=fs.readFileSync(new URL('../supabase/migrations/20260908005100_qr_pilot_assignment_lock_v1.sql',import.meta.url),'utf8');
 const ui=fs.readFileSync(new URL('../assets/supabase-qr-pilot-guard-v1.js',import.meta.url),'utf8');
 const nav=fs.readFileSync(new URL('../assets/navigation-compat-v1.js',import.meta.url),'utf8');
 
-test('QR terminals default to locked pilot mode',()=>{
+test('existing and new QR terminals are locked before pilot activation',()=>{
+  assert.match(prelock,/update public\.time_qr_terminals[\s\S]*set is_active = false/i);
   assert.match(migration,/pilot_mode boolean not null default true/i);
   assert.match(migration,/pilot_employee_id uuid references public\.employees\(id\)/i);
   assert.match(migration,/alter column is_active set default false/i);
@@ -34,9 +37,10 @@ test('pilot candidates expose only minimal fields and require active linked acco
 });
 
 test('only admins can assign pilot employees or activate terminals',()=>{
-  const assign=migration.match(/create or replace function public\.manager_set_time_qr_terminal_pilot_employee[\s\S]*?grant execute on function public\.manager_set_time_qr_terminal_pilot_employee\(uuid,uuid\) to authenticated;/i)?.[0]||'';
+  const assign=assignmentLock.match(/create or replace function public\.manager_set_time_qr_terminal_pilot_employee[\s\S]*?grant execute on function public\.manager_set_time_qr_terminal_pilot_employee\(uuid,uuid\) to authenticated;/i)?.[0]||'';
   const activate=migration.match(/create or replace function public\.manager_set_time_qr_terminal_active[\s\S]*?grant execute on function public\.manager_set_time_qr_terminal_active\(uuid,boolean\) to authenticated;/i)?.[0]||'';
   assert.match(assign,/private\.sf_is_manager\(v_terminal\.company_id, true\)/i);
+  assert.match(assign,/v_terminal\.is_active and p_employee_id is distinct from v_terminal\.pilot_employee_id/i);
   assert.match(activate,/private\.sf_is_manager\(v_terminal\.company_id, true\)/i);
   assert.match(activate,/Bitte zuerst einen Pilot-Mitarbeiter freigeben/);
 });
