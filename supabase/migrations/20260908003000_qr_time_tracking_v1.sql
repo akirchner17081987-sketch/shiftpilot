@@ -27,7 +27,7 @@ create table if not exists public.time_qr_punches (
   terminal_id uuid not null references public.time_qr_terminals(id) on delete restrict,
   assignment_id uuid not null references public.shift_assignments(id) on delete restrict,
   employee_id uuid not null references public.employees(id) on delete restrict,
-  auth_user_id uuid not null references auth.users(id) on delete restrict,
+  auth_user_id uuid references auth.users(id) on delete set null,
   punch_type text not null check (punch_type in ('CLOCK_IN','CLOCK_OUT')),
   punched_at timestamptz not null default clock_timestamp(),
   created_at timestamptz not null default clock_timestamp()
