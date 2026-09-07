@@ -1,7 +1,7 @@
 -- SchichtFunk – QR-Zeiterfassung V1
 -- Vorbereitete, noch nicht produktiv angewendete Datenbankänderung.
 -- Ziel: statischer, widerrufbarer QR-Code je Stempelstation; Zeitstempel ausschließlich serverseitig.
--- Vor Produktiv-Rollout mit `supabase migration new ...` in eine Migration übernehmen.
+-- Vor Produktiv-Rollout mit `supabase migration new ...` in eine echte Migration übernehmen.
 
 begin;
 
@@ -26,7 +26,7 @@ create table if not exists public.time_clock_stations (
 );
 
 create index if not exists time_clock_stations_company_idx
-  on public.time_clock_stations(company_id, active, name);
+  on public.time_clock_stations(company_id,active,name);
 
 create table if not exists public.time_clock_events (
   id uuid primary key default gen_random_uuid(),
@@ -42,13 +42,15 @@ create table if not exists public.time_clock_events (
 );
 
 create index if not exists time_clock_events_employee_recent_idx
-  on public.time_clock_events(employee_id, occurred_at desc);
+  on public.time_clock_events(employee_id,occurred_at desc);
 create index if not exists time_clock_events_station_recent_idx
-  on public.time_clock_events(station_id, occurred_at desc);
+  on public.time_clock_events(station_id,occurred_at desc);
 create index if not exists time_clock_events_assignment_idx
-  on public.time_clock_events(assignment_id, occurred_at);
+  on public.time_clock_events(assignment_id,occurred_at);
 
-alter table public.time_entries add column if not exists capture_method text not null default 'MANUAL';
+alter table public.time_entries
+  add column if not exists capture_method text not null default 'MANUAL';
+
 do $$
 begin
   if not exists (
@@ -65,7 +67,7 @@ end $$;
 alter table public.time_clock_stations enable row level security;
 alter table public.time_clock_events enable row level security;
 
--- Kein direkter Browserzugriff auf Stationsschlüssel/Events; alles läuft über RPCs.
+-- Kein direkter Browserzugriff auf Stationsschlüssel oder Scanereignisse.
 revoke all on public.time_clock_stations from public, anon, authenticated;
 revoke all on public.time_clock_events from public, anon, authenticated;
 
@@ -100,7 +102,7 @@ begin
     select s.id,s.name,s.active,s.last_scan_at,s.created_at,s.updated_at
     from public.time_clock_stations s
     where s.company_id=p_company_id
-    order by s.active desc, lower(s.name), s.created_at;
+    order by s.active desc,lower(s.name),s.created_at;
 end;
 $$;
 
@@ -123,7 +125,7 @@ begin
     raise exception 'Bitte einen Stationsnamen mit 1 bis 80 Zeichen angeben';
   end if;
 
-  v_token := encode(gen_random_bytes(32),'hex');
+  v_token:=encode(gen_random_bytes(32),'hex');
   insert into public.time_clock_stations(company_id,name,token_hash,created_by)
   values(p_company_id,trim(p_name),qr_private.sf_qr_token_hash(v_token),v_user)
   returning * into v_station;
@@ -157,11 +159,15 @@ declare
   v_station public.time_clock_stations%rowtype;
 begin
   if v_user is null then raise exception 'Authentication required'; end if;
-  select * into v_station from public.time_clock_stations where id=p_station_id for update;
+
+  select * into v_station
+  from public.time_clock_stations
+  where id=p_station_id
+  for update;
   if not found then raise exception 'Stempelstation nicht gefunden'; end if;
   if not private.sf_is_manager(v_station.company_id,false) then raise exception 'Keine Berechtigung'; end if;
 
-  v_token := encode(gen_random_bytes(32),'hex');
+  v_token:=encode(gen_random_bytes(32),'hex');
   update public.time_clock_stations
   set token_hash=qr_private.sf_qr_token_hash(v_token),active=true,updated_at=now()
   where id=v_station.id
@@ -197,7 +203,11 @@ declare
   v_station public.time_clock_stations%rowtype;
 begin
   if v_user is null then raise exception 'Authentication required'; end if;
-  select * into v_station from public.time_clock_stations where id=p_station_id for update;
+
+  select * into v_station
+  from public.time_clock_stations
+  where id=p_station_id
+  for update;
   if not found then raise exception 'Stempelstation nicht gefunden'; end if;
   if not private.sf_is_manager(v_station.company_id,false) then raise exception 'Keine Berechtigung'; end if;
 
@@ -252,19 +262,24 @@ begin
   limit 1;
   if not found then raise exception 'Kein aktiver Mitarbeiterzugang für diese Stempelstation'; end if;
 
-  -- Eine bereits laufende QR-Schicht hat immer Vorrang: der nächste Scan beendet sie.
-  select sa.*,te.* into v_assignment,v_entry
+  -- Eine laufende QR-Buchung hat Vorrang: der nächste bestätigte Scan beendet sie.
+  select sa.* into v_assignment
   from public.shift_assignments sa
   join public.time_entries te on te.assignment_id=sa.id
   where sa.company_id=v_station.company_id
     and sa.employee_id=v_employee.id
     and te.status='open'
+    and te.capture_method='QR'
     and te.actual_start is not null
     and te.actual_end is null
   order by te.actual_start desc
   limit 1;
 
   if found then
+    select * into v_entry
+    from public.time_entries
+    where assignment_id=v_assignment.id;
+
     return jsonb_build_object(
       'stationName',v_station.name,
       'action','CLOCK_OUT',
@@ -286,7 +301,8 @@ begin
     and v_now >= sa.starts_at - interval '2 hours'
     and v_now <= sa.starts_at + interval '4 hours'
     and not exists (
-      select 1 from public.time_entries te
+      select 1
+      from public.time_entries te
       where te.assignment_id=sa.id
         and (te.actual_start is not null or te.status <> 'open')
     )
@@ -328,19 +344,17 @@ declare
   v_assignment public.shift_assignments%rowtype;
   v_entry public.time_entries%rowtype;
   v_previous public.time_clock_events%rowtype;
-  v_event public.time_clock_events%rowtype;
   v_break integer := 0;
   v_duration_minutes integer := 0;
 begin
   if v_user is null then raise exception 'Authentication required'; end if;
   if p_token is null or p_token !~ '^[0-9a-f]{64}$' then raise exception 'QR-Code ungültig'; end if;
 
-  -- Stationszeile sperren: parallele Doppelscans werden seriell verarbeitet.
   select * into v_station
   from public.time_clock_stations s
   where s.token_hash=qr_private.sf_qr_token_hash(p_token)
     and s.active=true
-  for update;
+  limit 1;
   if not found then raise exception 'QR-Code ungültig oder deaktiviert'; end if;
 
   select * into v_employee
@@ -351,6 +365,11 @@ begin
   order by e.id
   limit 1;
   if not found then raise exception 'Kein aktiver Mitarbeiterzugang für diese Stempelstation'; end if;
+
+  -- Advisory Lock nur für diesen Mitarbeiter: parallele Doppelscans werden serialisiert,
+  -- ohne alle Mitarbeitenden derselben Station gegenseitig zu blockieren.
+  perform pg_advisory_xact_lock(hashtextextended(v_employee.id::text,0));
+  v_now:=clock_timestamp();
 
   select * into v_previous
   from public.time_clock_events ev
@@ -370,26 +389,32 @@ begin
     );
   end if;
 
-  select sa.*,te.* into v_assignment,v_entry
+  -- CLOCK_OUT: nur von QR gestartete, noch offene Zeiterfassung übernehmen.
+  select sa.* into v_assignment
   from public.shift_assignments sa
   join public.time_entries te on te.assignment_id=sa.id
   where sa.company_id=v_station.company_id
     and sa.employee_id=v_employee.id
     and te.status='open'
+    and te.capture_method='QR'
     and te.actual_start is not null
     and te.actual_end is null
   order by te.actual_start desc
-  limit 1
-  for update of sa,te;
+  limit 1;
 
   if found then
+    select * into v_entry
+    from public.time_entries
+    where assignment_id=v_assignment.id
+    for update;
+
     if v_now <= v_entry.actual_start then raise exception 'Ungültige Zeitfolge'; end if;
-    if v_now - v_entry.actual_start > interval '24 hours' then
+    if v_now-v_entry.actual_start > interval '24 hours' then
       raise exception 'Die laufende Zeiterfassung ist älter als 24 Stunden. Bitte die Verwaltung kontaktieren.';
     end if;
 
-    v_duration_minutes := greatest(1,floor(extract(epoch from (v_now-v_entry.actual_start))/60)::integer);
-    v_break := least(greatest(coalesce(v_assignment.break_minutes,0),0),greatest(0,v_duration_minutes-1));
+    v_duration_minutes:=greatest(1,floor(extract(epoch from (v_now-v_entry.actual_start))/60)::integer);
+    v_break:=least(greatest(coalesce(v_assignment.break_minutes,0),0),greatest(0,v_duration_minutes-1));
 
     update public.time_entries
     set actual_end=v_now,
@@ -413,23 +438,34 @@ begin
       company_id,station_id,assignment_id,employee_id,actor_user_id,event_type,occurred_at
     ) values(
       v_station.company_id,v_station.id,v_assignment.id,v_employee.id,v_user,'CLOCK_OUT',v_now
-    ) returning * into v_event;
+    );
 
-    update public.time_clock_stations set last_scan_at=v_now,updated_at=v_now where id=v_station.id;
+    update public.time_clock_stations
+    set last_scan_at=v_now,updated_at=v_now
+    where id=v_station.id;
 
     insert into public.audit_events(
       company_id,event_type,entity_type,entity_id,actor_id,actor_role,new_values,metadata
     ) values(
       v_station.company_id,'TIME_CLOCK_OUT','time_entry',v_assignment.id,v_user,'EMPLOYEE',
-      jsonb_build_object('actualStart',v_entry.actual_start,'actualEnd',v_entry.actual_end,'breakMinutes',v_entry.break_minutes,'status',v_entry.status,'version',v_entry.version),
-      jsonb_build_object('stationId',v_station.id,'stationName',v_station.name,'captureMethod','QR')
+      jsonb_build_object(
+        'actualStart',v_entry.actual_start,'actualEnd',v_entry.actual_end,
+        'breakMinutes',v_entry.break_minutes,'status',v_entry.status,'version',v_entry.version
+      ),
+      jsonb_build_object(
+        'stationId',v_station.id,'stationName',v_station.name,'captureMethod','QR'
+      )
     );
 
     perform private.sf_notify_managers(
       v_station.company_id,'TIME_ENTRY_REVIEW','QR-Zeit wartet auf Prüfung',
-      trim(coalesce(v_employee.first_name,'')||' '||coalesce(v_employee.last_name,''))||' hat '||v_assignment.shift_code||' per QR beendet.',
+      trim(coalesce(v_employee.first_name,'')||' '||coalesce(v_employee.last_name,''))||
+        ' hat '||v_assignment.shift_code||' per QR beendet.',
       'time','time_entry',v_assignment.id,
-      jsonb_build_object('assignmentId',v_assignment.id,'employeeId',v_employee.id,'status','recorded','captureMethod','QR')
+      jsonb_build_object(
+        'assignmentId',v_assignment.id,'employeeId',v_employee.id,
+        'status','recorded','captureMethod','QR'
+      )
     );
 
     return jsonb_build_object(
@@ -445,6 +481,7 @@ begin
     );
   end if;
 
+  -- CLOCK_IN: nächste veröffentlichte eigene Schicht im Stempelfenster wählen.
   select sa.* into v_assignment
   from public.shift_assignments sa
   where sa.company_id=v_station.company_id
@@ -453,11 +490,14 @@ begin
     and v_now >= sa.starts_at - interval '2 hours'
     and v_now <= sa.starts_at + interval '4 hours'
   order by abs(extract(epoch from (sa.starts_at-v_now))),sa.starts_at
-  limit 1
-  for update;
+  limit 1;
   if not found then raise exception 'Keine passende veröffentlichte Schicht im Stempelfenster gefunden'; end if;
 
-  select * into v_entry from public.time_entries where assignment_id=v_assignment.id for update;
+  select * into v_entry
+  from public.time_entries
+  where assignment_id=v_assignment.id
+  for update;
+
   if found and (v_entry.actual_start is not null or v_entry.status <> 'open') then
     raise exception 'Für diese Schicht existiert bereits eine Zeiterfassung';
   end if;
@@ -472,7 +512,8 @@ begin
     v_user,v_now,'','','EMPLOYEE','QR',
     null,null,null,null,null,'',
     case when v_entry.assignment_id is null then 1 else v_entry.version+1 end
-  ) on conflict(assignment_id) do update set
+  )
+  on conflict(assignment_id) do update set
     actual_start=excluded.actual_start,
     actual_end=null,
     break_minutes=0,
@@ -494,16 +535,22 @@ begin
     company_id,station_id,assignment_id,employee_id,actor_user_id,event_type,occurred_at
   ) values(
     v_station.company_id,v_station.id,v_assignment.id,v_employee.id,v_user,'CLOCK_IN',v_now
-  ) returning * into v_event;
+  );
 
-  update public.time_clock_stations set last_scan_at=v_now,updated_at=v_now where id=v_station.id;
+  update public.time_clock_stations
+  set last_scan_at=v_now,updated_at=v_now
+  where id=v_station.id;
 
   insert into public.audit_events(
     company_id,event_type,entity_type,entity_id,actor_id,actor_role,new_values,metadata
   ) values(
     v_station.company_id,'TIME_CLOCK_IN','time_entry',v_assignment.id,v_user,'EMPLOYEE',
-    jsonb_build_object('actualStart',v_entry.actual_start,'actualEnd',null,'status','open','version',v_entry.version),
-    jsonb_build_object('stationId',v_station.id,'stationName',v_station.name,'captureMethod','QR')
+    jsonb_build_object(
+      'actualStart',v_entry.actual_start,'actualEnd',null,'status','open','version',v_entry.version
+    ),
+    jsonb_build_object(
+      'stationId',v_station.id,'stationName',v_station.name,'captureMethod','QR'
+    )
   );
 
   return jsonb_build_object(
@@ -519,35 +566,43 @@ begin
 end;
 $$;
 
--- Public RPCs bleiben SECURITY INVOKER; die privilegierte Logik liegt in qr_private.
+-- Exponierte RPCs bleiben SECURITY INVOKER. Privilegierte Logik liegt in qr_private.
 create or replace function public.manager_list_time_clock_stations(p_company_id uuid)
 returns table(id uuid,name text,active boolean,last_scan_at timestamptz,created_at timestamptz,updated_at timestamptz)
 language sql
 stable
 security invoker
 set search_path=''
-as $$ select * from qr_private.manager_list_time_clock_stations_impl(p_company_id); $$;
+as $$
+  select * from qr_private.manager_list_time_clock_stations_impl(p_company_id);
+$$;
 
 create or replace function public.manager_create_time_clock_station(p_company_id uuid,p_name text)
 returns jsonb
 language sql
 security invoker
 set search_path=''
-as $$ select qr_private.manager_create_time_clock_station_impl(p_company_id,p_name); $$;
+as $$
+  select qr_private.manager_create_time_clock_station_impl(p_company_id,p_name);
+$$;
 
 create or replace function public.manager_rotate_time_clock_station(p_station_id uuid)
 returns jsonb
 language sql
 security invoker
 set search_path=''
-as $$ select qr_private.manager_rotate_time_clock_station_impl(p_station_id); $$;
+as $$
+  select qr_private.manager_rotate_time_clock_station_impl(p_station_id);
+$$;
 
 create or replace function public.manager_set_time_clock_station_active(p_station_id uuid,p_active boolean)
 returns jsonb
 language sql
 security invoker
 set search_path=''
-as $$ select qr_private.manager_set_time_clock_station_active_impl(p_station_id,p_active); $$;
+as $$
+  select qr_private.manager_set_time_clock_station_active_impl(p_station_id,p_active);
+$$;
 
 create or replace function public.employee_qr_clock_state(p_token text)
 returns jsonb
@@ -555,15 +610,20 @@ language sql
 stable
 security invoker
 set search_path=''
-as $$ select qr_private.employee_qr_clock_state_impl(p_token); $$;
+as $$
+  select qr_private.employee_qr_clock_state_impl(p_token);
+$$;
 
 create or replace function public.employee_qr_clock(p_token text)
 returns jsonb
 language sql
 security invoker
 set search_path=''
-as $$ select qr_private.employee_qr_clock_impl(p_token); $$;
+as $$
+  select qr_private.employee_qr_clock_impl(p_token);
+$$;
 
+-- Funktionen sind standardmäßig zu großzügig ausführbar: explizit einschränken.
 revoke execute on all functions in schema qr_private from public, anon;
 revoke execute on function public.manager_list_time_clock_stations(uuid) from public, anon;
 revoke execute on function public.manager_create_time_clock_station(uuid,text) from public, anon;
