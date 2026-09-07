@@ -198,13 +198,17 @@
 
   function gateStatus(text){const status=document.getElementById('sfDemoBootStatus');if(status)status.textContent=text}
   function coreDataReady(){
-    const required=['sf_demo_marketplace_v1','sf_demo_disruption_offers_v1','sf_demo_time_tracking_v2','sf_demo_datev_v2','sf_demo_time_account_settings_v1','sf_demo_data_employees','sf_demo_data_assignments','sf_demo_data_absences','sf_demo_data_timeEntries'];
+    const required=['sf_demo_marketplace_v1','sf_demo_disruption_offers_v1','sf_demo_time_tracking_v2','sf_demo_datev_v2','sf_demo_time_account_settings_v1'];
     const stored=required.every(key=>sessionStorage.getItem(key)!==null);
     const august=sessionStorage.getItem('sf_demo_data_august_standard_v1')==='ready';
     const localClient=B.client?.__sfDemoLocalClientV1===true&&B.ready===true;
-    let records=false;
-    try{records=employees.length>=15&&assignments.some(a=>String(a.id||'').startsWith('demo-aug26-'))&&Object.keys(timeEntries||{}).some(id=>id.startsWith('demo-aug26-'))}catch{}
+    const savedEmployees=readDemo('employees',[]),savedAssignments=readDemo('assignments',[]),savedEntries=readDemo('timeEntries',{});
+    const records=Array.isArray(savedEmployees)&&savedEmployees.length>=15&&Array.isArray(savedAssignments)&&savedAssignments.some(a=>String(a.id||'').startsWith('demo-aug26-'))&&Object.keys(savedEntries||{}).some(id=>id.startsWith('demo-aug26-'));
+    const gate=document.getElementById('sfDemoBootGate');if(gate){gate.dataset.storedReady=String(stored);gate.dataset.augustReady=String(august);gate.dataset.clientReady=String(localClient);gate.dataset.recordsReady=String(records)}
     return stored&&august&&localClient&&records;
+  }
+  function restorePreparedSnapshot(){
+    try{employees=readDemo('employees',employees);assignments=readDemo('assignments',assignments);absences=readDemo('absences',absences);globalSoll=readDemo('globalSoll',globalSoll);dailySoll=readDemo('dailySoll',dailySoll);timeEntries=readDemo('timeEntries',timeEntries)}catch(err){console.error('SchichtFunk Demo Snapshot',err)}
   }
   function controlsReady(){
     return document.querySelectorAll('[data-demo-perspective]').length>=2&&!!(document.querySelector('[data-demo-scenarios]')&&document.getElementById('sfDemoResetBtn')&&document.getElementById('sfDemoExitBtn')&&document.getElementById('sfDemoBadge'));
@@ -227,6 +231,7 @@
     const dataReady=coreDataReady(),uiReady=controlsReady();
     if(!dataReady||!uiReady){const gate=document.getElementById('sfDemoBootGate');if(gate){gate.dataset.dataReady=String(dataReady);gate.dataset.uiReady=String(uiReady)}failGate();return}
     gateStatus('Oberfläche wird abschließend aufgebaut …');
+    restorePreparedSnapshot();patchAuthLayer();
     const perspective=sessionStorage.getItem(PERSPECTIVE_KEY)==='employee'?'employee':'manager';
     window.SFDemoPerspective.set(perspective);
     if(perspective==='manager')rerender();

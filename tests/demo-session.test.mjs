@@ -44,6 +44,8 @@ test('demo surface remains hidden until all presentation data is ready',()=>{
   assert.match(mode,/querySelectorAll\('\[data-demo-perspective\]'\)\.length>=2/);
   assert.match(mode,/sf_demo_data_august_standard_v1/);
   assert.match(mode,/B\.client=window\.SFDemoDataClient\.create\(\)/);
+  assert.match(mode,/function restorePreparedSnapshot\(\)/);
+  assert.match(mode,/readDemo\('assignments',assignments\)/);
   assert.match(mode,/window\.__sfDemoReadyV1=true/);
   assert.match(mode,/sf:demo-ready/);
 });
