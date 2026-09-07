@@ -10,6 +10,8 @@
   const DEMO_USER='Demo Administrator';
   const PERSPECTIVE_KEY='sf_demo_perspective_v1';
   const DATA_PREFIX='sf_demo_data_';
+  const READY_TIMEOUT_MS=12000;
+  let preparationStarted=false;
   const pad=n=>String(n).padStart(2,'0');
   const localIso=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
   const mondayOf=d=>{const x=new Date(d);x.setHours(0,0,0,0);const day=x.getDay()||7;x.setDate(x.getDate()-day+1);return x};
@@ -193,12 +195,56 @@
     try{if(typeof renderLibrary==='function')renderLibrary();if(typeof renderPlanEmployeePool==='function')renderPlanEmployeePool();if(typeof renderCalendar==='function')renderCalendar();if(typeof renderEmployees==='function')renderEmployees();if(typeof renderTimeTracking==='function')renderTimeTracking();if(typeof renderAbsenceDashboard==='function')renderAbsenceDashboard();if(typeof renderSettings==='function')renderSettings();if(typeof renderOverview==='function')renderOverview()}catch(err){console.error('SchichtFunk Demo Render',err)}
   }
 
+  function gateStatus(text){const status=document.getElementById('sfDemoBootStatus');if(status)status.textContent=text}
+  function coreDataReady(){
+    const required=['sf_demo_marketplace_v1','sf_demo_disruption_offers_v1','sf_demo_time_tracking_v2','sf_demo_datev_v2','sf_demo_time_account_settings_v1','sf_demo_data_employees','sf_demo_data_assignments','sf_demo_data_absences','sf_demo_data_timeEntries'];
+    const stored=required.every(key=>sessionStorage.getItem(key)!==null);
+    const august=sessionStorage.getItem('sf_demo_data_august_standard_v1')==='ready';
+    const localClient=B.client?.__sfDemoLocalClientV1===true&&B.ready===true;
+    let records=false;
+    try{records=employees.length>=15&&assignments.some(a=>String(a.id||'').startsWith('demo-aug26-'))&&Object.keys(timeEntries||{}).some(id=>id.startsWith('demo-aug26-'))}catch{}
+    return stored&&august&&localClient&&records;
+  }
+  function controlsReady(){
+    return !!(window.SFDemoPerspective&&window.SFDemoScenarios&&window.SFDemoSession&&window.SFDemoTour&&window.sfResetDemo&&document.getElementById('sfDemoBadge'));
+  }
+  const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+  async function nextPaint(){await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))}
+  function failGate(){
+    const gate=document.getElementById('sfDemoBootGate'),card=gate?.querySelector('.sf-demo-boot-card');
+    if(card)card.classList.add('is-error');if(gate)gate.setAttribute('aria-busy','false');
+    gateStatus('Die Demo konnte nicht vollständig vorbereitet werden. Bitte laden Sie sie erneut.');
+  }
+  async function prepareAndReveal(){
+    const started=Date.now();
+    gateStatus('Referenzmonat und Arbeitszeiten werden vorbereitet …');
+    while(Date.now()-started<READY_TIMEOUT_MS){
+      patchAuthLayer();
+      if(coreDataReady()&&controlsReady())break;
+      await wait(60);
+    }
+    if(!coreDataReady()||!controlsReady()){failGate();return}
+    gateStatus('Oberfläche wird abschließend aufgebaut …');
+    const perspective=sessionStorage.getItem(PERSPECTIVE_KEY)==='employee'?'employee':'manager';
+    window.SFDemoPerspective.set(perspective);
+    if(perspective==='manager')rerender();
+    await nextPaint();
+    const gate=document.getElementById('sfDemoBootGate');if(gate)gate.setAttribute('aria-busy','false');
+    document.documentElement.classList.remove('sf-demo-booting');
+    document.documentElement.dataset.sfDemoReady='1';
+    window.__sfDemoReadyV1=true;
+    if(gate)gate.remove();
+    document.dispatchEvent(new CustomEvent('sf:demo-ready',{detail:{perspective}}));
+  }
+
   function start(){
     if(!seedDemo()){setTimeout(start,60);return}
+    if(preparationStarted)return;preparationStarted=true;
     addDemoCss();patchAuthLayer();demoOpen('overview');rerender();
-    [50,180,500,1200,2500].forEach(ms=>setTimeout(()=>{patchAuthLayer();demoOpen(document.querySelector('.view.active')?.id?.replace('view-','')||'overview')},ms));
+    [50,180,500,1200].forEach(ms=>setTimeout(patchAuthLayer,ms));
     const observer=new MutationObserver(()=>renderDemoState());
     observer.observe(document.body,{childList:true,subtree:true});
+    prepareAndReveal();
   }
 
   async function authorizeThenStart(){

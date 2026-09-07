@@ -113,7 +113,8 @@
   }
 
   async function augmentEmployee(){
-    if(B.role!=='EMPLOYEE'||!B.client||!B.employeePortalData)return;
+    const d=B.employeePortalData;
+    if(B.role!=='EMPLOYEE'||!B.client||!d)return;
     css();const root=document.getElementById('sfEmployeePortal');if(!root)return;
     const shifts=(B.employeePortalData.shifts||[]).filter(s=>new Date(s.ends_at).getTime()>=Date.now()).sort((a,b)=>new Date(a.starts_at)-new Date(b.starts_at)).slice(0,20),ids=shifts.map(s=>s.id);
     let map=new Map();if(ids.length){const q=await B.client.from('shift_assignment_confirmations').select('assignment_id,status,note,responded_at').eq('employee_id',B.employeePortalData.employee.id).in('assignment_id',ids);if(!q.error)map=new Map((q.data||[]).map(x=>[x.assignment_id,x]))}

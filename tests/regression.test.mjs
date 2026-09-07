@@ -469,6 +469,7 @@ test('regular published shifts do not require individual employee confirmation',
   assert.match(readiness, /changed\?'nachträgliche Änderung':shortNotice\?'kurzfristig veröffentlicht':''/);
   assert.match(readiness, /Date\.now\(\)&&confirmationReason\(a\)/);
   assert.match(readiness, /if\(!shift\|\|!confirmationReason\(shift,d\.requests/);
+  assert.match(readiness, /const d=B\.employeePortalData/);
   assert.match(readiness, /shift_assignments'\)\.select\('id,last_change_request_id'/);
   assert.match(employeeAccess, /company_compliance_policy.*employee_confirmation_under_hours/);
 });

@@ -34,3 +34,21 @@ test('expired sessions use the secure demo logout path',()=>{
   assert.match(page,/30 Minuten Inaktivität automatisch beendet/);
   assert.match(page,/maximale Sitzungsdauer ist abgelaufen/);
 });
+
+test('demo surface remains hidden until all presentation data is ready',()=>{
+  assert.match(page,/sf-demo-booting/);
+  assert.match(page,/id="sfDemoBootGate"/);
+  assert.match(page,/Die Oberfläche erscheint, sobald alle Bereiche bereit sind/);
+  assert.match(mode,/function coreDataReady\(\)/);
+  assert.match(mode,/function controlsReady\(\)/);
+  assert.match(mode,/sf_demo_data_august_standard_v1/);
+  assert.match(mode,/window\.__sfDemoReadyV1=true/);
+  assert.match(mode,/sf:demo-ready/);
+});
+
+test('incomplete demo preparation fails closed with a retry option',()=>{
+  assert.match(page,/class="sf-demo-boot-retry"/);
+  assert.match(mode,/READY_TIMEOUT_MS=12000/);
+  assert.match(mode,/function failGate\(\)/);
+  assert.match(mode,/nicht vollständig vorbereitet werden/);
+});
