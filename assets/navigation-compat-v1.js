@@ -72,5 +72,5 @@
   // QR-Zeiterfassung: Verwaltung und kontrollierte Pilotfreigabe der Stempelstationen.
   loadIntegration('/assets/supabase-qr-terminal-admin-v1.js?v=20260908-1','data-sf-qr-terminal-admin');
   loadIntegration('/assets/supabase-qr-terminal-role-guard-v1.js?v=20260908-1','data-sf-qr-terminal-role-guard');
-  loadIntegration('/assets/supabase-qr-pilot-guard-v1.js?v=20260908-1','data-sf-qr-pilot-guard');
+  loadIntegration('/assets/supabase-qr-pilot-guard-v1.js?v=20260908-2','data-sf-qr-pilot-guard');
 })();
