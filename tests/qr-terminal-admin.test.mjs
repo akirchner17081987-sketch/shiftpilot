@@ -5,6 +5,7 @@ import test from 'node:test';
 const admin=fs.readFileSync(new URL('../assets/supabase-qr-terminal-admin-v1.js',import.meta.url),'utf8');
 const guard=fs.readFileSync(new URL('../assets/supabase-qr-terminal-role-guard-v1.js',import.meta.url),'utf8');
 const nav=fs.readFileSync(new URL('../assets/navigation-compat-v1.js',import.meta.url),'utf8');
+const workspace=fs.readFileSync(new URL('../assets/time-workspace-v2.js',import.meta.url),'utf8');
 
 test('QR terminal management uses the protected manager RPCs',()=>{
   assert.match(admin,/manager_list_time_qr_terminals/);
@@ -38,4 +39,11 @@ test('dispatcher and planner receive read-only QR terminal controls',()=>{
 test('QR terminal UI and role guard are loaded by the existing integration loader',()=>{
   assert.match(nav,/supabase-qr-terminal-admin-v1\.js\?v=20260908-1/);
   assert.match(nav,/supabase-qr-terminal-role-guard-v1\.js\?v=20260908-1/);
+});
+
+test('time workspace exposes QR terminals as a dedicated third tab',()=>{
+  assert.match(workspace,/data-time-mode="qr"[^>]*>QR-Terminals</);
+  assert.match(workspace,/sf-tw-qr/);
+  assert.match(workspace,/B\.qrTerminalAdmin\?\.refresh\?\.\(\)/);
+  assert.match(workspace,/grid-template-columns:1fr 1fr 1fr/);
 });
