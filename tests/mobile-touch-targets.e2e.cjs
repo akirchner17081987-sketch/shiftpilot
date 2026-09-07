@@ -24,7 +24,8 @@ const routes = ['/', '/demo.html', '/demo-abschluss.html'];
   let failed = false;
   for (const route of routes) {
     browserErrors = [];
-    await page.goto(`${baseUrl}${route}`, { waitUntil: 'networkidle' });
+    await page.goto(`${baseUrl}${route}`, { waitUntil: 'domcontentloaded', timeout: 15000 });
+    await page.waitForTimeout(800);
     const result = await page.evaluate(() => {
       const selector = [
         'button',
