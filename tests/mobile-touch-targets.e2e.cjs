@@ -77,6 +77,50 @@ const routes = ['/', '/demo.html', '/demo-abschluss.html'];
     }
   }
 
+  browserErrors = [];
+  await page.goto(`${baseUrl}/`, { waitUntil: 'domcontentloaded', timeout: 15000 });
+  await page.waitForTimeout(800);
+  await page.evaluate(() => {
+    document.getElementById('landingPage')?.setAttribute('style','display:none!important');
+    document.getElementById('appShell')?.setAttribute('style','display:grid!important');
+    document.querySelectorAll('.sf-auth-backdrop,#sfAuthBackdrop,#spAuthDialog').forEach(element => element.remove());
+  });
+  const toggle=page.locator('#sfMobileManagerNavToggle');
+  await toggle.click({ force: true });
+  await page.waitForTimeout(250);
+  const openState=await page.evaluate(() => {
+    const shell=document.getElementById('appShell');
+    const sidebar=shell.querySelector('.sidebar');
+    const label=sidebar.querySelector('[data-view="schedule"] span:nth-child(2)');
+    const toggleButton=document.getElementById('sfMobileManagerNavToggle');
+    const toggleRect=toggleButton.getBoundingClientRect();
+    const sidebarRect=sidebar.getBoundingClientRect();
+    return {
+      expanded:toggleButton.getAttribute('aria-expanded'),
+      sidebarLeft:Math.round(sidebarRect.left),
+      labelVisible:getComputedStyle(label).display!=='none',
+      labelled:toggleButton.getAttribute('aria-label'),
+      toggleWidth:Math.round(toggleRect.width),
+      toggleHeight:Math.round(toggleRect.height),
+    };
+  });
+  console.log(`Manager-Menü offen: ${JSON.stringify(openState)}`);
+  if(openState.expanded!=='true'||openState.sidebarLeft<0||!openState.labelVisible||openState.toggleWidth<44||openState.toggleHeight<44)failed=true;
+  await page.screenshot({path:'test-results/mobile-manager-navigation-open-390.png',fullPage:false});
+  await page.keyboard.press('Escape');
+  const closedByEscape=await toggle.getAttribute('aria-expanded');
+  console.log(`Manager-Menü nach Escape: ${closedByEscape}`);
+  if(closedByEscape!=='false')failed=true;
+  await toggle.click({ force: true });
+  await page.locator('.sidebar [data-view="employees"]').click();
+  await page.waitForTimeout(100);
+  const selectionState=await page.evaluate(() => ({
+    expanded:document.getElementById('sfMobileManagerNavToggle').getAttribute('aria-expanded'),
+    current:document.querySelector('#sfMobileManagerNavToggle small').textContent,
+  }));
+  console.log(`Manager-Menü nach Bereichsauswahl: ${JSON.stringify(selectionState)}`);
+  if(selectionState.expanded!=='false'||selectionState.current!=='Mitarbeiter')failed=true;
+
   await browser.close();
   if (failed) process.exitCode = 1;
 })().catch(error => {

@@ -18,6 +18,8 @@ const supabaseData = read('assets/supabase-data-v1.js');
 const roleEscalationFix = read('database/fix_company_member_role_escalation.sql');
 const securityHardening = read('database/security_hardening_v1.sql');
 const mobileCss = read('assets/mobile-responsive-v1.css');
+const mobileManagerNavigationCss = read('assets/mobile-manager-navigation-v1.css');
+const mobileManagerNavigation = read('assets/mobile-manager-navigation-v1.js');
 const readiness = read('assets/readiness-traffic-light-v1.js');
 const readinessMigration = read('database/shift_readiness_v1.sql');
 const disruption = read('assets/disruption-autopilot-v1.js');
@@ -63,6 +65,19 @@ test('mobile interactive controls provide at least 44 by 44 pixel touch targets'
   assert.match(mobileCss, /label:has\(input\[type="checkbox"\]\)/);
   assert.match(mobileCss, /touch-action:\s*manipulation/);
   assert.doesNotMatch(mobileCss, /\.nav button\s*\{[^}]*min-height:\s*42px/s);
+});
+
+test('mobile manager navigation is labelled, expandable and keyboard dismissible', () => {
+  assert.match(index, /mobile-manager-navigation-v1\.css\?v=20260907-1/);
+  assert.match(index, /mobile-manager-navigation-v1\.js\?v=20260907-1/);
+  assert.match(mobileManagerNavigationCss, /#appShell\.sf-mobile-nav-open \.sidebar/);
+  assert.match(mobileManagerNavigationCss, /\.sf-mobile-manager-nav-copy/);
+  assert.match(mobileManagerNavigation, /aria-controls/);
+  assert.match(mobileManagerNavigation, /aria-expanded/);
+  assert.match(mobileManagerNavigation, /Manager-Menü öffnen\. Aktueller Bereich/);
+  assert.match(mobileManagerNavigation, /event\.key==='Escape'/);
+  assert.match(mobileManagerNavigation, /event\.target\.closest\('\[data-view\]'\)/);
+  assert.match(mobileManagerNavigation, /toggleAttribute\('inert'/);
 });
 
 test('global search exposes a programmatic accessible name', () => {
