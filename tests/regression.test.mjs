@@ -53,6 +53,12 @@ test('secondary text is readable across public, manager, demo and employee surfa
   assert.doesNotMatch(secondaryTextReadability, /font-size:(?:8|9|10)px!important/);
 });
 
+test('global search exposes a programmatic accessible name', () => {
+  assert.match(index, /<div class="search" role="search">/);
+  assert.match(index, /<input id="globalSearch" type="search" aria-label="Globale Suche nach Mitarbeitern oder Schichten"/);
+  assert.match(index, /<span class="kbd" aria-hidden="true">⌘ K<\/span>/);
+});
+
 test('Audit-Logs are an administrator-only filtered detail workspace', () => {
   assert.match(index, /data-view="audit" id="sfAuditNav" hidden/);
   assert.match(index, /id="view-audit"/);

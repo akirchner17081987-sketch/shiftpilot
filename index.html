@@ -143,7 +143,7 @@ button,input,select,textarea{font:inherit} button{cursor:pointer}
     <div class="side-bottom"><nav class="nav"><button data-view="settings"><span>⚙</span><span>Einstellungen</span></button></nav><div class="user-row"><div class="avatar">AK</div><div><b>Alexander Kirchner</b><small>Administrator</small></div></div></div>
   </aside>
   <header class="topbar">
-    <div class="search"><input id="globalSearch" placeholder="Mitarbeiter oder Schicht suchen ..."/><span class="kbd">⌘ K</span></div>
+    <div class="search" role="search"><input id="globalSearch" type="search" aria-label="Globale Suche nach Mitarbeitern oder Schichten" aria-controls="spEmployeeList" placeholder="Mitarbeiter oder Schicht suchen ..."/><span class="kbd" aria-hidden="true">⌘ K</span></div>
     <div class="top-actions"><button class="iconbtn">?</button><button class="iconbtn">♧</button><button class="primary" id="newTemplateBtn">＋ Neue Vorlage</button></div>
   </header>
   <main class="main"><div class="content">
@@ -277,7 +277,25 @@ function switchView(name){const appMain=document.querySelector('.main');if(appMa
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.view)));
 document.getElementById('prevWeek').onclick=()=>{weekStart=addDays(weekStart,-7);renderCalendar();renderSettings()};document.getElementById('nextWeek').onclick=()=>{weekStart=addDays(weekStart,7);renderCalendar();renderSettings()};document.getElementById('todayBtn').onclick=()=>{weekStart=currentMonday();renderCalendar();renderSettings()};document.getElementById('empSearch').addEventListener('input',renderEmployees);document.getElementById('empFilter').addEventListener('change',renderEmployees);document.getElementById('saveEmployeeBtn').onclick=saveEmployee;document.getElementById('deleteEmployeeBtn').onclick=deleteEmployee;document.getElementById('addEmployeeBtn').onclick=clearEmployeeForm;document.getElementById('addEmployeeAbsenceBtn').onclick=addAbsenceForSelected;document.getElementById('autoPlanBtn').onclick=runAutoPlan;document.getElementById('newTemplateBtn').onclick=()=>alert('Die sieben Schichtvorlagen sind bereits angelegt. Eigene Vorlagen werden als nächster Schritt ergänzt.');
 document.getElementById('planEmployeeSearch')?.addEventListener('input',renderPlanEmployeePool);
-document.getElementById('globalSearch').addEventListener('input',e=>{const q=e.target.value.toLowerCase();if(!q)return;const emp=employees.find(x=>(x.first+' '+x.last).toLowerCase().includes(q));if(emp){switchView('employees');document.getElementById('empSearch').value=q;renderEmployees()}});
+const globalSearchInput=document.getElementById('globalSearch');
+function updateGlobalSearchResults(value){
+  const query=String(value||'').trim();
+  const legacySearch=document.getElementById('empSearch');
+  const employeeSearch=document.getElementById('spEmpSearch');
+  if(legacySearch)legacySearch.value=query;
+  if(employeeSearch)employeeSearch.value=query;
+  if(query)switchView('employees');
+  if(typeof renderEmployees==='function')renderEmployees();
+}
+globalSearchInput.addEventListener('input',e=>updateGlobalSearchResults(e.currentTarget.value));
+globalSearchInput.addEventListener('keydown',e=>{
+  if(e.key==='ArrowDown'){
+    const firstResult=document.querySelector('#spEmployeeList .sp-emp-row');
+    if(firstResult){e.preventDefault();firstResult.focus()}
+  }else if(e.key==='Escape'&&e.currentTarget.value){
+    e.preventDefault();e.currentTarget.value='';updateGlobalSearchResults('');
+  }
+});
 
 function openApp(view='overview'){const landing=document.getElementById('landingPage'),app=document.getElementById('appShell');if(landing)landing.style.display='none';if(app)app.style.display='grid';switchView(view);window.scrollTo({top:0,behavior:'instant'});history.replaceState(null,'','#app')}
 function openLanding(){const landing=document.getElementById('landingPage'),app=document.getElementById('appShell');if(app)app.style.display='none';if(landing)landing.style.display='block';history.replaceState(null,'','#home');window.scrollTo({top:0,behavior:'instant'})}
