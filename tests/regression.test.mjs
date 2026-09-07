@@ -9,6 +9,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const read = path => readFileSync(resolve(root, path), 'utf8');
 const index = read('index.html');
 const demoPage = read('demo.html');
+const demoCompletionPage = read('demo-abschluss.html');
 const secondaryTextReadability = read('assets/secondary-text-readability-v1.css');
 const employeeManagement = read('assets/employee-management-v2.js');
 const employeeRhythm = read('assets/employee-rhythm-v1.js');
@@ -51,6 +52,17 @@ test('secondary text is readable across public, manager, demo and employee surfa
   assert.match(secondaryTextReadability, /#landingPage \.feature-card p/);
   assert.match(secondaryTextReadability, /\.demo-shell \.security-note/);
   assert.doesNotMatch(secondaryTextReadability, /font-size:(?:8|9|10)px!important/);
+});
+
+test('mobile interactive controls provide at least 44 by 44 pixel touch targets', () => {
+  assert.match(index, /mobile-responsive-v1\.css\?v=20260907-touch44/);
+  assert.match(demoPage, /mobile-responsive-v1\.css\?v=20260907-touch44/);
+  assert.match(demoCompletionPage, /mobile-responsive-v1\.css\?v=20260907-touch44/);
+  assert.match(mobileCss, /min-height:\s*44px !important/);
+  assert.match(mobileCss, /min-width:\s*44px !important/);
+  assert.match(mobileCss, /label:has\(input\[type="checkbox"\]\)/);
+  assert.match(mobileCss, /touch-action:\s*manipulation/);
+  assert.doesNotMatch(mobileCss, /\.nav button\s*\{[^}]*min-height:\s*42px/s);
 });
 
 test('global search exposes a programmatic accessible name', () => {
