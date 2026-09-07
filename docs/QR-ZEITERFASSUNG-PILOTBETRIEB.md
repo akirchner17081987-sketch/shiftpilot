@@ -13,7 +13,7 @@ Für den ersten Pilotbetrieb sind festgelegt:
 1. **Saskia Frank – Personal-Nr. 37**
 2. **Alexander Kirchner – Personal-Nr. 119 (Mitarbeiterkonto)**
 
-Live-Vorabprüfung am 08.09.2026:
+Live-Prüfung am 08.09.2026:
 
 - beide Mitarbeiter stehen auf `status = active`,
 - beide Mitarbeiter besitzen eine `auth_user_id`,
@@ -21,6 +21,15 @@ Live-Vorabprüfung am 08.09.2026:
 - beide gehören demselben Unternehmen an.
 
 Die Mitarbeiter werden nicht über fest einprogrammierte Datenbank-IDs freigeschaltet, sondern kontrolliert über die serverseitige Pilot-Whitelist des jeweiligen QR-Terminals.
+
+## Veröffentlichtes Testschicht-Set
+
+Für den ersten realen QR-Pilot sind in der Produktivdatenbank ausdrücklich als **QR-PILOT TEST** gekennzeichnete Schichten veröffentlicht:
+
+- **Saskia Frank – Pers.-Nr. 37:** OT1, 08.09.2026, 06:00–16:00 Uhr, 60 Minuten geplante Pause. Assignment-ID: `689ff512-96d6-4c45-beb8-2a22ec50fff8`.
+- **Alexander Kirchner – Pers.-Nr. 119:** O1, 08.09.2026 18:00 Uhr bis 09.09.2026 04:00 Uhr, 60 Minuten geplante Pause. Assignment-ID: `4826ebe8-1d5c-456a-b639-6e078b92322d`.
+
+Beide Schichten wurden vor dem Insert gegen die bestehenden Standard-Schichtregeln geprüft. Zum Veröffentlichungszeitpunkt bestanden weder kollidierende Schichten noch wirksame Abwesenheiten. September 2026 ist nicht abgeschlossen. Beide Veröffentlichungen wurden durch den bestehenden Audit-Trigger erfasst und lösten je eine Mitarbeiter-Benachrichtigung aus. Es existiert bewusst noch kein `time_entries`-Datensatz; die IST-Zeit soll erst durch den QR-Pilot entstehen.
 
 ## Technische Pilot-Sperren
 
@@ -43,20 +52,19 @@ Die Mitarbeiter werden nicht über fest einprogrammierte Datenbank-IDs freigesch
 
 **Mitarbeiterkonten bereit:** Saskia Frank und Alexander Kirchner erfüllen die technischen Login-Voraussetzungen.
 
-**Noch offen:** Für beide Mitarbeiter existiert derzeit keine passende veröffentlichte Testschicht. Vor dem realen Scan-Test muss daher mindestens je eine veröffentlichte Testschicht im zulässigen Zeitfenster vorbereitet werden.
+**Testschichten bereit und veröffentlicht:** Beide Pilot-Mitarbeiter besitzen je eine passende veröffentlichte Testschicht mit geplanter Pause und eindeutiger QR-Pilot-Kennzeichnung.
 
-Die QR-Migrationen sind weiterhin **nicht auf die Produktivdatenbank angewendet**.
+**Noch nicht live aktiviert:** Die QR-Migrationen sind weiterhin **nicht auf die Produktivdatenbank angewendet**. Es existiert daher noch kein aktives Produktiv-QR-Terminal.
 
 ## Voraussetzungen für den Pilot
 
 1. Saskia Frank und Alexander Kirchner als Pilot-Mitarbeiter beibehalten.
 2. Mitarbeiterstatus und Login-Verknüpfung unmittelbar vor dem Test nochmals prüfen.
 3. Persönlichen SchichtFunk-Login mit beiden Mitarbeiterkonten erfolgreich testen.
-4. Für **beide** Mitarbeiter jeweils eine veröffentlichte Testschicht vorbereiten.
-5. Sicherstellen, dass der betreffende Abrechnungsmonat nicht abgeschlossen ist.
-6. Einen konkreten Teststandort für das QR-Terminal festlegen.
-7. Für den Test mindestens ein Smartphone mit normaler Kamera und Internetzugang bereithalten.
-8. Einen dritten, **nicht freigegebenen** Mitarbeiter für den Negativtest verwenden.
+4. Die bereits veröffentlichten Testschichten und deren Zeitfenster kontrollieren.
+5. Einen konkreten Teststandort für das QR-Terminal festlegen.
+6. Für den Test mindestens ein Smartphone mit normaler Kamera und Internetzugang bereithalten.
+7. Einen dritten, **nicht freigegebenen** Mitarbeiter für den Negativtest verwenden.
 
 ## Kontrollierte Live-Aktivierung
 
@@ -71,7 +79,7 @@ Erst wenn alle Voraussetzungen erfüllt sind:
 7. In der Pilot-Whitelist genau **Saskia Frank (Pers.-Nr. 37)** und **Alexander Kirchner (Pers.-Nr. 119)** auswählen.
 8. Prüfen, dass keine weiteren Mitarbeiter ausgewählt sind.
 9. QR-Code speichern/ausdrucken und am Teststandort bereitstellen.
-10. Testschichten veröffentlichen und Zuordnungen kontrollieren.
+10. Die bereits veröffentlichten Testschichten nochmals kontrollieren.
 11. Erst unmittelbar vor dem Test das Terminal aktivieren.
 
 ## Pilot-Testablauf
