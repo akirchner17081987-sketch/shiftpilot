@@ -5,11 +5,18 @@
 
   const MANAGER=new Set(['OWNER','ADMIN','DISPATCHER','PLANNER']);
   const QR_LIB='https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js';
+  const PENDING_KEY='sf_qr_pending_token_v1';
   let stations=[];
   let stationBusy=false;
   let employeeScanBusy=false;
   let employeeScanHandled=false;
   let qrLibPromise=null;
+  let pendingScanToken='';
+
+  try{
+    pendingScanToken=new URL(location.href).searchParams.get('sfqr')||sessionStorage.getItem(PENDING_KEY)||'';
+    if(pendingScanToken)sessionStorage.setItem(PENDING_KEY,pendingScanToken);
+  }catch{}
 
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const tz=()=>B.companyTimeZone||'Europe/Berlin';
@@ -43,11 +50,17 @@
   }
 
   function scanToken(){
-    try{return new URL(location.href).searchParams.get('sfqr')||''}catch{return''}
+    try{
+      const current=new URL(location.href).searchParams.get('sfqr')||'';
+      if(current&&current!==pendingScanToken){pendingScanToken=current;employeeScanHandled=false;sessionStorage.setItem(PENDING_KEY,current)}
+      if(!pendingScanToken)pendingScanToken=sessionStorage.getItem(PENDING_KEY)||'';
+    }catch{}
+    return pendingScanToken;
   }
 
   function clearScanToken(){
-    try{const u=new URL(location.href);u.searchParams.delete('sfqr');history.replaceState(null,'',u.pathname+(u.search?u.search:'')+(u.hash||'#app'))}catch{}
+    pendingScanToken='';
+    try{sessionStorage.removeItem(PENDING_KEY);const u=new URL(location.href);u.searchParams.delete('sfqr');history.replaceState(null,'',u.pathname+(u.search?u.search:'')+(u.hash||'#app'))}catch{}
   }
 
   function modal(title,subtitle,body){
@@ -71,7 +84,7 @@
 
   async function showQr(station,token){
     const url=scanUrl(token);
-    const m=modal(`QR-Code · ${station.name}`,'Diesen Code am Einsatzort aushängen. Mitarbeitende scannen ihn mit der normalen Handy-Kamera.',`<div class="sf-qr-canvas-wrap"><canvas id="sfQrCanvas" width="320" height="320" aria-label="QR-Code für ${esc(station.name)}"></canvas></div><div class="sf-qr-url">${esc(url)}</div><div class="sf-qr-note"><b>Sicherheit:</b> Der QR-Code enthält keine Mitarbeiterdaten. Der Stationsschlüssel wird serverseitig nur gehasht gespeichert. Nach „QR erneuern“ ist der alte Code sofort ungültig.</div>`);
+    const m=modal(`QR-Code · ${station.name}`,'Diesen Code am Einsatzort aushängen. Mitarbeitende scannen ihn mit der normalen Handy-Kamera.',`<div class="sf-qr-canvas-wrap"><canvas id="sfQrCanvas" width="320" height="320" aria-label="QR-Code für ${esc(station.name)}"></canvas></div><div class="sf-qr-url">${esc(url)}</div><div class="sf-qr-note"><b>Sicherheit:</b> Der QR-Code enthält keine Mitarbeiterdaten. Der Stationsschlüssel wird serverseitig nur gehasht gespeichert. Nach „QR neu erzeugen“ ist der alte Code sofort ungültig.</div>`);
     const foot=m.querySelector('#sfQrClockFoot');foot.innerHTML='<button class="ghost" id="sfQrClose">Schließen</button><button class="ghost" id="sfQrSave">QR als PNG speichern</button><button class="primary" id="sfQrPrint">Drucken</button>';foot.querySelector('#sfQrClose').onclick=m.sfClose;
     try{
       const QR=await loadQrLib(),canvas=m.querySelector('#sfQrCanvas');
@@ -94,14 +107,13 @@
   }
 
   function renderAdminContent(card,error=''){
-    const rows=stations.map(s=>`<div class="sf-qr-row" data-sf-qr-station="${esc(s.id)}"><div class="sf-qr-row-main"><b>${esc(s.name)} <span class="sf-qr-state ${s.active?'':'off'}">${s.active?'● Aktiv':'○ Deaktiviert'}</span></b><small>${s.last_scan_at?`Letzter Scan: ${esc(fmtDateTime(s.last_scan_at))}`:'Noch kein Scan'} · angelegt ${esc(fmtDateTime(s.created_at))}</small></div><div class="sf-qr-row-actions"><button class="ghost" data-sf-qr-show ${s.active?'':'disabled'}>QR anzeigen</button><button class="ghost" data-sf-qr-rotate>QR erneuern</button><button class="ghost" data-sf-qr-toggle>${s.active?'Deaktivieren':'Aktivieren'}</button></div></div>`).join('');
+    const rows=stations.map(s=>`<div class="sf-qr-row" data-sf-qr-station="${esc(s.id)}"><div class="sf-qr-row-main"><b>${esc(s.name)} <span class="sf-qr-state ${s.active?'':'off'}">${s.active?'● Aktiv':'○ Deaktiviert'}</span></b><small>${s.last_scan_at?`Letzter Scan: ${esc(fmtDateTime(s.last_scan_at))}`:'Noch kein Scan'} · angelegt ${esc(fmtDateTime(s.created_at))}</small></div><div class="sf-qr-row-actions"><button class="ghost" data-sf-qr-rotate>QR neu erzeugen</button><button class="ghost" data-sf-qr-toggle>${s.active?'Deaktivieren':'Aktivieren'}</button></div></div>`).join('');
     card.innerHTML=`<div class="sf-qr-admin-head"><div class="sf-qr-admin-icon">▦</div><div class="sf-qr-admin-copy"><div class="eyebrow">QR-STEMPELSTATIONEN</div><h3>Dienstbeginn & Dienstende per QR-Code</h3><p>Ein QR-Code je Standort oder Stempelpunkt. Mitarbeitende scannen mit der Handy-Kamera und bestätigen die Buchung in ihrem geschützten SchichtFunk-Zugang.</p></div><div class="sf-qr-create"><input id="sfQrStationName" maxlength="80" placeholder="z. B. Haupteingang Objekt A"><button class="primary" id="sfQrStationCreate">＋ Station anlegen</button></div></div>${error?`<div class="sf-qr-setup">${esc(error)}</div>`:`<div class="sf-qr-list">${rows||'<div class="sf-qr-empty">Noch keine QR-Stempelstation angelegt.</div>'}</div>`}`;
     const create=card.querySelector('#sfQrStationCreate'),input=card.querySelector('#sfQrStationName');
     if(create){create.onclick=()=>createStation(input?.value||'');input?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();create.click()}})}
     card.querySelectorAll('[data-sf-qr-station]').forEach(row=>{
       const id=row.dataset.sfQrStation,s=stations.find(x=>String(x.id)===String(id));if(!s)return;
-      row.querySelector('[data-sf-qr-show]')?.addEventListener('click',()=>rotateStation(s,true));
-      row.querySelector('[data-sf-qr-rotate]')?.addEventListener('click',()=>rotateStation(s,false));
+      row.querySelector('[data-sf-qr-rotate]')?.addEventListener('click',()=>rotateStation(s));
       row.querySelector('[data-sf-qr-toggle]')?.addEventListener('click',()=>toggleStation(s));
     });
   }
@@ -118,10 +130,9 @@
     try{B.showLoading?.('QR-Stempelstation wird angelegt …');const q=await B.client.rpc('manager_create_time_clock_station',{p_company_id:B.companyId,p_name:name});if(q.error)throw q.error;await loadStations();renderAdminContent(adminShell());const station={id:q.data.id,name:q.data.name,active:q.data.active};await showQr(station,q.data.token);B.notifications?.refresh?.();if(typeof showSaveToast==='function')showSaveToast('QR-Stempelstation angelegt',`${name} ist einsatzbereit.`)}catch(e){alert(friendlyRpcError(e))}finally{B.hideLoading?.()}
   }
 
-  async function rotateStation(station,showOnly){
-    const text=showOnly?'Der Stationsschlüssel wird aus Sicherheitsgründen nicht dauerhaft im Browser gespeichert. Um den QR-Code erneut anzuzeigen, wird ein neuer Schlüssel erzeugt und der bisherige QR-Code ungültig. Fortfahren?':`QR-Code für „${station.name}“ erneuern? Der bisherige Ausdruck wird dadurch sofort ungültig.`;
-    if(!confirm(text))return;
-    try{B.showLoading?.('QR-Code wird erneuert …');const q=await B.client.rpc('manager_rotate_time_clock_station',{p_station_id:station.id});if(q.error)throw q.error;await loadStations();renderAdminContent(adminShell());await showQr({id:q.data.id,name:q.data.name,active:q.data.active},q.data.token);if(typeof showSaveToast==='function')showSaveToast('QR-Code erneuert',`Der bisherige Code für ${station.name} ist nicht mehr gültig.`)}catch(e){alert(friendlyRpcError(e))}finally{B.hideLoading?.()}
+  async function rotateStation(station){
+    if(!confirm(`Neuen QR-Code für „${station.name}“ erzeugen? Der bisherige Ausdruck wird dadurch sofort ungültig.`))return;
+    try{B.showLoading?.('QR-Code wird neu erzeugt …');const q=await B.client.rpc('manager_rotate_time_clock_station',{p_station_id:station.id});if(q.error)throw q.error;await loadStations();renderAdminContent(adminShell());await showQr({id:q.data.id,name:q.data.name,active:q.data.active},q.data.token);if(typeof showSaveToast==='function')showSaveToast('Neuer QR-Code erzeugt',`Der bisherige Code für ${station.name} ist nicht mehr gültig.`)}catch(e){alert(friendlyRpcError(e))}finally{B.hideLoading?.()}
   }
 
   async function toggleStation(station){
