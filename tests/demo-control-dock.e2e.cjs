@@ -22,6 +22,7 @@ async function prepare(page) {
   await page.goto(`${baseUrl}/#app`, { waitUntil: 'domcontentloaded', timeout: 20000 });
   for (const script of scripts) await page.addScriptTag({ url: `${baseUrl}/${script}` });
   await page.locator('#sfDemoControlDock').waitFor({ state: 'visible', timeout: 15000 });
+  await page.locator('#sfDemoControlDock #sfDemoPerspectiveSwitch').waitFor({ state: 'visible', timeout: 15000 });
   await page.waitForTimeout(500);
 }
 
