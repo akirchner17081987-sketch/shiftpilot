@@ -6,28 +6,39 @@ const prelock=fs.readFileSync(new URL('../supabase/migrations/20260908004500_qr_
 const migration=fs.readFileSync(new URL('../supabase/migrations/20260908005000_qr_time_pilot_guard_v1.sql',import.meta.url),'utf8');
 const assignmentLock=fs.readFileSync(new URL('../supabase/migrations/20260908005100_qr_pilot_assignment_lock_v1.sql',import.meta.url),'utf8');
 const privateClock=fs.readFileSync(new URL('../supabase/migrations/20260908005200_qr_pilot_private_clock_base_v1.sql',import.meta.url),'utf8');
+const multiPilot=fs.readFileSync(new URL('../supabase/migrations/20260908005300_qr_pilot_multi_employee_v1.sql',import.meta.url),'utf8');
 const ui=fs.readFileSync(new URL('../assets/supabase-qr-pilot-guard-v1.js',import.meta.url),'utf8');
 const nav=fs.readFileSync(new URL('../assets/navigation-compat-v1.js',import.meta.url),'utf8');
 
 test('existing and new QR terminals are locked before pilot activation',()=>{
   assert.match(prelock,/update public\.time_qr_terminals[\s\S]*set is_active = false/i);
   assert.match(migration,/pilot_mode boolean not null default true/i);
-  assert.match(migration,/pilot_employee_id uuid references public\.employees\(id\)/i);
   assert.match(migration,/alter column is_active set default false/i);
-  assert.match(migration,/check \(not is_active or pilot_employee_id is not null\)/i);
   assert.match(migration,/is_active, pilot_mode,[\s\S]*false, true, null/i);
 });
 
-test('employee QR status and clocking are protected by the server-side pilot guard',()=>{
+test('employee QR status and clocking are protected by server-side pilot checks',()=>{
   assert.match(migration,/private\.sf_assert_qr_pilot_access\(p_token\)/);
-  assert.match(migration,/v_pilot\.id <> v_employee_id/);
-  assert.match(migration,/e\.status = 'active'/);
-  assert.match(migration,/e\.auth_user_id is not null/);
-  assert.match(migration,/employee_clock_from_qr_unchecked/);
   assert.match(migration,/time_qr_punches_pilot_guard/);
   assert.match(privateClock,/alter function public\.employee_clock_from_qr_unchecked\(text,text\)[\s\S]*set schema private/i);
   assert.match(privateClock,/revoke all on function private\.employee_clock_from_qr_unchecked\(text,text\)[\s\S]*from public, anon, authenticated/i);
   assert.match(privateClock,/return private\.employee_clock_from_qr_unchecked\(p_token, p_expected_action\)/i);
+  assert.match(multiPilot,/create or replace function private\.sf_assert_qr_pilot_access/i);
+  assert.match(multiPilot,/p\.employee_id = v_employee_id/i);
+  assert.match(multiPilot,/e\.status = 'active'/i);
+  assert.match(multiPilot,/e\.auth_user_id is not null/i);
+  assert.match(multiPilot,/create or replace function private\.sf_enforce_qr_punch_pilot/i);
+  assert.match(multiPilot,/p\.employee_id = new\.employee_id/i);
+});
+
+test('multiple pilot employees use a private allowlist with no direct client access',()=>{
+  assert.match(multiPilot,/create table if not exists public\.time_qr_pilot_employees/i);
+  assert.match(multiPilot,/primary key \(terminal_id, employee_id\)/i);
+  assert.match(multiPilot,/enable row level security/i);
+  assert.match(multiPilot,/revoke all on table public\.time_qr_pilot_employees from public, anon, authenticated/i);
+  assert.match(multiPilot,/manager_set_time_qr_terminal_pilot_employees/i);
+  assert.match(multiPilot,/maximal 10 pilot-mitarbeiter/i);
+  assert.match(multiPilot,/v_terminal\.is_active and v_ids is distinct from v_current_ids/i);
 });
 
 test('pilot candidates expose only minimal fields and require active linked accounts',()=>{
@@ -39,25 +50,24 @@ test('pilot candidates expose only minimal fields and require active linked acco
   assert.doesNotMatch(migration,/jsonb_build_object\([\s\S]{0,400}'phone'/i);
 });
 
-test('only admins can assign pilot employees or activate terminals',()=>{
-  const assign=assignmentLock.match(/create or replace function public\.manager_set_time_qr_terminal_pilot_employee[\s\S]*?grant execute on function public\.manager_set_time_qr_terminal_pilot_employee\(uuid,uuid\) to authenticated;/i)?.[0]||'';
-  const activate=migration.match(/create or replace function public\.manager_set_time_qr_terminal_active[\s\S]*?grant execute on function public\.manager_set_time_qr_terminal_active\(uuid,boolean\) to authenticated;/i)?.[0]||'';
-  assert.match(assign,/private\.sf_is_manager\(v_terminal\.company_id, true\)/i);
-  assert.match(assign,/v_terminal\.is_active and p_employee_id is distinct from v_terminal\.pilot_employee_id/i);
-  assert.match(activate,/private\.sf_is_manager\(v_terminal\.company_id, true\)/i);
-  assert.match(activate,/Bitte zuerst einen Pilot-Mitarbeiter freigeben/);
+test('only admins can change pilot allowlist or activate terminals',()=>{
+  assert.match(multiPilot,/manager_set_time_qr_terminal_pilot_employees[\s\S]*private\.sf_is_manager\(v_terminal\.company_id, true\)/i);
+  assert.match(multiPilot,/manager_set_time_qr_terminal_active[\s\S]*private\.sf_is_manager\(v_terminal\.company_id, true\)/i);
+  assert.match(multiPilot,/mindestens einen Pilot-Mitarbeiter freigeben/i);
 });
 
-test('manager UI selects one pilot employee and blocks activation until ready',()=>{
+test('manager UI supports multi-selection and blocks activation until at least one employee is selected',()=>{
   assert.match(ui,/manager_list_time_qr_pilot_candidates/);
-  assert.match(ui,/manager_set_time_qr_terminal_pilot_employee/);
-  assert.match(ui,/Pilot noch nicht startbereit/);
-  assert.match(ui,/Kein freigabefähiger Mitarbeiter vorhanden/);
+  assert.match(ui,/manager_set_time_qr_terminal_pilot_employees/);
+  assert.match(ui,/select multiple data-qrt-pilot-select/);
+  assert.match(ui,/selectedOptions/);
+  assert.match(ui,/Mehrfachauswahl möglich/);
+  assert.match(ui,/mindestens einen Pilot-Mitarbeiter auswählen/);
   assert.match(ui,/e\.preventDefault\(\);e\.stopImmediatePropagation\(\)/);
   assert.doesNotMatch(ui,/localStorage\.setItem/i);
   assert.doesNotMatch(ui,/sessionStorage\.setItem/i);
 });
 
-test('pilot guard integration is loaded with QR terminal management',()=>{
-  assert.match(nav,/supabase-qr-pilot-guard-v1\.js\?v=20260908-1/);
+test('pilot guard integration uses the V2 cache marker',()=>{
+  assert.match(nav,/supabase-qr-pilot-guard-v1\.js\?v=20260908-2/);
 });
