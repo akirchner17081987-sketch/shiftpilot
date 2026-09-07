@@ -93,6 +93,13 @@
         timeEntries[e.assignment_id]={actualStart:`${pad(start.getHours())}:${pad(start.getMinutes())}`,actualEnd:`${pad(end.getHours())}:${pad(end.getMinutes())}`,breakMin:30,status:'confirmed'};
       }
       store.set('assignments',assignments);store.set('dailySoll',dailySoll);store.set('absences',absences);store.set('timeEntries',timeEntries);
+      // Im Demo-Modus koennen spaet geladene Produktiv-Bridges store.set abfangen.
+      // Der vorbereitete Referenzmonat muss deshalb zusaetzlich sicher in der
+      // isolierten Session-Sandbox liegen, bevor die Startblende freigegeben wird.
+      sessionStorage.setItem('sf_demo_data_assignments',JSON.stringify(assignments));
+      sessionStorage.setItem('sf_demo_data_dailySoll',JSON.stringify(dailySoll));
+      sessionStorage.setItem('sf_demo_data_absences',JSON.stringify(absences));
+      sessionStorage.setItem('sf_demo_data_timeEntries',JSON.stringify(timeEntries));
       sessionStorage.setItem(INIT_KEY,'ready');
       seeded=true;return true;
     }catch(err){console.error('[SchichtFunk Demo August] Planung konnte nicht erzeugt werden.',err);return false}
