@@ -141,10 +141,15 @@
     bookBtn.textContent=expected==='CLOCK_IN'?'Start wird gebucht …':'Ende wird gebucht …';
     const {data,error}=await supabase.rpc('employee_clock_from_qr',{p_token:token,p_expected_action:expected});
     busy=false;
-    if(error){showMessage(clockMsg,error.message||'Buchung fehlgeschlagen.','bad');await loadStatus();return;}
+    if(error){
+      const message=error.message||'Buchung fehlgeschlagen.';
+      await loadStatus();
+      showMessage(clockMsg,message,'bad');
+      return;
+    }
     const verb=expected==='CLOCK_IN'?'gestartet':'beendet';
-    showMessage(clockMsg,`Arbeitszeit erfolgreich ${verb} · ${fmtTime(data?.punched_at)} Uhr`,'good');
     await loadStatus();
+    showMessage(clockMsg,`Arbeitszeit erfolgreich ${verb} · ${fmtTime(data?.punched_at)} Uhr`,'good');
   });
 
   logoutBtn.addEventListener('click',async()=>{await supabase.auth.signOut({scope:'local'});currentStatus=null;await loadStatus();});
