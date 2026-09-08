@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { demoExitControl, waitForDemoReady } from './helpers/demo-ready.mjs';
 
 test('ending the demo opens the responsive completion page', async ({ page }) => {
   let signedOut=false;
@@ -8,7 +9,8 @@ test('ending the demo opens the responsive completion page', async ({ page }) =>
     await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({expiresAt:new Date(Date.now()+3_600_000).toISOString()})});
   });
   await page.goto('/demo');
-  await page.locator('#sfDemoExitBtn').click();
+  await waitForDemoReady(page);
+  await demoExitControl(page).click();
   await page.waitForURL('**/demo-abschluss');
 
   await expect(page.getByRole('heading',{name:/weiter unterstützen/})).toBeVisible();
