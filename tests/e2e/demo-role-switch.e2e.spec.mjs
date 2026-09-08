@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { waitForDemoReady } from './helpers/demo-ready.mjs';
 
 test('demo switches between manager workspace and the existing employee portal', async ({ page }) => {
   await page.addInitScript(() => sessionStorage.setItem('sf_demo_tour_seen_v1', 'complete'));
@@ -6,6 +7,7 @@ test('demo switches between manager workspace and the existing employee portal',
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
   });
   await page.goto('/demo');
+  await waitForDemoReady(page);
 
   const managerSwitch = page.locator('#appShell #sfDemoPerspectiveSwitch');
   await expect(managerSwitch).toBeVisible();
@@ -88,6 +90,7 @@ test('demo employee can review and confirm presentation shift changes', async ({
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
   });
   await page.goto('/demo');
+  await waitForDemoReady(page);
   await page.locator('#appShell [data-demo-perspective="employee"]').click();
 
   const portal=page.locator('#sfEmployeePortal');
@@ -112,6 +115,7 @@ test('demo employee sees absence examples and can submit a local request', async
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
   });
   await page.goto('/demo');
+  await waitForDemoReady(page);
   await page.locator('#appShell [data-demo-perspective="employee"]').click();
 
   const portal=page.locator('#sfEmployeePortal');
@@ -141,6 +145,7 @@ test('demo time tracking persists employee entries and monthly accounts render',
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
   });
   await page.goto('/demo');
+  await waitForDemoReady(page);
   await page.locator('#appShell [data-demo-perspective="employee"]').click();
 
   const portal=page.locator('#sfEmployeePortal');
@@ -151,7 +156,7 @@ test('demo time tracking persists employee entries and monthly accounts render',
   await expect(timeCard).toContainText('Bestätigt');
   await expect(timeCard).toContainText('Korrektur nötig');
   await expect(timeCard).toContainText('7,50 Std.');
-  if(testInfo.project.name==='desktop-chromium')await timeCard.screenshot({path:'C:/Users/lhz_d/Documents/Codex/2026-09-06/we-2/outputs/arbeitszeiterfassung-demo-geprueft.png'});
+  if(testInfo.project.name==='desktop-chromium')await timeCard.screenshot({path:testInfo.outputPath('arbeitszeiterfassung-demo-geprueft.png')});
 
   const editable=timeCard.locator('[data-time-report]').first();
   const item=editable.locator('xpath=ancestor::*[@data-emp-time]');
@@ -190,5 +195,5 @@ test('demo time tracking persists employee entries and monthly accounts render',
   await expect(managerAccount.locator('#sfTaDatevPane')).toBeVisible();
   await accountTab.click();
   await expect(managerAccount.locator('#sfTaAccountPane')).toBeVisible();
-  if(testInfo.project.name==='desktop-chromium')await managerAccount.screenshot({path:'C:/Users/lhz_d/Documents/Codex/2026-09-06/we-2/outputs/stundenkonto-manager-geprueft.png'});
+  if(testInfo.project.name==='desktop-chromium')await managerAccount.screenshot({path:testInfo.outputPath('stundenkonto-manager-geprueft.png')});
 });
