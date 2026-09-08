@@ -37,12 +37,28 @@
     return true;
   };
 
+  function bindGlobalSearchKeyboard(){
+    const search=document.getElementById('globalSearch');
+    if(!search||search.dataset.sfKeyboardNav==='1')return;
+    search.dataset.sfKeyboardNav='1';
+    search.addEventListener('keydown',event=>{
+      if(event.key!=='ArrowDown')return;
+      const first=document.querySelector('#spEmployeeList .sp-emp-row');
+      if(!first)return;
+      event.preventDefault();
+      setTimeout(()=>document.querySelector('#spEmployeeList .sp-emp-row')?.focus(),0);
+    });
+  }
+
   document.addEventListener('DOMContentLoaded',()=>{
     document.querySelectorAll('[data-view]').forEach(btn=>{
       const target=normalize(btn.dataset.view);
       if(!document.getElementById('view-'+target))console.warn('[SchichtFunk Navigation] Zielansicht fehlt:',btn.dataset.view,btn);
     });
+    bindGlobalSearchKeyboard();
   });
+  setTimeout(bindGlobalSearchKeyboard,0);
+  setTimeout(bindGlobalSearchKeyboard,500);
 
   function loadIntegration(src,marker){
     if(document.querySelector(`script[${marker}]`))return;
@@ -70,7 +86,7 @@
   loadIntegration('/assets/demo-datev-snapshot-fix-v1.js?v=20260904-2','data-sf-demo-datev-snapshot-fix');
 
   // Demo bleibt auch mit den QR-Verwaltungsmodulen vollständig lokal und fail-closed.
-  loadIntegration('/assets/demo-qr-local-bridge-v1.js?v=20260908-1','data-sf-demo-qr-local-bridge');
+  loadIntegration('/assets/demo-qr-local-bridge-v1.js?v=20260908-2','data-sf-demo-qr-local-bridge');
 
   // QR-Zeiterfassung: Verwaltung und kontrollierte Pilotfreigabe der Stempelstationen.
   loadIntegration('/assets/supabase-qr-terminal-admin-v1.js?v=20260908-1','data-sf-qr-terminal-admin');

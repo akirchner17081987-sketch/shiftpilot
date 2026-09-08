@@ -1,5 +1,7 @@
 export async function primeDemoSession(page) {
   await page.addInitScript(() => {
+    const path = (location.pathname || '').replace(/\/+$/, '') || '/';
+    if (path !== '/demo' && path !== '/demo.html') return;
     sessionStorage.setItem('sf_demo_session_v1', 'active');
     sessionStorage.setItem('sf_demo_tour_seen_v1', 'complete');
   });
@@ -15,11 +17,13 @@ export async function waitForDemoReady(page, options = {}) {
 
   await page.waitForFunction(
     ({ requireReadability }) => {
+      const html = document.documentElement;
       const shell = document.getElementById('appShell');
       const backend = window.SFBackend;
-      if (!shell || document.documentElement.dataset.sfDemo !== '1') return false;
+      if (!shell || html.dataset.sfDemo !== '1') return false;
+      if (html.dataset.sfDemoReady !== '1' && window.__sfDemoReadyV1 !== true) return false;
       if (!backend?.ready || !backend?.client?.__sfDemoLocalClientV1) return false;
-      if (document.documentElement.classList.contains('sf-demo-booting')) return false;
+      if (html.classList.contains('sf-demo-booting')) return false;
       if (requireReadability && !window.__sfDemoReadabilityV1) return false;
       return getComputedStyle(shell).display !== 'none';
     },
@@ -49,19 +53,29 @@ export async function waitForDemoReady(page, options = {}) {
     await page.locator('[data-demo-scenarios]')
       .waitFor({ state: 'visible', timeout });
   }
+
+  // Erst nach dem finalen Demo-Render mit dem Test fortfahren. Das verhindert,
+  // dass spaet geladene Integrationen gerade bearbeitete Controls erneut rendern.
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 }
 
-export async function openManagerArea(page, view) {
+export async function openManagerArea(page, view, timeout = 15_000) {
   const mobileToggle = page.locator('#sfMobileManagerNavToggle');
   if (await mobileToggle.isVisible().catch(() => false)) {
     const expanded = await mobileToggle.getAttribute('aria-expanded');
     if (expanded !== 'true') await mobileToggle.click();
+    await page.locator('#appShell').waitFor({ state: 'visible', timeout });
   }
 
   const target = page.locator(`#appShell .sidebar [data-view="${view}"]`).first();
-  await target.waitFor({ state: 'visible', timeout: 10_000 });
+  await target.waitFor({ state: 'visible', timeout });
   await target.scrollIntoViewIfNeeded();
   await target.click();
+  await page.waitForFunction(
+    value => document.getElementById(`view-${value}`)?.classList.contains('active'),
+    view,
+    { timeout },
+  );
 }
 
 export async function openEmployeeArea(page, view, timeout = 10_000) {
