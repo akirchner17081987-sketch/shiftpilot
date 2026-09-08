@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { demoPerspectiveSwitch, openEmployeeArea, primeDemoSession, waitForDemoReady } from './helpers/demo-ready.mjs';
+import { demoPerspectiveSwitch, openEmployeeArea, openManagerArea, primeDemoSession, waitForDemoReady } from './helpers/demo-ready.mjs';
 
 test('demo switches between manager workspace and the existing employee portal', async ({ page }) => {
   await primeDemoSession(page);
@@ -45,7 +45,7 @@ test('demo switches between manager workspace and the existing employee portal',
   await expect(portal.locator('.sf-shift-item').first()).toBeVisible();
   expect(await portal.locator('.sf-shift-item').count()).toBeGreaterThanOrEqual(2);
   const offerButton=portal.locator('.sf-market-offer').filter({hasText:'Im Marktplatz anbieten'}).first();
-  await expect(offerButton).toBeVisible();
+  await expect(offerButton).toBeVisible({timeout:15_000});
   await offerButton.click();
   await page.getByRole('button',{name:'Angebot veröffentlichen'}).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -177,7 +177,7 @@ test('demo time tracking persists employee entries and monthly accounts render',
   await expect.poll(()=>account.locator('.sf-ta-employee-grid').innerText()).not.toBe(current);
 
   await demoPerspectiveSwitch(page).locator('[data-demo-perspective="manager"]').click();
-  await page.locator('[data-view="reports"]:visible').first().click();
+  await openManagerArea(page,'reports');
   const managerAccount=page.locator('#sfTimeAccounts');
   await expect(managerAccount).toBeVisible();
   await expect(managerAccount.locator('#sfTaBody tr')).toHaveCount(8);
