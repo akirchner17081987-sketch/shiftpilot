@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { waitForDemoReady } from './helpers/demo-ready.mjs';
 
 test('demo readability is applied to manager and employee perspectives', async ({ page }, testInfo) => {
   await page.addInitScript(() => sessionStorage.setItem('sf_demo_tour_seen_v1', 'complete'));
@@ -6,6 +7,7 @@ test('demo readability is applied to manager and employee perspectives', async (
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
   });
   await page.goto('/demo');
+  await waitForDemoReady(page);
   await expect.poll(()=>page.locator('#appShell .content').evaluate(element=>getComputedStyle(element).maxWidth)).toBe('1720px');
 
   const manager=await page.locator('#appShell').evaluate(shell=>({

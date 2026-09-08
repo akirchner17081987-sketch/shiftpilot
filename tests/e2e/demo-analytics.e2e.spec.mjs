@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { openManagerArea, waitForDemoReady } from './helpers/demo-ready.mjs';
 
 test('demo explains and records only anonymous feature categories',async({page})=>{
   const events=[];
@@ -6,6 +7,7 @@ test('demo explains and records only anonymous feature categories',async({page})
   await page.route('**/api/demo-auth',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,expiresAt:new Date(Date.now()+3_600_000).toISOString()})}));
   await page.route('**/api/demo-analytics',async route=>{events.push(route.request().postDataJSON());await route.fulfill({status:204,body:''})});
   await page.goto('/demo');
+  await waitForDemoReady(page);
 
   const privacy=page.getByRole('button',{name:/Anonyme Auswertung/}).first();
   await expect(privacy).toBeVisible();
@@ -15,8 +17,8 @@ test('demo explains and records only anonymous feature categories',async({page})
   await expect(page.locator('#sfDemoPrivacyInfo')).toContainText('Tageszählern');
   await page.getByRole('button',{name:'Verstanden'}).click();
 
-  await page.locator('[data-view="schedule"]').click();
-  await page.locator('[data-demo-perspective="employee"]').click();
+  await openManagerArea(page,'schedule');
+  await page.locator('#appShell [data-demo-perspective="employee"]').click();
   await expect.poll(()=>events.some(event=>event.event==='session_started'&&event.value==='manager')).toBe(true);
   expect(events.some(event=>event.event==='area_opened'&&event.value==='schedule')).toBe(true);
   expect(events.some(event=>event.event==='perspective_changed'&&event.value==='employee')).toBe(true);

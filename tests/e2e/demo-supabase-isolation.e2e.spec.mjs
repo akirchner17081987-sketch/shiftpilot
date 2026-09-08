@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { waitForDemoReady } from './helpers/demo-ready.mjs';
 
 test('demo never connects to Supabase in manager or employee views',async({page})=>{
   const supabaseRequests=[];
@@ -10,6 +11,7 @@ test('demo never connects to Supabase in manager or employee views',async({page}
   await page.route('**/api/demo-auth',async route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({expiresAt:new Date(Date.now()+3_600_000).toISOString()})}));
 
   await page.goto('/demo');
+  await waitForDemoReady(page, { scenarios: true });
   await expect(page.locator('#sfDemoBadge')).toHaveCount(1);
   await expect.poll(()=>page.evaluate(()=>({local:window.SFBackend?.client?.__sfDemoLocalClientV1,ready:window.SFBackend?.ready}))).toEqual({local:true,ready:true});
 
