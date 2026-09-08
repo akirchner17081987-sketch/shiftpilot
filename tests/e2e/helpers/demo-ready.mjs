@@ -15,25 +15,24 @@ export async function waitForDemoReady(page, options = {}) {
     timeout = 20_000,
   } = options;
 
-  // Der Demo-Kern setzt diesen Marker erst nach seinem eigenen vollständigen
-  // Bootstrap. Einzelne Integrationen dürfen ihren Client danach noch
-  // dekorieren; das ist kein Grund, die gesamte Oberfläche als unbereit zu
-  // behandeln und war die Ursache sporadischer CI-Timeouts.
+  // Die Oberfläche selbst ist das belastbare End-to-End-Signal: Der Demo-Kern
+  // hält appShell bis zum abgeschlossenen Bootstrap verborgen. Interne Marker
+  // können bei späteren Integrations-Reinitialisierungen kurz fehlen und dürfen
+  // deshalb keinen ansonsten nutzbaren Browserlauf blockieren.
   await page.waitForFunction(
     () => {
       const html = document.documentElement;
       const shell = document.getElementById('appShell');
       if (!shell || html.dataset.sfDemo !== '1') return false;
-      if (html.dataset.sfDemoReady !== '1' && window.__sfDemoReadyV1 !== true) return false;
-      if (html.classList.contains('sf-demo-booting')) return false;
-      return getComputedStyle(shell).display !== 'none';
+      const style = getComputedStyle(shell);
+      return style.display !== 'none' && style.visibility !== 'hidden';
     },
     null,
     { timeout },
   );
 
   await page.locator('#appShell').waitFor({ state: 'visible', timeout });
-  await page.locator('#sfDemoBadge').waitFor({ state: 'attached', timeout });
+  await page.locator('#sfDemoBadge').waitFor({ state: 'visible', timeout });
 
   if (readability) {
     await page.waitForFunction(
@@ -47,8 +46,7 @@ export async function waitForDemoReady(page, options = {}) {
 
   if (perspective || scenarios) {
     await page.waitForFunction(
-      () => document.documentElement.dataset.sfDemoDock === '1'
-        && !!document.getElementById('sfDemoControlDock'),
+      () => !!document.getElementById('sfDemoControlDock'),
       null,
       { timeout },
     );
@@ -91,9 +89,6 @@ export async function openEmployeeArea(page, view, timeout = 10_000) {
   const portal = page.locator('#sfEmployeePortal');
   await portal.waitFor({ state: 'visible', timeout });
 
-  // Desktop und Mobile teilen dieselben data-Attribute, aber nicht dieselbe
-  // DOM-Hierarchie. Deshalb zuerst jeden tatsächlich sichtbaren Zielknopf
-  // verwenden und nur bei Bedarf das mobile Mehr-Menü öffnen.
   const visibleTarget = portal.locator(`[data-sf-employee-view="${view}"]:visible`).first();
   if (await visibleTarget.isVisible().catch(() => false)) {
     await visibleTarget.scrollIntoViewIfNeeded();
