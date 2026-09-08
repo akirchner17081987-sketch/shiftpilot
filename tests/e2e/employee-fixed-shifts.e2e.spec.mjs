@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { openManagerArea, waitForDemoReady } from './helpers/demo-ready.mjs';
 
 test('manager configures an exclusive shift and a fixed working week', async ({ page }) => {
   await page.addInitScript(() => sessionStorage.setItem('sf_demo_tour_seen_v1', 'complete'));
@@ -9,12 +10,12 @@ test('manager configures an exclusive shift and a fixed working week', async ({ 
     await route.fulfill({ status: 204, body: '' });
   });
   await page.goto('/demo');
+  await waitForDemoReady(page);
 
   await expect(page.locator('#appShell #sfDemoPerspectiveSwitch')).toBeVisible();
-  await page.waitForTimeout(5200);
-  await page.locator('#appShell aside [data-view="employees"]').click();
+  await openManagerArea(page,'employees');
   await expect(page.locator('#view-employees')).toHaveClass(/active/);
-  await expect(page.locator('#spEmployeeV2')).toBeVisible();
+  await expect(page.locator('#spEmployeeV2')).toBeVisible({ timeout: 12_000 });
   await page.locator('#spEmployeeList [data-id]').first().click();
 
   await expect(page.getByText('Feste Schichtregel', { exact: true })).toBeVisible();
