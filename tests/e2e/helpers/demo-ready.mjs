@@ -1,3 +1,10 @@
+export async function primeDemoSession(page) {
+  await page.addInitScript(() => {
+    sessionStorage.setItem('sf_demo_session_v1', 'active');
+    sessionStorage.setItem('sf_demo_tour_seen_v1', 'complete');
+  });
+}
+
 export async function waitForDemoReady(page, options = {}) {
   const {
     perspective = true,
@@ -55,6 +62,31 @@ export async function openManagerArea(page, view) {
   await target.waitFor({ state: 'visible', timeout: 10_000 });
   await target.scrollIntoViewIfNeeded();
   await target.click();
+}
+
+export async function openEmployeeArea(page, view, timeout = 10_000) {
+  const portal = page.locator('#sfEmployeePortal');
+  await portal.waitFor({ state: 'visible', timeout });
+
+  const direct = portal.locator(`.sf-employee-nav-scroll > .sf-employee-nav-group [data-sf-employee-view="${view}"]:visible`).first();
+  if (await direct.isVisible().catch(() => false)) {
+    await direct.scrollIntoViewIfNeeded();
+    await direct.click();
+  } else {
+    const toggle = portal.locator('.sf-employee-more-toggle');
+    await toggle.waitFor({ state: 'visible', timeout });
+    if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
+    const target = portal.locator(`.sf-employee-more-panel [data-sf-employee-view="${view}"]`).first();
+    await target.waitFor({ state: 'visible', timeout });
+    await target.scrollIntoViewIfNeeded();
+    await target.click();
+  }
+
+  await page.waitForFunction(
+    value => document.getElementById('sfEmployeePortal')?.dataset.sfPortalActive === value,
+    view,
+    { timeout },
+  );
 }
 
 export function demoPerspectiveSwitch(page) {
