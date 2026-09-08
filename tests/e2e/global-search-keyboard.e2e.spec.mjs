@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test';
+import { primeDemoSession, waitForDemoReady } from './helpers/demo-ready.mjs';
 
 test('global search results are fully keyboard accessible', async ({ page }) => {
-  await page.addInitScript(() => sessionStorage.setItem('sf_demo_tour_seen_v1', 'complete'));
+  await primeDemoSession(page);
   await page.route('**/api/demo-auth', async route => {
     await route.fulfill({
       status: 200,
@@ -10,8 +11,7 @@ test('global search results are fully keyboard accessible', async ({ page }) => 
     });
   });
   await page.goto('/demo');
-  await expect(page.locator('#appShell')).toBeVisible();
-  await page.waitForTimeout(2_200);
+  await waitForDemoReady(page);
 
   const search = page.getByRole('searchbox', { name: 'Globale Suche nach Mitarbeitern oder Schichten' });
   await page.keyboard.press('Control+KeyK');
