@@ -18,7 +18,7 @@
     html[data-sf-demo="1"] #appShell .user-row small{font-size:11.5px;line-height:1.4}
     html[data-sf-demo="1"] #appShell .page-head{margin-bottom:20px}
     html[data-sf-demo="1"] #appShell .page-head h1{font-size:32px;line-height:1.15;letter-spacing:-.02em}
-    html[data-sf-demo="1"] #appShell .page-head p{max-width:840px;font-size:14px;line-height:1.55}
+    html[data-sf-demo="1"] #appShell .page-head p{max-width:840px;font-size:14px!important;line-height:1.55}
     html[data-sf-demo="1"] #appShell .eyebrow{font-size:12px;line-height:1.35}
     html[data-sf-demo="1"] #appShell .stat{min-height:104px;padding:17px}
     html[data-sf-demo="1"] #appShell .stat small{font-size:12px!important;line-height:1.35}
@@ -92,7 +92,7 @@
       html[data-sf-demo="1"]{--sidebar:58px}
       html[data-sf-demo="1"] #appShell .main{padding:17px 12px 76px}
       html[data-sf-demo="1"] #appShell .page-head h1{font-size:26px}
-      html[data-sf-demo="1"] #appShell .page-head p{font-size:13px}
+      html[data-sf-demo="1"] #appShell .page-head p{font-size:13px!important}
       html[data-sf-demo="1"] #appShell .stat{min-height:92px;padding:15px}
       html[data-sf-demo="1"] #sfEmployeePortal .sf-portal-main{padding:20px 14px 80px!important}
       html[data-sf-demo="1"] #sfEmployeePortal .sf-portal-welcome h1{font-size:28px}

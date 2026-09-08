@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
-import { openManagerArea, waitForDemoReady } from './helpers/demo-ready.mjs';
+import { demoPerspectiveSwitch, openManagerArea, primeDemoSession, waitForDemoReady } from './helpers/demo-ready.mjs';
 
 test('manager configures an exclusive shift and a fixed working week', async ({ page }) => {
-  await page.addInitScript(() => sessionStorage.setItem('sf_demo_tour_seen_v1', 'complete'));
+  await primeDemoSession(page);
   await page.route('**/api/demo-auth', async route => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
   });
@@ -12,7 +12,7 @@ test('manager configures an exclusive shift and a fixed working week', async ({ 
   await page.goto('/demo');
   await waitForDemoReady(page);
 
-  await expect(page.locator('#appShell #sfDemoPerspectiveSwitch')).toBeVisible();
+  await expect(demoPerspectiveSwitch(page)).toBeVisible();
   await openManagerArea(page,'employees');
   await expect(page.locator('#view-employees')).toHaveClass(/active/);
   await expect(page.locator('#spEmployeeV2')).toBeVisible({ timeout: 12_000 });

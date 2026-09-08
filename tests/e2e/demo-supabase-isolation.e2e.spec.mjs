@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { demoPerspectiveSwitch, waitForDemoReady } from './helpers/demo-ready.mjs';
+import { demoPerspectiveSwitch, primeDemoSession, waitForDemoReady } from './helpers/demo-ready.mjs';
 
 test('demo never connects to Supabase in manager or employee views',async({page})=>{
   const supabaseRequests=[];
@@ -7,7 +7,7 @@ test('demo never connects to Supabase in manager or employee views',async({page}
   page.on('request',request=>{if(/(^|\.)supabase\.(co|in)(\/|$)/i.test(new URL(request.url()).hostname))supabaseRequests.push(request.url())});
   page.on('console',message=>{if(/SF_DEMO_(?:UNHANDLED|NETWORK_BLOCKED)/.test(message.text()))isolationErrors.push(message.text())});
   page.on('pageerror',error=>{if(/SF_DEMO_(?:UNHANDLED|NETWORK_BLOCKED)/.test(error.message))isolationErrors.push(error.message)});
-  await page.addInitScript(()=>sessionStorage.setItem('sf_demo_tour_seen_v1','complete'));
+  await primeDemoSession(page);
   await page.route('**/api/demo-auth',async route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({expiresAt:new Date(Date.now()+3_600_000).toISOString()})}));
 
   await page.goto('/demo');
@@ -22,14 +22,16 @@ test('demo never connects to Supabase in manager or employee views',async({page}
   }
   const localCoverage=await page.evaluate(async()=>{
     const client=window.SFBackend.client;
-    const [swaps,settings,holidays]=await Promise.all([
+    const [swaps,settings,holidays,terminals,candidates]=await Promise.all([
       client.from('shift_swap_requests').select('*').eq('company_id','demo-local-company'),
       client.from('time_account_settings').select('*').eq('company_id','demo-local-company').maybeSingle(),
       client.rpc('manager_monthly_holidays',{p_company_id:'demo-local-company',p_month:'2026-05-01'}),
+      client.rpc('manager_list_time_qr_terminals',{p_company_id:'demo-local-company'}),
+      client.rpc('manager_list_time_qr_pilot_candidates',{p_company_id:'demo-local-company'}),
     ]);
-    return {swaps:swaps.error,settings:settings.error,holidays:holidays.error};
+    return {swaps:swaps.error,settings:settings.error,holidays:holidays.error,terminals:terminals.error,candidates:candidates.error};
   });
-  expect(localCoverage).toEqual({swaps:null,settings:null,holidays:null});
+  expect(localCoverage).toEqual({swaps:null,settings:null,holidays:null,terminals:null,candidates:null});
 
   const scenarios=await page.evaluate(()=>window.SFDemoScenarios?.list?.()||[]);
   for(const scenario of scenarios){
@@ -41,7 +43,7 @@ test('demo never connects to Supabase in manager or employee views',async({page}
 
   await demoPerspectiveSwitch(page).locator('[data-demo-perspective="employee"]').click();
   await expect(page.locator('#sfEmployeePortal')).toBeVisible();
-  const employeeViews=await page.locator('#sfEmployeePortal [data-portal-view]').evaluateAll(nodes=>[...new Set(nodes.map(node=>node.dataset.portalView).filter(Boolean))]);
+  const employeeViews=await page.locator('#sfEmployeePortal [data-sf-employee-view]').evaluateAll(nodes=>[...new Set(nodes.map(node=>node.dataset.sfEmployeeView).filter(Boolean))]);
   for(const view of employeeViews){
     await page.evaluate(name=>window.SFBackend?.employeePortalNavigate?.(name),view);
     await page.waitForTimeout(100);
