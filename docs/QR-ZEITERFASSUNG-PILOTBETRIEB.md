@@ -48,47 +48,17 @@ Beide Schichten wurden vor dem Insert gegen die bestehenden Standard-Schichtrege
 - Die Pilotliste kann bei aktivem Terminal nicht geändert werden. Das Terminal muss zuvor deaktiviert werden.
 - Die Pilot-Whitelist besitzt RLS und keine direkten Client-Rechte.
 
-## Live-Pilotstand
-
-Die vorbereiteten QR-Migrationen wurden am **08.09.2026 kontrolliert auf die Produktivdatenbank angewendet**.
-
-Live vorhanden und geprüft:
-
-- `time_qr_terminals` – RLS aktiv, keine direkten `anon`-/`authenticated`-DML-Rechte,
-- `time_qr_punches` – RLS aktiv, keine direkten `anon`-/`authenticated`-DML-Rechte,
-- `time_qr_pilot_employees` – RLS aktiv, keine direkten `anon`-/`authenticated`-DML-Rechte,
-- interne QR-Hilfsfunktionen liegen im Schema `private`, besitzen einen leeren `search_path` und sind für `anon`/`authenticated` nicht direkt ausführbar,
-- die vorgesehenen öffentlichen RPCs besitzen ebenfalls einen leeren `search_path` und sind nur für die vorgesehenen angemeldeten Aufrufe freigegeben,
-- die Validierungs- und Punch-Guard-Trigger sind aktiv.
-
-### Pilot-Terminal
-
-Es existiert genau ein vorbereitetes Terminal:
-
-- Name: **QR-Pilot Testterminal**
-- Terminal-ID: `c7a931b4-bde8-472f-8bdf-66361c752c56`
-- Status: **deaktiviert** (`is_active = false`)
-- Modus: **Pilot** (`pilot_mode = true`)
-- Startfenster: 120 Minuten vor Schichtbeginn
-- Ausstempelfenster: 360 Minuten nach Schichtende
-- Standortnotiz: `Kontrollierter Pilotbetrieb – Saskia Frank & Alexander Kirchner`
-
-Die Whitelist enthält **exakt zwei Mitarbeiter**:
-
-1. Saskia Frank – Pers.-Nr. 37
-2. Alexander Kirchner – Pers.-Nr. 119
-
-Ein Sperrtest mit einem freigegebenen Mitarbeiterkonto wurde bei deaktiviertem Terminal erfolgreich durchgeführt: die Statusabfrage wird serverseitig verweigert. Es wurden dabei **keine Punches und keine IST-Zeiteinträge** erzeugt.
-
-Der Roh-Token des Terminals wird nicht in Klartext in der Datenbank gespeichert; dort liegt ausschließlich sein Hash.
-
 ## Aktueller Readiness-Status
 
-**Bereit:** Mitarbeiterkonten, veröffentlichte Testschichten, QR-Datenbankmigrationen, Pilot-Terminal und Zwei-Personen-Whitelist.
+**Mitarbeiterkonten bereit:** Saskia Frank und Alexander Kirchner erfüllen die technischen Login-Voraussetzungen.
 
-**Weiterhin gesperrt:** Das Pilot-Terminal ist deaktiviert und hat noch keine Zeitbuchung erzeugt.
+**Testschichten bereit und veröffentlicht:** Beide Pilot-Mitarbeiter besitzen je eine passende veröffentlichte Testschicht mit geplanter Pause und eindeutiger QR-Pilot-Kennzeichnung.
 
-**Noch vor dem ersten Smartphone-Scan erforderlich:** Die QR-Seite muss im produktiven Vercel-Stand verfügbar sein. Am 08.09.2026 liefert `https://shiftpilot-two.vercel.app/qr-time.html` noch HTTP 404. Die Seite ist im Feature-Branch/Preview bereits erfolgreich verfügbar. Deshalb darf das Terminal vor der Produktivbereitstellung der QR-Seite nicht aktiviert werden.
+**QR-Datenbank live vorbereitet:** Die QR-Migrationen sind auf der Produktivdatenbank installiert. Die QR-Tabellen besitzen RLS, direkte Client-DML-Rechte sind entzogen, interne Buchungsfunktionen liegen im privaten Schema und die Pilot-Guard-Trigger sind aktiv.
+
+**Pilot-Terminal vorbereitet:** Genau ein Terminal `QR-Pilot Testterminal` (ID `c7a931b4-bde8-472f-8bdf-66361c752c56`) existiert. Es ist deaktiviert, befindet sich im Pilotmodus und enthält exakt Saskia Frank (37) und Alexander Kirchner (119) in der Whitelist. Es existieren weiterhin 0 QR-Punches und 0 Pilot-Zeiteinträge.
+
+**CI-Gate korrigiert und bestanden:** Pull Requests laufen nicht mehr fälschlich mit Playwright gegen einen älteren Produktionsstand. Die vollständigen statischen Regressionstests laufen im PR; die produktiven Browserabläufe bleiben als Post-Merge-/Produktions-Gate erhalten. GitHub-Run #187 für Commit `dc1685391e28b4da7afd277cb3c0f931fcc1a471` wurde erfolgreich abgeschlossen. Der zugehörige Vercel-Preview-Build ist `READY` und `/qr-time.html` liefert HTTP 200.
 
 ## Voraussetzungen für den Pilot
 
@@ -96,24 +66,19 @@ Der Roh-Token des Terminals wird nicht in Klartext in der Datenbank gespeichert;
 2. Mitarbeiterstatus und Login-Verknüpfung unmittelbar vor dem Test nochmals prüfen.
 3. Persönlichen SchichtFunk-Login mit beiden Mitarbeiterkonten erfolgreich testen.
 4. Die bereits veröffentlichten Testschichten und deren Zeitfenster kontrollieren.
-5. Produktive Verfügbarkeit von `/qr-time.html` herstellen und mit HTTP 200 prüfen.
-6. Einen konkreten Teststandort für das QR-Terminal festlegen bzw. die bestehende Pilot-Standortnotiz konkretisieren.
-7. Für den Test mindestens ein Smartphone mit normaler Kamera und Internetzugang bereithalten.
-8. Einen dritten, **nicht freigegebenen** Mitarbeiter für den Negativtest verwenden.
+5. Einen konkreten Teststandort für das QR-Terminal festlegen.
+6. Für den Test mindestens ein Smartphone mit normaler Kamera und Internetzugang bereithalten.
+7. Einen dritten, **nicht freigegebenen** Mitarbeiter für den Negativtest verwenden.
 
 ## Kontrollierte Live-Aktivierung
 
-Nach erfolgter Produktivbereitstellung der QR-Seite:
+Erst wenn die produktive QR-Seite bereitsteht und der reale Smartphone-Test unmittelbar bevorsteht:
 
-1. Aktuellen Produktionsstand und Datenbankstatus nochmals prüfen.
-2. Verifizieren, dass `/qr-time.html` produktiv HTTP 200 liefert.
-3. Prüfen, dass das Pilot-Terminal weiterhin deaktiviert ist.
-4. Prüfen, dass die Whitelist exakt **Saskia Frank (Pers.-Nr. 37)** und **Alexander Kirchner (Pers.-Nr. 119)** enthält.
-5. Prüfen, dass keine weiteren Mitarbeiter ausgewählt sind.
-6. QR-Code mit dem gültigen Terminalschlüssel erzeugen/speichern und am Teststandort bereitstellen.
-7. Die bereits veröffentlichten Testschichten nochmals kontrollieren.
-8. Erst unmittelbar vor dem jeweiligen realen Scan-Test das Terminal aktivieren.
-9. Nach dem Test das Terminal wieder deaktivieren.
+1. Produktivdeployment auf `main` prüfen.
+2. `https://shiftpilot-two.vercel.app/qr-time.html` auf HTTP 200 prüfen.
+3. Mitarbeiterstatus, Whitelist und Testschichten nochmals kontrollieren.
+4. Terminalschlüssel unmittelbar vor dem Test rotieren und den neuen QR-Code bereitstellen.
+5. Das Terminal erst danach aktivieren.
 
 ## Pilot-Testablauf
 
