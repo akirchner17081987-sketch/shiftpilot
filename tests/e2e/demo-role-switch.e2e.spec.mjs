@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
-import { demoPerspectiveSwitch, waitForDemoReady } from './helpers/demo-ready.mjs';
+import { demoPerspectiveSwitch, openEmployeeArea, primeDemoSession, waitForDemoReady } from './helpers/demo-ready.mjs';
 
 test('demo switches between manager workspace and the existing employee portal', async ({ page }) => {
-  await page.addInitScript(() => sessionStorage.setItem('sf_demo_tour_seen_v1', 'complete'));
+  await primeDemoSession(page);
   await page.route('**/api/demo-auth', async route => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
   });
@@ -27,7 +27,7 @@ test('demo switches between manager workspace and the existing employee portal',
   await expect(upcoming).not.toHaveText('0');
   await expect(nextShift).not.toHaveText('–');
   await expect(plannedHours).not.toHaveText('0.0 h');
-  await portal.locator('[data-sf-employee-view="disruptions"]:visible').first().click();
+  await openEmployeeArea(page,'disruptions');
   const disruptions=portal.locator('[data-sf-portal-section="disruptions"]');
   await expect(disruptions).toBeVisible();
   await expect(disruptions).toContainText('2 offen');
@@ -41,7 +41,7 @@ test('demo switches between manager workspace and the existing employee portal',
   await page.getByRole('dialog').getByRole('button',{name:'Verbindlich übernehmen'}).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(disruptions).toContainText('Übernommen');
-  await portal.locator('[data-sf-employee-view="shifts"]:visible').first().click();
+  await openEmployeeArea(page,'shifts');
   await expect(portal.locator('.sf-shift-item').first()).toBeVisible();
   expect(await portal.locator('.sf-shift-item').count()).toBeGreaterThanOrEqual(2);
   const offerButton=portal.locator('.sf-market-offer').filter({hasText:'Im Marktplatz anbieten'}).first();
@@ -50,7 +50,7 @@ test('demo switches between manager workspace and the existing employee portal',
   await page.getByRole('button',{name:'Angebot veröffentlichen'}).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
 
-  await portal.locator('[data-sf-employee-view="marketplace"]:visible').first().click();
+  await openEmployeeArea(page,'marketplace');
   const market=portal.locator('[data-sf-portal-section="marketplace"]');
   await expect(market).toBeVisible();
   await expect(market).toContainText('Verfügbare Schichten');
@@ -85,7 +85,7 @@ test('demo switches between manager workspace and the existing employee portal',
 });
 
 test('demo employee can review and confirm presentation shift changes', async ({ page }) => {
-  await page.addInitScript(() => sessionStorage.setItem('sf_demo_tour_seen_v1', 'complete'));
+  await primeDemoSession(page);
   await page.route('**/api/demo-auth', async route => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
   });
@@ -94,7 +94,7 @@ test('demo employee can review and confirm presentation shift changes', async ({
   await demoPerspectiveSwitch(page).locator('[data-demo-perspective="employee"]').click();
 
   const portal=page.locator('#sfEmployeePortal');
-  await portal.locator('[data-sf-employee-view="changes"]:visible').first().click();
+  await openEmployeeArea(page,'changes');
   const changes=portal.locator('[data-sf-portal-section="changes"]');
   await expect(changes).toBeVisible();
   await expect(changes.locator('.sf-change-card')).toHaveCount(3);
@@ -110,7 +110,7 @@ test('demo employee can review and confirm presentation shift changes', async ({
 });
 
 test('demo employee sees absence examples and can submit a local request', async ({ page }) => {
-  await page.addInitScript(() => sessionStorage.setItem('sf_demo_tour_seen_v1', 'complete'));
+  await primeDemoSession(page);
   await page.route('**/api/demo-auth', async route => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
   });
@@ -119,7 +119,7 @@ test('demo employee sees absence examples and can submit a local request', async
   await demoPerspectiveSwitch(page).locator('[data-demo-perspective="employee"]').click();
 
   const portal=page.locator('#sfEmployeePortal');
-  await portal.locator('[data-sf-employee-view="absences"]:visible').first().click();
+  await openEmployeeArea(page,'absences');
   const absences=portal.locator('[data-sf-portal-section="absences"]');
   await expect(absences.locator('.sf-ae3-row')).toHaveCount(3);
   await expect(absences).toContainText('Fortbildung');
@@ -140,7 +140,7 @@ test('demo employee sees absence examples and can submit a local request', async
 });
 
 test('demo time tracking persists employee entries and monthly accounts render', async ({ page }, testInfo) => {
-  await page.addInitScript(() => sessionStorage.setItem('sf_demo_tour_seen_v1', 'complete'));
+  await primeDemoSession(page);
   await page.route('**/api/demo-auth', async route => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
   });
@@ -149,7 +149,7 @@ test('demo time tracking persists employee entries and monthly accounts render',
   await demoPerspectiveSwitch(page).locator('[data-demo-perspective="employee"]').click();
 
   const portal=page.locator('#sfEmployeePortal');
-  await portal.locator('[data-sf-employee-view="time"]:visible').first().click();
+  await openEmployeeArea(page,'time');
   const timeCard=portal.locator('#sfEmployeeTimeCard');
   await expect(timeCard.locator('.sf-time-item')).toHaveCount(6);
   await expect(timeCard).toContainText('Zur Prüfung');
@@ -167,7 +167,7 @@ test('demo time tracking persists employee entries and monthly accounts render',
   await expect(dialog).toHaveCount(0);
   await expect(item).toContainText('Zur Prüfung');
 
-  await portal.locator('[data-sf-employee-view="account"]:visible').first().click();
+  await openEmployeeArea(page,'account');
   const account=portal.locator('#sfEmployeeTimeAccount');
   await expect(account).toBeVisible();
   const current=await account.locator('.sf-ta-employee-grid').innerText();
