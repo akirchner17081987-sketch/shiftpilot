@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { waitForDemoReady } from './helpers/demo-ready.mjs';
+import { demoPerspectiveSwitch, waitForDemoReady } from './helpers/demo-ready.mjs';
 
 test('demo switches between manager workspace and the existing employee portal', async ({ page }) => {
   await page.addInitScript(() => sessionStorage.setItem('sf_demo_tour_seen_v1', 'complete'));
@@ -9,7 +9,7 @@ test('demo switches between manager workspace and the existing employee portal',
   await page.goto('/demo');
   await waitForDemoReady(page);
 
-  const managerSwitch = page.locator('#appShell #sfDemoPerspectiveSwitch');
+  const managerSwitch = demoPerspectiveSwitch(page);
   await expect(managerSwitch).toBeVisible();
   await expect(managerSwitch.locator('[data-demo-perspective="manager"]')).toHaveAttribute('aria-pressed', 'true');
   await managerSwitch.locator('[data-demo-perspective="employee"]').click();
@@ -20,7 +20,7 @@ test('demo switches between manager workspace and the existing employee portal',
   await expect(portal).toContainText('Anna Becker');
   await expect(portal).not.toContainText('permission denied');
   await expect(page.locator('#appShell')).toHaveCount(0);
-  await expect(portal.locator('[data-demo-perspective="employee"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(demoPerspectiveSwitch(page).locator('[data-demo-perspective="employee"]')).toHaveAttribute('aria-pressed', 'true');
   const upcoming=portal.locator('.sf-portal-stat').filter({hasText:'Kommende Schichten'}).locator('strong');
   const nextShift=portal.locator('.sf-portal-stat').filter({hasText:'Nächste Schicht'}).locator('strong');
   const plannedHours=portal.locator('.sf-portal-stat').filter({hasText:'Geplante Stunden'}).locator('strong');
@@ -73,14 +73,14 @@ test('demo switches between manager workspace and the existing employee portal',
   expect(['7px','9px']).toContain(scrollbar.width);
   expect(scrollbar.thumb).not.toBe('rgba(0, 0, 0, 0)');
 
-  await portal.locator('[data-demo-perspective="manager"]').click();
+  await demoPerspectiveSwitch(page).locator('[data-demo-perspective="manager"]').click();
   await expect(portal).toHaveCount(0);
   await expect(page.locator('#appShell')).toBeVisible();
-  await expect(page.locator('#appShell #sfDemoPerspectiveSwitch [data-demo-perspective="manager"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(demoPerspectiveSwitch(page).locator('[data-demo-perspective="manager"]')).toHaveAttribute('aria-pressed', 'true');
 
-  await page.locator('#appShell [data-demo-perspective="employee"]').click();
+  await demoPerspectiveSwitch(page).locator('[data-demo-perspective="employee"]').click();
   await expect(page.locator('#sfEmployeePortal')).toBeVisible();
-  await page.locator('#sfEmployeePortal [data-demo-perspective="manager"]').click();
+  await demoPerspectiveSwitch(page).locator('[data-demo-perspective="manager"]').click();
   await expect(page.locator('#appShell')).toBeVisible();
 });
 
@@ -91,7 +91,7 @@ test('demo employee can review and confirm presentation shift changes', async ({
   });
   await page.goto('/demo');
   await waitForDemoReady(page);
-  await page.locator('#appShell [data-demo-perspective="employee"]').click();
+  await demoPerspectiveSwitch(page).locator('[data-demo-perspective="employee"]').click();
 
   const portal=page.locator('#sfEmployeePortal');
   await portal.locator('[data-sf-employee-view="changes"]:visible').first().click();
@@ -116,7 +116,7 @@ test('demo employee sees absence examples and can submit a local request', async
   });
   await page.goto('/demo');
   await waitForDemoReady(page);
-  await page.locator('#appShell [data-demo-perspective="employee"]').click();
+  await demoPerspectiveSwitch(page).locator('[data-demo-perspective="employee"]').click();
 
   const portal=page.locator('#sfEmployeePortal');
   await portal.locator('[data-sf-employee-view="absences"]:visible').first().click();
@@ -146,7 +146,7 @@ test('demo time tracking persists employee entries and monthly accounts render',
   });
   await page.goto('/demo');
   await waitForDemoReady(page);
-  await page.locator('#appShell [data-demo-perspective="employee"]').click();
+  await demoPerspectiveSwitch(page).locator('[data-demo-perspective="employee"]').click();
 
   const portal=page.locator('#sfEmployeePortal');
   await portal.locator('[data-sf-employee-view="time"]:visible').first().click();
@@ -176,7 +176,7 @@ test('demo time tracking persists employee entries and monthly accounts render',
   await expect(account.locator('.sf-ta-employee-month')).toHaveValue('2026-08');
   await expect.poll(()=>account.locator('.sf-ta-employee-grid').innerText()).not.toBe(current);
 
-  await portal.locator('[data-demo-perspective="manager"]').click();
+  await demoPerspectiveSwitch(page).locator('[data-demo-perspective="manager"]').click();
   await page.locator('[data-view="reports"]:visible').first().click();
   const managerAccount=page.locator('#sfTimeAccounts');
   await expect(managerAccount).toBeVisible();
