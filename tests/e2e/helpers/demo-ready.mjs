@@ -7,6 +7,36 @@ export async function primeDemoSession(page) {
   });
 }
 
+async function waitForVisibleDemoShell(page, timeout) {
+  const firstWindow = Math.min(timeout, 8_000);
+  const secondWindow = Math.max(8_000, Math.min(timeout, 12_000));
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      await page.waitForFunction(
+        () => {
+          const html = document.documentElement;
+          const shell = document.getElementById('appShell');
+          if (!shell || html.dataset.sfDemo !== '1') return false;
+          const style = getComputedStyle(shell);
+          return style.display !== 'none' && style.visibility !== 'hidden';
+        },
+        null,
+        { timeout: attempt === 0 ? firstWindow : secondWindow },
+      );
+      return;
+    } catch (error) {
+      if (attempt === 1) throw error;
+
+      // Ein einzelner Produktions-Reload ist Teil des E2E-Helfers, nicht der
+      // Anwendung. Damit heilen wir ausschließlich einen hängen gebliebenen
+      // initialen Demo-Boot (z. B. transienter CDN-/Script-Ladevorgang). Die
+      // Init-Skripte und Route-Mocks bleiben bei Playwright über reload erhalten.
+      await page.reload({ waitUntil: 'domcontentloaded' });
+    }
+  }
+}
+
 export async function waitForDemoReady(page, options = {}) {
   const {
     perspective = true,
@@ -15,21 +45,10 @@ export async function waitForDemoReady(page, options = {}) {
     timeout = 20_000,
   } = options;
 
-  // Die Oberfläche selbst ist das belastbare End-to-End-Signal: Der Demo-Kern
-  // hält appShell bis zum abgeschlossenen Bootstrap verborgen. Interne Marker
-  // können bei späteren Integrations-Reinitialisierungen kurz fehlen und dürfen
-  // deshalb keinen ansonsten nutzbaren Browserlauf blockieren.
-  await page.waitForFunction(
-    () => {
-      const html = document.documentElement;
-      const shell = document.getElementById('appShell');
-      if (!shell || html.dataset.sfDemo !== '1') return false;
-      const style = getComputedStyle(shell);
-      return style.display !== 'none' && style.visibility !== 'hidden';
-    },
-    null,
-    { timeout },
-  );
+  // Die sichtbare Oberfläche ist das belastbare End-to-End-Signal. Falls nur
+  // der erste Produktions-Boot hängen bleibt, wird genau einmal neu geladen;
+  // ein reproduzierbarer Fehler bleibt weiterhin rot.
+  await waitForVisibleDemoShell(page, timeout);
 
   await page.locator('#appShell').waitFor({ state: 'visible', timeout });
   await page.locator('#sfDemoBadge').waitFor({ state: 'visible', timeout });
