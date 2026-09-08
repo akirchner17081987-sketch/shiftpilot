@@ -23,12 +23,24 @@ export async function waitForDemoReady(page, options = {}) {
   await page.locator('#appShell').waitFor({ state: 'visible', timeout });
   await page.locator('#sfDemoBadge').waitFor({ state: 'attached', timeout });
 
+  if (perspective || scenarios) {
+    await page.waitForFunction(
+      () => document.documentElement.dataset.sfDemoDock === '1'
+        && !!document.getElementById('sfDemoControlDock'),
+      null,
+      { timeout },
+    );
+    await page.locator('#sfDemoControlDock').waitFor({ state: 'visible', timeout });
+  }
+
   if (perspective) {
-    await page.locator('#appShell #sfDemoPerspectiveSwitch').waitFor({ state: 'visible', timeout });
+    await page.locator('#sfDemoPerspectiveSwitch')
+      .waitFor({ state: 'visible', timeout });
   }
 
   if (scenarios) {
-    await page.locator('#appShell [data-demo-scenarios]').waitFor({ state: 'visible', timeout });
+    await page.locator('[data-demo-scenarios]')
+      .waitFor({ state: 'visible', timeout });
   }
 }
 
@@ -43,4 +55,16 @@ export async function openManagerArea(page, view) {
   await target.waitFor({ state: 'visible', timeout: 10_000 });
   await target.scrollIntoViewIfNeeded();
   await target.click();
+}
+
+export function demoPerspectiveSwitch(page) {
+  return page.locator('#sfDemoPerspectiveSwitch');
+}
+
+export function demoScenarioControl(page) {
+  return page.locator('[data-demo-scenarios]');
+}
+
+export function demoExitControl(page) {
+  return page.locator('#sfDemoControlDock').getByRole('button', { name: 'Demo beenden' });
 }
