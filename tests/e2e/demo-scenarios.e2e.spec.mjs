@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { waitForDemoReady } from './helpers/demo-ready.mjs';
+import { demoScenarioControl, waitForDemoReady } from './helpers/demo-ready.mjs';
 
 test('all prepared demo scenarios open their matching workspace', async ({ page }) => {
   await page.addInitScript(() => sessionStorage.setItem('sf_demo_tour_seen_v1', 'complete'));
@@ -9,7 +9,8 @@ test('all prepared demo scenarios open their matching workspace', async ({ page 
   await page.goto('/demo');
   await waitForDemoReady(page, { scenarios: true });
 
-  await expect(page.locator('#appShell [data-demo-scenarios]')).toBeVisible();
+  const scenariosControl=demoScenarioControl(page);
+  await expect(scenariosControl).toBeVisible();
   const cases=[
     ['understaffing','schedule','Unterbesetzung'],
     ['vacation','absence','Urlaubsantrag'],
@@ -18,7 +19,7 @@ test('all prepared demo scenarios open their matching workspace', async ({ page 
     ['outage','disruptions','Kurzfristiger Ausfall'],
   ];
   for(const [key,view,title] of cases){
-    await page.locator('#appShell [data-demo-scenarios]').click();
+    await scenariosControl.click();
     await expect(page.locator('#sfDemoScenarioModal')).toBeVisible();
     await page.locator(`#sfDemoScenarioModal [data-scenario="${key}"]`).click();
     await expect(page.locator(`#view-${view}`)).toHaveClass(/active/);
@@ -32,5 +33,5 @@ test('all prepared demo scenarios open their matching workspace', async ({ page 
   await page.locator('#view-disruptions .sf-demo-scenario-banner [data-reset]').click();
   await expect(page.locator('#view-overview')).toHaveClass(/active/);
   await expect(page.locator('.sf-demo-scenario-banner')).toHaveCount(0);
-  await expect(page.locator('#appShell [data-demo-scenarios]')).not.toHaveClass(/active/);
+  await expect(scenariosControl).not.toHaveClass(/active/);
 });

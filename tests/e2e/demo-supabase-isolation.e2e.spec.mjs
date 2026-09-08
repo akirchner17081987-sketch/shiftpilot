@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { waitForDemoReady } from './helpers/demo-ready.mjs';
+import { demoPerspectiveSwitch, waitForDemoReady } from './helpers/demo-ready.mjs';
 
 test('demo never connects to Supabase in manager or employee views',async({page})=>{
   const supabaseRequests=[];
@@ -39,7 +39,7 @@ test('demo never connects to Supabase in manager or employee views',async({page}
   await page.evaluate(()=>window.SFDemoScenarios?.reset?.());
   await page.waitForTimeout(250);
 
-  await page.locator('#appShell [data-demo-perspective="employee"]').click();
+  await demoPerspectiveSwitch(page).locator('[data-demo-perspective="employee"]').click();
   await expect(page.locator('#sfEmployeePortal')).toBeVisible();
   const employeeViews=await page.locator('#sfEmployeePortal [data-portal-view]').evaluateAll(nodes=>[...new Set(nodes.map(node=>node.dataset.portalView).filter(Boolean))]);
   for(const view of employeeViews){

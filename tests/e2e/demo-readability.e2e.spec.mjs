@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { waitForDemoReady } from './helpers/demo-ready.mjs';
+import { demoPerspectiveSwitch, waitForDemoReady } from './helpers/demo-ready.mjs';
 
 test('demo readability is applied to manager and employee perspectives', async ({ page }, testInfo) => {
   await page.addInitScript(() => sessionStorage.setItem('sf_demo_tour_seen_v1', 'complete'));
@@ -21,7 +21,7 @@ test('demo readability is applied to manager and employee perspectives', async (
   expect(manager.paragraph).toBeGreaterThanOrEqual(13);
   expect(manager.overflow).toBeLessThanOrEqual(1);
 
-  await page.locator('#appShell [data-demo-perspective="employee"]').click();
+  await demoPerspectiveSwitch(page).locator('[data-demo-perspective="employee"]').click();
   await expect(page.locator('#sfEmployeePortal')).toBeVisible();
   await expect(page.locator('#sfEmployeePortal .sf-employee-tile').first()).toBeVisible();
   const employee=await page.locator('#sfEmployeePortal').evaluate(portal=>({
