@@ -69,6 +69,9 @@
   loadIntegration('/assets/demo-august-2026-v1.js?v=20260907-startgate2','data-sf-demo-august-2026');
   loadIntegration('/assets/demo-datev-snapshot-fix-v1.js?v=20260904-2','data-sf-demo-datev-snapshot-fix');
 
+  // Demo bleibt auch mit den QR-Verwaltungsmodulen vollständig lokal und fail-closed.
+  loadIntegration('/assets/demo-qr-local-bridge-v1.js?v=20260908-1','data-sf-demo-qr-local-bridge');
+
   // QR-Zeiterfassung: Verwaltung und kontrollierte Pilotfreigabe der Stempelstationen.
   loadIntegration('/assets/supabase-qr-terminal-admin-v1.js?v=20260908-1','data-sf-qr-terminal-admin');
   loadIntegration('/assets/supabase-qr-terminal-role-guard-v1.js?v=20260908-1','data-sf-qr-terminal-role-guard');
