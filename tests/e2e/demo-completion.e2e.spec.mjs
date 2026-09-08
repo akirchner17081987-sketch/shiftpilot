@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test';
-import { demoExitControl, waitForDemoReady } from './helpers/demo-ready.mjs';
+import { demoExitControl, primeDemoSession, waitForDemoReady } from './helpers/demo-ready.mjs';
 
 test('ending the demo opens the responsive completion page', async ({ page }) => {
   let signedOut=false;
-  await page.addInitScript(() => sessionStorage.setItem('sf_demo_tour_seen_v1', 'complete'));
+  await primeDemoSession(page);
   await page.route('**/api/demo-auth', async route => {
     if(route.request().method()==='DELETE'){signedOut=true;await route.fulfill({status:200,contentType:'application/json',body:'{"ok":true}'});return}
     await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({expiresAt:new Date(Date.now()+3_600_000).toISOString()})});
