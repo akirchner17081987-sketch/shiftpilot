@@ -21,10 +21,14 @@ jobs:
           cache: npm
       - name: Abhängigkeiten installieren
         run: npm ci
-      - name: Chromium für Portaltests installieren
+      - name: Statische Regressionstests ausführen
+        run: npm test
+      - name: Chromium für Produktions-Browsertests installieren
+        if: github.event_name != 'pull_request'
         run: npx playwright install --with-deps chromium
-      - name: Regressionstests und Browserabläufe ausführen
-        run: npm run test:all
+      - name: Browserabläufe gegen Produktion ausführen
+        if: github.event_name != 'pull_request'
+        run: npm run test:e2e
         env:
           E2E_BASE_URL: https://shiftpilot-two.vercel.app
           SF_E2E_EMAIL: ${{ secrets.SF_E2E_EMAIL }}
