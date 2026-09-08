@@ -15,24 +15,35 @@ export async function waitForDemoReady(page, options = {}) {
     timeout = 20_000,
   } = options;
 
+  // Der Demo-Kern setzt diesen Marker erst nach seinem eigenen vollständigen
+  // Bootstrap. Einzelne Integrationen dürfen ihren Client danach noch
+  // dekorieren; das ist kein Grund, die gesamte Oberfläche als unbereit zu
+  // behandeln und war die Ursache sporadischer CI-Timeouts.
   await page.waitForFunction(
-    ({ requireReadability }) => {
+    () => {
       const html = document.documentElement;
       const shell = document.getElementById('appShell');
-      const backend = window.SFBackend;
       if (!shell || html.dataset.sfDemo !== '1') return false;
       if (html.dataset.sfDemoReady !== '1' && window.__sfDemoReadyV1 !== true) return false;
-      if (!backend?.ready || !backend?.client?.__sfDemoLocalClientV1) return false;
       if (html.classList.contains('sf-demo-booting')) return false;
-      if (requireReadability && !window.__sfDemoReadabilityV1) return false;
       return getComputedStyle(shell).display !== 'none';
     },
-    { requireReadability: readability },
+    null,
     { timeout },
   );
 
   await page.locator('#appShell').waitFor({ state: 'visible', timeout });
   await page.locator('#sfDemoBadge').waitFor({ state: 'attached', timeout });
+
+  if (readability) {
+    await page.waitForFunction(
+      () => window.__sfDemoReadabilityV1 === true
+        || !!document.getElementById('sfDemoReadabilityV1Css')
+        || !!document.querySelector('style[data-sf-demo-readability],link[data-sf-demo-readability]'),
+      null,
+      { timeout },
+    );
+  }
 
   if (perspective || scenarios) {
     await page.waitForFunction(
@@ -54,8 +65,6 @@ export async function waitForDemoReady(page, options = {}) {
       .waitFor({ state: 'visible', timeout });
   }
 
-  // Erst nach dem finalen Demo-Render mit dem Test fortfahren. Das verhindert,
-  // dass spaet geladene Integrationen gerade bearbeitete Controls erneut rendern.
   await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 }
 
@@ -82,18 +91,24 @@ export async function openEmployeeArea(page, view, timeout = 10_000) {
   const portal = page.locator('#sfEmployeePortal');
   await portal.waitFor({ state: 'visible', timeout });
 
-  const direct = portal.locator(`.sf-employee-nav-scroll > .sf-employee-nav-group [data-sf-employee-view="${view}"]:visible`).first();
-  if (await direct.isVisible().catch(() => false)) {
-    await direct.scrollIntoViewIfNeeded();
-    await direct.click();
+  // Desktop und Mobile teilen dieselben data-Attribute, aber nicht dieselbe
+  // DOM-Hierarchie. Deshalb zuerst jeden tatsächlich sichtbaren Zielknopf
+  // verwenden und nur bei Bedarf das mobile Mehr-Menü öffnen.
+  const visibleTarget = portal.locator(`[data-sf-employee-view="${view}"]:visible`).first();
+  if (await visibleTarget.isVisible().catch(() => false)) {
+    await visibleTarget.scrollIntoViewIfNeeded();
+    await visibleTarget.click();
   } else {
     const toggle = portal.locator('.sf-employee-more-toggle');
-    await toggle.waitFor({ state: 'visible', timeout });
-    if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
-    const target = portal.locator(`.sf-employee-more-panel [data-sf-employee-view="${view}"]`).first();
-    await target.waitFor({ state: 'visible', timeout });
-    await target.scrollIntoViewIfNeeded();
-    await target.click();
+    if (await toggle.isVisible().catch(() => false)) {
+      if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
+      const target = portal.locator(`.sf-employee-more-panel [data-sf-employee-view="${view}"]:visible`).first();
+      await target.waitFor({ state: 'visible', timeout });
+      await target.scrollIntoViewIfNeeded();
+      await target.click();
+    } else {
+      throw new Error(`Mitarbeiterbereich "${view}" ist in der aktuellen Ansicht nicht erreichbar.`);
+    }
   }
 
   await page.waitForFunction(
