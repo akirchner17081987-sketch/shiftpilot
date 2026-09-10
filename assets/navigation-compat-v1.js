@@ -85,6 +85,9 @@
   loadIntegration('/assets/demo-august-2026-v1.js?v=20260907-startgate2','data-sf-demo-august-2026');
   loadIntegration('/assets/demo-datev-snapshot-fix-v1.js?v=20260904-2','data-sf-demo-datev-snapshot-fix');
 
+  // Zentrale Planer-Startansicht mit Live-Besetzung und direktem Störfall-Einstieg.
+  loadIntegration('/assets/today-dashboard-v1.js?v=20260910-1','data-sf-today-dashboard');
+
   // Demo bleibt auch mit den QR-Verwaltungsmodulen vollständig lokal und fail-closed.
   loadIntegration('/assets/demo-qr-local-bridge-v1.js?v=20260908-2','data-sf-demo-qr-local-bridge');
 
