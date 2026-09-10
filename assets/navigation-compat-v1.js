@@ -94,6 +94,9 @@
   // Mitarbeiter sehen die QR-Zeiterfassung als festen Block auf ihrer Übersicht.
   loadIntegration('/assets/employee-qr-status-v1.js?v=20260910-2','data-sf-employee-qr-status');
 
+  // Integrierter Kamera-Scanner auf Übersicht und im Bereich Arbeitszeit.
+  loadIntegration('/assets/employee-qr-scanner-v1.js?v=20260910-1','data-sf-employee-qr-scanner');
+
   // QR-Zeiterfassung: Objekt-Terminals mit allgemeinem Betrieb oder optionalem Pilotmodus.
   loadIntegration('/assets/supabase-qr-terminal-admin-v1.js?v=20260908-1','data-sf-qr-terminal-admin');
   loadIntegration('/assets/supabase-qr-terminal-role-guard-v1.js?v=20260908-1','data-sf-qr-terminal-role-guard');
