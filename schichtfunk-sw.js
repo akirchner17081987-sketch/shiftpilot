@@ -1,5 +1,5 @@
-// SchichtFunk – sicherer PWA App-Shell + Web Push Service Worker V2
-const CACHE='schichtfunk-shell-v2';
+// SchichtFunk – sicherer PWA App-Shell + Web Push Service Worker V3
+const CACHE='schichtfunk-shell-v3';
 const STATIC=[
   '/index.html',
   '/site.webmanifest',
@@ -39,6 +39,22 @@ self.addEventListener('fetch',event=>{
 
   const staticAsset=url.pathname.startsWith('/assets/')||url.pathname==='/site.webmanifest';
   if(!staticAsset)return;
+
+  // Kritische Laufzeit-Integrationen immer zuerst aus dem Netz holen. So kann ein
+  // installierter PWA-Cache keine Sicherheits-/Push-Korrektur auf dem Gerät verdecken.
+  const networkFirst=/\/(navigation-compat-v1|employee-mobile-pwa-v1|push-notifications-v1)\.js$/.test(url.pathname);
+  if(networkFirst){
+    event.respondWith(caches.open(CACHE).then(async cache=>{
+      try{
+        const response=await fetch(request);
+        if(mayCache(response))cache.put(request,response.clone());
+        return response;
+      }catch{
+        return (await cache.match(request))||Response.error();
+      }
+    }));
+    return;
+  }
 
   event.respondWith(caches.open(CACHE).then(async cache=>{
     const cached=await cache.match(request);
