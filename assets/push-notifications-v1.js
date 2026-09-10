@@ -16,21 +16,49 @@
   `;document.head.appendChild(s)}
 
   function toast(text){document.querySelector('.sf-push-toast')?.remove();const t=document.createElement('div');t.className='sf-push-toast';t.textContent=text;document.body.appendChild(t);setTimeout(()=>t.remove(),4200)}
-  async function subscription(){if(!supported())return null;try{return await (await navigator.serviceWorker.ready).pushManager.getSubscription()}catch{return null}}
+  function timeout(ms,label='TIMEOUT'){return new Promise((_,reject)=>setTimeout(()=>reject(new Error(label)),ms))}
+  async function currentRegistration(){if(!('serviceWorker' in navigator))return null;try{return await navigator.serviceWorker.getRegistration()}catch{return null}}
+  async function subscription(){if(!supported())return null;const reg=await currentRegistration();if(!reg)return null;try{return await reg.pushManager.getSubscription()}catch{return null}}
+  async function ensureRegistration(){
+    if(!supported())throw new Error('PUSH_NOT_SUPPORTED');
+    let reg=await currentRegistration();
+    if(!reg)reg=await navigator.serviceWorker.register('/schichtfunk-sw.js',{scope:'/',updateViaCache:'none'});
+    try{await Promise.race([reg.update(),timeout(5000,'SERVICE_WORKER_UPDATE_TIMEOUT')])}catch(e){console.debug('[SchichtFunk Push] Service-Worker-Update',e?.message||e)}
+    const candidate=reg.installing||reg.waiting;
+    if(candidate&&candidate.state!=='activated'){
+      try{await Promise.race([new Promise(resolve=>{const done=()=>{if(candidate.state==='activated'||candidate.state==='redundant'){candidate.removeEventListener('statechange',done);resolve()}};candidate.addEventListener('statechange',done);done()}),timeout(8000,'SERVICE_WORKER_ACTIVATION_TIMEOUT')])}catch(e){console.debug('[SchichtFunk Push] Service-Worker-Aktivierung',e?.message||e)}
+    }
+    if(reg.active)return reg;
+    return await Promise.race([navigator.serviceWorker.ready,timeout(8000,'SERVICE_WORKER_READY_TIMEOUT')]);
+  }
   function state(sub){if(demo())return['demo','Push in der Demo deaktiviert','Produktive Geräte werden in der Demo nicht registriert.'];if(!supported())return['unsupported','Push nicht verfügbar','Installiere die PWA bzw. nutze einen Browser mit Web-Push-Unterstützung.'];if(Notification.permission==='denied')return['denied','Push im Browser blockiert','Bitte Benachrichtigungen in den Website-/App-Einstellungen wieder erlauben.'];if(sub&&Notification.permission==='granted')return['active','Push ist aktiv','Schichtangebote, Änderungen und wichtige Meldungen können auch außerhalb von SchichtFunk erscheinen.'];return['ready','Push-Mitteilungen aktivieren','Erhalte wichtige SchichtFunk-Meldungen direkt auf diesem Gerät.']}
 
-  async function render(){if(rendering){renderAgain=true;return}rendering=true;try{css();const sub=await subscription(),[mode,title,text]=state(sub);const action=mode==='active'?'<span class="sf-push-actions"><button type="button" class="sf-push-action test" data-sf-push-test>Test senden</button><button type="button" class="sf-push-action off" data-sf-push-disable>Deaktivieren</button></span>':mode==='ready'?'<button type="button" class="sf-push-action" data-sf-push-enable>Push aktivieren</button>':'';const html=`<span class="sf-push-icon">🔔</span><span class="sf-push-copy"><b>${esc(title)}</b><small>${esc(text)}</small></span>${action}`;
+  function paint(sub){
+    css();const [mode,title,text]=state(sub);const action=mode==='active'?'<span class="sf-push-actions"><button type="button" class="sf-push-action test" data-sf-push-test>Test senden</button><button type="button" class="sf-push-action off" data-sf-push-disable>Deaktivieren</button></span>':mode==='ready'?'<button type="button" class="sf-push-action" data-sf-push-enable>Push aktivieren</button>':'';const html=`<span class="sf-push-icon">🔔</span><span class="sf-push-copy"><b>${esc(title)}</b><small>${esc(text)}</small></span>${action}`;
     const portal=document.getElementById('sfEmployeePortal'),dash=portal?.querySelector('.sf-employee-dashboard');
     if(dash){let card=dash.querySelector('#sfEmployeePushCard');if(!card){card=document.createElement('section');card.id='sfEmployeePushCard';card.className='sf-push-card';const install=dash.querySelector('#sfEmployeePwaInstall');if(install)install.after(card);else dash.prepend(card)}setHtml(card,html)}
     const panel=document.getElementById('sfNotifyPanel');if(panel){let row=panel.querySelector('#sfPushPanelRow');if(!row){row=document.createElement('div');row.id='sfPushPanelRow';row.className='sf-push-panel';panel.querySelector('.sf-notify-head')?.after(row)}setHtml(row,html)}
-  }finally{rendering=false;if(renderAgain){renderAgain=false;setTimeout(render,0)}}}
+  }
+
+  async function render(){
+    if(rendering){renderAgain=true;return}
+    rendering=true;
+    try{
+      // Wichtig: Die Karte sofort zeichnen. Niemals auf serviceWorker.ready warten,
+      // denn das kann auf einem frisch geöffneten Mobilgerät unbegrenzt offen bleiben.
+      paint(null);
+      const sub=await subscription();
+      paint(sub);
+    }finally{rendering=false;if(renderAgain){renderAgain=false;setTimeout(render,0)}}
+  }
 
   async function registerServer(sub){if(!B.client||!B.user?.id||!B.companyId)return false;const j=sub.toJSON(),keys=j.keys||{};if(!j.endpoint||!keys.p256dh||!keys.auth)return false;const {error}=await B.client.rpc('register_push_subscription',{p_company_id:B.companyId,p_endpoint:j.endpoint,p_p256dh:keys.p256dh,p_auth:keys.auth,p_user_agent:navigator.userAgent||null});if(error)throw error;lastSync=`${B.user.id}|${j.endpoint}`;return true}
 
   async function enable(){if(busy||demo()||!supported())return;busy=true;try{
     let permission=Notification.permission;if(permission!=='granted')permission=await Notification.requestPermission();if(permission!=='granted'){await render();return}
+    if(!B.client||!B.user?.id||!B.companyId)throw new Error('PUSH_SESSION_NOT_READY');
     const {data:key,error:keyError}=await B.client.rpc('get_push_public_key');if(keyError||!key)throw keyError||new Error('Push-Schlüssel nicht verfügbar');
-    const reg=await navigator.serviceWorker.ready;let sub=await reg.pushManager.getSubscription();if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:keyBytes(key)});await registerServer(sub);toast('Push-Mitteilungen sind auf diesem Gerät aktiviert.');await render();
+    const reg=await ensureRegistration();let sub=await reg.pushManager.getSubscription();if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:keyBytes(key)});await registerServer(sub);toast('Push-Mitteilungen sind auf diesem Gerät aktiviert.');await render();
   }catch(e){console.warn('[SchichtFunk Push] Aktivierung fehlgeschlagen',e);alert('Push-Mitteilungen konnten auf diesem Gerät nicht aktiviert werden. Bitte Browser-/App-Berechtigungen prüfen.')}finally{busy=false}}
 
   async function disable(){if(busy||!supported())return;busy=true;try{const sub=await subscription();if(sub){const endpoint=sub.endpoint;if(B.client&&B.user?.id)await B.client.rpc('unregister_push_subscription',{p_endpoint:endpoint});await sub.unsubscribe()}lastSync='';toast('Push-Mitteilungen wurden auf diesem Gerät deaktiviert.');await render()}catch(e){console.warn('[SchichtFunk Push] Deaktivierung fehlgeschlagen',e)}finally{busy=false}}
@@ -53,5 +81,5 @@
   const observer=new MutationObserver(()=>{if(document.getElementById('sfEmployeePortal')||document.getElementById('sfNotifyPanel'))render()});observer.observe(document.documentElement,{childList:true,subtree:true});
   window.addEventListener('focus',()=>{sync();render();routePending()});document.addEventListener('visibilitychange',()=>{if(!document.hidden){sync();render();routePending()}});
   B.pushNotifications={enable,disable,sendTest,sync,status:async()=>state(await subscription())};
-  [500,1500,3500].forEach(ms=>setTimeout(()=>{sync();render();routePending()},ms));setInterval(()=>routePending(),1500);setInterval(()=>sync(),60000);
+  [120,500,1500,3500].forEach(ms=>setTimeout(()=>{render();sync();routePending()},ms));setInterval(()=>routePending(),1500);setInterval(()=>sync(),60000);
 })();
