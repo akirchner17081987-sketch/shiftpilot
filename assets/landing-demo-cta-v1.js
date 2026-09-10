@@ -10,9 +10,27 @@
     const s=document.createElement('style');s.id='sfLandingDemoCtaCss';s.textContent=`
       .sf-demo-trust{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin:-13px 0 24px;color:#86a2b7;font-size:11px;font-weight:700}.sf-demo-trust span{display:inline-flex;gap:6px;align-items:center}.sf-demo-trust i{font-style:normal;color:#42dbc5}
       .sf-demo-public{position:relative;overflow:hidden;background:linear-gradient(135deg,#071927,#0b2232 55%,#0a1b2b);color:#fff;padding:58px 4vw;border-top:1px solid #17364a;border-bottom:1px solid #17364a}.sf-demo-public:before{content:'';position:absolute;width:520px;height:520px;border-radius:50%;right:-120px;top:-260px;background:radial-gradient(circle,rgba(37,218,198,.16),transparent 68%);pointer-events:none}.sf-demo-public-inner{position:relative;max-width:1450px;margin:0 auto;display:grid;grid-template-columns:1.15fr .85fr;gap:46px;align-items:center}.sf-demo-public-kicker{color:#4be5d2;font-size:11px;font-weight:900;letter-spacing:.14em}.sf-demo-public h2{font-size:clamp(31px,3vw,47px);line-height:1.08;margin:9px 0 13px;letter-spacing:-.03em}.sf-demo-public h2 span{color:#3ce0cf}.sf-demo-public p{max-width:760px;margin:0;color:#a7bacb;font-size:15px;line-height:1.7}.sf-demo-public-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:23px}.sf-demo-public-chip{padding:8px 10px;border:1px solid #285065;border-radius:999px;background:#0c2734;color:#c8e9e4;font-size:11px;font-weight:750}.sf-demo-public-action{border:1px solid #23495b;border-radius:16px;background:rgba(5,16,25,.72);padding:24px;box-shadow:0 20px 55px rgba(0,0,0,.22)}.sf-demo-public-action strong{display:block;font-size:17px}.sf-demo-public-action p{font-size:12px;line-height:1.55;margin:7px 0 18px}.sf-demo-public-action .landing-btn{width:100%;min-height:50px}.sf-demo-public-fine{display:flex;justify-content:center;gap:8px;margin-top:12px;color:#718da2;font-size:10px}
+      .landing-btn.sf-login-top{border-color:#12b7b3;background:linear-gradient(135deg,#00cfc8,#238cf2);color:#fff;box-shadow:0 8px 24px rgba(0,201,220,.2)}.landing-btn.sf-login-top:hover{filter:brightness(1.08)}
       .landing-btn.sf-demo-top{border-color:#2b7f70;background:#11352e;color:#8ff0d8}.landing-btn.sf-demo-top:hover{background:#18483d}
       @media(max-width:900px){.sf-demo-public-inner{grid-template-columns:1fr}.sf-demo-public{padding:44px 20px}}
-      @media(max-width:700px){.sf-demo-trust{margin-top:-8px}.landing-actions .sf-demo-top{display:inline-flex}.landing-actions{gap:7px}.landing-actions .landing-btn{padding:10px 12px;font-size:12px}}
+      @media(max-width:700px){
+        .sf-demo-trust{margin-top:-8px}
+        #landingPage .landing-nav{height:74px!important;padding:7px 10px!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:8px!important;align-items:center!important;flex-wrap:nowrap!important}
+        #landingPage .landing-logo{width:min(145px,39vw)!important;max-width:39vw!important;height:56px!important}
+        #landingPage .landing-actions{margin-left:0!important;display:flex!important;align-items:center!important;gap:6px!important;min-width:0}
+        #landingPage .landing-actions .landing-btn:first-child{display:inline-flex!important}
+        #landingPage .landing-actions .landing-btn{display:inline-flex!important;align-items:center;justify-content:center;min-height:42px;padding:8px 9px!important;font-size:11px!important;line-height:1;white-space:nowrap;border-radius:9px}
+        #landingPage .landing-actions .sf-login-top{min-width:76px}
+        #landingPage .landing-actions .sf-demo-top{min-width:82px}
+      }
+      @media(max-width:360px){
+        #landingPage .landing-nav{padding-left:8px!important;padding-right:8px!important;gap:5px!important}
+        #landingPage .landing-logo{width:min(122px,36vw)!important;max-width:36vw!important}
+        #landingPage .landing-actions{gap:4px!important}
+        #landingPage .landing-actions .landing-btn{padding:8px 7px!important;font-size:10.5px!important}
+        #landingPage .landing-actions .sf-login-top{min-width:70px}
+        #landingPage .landing-actions .sf-demo-top{min-width:72px}
+      }
     `;document.head.appendChild(s);
   }
 
@@ -24,9 +42,10 @@
     const actions=document.querySelector('#landingPage .landing-actions');if(!actions)return;
     const existing=[...actions.querySelectorAll('button')];
     const login=existing.find(b=>/anmelden/i.test(b.textContent||''));
-    if(login){login.textContent='Anmelden';login.title='Zum bestehenden SchichtFunk-Konto anmelden'}
+    if(login){login.textContent='Anmelden';login.title='Zum bestehenden SchichtFunk-Konto anmelden';login.classList.add('sf-login-top')}
     let demo=actions.querySelector('.sf-demo-top');
-    if(!demo){demo=button('Demo-Zugang →','landing-btn sf-demo-top');actions.appendChild(demo)}
+    if(!demo){demo=button('Demo testen','landing-btn sf-demo-top');actions.appendChild(demo)}
+    else demo.textContent='Demo testen';
     const dashboard=existing.find(b=>/dashboard öffnen/i.test(b.textContent||''));if(dashboard)dashboard.remove();
   }
 
