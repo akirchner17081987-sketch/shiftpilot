@@ -49,13 +49,20 @@ const handler=withSupabase({auth:"none"},async(req,ctx)=>{
     });
   };
 
-  // Defense in depth: selbst bei einer fehlerhaft erzeugten Meldung niemals an ausgeschiedene Mitglieder senden.
+  // Erlaubt aktive Manager-Mitglieder ODER regulär verknüpfte aktive Mitarbeiterkonten.
   const {data:membership,error:mError}=await ctx.supabaseAdmin.from("company_members")
     .select("user_id").eq("company_id",notification.company_id).eq("user_id",notification.user_id).eq("status","ACTIVE").maybeSingle();
   if(mError)throw mError;
-  if(!membership){await mark("SKIPPED");return Response.json({ok:true,status:"SKIPPED",reason:"INACTIVE_MEMBERSHIP"})}
+  let activeEmployee:any=null;
+  if(!membership){
+    const {data,error}=await ctx.supabaseAdmin.from("employees")
+      .select("id").eq("company_id",notification.company_id).eq("auth_user_id",notification.user_id)
+      .eq("status","active").eq("access_status","ACTIVE").maybeSingle();
+    if(error)throw error;
+    activeEmployee=data;
+  }
+  if(!membership&&!activeEmployee){await mark("SKIPPED");return Response.json({ok:true,status:"SKIPPED",reason:"INACTIVE_ACCOUNT"})}
 
-  // Ein Browsergerät gehört zum Benutzer. So funktionieren Pushs auch bei mehreren Firmenmitgliedschaften.
   const {data:subs,error:sError}=await ctx.supabaseAdmin.from("push_subscriptions")
     .select("id,endpoint,p256dh,auth_key")
     .eq("user_id",notification.user_id).eq("enabled",true);
