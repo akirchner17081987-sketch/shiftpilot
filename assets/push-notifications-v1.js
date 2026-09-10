@@ -1,0 +1,53 @@
+// SchichtFunk – echte Browser/PWA Push-Benachrichtigungen V1
+(function(){
+  const B=window.SFBackend=window.SFBackend||{};
+  if(B.__pushNotificationsV1)return;B.__pushNotificationsV1=true;
+
+  let busy=false,lastSync='';
+  const demo=()=>sessionStorage.getItem('sf_demo_session_v1')==='active';
+  const supported=()=>window.isSecureContext&&'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
+  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const keyBytes=s=>{const pad='='.repeat((4-s.length%4)%4),raw=atob((s+pad).replace(/-/g,'+').replace(/_/g,'/')),out=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)out[i]=raw.charCodeAt(i);return out};
+
+  function css(){if(document.getElementById('sfPushNotificationsCss'))return;const s=document.createElement('style');s.id='sfPushNotificationsCss';s.textContent=`
+    .sf-push-card{margin:0 0 14px;padding:14px;border:1px solid #285067;border-radius:14px;background:linear-gradient(145deg,#0e2534,#0a1a28);color:#deedf7;display:flex;align-items:center;gap:12px}.sf-push-icon{width:42px;height:42px;border-radius:12px;background:#123a34;color:#74ead2;display:grid;place-items:center;font-size:19px;flex:0 0 auto}.sf-push-copy{min-width:0;flex:1}.sf-push-copy b{display:block;font-size:12px}.sf-push-copy small{display:block;margin-top:4px;color:#8fa7ba;font-size:9.5px;line-height:1.45}.sf-push-action{min-height:44px;border:1px solid #37a98f;border-radius:10px;background:#135f51;color:#effffb;padding:8px 12px;font-weight:900;font-size:10px;white-space:nowrap}.sf-push-action.off{border-color:#385166;background:#0b1926;color:#a9bdcd}.sf-push-panel{padding:10px 14px;border-bottom:1px solid #20364a;background:#0b1a27;display:flex;align-items:center;gap:10px}.sf-push-panel .sf-push-icon{width:34px;height:34px;border-radius:9px;font-size:15px}.sf-push-panel .sf-push-copy b{font-size:10.5px}.sf-push-panel .sf-push-copy small{font-size:9px}.sf-push-panel .sf-push-action{min-height:38px;padding:6px 9px;font-size:9px}
+    @media(max-width:620px){.sf-push-card{align-items:flex-start;flex-wrap:wrap}.sf-push-card .sf-push-copy{flex:1 1 calc(100% - 56px)}.sf-push-card .sf-push-action{width:100%}.sf-push-panel{flex-wrap:wrap}.sf-push-panel .sf-push-copy{flex:1}.sf-push-panel .sf-push-action{width:100%}}
+  `;document.head.appendChild(s)}
+
+  async function subscription(){if(!supported())return null;try{return await (await navigator.serviceWorker.ready).pushManager.getSubscription()}catch{return null}}
+  function state(sub){if(demo())return['demo','Push in der Demo deaktiviert','Produktive Geräte werden in der Demo nicht registriert.'];if(!supported())return['unsupported','Push nicht verfügbar','Installiere die PWA bzw. nutze einen Browser mit Web-Push-Unterstützung.'];if(Notification.permission==='denied')return['denied','Push im Browser blockiert','Bitte Benachrichtigungen in den Website-/App-Einstellungen wieder erlauben.'];if(sub&&Notification.permission==='granted')return['active','Push ist aktiv','Schichtangebote, Änderungen und wichtige Meldungen können auch außerhalb von SchichtFunk erscheinen.'];return['ready','Push-Mitteilungen aktivieren','Erhalte wichtige SchichtFunk-Meldungen direkt auf diesem Gerät.']}
+
+  async function render(){css();const sub=await subscription(),[mode,title,text]=state(sub);const action=mode==='active'?'<button type="button" class="sf-push-action off" data-sf-push-disable>Deaktivieren</button>':mode==='ready'?'<button type="button" class="sf-push-action" data-sf-push-enable>Push aktivieren</button>':'';
+    const portal=document.getElementById('sfEmployeePortal'),dash=portal?.querySelector('.sf-employee-dashboard');
+    if(dash){let card=dash.querySelector('#sfEmployeePushCard');if(!card){card=document.createElement('section');card.id='sfEmployeePushCard';card.className='sf-push-card';const after=dash.querySelector('#sfEmployeePwaInstall');after?.after(card)||dash.prepend(card)}card.innerHTML=`<span class="sf-push-icon">🔔</span><span class="sf-push-copy"><b>${esc(title)}</b><small>${esc(text)}</small></span>${action}`}
+    const panel=document.getElementById('sfNotifyPanel');if(panel){let row=panel.querySelector('#sfPushPanelRow');if(!row){row=document.createElement('div');row.id='sfPushPanelRow';row.className='sf-push-panel';panel.querySelector('.sf-notify-head')?.after(row)}row.innerHTML=`<span class="sf-push-icon">🔔</span><span class="sf-push-copy"><b>${esc(title)}</b><small>${esc(text)}</small></span>${action}`}
+  }
+
+  async function registerServer(sub){if(!B.client||!B.user?.id||!B.companyId)return false;const j=sub.toJSON(),keys=j.keys||{};if(!j.endpoint||!keys.p256dh||!keys.auth)return false;const {error}=await B.client.rpc('register_push_subscription',{p_company_id:B.companyId,p_endpoint:j.endpoint,p_p256dh:keys.p256dh,p_auth:keys.auth,p_user_agent:navigator.userAgent||null});if(error)throw error;lastSync=`${B.user.id}|${j.endpoint}`;return true}
+
+  async function enable(){if(busy||demo()||!supported())return;busy=true;try{
+    let permission=Notification.permission;if(permission!=='granted')permission=await Notification.requestPermission();if(permission!=='granted'){await render();return}
+    const {data:key,error:keyError}=await B.client.rpc('get_push_public_key');if(keyError||!key)throw keyError||new Error('Push-Schlüssel nicht verfügbar');
+    const reg=await navigator.serviceWorker.ready;let sub=await reg.pushManager.getSubscription();if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:keyBytes(key)});await registerServer(sub);await render();
+  }catch(e){console.warn('[SchichtFunk Push] Aktivierung fehlgeschlagen',e);alert('Push-Mitteilungen konnten auf diesem Gerät nicht aktiviert werden. Bitte Browser-/App-Berechtigungen prüfen.')}finally{busy=false}}
+
+  async function disable(){if(busy||!supported())return;busy=true;try{const sub=await subscription();if(sub){const endpoint=sub.endpoint;if(B.client&&B.user?.id)await B.client.rpc('unregister_push_subscription',{p_endpoint:endpoint});await sub.unsubscribe()}lastSync='';await render()}catch(e){console.warn('[SchichtFunk Push] Deaktivierung fehlgeschlagen',e)}finally{busy=false}}
+
+  async function sync(){if(demo()||!supported()||Notification.permission!=='granted'||!B.client||!B.user?.id||!B.companyId)return;const sub=await subscription();if(!sub)return;const sig=`${B.user.id}|${sub.endpoint}`;if(sig===lastSync)return;try{await registerServer(sub)}catch(e){console.debug('[SchichtFunk Push] Sync',e?.message||e)}}
+
+  function routePending(){let target=sessionStorage.getItem('sf_pending_push_view')||'';try{const u=new URL(location.href),q=u.searchParams.get('sf_push_view');if(q){target=q;sessionStorage.setItem('sf_pending_push_view',q);u.searchParams.delete('sf_push_view');history.replaceState(null,'',u.pathname+(u.search?u.search:'')+u.hash)}}catch{}if(!target||!B.role)return false;
+    if(B.role==='EMPLOYEE'){
+      const map={'employee-shifts':'shifts','employee-changes':'changes','employee-absences':'absences','employee-times':'time','employee-swaps':'swaps','employee-disruptions':'disruptions','employee-marketplace':'marketplace'};const view=map[target]||target.replace(/^employee-/,'');
+      try{B.openEmployeePortal?.();setTimeout(()=>B.employeePortalNavigate?.(view),120);sessionStorage.removeItem('sf_pending_push_view');return true}catch{return false}
+    }
+    if(target==='disruptions'){window.SFDisruptionAutopilot?.open?.();sessionStorage.removeItem('sf_pending_push_view');return true}
+    if(['absence','schedule','time','employees','overview','auto','reports','settings'].includes(target)){window.showView?.(target);sessionStorage.removeItem('sf_pending_push_view');return true}
+    return false;
+  }
+
+  document.addEventListener('click',e=>{if(e.target.closest?.('[data-sf-push-enable]')){e.preventDefault();enable()}else if(e.target.closest?.('[data-sf-push-disable]')){e.preventDefault();disable()}},true);
+  const observer=new MutationObserver(()=>{if(document.getElementById('sfEmployeePortal')||document.getElementById('sfNotifyPanel'))render()});observer.observe(document.documentElement,{childList:true,subtree:true});
+  window.addEventListener('focus',()=>{sync();render();routePending()});document.addEventListener('visibilitychange',()=>{if(!document.hidden){sync();render();routePending()}});
+  B.pushNotifications={enable,disable,sync,status:async()=>state(await subscription())};
+  [500,1500,3500].forEach(ms=>setTimeout(()=>{sync();render();routePending()},ms));setInterval(()=>routePending(),1500);setInterval(()=>sync(),60000);
+})();
