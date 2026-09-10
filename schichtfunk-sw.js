@@ -10,7 +10,7 @@ const STATIC=[
 ];
 
 self.addEventListener('install',event=>{
-  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(STATIC)).then(()=>self.skipWaiting()));
+  event.waitUntil(caches.open(CACHE).then(cache=>Promise.all(STATIC.map(url=>cache.add(url).catch(()=>null)))).then(()=>self.skipWaiting()));
 });
 
 self.addEventListener('activate',event=>{
