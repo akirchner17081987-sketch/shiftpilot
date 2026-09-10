@@ -1,5 +1,5 @@
-// SchichtFunk – sicherer PWA App-Shell Service Worker V1
-const CACHE='schichtfunk-shell-v1';
+// SchichtFunk – sicherer PWA App-Shell + Web Push Service Worker V2
+const CACHE='schichtfunk-shell-v2';
 const STATIC=[
   '/index.html',
   '/site.webmanifest',
@@ -49,5 +49,30 @@ self.addEventListener('fetch',event=>{
     if(cached){event.waitUntil(refresh);return cached}
     const network=await refresh;
     return network||Response.error();
+  }));
+});
+
+self.addEventListener('push',event=>{
+  let payload={};
+  try{payload=event.data?.json?.()||{}}catch{try{payload={title:'SchichtFunk',body:event.data?.text?.()||''}}catch{payload={}}}
+  const title=payload.title||'SchichtFunk';
+  const options={
+    body:payload.body||'Neue Benachrichtigung in SchichtFunk',
+    icon:'/assets/schichtfunk-app-icon-192.png',
+    badge:'/assets/schichtfunk-app-icon-192.png',
+    tag:payload.tag||'schichtfunk-notification',
+    renotify:true,
+    data:{url:payload.url||'/#app'}
+  };
+  event.waitUntil(self.registration.showNotification(title,options));
+});
+
+self.addEventListener('notificationclick',event=>{
+  event.notification.close();
+  const target=new URL(event.notification.data?.url||'/#app',self.location.origin).href;
+  event.waitUntil(self.clients.matchAll({type:'window',includeUncontrolled:true}).then(async list=>{
+    const existing=list.find(client=>{try{return new URL(client.url).origin===self.location.origin}catch{return false}});
+    if(existing){try{await existing.navigate(target)}catch{}return existing.focus()}
+    return self.clients.openWindow(target);
   }));
 });
