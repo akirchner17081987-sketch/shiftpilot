@@ -1,7 +1,7 @@
-// SchichtFunk – robuste Browser/PWA Push-Benachrichtigungen V2
+// SchichtFunk – robuste Browser/PWA Push-Benachrichtigungen V3
 (function(){
   const B=window.SFBackend=window.SFBackend||{};
-  if(B.__pushNotificationsV2)return;B.__pushNotificationsV2=true;
+  if(B.__pushNotificationsV3)return;B.__pushNotificationsV3=true;
 
   let busy=false,lastSync='',rendering=false,renderAgain=false,renderTimer=0,notice=null;
   const demo=()=>sessionStorage.getItem('sf_demo_session_v1')==='active';
@@ -35,10 +35,11 @@
     const name=String(error?.name||'');
     if(code.includes('PUSH_PERMISSION_DISMISSED'))return'Es wurde keine Auswahl getroffen. Bitte erneut tippen und „Erlauben“ wählen.';
     if(code.includes('PUSH_PERMISSION_DENIED')||name==='NotAllowedError')return'Benachrichtigungen sind blockiert. Bitte in den Website-/App-Einstellungen für SchichtFunk erlauben.';
-    if(code.includes('PUSH_SESSION_NOT_READY')||code.includes('AUTH_REQUIRED')||code.includes('JWT'))return'Die Anmeldung ist noch nicht bereit oder abgelaufen. Bitte SchichtFunk neu laden und erneut anmelden.';
+    if(code.includes('PUSH_SESSION_NOT_READY')||code.includes('AUTH_REQUIRED')||code.includes('JWT'))return'Die Anmeldung ist noch nicht vollständig bereit oder abgelaufen. Bitte SchichtFunk kurz neu öffnen und erneut versuchen.';
     if(code.includes('ACTIVE_MEMBERSHIP_REQUIRED'))return'Dieses Konto ist keinem aktiven Unternehmen zugeordnet. Bitte die Einsatzleitung kontaktieren.';
     if(code.includes('PUSH_NOT_CONFIGURED')||code.includes('Push-Schlüssel nicht verfügbar')||code.includes('PUSH_PUBLIC_KEY_INVALID'))return'Der Push-Dienst ist serverseitig noch nicht vollständig eingerichtet. Bitte den Support kontaktieren.';
     if(code.includes('SERVICE_WORKER'))return'Die SchichtFunk-App konnte im Hintergrund nicht gestartet werden. Bitte App vollständig schließen, neu öffnen und erneut versuchen.';
+    if(code.includes('PUSH_SERVER_VERIFY_FAILED'))return'Das Geräteabo wurde im Browser erstellt, konnte aber nicht in SchichtFunk gespeichert werden.';
     if(code.includes('INVALID_ENDPOINT')||code.includes('INVALID_P256DH')||code.includes('INVALID_AUTH_KEY')||code.includes('PUSH_SUBSCRIPTION_INVALID'))return'Das Geräteabo war ungültig. Bitte die App neu installieren und erneut versuchen.';
     if(code.includes('Failed to register')||name==='SecurityError')return'Die Hintergrundfunktion wurde vom Browser blockiert. Bitte Website-Daten/Berechtigungen für SchichtFunk prüfen.';
     if(name==='AbortError'||name==='NetworkError'||code.toLowerCase().includes('network')||code.toLowerCase().includes('fetch'))return'Der Push-Dienst ist gerade nicht erreichbar. Bitte Internetverbindung prüfen und erneut versuchen.';
@@ -53,7 +54,16 @@
   function toast(text){document.querySelector('.sf-push-toast')?.remove();const t=document.createElement('div');t.className='sf-push-toast';t.setAttribute('role','status');t.setAttribute('aria-live','polite');t.textContent=text;document.body.appendChild(t);setTimeout(()=>t.remove(),5000)}
   async function currentRegistration(){if(!('serviceWorker' in navigator))return null;try{return await navigator.serviceWorker.getRegistration('/')}catch{return null}}
   async function subscription(){if(!supported())return null;const reg=await currentRegistration();if(!reg)return null;try{return await reg.pushManager.getSubscription()}catch{return null}}
-  async function waitForBackend(){for(let i=0;i<30;i++){if(B.client&&B.user?.id&&B.companyId)return true;await delay(100)}throw new Error('PUSH_SESSION_NOT_READY')}
+  async function waitForBackend(){
+    for(let i=0;i<70;i++){
+      if(B.client&&B.user?.id&&B.companyId)return true;
+      if(B.client&&!B.user?.id&&typeof B.recoverSession==='function'){
+        try{const session=await B.recoverSession();if(session&&typeof B.boot==='function')await B.boot(session)}catch(error){console.debug('[SchichtFunk Push] Session-Recovery',error?.message||error)}
+      }
+      await delay(100);
+    }
+    throw new Error('PUSH_SESSION_NOT_READY');
+  }
   async function ensureRegistration(){
     if(!supported())throw new Error('PUSH_NOT_SUPPORTED');
     let reg;
@@ -71,12 +81,13 @@
     if(mode!=='ok')return[mode,'Push nicht verfügbar',reason];
     if(Notification.permission==='denied')return['denied','Push im Browser blockiert','Bitte Benachrichtigungen in den Website-/App-Einstellungen wieder erlauben.'];
     if(sub&&Notification.permission==='granted')return['active','Push ist aktiv','Schichtangebote, Änderungen und wichtige Meldungen können auch außerhalb von SchichtFunk erscheinen.'];
+    if(Notification.permission==='granted')return['ready','Berechtigung erteilt – Gerät registrieren','iOS erlaubt Mitteilungen bereits. Dieses Gerät muss noch bei SchichtFunk registriert werden.'];
     return['ready','Push-Mitteilungen aktivieren','Erhalte wichtige SchichtFunk-Meldungen direkt auf diesem Gerät.'];
   }
 
   function paint(sub,override=notice){
     css();const [mode,title,text]=override||baseState(sub);
-    const action=mode==='active'?'<span class="sf-push-actions"><button type="button" class="sf-push-action test" data-sf-push-test>Test senden</button><button type="button" class="sf-push-action off" data-sf-push-disable>Deaktivieren</button></span>':mode==='ready'||mode==='error'?'<button type="button" class="sf-push-action" data-sf-push-enable>'+(mode==='error'?'Erneut versuchen':'Push aktivieren')+'</button>':mode==='working'?'<button type="button" class="sf-push-action" disabled aria-busy="true">Wird aktiviert …</button>':'';
+    const action=mode==='active'?'<span class="sf-push-actions"><button type="button" class="sf-push-action test" data-sf-push-test>Test senden</button><button type="button" class="sf-push-action off" data-sf-push-disable>Deaktivieren</button></span>':mode==='ready'||mode==='error'?'<button type="button" class="sf-push-action" data-sf-push-enable>'+(mode==='error'?'Erneut versuchen':Notification.permission==='granted'?'Gerät registrieren':'Push aktivieren')+'</button>':mode==='working'?'<button type="button" class="sf-push-action" disabled aria-busy="true">Wird aktiviert …</button>':'';
     const html=`<span class="sf-push-icon" aria-hidden="true">🔔</span><span class="sf-push-copy"><b>${esc(title)}</b><small>${esc(text)}</small></span>${action}`;
     const portal=document.getElementById('sfEmployeePortal'),dash=portal?.querySelector('.sf-employee-dashboard');
     if(dash){let card=dash.querySelector('#sfEmployeePushCard');if(!card){card=document.createElement('section');card.id='sfEmployeePushCard';card.className='sf-push-card';card.setAttribute('aria-live','polite');const install=dash.querySelector('#sfEmployeePwaInstall');if(install)install.after(card);else dash.prepend(card)}card.dataset.mode=mode;setHtml(card,html)}
@@ -90,7 +101,31 @@
     await waitForBackend();const json=sub?.toJSON?.(),keys=json?.keys||{};
     if(!json?.endpoint||!keys.p256dh||!keys.auth)throw new Error('PUSH_SUBSCRIPTION_INVALID');
     const {error}=await B.client.rpc('register_push_subscription',{p_company_id:B.companyId,p_endpoint:json.endpoint,p_p256dh:keys.p256dh,p_auth:keys.auth,p_user_agent:navigator.userAgent||null});
-    if(error)throw error;lastSync=`${B.user.id}|${json.endpoint}`;return true;
+    if(error)throw error;
+    const {data:verify,error:verifyError}=await B.client.from('push_subscriptions').select('id,enabled').eq('endpoint',json.endpoint).eq('user_id',B.user.id).maybeSingle();
+    if(verifyError)throw verifyError;
+    if(!verify?.id||verify.enabled!==true)throw new Error('PUSH_SERVER_VERIFY_FAILED');
+    lastSync=`${B.user.id}|${json.endpoint}`;return true;
+  }
+
+  async function diagnostics(){
+    const reg=await currentRegistration();
+    const sub=reg?await reg.pushManager.getSubscription().catch(()=>null):null;
+    return {
+      secureContext:window.isSecureContext,
+      ios:isIos(),
+      standalone:standalone(),
+      serviceWorkerSupported:'serviceWorker' in navigator,
+      serviceWorkerRegistered:!!reg,
+      serviceWorkerActive:!!reg?.active,
+      pushManager:'PushManager' in window,
+      notificationApi:'Notification' in window,
+      permission:'Notification' in window?Notification.permission:'unavailable',
+      browserSubscription:!!sub,
+      backendClient:!!B.client,
+      backendUser:!!B.user?.id,
+      backendCompany:!!B.companyId
+    };
   }
 
   async function enable(){
@@ -112,8 +147,12 @@
       let sub=await reg.pushManager.getSubscription();
       if(!sub)sub=await Promise.race([reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey}),timeout(15000,'PUSH_SUBSCRIBE_TIMEOUT')]);
       await registerServer(sub);
-      notice=null;toast('Push-Mitteilungen sind auf diesem Gerät aktiviert.');await render();
-    }catch(error){console.warn('[SchichtFunk Push] Aktivierung fehlgeschlagen',error);notice=['error','Push konnte nicht aktiviert werden',errorMessage(error)];paint(null)}finally{busy=false}
+      notice=null;toast('Push-Mitteilungen sind aktiviert und dieses Gerät ist bei SchichtFunk registriert.');await render();
+    }catch(error){
+      console.warn('[SchichtFunk Push] Aktivierung fehlgeschlagen',error);
+      console.warn('[SchichtFunk Push] Diagnose',await diagnostics().catch(()=>null));
+      notice=['error','Push konnte nicht aktiviert werden',errorMessage(error)];paint(null)
+    }finally{busy=false}
   }
 
   async function disable(){if(busy||!supported())return;busy=true;try{const sub=await subscription();if(sub){const endpoint=sub.endpoint;if(B.client&&B.user?.id){const {error}=await B.client.rpc('unregister_push_subscription',{p_endpoint:endpoint});if(error)throw error}await sub.unsubscribe()}lastSync='';notice=null;toast('Push-Mitteilungen wurden auf diesem Gerät deaktiviert.');await render()}catch(error){console.warn('[SchichtFunk Push] Deaktivierung fehlgeschlagen',error);notice=['error','Push konnte nicht deaktiviert werden',errorMessage(error,'deaktiviert')];paint(null)}finally{busy=false}}
@@ -131,6 +170,6 @@
   document.addEventListener('click',event=>{const source=event.target?.closest?event.target:event.target?.parentElement;const target=source?.closest?.('[data-sf-push-enable],[data-sf-push-disable],[data-sf-push-test]');if(!target)return;event.preventDefault();event.stopPropagation();if(target.matches('[data-sf-push-enable]'))void enable();else if(target.matches('[data-sf-push-disable]'))void disable();else void sendTest()},true);
   const observer=new MutationObserver(records=>{const relevant=records.some(record=>[...record.addedNodes].some(node=>node.nodeType===1&&(node.id==='sfEmployeePortal'||node.id==='sfNotifyPanel'||node.matches?.('.sf-employee-dashboard')||node.querySelector?.('#sfEmployeePortal,#sfNotifyPanel,.sf-employee-dashboard'))));if(relevant)scheduleRender()});observer.observe(document.documentElement,{childList:true,subtree:true});
   window.addEventListener('focus',()=>{void sync();scheduleRender();routePending()});document.addEventListener('visibilitychange',()=>{if(!document.hidden){void sync();scheduleRender();routePending()}});
-  B.pushNotifications={enable,disable,sendTest,sync,status:async()=>baseState(await subscription()),compatibility};
+  B.pushNotifications={enable,disable,sendTest,sync,diagnostics,status:async()=>baseState(await subscription()),compatibility};
   [120,500,1500,3500].forEach(ms=>setTimeout(()=>{scheduleRender();void sync();routePending()},ms));setInterval(()=>routePending(),1500);setInterval(()=>void sync(),60000);
 })();
