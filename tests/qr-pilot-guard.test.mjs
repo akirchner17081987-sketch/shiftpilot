@@ -59,13 +59,13 @@ test('manager UI supports multiple selected pilot employees and blocks activatio
   assert.match(ui,/manager_set_time_qr_terminal_pilot_employees/);
   assert.match(ui,/p_employee_ids:employeeIds/);
   assert.match(ui,/Mehrfachauswahl/i);
-  assert.match(ui,/Pilot noch nicht startbereit/);
-  assert.match(ui,/Kein freigabefähiger Mitarbeiter vorhanden/);
+  assert.match(ui,/Bitte zuerst mindestens einen Pilot-Mitarbeiter auswählen/);
+  assert.match(ui,/Pilotbetrieb kann noch nicht aktiviert werden/);
   assert.match(ui,/e\.preventDefault\(\);e\.stopImmediatePropagation\(\)/);
   assert.doesNotMatch(ui,/localStorage\.setItem/i);
   assert.doesNotMatch(ui,/sessionStorage\.setItem/i);
 });
 
 test('pilot guard integration is loaded with QR terminal management',()=>{
-  assert.match(nav,/supabase-qr-pilot-guard-v1\.js\?v=20260908-2/);
+  assert.match(nav,/supabase-qr-pilot-guard-v1\.js\?v=20260910-1/);
 });

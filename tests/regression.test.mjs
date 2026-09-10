@@ -279,7 +279,7 @@ test('production responses are protected by restrictive security headers', () =>
   assert.equal(values['X-Content-Type-Options'], 'nosniff');
   assert.equal(values['X-Frame-Options'], 'DENY');
   assert.equal(values['Referrer-Policy'], 'strict-origin-when-cross-origin');
-  assert.match(values['Permissions-Policy'], /camera=\(\)/);
+  assert.match(values['Permissions-Policy'], /camera=\(self\)/);
 });
 
 test('all JavaScript assets pass the Node syntax check', () => {
