@@ -91,6 +91,9 @@
   // Demo bleibt auch mit den QR-Verwaltungsmodulen vollständig lokal und fail-closed.
   loadIntegration('/assets/demo-qr-local-bridge-v1.js?v=20260908-2','data-sf-demo-qr-local-bridge');
 
+  // Mitarbeiter sehen ihren aktuellen QR-Check-in/Check-out direkt im Portal.
+  loadIntegration('/assets/employee-qr-status-v1.js?v=20260910-1','data-sf-employee-qr-status');
+
   // QR-Zeiterfassung: Objekt-Terminals mit allgemeinem Betrieb oder optionalem Pilotmodus.
   loadIntegration('/assets/supabase-qr-terminal-admin-v1.js?v=20260908-1','data-sf-qr-terminal-admin');
   loadIntegration('/assets/supabase-qr-terminal-role-guard-v1.js?v=20260908-1','data-sf-qr-terminal-role-guard');
