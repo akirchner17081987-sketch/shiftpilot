@@ -85,14 +85,14 @@
   loadIntegration('/assets/demo-august-2026-v1.js?v=20260907-startgate2','data-sf-demo-august-2026');
   loadIntegration('/assets/demo-datev-snapshot-fix-v1.js?v=20260904-2','data-sf-demo-datev-snapshot-fix');
 
-  // Zentrale Planer-Startansicht mit Live-Besetzung und direktem Störfall-Einstieg.
-  loadIntegration('/assets/today-dashboard-v1.js?v=20260910-1','data-sf-today-dashboard');
+  // Zentrale Planer-Startansicht mit laufender Cloud-Aktualisierung der QR-Check-ins.
+  loadIntegration('/assets/today-dashboard-v1.js?v=20260910-2','data-sf-today-dashboard');
 
   // Demo bleibt auch mit den QR-Verwaltungsmodulen vollständig lokal und fail-closed.
   loadIntegration('/assets/demo-qr-local-bridge-v1.js?v=20260908-2','data-sf-demo-qr-local-bridge');
 
-  // QR-Zeiterfassung: Verwaltung und kontrollierte Pilotfreigabe der Stempelstationen.
+  // QR-Zeiterfassung: Objekt-Terminals mit allgemeinem Betrieb oder optionalem Pilotmodus.
   loadIntegration('/assets/supabase-qr-terminal-admin-v1.js?v=20260908-1','data-sf-qr-terminal-admin');
   loadIntegration('/assets/supabase-qr-terminal-role-guard-v1.js?v=20260908-1','data-sf-qr-terminal-role-guard');
-  loadIntegration('/assets/supabase-qr-pilot-guard-v1.js?v=20260908-2','data-sf-qr-pilot-guard');
+  loadIntegration('/assets/supabase-qr-pilot-guard-v1.js?v=20260910-1','data-sf-qr-pilot-guard');
 })();
