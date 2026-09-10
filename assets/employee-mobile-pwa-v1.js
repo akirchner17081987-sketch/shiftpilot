@@ -132,8 +132,10 @@
     let card=dash.querySelector('#sfEmployeePwaInstall');
     if(!card){card=document.createElement('section');card.id='sfEmployeePwaInstall';card.className='sf-pwa-install-card';card.hidden=true;dash.insertBefore(card,dash.firstChild)}
     const mode=installMode();
-    if(!mode){card.hidden=true;return}
+    if(!mode){card.hidden=true;card.dataset.sfInstallMode='';return}
     card.hidden=false;
+    if(card.dataset.sfInstallMode===mode)return;
+    card.dataset.sfInstallMode=mode;
     if(mode==='prompt'){
       card.classList.remove('ios-help-open');
       card.innerHTML='<div class="sf-pwa-install-copy"><b>SchichtFunk wie eine App nutzen</b><small>Auf dem Startbildschirm installieren und schneller ins Mitarbeiterportal starten.</small></div><button type="button" class="sf-pwa-install-btn" data-sf-pwa-install>Installieren</button>';
@@ -143,7 +145,9 @@
   }
 
   function updateActive(portal){
-    const active=portal.dataset.sfPortalActive||'dashboard';if(active===lastActive&&portal.querySelector('#sfEmployeeMobileDock'))return;lastActive=active;
+    const active=portal.dataset.sfPortalActive||'dashboard';
+    if(active===lastActive&&portal.querySelector('#sfEmployeeMobileDock'))return;
+    lastActive=active;
     portal.querySelectorAll('#sfEmployeeMobileDock [data-sf-employee-view]').forEach(b=>b.classList.toggle('active',b.dataset.sfEmployeeView===active));
     const moreSet=new Set(['disruptions','marketplace','changes','swaps','absences','account','wage','profile']);
     portal.querySelector('#sfEmployeeMobileDock [data-sf-mobile-more]')?.classList.toggle('active',moreSet.has(active));
