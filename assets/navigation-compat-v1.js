@@ -100,6 +100,9 @@
   // Mobile/PWA: Bottom-Navigation, Installationshilfe und sicherer App-Shell-Service-Worker.
   loadIntegration('/assets/employee-mobile-pwa-v1.js?v=20260910-1','data-sf-employee-mobile-pwa');
 
+  // Echte Browser-/PWA-Push-Mitteilungen auf Basis der bestehenden Benachrichtigungszentrale.
+  loadIntegration('/assets/push-notifications-v1.js?v=20260910-1','data-sf-push-notifications');
+
   // QR-Zeiterfassung: Objekt-Terminals mit allgemeinem Betrieb oder optionalem Pilotmodus.
   loadIntegration('/assets/supabase-qr-terminal-admin-v1.js?v=20260908-1','data-sf-qr-terminal-admin');
   loadIntegration('/assets/supabase-qr-terminal-role-guard-v1.js?v=20260908-1','data-sf-qr-terminal-role-guard');
