@@ -6,7 +6,6 @@
   const JSQR_LIB='https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
   let stream=null,scanTimer=null,decoderPromise=null,scanning=false;
   const demo=()=>sessionStorage.getItem('sf_demo_session_v1')==='active';
-  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
   function css(){
     if(document.getElementById('sfEmployeeQrScannerCss'))return;
@@ -89,8 +88,12 @@
   async function scanWithBarcodeDetector(video){
     let detector;
     try{
-      const formats=typeof BarcodeDetector.getSupportedFormats==='function'?await BarcodeDetector.getSupportedFormats():[];
-      detector=new BarcodeDetector(formats.includes('qr_code')?{formats:['qr_code']}:undefined);
+      if(typeof window.BarcodeDetector!=='function')return false;
+      if(typeof window.BarcodeDetector.getSupportedFormats==='function'){
+        const formats=await window.BarcodeDetector.getSupportedFormats();
+        if(Array.isArray(formats)&&formats.length&&!formats.includes('qr_code'))return false;
+      }
+      detector=new window.BarcodeDetector({formats:['qr_code']});
     }catch{return false}
     const tick=async()=>{
       if(!scanning)return;
@@ -132,7 +135,7 @@
       stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:960}}});
       video.srcObject=stream;video.setAttribute('playsinline','');video.muted=true;await video.play();scanning=true;
       setStatus('Kamera aktiv · QR-Code innerhalb des Rahmens halten.');
-      if('BarcodeDetector' in window){const native=await scanWithBarcodeDetector(video);if(native)return}
+      if(await scanWithBarcodeDetector(video))return;
       await scanWithCanvas(video);
     }catch(e){
       stopCamera();
