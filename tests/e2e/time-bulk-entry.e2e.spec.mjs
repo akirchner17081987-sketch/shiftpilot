@@ -23,12 +23,12 @@ test('manager records all eligible open times in one guarded action',async({page
   await expect(modal).toBeVisible();
   await expect(modal.getByRole('heading',{name:'Alle offenen Zeiten erfassen'})).toBeVisible();
   const apply=modal.locator('#sfTimeBulkApply');
-  await expect(apply).toBeDisabled();
-  await modal.locator('#sfTimeBulkAcknowledge').check();
   await expect(apply).toBeEnabled();
+  await expect(modal.locator('#sfTimeBulkAcknowledge')).toHaveCount(0);
+  await expect(modal).toContainText('ohne weitere Einzelprüfung als bestätigt');
   await apply.click();
 
   await expect(modal).toBeHidden();
-  await expect(page.locator('#timeTableBody')).toContainText('Zur Prüfung');
+  await expect(page.locator('#timeTableBody')).toContainText('Bestätigt');
   await expect(bulk).toHaveText('Keine offenen Zeiten');
 });
