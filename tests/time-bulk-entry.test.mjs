@@ -24,7 +24,7 @@ test('demo supports bulk time entry without external calls',()=>{
 });
 
 test('bulk RPC is atomic, restricted and protects existing or ineligible rows',()=>{
-  const sql=read('supabase/migrations/20260911080659_manager_bulk_record_include_planned_shifts.sql');
+  const sql=read('supabase/migrations/20260911080807_manager_bulk_record_include_planned_shifts.sql');
   assert.match(sql,/security definer/i);
   assert.match(sql,/set search_path=''/i);
   assert.match(sql,/private\.sf_is_manager\(p_company_id,false\)/i);
