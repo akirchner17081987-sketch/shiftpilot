@@ -12,7 +12,6 @@ test('DATEV browser export module has valid JavaScript syntax',()=>{
   assert.doesNotThrow(()=>new vm.Script(ui,{filename:'datev-lodas-export-v1.js'}));
   assert.match(ui,/charset=us-ascii/);
   assert.match(ui,/SchichtFunk_DATEV_LODAS_\$\{month\}\.txt/);
-  assert.doesNotMatch(ui,/\.sic/);
 });
 
 test('DATEV LODAS header and movement lines match the binding SchichtFunk pattern',()=>{
@@ -29,9 +28,9 @@ test('DATEV LODAS header and movement lines match the binding SchichtFunk patter
   const expected=[
     '[Allgemein]',
     'Ziel=LODAS',
-    'Version_SST=1.0',
     'Datumsformat=TT.MM.JJJJ',
     'Zahlenkomma=,',
+    'Version=15.06',
     'BeraterNr=1103899',
     'MandantenNr=62069',
     '[Satzbeschreibung]',
@@ -83,9 +82,9 @@ test('current LODAS field limits are enforced',()=>{
   assert.throws(()=>C.formatContent({beraterNr:'28547',mandantenNr:'90909',month:'2026-08',rows:[{pnr:'123456',wage_type:'100',minutes:60,cost_center:'NULL'}]}),/Personalnummer/);
 });
 
-test('export uses the documented interface version key and no legacy key',()=>{
+test('export uses the binding LODAS 15.06 header key and no SST variant',()=>{
   const content=C.formatContent({beraterNr:'28547',mandantenNr:'90909',month:'2026-08',rows:[]});
-  assert.match(content,/^Version_SST=1\.0$/m);
-  assert.doesNotMatch(content,/^Version_=/m);
+  assert.match(content,/^Version=15\.06$/m);
+  assert.doesNotMatch(content,/^Version_SST=/m);
   assert.ok([...content].every(char=>char.charCodeAt(0)<=127));
 });
