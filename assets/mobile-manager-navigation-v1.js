@@ -6,7 +6,7 @@
   const MOBILE='(max-width: 820px)';
   const media=window.matchMedia(MOBILE);
   const labels={
-    overview:'Übersicht',schedule:'Dienstplan',auto:'Auto-Planung',disruptions:'Störfall-Autopilot',
+    overview:'Heute',schedule:'Dienstplan',auto:'Auto-Planung',disruptions:'Störfall-Autopilot',
     marketplace:'Schicht-Marktplatz',employees:'Mitarbeiter',absence:'Abwesenheiten',time:'Zeiterfassung',
     reports:'Auswertungen',audit:'Audit-Logs',settings:'Einstellungen'
   };
@@ -31,7 +31,7 @@
     toggle.className='sf-mobile-manager-nav';
     toggle.setAttribute('aria-controls',sidebar.id);
     toggle.setAttribute('aria-expanded','false');
-    toggle.innerHTML='<span class="sf-mobile-manager-nav-icon" aria-hidden="true">☰</span><span class="sf-mobile-manager-nav-copy"><span>Menü</span><small>Übersicht</small></span>';
+    toggle.innerHTML='<span class="sf-mobile-manager-nav-icon" aria-hidden="true">☰</span><span class="sf-mobile-manager-nav-copy"><span>Menü</span><small>Heute</small></span>';
     topbar.insertBefore(toggle,search||topbar.firstChild);
 
     const backdrop=document.createElement('button');
@@ -46,7 +46,7 @@
 
     function updateCurrent(){
       const active=sidebar.querySelector('[data-view].active');
-      const label=labels[active?.dataset.view]||active?.textContent?.trim()||'Übersicht';
+      const label=labels[active?.dataset.view]||active?.textContent?.trim()||'Heute';
       current.textContent=label;
       toggle.setAttribute('aria-label',`Manager-Menü öffnen. Aktueller Bereich: ${label}`);
     }
@@ -79,4 +79,14 @@
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
+
+// Zentrales Heute-Dashboard fuer Planer laden. Der Guard im Zielskript verhindert Doppelladungen.
+(function loadTodayDashboardV2(){
+  if(window.__sfTodayDashboardV2||document.querySelector('script[data-sf-today-dashboard-v2]'))return;
+  const s=document.createElement('script');
+  s.src='assets/today-dashboard-v2.js?v=20260911-1';
+  s.async=false;
+  s.dataset.sfTodayDashboardV2='1';
+  document.head.appendChild(s);
 })();
