@@ -78,6 +78,9 @@
   loadStyle('/assets/date-month-controls-v1.css?v=20260904-1','data-sf-date-month-controls');
   loadIntegration('/assets/date-month-format-v1.js?v=20260904-2','data-sf-date-month-format');
 
+  // Einheitliche SchichtFunk-Scrollleisten in Darkmode + Teal statt Browser-Standard.
+  loadStyle('/assets/schichtfunk-scrollbars-v1.css?v=20260911-1','data-sf-scrollbars');
+
   loadIntegration('/assets/o1s-integration-v1.js?v=20260904-1','data-sf-o1s-integration');
   loadIntegration('/assets/qa-integration-v1.js?v=20260904-1','data-sf-qa-integration');
   loadIntegration('/assets/calendar-view-switch-v1.js?v=20260904-1','data-sf-calendar-view');
