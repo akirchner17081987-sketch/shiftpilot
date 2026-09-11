@@ -7,17 +7,20 @@ const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
 test('manager UI offers a guarded bulk time-entry action',()=>{
   const ui=read('assets/supabase-time-tracking-v1.js');
   assert.match(ui,/Alle offenen Zeiten erfassen/);
-  assert.match(ui,/sfTimeBulkAcknowledge/);
+  assert.doesNotMatch(ui,/sfTimeBulkAcknowledge/);
+  assert.match(ui,/sf-time-bulk-apply/);
   assert.match(ui,/manager_bulk_record_time_entries/);
-  assert.match(ui,/p_confirm:direct\.checked/);
+  assert.match(ui,/p_confirm:true/);
   assert.match(ui,/Geschlossene Monate, zukünftige Schichten und vorhandene Zeiteinträge/);
 });
 
 test('demo supports bulk time entry without external calls',()=>{
   const demo=read('assets/demo-marketplace-v1.js');
+  const gate=read('demo.html');
   assert.match(demo,/name==='manager_bulk_record_time_entries'/);
   assert.match(demo,/row\.actual_start=row\.starts_at/);
   assert.match(demo,/row\.entry_status=args\.p_confirm\?'confirmed':'recorded'/);
+  assert.match(gate,/demo-marketplace-v1\.js\?v=20260911-bulk2/);
 });
 
 test('bulk RPC is atomic, restricted and protects existing or ineligible rows',()=>{
