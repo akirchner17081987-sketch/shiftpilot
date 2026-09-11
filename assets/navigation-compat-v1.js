@@ -12,6 +12,7 @@
     auswertungen:'reports',
     einstellungen:'settings',
     dashboard:'overview',
+    heute:'overview',
     uebersicht:'overview',
     übersicht:'overview'
   };
@@ -85,8 +86,8 @@
   loadIntegration('/assets/demo-august-2026-v1.js?v=20260907-startgate2','data-sf-demo-august-2026');
   loadIntegration('/assets/demo-datev-snapshot-fix-v1.js?v=20260904-2','data-sf-demo-datev-snapshot-fix');
 
-  // Zentrale Planer-Startansicht mit laufender Cloud-Aktualisierung der QR-Check-ins.
-  loadIntegration('/assets/today-dashboard-v1.js?v=20260910-2','data-sf-today-dashboard');
+  // Zentrale Planer-Startansicht: Live-Besetzung, QR-Check-ins, Ausfälle, SOLL/IST und Störfall-Autopilot.
+  loadIntegration('/assets/today-dashboard-v2.js?v=20260911-1','data-sf-today-dashboard');
 
   // Demo bleibt auch mit den QR-Verwaltungsmodulen vollständig lokal und fail-closed.
   loadIntegration('/assets/demo-qr-local-bridge-v1.js?v=20260908-2','data-sf-demo-qr-local-bridge');
