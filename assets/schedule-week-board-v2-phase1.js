@@ -4,7 +4,7 @@
   window.__sfWeekBoardV2Phase1=true;
 
   const MODE_KEY='sf_schedule_week_view_v2';
-  const ORDER=['OT1','OT2','OT','O1','Teamleiter','O2','O3'];
+  const ORDER=['OT1','OT2','OT3','OT','TR','O1','O1S','Teamleiter','O2','O2S','QA','O3'];
   const accent={teal:'#2ed9b8',cyan:'#38d7d4',violet:'#8f7dff',blue:'#62a0ff',amber:'#ffbd4f',pink:'#ff6f9d',red:'#ff6677'};
   let mode=sessionStorage.getItem(MODE_KEY)||'board';
   let dragPayload=null,undoTimer=null;

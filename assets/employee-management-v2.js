@@ -1,7 +1,7 @@
 // SchichtFunk – integrierte Mitarbeiterverwaltung V2
 (function(){
   if(window.__employeeManagementV2)return;window.__employeeManagementV2=true;
-  const Q=['O1','O1S','O2','QA','O3','OT1','OT2','OT','Teamleiter'];
+  const Q=['O1','O1S','O2','O2S','QA','TR','O3','OT1','OT2','OT3','OT','Teamleiter'];
   const WEEKDAYS=['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'];
   const AV={green:['Verfügbar','available'],yellow:['Eingeschränkt','limited'],red:['Nicht einplanbar','unavailable']};
   const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));

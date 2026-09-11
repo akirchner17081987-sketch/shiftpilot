@@ -199,16 +199,19 @@ const TYPES=[
 {id:'O1',name:'O1',start:'07:00',end:'15:00',cls:'violet'},
 {id:'O1S',name:'O1S',start:'18:00',end:'04:00',cls:'violet'},
 {id:'O2',name:'O2',start:'15:00',end:'23:00',cls:'blue'},
+{id:'O2S',name:'O2S',start:'20:00',end:'06:00',cls:'cyan'},
 {id:'QA',name:'QA',start:'20:00',end:'06:00',cls:'blue'},
+{id:'TR',name:'TR',start:'08:00',end:'16:00',cls:'amber'},
 {id:'Teamleiter',name:'Teamleiter',start:'08:00',end:'16:00',cls:'amber'},
 {id:'O3',name:'O3',start:'23:00',end:'07:00',cls:'pink'},
 {id:'OT1',name:'OT1',start:'10:00',end:'18:00',cls:'teal'},
 {id:'OT2',name:'OT2',start:'12:00',end:'20:00',cls:'cyan'},
+{id:'OT3',name:'OT3',start:'10:00',end:'20:00',cls:'pink'},
 {id:'OT',name:'OT',start:'18:00',end:'02:00',cls:'violet'}];
 const DAYS=['Mo','Di','Mi','Do','Fr','Sa','So'];
 const store={get(k,d){try{return JSON.parse(localStorage.getItem('sp_'+k))??d}catch{return d}},set(k,v){localStorage.setItem('sp_'+k,JSON.stringify(v))}};
 const savedShiftTimes=store.get('shiftTimes',{});TYPES.forEach(t=>{if(savedShiftTimes[t.id]){t.start=savedShiftTimes[t.id].start||t.start;t.end=savedShiftTimes[t.id].end||t.end}});
-let globalSoll=store.get('globalSoll',{O1:3,O1S:0,O2:2,QA:0,Teamleiter:2,O3:2,OT1:1,OT2:2,OT:3});
+let globalSoll=store.get('globalSoll',{O1:3,O1S:0,O2:2,O2S:0,QA:0,TR:0,Teamleiter:2,O3:2,OT1:1,OT2:2,OT3:0,OT:3});
 let dailySoll=store.get('dailySoll',{});
 const seedNames=['Lukas Becker','Mara Hoffmann','Jonas Weber','Sophie Wagner','Tim Fischer','Lea Schröder','Noah Meyer','Emilia Wolf','Ben Schulz','Hannah Neumann','Paul Braun','Lina Koch','Finn Richter','Emma Klein','Max Vogel','Mia Schäfer','Elias Hartmann','Nora König','Luis Lange','Clara Werner','Theo Schmitt','Ella Krause','Leon Frank','Leni Peters'];
 let employees=store.get('employees', seedNames.map((n,i)=>{const [first,...rest]=n.split(' ');return{id:'e'+(i+1),first,last:rest.join(' '),personnelNo:'P'+String(i+1).padStart(3,'0'),role:i%8===0?'Teamleiter':'Sicherheitsmitarbeiter',employment:i%5===0?'Teilzeit':'Vollzeit',weeklyHours:i%5===0?30:40,startDate:'2024-01-01',contractEnd:'',birthDate:'',status:i===22?'inactive':'active',email:(first+'.'+rest.join('.')).toLowerCase()+'@nordstern.de',phone:'',address:'',zip:'',city:'',shifts:TYPES.filter((_,j)=>(i+j)%3!==0).map(t=>t.id),qualifications:i%3===0?['§34a Sachkunde','Erste Hilfe']:['§34a Unterrichtung'],note:''}}));
@@ -1023,7 +1026,6 @@ table th,table td{font-size:13px;line-height:1.35}
 <script src="assets/schichtfunk-brand-cleanup-v2.js?v=20260911-recursion1"></script>
 <script src="assets/navigation-compat-v1.js"></script>
 <script src="assets/mobile-manager-navigation-v1.js?v=20260907-1"></script>
-<script src="assets/schichtfunk-brand-cleanup-v2.js"></script>
 </body>
 </html>
 

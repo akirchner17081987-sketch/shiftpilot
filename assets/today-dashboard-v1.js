@@ -22,7 +22,7 @@
     const available=rows.filter(a=>!absentIds.has(String(a.employeeId)));
     const noShow=available[0]||rows[0];
     const warning=available.find(a=>String(a.employeeId)!==String(noShow?.employeeId))||rows.find(a=>String(a.employeeId)!==String(noShow?.employeeId))||noShow;
-    const typePriority=['O2','O1','OT2','Teamleiter','O3','OT1','OT','O1S','QA'];
+    const typePriority=['O2','O2S','O1','OT2','OT3','Teamleiter','O3','OT1','OT','TR','O1S','QA'];
     const underType=typePriority.find(t=>T().some(x=>x.id===t))||rows.find(a=>a.type!==noShow?.type)?.type||rows[0]?.type||T()[0]?.id||'';
     return{noShowKey:assignmentKey(noShow),warningEmployeeId:String(warning?.employeeId||''),underType,warningHours:10.8};
   }
