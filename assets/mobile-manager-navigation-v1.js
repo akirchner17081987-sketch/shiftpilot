@@ -80,13 +80,3 @@
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
-
-// Zentrales Heute-Dashboard fuer Planer laden. Der Guard im Zielskript verhindert Doppelladungen.
-(function loadTodayDashboardV2(){
-  if(window.__sfTodayDashboardV2||document.querySelector('script[data-sf-today-dashboard-v2]'))return;
-  const s=document.createElement('script');
-  s.src='assets/today-dashboard-v2.js?v=20260911-1';
-  s.async=false;
-  s.dataset.sfTodayDashboardV2='1';
-  document.head.appendChild(s);
-})();
