@@ -15,17 +15,13 @@
   function css(){if(document.getElementById('sfWagePreviewCss'))return;const s=document.createElement('style');s.id='sfWagePreviewCss';s.textContent=`
     .sf-wage-head{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap}.sf-wage-head h3{margin:0}.sf-wage-head p{margin:4px 0 0;color:#7f95a8;font-size:10px}.sf-wage-spacer{margin-left:auto}.sf-wage-month,.sf-wage-rate{box-sizing:border-box;background:#081624;border:1px solid #294159;color:#edf6ff;border-radius:8px;padding:8px 10px;max-width:100%}.sf-wage-rate{width:120px}.sf-wage-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}.sf-wage-kpi{min-width:0;padding:10px;border:1px solid #20384d;background:#091725;border-radius:9px}.sf-wage-kpi small{display:block;color:#7f95a8;font-size:8px;text-transform:uppercase}.sf-wage-kpi b{display:block;margin-top:4px;font-size:14px;overflow-wrap:anywhere}.sf-wage-total{border-color:#2c806f;background:#0b2825}.sf-wage-total b{color:#72e7c8;font-size:18px}.sf-wage-detail{margin-top:10px;border-top:1px solid #20384d}.sf-wage-row{display:flex;justify-content:space-between;gap:10px;padding:8px 2px;border-bottom:1px solid #172c3e;font-size:10px}.sf-wage-row span{color:#8ca1b3}.sf-wage-note{margin-top:10px;padding:9px 10px;border:1px solid #564a2f;background:#241f14;color:#d9c894;border-radius:8px;font-size:9px;line-height:1.45}.sf-wage-private{color:#6dd9bd!important}
     @media(max-width:640px){
-      .sf-wage-head{display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr);align-items:stretch;gap:10px;width:100%}
-      .sf-wage-head>div:first-child{grid-column:1/-1;min-width:0}
-      .sf-wage-spacer{display:none}
-      .sf-wage-month,.sf-wage-rate{box-sizing:border-box!important;width:100%!important;min-width:0!important;max-width:100%!important;height:46px;font-size:13px!important;padding:8px 10px!important}
-      .sf-wage-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;width:100%!important}
-      .sf-wage-total{grid-column:1/-1!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important}
-      .sf-wage-total b{white-space:normal!important;overflow-wrap:anywhere!important}
-    }
-    @media(max-width:360px){
-      .sf-wage-head{grid-template-columns:1fr}
-      .sf-wage-head>div:first-child,.sf-wage-month,.sf-wage-rate{grid-column:1}
+      #sfEmployeeWagePreview .sf-wage-head{display:grid!important;grid-template-columns:minmax(0,1fr)!important;align-items:stretch!important;gap:10px!important;width:100%!important}
+      #sfEmployeeWagePreview .sf-wage-head>div:first-child{grid-column:1!important;min-width:0!important}
+      #sfEmployeeWagePreview .sf-wage-spacer{display:none!important}
+      #sfEmployeeWagePreview .sf-wage-month,#sfEmployeeWagePreview .sf-wage-rate{grid-column:1!important;box-sizing:border-box!important;width:100%!important;min-width:0!important;max-width:100%!important;height:48px!important;font-size:14px!important;padding:9px 12px!important}
+      #sfEmployeeWagePreview .sf-wage-grid{display:grid!important;grid-template-columns:minmax(0,1fr)!important;width:100%!important;gap:8px!important}
+      #sfEmployeeWagePreview .sf-wage-kpi,#sfEmployeeWagePreview .sf-wage-total{grid-column:1!important;width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important}
+      #sfEmployeeWagePreview .sf-wage-total b{white-space:normal!important;overflow-wrap:anywhere!important}
     }
   `;document.head.appendChild(s)}
   function rate(){const n=Number(localStorage.getItem(storageKey()));return Number.isFinite(n)&&n>0?n:0}
