@@ -18,10 +18,15 @@
       #sfEmployeeWagePreview .sf-wage-head{display:grid!important;grid-template-columns:minmax(0,1fr)!important;align-items:stretch!important;gap:10px!important;width:100%!important}
       #sfEmployeeWagePreview .sf-wage-head>div:first-child{grid-column:1!important;min-width:0!important}
       #sfEmployeeWagePreview .sf-wage-spacer{display:none!important}
-      #sfEmployeeWagePreview .sf-wage-month,#sfEmployeeWagePreview .sf-wage-rate{grid-column:1!important;box-sizing:border-box!important;width:100%!important;min-width:0!important;max-width:100%!important;height:48px!important;font-size:14px!important;padding:9px 12px!important}
-      #sfEmployeeWagePreview .sf-wage-grid{display:grid!important;grid-template-columns:minmax(0,1fr)!important;width:100%!important;gap:8px!important}
-      #sfEmployeeWagePreview .sf-wage-kpi,#sfEmployeeWagePreview .sf-wage-total{grid-column:1!important;width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important}
+      #sfEmployeeWagePreview .sf-wage-month,#sfEmployeeWagePreview .sf-wage-rate{grid-column:1!important;display:block!important;position:static!important;float:none!important;transform:none!important;box-sizing:border-box!important;width:100%!important;min-width:0!important;max-width:100%!important;height:50px!important;margin:0!important;font-size:15px!important;padding:10px 12px!important}
+      #sfEmployeeWagePreview .sf-wage-grid{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;width:100%!important;gap:8px!important}
+      #sfEmployeeWagePreview .sf-wage-kpi{min-width:0!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important}
+      #sfEmployeeWagePreview .sf-wage-total{grid-column:1/-1!important;width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important}
       #sfEmployeeWagePreview .sf-wage-total b{white-space:normal!important;overflow-wrap:anywhere!important}
+    }
+    @media(max-width:360px){
+      #sfEmployeeWagePreview .sf-wage-grid{grid-template-columns:minmax(0,1fr)!important}
+      #sfEmployeeWagePreview .sf-wage-total{grid-column:1!important}
     }
   `;document.head.appendChild(s)}
   function rate(){const n=Number(localStorage.getItem(storageKey()));return Number.isFinite(n)&&n>0?n:0}
