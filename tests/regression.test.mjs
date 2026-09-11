@@ -177,11 +177,14 @@ test('auto planning supports a selected week, calendar month, or exact date', ()
   assert.match(index, /function autoOpenSlots\(\)\{const dates=autoPlanningDates\(\)/);
 });
 
-test('O1S and QA are available as fixed overnight shifts', () => {
+test('all operational shift codes are available as standard shifts', () => {
   assert.match(index, /\{id:'O1S',name:'O1S',start:'18:00',end:'04:00',cls:'violet'\}/);
+  assert.match(index, /\{id:'O2S',name:'O2S',start:'20:00',end:'06:00',cls:'cyan'\}/);
   assert.match(index, /\{id:'QA',name:'QA',start:'20:00',end:'06:00',cls:'blue'\}/);
-  assert.match(index, /globalSoll=store\.get\('globalSoll',\{O1:3,O1S:0,O2:2,QA:0,/);
-  assert.match(employeeManagement, /const Q=\['O1','O1S','O2','QA','O3','OT1','OT2','OT','Teamleiter'\]/);
+  assert.match(index, /\{id:'TR',name:'TR',start:'08:00',end:'16:00',cls:'amber'\}/);
+  assert.match(index, /\{id:'OT3',name:'OT3',start:'10:00',end:'20:00',cls:'pink'\}/);
+  assert.match(index, /globalSoll=store\.get\('globalSoll',\{O1:3,O1S:0,O2:2,O2S:0,QA:0,TR:0,/);
+  assert.match(employeeManagement, /const Q=\['O1','O1S','O2','O2S','QA','TR','O3','OT1','OT2','OT3','OT','Teamleiter'\]/);
 });
 
 test('individual monthly target hours are persisted and enforced during planning', () => {
