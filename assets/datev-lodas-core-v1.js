@@ -114,9 +114,9 @@
     const date=monthStartDmy(month);const out=[
       '[Allgemein]',
       'Ziel=LODAS',
-      'Version_SST=1.0',
       'Datumsformat=TT.MM.JJJJ',
       'Zahlenkomma=,',
+      'Version=15.06',
       `BeraterNr=${String(beraterNr).trim()}`,
       `MandantenNr=${String(mandantenNr).trim()}`,
       '[Satzbeschreibung]',
