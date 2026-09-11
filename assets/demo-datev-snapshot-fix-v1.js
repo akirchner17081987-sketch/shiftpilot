@@ -89,8 +89,8 @@
     const wrapper=async function(name,args={}){
       const month=requestMonth(name,args);
       if(name==='manager_time_month_status'){
-        if(month===MONTH)return {data:{status:'CLOSED',closed_at:'2026-09-01T06:00:00+02:00',demo:true},error:null};
-        return {data:{status:'OPEN',closed_at:null,demo:true},error:null};
+        if(month===MONTH)return {data:{status:'CLOSED',closed_at:'2026-09-01T06:00:00+02:00',revision:1,demo:true},error:null};
+        return {data:{status:'OPEN',closed_at:null,revision:0,demo:true},error:null};
       }
       if(name==='manager_time_report_bundle'){
         if(month===MONTH)return {data:clone(augustBundle()),error:null};

@@ -6,8 +6,8 @@ create or replace function private.sf_validate_time_values(
 returns void
 language plpgsql
 stable
-set search_path = ''
-as $function$
+set search_path to ''
+as $$
 declare
   v_minutes numeric;
 begin
@@ -25,17 +25,14 @@ begin
     raise exception 'Die Pause muss kuerzer als die Arbeitszeit sein';
   end if;
 end;
-$function$;
+$$;
 
-create or replace function private.employee_clock_from_qr_unchecked(
-  p_token text,
-  p_expected_action text
-)
+create or replace function private.employee_clock_from_qr_unchecked(p_token text, p_expected_action text)
 returns jsonb
 language plpgsql
 security definer
-set search_path = ''
-as $function$
+set search_path to ''
+as $$
 declare
   v_ctx jsonb;
   v_now timestamptz := clock_timestamp();
@@ -166,4 +163,7 @@ begin
     'time_entry',v_result
   );
 end;
-$function$;
+$$;
+
+revoke all on function private.sf_validate_time_values(timestamptz,timestamptz,integer) from public, anon, authenticated;
+revoke all on function private.employee_clock_from_qr_unchecked(text,text) from public, anon, authenticated;;

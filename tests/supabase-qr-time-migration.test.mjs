@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const sql=fs.readFileSync(new URL('../supabase/migrations/20260908003000_qr_time_tracking_v1.sql',import.meta.url),'utf8');
+const sql=fs.readFileSync(new URL('../supabase/migrations/20260908000043_qr_time_tracking_v1.sql',import.meta.url),'utf8');
 const html=fs.readFileSync(new URL('../qr-time.html',import.meta.url),'utf8');
 
 const has=(pattern,message)=>assert.match(sql,pattern,message);
@@ -23,8 +23,8 @@ test('QR tables are RLS protected and not directly exposed',()=>{
 test('employee identity and timestamp are resolved server-side',()=>{
   has(/v_employee := private\.sf_employee_id\(\)/i,'employee must come from authenticated account mapping');
   has(/v_now timestamptz := clock_timestamp\(\)/i,'server time must drive punches');
-  has(/auth\.uid\(\), 'CLOCK_IN', v_now/i,'clock-in must use auth uid and server time');
-  has(/auth\.uid\(\), 'CLOCK_OUT', v_now/i,'clock-out must use auth uid and server time');
+  has(/auth\.uid\(\),\s*'CLOCK_IN',\s*v_now/i,'clock-in must use auth uid and server time');
+  has(/auth\.uid\(\),\s*'CLOCK_OUT',\s*v_now/i,'clock-out must use auth uid and server time');
 });
 
 test('QR tokens are high entropy and stored only as hashes',()=>{

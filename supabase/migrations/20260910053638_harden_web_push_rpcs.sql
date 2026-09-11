@@ -55,3 +55,5 @@ $$;
 
 revoke all on function public.register_push_subscription(uuid,text,text,text,text) from public, anon;
 grant execute on function public.register_push_subscription(uuid,text,text,text,text) to authenticated;
+
+;

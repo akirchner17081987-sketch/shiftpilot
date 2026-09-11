@@ -220,10 +220,15 @@
     }
     if(name==='manager_time_month_status'){
       const month=String(args.p_month||'').slice(0,7),now=new Date(),cur=`${now.getFullYear()}-${pad(now.getMonth()+1)}`;
-      return {data:{status:month<cur?'CLOSED':'OPEN',closed_at:month<cur?new Date().toISOString():null},error:null};
+      return {data:{status:month<cur?'CLOSED':'OPEN',closed_at:month<cur?new Date().toISOString():null,revision:month<cur?1:0},error:null};
     }
     if(name==='manager_time_report_bundle')return {data:timeBundle(),error:null};
     if(name==='manager_log_datev_lodas_export')return {data:{logged:true,demo:true},error:null};
+    if(name==='manager_authorize_datev_lodas_export'){
+      if(Number(args.p_expected_closure_revision)!==1)return {data:null,error:{message:'Der Demo-Monatsabschluss wurde seit der Vorprüfung geändert.'}};
+      if(Number(args.p_row_count)<1||!/^[0-9a-f]{64}$/.test(String(args.p_content_sha256||'')))return {data:null,error:{message:'Die Demo-Exportfreigabe ist unvollständig.'}};
+      return {data:'00000000-0000-4000-8000-000000000008',error:null};
+    }
     if(name==='manager_monthly_holidays')return {data:monthlyHolidays(args.p_month),error:null};
     if(name==='manager_update_time_account_settings'||name==='manager_update_time_account_settings_v2'){
       accountSettings={...accountSettings,account_start_date:args.p_account_start_date||accountSettings.account_start_date,credited_absence_types:args.p_credited_absence_types||accountSettings.credited_absence_types,federal_state:args.p_federal_state||accountSettings.federal_state};saveAccount();return {data:clone(accountSettings),error:null};

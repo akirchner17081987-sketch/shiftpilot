@@ -16,4 +16,4 @@ alter table public.time_qr_terminals
   add constraint time_qr_terminals_start_window_minutes_check
     check (start_window_minutes >= 0 and start_window_minutes <= 60),
   add constraint time_qr_terminals_end_window_minutes_check
-    check (end_window_minutes >= 0 and end_window_minutes <= 120);
+    check (end_window_minutes >= 0 and end_window_minutes <= 120);;

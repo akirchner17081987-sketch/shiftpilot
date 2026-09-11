@@ -6,12 +6,32 @@ import {test} from 'node:test';
 const source=fs.readFileSync(new URL('../assets/datev-lodas-core-v1.js',import.meta.url),'utf8');
 const sandbox={};vm.createContext(sandbox);vm.runInContext(source,sandbox);
 const C=sandbox.SFDatevLodasCore;
+const ui=fs.readFileSync(new URL('../assets/datev-lodas-export-v1.js',import.meta.url),'utf8');
+const migration=fs.readFileSync(new URL('../supabase/migrations/20260911061817_complete_datev_lodas_export_v2.sql',import.meta.url),'utf8');
 
 test('DATEV browser export module has valid JavaScript syntax',()=>{
-  const ui=fs.readFileSync(new URL('../assets/datev-lodas-export-v1.js',import.meta.url),'utf8');
   assert.doesNotThrow(()=>new vm.Script(ui,{filename:'datev-lodas-export-v1.js'}));
   assert.match(ui,/charset=us-ascii/);
   assert.match(ui,/SchichtFunk_DATEV_LODAS_\$\{month\}\.txt/);
+});
+
+test('DATEV download requires a successful server authorization first',()=>{
+  const authorization=ui.indexOf("B.client.rpc('manager_authorize_datev_lodas_export'");
+  const download=ui.indexOf('URL.createObjectURL(blob)');
+  assert.ok(authorization>=0,'server authorization RPC is missing');
+  assert.ok(download>authorization,'download must happen after server authorization');
+  assert.match(ui,/if\(audit\.error\)throw audit\.error/);
+  assert.doesNotMatch(ui,/console\.warn\('DATEV Export-Audit'/);
+});
+
+test('DATEV authorization migration uses least privilege and a private definer',()=>{
+  assert.match(migration,/revoke all on table public\.datev_lodas_settings from public, anon/);
+  assert.match(migration,/create or replace function private\.authorize_datev_lodas_export/);
+  assert.match(migration,/security definer\s+set search_path = ''/);
+  assert.match(migration,/create or replace function public\.manager_authorize_datev_lodas_export/);
+  assert.match(migration,/security invoker\s+set search_path = ''/);
+  assert.match(migration,/p_expected_closure_revision/);
+  assert.match(migration,/serverAuthorized', true/);
 });
 
 test('DATEV LODAS header and movement lines match the binding SchichtFunk pattern',()=>{
@@ -60,6 +80,16 @@ test('rules aggregate confirmed work and keep the configured own wage type',()=>
   assert.equal(result.rows[0].pnr,'26');
   assert.equal(result.rows[0].wage_type,'101');
   assert.equal(result.rows[0].cost_center,'NULL');
+});
+
+test('empty movement exports are blocked instead of producing a misleading file',()=>{
+  const result=C.buildRows({
+    rules:[{active:true,label:'Grundstunden',source_type:'WORK_TOTAL',source_key:null,wage_type:'101',cost_center:null,sort_order:10}],
+    employees:[{employee_id:'e1',employee_name:'Test',personnel_no:'26',confirmed_work_minutes:0}],
+    details:[],entries:[]
+  });
+  assert.equal(result.rows.length,0);
+  assert.ok(result.errors.some(x=>x.includes('Ein leerer DATEV-Export ist nicht zulässig')));
 });
 
 test('non-numeric payroll personnel numbers block the fixed LODAS format',()=>{

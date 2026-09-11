@@ -137,7 +137,7 @@
     const base=rpc.bind(B.client);
     const wrapped=async function(name,args={}){
       const month=String(args?.p_month||'');
-      if(name==='manager_time_month_status'&&month.startsWith(MONTH))return {data:{status:'CLOSED',closed_at:'2026-09-01T06:00:00+02:00',demo:true},error:null};
+      if(name==='manager_time_month_status'&&month.startsWith(MONTH))return {data:{status:'CLOSED',closed_at:'2026-09-01T06:00:00+02:00',revision:1,demo:true},error:null};
       if(name==='manager_time_report_bundle'&&month.startsWith(MONTH))return {data:JSON.parse(JSON.stringify(augustBundle)),error:null};
       if(name==='manager_list_time_entries'&&rangeTouchesAugust(args)){
         const start=String(args.p_start_date||FIRST),end=String(args.p_end_date||LAST);

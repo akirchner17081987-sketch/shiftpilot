@@ -99,7 +99,7 @@
     if(document.getElementById('sfDatevLodasExportScript'))return;
     const s=document.createElement('script');
     s.id='sfDatevLodasExportScript';
-    s.src='assets/datev-lodas-export-v1.js?v=20260906-lodas94';
+    s.src='assets/datev-lodas-export-v1.js?v=20260911-production-v2';
     s.async=true;
     s.addEventListener('load',()=>{setTimeout(enhanceDatevPanel,50);setTimeout(enhanceDatevPanel,700)});
     document.head.appendChild(s);

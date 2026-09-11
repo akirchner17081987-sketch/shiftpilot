@@ -58,4 +58,4 @@ end;
 $$;
 
 revoke all on function public.send_push_test(uuid) from public, anon;
-grant execute on function public.send_push_test(uuid) to authenticated;
+grant execute on function public.send_push_test(uuid) to authenticated;;

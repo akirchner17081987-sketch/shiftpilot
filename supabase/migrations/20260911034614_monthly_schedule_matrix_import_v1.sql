@@ -55,7 +55,8 @@ begin
       v_action := 'BLOCKED';
       v_reason := 'Mitarbeiter oder Datum ungültig';
     elsif v_kind='SHIFT' then
-      select st.default_start, st.default_end into v_start,v_end
+      select st.default_start, st.default_end
+        into v_start,v_end
       from public.shift_templates st
       where st.company_id=p_company_id and upper(st.code)=v_code and st.active=true
       limit 1;
@@ -77,7 +78,9 @@ begin
         limit 1;
 
         if found then
-          if v_existing.shift_code=v_code and v_existing.starts_at=v_starts_at and v_existing.ends_at=v_ends_at then
+          if v_existing.shift_code=v_code
+             and v_existing.starts_at=v_starts_at
+             and v_existing.ends_at=v_ends_at then
             v_action := 'NOOP';
             v_reason := 'Bereits identisch vorhanden';
           elsif v_existing.status='PUBLISHED'
@@ -92,9 +95,13 @@ begin
             if p_apply then
               perform set_config('schichtfunk.legacy_import','on',true);
               update public.shift_assignments
-              set shift_code=v_code,starts_at=v_starts_at,ends_at=v_ends_at,break_minutes=0,
+              set shift_code=v_code,
+                  starts_at=v_starts_at,
+                  ends_at=v_ends_at,
+                  break_minutes=0,
                   note=case when v_note<>'' then v_note else note end,
-                  updated_at=clock_timestamp(),version=greatest(coalesce(version,1)+1,2)
+                  updated_at=clock_timestamp(),
+                  version=greatest(coalesce(version,1)+1,2)
               where id=v_existing.id;
             end if;
           end if;
@@ -106,8 +113,10 @@ begin
             insert into public.shift_assignments(
               company_id,employee_id,legacy_id,shift_code,starts_at,ends_at,break_minutes,note,status,version,created_by
             ) values (
-              p_company_id,v_employee,'month-import:'||v_date::text||':'||v_employee::text||':'||lower(v_code),
-              v_code,v_starts_at,v_ends_at,0,case when v_note<>'' then v_note else 'Monatsplan-Import' end,
+              p_company_id,v_employee,
+              'month-import:'||v_date::text||':'||v_employee::text||':'||lower(v_code),
+              v_code,v_starts_at,v_ends_at,0,
+              case when v_note<>'' then v_note else 'Monatsplan-Import' end,
               'DRAFT',1,v_actor
             );
           end if;
@@ -126,9 +135,12 @@ begin
       else
         select a.* into v_abs
         from public.absences a
-        where a.company_id=p_company_id and a.employee_id=v_employee and a.status<>'Abgelehnt'
+        where a.company_id=p_company_id
+          and a.employee_id=v_employee
+          and a.status<>'Abgelehnt'
           and v_date between a.start_date and a.end_date
-        order by a.created_at limit 1;
+        order by a.created_at
+        limit 1;
 
         if found then
           if v_abs.absence_type=v_code then
@@ -166,7 +178,8 @@ begin
     end if;
 
     v_results := v_results || jsonb_build_array(jsonb_build_object(
-      'employee_id',v_employee,'date',v_date,'kind',v_kind,'code',v_code,'action',v_action,'reason',v_reason
+      'employee_id',v_employee,'date',v_date,'kind',v_kind,'code',v_code,
+      'action',v_action,'reason',v_reason
     ));
   end loop;
 
@@ -187,4 +200,4 @@ begin
 end;
 $function$;
 
-grant execute on function public.manager_import_month_matrix(uuid,jsonb,boolean) to authenticated;
+grant execute on function public.manager_import_month_matrix(uuid,jsonb,boolean) to authenticated;;

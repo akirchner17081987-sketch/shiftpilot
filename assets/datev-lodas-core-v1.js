@@ -105,7 +105,7 @@
     employeeErrors.forEach(e=>errors.push(e));
     const rows=[...accumulator.values()].filter(r=>Number(formatValueFromMinutes(r.minutes).replace(',','.'))!==0)
       .sort((a,b)=>a.employee_order-b.employee_order||a.rule_order-b.rule_order||a.wage_type.localeCompare(b.wage_type,'de',{numeric:true}));
-    if(!rows.length&&!errors.length)warnings.push('Die aktiven Lohnarten-Zuordnungen ergeben für diesen Monat keine Buchungswerte.');
+    if(!rows.length&&!errors.length)errors.push('Die aktiven Lohnarten-Zuordnungen ergeben für diesen Monat keine Bewegungsdaten. Ein leerer DATEV-Export ist nicht zulässig.');
     return {rows,errors:[...new Set(errors)],warnings};
   }
 
