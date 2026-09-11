@@ -1,0 +1,106 @@
+/* SchichtFunk – einheitliche Scrollleisten V1
+   Dunkle, integrierte Scrollleisten mit dem bestehenden Teal-Akzent. */
+
+:root{
+  --sf-scroll-track:#081522;
+  --sf-scroll-track-border:#20384d;
+  --sf-scroll-thumb:#2ed9b8;
+  --sf-scroll-thumb-hover:#45e2c5;
+  --sf-scroll-thumb-active:#20c8aa;
+}
+
+/* Firefox */
+#appShell,
+#appShell *,
+.sf-disruption-modal,
+.sf-disruption-dialog{
+  scrollbar-width:thin;
+  scrollbar-color:var(--sf-scroll-thumb) var(--sf-scroll-track);
+}
+
+/* Chromium / Edge / Safari: gleiche Optik in allen SchichtFunk-Scrollbereichen */
+#appShell::-webkit-scrollbar,
+#appShell *::-webkit-scrollbar,
+.sf-disruption-modal::-webkit-scrollbar,
+.sf-disruption-dialog::-webkit-scrollbar{
+  width:11px;
+  height:11px;
+}
+
+#appShell::-webkit-scrollbar-track,
+#appShell *::-webkit-scrollbar-track,
+.sf-disruption-modal::-webkit-scrollbar-track,
+.sf-disruption-dialog::-webkit-scrollbar-track{
+  background:var(--sf-scroll-track);
+  border:1px solid var(--sf-scroll-track-border);
+  border-radius:999px;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.18);
+}
+
+#appShell::-webkit-scrollbar-thumb,
+#appShell *::-webkit-scrollbar-thumb,
+.sf-disruption-modal::-webkit-scrollbar-thumb,
+.sf-disruption-dialog::-webkit-scrollbar-thumb{
+  min-height:42px;
+  background:linear-gradient(180deg,#39dfc2 0%,var(--sf-scroll-thumb) 55%,#24c8aa 100%);
+  border:2px solid var(--sf-scroll-track);
+  border-radius:999px;
+  box-shadow:0 0 0 1px rgba(46,217,184,.16),0 0 9px rgba(46,217,184,.14);
+}
+
+#appShell::-webkit-scrollbar-thumb:hover,
+#appShell *::-webkit-scrollbar-thumb:hover,
+.sf-disruption-modal::-webkit-scrollbar-thumb:hover,
+.sf-disruption-dialog::-webkit-scrollbar-thumb:hover{
+  background:linear-gradient(180deg,#58e8cf 0%,var(--sf-scroll-thumb-hover) 100%);
+}
+
+#appShell::-webkit-scrollbar-thumb:active,
+#appShell *::-webkit-scrollbar-thumb:active,
+.sf-disruption-modal::-webkit-scrollbar-thumb:active,
+.sf-disruption-dialog::-webkit-scrollbar-thumb:active{
+  background:var(--sf-scroll-thumb-active);
+}
+
+#appShell::-webkit-scrollbar-corner,
+#appShell *::-webkit-scrollbar-corner,
+.sf-disruption-dialog::-webkit-scrollbar-corner{
+  background:var(--sf-scroll-track);
+}
+
+/* Die kleinen Endflächen wirken wie die übrigen dunklen UI-Steuerelemente. */
+#appShell::-webkit-scrollbar-button,
+#appShell *::-webkit-scrollbar-button,
+.sf-disruption-dialog::-webkit-scrollbar-button{
+  width:10px;
+  height:10px;
+  background:#0b1a29;
+  border-radius:999px;
+}
+
+/* Zentrale Heute-Listen erhalten etwas Abstand zur Leiste, damit Text/Buttons nicht anliegen. */
+#view-overview .td-list{
+  scrollbar-gutter:stable;
+  padding-right:8px;
+}
+
+/* Bestehende kompakte Listen behalten ihre Abmessungen, aber dieselbe Gestaltung. */
+#nav,
+.employee-pool-list,
+.sf-db-card-body,
+.sf-audit-list,
+.absence-table-body,
+.sf-disruption-dialog,
+#view-overview .td-list{
+  scrollbar-gutter:stable;
+}
+
+@media(max-width:820px){
+  /* Auf Touch-Geräten etwas schmaler, damit keine Nutzfläche verloren geht. */
+  #appShell::-webkit-scrollbar,
+  #appShell *::-webkit-scrollbar,
+  .sf-disruption-dialog::-webkit-scrollbar{
+    width:8px;
+    height:8px;
+  }
+}
