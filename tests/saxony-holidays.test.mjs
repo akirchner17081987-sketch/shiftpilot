@@ -19,5 +19,5 @@ test('holiday UI refreshes with the time-account workspace and identifies Saxony
   assert.match(ui,/Sachsen \(DE-SN\) ist verbindlich/);
   assert.match(ui,/Reformationsfest und Buß- und Bettag/);
   assert.match(loader,/supabase-time-account-holidays-v1\.js'\?'20260911-saxony1'/);
-  assert.match(page,/conflict-plausibility-v1\.js\?v=20260911-saxony1/);
+  assert.match(page,/conflict-plausibility-v1\.js\?v=20260911-saxony2/);
 });

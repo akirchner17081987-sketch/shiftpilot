@@ -107,7 +107,9 @@
 
   function wrapRender(){
     const current=window.renderTimeTracking;
-    if(typeof current!=='function'||current===wrapper)return;
+    // Wrap exactly once. A later workspace wrapper may legitimately wrap this
+    // function; wrapping that wrapper again would create a recursive cycle.
+    if(wrapper||typeof current!=='function')return;
     wrappedBase=current;
     wrapper=async function(){
       ensureControls();
