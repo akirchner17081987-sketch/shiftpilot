@@ -209,6 +209,10 @@
       const row=timeRows.find(x=>x.assignment_id===args.p_assignment_id);if(!row)return {data:null,error:{message:'Demo-Zeiteintrag wurde nicht gefunden.'}};
       row.actual_start=args.p_actual_start;row.actual_end=args.p_actual_end;row.actual_break_minutes=Number(args.p_break_minutes||0);row.manager_note=args.p_note||'';row.entry_status=args.p_confirm?'confirmed':'recorded';row.correction_note='';saveTime();return {data:clone(row),error:null};
     }
+    if(name==='manager_bulk_record_time_entries'){
+      timeRows=read(TIME_KEY,timeRows);const start=String(args.p_start_date||''),end=String(args.p_end_date||''),now=Date.now();let updated=0,existing=0,future=0;
+      timeRows.filter(row=>String(row.starts_at||'').slice(0,10)>=start&&String(row.starts_at||'').slice(0,10)<=end).forEach(row=>{if(row.entry_status!=='open'||row.actual_start||row.actual_end){existing++;return}if(new Date(row.ends_at).getTime()>now){future++;return}row.actual_start=row.starts_at;row.actual_end=row.ends_at;row.actual_break_minutes=Number(row.planned_break_minutes||0);row.manager_note=args.p_note||'';row.entry_status=args.p_confirm?'confirmed':'recorded';row.correction_note='';updated++});saveTime();return {data:{total:updated+existing+future,updated,status:args.p_confirm?'confirmed':'recorded',skippedExisting:existing,skippedFuture:future,skippedClosed:0,skippedUnpublished:0,skippedInvalid:0},error:null};
+    }
     if(name==='manager_review_time_entry'){
       timeRows=read(TIME_KEY,timeRows);
       const row=timeRows.find(x=>x.assignment_id===args.p_assignment_id);if(!row)return {data:null,error:{message:'Demo-Zeiteintrag wurde nicht gefunden.'}};
