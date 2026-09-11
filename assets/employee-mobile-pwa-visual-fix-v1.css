@@ -1,0 +1,43 @@
+/* SchichtFunk – Mitarbeiterportal Mobile/PWA visueller Feinschliff V1 */
+@media (max-width: 430px){
+  /* KPI-Karten vollständig sichtbar statt angeschnittener Horizontal-Karussells. */
+  #sfEmployeePortal .sf-portal-stats{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:10px!important;
+    margin:12px 0 18px!important;
+    padding:0!important;
+    overflow:visible!important;
+    scroll-snap-type:none!important;
+  }
+  #sfEmployeePortal .sf-portal-stat{
+    width:auto!important;
+    min-width:0!important;
+    max-width:none!important;
+    min-height:92px!important;
+    padding:14px 15px!important;
+    flex:none!important;
+    scroll-snap-align:none!important;
+  }
+  #sfEmployeePortal .sf-portal-stat strong{font-size:22px!important}
+
+  /* Dashboard-Inhalte erhalten sichtbar Luft zur festen Bottom-Navigation. */
+  #sfEmployeePortal .sf-portal-main{
+    padding-bottom:42px!important;
+    scroll-padding-bottom:96px!important;
+  }
+  #sfEmployeePortal .sf-employee-dashboard{padding-bottom:24px!important}
+  #sfEmployeePortal .sf-employee-dashboard>h2{margin-top:18px!important}
+
+  /* Kartenabstände auf iPhone kompakter, ohne Touch-Ziele zu verkleinern. */
+  #sfEmployeePortal .sf-portal-card{padding:15px!important}
+  #sfEmployeePortal .sf-pwa-install-card{margin-bottom:12px!important}
+
+  /* Kopfbereich etwas ruhiger und für schmale Displays ausbalanciert. */
+  #sfEmployeePortal .sf-portal-logo{width:min(154px,42vw)!important;max-width:42vw!important}
+  #sfEmployeePortal .sf-portal-top .ghost{padding-inline:12px!important}
+}
+
+@media (max-width: 350px){
+  #sfEmployeePortal .sf-portal-stats{grid-template-columns:1fr!important}
+}
