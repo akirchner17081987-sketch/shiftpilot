@@ -20,18 +20,19 @@
   const read=(key,fallback)=>{try{const raw=sessionStorage.getItem(key);return raw?JSON.parse(raw):fallback}catch{return fallback}};
   const write=(key,value)=>{try{sessionStorage.setItem(key,JSON.stringify(value))}catch{}};
 
-  // Defense in depth: a demo session must never reach a Supabase host, even if
-  // a later feature accidentally bypasses the local data client.
+  // Defense in depth: only the dedicated demo gate and its category-only
+  // analytics endpoint may leave the local sandbox. Product data stays local.
   const isSupabaseUrl=value=>{try{return /(^|\.)supabase\.(co|in)$/i.test(new URL(typeof value==='string'?value:value?.url,location.href).hostname)}catch{return false}};
+  const isAllowedDemoApiUrl=value=>{try{const url=new URL(typeof value==='string'?value:value?.url,location.href);return url.hostname==='zbvloohfjleadjnqhbbh.supabase.co'&&['/functions/v1/demo-auth','/functions/v1/demo-analytics'].includes(url.pathname)}catch{return false}};
   if(!window.__sfDemoNetworkGuardV1){
     window.__sfDemoNetworkGuardV1=true;
     const nativeFetch=window.fetch.bind(window);
     window.fetch=function(input,init){
-      if(isSupabaseUrl(input)){const error=new Error('SF_DEMO_NETWORK_BLOCKED: Externe Supabase-Verbindungen sind im Demo-Modus gesperrt.');error.code='SF_DEMO_NETWORK_BLOCKED';return Promise.reject(error)}
+      if(isSupabaseUrl(input)&&!isAllowedDemoApiUrl(input)){const error=new Error('SF_DEMO_NETWORK_BLOCKED: Externe Supabase-Verbindungen sind im Demo-Modus gesperrt.');error.code='SF_DEMO_NETWORK_BLOCKED';return Promise.reject(error)}
       return nativeFetch(input,init);
     };
     const nativeOpen=XMLHttpRequest.prototype.open;
-    XMLHttpRequest.prototype.open=function(method,url){if(isSupabaseUrl(url))throw Object.assign(new Error('SF_DEMO_NETWORK_BLOCKED: Supabase-XHR ist im Demo-Modus gesperrt.'),{code:'SF_DEMO_NETWORK_BLOCKED'});return nativeOpen.apply(this,arguments)};
+    XMLHttpRequest.prototype.open=function(method,url){if(isSupabaseUrl(url)&&!isAllowedDemoApiUrl(url))throw Object.assign(new Error('SF_DEMO_NETWORK_BLOCKED: Supabase-XHR ist im Demo-Modus gesperrt.'),{code:'SF_DEMO_NETWORK_BLOCKED'});return nativeOpen.apply(this,arguments)};
     if(typeof window.WebSocket==='function'){
       const NativeWebSocket=window.WebSocket;
       window.WebSocket=new Proxy(NativeWebSocket,{construct(Target,args){if(isSupabaseUrl(args[0]))throw Object.assign(new Error('SF_DEMO_NETWORK_BLOCKED: Supabase-Realtime ist im Demo-Modus gesperrt.'),{code:'SF_DEMO_NETWORK_BLOCKED'});return Reflect.construct(Target,args)}});

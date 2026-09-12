@@ -1,10 +1,10 @@
 import { expect, test } from '@playwright/test';
 import { demoPerspectiveSwitch, primeDemoSession, waitForDemoReady } from './helpers/demo-ready.mjs';
 
-test('demo never connects to Supabase in manager or employee views',async({page})=>{
+test('demo only connects to dedicated Supabase demo endpoints',async({page})=>{
   const supabaseRequests=[];
   const isolationErrors=[];
-  page.on('request',request=>{if(/(^|\.)supabase\.(co|in)(\/|$)/i.test(new URL(request.url()).hostname))supabaseRequests.push(request.url())});
+  page.on('request',request=>{const url=new URL(request.url());if(/(^|\.)supabase\.(co|in)$/i.test(url.hostname)&&!['/functions/v1/demo-auth','/functions/v1/demo-analytics'].includes(url.pathname))supabaseRequests.push(request.url())});
   page.on('console',message=>{if(/SF_DEMO_(?:UNHANDLED|NETWORK_BLOCKED)/.test(message.text()))isolationErrors.push(message.text())});
   page.on('pageerror',error=>{if(/SF_DEMO_(?:UNHANDLED|NETWORK_BLOCKED)/.test(error.message))isolationErrors.push(error.message)});
   await primeDemoSession(page);
@@ -50,7 +50,7 @@ test('demo never connects to Supabase in manager or employee views',async({page}
   }
 
   await page.waitForTimeout(1800);
-  expect(supabaseRequests,'Die Demo hat eine Supabase-Netzwerkverbindung aufgebaut.').toEqual([]);
+  expect(supabaseRequests,'Die Demo hat eine nicht freigegebene Supabase-Verbindung aufgebaut.').toEqual([]);
   expect(isolationErrors,'Die Demo hat einen nicht lokal abgedeckten Datenzugriff ausgelöst.').toEqual([]);
   expect(await page.evaluate(()=>window.SFBackend?.client?.__sfDemoLocalClientV1)).toBe(true);
 });

@@ -12,6 +12,9 @@ const marketplace=fs.readFileSync(new URL('../assets/supabase-shift-marketplace-
 test('demo client is fail-closed and blocks Supabase transports',()=>{
   assert.match(adapter,/SF_DEMO_UNHANDLED/);
   assert.match(adapter,/SF_DEMO_NETWORK_BLOCKED/);
+  assert.match(adapter,/\/functions\/v1\/demo-auth/);
+  assert.match(adapter,/\/functions\/v1\/demo-analytics/);
+  assert.match(adapter,/isSupabaseUrl\(input\)&&!isAllowedDemoApiUrl\(input\)/);
   assert.match(adapter,/__sfDemoLocalClientV1/);
   assert.doesNotMatch(adapter,/return originalRpc\(/);
   assert.doesNotMatch(adapter,/\|\|originalFrom\(/);
@@ -34,7 +37,7 @@ test('employee marketplace loads independently and never stays on an endless pla
   assert.match(marketplace,/sf:demo-perspective-change/);
 });
 
-test('cloud bootstrap skips Supabase SDK in an active demo session',()=>{
+test('cloud bootstrap skips Supabase data access in an active demo session',()=>{
   assert.match(auth,/sf_demo_session_v1.*SFDemoDataClient/);
   assert.match(mode,/B\.ready=true/);
 });
