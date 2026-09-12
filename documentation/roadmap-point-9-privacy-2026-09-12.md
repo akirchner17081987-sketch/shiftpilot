@@ -19,6 +19,7 @@ Stand: 12.09.2026
 - Supabase-Produktivprojekt ist `ACTIVE_HEALTHY` in Region `eu-central-1`.
 - Der zuvor anonym ausführbare SECURITY-DEFINER-RPC `manager_import_month_matrix` wurde für `anon` gesperrt; die entsprechende Supabase-Security-Advisor-Warnung ist danach verschwunden.
 - Die Datenschutzerklärung bildet den tatsächlichen Funktionsumfang ab: Benutzerkonten, Rollen, Mitarbeiterstammdaten, Dienstplanung, Abwesenheiten/Krankheitsdaten, Zeiterfassung, QR, Stundenkonto, Feiertage, Schichtänderungen, Tausch, Marktplatz, Auto-Planung, Störfall-Autopilot, Push, PWA/Browser-Speicher, Demo und DATEV-LODAS-Export.
+- Vollständige Betreiberunterlage `documentation/avv-dpa-subprocessors-2026-09-12.md` für direkte Auftragsverarbeiter, DPA-Lage, Unterauftragsverarbeiter und Drittlandtransfers angelegt.
 
 ## Rechtliche Einordnung im Datenschutztext
 
@@ -29,23 +30,42 @@ Stand: 12.09.2026
 - PWA-/Browser-Speicher wird als technisch erforderliche Speicherung beschrieben; nicht notwendige Analyse-/Marketing-Cookies sind derzeit nicht vorgesehen.
 - Auto-Planung und Störfall-Autopilot werden als unterstützende regelbasierte Funktionen beschrieben; keine ausschließlich automatisierte Entscheidung mit Rechtswirkung nach dem aktuellen Produktstand.
 
-## Auftragsverarbeiter / Anbieterunterlagen
+## Auftragsverarbeiter / AVV-DPA-Prüfung
 
 ### Vercel
+- Tatsächlicher Teamplan geprüft: **Hobby**.
+- Vercel Terms: Hobby ist auf persönliche/nicht-kommerzielle Nutzung beschränkt.
+- Aktuelles Vercel-DPA gilt laut Anbieter für **Pro und Enterprise**.
+- Ergebnis: Für den vorgesehenen geschäftlichen SchichtFunk-Produktivbetrieb muss der Vercel-Tarif **mindestens auf Pro** angehoben werden. Bis dahin ist der Vercel-AVV/DPA-Nachweis nicht freigabefähig.
 - DPA: https://vercel.com/legal/dpa
-- Subprozessoren/Trust Center: https://security.vercel.com
-- Zu dokumentieren: tatsächlich gebuchter Plan, wirksame Einbeziehung des DPA/AVV, Subprozessoren und Drittlandtransferprüfung.
+- Unterauftragsverarbeiter: https://security.vercel.com
+- DPA enthält EU-SCCs und Regelungen zur Unterauftragsverarbeitung.
 
 ### Supabase
-- DPA: https://supabase.com/downloads/docs/Supabase%2BDPA%2B231211.pdf
-- Produktivregion: eu-central-1.
-- Zu dokumentieren: wirksame Einbeziehung des DPA/AVV, aktuelle Subprozessoren, Drittlandtransferprüfung und technische Aufbewahrungs-/Backup-Konfiguration.
+- Organisation geprüft: `Security_Plattform`, aktueller Plan: **Free**.
+- Produktivprojekt: `SchichtFunk`, Region **eu-central-1 (Frankfurt)**.
+- Aktuelles DPA geprüft: https://supabase.com/downloads/docs/Supabase%2BDPA%2B260317.pdf
+- Das DPA wird in den geprüften Anbieterunterlagen nicht auf einen bestimmten kostenpflichtigen Plan begrenzt, verlangt aber einen wirksamen Vertragsabschluss/Unterschriftsnachweis.
+- SchichtFunk-Verarbeitungsangaben einschließlich Gesundheitsdaten („Krank“), Betroffenenkategorien, Rollenlage und zuständiger Aufsichtsbehörde sind in der AVV/DPA-Unterlage vorausgefüllt/dokumentiert.
+- Aktuelle Supabase-Unterauftragsverarbeiter aus Schedule 3 sind dokumentiert.
+
+### Weitere direkte Auftragsverarbeiter
+- Kein eigenständiger Analyse-/Marketinganbieter festgestellt.
+- Keine direkte Sentry-, Stripe-, Resend-, Mailgun-, SendGrid- oder Postmark-Anbindung im aktuellen Repository festgestellt.
+- Supabase-Plattformkommunikation ist über die Supabase-Unterauftragsverarbeiterkette abzudecken.
+- Browser-/OS-Push-Infrastruktur wird als technischer Intermediär/Empfänger in der Datenschutzerklärung beschrieben; derzeit kein separat von SchichtFunk beauftragter AVV-Anbieter.
+
+### Teilstatus AVV/DPA + Auftragsverarbeiter
+
+- Auftragsverarbeiter-/Subprozessorenübersicht: 🟢 dokumentiert und geprüft.
+- Vercel-DPA: 🟠 blockiert durch aktuellen Hobby-Plan; Upgrade mindestens auf Pro erforderlich.
+- Supabase-DPA: 🟡 fachlich vorbereitet; Unterschrift/wirksame Annahme und Archivierung als Vertragsnachweis erforderlich.
 
 ## Noch offen – Punkt 9 bleibt IN ARBEIT
 
 1. Supabase Auth „Leaked Password Protection“ aktivieren. Der Security Advisor meldet die Funktion weiterhin als deaktiviert.
-2. AVV/DPA-Nachweis für Vercel und Supabase verbindlich dokumentieren; tatsächlichen Vercel-Plan und die vertragliche Geltung des DPA prüfen.
-3. Weitere Auftragsverarbeiter/Subprozessoren dokumentieren, insbesondere E-Mail-Provider und – soweit einschlägig – Browser-/OS-Push-Infrastruktur.
+2. **Vercel Hobby → mindestens Pro umstellen und danach DPA-Geltung als Vertragsnachweis archivieren.**
+3. **Supabase-DPA unterzeichnen/wirksam annehmen und archivieren.**
 4. Lösch- und Aufbewahrungskonzept mit konkreten Fristen/Kriterien pro Datenkategorie und Mandantenprozess finalisieren.
 5. TOM-Dokumentation (technische und organisatorische Maßnahmen) als Betreiberunterlage finalisieren.
 6. Verzeichnis von Verarbeitungstätigkeiten (VVT) für die Verarbeitungsvorgänge, bei denen der Betreiber selbst Verantwortlicher ist, und Auftragsverarbeitungsübersicht finalisieren.
@@ -58,4 +78,4 @@ Stand: 12.09.2026
 
 Roadmap-Punkt 9: 🟠 **In Arbeit**.
 
-Der öffentliche rechtliche Grundauftritt und die produktbezogene Datenschutzerklärung sind umgesetzt. Für eine vollständige Compliance-Freigabe fehlen noch die oben aufgeführten organisatorischen und vertraglichen Nachweise sowie die Aktivierung der Supabase-Leaked-Password-Protection.
+Der öffentliche rechtliche Grundauftritt, die produktbezogene Datenschutzerklärung und die Auftragsverarbeiter-/Subprozessorendokumentation sind umgesetzt. Der AVV/DPA-Teil kann erst nach Vercel-Pro-Upgrade und Supabase-DPA-Vertragsnachweis endgültig grün gesetzt werden.
