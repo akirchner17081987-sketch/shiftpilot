@@ -23,6 +23,8 @@ Stand: 12.09.2026
 - Der zuvor anonym ausführbare SECURITY-DEFINER-RPC `manager_import_month_matrix` wurde für `anon` gesperrt; die entsprechende Supabase-Security-Advisor-Warnung ist danach verschwunden.
 - Die Datenschutzerklärung bildet den tatsächlichen Funktionsumfang ab: Benutzerkonten, Rollen, Mitarbeiterstammdaten, Dienstplanung, Abwesenheiten/Krankheitsdaten, Zeiterfassung, QR, Stundenkonto, Feiertage, Schichtänderungen, Tausch, Marktplatz, Auto-Planung, Störfall-Autopilot, Push, PWA/Browser-Speicher, Demo und DATEV-LODAS-Export.
 - Vollständige Betreiberunterlage `documentation/avv-dpa-subprocessors-2026-09-12.md` für direkte Auftragsverarbeiter, DPA-Lage, Unterauftragsverarbeiter und Drittlandtransfers angelegt.
+- TOM Version 1.0, VVT Version 1.0, Lösch-/Aufbewahrungskonzept Version 1.0 und DSFA-Schwellenprüfung Version 1.0 sind als zusammenhängende Betreiberunterlagen dokumentiert.
+- Die DSFA-Schwellenprüfung ist abgeschlossen. Für den Beschäftigtendaten-Echtbetrieb ist vor dem ersten kommerziellen Echtkunden eine vollständige kundenspezifische DSFA erforderlich.
 
 ## Rechtliche Einordnung im Datenschutztext
 
@@ -76,16 +78,16 @@ Stand: 12.09.2026
 
 1. Supabase Auth „Leaked Password Protection“ aktivieren. Der Security Advisor meldet die Funktion weiterhin als deaktiviert.
 2. Für einen möglichen produktiven Vercel-Rollback vor Aktivierung eine kommerziell zulässige Tarif-/DPA-Grundlage herstellen; kein Upgrade ohne ausdrückliche Freigabe.
-3. Lösch- und Aufbewahrungskonzept mit konkreten Fristen/Kriterien pro Datenkategorie und Mandantenprozess finalisieren.
-4. TOM-Dokumentation (technische und organisatorische Maßnahmen) als Betreiberunterlage finalisieren.
-5. Verzeichnis von Verarbeitungstätigkeiten (VVT) für die Verarbeitungsvorgänge, bei denen der Betreiber selbst Verantwortlicher ist, und Auftragsverarbeitungsübersicht finalisieren.
-6. DSFA-Schwellenprüfung dokumentieren, insbesondere wegen systematischer Beschäftigtendatenverarbeitung, Arbeitszeiterfassung und Gesundheits-/Krankheitsdaten. Falls die Prüfung ein voraussichtlich hohes Risiko ergibt, vollständige DSFA durchführen.
-7. Backup-/Restore-Konzept und regelmäßigen Wiederherstellungstest dokumentieren.
-8. Logging-/Monitoring- und Incident-Response-Aufbewahrung sowie Datenschutzverletzungsprozess nach Art. 33/34 DSGVO dokumentieren.
+3. Lösch- und Aufbewahrungskonzept technisch umsetzen: Dry-Run, kundenspezifische Fristprofile/Legal Holds, Auditredaktion, koordinierte Auth-/Storage-/Push-/Datenbanklöschung und Testnachweis.
+4. TOM-Härtung abschließen: alle 35 gemeldeten `SECURITY DEFINER`-RPCs anhand einer Allowlist prüfen, MFA-Konzept festlegen und hoch priorisierte Maßnahmen abnehmen.
+5. Vor dem ersten kommerziellen Echtkunden eine Datenschutzbeauftragte Person für SchichtFunk benennen, deren Kontaktdaten veröffentlichen/der Aufsicht mitteilen sowie das VVT-Kundenblatt und die vollständige kundenspezifische DSFA ergänzen/freigeben; Datenschutzbeauftragten und gegebenenfalls Betriebsrat des Kunden einbeziehen.
+6. Backup-/Restore-Konzept und regelmäßigen Wiederherstellungstest einschließlich Personalakten-Storage dokumentieren.
+7. Logging-/Monitoring- und Incident-Response-Aufbewahrung sowie Datenschutzverletzungsprozess nach Art. 33/34 DSGVO dokumentieren und testen.
+8. IONOS-Deploy-Now-spezifische Logfrist bestätigen.
 9. Prüfen, ob Registerangaben, USt-IdNr. oder weitere Impressumspflichten für den Betreiber einschlägig sind; falls ja, Impressum ergänzen.
 
 ## Gesamtstatus
 
 Roadmap-Punkt 9: 🟠 **In Arbeit**.
 
-Der öffentliche rechtliche Grundauftritt, die produktbezogene Datenschutzerklärung sowie die AVV/DPA- und Auftragsverarbeiter-/Subprozessorendokumentation für IONOS + Supabase sind umgesetzt. Punkt 9 bleibt wegen der übrigen Betreiberunterlagen in Arbeit. Vercel Pro ist für das geplante IONOS-Primärhosting nicht erforderlich, wohl aber vor einer kommerziellen Aktivierung des Vercel-Rollbacks.
+Der öffentliche rechtliche Grundauftritt, die produktbezogene Datenschutzerklärung, AVV/DPA, VVT, TOM, Löschkonzept und DSFA-Schwellenprüfung sind dokumentiert. Punkt 9 bleibt wegen der technischen Löschumsetzung, Sicherheits-Härtung, vollständigen kundenspezifischen DSFA, Restore-/Incident-Nachweisen und Betreiberangaben in Arbeit. Vercel Pro ist für das geplante IONOS-Primärhosting nicht erforderlich, wohl aber vor einer kommerziellen Aktivierung des Vercel-Rollbacks.

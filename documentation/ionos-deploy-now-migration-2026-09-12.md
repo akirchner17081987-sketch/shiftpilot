@@ -86,5 +86,6 @@ Die Domain `www.schichtfunk.de` wird erst verbunden bzw. per DNS umgeschaltet, w
 - Technische IONOS-Staging-Abnahme: bestanden. Beide isolierten Testrollen sind im Browser abgenommen; zusätzlich wurden PWA-Installation, Push-Aktivierung, Testzustellung und Öffnen der Mitteilung auf einem realen iPhone mit dem Betreiberkonto bestätigt.
 - Demo-Geheimnisse in Supabase: gesetzt; Klartextwerte sind nicht im Repository oder in dieser Dokumentation gespeichert.
 - AVV/DPA: IONOS-AVV-Einbeziehung und aktuelle Anlagen sowie Supabase-DPA, SCC, TIA und Unterauftragsverarbeiter sind mit Versionsstand und SHA-256-Prüfsummen im Nachweisregister dokumentiert. Supabase bestätigt im angemeldeten Pro-Organisationsbereich die automatische DPA-Einbeziehung ohne separate Unterschrift.
+- Betreiberunterlagen: TOM, VVT, Lösch-/Aufbewahrungskonzept und DSFA-Schwellenprüfung sind als Version 1.0 dokumentiert. Die Schwellenprüfung verlangt vor dem ersten kommerziellen Beschäftigtendaten-Echtbetrieb eine vollständige kundenspezifische DSFA, die Benennung einer datenschutzbeauftragten Person und den Abschluss der hoch priorisierten Sicherheits-/Löschmaßnahmen.
 - Supabase Pro: aktiv; Spend Cap eingeschaltet.
 - Domain-Umschaltung: gesperrt bis Staging-Abnahme und ausdrücklicher Betreiberfreigabe.
