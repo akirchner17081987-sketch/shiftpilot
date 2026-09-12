@@ -1,0 +1,5 @@
+[functions.demo-auth]
+verify_jwt = false
+
+[functions.demo-analytics]
+verify_jwt = false

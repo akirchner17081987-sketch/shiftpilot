@@ -16,7 +16,34 @@ Diese Betreiberunterlage dokumentiert die bei SchichtFunk aktuell eingesetzten w
 
 Für Beschäftigtendaten ist regelmäßig das jeweilige Kundenunternehmen bzw. der jeweilige Arbeitgeber Verantwortlicher; SchichtFunk ist insoweit Auftragsverarbeiter. Gegenüber den Infrastruktur-Anbietern ist SchichtFunk je nach Verarbeitung Controller/Business oder Processor/Service Provider für den jeweiligen Kunden.
 
-## 1. Vercel Inc. – Webhosting / Serverless-Funktionen
+## 1. IONOS SE – primäres statisches Webhosting / Deploy Now
+
+### Tatsächlich festgestellter Kontostand
+
+- IONOS Deploy Now Starter Membership wurde im September 2026 gebucht.
+- GitHub-Konto und Repository `akirchner17081987-sketch/shiftpilot` sind verbunden.
+- Vorgesehener Build: Plain Node.js 22, `npm ci`, `npm run build`, Veröffentlichungsverzeichnis `dist`.
+- Der geprüfte statische Build ist 2,04 MiB groß und liegt unter dem Tariflimit von 50 MB.
+- Die produktive Domain ist noch nicht auf Deploy Now umgestellt; zuerst erfolgt die Abnahme über die IONOS-Bereitstellungsadresse.
+
+### AVV-/Vertragslage
+
+- Offizielle IONOS-Information zum AVV: https://www.ionos.de/hilfe/mein-konto/vertraege/auftragsverarbeitung-avv/
+- Nach dieser Anbieterinformation ist der AVV bei ab dem 19.07.2022 abgeschlossenen Verträgen Bestandteil der IONOS-AGB. Der aktuelle Deploy-Now-Vertrag wurde danach geschlossen.
+- Für den belastbaren Betreiber-Nachweis sind Buchungsbestätigung, die zum Vertrag gehörenden AGB-/AVV-Dokumente und deren Versionsstand zu archivieren.
+- Vor Produktivfreigabe sind zusätzlich die konkret für Deploy Now geltenden Angaben zu Serverprotokollen, Löschfristen, Hostingstandorten und Unterauftragsverarbeitern anhand der Vertrags-/Produktunterlagen festzuhalten. Allgemeine Angaben zu anderen IONOS-Hostingprodukten werden nicht ungeprüft auf Deploy Now übertragen.
+
+### Datenkategorien und Zweck
+
+IONOS liefert ausschließlich die statischen SchichtFunk-Dateien/PWA aus. Dabei können insbesondere IP-Adresse, Zeitstempel, angeforderte Ressource, Browser-/Geräteinformationen sowie technische Sicherheits- und Fehlerdaten verarbeitet werden. Produktive Beschäftigten-, Dienstplan-, Arbeitszeit- und Abwesenheitsdaten liegen weiterhin bei Supabase und werden nicht in den statischen IONOS-Build aufgenommen.
+
+### Status IONOS
+
+🟡 **TECHNISCH VORBEREITET – Vertragsnachweise und produktspezifische Detailprüfung noch zu archivieren.**
+
+---
+
+## 2. Vercel Inc. – vorübergehendes Webhosting / Rückfallumgebung
 
 ### Tatsächlich festgestellter Kontostand
 
@@ -34,9 +61,9 @@ Für Beschäftigtendaten ist regelmäßig das jeweilige Kundenunternehmen bzw. d
 - Die Vercel Terms of Service beschränken den Hobby-Plan auf **persönliche bzw. nicht-kommerzielle Nutzung**.
 - SchichtFunk ist als geschäftliche SaaS-Anwendung vorgesehen. Der aktuelle Hobby-Plan ist daher für den vorgesehenen Produktivbetrieb **nicht als endgültige Vertragsgrundlage geeignet**.
 
-### Erforderliche Maßnahme
+### Erforderliche Maßnahme bei Aktivierung des Rückfalls
 
-**Vor kommerziellem Produktivbetrieb muss das Vercel-Team mindestens auf Pro umgestellt werden.** Erst danach kann der AVV/DPA-Nachweis für Vercel als wirksam dokumentiert werden. Der Anbieter weist Pro ausdrücklich als Tarif für professionelle Entwickler, Freelancer und Unternehmen aus.
+Vercel bleibt während der kontrollierten Migration zunächst technisch erreichbar, soll nach Freigabe von IONOS aber nur noch als Rückfalloption dienen. **Vor einer erneuten kommerziellen Produktivschaltung über Vercel muss das Team mindestens auf Pro oder eine sonstige geeignete kommerzielle Vertragsgrundlage umgestellt werden.** Bis dahin ist Vercel nicht als freigegebener produktiver Rückfallweg zu aktivieren. Ein kostenpflichtiges Upgrade erfolgt nur nach ausdrücklicher Bestätigung des Betreibers.
 
 ### Unterauftragsverarbeiter / Drittlandtransfer
 
@@ -48,11 +75,11 @@ Für Beschäftigtendaten ist regelmäßig das jeweilige Kundenunternehmen bzw. d
 
 ### Status Vercel
 
-🟠 **NICHT ABGESCHLOSSEN – Vertragsblocker: aktueller Hobby-Plan.**
+🟡 **ALS INAKTIVE RÜCKFALLUMGEBUNG DOKUMENTIERT – kommerzielle Aktivierung mit Hobby nicht freigegeben.**
 
 ---
 
-## 2. Supabase Inc. – Backend, Datenbank, Auth, Realtime und Edge Functions
+## 3. Supabase Inc. – Backend, Datenbank, Auth, Realtime und Edge Functions
 
 ### Tatsächlich festgestellter Kontostand
 
@@ -65,6 +92,8 @@ Für Beschäftigtendaten ist regelmäßig das jeweilige Kundenunternehmen bzw. d
 - Region: **eu-central-1 (Frankfurt)**
 
 Die gewählte spezifische Region bestimmt laut Supabase die Region der primären Projektdaten. `eu-central-1` entspricht Central EU / Frankfurt.
+
+Die vormals bei Vercel ausgeführten Demo-Endpunkte `demo-auth` und `demo-analytics` sind nun als Supabase Edge Functions bereitgestellt. Ihre produktive Aktivierung setzt die sichere Übernahme bzw. Rotation der Demo-Geheimnisse voraus; es werden keine Standardzugangsdaten verwendet.
 
 ### AVV/DPA-Lage
 
@@ -124,7 +153,7 @@ Supabase sieht für internationale Übermittlungen vertragliche Transfermechanis
 
 ---
 
-## 3. Weitere direkte Auftragsverarbeiter von SchichtFunk
+## 4. Weitere direkte Auftragsverarbeiter von SchichtFunk
 
 Im aktuell geprüften SchichtFunk-Repository wurden **keine eigenständig angebundenen Analyse-/Marketingdienste, Sentry-Integration, Stripe-Zahlungsabwicklung, Resend/Mailgun/SendGrid/Postmark-Direktanbindung oder vergleichbare zusätzliche SaaS-Auftragsverarbeiter** festgestellt.
 
@@ -132,9 +161,9 @@ Authentifizierungs-E-Mails und vergleichbare Supabase-Plattformkommunikation sin
 
 Web-Push wird über standardisierte Browser-/Betriebssystem-Push-Infrastruktur an den vom Gerät bereitgestellten Push-Endpunkt zugestellt. Diese Infrastruktur wird in der Datenschutzerklärung als möglicher technischer Empfänger/Intermediär beschrieben; sie ist derzeit **kein separat von SchichtFunk beauftragter SaaS-Auftragsverarbeiter mit eigenem SchichtFunk-AVV**.
 
-GitHub wird für Quellcode/Deployment verwendet. Produktive Beschäftigten- oder Arbeitszeitdaten werden nach dem geprüften Architekturstand nicht als Anwendungsdaten in GitHub gespeichert; GitHub wird deshalb nicht als direkter Auftragsverarbeiter für SchichtFunk-Kundendaten in dieser Liste geführt.
+GitHub wird für Quellcode, Build-Automatisierung und Deployment verwendet. Produktive Beschäftigten- oder Arbeitszeitdaten werden nach dem geprüften Architekturstand nicht als Anwendungsdaten in GitHub gespeichert; GitHub wird deshalb nicht als direkter Auftragsverarbeiter für SchichtFunk-Kundendaten in dieser Liste geführt.
 
-## 4. Ergebnis / Freigabestatus dieses Teilpunkts
+## 5. Ergebnis / Freigabestatus dieses Teilpunkts
 
 ### Auftragsverarbeiter- und Unterauftragsverarbeiterübersicht
 
@@ -142,12 +171,13 @@ GitHub wird für Quellcode/Deployment verwendet. Produktive Beschäftigten- oder
 
 ### AVV/DPA-Vertragsnachweise
 
-🟠 **NOCH NICHT VOLLSTÄNDIG ABGESCHLOSSEN**, weil zwei externe Betreiberhandlungen erforderlich sind:
+🟠 **NOCH NICHT VOLLSTÄNDIG ABGESCHLOSSEN**, weil externe Betreiberhandlungen erforderlich sind:
 
-1. **Vercel: Hobby → mindestens Pro umstellen**, damit die geschäftliche Nutzung tariflich zulässig ist und das veröffentlichte Pro-/Enterprise-DPA für SchichtFunk greift.
+1. **IONOS: Buchungsbestätigung und die konkret einbezogene AGB-/AVV-Fassung archivieren; Deploy-Now-Protokollierung und Unterauftragsverarbeiter produktspezifisch dokumentieren.**
 2. **Supabase-DPA mit den oben dokumentierten SchichtFunk-Angaben unterzeichnen bzw. wirksam annehmen und als Vertragsnachweis archivieren.**
+3. **Vercel nur bei tatsächlich gewünschter kommerzieller Rückschaltung auf eine geeignete Tarif-/DPA-Grundlage umstellen.**
 
-Erst nach diesen beiden Nachweisen darf der Teilpunkt „AVV/DPA + Auftragsverarbeiter“ auf 🟢 gesetzt werden.
+Erst nach den für die tatsächlich eingesetzte Produktions- und Rückfallarchitektur erforderlichen Nachweisen darf der Teilpunkt „AVV/DPA + Auftragsverarbeiter“ auf 🟢 gesetzt werden.
 
 ## Prüfintervall
 

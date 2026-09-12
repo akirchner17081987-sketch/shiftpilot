@@ -183,8 +183,8 @@
 
   function finishDemo(target,reason){
     document.dispatchEvent(new CustomEvent('sf:demo-finish',{detail:{reason}}));
+    window.SFDemoAPI?.fetchAuth({method:'DELETE',keepalive:true}).catch(()=>{});
     clearLocalDemo();
-    fetch('/api/demo-auth',{method:'DELETE',credentials:'same-origin',keepalive:true}).catch(()=>{});
     location.replace(target);
   }
   function exitDemo(){finishDemo('/demo-abschluss','manual')}
@@ -261,7 +261,7 @@
 
   async function authorizeThenStart(){
     try{
-      const response=await fetch('/api/demo-auth',{cache:'no-store',credentials:'same-origin'});
+      const response=await window.SFDemoAPI.fetchAuth();
       if(!response.ok)throw new Error('expired');
       const result=await response.json();
       if(result.expiresAt)sessionStorage.setItem('sf_demo_expires_at_v1',result.expiresAt);
