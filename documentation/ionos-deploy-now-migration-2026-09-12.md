@@ -28,6 +28,8 @@ Stand: 12.09.2026
 - HTML, Manifest und Service Worker werden nicht langfristig zwischengespeichert; statische Assets erhalten einen begrenzten Browser-Cache.
 - Content-Security-Policy, HSTS, MIME-Schutz, Frame-Schutz, Referrer-Policy und Permissions-Policy werden auf IONOS über `.htaccess` gesetzt.
 - `site.webmanifest`, Icons und `schichtfunk-sw.js` sind Bestandteil des statischen Builds.
+- Reale Geräteabnahme am 12.09.2026: Die IONOS-Vorschau wurde auf einem iPhone als Home-Bildschirm-Web-App installiert. Anmeldung, Push-Freigabe, serverseitig bestätigte Geräteregistrierung, Testzustellung und Öffnen der Mitteilung wurden mit dem Betreiberkonto erfolgreich bestätigt.
+- Push-Abonnements sind an die jeweilige Herkunft gebunden. Nach der späteren Domain-Umschaltung muss Push unter `www.schichtfunk.de` einmal erneut aktiviert und mit einer Testzustellung bestätigt werden.
 
 ## Serverlogik und Geheimnisse
 
@@ -81,7 +83,7 @@ Die Domain `www.schichtfunk.de` wird erst verbunden bzw. per DNS umgeschaltet, w
 - Supabase Edge Functions: bereitgestellt und mit neu erzeugten Geheimnissen aktiviert. Live-Prüfung: Anmeldung HTTP 200, Sitzungsprüfung HTTP 200, Analytics HTTP 204; CORS erlaubt exakt die IONOS-Prüfadresse.
 - Geschützte Echtkonto-Prüfungen: ein isolierter fiktiver Testmandant mit einem `OWNER`-Managerkonto und einem verknüpften `EMPLOYEE`-Konto wurde angelegt. Beide Anmeldungen, Rollen sowie die RLS-bedingte Sicht auf ausschließlich diesen Testmandanten wurden über die Live-API verifiziert. Die IONOS-Browserprüfung des Managers bestand in Desktop- und Mobilansicht für Inhaberrolle, Mandantenzuordnung, alle neun Kernbereiche, die isolierte Mitarbeiterliste und die Seitenbreite. Das Mitarbeiterportal bestand zusätzlich acht geschützte Desktop-/Mobilprüfungen gegen den isolierten Testmandanten. Kennwörter sind nicht im Repository oder in dieser Dokumentation gespeichert.
 - Geschützte Demo auf IONOS: echte Anmeldung, Managerbereich, Mitarbeiterportal, Dienstplan, Mitarbeiter, Abwesenheiten, Zeiterfassung/QR-Einstieg, Stundenkonto, Lohnvorschau, DATEV und beide Marktplatzansichten geprüft. Ein dabei gefundener rekursiver RPC-Wrapperfehler wurde behoben und durch Desktop-/Mobiltests abgesichert.
-- Vollständige IONOS-Staging-Abnahme: weitgehend bestanden; beide isolierten Testrollen sind im Browser abgenommen. Offen bleiben Push/PWA auf einem realen Gerät und der revisionssichere DPA-/AVV-Nachweis.
+- Technische IONOS-Staging-Abnahme: bestanden. Beide isolierten Testrollen sind im Browser abgenommen; zusätzlich wurden PWA-Installation, Push-Aktivierung, Testzustellung und Öffnen der Mitteilung auf einem realen iPhone mit dem Betreiberkonto bestätigt. Organisatorisch offen bleibt der revisionssichere DPA-/AVV-Nachweis.
 - Demo-Geheimnisse in Supabase: gesetzt; Klartextwerte sind nicht im Repository oder in dieser Dokumentation gespeichert.
 - Supabase Pro: aktiv. Der DPA-/AVV-Nachweis und die Liste der Auftragsverarbeiter müssen noch revisionssicher archiviert werden.
 - Domain-Umschaltung: gesperrt bis Staging-Abnahme und ausdrücklicher Betreiberfreigabe.
