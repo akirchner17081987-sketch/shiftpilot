@@ -39,31 +39,8 @@ test('DATEV authorization migration uses least privilege and a private definer',
 });
 
 test('DATEV LODAS header and movement lines match the binding SchichtFunk pattern',()=>{
-  const content=C.formatContent({
-    beraterNr:'1103899',
-    mandantenNr:'62069',
-    month:'2026-08',
-    rows:[
-      {pnr:'26',wage_type:'1214',minutes:60,cost_center:'NULL'},
-      {pnr:'26',wage_type:'2214',minutes:3000,cost_center:'NULL'},
-      {pnr:'26',wage_type:'101',minutes:7800,cost_center:'NULL'}
-    ]
-  });
-  const expected=[
-    '[Allgemein]',
-    'Ziel=LODAS',
-    'Datumsformat=TT.MM.JJJJ',
-    'Zahlenkomma=,',
-    'Version=15.06',
-    'BeraterNr=1103899',
-    'MandantenNr=62069',
-    '[Satzbeschreibung]',
-    '1;u_lod_bwd_buchung_standard;abrechnung_zeitraum#bwd;bs_wert_butab#bwd;pnr#bwd;la_eigene#bwd;bs_nr#bwd;kostenstelle#bwd;abw_lohnfaktor#bwd;bemerkung#bwd;',
-    '[Bewegungsdaten]',
-    '1;01.08.2026;1,00;26;1214;1;NULL;',
-    '1;01.08.2026;50,00;26;2214;1;NULL;',
-    '1;01.08.2026;130,00;26;101;1;NULL;'
-  ].join('\r\n');
+  const content=C.formatContent({beraterNr:'1103899',mandantenNr:'62069',month:'2026-08',rows:[{pnr:'26',wage_type:'1214',minutes:60,cost_center:'NULL'},{pnr:'26',wage_type:'2214',minutes:3000,cost_center:'NULL'},{pnr:'26',wage_type:'101',minutes:7800,cost_center:'NULL'}]});
+  const expected=['[Allgemein]','Ziel=LODAS','Datumsformat=TT.MM.JJJJ','Zahlenkomma=,','Version=15.06','BeraterNr=1103899','MandantenNr=62069','[Satzbeschreibung]','1;u_lod_bwd_buchung_standard;abrechnung_zeitraum#bwd;bs_wert_butab#bwd;pnr#bwd;la_eigene#bwd;bs_nr#bwd;kostenstelle#bwd;abw_lohnfaktor#bwd;bemerkung#bwd;','[Bewegungsdaten]','1;01.08.2026;1,00;26;1214;1;NULL;','1;01.08.2026;50,00;26;2214;1;NULL;','1;01.08.2026;130,00;26;101;1;NULL;'].join('\r\n');
   assert.equal(content,expected);
 });
 
@@ -73,17 +50,15 @@ test('DATEV values use two decimals and German decimal comma',()=>{
 });
 
 test('rules aggregate confirmed work and keep the configured own wage type',()=>{
-  const result=C.buildRows({
-    rules:[{active:true,label:'Grundstunden',source_type:'WORK_TOTAL',source_key:null,wage_type:'101',cost_center:null,sort_order:10}],
-    employees:[{employee_id:'e1',employee_name:'Test',personnel_no:'26',confirmed_work_minutes:7800}],
-    details:[],entries:[]
-  });
-  assert.equal(result.errors.length,0);
-  assert.equal(result.rows.length,1);
-  assert.equal(result.rows[0].minutes,7800);
-  assert.equal(result.rows[0].pnr,'26');
-  assert.equal(result.rows[0].wage_type,'101');
-  assert.equal(result.rows[0].cost_center,'NULL');
+  const result=C.buildRows({rules:[{active:true,label:'Grundstunden',source_type:'WORK_TOTAL',source_key:null,wage_type:'101',cost_center:null,sort_order:10}],employees:[{employee_id:'e1',employee_name:'Test',personnel_no:'26',confirmed_work_minutes:7800}],details:[],entries:[]});
+  assert.equal(result.errors.length,0);assert.equal(result.rows.length,1);assert.equal(result.rows[0].minutes,7800);assert.equal(result.rows[0].pnr,'26');assert.equal(result.rows[0].wage_type,'101');assert.equal(result.rows[0].cost_center,'NULL');
+});
+
+test('Urlaub Tagesbasis exports days as quantity instead of hours',()=>{
+  const result=C.buildRows({rules:[{active:true,label:'Urlaub',source_type:'ABSENCE_DAYS',source_key:'Urlaub',wage_type:'141',cost_center:null,sort_order:20}],employees:[{employee_id:'e1',employee_name:'Test',personnel_no:'26',confirmed_work_minutes:0}],details:[{employee_id:'e1',employee_name:'Test',work_date:'2026-08-03',absence_types:'Urlaub'},{employee_id:'e1',employee_name:'Test',work_date:'2026-08-04',absence_types:'Urlaub'}],entries:[]});
+  assert.equal(result.errors.length,0);assert.equal(result.rows[0].unit,'DAYS');assert.equal(result.rows[0].quantity,2);
+  const content=C.formatContent({beraterNr:'1103899',mandantenNr:'62069',month:'2026-08',rows:result.rows});
+  assert.match(content,/1;01\.08\.2026;2,00;26;141;1;NULL;/);
 });
 
 test('night premium counts only 22:00-06:00 in Europe/Berlin',()=>{
@@ -97,63 +72,32 @@ test('Sunday premium counts the full Sunday 00:00-24:00 window',()=>{
 });
 
 test('premium rules aggregate 1214 and 2214 separately',()=>{
-  const result=C.buildRows({
-    rules:[
-      {active:true,label:'Nacht',source_type:'NIGHT_WINDOW',source_key:'22:00-06:00',wage_type:'1214',cost_center:null,sort_order:20},
-      {active:true,label:'Sonntag',source_type:'SUNDAY_WINDOW',source_key:'00:00-24:00',wage_type:'2214',cost_center:null,sort_order:30}
-    ],
-    employees:[{employee_id:'e1',employee_name:'Test',personnel_no:'26',confirmed_work_minutes:0}],
-    details:[],
-    entries:[{employee_id:'e1',employee_name:'Test',entry_status:'confirmed',actual_start:'2026-08-01T22:00:00+02:00',actual_end:'2026-08-02T06:00:00+02:00',actual_break_minutes:0}]
-  });
-  assert.equal(result.errors.length,0);
-  assert.equal(result.rows.find(x=>x.wage_type==='1214').minutes,480);
-  assert.equal(result.rows.find(x=>x.wage_type==='2214').minutes,360);
+  const result=C.buildRows({rules:[{active:true,label:'Nacht',source_type:'NIGHT_WINDOW',source_key:'22:00-06:00',wage_type:'1214',cost_center:null,sort_order:20},{active:true,label:'Sonntag',source_type:'SUNDAY_WINDOW',source_key:'00:00-24:00',wage_type:'2214',cost_center:null,sort_order:30}],employees:[{employee_id:'e1',employee_name:'Test',personnel_no:'26',confirmed_work_minutes:0}],details:[],entries:[{employee_id:'e1',employee_name:'Test',entry_status:'confirmed',actual_start:'2026-08-01T22:00:00+02:00',actual_end:'2026-08-02T06:00:00+02:00',actual_break_minutes:0}]});
+  assert.equal(result.errors.length,0);assert.equal(result.rows.find(x=>x.wage_type==='1214').minutes,480);assert.equal(result.rows.find(x=>x.wage_type==='2214').minutes,360);
 });
 
 test('premium calculation blocks ambiguous breaks without break placement',()=>{
-  const result=C.buildRows({
-    rules:[{active:true,label:'Nacht',source_type:'NIGHT_WINDOW',source_key:'22:00-06:00',wage_type:'1214',cost_center:null,sort_order:20}],
-    employees:[{employee_id:'e1',employee_name:'Test',personnel_no:'26',confirmed_work_minutes:0}],
-    details:[],
-    entries:[{employee_id:'e1',employee_name:'Test',entry_status:'confirmed',actual_start:'2026-08-03T20:00:00+02:00',actual_end:'2026-08-04T06:00:00+02:00',actual_break_minutes:30}]
-  });
+  const result=C.buildRows({rules:[{active:true,label:'Nacht',source_type:'NIGHT_WINDOW',source_key:'22:00-06:00',wage_type:'1214',cost_center:null,sort_order:20}],employees:[{employee_id:'e1',employee_name:'Test',personnel_no:'26',confirmed_work_minutes:0}],details:[],entries:[{employee_id:'e1',employee_name:'Test',entry_status:'confirmed',actual_start:'2026-08-03T20:00:00+02:00',actual_end:'2026-08-04T06:00:00+02:00',actual_break_minutes:30}]});
   assert.ok(result.errors.some(x=>x.includes('Pause ohne genaue Pausenlage')));
 });
 
 test('empty movement exports are blocked instead of producing a misleading file',()=>{
-  const result=C.buildRows({
-    rules:[{active:true,label:'Grundstunden',source_type:'WORK_TOTAL',source_key:null,wage_type:'101',cost_center:null,sort_order:10}],
-    employees:[{employee_id:'e1',employee_name:'Test',personnel_no:'26',confirmed_work_minutes:0}],
-    details:[],entries:[]
-  });
-  assert.equal(result.rows.length,0);
-  assert.ok(result.errors.some(x=>x.includes('Ein leerer DATEV-Export ist nicht zulässig')));
+  const result=C.buildRows({rules:[{active:true,label:'Grundstunden',source_type:'WORK_TOTAL',source_key:null,wage_type:'101',cost_center:null,sort_order:10}],employees:[{employee_id:'e1',employee_name:'Test',personnel_no:'26',confirmed_work_minutes:0}],details:[],entries:[]});
+  assert.equal(result.rows.length,0);assert.ok(result.errors.some(x=>x.includes('Ein leerer DATEV-Export ist nicht zulässig')));
 });
 
 test('non-numeric payroll personnel numbers block the fixed LODAS format',()=>{
-  const result=C.buildRows({
-    rules:[{active:true,label:'Grundstunden',source_type:'WORK_TOTAL',source_key:null,wage_type:'101',cost_center:null,sort_order:10}],
-    employees:[{employee_id:'e1',employee_name:'Test',personnel_no:'P001',confirmed_work_minutes:480}],
-    details:[],entries:[]
-  });
-  assert.equal(result.rows.length,0);
-  assert.ok(result.errors.some(x=>x.includes('1 bis 5 Ziffern')));
+  const result=C.buildRows({rules:[{active:true,label:'Grundstunden',source_type:'WORK_TOTAL',source_key:null,wage_type:'101',cost_center:null,sort_order:10}],employees:[{employee_id:'e1',employee_name:'Test',personnel_no:'P001',confirmed_work_minutes:480}],details:[],entries:[]});
+  assert.equal(result.rows.length,0);assert.ok(result.errors.some(x=>x.includes('1 bis 5 Ziffern')));
 });
 
 test('current LODAS field limits are enforced',()=>{
-  assert.deepEqual(Array.from(C.validateSettings({berater_nr:'123',mandanten_nr:'123456'})),[
-    'BeraterNr muss aus 4 bis 7 Ziffern bestehen.',
-    'MandantenNr muss aus 1 bis 5 Ziffern bestehen.'
-  ]);
+  assert.deepEqual(Array.from(C.validateSettings({berater_nr:'123',mandanten_nr:'123456'})),['BeraterNr muss aus 4 bis 7 Ziffern bestehen.','MandantenNr muss aus 1 bis 5 Ziffern bestehen.']);
   assert.ok(C.validateRules([{active:true,source_type:'WORK_TOTAL',wage_type:'12345',cost_center:null}]).some(x=>x.includes('1 bis 4 Ziffern')));
   assert.ok(C.validateRules([{active:true,source_type:'WORK_TOTAL',wage_type:'100',cost_center:'KÖST'}]).some(x=>x.includes('ASCII')));
   assert.throws(()=>C.formatContent({beraterNr:'28547',mandantenNr:'90909',month:'2026-08',rows:[{pnr:'123456',wage_type:'100',minutes:60,cost_center:'NULL'}]}),/Personalnummer/);
 });
 
 test('export uses the binding LODAS 15.06 header key and no SST variant',()=>{
-  const content=C.formatContent({beraterNr:'28547',mandantenNr:'90909',month:'2026-08',rows:[]});
-  assert.match(content,/^Version=15\.06$/m);
-  assert.doesNotMatch(content,/^Version_SST=/m);
-  assert.ok([...content].every(char=>char.charCodeAt(0)<=127));
+  const content=C.formatContent({beraterNr:'28547',mandantenNr:'90909',month:'2026-08',rows:[]});assert.match(content,/^Version=15\.06$/m);assert.doesNotMatch(content,/^Version_SST=/m);assert.ok([...content].every(char=>char.charCodeAt(0)<=127));
 });
