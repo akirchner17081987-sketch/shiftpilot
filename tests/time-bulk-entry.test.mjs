@@ -23,6 +23,17 @@ test('demo supports bulk time entry without external calls',()=>{
   assert.match(gate,/demo-marketplace-v1\.js\?v=20260911-bulk2/);
 });
 
+test('selected month drives the query and stale requests cannot overwrite it',()=>{
+  const ui=read('assets/supabase-time-tracking-v1.js');
+  const loader=read('assets/conflict-plausibility-v1.js');
+  assert.match(ui,/document\.getElementById\('sfTimeMonthPicker'\)\?\.value/);
+  assert.match(ui,/return\{start:`\$\{selected\}-01`,end:`\$\{selected\}-\$\{last\}`\}/);
+  assert.match(ui,/const request=\+\+managerLoadSequence/);
+  assert.match(ui,/if\(request!==managerLoadSequence\)return false/);
+  assert.match(ui,/const applied=await loadManager\(\);if\(applied\)renderManagerRows\(\)/);
+  assert.match(loader,/supabase-time-tracking-v1\.js'\?'20260912-monthfix1'/);
+});
+
 test('bulk RPC is atomic, restricted and protects existing or ineligible rows',()=>{
   const sql=read('supabase/migrations/20260911080807_manager_bulk_record_include_planned_shifts.sql');
   assert.match(sql,/security definer/i);

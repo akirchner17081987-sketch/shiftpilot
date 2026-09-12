@@ -3,7 +3,7 @@
   const B=window.SFBackend=window.SFBackend||{};
   if(B.__timeTrackingV1)return;B.__timeTrackingV1=true;
   const MANAGER=new Set(['OWNER','ADMIN','DISPATCHER','PLANNER']);
-  let managerRows=[],employeeEntries=new Map(),managerBusy=false,employeeBusy=false;
+  let managerRows=[],employeeEntries=new Map(),managerLoadSequence=0,employeeBusy=false;
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
   const tz=()=>B.companyTimeZone||'Europe/Berlin';
   const fmtDate=v=>v?(B.sfFormatDate?.(v)||new Intl.DateTimeFormat('de-DE',{timeZone:tz(),weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date(v))):'–';
@@ -30,7 +30,15 @@
   }
 
   function periodRange(){
-    const mode=document.getElementById('timePeriod')?.value||'week';let dates=[];
+    const mode=document.getElementById('timePeriod')?.value||'week';
+    if(mode==='month'){
+      const selected=document.getElementById('sfTimeMonthPicker')?.value||'';
+      if(/^\d{4}-(0[1-9]|1[0-2])$/.test(selected)){
+        const [year,month]=selected.split('-').map(Number),last=String(new Date(year,month,0).getDate()).padStart(2,'0');
+        return{start:`${selected}-01`,end:`${selected}-${last}`};
+      }
+    }
+    let dates=[];
     try{if(typeof window.currentWeekDates==='function')dates=window.currentWeekDates()}catch{}
     if(!dates.length){const d=new Date(),day=(d.getDay()+6)%7,start=new Date(d);start.setDate(d.getDate()-day);start.setHours(0,0,0,0);dates=Array.from({length:7},(_,i)=>new Date(start.getFullYear(),start.getMonth(),start.getDate()+i))}
     const z=d=>{const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),x=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${x}`};
@@ -39,8 +47,9 @@
   }
 
   async function loadManager(){
-    if(!MANAGER.has(B.role)||!B.client||!B.companyId||managerBusy)return managerRows;managerBusy=true;
-    try{const r=periodRange(),q=await B.client.rpc('manager_list_time_entries',{p_company_id:B.companyId,p_start_date:r.start,p_end_date:r.end});if(q.error)throw q.error;managerRows=q.data||[];return managerRows}catch(e){console.warn('Zeiterfassung konnte nicht geladen werden',e);managerRows=[];return managerRows}finally{managerBusy=false}
+    if(!MANAGER.has(B.role)||!B.client||!B.companyId)return false;
+    const request=++managerLoadSequence,r=periodRange();
+    try{const q=await B.client.rpc('manager_list_time_entries',{p_company_id:B.companyId,p_start_date:r.start,p_end_date:r.end});if(request!==managerLoadSequence)return false;if(q.error)throw q.error;managerRows=q.data||[];return true}catch(e){if(request!==managerLoadSequence)return false;console.warn('Zeiterfassung konnte nicht geladen werden',e);managerRows=[];return true}
   }
 
   function renderManagerRows(){
@@ -70,7 +79,7 @@
     apply.onclick=async()=>{try{apply.disabled=true;B.showLoading?.('Offene Zeiten werden gemeinsam bestätigt …');const q=await B.client.rpc('manager_bulk_record_time_entries',{p_company_id:B.companyId,p_start_date:range.start,p_end_date:range.end,p_note:m.querySelector('#sfTimeBulkNote').value.trim(),p_confirm:true});if(q.error)throw q.error;const result=typeof q.data==='string'?JSON.parse(q.data):q.data||{},updated=Number(result.updated||0),skipped=Number(result.skippedExisting||0)+Number(result.skippedFuture||0)+Number(result.skippedClosed||0)+Number(result.skippedUnpublished||0)+Number(result.skippedInvalid||0);m.sfClose();await renderManager();B.notifications?.refresh?.();if(typeof showSaveToast==='function')showSaveToast('Zeiten direkt übernommen',`${updated} bestätigt${skipped?` · ${skipped} geschützt oder übersprungen`:''}.`)}catch(e){say(m,e?.message||String(e));apply.disabled=false}finally{B.hideLoading?.()}}
   }
 
-  async function renderManager(){if(!MANAGER.has(B.role))return;css();await loadManager();renderManagerRows()}
+  async function renderManager(){if(!MANAGER.has(B.role))return;css();const applied=await loadManager();if(applied)renderManagerRows()}
   window.renderTimeTracking=renderManager;
   window.editTimeEntry=function(id){const r=managerRows.find(x=>String(x.assignment_id)===String(id));if(r)openManagerModal(r)};
 
