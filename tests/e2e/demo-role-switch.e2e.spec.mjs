@@ -84,6 +84,23 @@ test('demo switches between manager workspace and the existing employee portal',
   await expect(page.locator('#appShell')).toBeVisible();
 });
 
+test('demo employee marketplace survives composed O1S and QA RPC wrappers', async ({ page }) => {
+  await primeDemoSession(page);
+  await page.route('**/demo-auth', async route => {
+    await route.fulfill({headers:{'Access-Control-Allow-Origin':'*'}, status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
+  });
+  await page.goto('/demo');
+  await waitForDemoReady(page);
+  await demoPerspectiveSwitch(page).locator('[data-demo-perspective="employee"]').click();
+  await page.evaluate(()=>window.SFBackend?.employeePortalNavigate?.('marketplace'));
+  await page.waitForFunction(()=>document.getElementById('sfEmployeePortal')?.dataset.sfPortalActive==='marketplace');
+
+  const market=page.locator('#sfEmployeePortal [data-sf-portal-section="marketplace"]');
+  await expect(market).toBeVisible();
+  await expect(market).toContainText('Verfügbare Schichten');
+  await expect(market).not.toContainText('konnte nicht geladen werden');
+});
+
 test('demo employee can review and confirm presentation shift changes', async ({ page }) => {
   await primeDemoSession(page);
   await page.route('**/demo-auth', async route => {

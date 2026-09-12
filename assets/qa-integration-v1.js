@@ -114,7 +114,12 @@
       }
       return res;
     };
-    wrapped.__sfDemoCloudV2=true;wrapped.__sfQAIntegrationV1=true;B.client.rpc=wrapped;return true;
+    wrapped.__sfDemoCloudV2=true;
+    wrapped.__sfQAIntegrationV1=true;
+    // Preserve the O1S marker so both DOM observers recognize the composed
+    // wrapper as complete instead of growing an alternating wrapper chain.
+    wrapped.__sfO1SIntegrationV1=rpc.__sfO1SIntegrationV1===true;
+    B.client.rpc=wrapped;return true;
   }
 
   function patchDemoPlanning(){

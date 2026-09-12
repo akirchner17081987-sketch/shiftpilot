@@ -121,7 +121,13 @@
       }
       return res;
     };
-    wrapped.__sfDemoCloudV2=true;wrapped.__sfO1SIntegrationV1=true;B.client.rpc=wrapped;demoRpcPatched=true;return true;
+    wrapped.__sfDemoCloudV2=true;
+    wrapped.__sfO1SIntegrationV1=true;
+    // Keep sibling integration markers when wrappers are composed. Without
+    // this, the QA and O1S MutationObservers alternately wrap each other on
+    // every DOM change until the RPC chain overflows the call stack.
+    wrapped.__sfQAIntegrationV1=rpc.__sfQAIntegrationV1===true;
+    B.client.rpc=wrapped;demoRpcPatched=true;return true;
   }
 
   function patchDemoPlanning(){

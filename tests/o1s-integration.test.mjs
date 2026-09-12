@@ -33,3 +33,7 @@ test('O1S appears in demo planning, time tracking and marketplace',()=>{
   assert.match(integration,/a\.type='O1S'/);
   assert.match(integration,/shift_code:'O1S'/);
 });
+
+test('O1S demo RPC wrapper preserves the QA integration marker',()=>{
+  assert.match(integration,/wrapped\.__sfQAIntegrationV1=rpc\.__sfQAIntegrationV1===true/);
+});

@@ -19,7 +19,7 @@ Stand: 12.09.2026
 - Abhängigkeiten: `npm ci`
 - Build-Befehl: `npm run build`
 - Veröffentlichungsverzeichnis: `dist`
-- Geprüfte Größe: 2.134.647 Byte / 2,04 MiB, Zielwert unter 50 MB
+- Geprüfte Größe: 2.135.170 Byte / 2,04 MiB, Zielwert unter 50 MB
 - Die Dateiauswahl für `dist` ist ausdrücklich begrenzt; Quellcode, Tests, lokale Konfigurationen und Geheimnisse werden nicht veröffentlicht.
 
 ## Routing, PWA und Sicherheitsheader
@@ -27,18 +27,18 @@ Stand: 12.09.2026
 - Apache-Regeln in `.htaccess` erzwingen HTTPS, liefern kurze Routen wie `/demo`, `/impressum` und `/datenschutz` aus und fallen für clientseitige Routen auf `index.html` zurück.
 - HTML, Manifest und Service Worker werden nicht langfristig zwischengespeichert; statische Assets erhalten einen begrenzten Browser-Cache.
 - Content-Security-Policy, HSTS, MIME-Schutz, Frame-Schutz, Referrer-Policy und Permissions-Policy werden auf IONOS über `.htaccess` gesetzt.
-- `manifest.webmanifest`, Icons und `service-worker.js` sind Bestandteil des statischen Builds.
+- `site.webmanifest`, Icons und `schichtfunk-sw.js` sind Bestandteil des statischen Builds.
 
 ## Serverlogik und Geheimnisse
 
 - `demo-auth` und `demo-analytics` laufen als Supabase Edge Functions. Die bisherigen Vercel-Funktionen bleiben unverändert im Repository, damit der alte Vercel-Stand technisch rückfallfähig bleibt.
 - Die Edge Functions verwenden kurzlebige HMAC-signierte Demo-Sitzungstoken, eine strenge Herkunftsliste und keine Standardzugangsdaten.
-- Vor der Demo-Abnahme müssen folgende Supabase-Geheimnisse sicher neu gesetzt oder aus den ursprünglichen Werten übernommen werden:
+- Für die Demo-Abnahme wurden folgende Supabase-Geheimnisse am 12.09.2026 neu erzeugt und gesetzt:
   - `DEMO_USER_SHA256`
   - `DEMO_PASSWORD_SHA256`
   - `DEMO_SESSION_SECRET`
   - `DEMO_ANALYTICS_INGEST_SECRET`
-  - optional `DEMO_ALLOWED_ORIGINS` für zusätzliche IONOS-Vorschauadressen
+  - `DEMO_ALLOWED_ORIGINS` mit der aktuellen IONOS-Prüfadresse und den vorgesehenen Produktionsdomains
 - Geheimniswerte dürfen weder im Git-Repository noch in Build-Ausgaben oder dieser Dokumentation gespeichert werden.
 
 ## Staging-Abnahme vor Domain-Umschaltung
@@ -78,9 +78,10 @@ Die Domain `www.schichtfunk.de` wird erst verbunden bzw. per DNS umgeschaltet, w
 - Öffentliche IONOS-Browserprüfung: 10 von 10 Desktop-/Mobiltests bestanden (Branding, PWA-Ressourcen, Login-Validierung, Supabase-Demo-Client, responsive Breite und Sicherheitsheader).
 - Kurze Seitenrouten, tiefe PWA-Routen, HTTPS/HSTS, Cache-Regeln und 404-Verhalten für fehlende statische Assets: direkt auf IONOS geprüft.
 - Isolierte Demo-Prüfungen mit simulierter Edge-Function-Freigabe: Manager-/Mitarbeiterwechsel, DATEV-Download, Arbeitszeiterfassung/Stundenkonto und weitere Demoabläufe wurden ohne Produktionsdaten erreicht. Ein gebündelter Kaltstart-Dauerlauf wurde wegen zeitweise stark schwankender Antwortzeiten der Vorschau nicht als alleiniger Freigabenachweis gewertet.
-- Supabase Edge Functions: bereitgestellt und ohne fehlende Geheimnisse bewusst gesperrt.
+- Supabase Edge Functions: bereitgestellt und mit neu erzeugten Geheimnissen aktiviert. Live-Prüfung: Anmeldung HTTP 200, Sitzungsprüfung HTTP 200, Analytics HTTP 204; CORS erlaubt exakt die IONOS-Prüfadresse.
 - Geschützte Echtkonto-Prüfungen: offen, weil die ausschließlich lesenden Testkonto-Variablen `SF_E2E_EMAIL` und `SF_E2E_PASSWORD` nicht vorliegen.
-- Vollständige IONOS-Staging-Abnahme: teilweise bestanden; echte Demo-Anmeldung, Echtkonto-/Rollenprüfung und Push auf einem realen Gerät bleiben offen.
-- Demo-Geheimnisse in Supabase: offen.
+- Geschützte Demo auf IONOS: echte Anmeldung, Managerbereich, Mitarbeiterportal, Dienstplan, Mitarbeiter, Abwesenheiten, Zeiterfassung/QR-Einstieg, Stundenkonto, Lohnvorschau, DATEV und beide Marktplatzansichten geprüft. Ein dabei gefundener rekursiver RPC-Wrapperfehler wurde behoben und durch Desktop-/Mobiltests abgesichert.
+- Vollständige IONOS-Staging-Abnahme: weitgehend bestanden; Echtkonto-/Rollenprüfung und Push auf einem realen Gerät bleiben offen.
+- Demo-Geheimnisse in Supabase: gesetzt; Klartextwerte sind nicht im Repository oder in dieser Dokumentation gespeichert.
 - Supabase Pro und DPA-Nachweis: offen; keine kostenpflichtige Umstellung erfolgt.
 - Domain-Umschaltung: gesperrt bis Staging-Abnahme und ausdrücklicher Betreiberfreigabe.
