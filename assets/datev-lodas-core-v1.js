@@ -6,11 +6,11 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
   const SATZBESCHREIBUNG='1;u_lod_bwd_buchung_standard;abrechnung_zeitraum#bwd;bs_wert_butab#bwd;pnr#bwd;la_eigene#bwd;bs_nr#bwd;kostenstelle#bwd;abw_lohnfaktor#bwd;bemerkung#bwd;';
-  const SOURCE_TYPES=new Set(['WORK_TOTAL','SHIFT_CODE','ABSENCE_TYPE','ABSENCE_DAYS','NIGHT_WINDOW','SUNDAY_WINDOW']);
+  const SOURCE_TYPES=new Set(['WORK_TOTAL','SHIFT_CODE','ABSENCE_TYPE','ABSENCE_DAYS','NIGHT_WINDOW','SUNDAY_WINDOW','HOLIDAY_WINDOW']);
   const safeAsciiToken=v=>/^[\x20-\x7E]+$/.test(String(v??''))&&!/[;\r\n]/.test(String(v??''));
   const monthOk=v=>/^\d{4}-(0[1-9]|1[0-2])$/.test(String(v||''));
   const BERLIN_TZ='Europe/Berlin';
-  const berlinPartsFormatter=new Intl.DateTimeFormat('en-GB',{timeZone:BERLIN_TZ,weekday:'short',hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
+  const berlinPartsFormatter=new Intl.DateTimeFormat('en-GB',{timeZone:BERLIN_TZ,year:'numeric',month:'2-digit',day:'2-digit',weekday:'short',hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
 
   function monthStartDmy(month){
     if(!monthOk(month))throw new Error('Ungültiger Abrechnungsmonat.');
@@ -41,6 +41,7 @@
       if(['SHIFT_CODE','ABSENCE_TYPE','ABSENCE_DAYS'].includes(r.source_type)&&!r.source_key)errors.push(`Regel ${n}: Quelle/Schlüssel fehlt.`);
       if(r.source_type==='NIGHT_WINDOW'&&r.source_key!=='22:00-06:00')errors.push(`Regel ${n}: Nachtfenster muss 22:00-06:00 sein.`);
       if(r.source_type==='SUNDAY_WINDOW'&&r.source_key!=='00:00-24:00')errors.push(`Regel ${n}: Sonntagsfenster muss 00:00-24:00 sein.`);
+      if(r.source_type==='HOLIDAY_WINDOW'&&r.source_key!=='00:00-24:00')errors.push(`Regel ${n}: Feiertagsfenster muss 00:00-24:00 sein.`);
       if(!/^\d{1,4}$/.test(r.wage_type))errors.push(`Regel ${n}: Lohnart muss aus 1 bis 4 Ziffern bestehen.`);
       if(r.cost_center&&(r.cost_center.length>13||!safeAsciiToken(r.cost_center)))errors.push(`Regel ${n}: Kostenstelle darf höchstens 13 druckbare ASCII-Zeichen ohne Semikolon enthalten.`);
     });
@@ -57,9 +58,9 @@
   function berlinMinuteInfo(ms){
     const parts=berlinPartsFormatter.formatToParts(new Date(ms));
     const get=t=>parts.find(p=>p.type===t)?.value||'';
-    return {weekday:get('weekday'),hour:Number(get('hour')),minute:Number(get('minute'))};
+    return {weekday:get('weekday'),hour:Number(get('hour')),minute:Number(get('minute')),date:`${get('year')}-${get('month')}-${get('day')}`};
   }
-  function premiumMinutes(e,type){
+  function premiumMinutes(e,type,holidayDates){
     if(!e?.actual_start||!e?.actual_end||entryStatus(e)!=='confirmed')return 0;
     const start=new Date(e.actual_start).getTime(),end=new Date(e.actual_end).getTime();
     if(!Number.isFinite(start)||!Number.isFinite(end)||end<=start)return 0;
@@ -67,7 +68,7 @@
     for(let t=first;t<end;t+=60000){
       const segStart=Math.max(start,t),segEnd=Math.min(end,t+60000);if(segEnd<=segStart)continue;
       const info=berlinMinuteInfo(t+30000);
-      const qualifies=type==='NIGHT_WINDOW'?(info.hour>=22||info.hour<6):type==='SUNDAY_WINDOW'?(info.weekday==='Sun'):false;
+      const qualifies=type==='NIGHT_WINDOW'?(info.hour>=22||info.hour<6):type==='SUNDAY_WINDOW'?(info.weekday==='Sun'):type==='HOLIDAY_WINDOW'?(holidayDates?.has(info.date)):false;
       if(qualifies)minutes+=(segEnd-segStart)/60000;
     }
     return Math.round(minutes);
@@ -78,6 +79,7 @@
     const active=normalizeRules(rules),emps=employees||[],dets=details||[],ents=entries||[];
     const employeeById=new Map(emps.map((e,i)=>[String(e.employee_id||e.id),{...e,_order:i}]));
     const employeeErrors=new Set(),accumulator=new Map();
+    const holidayDates=new Set(dets.filter(d=>String(d?.holiday_name||'').trim()).map(d=>String(d.work_date||'')).filter(Boolean));
     function employeePnr(id){
       const e=employeeById.get(String(id)),pnr=String(e?.personnel_no??'').trim();
       if(!e){employeeErrors.add(`Mitarbeiter ${id} ist im Monats-Snapshot nicht vorhanden.`);return null}
@@ -97,8 +99,8 @@
       if(rule.source_type==='SHIFT_CODE'){
         const sums=new Map();ents.filter(e=>entryStatus(e)==='confirmed'&&String(e.shift_code||'')===rule.source_key).forEach(e=>sums.set(String(e.employee_id),(sums.get(String(e.employee_id))||0)+entryNetMinutes(e)));sums.forEach((m,id)=>add(id,rule,m));return;
       }
-      if(rule.source_type==='NIGHT_WINDOW'||rule.source_type==='SUNDAY_WINDOW'){
-        const sums=new Map();ents.filter(e=>entryStatus(e)==='confirmed').forEach(e=>{if(breakMinutes(e)>0){errors.push(`${e.employee_name||'Mitarbeiter'} · ${e.work_date||''}: Zuschlagsberechnung ist wegen einer Pause ohne genaue Pausenlage nicht eindeutig.`);return}const m=premiumMinutes(e,rule.source_type);if(m>0)sums.set(String(e.employee_id),(sums.get(String(e.employee_id))||0)+m)});sums.forEach((m,id)=>add(id,rule,m));return;
+      if(['NIGHT_WINDOW','SUNDAY_WINDOW','HOLIDAY_WINDOW'].includes(rule.source_type)){
+        const sums=new Map();ents.filter(e=>entryStatus(e)==='confirmed').forEach(e=>{if(breakMinutes(e)>0){errors.push(`${e.employee_name||'Mitarbeiter'} · ${e.work_date||''}: Zuschlagsberechnung ist wegen einer Pause ohne genaue Pausenlage nicht eindeutig.`);return}const m=premiumMinutes(e,rule.source_type,holidayDates);if(m>0)sums.set(String(e.employee_id),(sums.get(String(e.employee_id))||0)+m)});sums.forEach((m,id)=>add(id,rule,m));return;
       }
       if(rule.source_type==='ABSENCE_TYPE'){
         dets.forEach(d=>{const types=splitAbsenceTypes(d.absence_types);if(!types.includes(rule.source_key))return;if(types.length>1){errors.push(`${d.employee_name||'Mitarbeiter'} · ${d.work_date||''}: mehrere Abwesenheitsarten an einem Tag können für DATEV nicht eindeutig aufgeteilt werden.`);return}add(d.employee_id,rule,Number(d.absence_credit_minutes||0))});return;
