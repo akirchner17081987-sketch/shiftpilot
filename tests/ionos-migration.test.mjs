@@ -13,6 +13,7 @@ const mode=read('assets/demo-mode-v1.js');
 const analytics=read('assets/demo-analytics-v1.js');
 const authFunction=read('supabase/functions/demo-auth/index.ts');
 const analyticsFunction=read('supabase/functions/demo-analytics/index.ts');
+const security=read('supabase/functions/_shared/demo-security.js');
 const apache=read('.htaccess');
 
 test('demo clients use Supabase Edge Functions and retain Vercel only as fallback code',()=>{
@@ -32,6 +33,7 @@ test('edge functions enforce origin, custom session token and event allowlist',(
   assert.match(analyticsFunction,/verifyToken\(bearer\(req\),secret,'access'\)/);
   assert.match(analyticsFunction,/ALLOWED\[event\]\?\.has\(value\)/);
   assert.match(analyticsFunction,/record_demo_usage/);
+  assert.match(security,/https:\/\/home-5021411544\.app-ionos\.space/);
 });
 
 test('portable HMAC tokens reject tampering and expiry',async()=>{

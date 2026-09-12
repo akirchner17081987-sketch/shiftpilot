@@ -12,11 +12,14 @@ Stand: 12.09.2026
 ## Deploy-Now-Build
 
 - Repository: `akirchner17081987-sketch/shiftpilot`
+- Deploy-Now-Projekt-ID: `7bc70ac7-ec3b-4e7b-bae5-569c957e8514`
+- Prüfbasis/Zielzweig: `codex/ionos-migration`
+- IONOS-Prüfadresse: https://home-5021411544.app-ionos.space/
 - Laufzeit für den Build: Plain Node.js 22
 - Abhängigkeiten: `npm ci`
 - Build-Befehl: `npm run build`
 - Veröffentlichungsverzeichnis: `dist`
-- Geprüfte Größe: 2.134.088 Byte / 2,04 MiB, Zielwert unter 50 MB
+- Geprüfte Größe: 2.134.647 Byte / 2,04 MiB, Zielwert unter 50 MB
 - Die Dateiauswahl für `dist` ist ausdrücklich begrenzt; Quellcode, Tests, lokale Konfigurationen und Geheimnisse werden nicht veröffentlicht.
 
 ## Routing, PWA und Sicherheitsheader
@@ -70,10 +73,14 @@ Die Domain `www.schichtfunk.de` wird erst verbunden bzw. per DNS umgeschaltet, w
 
 ## Aktueller Freigabestatus
 
-- Statischer Build und automatisierte lokale Prüfungen: bestanden.
+- Deploy-Now-Projekt und automatische GitHub-Actions-Bereitstellung: eingerichtet; Build- und Deployment-Läufe erfolgreich.
+- Statischer Build und 28 automatisierte lokale Funktions-/Regressionstestgruppen: bestanden.
+- Öffentliche IONOS-Browserprüfung: 10 von 10 Desktop-/Mobiltests bestanden (Branding, PWA-Ressourcen, Login-Validierung, Supabase-Demo-Client, responsive Breite und Sicherheitsheader).
+- Kurze Seitenrouten, tiefe PWA-Routen, HTTPS/HSTS, Cache-Regeln und 404-Verhalten für fehlende statische Assets: direkt auf IONOS geprüft.
+- Isolierte Demo-Prüfungen mit simulierter Edge-Function-Freigabe: Manager-/Mitarbeiterwechsel, DATEV-Download, Arbeitszeiterfassung/Stundenkonto und weitere Demoabläufe wurden ohne Produktionsdaten erreicht. Ein gebündelter Kaltstart-Dauerlauf wurde wegen zeitweise stark schwankender Antwortzeiten der Vorschau nicht als alleiniger Freigabenachweis gewertet.
 - Supabase Edge Functions: bereitgestellt und ohne fehlende Geheimnisse bewusst gesperrt.
-- IONOS-Projekt/Bereitstellungsadresse: Einrichtung in Arbeit.
-- Vollständige IONOS-Staging-Abnahme: offen.
+- Geschützte Echtkonto-Prüfungen: offen, weil die ausschließlich lesenden Testkonto-Variablen `SF_E2E_EMAIL` und `SF_E2E_PASSWORD` nicht vorliegen.
+- Vollständige IONOS-Staging-Abnahme: teilweise bestanden; echte Demo-Anmeldung, Echtkonto-/Rollenprüfung und Push auf einem realen Gerät bleiben offen.
 - Demo-Geheimnisse in Supabase: offen.
 - Supabase Pro und DPA-Nachweis: offen; keine kostenpflichtige Umstellung erfolgt.
 - Domain-Umschaltung: gesperrt bis Staging-Abnahme und ausdrücklicher Betreiberfreigabe.

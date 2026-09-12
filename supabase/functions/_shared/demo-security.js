@@ -46,7 +46,7 @@ export function bearer(req){
 export function cors(req){
   const origin=String(req.headers.get('origin')||'');
   const configured=String(Deno.env.get('DEMO_ALLOWED_ORIGINS')||'').split(',').map(value=>value.trim()).filter(Boolean);
-  const allowed=new Set(['https://schichtfunk.de','https://www.schichtfunk.de','http://localhost:4173','http://127.0.0.1:4173',...configured]);
+  const allowed=new Set(['https://schichtfunk.de','https://www.schichtfunk.de','https://home-5021411544.app-ionos.space','http://localhost:4173','http://127.0.0.1:4173',...configured]);
   if(origin&&!allowed.has(origin))return null;
   return {
     ...(origin?{'Access-Control-Allow-Origin':origin}:{}),
