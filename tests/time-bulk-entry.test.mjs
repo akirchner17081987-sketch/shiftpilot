@@ -30,8 +30,11 @@ test('selected month drives the query and stale requests cannot overwrite it',()
   assert.match(ui,/return\{start:`\$\{selected\}-01`,end:`\$\{selected\}-\$\{last\}`\}/);
   assert.match(ui,/const request=\+\+managerLoadSequence/);
   assert.match(ui,/if\(request!==managerLoadSequence\)return false/);
-  assert.match(ui,/const applied=await loadManager\(\);if\(applied\)renderManagerRows\(\)/);
-  assert.match(loader,/supabase-time-tracking-v1\.js'\?'20260912-monthfix1'/);
+  assert.match(ui,/const applied=await loadManager\(monthOverride\);if\(applied\)renderManagerRows\(\)/);
+  assert.match(ui,/periodRange\(monthOverride\)/);
+  assert.match(ui,/sfTimeMonthPicker'\)\?\.value!==monthOverride/);
+  assert.match(loader,/supabase-time-tracking-v1\.js'\?'20260912-monthfix2'/);
+  assert.match(loader,/time-month-picker-v1\.js'\?'20260912-monthfix2'/);
 });
 
 test('bulk RPC is atomic, restricted and protects existing or ineligible rows',()=>{

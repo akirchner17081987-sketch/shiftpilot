@@ -100,7 +100,9 @@
         saveMonth(picker.value);
         select.value='month';
         syncDatevMonth(picker.value);
-        await window.renderTimeTracking?.();
+        const refresh=B.timeTracking?.refreshManager;
+        if(typeof refresh==='function')await refresh(picker.value);
+        else await window.renderTimeTracking?.(picker.value);
       });
     }
   }
