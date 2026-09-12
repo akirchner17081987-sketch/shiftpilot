@@ -19,7 +19,7 @@ Stand: 12.09.2026
 - Abhängigkeiten: `npm ci`
 - Build-Befehl: `npm run build`
 - Veröffentlichungsverzeichnis: `dist`
-- Geprüfte Größe: 2.135.136 Byte / 2,04 MiB, Zielwert unter 50 MB
+- Geprüfte Größe: 2.135.798 Byte / 2,04 MiB, Zielwert unter 50 MB
 - Die Dateiauswahl für `dist` ist ausdrücklich begrenzt; Quellcode, Tests, lokale Konfigurationen und Geheimnisse werden nicht veröffentlicht.
 
 ## Routing, PWA und Sicherheitsheader
@@ -79,9 +79,9 @@ Die Domain `www.schichtfunk.de` wird erst verbunden bzw. per DNS umgeschaltet, w
 - Kurze Seitenrouten, tiefe PWA-Routen, HTTPS/HSTS, Cache-Regeln und 404-Verhalten für fehlende statische Assets: direkt auf IONOS geprüft.
 - Isolierte Demo-Prüfungen mit simulierter Edge-Function-Freigabe: Manager-/Mitarbeiterwechsel, DATEV-Download, Arbeitszeiterfassung/Stundenkonto und weitere Demoabläufe wurden ohne Produktionsdaten erreicht. Ein gebündelter Kaltstart-Dauerlauf wurde wegen zeitweise stark schwankender Antwortzeiten der Vorschau nicht als alleiniger Freigabenachweis gewertet.
 - Supabase Edge Functions: bereitgestellt und mit neu erzeugten Geheimnissen aktiviert. Live-Prüfung: Anmeldung HTTP 200, Sitzungsprüfung HTTP 200, Analytics HTTP 204; CORS erlaubt exakt die IONOS-Prüfadresse.
-- Geschützte Echtkonto-Prüfungen: ein isolierter fiktiver Testmandant mit einem `OWNER`-Managerkonto und einem verknüpften `EMPLOYEE`-Konto wurde angelegt. Beide Anmeldungen, Rollen sowie die RLS-bedingte Sicht auf ausschließlich diesen Testmandanten wurden über die Live-API verifiziert. Kennwörter sind nicht im Repository oder in dieser Dokumentation gespeichert; die Browser-Abnahme über IONOS steht noch aus.
+- Geschützte Echtkonto-Prüfungen: ein isolierter fiktiver Testmandant mit einem `OWNER`-Managerkonto und einem verknüpften `EMPLOYEE`-Konto wurde angelegt. Beide Anmeldungen, Rollen sowie die RLS-bedingte Sicht auf ausschließlich diesen Testmandanten wurden über die Live-API verifiziert. Die IONOS-Browserprüfung des Managers bestand in Desktop- und Mobilansicht für Inhaberrolle, Mandantenzuordnung, alle neun Kernbereiche, die isolierte Mitarbeiterliste und die Seitenbreite. Das Mitarbeiterportal bestand zusätzlich acht geschützte Desktop-/Mobilprüfungen gegen den isolierten Testmandanten. Kennwörter sind nicht im Repository oder in dieser Dokumentation gespeichert.
 - Geschützte Demo auf IONOS: echte Anmeldung, Managerbereich, Mitarbeiterportal, Dienstplan, Mitarbeiter, Abwesenheiten, Zeiterfassung/QR-Einstieg, Stundenkonto, Lohnvorschau, DATEV und beide Marktplatzansichten geprüft. Ein dabei gefundener rekursiver RPC-Wrapperfehler wurde behoben und durch Desktop-/Mobiltests abgesichert.
-- Vollständige IONOS-Staging-Abnahme: weitgehend bestanden; die Browser-Anmeldung beider isolierter Testrollen über IONOS und Push auf einem realen Gerät bleiben offen.
+- Vollständige IONOS-Staging-Abnahme: weitgehend bestanden; beide isolierten Testrollen sind im Browser abgenommen. Offen bleiben Push/PWA auf einem realen Gerät und der revisionssichere DPA-/AVV-Nachweis.
 - Demo-Geheimnisse in Supabase: gesetzt; Klartextwerte sind nicht im Repository oder in dieser Dokumentation gespeichert.
 - Supabase Pro: aktiv. Der DPA-/AVV-Nachweis und die Liste der Auftragsverarbeiter müssen noch revisionssicher archiviert werden.
 - Domain-Umschaltung: gesperrt bis Staging-Abnahme und ausdrücklicher Betreiberfreigabe.

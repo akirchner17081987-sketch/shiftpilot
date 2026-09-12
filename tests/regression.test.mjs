@@ -599,12 +599,19 @@ test('employee dialogs trap focus, close with Escape and announce errors', () =>
   assert.match(employeePortalLayout, /B\.bindAccessibleModal=function/);
   assert.match(employeePortalLayout, /event\.key==='Escape'/);
   assert.match(employeePortalLayout, /event\.key!=='Tab'/);
+  assert.match(employeePortalLayout, /returnFocus\|\|document\.activeElement/);
   assert.match(employeePortalLayout, /opener\?\.isConnected/);
+  assert.match(employeePortalLayout, /returnFocusSelector\?document\.querySelector\(returnFocusSelector\)/);
+  assert.match(employeePortalLayout, /setTimeout\(restoreOpener,80\)/);
   for (const source of [shiftSwap, marketplace, timeTracking, employeeAbsence]) {
     assert.match(source, /role="alert" aria-live="assertive"/);
     assert.match(source, /aria-labelledby=/);
     assert.match(source, /bindAccessibleModal/);
   }
+  assert.match(employeeAbsence, /returnFocus:opener,returnFocusSelector:/);
+  assert.match(employeeAbsence, /open\(btn\)/);
+  assert.match(employeeAbsence, /restoreRequestFocus/);
+  assert.match(employeeAbsence, /setTimeout\(\(\)=>render\(\),0\)/);
 });
 
 test('employee portal navigation and notification badge use hardened contrast colors', () => {
