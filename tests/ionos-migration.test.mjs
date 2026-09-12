@@ -20,6 +20,7 @@ test('demo clients use Supabase Edge Functions and retain Vercel only as fallbac
   assert.match(demo,/SFDemoAPI\.fetchAuth/);
   assert.doesNotMatch(demo,/fetch\('\/api\/demo-auth'/);
   assert.match(api,/supabase\.co\/functions\/v1/);
+  assert.match(api,/text\/plain;charset=UTF-8/);
   assert.match(mode,/SFDemoAPI\?\.fetchAuth/);
   assert.match(analytics,/SFDemoAPI\?\.fetchAnalytics/);
 });

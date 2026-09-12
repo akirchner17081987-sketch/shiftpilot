@@ -15,6 +15,6 @@
     getAccessToken:()=>read(ACCESS_KEY),setAccessToken:value=>write(ACCESS_KEY,String(value||'')),clearAccessToken:()=>write(ACCESS_KEY,''),
     setFailureToken:value=>write(FAILURE_KEY,String(value||'')),clearFailureToken:()=>write(FAILURE_KEY,''),
     fetchAuth:(options={})=>fetch(`${base}/demo-auth`,{cache:'no-store',...options,headers:headers(options.headers||{})}),
-    fetchAnalytics:(body,options={})=>fetch(`${base}/demo-analytics`,{method:'POST',keepalive:true,...options,headers:headers({'Content-Type':'application/json',...(options.headers||{})}),body:JSON.stringify(body)})
+    fetchAnalytics:(body,options={})=>fetch(`${base}/demo-analytics`,{method:'POST',keepalive:true,...options,headers:headers({'Content-Type':'text/plain;charset=UTF-8',...(options.headers||{})}),body:JSON.stringify(body)})
   };
 })();

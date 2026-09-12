@@ -156,7 +156,7 @@ test('demo time tracking persists employee entries and monthly accounts render',
   await expect(timeCard).toContainText('Bestätigt');
   await expect(timeCard).toContainText('Korrektur nötig');
   await expect(timeCard).toContainText('7,50 Std.');
-  if(testInfo.project.name==='desktop-chromium')await timeCard.screenshot({path:testInfo.outputPath('arbeitszeiterfassung-demo-geprueft.png')});
+  if(testInfo.project.name==='desktop-chromium')await page.screenshot({path:testInfo.outputPath('arbeitszeiterfassung-demo-geprueft.png')});
 
   const editable=timeCard.locator('[data-time-report]').first();
   const item=editable.locator('xpath=ancestor::*[@data-emp-time]');
