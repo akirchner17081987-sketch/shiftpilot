@@ -40,8 +40,8 @@ test('selected month drives the query and stale requests cannot overwrite it',()
 });
 
 test('bulk RPC is atomic, restricted and protects existing or ineligible rows',()=>{
-  const sql=read('supabase/migrations/20260912093000_bulk_time_auto_reopen_closed_month.sql');
-  const hardening=read('supabase/migrations/20260912094500_harden_bulk_time_auto_reopen.sql');
+  const sql=read('supabase/migrations/20260912132846_bulk_time_auto_reopen_closed_month.sql');
+  const hardening=read('supabase/migrations/20260912132957_harden_bulk_time_auto_reopen.sql');
   assert.match(sql,/security definer/i);
   assert.match(sql,/set search_path=''/i);
   assert.match(sql,/private\.sf_is_manager\(p_company_id,false\)/i);

@@ -160,3 +160,5 @@ grant execute on function public.manager_bulk_record_time_entries(uuid,date,date
 notify pgrst,'reload schema';
 
 commit;
+
+;
