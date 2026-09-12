@@ -19,7 +19,7 @@ Stand: 12.09.2026
 - Abhängigkeiten: `npm ci`
 - Build-Befehl: `npm run build`
 - Veröffentlichungsverzeichnis: `dist`
-- Geprüfte Größe: 2.135.170 Byte / 2,04 MiB, Zielwert unter 50 MB
+- Geprüfte Größe: 2.135.136 Byte / 2,04 MiB, Zielwert unter 50 MB
 - Die Dateiauswahl für `dist` ist ausdrücklich begrenzt; Quellcode, Tests, lokale Konfigurationen und Geheimnisse werden nicht veröffentlicht.
 
 ## Routing, PWA und Sicherheitsheader
