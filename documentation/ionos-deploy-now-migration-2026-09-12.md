@@ -5,7 +5,7 @@ Stand: 12.09.2026
 ## Zielarchitektur
 
 - IONOS Deploy Now liefert ausschließlich den statischen SchichtFunk-Webauftritt und die PWA aus.
-- Supabase bleibt das Backend für Datenbank, Authentifizierung, Realtime, Storage und Edge Functions; Projektregion ist `eu-central-1` (Frankfurt).
+- Supabase bleibt das Backend für Datenbank, Authentifizierung, Realtime, Storage und Edge Functions; Projektregion ist `eu-central-1` (Frankfurt). Der Pro-Tarif ist seit dem 12.09.2026 für die Organisation aktiv; der Spend Cap ist eingeschaltet.
 - Vercel bleibt während der Migration technisch als Rückfallstand erhalten. Mit dem aktuellen Hobby-Tarif ist eine kommerzielle Produktiv-Rückschaltung nicht freigegeben.
 - Die IONOS-Domain- und E-Mail-Verträge bleiben organisatorisch unverändert. Eine DNS-/Domain-Umschaltung erfolgt erst nach dokumentierter Staging-Abnahme und ausdrücklicher Bestätigung.
 
@@ -57,7 +57,7 @@ Folgende Punkte sind auf der IONOS-Bereitstellungsadresse zu prüfen und zu prot
 10. Demo-Anmeldung, Demo-Sitzung, Analytics-RPC und Zurücksetzen der fiktiven Demodaten.
 11. Browser-Konsole, Netzwerkfehler, mobile Darstellung und wesentliche Barrierefreiheitsprüfungen.
 
-Die Abnahme erfolgt soweit möglich mit Test-/Demo-Konten und rein lesenden Prüfungen. Produktionsdaten werden nicht verändert.
+Die Abnahme erfolgt mit Test-/Demo-Konten in einem getrennten, ausdrücklich als fiktiv gekennzeichneten Testmandanten. Produktionsdaten werden nicht verändert.
 
 ## Freigabe und Umschaltung
 
@@ -79,9 +79,9 @@ Die Domain `www.schichtfunk.de` wird erst verbunden bzw. per DNS umgeschaltet, w
 - Kurze Seitenrouten, tiefe PWA-Routen, HTTPS/HSTS, Cache-Regeln und 404-Verhalten für fehlende statische Assets: direkt auf IONOS geprüft.
 - Isolierte Demo-Prüfungen mit simulierter Edge-Function-Freigabe: Manager-/Mitarbeiterwechsel, DATEV-Download, Arbeitszeiterfassung/Stundenkonto und weitere Demoabläufe wurden ohne Produktionsdaten erreicht. Ein gebündelter Kaltstart-Dauerlauf wurde wegen zeitweise stark schwankender Antwortzeiten der Vorschau nicht als alleiniger Freigabenachweis gewertet.
 - Supabase Edge Functions: bereitgestellt und mit neu erzeugten Geheimnissen aktiviert. Live-Prüfung: Anmeldung HTTP 200, Sitzungsprüfung HTTP 200, Analytics HTTP 204; CORS erlaubt exakt die IONOS-Prüfadresse.
-- Geschützte Echtkonto-Prüfungen: offen, weil die ausschließlich lesenden Testkonto-Variablen `SF_E2E_EMAIL` und `SF_E2E_PASSWORD` nicht vorliegen.
+- Geschützte Echtkonto-Prüfungen: ein isolierter fiktiver Testmandant mit einem `OWNER`-Managerkonto und einem verknüpften `EMPLOYEE`-Konto wurde angelegt. Beide Anmeldungen, Rollen sowie die RLS-bedingte Sicht auf ausschließlich diesen Testmandanten wurden über die Live-API verifiziert. Kennwörter sind nicht im Repository oder in dieser Dokumentation gespeichert; die Browser-Abnahme über IONOS steht noch aus.
 - Geschützte Demo auf IONOS: echte Anmeldung, Managerbereich, Mitarbeiterportal, Dienstplan, Mitarbeiter, Abwesenheiten, Zeiterfassung/QR-Einstieg, Stundenkonto, Lohnvorschau, DATEV und beide Marktplatzansichten geprüft. Ein dabei gefundener rekursiver RPC-Wrapperfehler wurde behoben und durch Desktop-/Mobiltests abgesichert.
-- Vollständige IONOS-Staging-Abnahme: weitgehend bestanden; Echtkonto-/Rollenprüfung und Push auf einem realen Gerät bleiben offen.
+- Vollständige IONOS-Staging-Abnahme: weitgehend bestanden; die Browser-Anmeldung beider isolierter Testrollen über IONOS und Push auf einem realen Gerät bleiben offen.
 - Demo-Geheimnisse in Supabase: gesetzt; Klartextwerte sind nicht im Repository oder in dieser Dokumentation gespeichert.
-- Supabase Pro und DPA-Nachweis: offen; keine kostenpflichtige Umstellung erfolgt.
+- Supabase Pro: aktiv. Der DPA-/AVV-Nachweis und die Liste der Auftragsverarbeiter müssen noch revisionssicher archiviert werden.
 - Domain-Umschaltung: gesperrt bis Staging-Abnahme und ausdrücklicher Betreiberfreigabe.
