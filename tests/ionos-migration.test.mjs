@@ -45,6 +45,7 @@ test('portable HMAC tokens reject tampering and expiry',async()=>{
 
 test('Apache config handles clean routes, SPA fallback and PWA-safe caching',()=>{
   assert.match(apache,/RewriteCond %\{DOCUMENT_ROOT\}\/\$1\.html -f/);
+  assert.match(apache,/RewriteCond %\{REQUEST_URI\} !\\\.\[\^\/\]\+\$/);
   assert.match(apache,/RewriteRule \^ index\.html \[L\]/);
   assert.match(apache,/Content-Security-Policy/);
   assert.match(apache,/schichtfunk-sw\\\.js/);
