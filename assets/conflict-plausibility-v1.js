@@ -71,7 +71,7 @@
   const managerStart=files.indexOf('assets/supabase-time-month-close-v1.js');
   let managerPromise=null;
   const present=file=>[...document.scripts].some(s=>{try{return new URL(s.src,location.href).pathname===new URL(file,location.href).pathname}catch{return false}});
-  const append=(file,next)=>{if(present(file)){next();return}const s=document.createElement('script');const version=file==='assets/supabase-time-tracking-v1.js'?'20260912-monthfix2':file==='assets/supabase-time-account-holidays-v1.js'?'20260911-saxony1':file==='assets/time-month-picker-v1.js'?'20260912-monthfix2':'20260906-timeaccount1';s.src=file+'?v='+version;s.onload=next;s.onerror=()=>{console.error('SchichtFunk-Modul konnte nicht geladen werden:',file);next()};document.body.appendChild(s)};
+  const append=(file,next)=>{if(present(file)){next();return}const s=document.createElement('script');const version=file==='assets/supabase-time-tracking-v1.js'?'20260912-plan-default1':file==='assets/supabase-time-account-holidays-v1.js'?'20260911-saxony1':file==='assets/time-month-picker-v1.js'?'20260912-monthfix2':'20260906-timeaccount1';s.src=file+'?v='+version;s.onload=next;s.onerror=()=>{console.error('SchichtFunk-Modul konnte nicht geladen werden:',file);next()};document.body.appendChild(s)};
   const loadManager=()=>{
     if(managerPromise)return managerPromise;
     managerPromise=new Promise(resolve=>{const next=i=>{if(i>=files.length){resolve();return}append(files[i],()=>next(i+1))};next(managerStart)}).then(()=>{const B=window.SFBackend;if(B?.ready&&B.role!=='EMPLOYEE')B.baseOpenApp?.(B.pendingView||'overview')});

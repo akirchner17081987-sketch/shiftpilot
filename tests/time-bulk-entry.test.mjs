@@ -11,7 +11,9 @@ test('manager UI offers a guarded bulk time-entry action',()=>{
   assert.match(ui,/sf-time-bulk-apply/);
   assert.match(ui,/manager_bulk_record_time_entries/);
   assert.match(ui,/p_confirm:true/);
-  assert.match(ui,/Geschlossene Monate, zukünftige Schichten und vorhandene Zeiteinträge/);
+  assert.match(ui,/Nur bei Abweichungen einzeln handeln/);
+  assert.match(ui,/automatisch wieder geöffnet/);
+  assert.match(ui,/reopenedMonths/);
 });
 
 test('demo supports bulk time entry without external calls',()=>{
@@ -33,12 +35,13 @@ test('selected month drives the query and stale requests cannot overwrite it',()
   assert.match(ui,/const applied=await loadManager\(monthOverride\);if\(applied\)renderManagerRows\(\)/);
   assert.match(ui,/periodRange\(monthOverride\)/);
   assert.match(ui,/sfTimeMonthPicker'\)\?\.value!==monthOverride/);
-  assert.match(loader,/supabase-time-tracking-v1\.js'\?'20260912-monthfix2'/);
+  assert.match(loader,/supabase-time-tracking-v1\.js'\?'20260912-plan-default1'/);
   assert.match(loader,/time-month-picker-v1\.js'\?'20260912-monthfix2'/);
 });
 
 test('bulk RPC is atomic, restricted and protects existing or ineligible rows',()=>{
-  const sql=read('supabase/migrations/20260911080807_manager_bulk_record_include_planned_shifts.sql');
+  const sql=read('supabase/migrations/20260912093000_bulk_time_auto_reopen_closed_month.sql');
+  const hardening=read('supabase/migrations/20260912094500_harden_bulk_time_auto_reopen.sql');
   assert.match(sql,/security definer/i);
   assert.match(sql,/set search_path=''/i);
   assert.match(sql,/private\.sf_is_manager\(p_company_id,false\)/i);
@@ -46,9 +49,15 @@ test('bulk RPC is atomic, restricted and protects existing or ineligible rows',(
   assert.doesNotMatch(sql,/sa\.status='PUBLISHED'/i);
   assert.match(sql,/te\.assignment_id is null/i);
   assert.match(sql,/sa\.ends_at<=now\(\)/i);
-  assert.match(sql,/sf_is_time_month_closed/i);
+  assert.match(sql,/manager_reopen_time_month/i);
+  assert.match(sql,/private\.sf_is_manager\(p_company_id,true\)/i);
+  assert.match(sql,/'reopenedMonths',v_reopened_months/i);
+  assert.match(sql,/planEqualsActual/i);
   assert.match(sql,/on conflict\(assignment_id\) do nothing/i);
   assert.match(sql,/jsonb_build_object\('bulk',true/i);
   assert.match(sql,/revoke all .* from public,anon/i);
   assert.match(sql,/grant execute .* to authenticated/i);
+  assert.match(hardening,/alter function public\.manager_bulk_record_time_entries[\s\S]*set schema private/i);
+  assert.match(hardening,/create function public\.manager_bulk_record_time_entries[\s\S]*security invoker/i);
+  assert.match(hardening,/revoke all on function private\.manager_bulk_record_time_entries[\s\S]*from public,anon/i);
 });

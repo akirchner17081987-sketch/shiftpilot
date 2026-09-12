@@ -27,7 +27,8 @@ test('manager records all eligible open times in one guarded action',async({page
   const apply=modal.locator('#sfTimeBulkApply');
   await expect(apply).toBeEnabled();
   await expect(modal.locator('#sfTimeBulkAcknowledge')).toHaveCount(0);
-  await expect(modal).toContainText('ohne weitere Einzelprüfung als bestätigt');
+  await expect(modal).toContainText('Nur bei Abweichungen einzeln handeln');
+  await expect(modal).toContainText('automatisch wieder geöffnet');
   await apply.click();
 
   await expect(modal).toBeHidden();
