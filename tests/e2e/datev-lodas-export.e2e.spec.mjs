@@ -45,6 +45,41 @@ test('DATEV LODAS one-click export is authorized, audited and downloaded', async
   await expect(panel.locator('#sfDatevStatus')).toContainText('erstellt und protokolliert');
 });
 
+test('DATEV LODAS export can be downloaded with the optional .sic extension', async ({ page }) => {
+  await primeDemoSession(page);
+  await page.route('**/api/demo-auth', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }),
+    });
+  });
+
+  await page.goto('/demo');
+  await waitForDemoReady(page);
+  await openManagerArea(page, 'reports');
+
+  const workspace = page.locator('#sfTimeAccounts');
+  await workspace.waitFor({ state: 'visible' });
+  await workspace.locator('[data-sf-ta-tab="datev"]').click();
+
+  const panel = workspace.locator('#sfDatevPanel');
+  await expect(panel.locator('#sfDatevExtension')).toHaveValue('txt');
+  await panel.locator('#sfDatevExtension').selectOption('sic');
+  await panel.locator('#sfDatevMonth').fill('2026-08');
+  await panel.locator('#sfDatevMonth').dispatchEvent('change');
+
+  const downloadPromise = page.waitForEvent('download');
+  await panel.locator('#sfDatevExport').click();
+  const download = await downloadPromise;
+  const content = await downloadText(download);
+
+  expect(download.suggestedFilename()).toBe('SchichtFunk_DATEV_LODAS_2026-08.sic');
+  expect(content).toContain('[Allgemein]\r\nZiel=LODAS');
+  expect(content).toContain('[Bewegungsdaten]\r\n1;01.08.2026;');
+  await expect(panel.locator('#sfDatevStatus')).toContainText('als .sic erstellt und protokolliert');
+});
+
 test('DATEV download is blocked when server authorization fails', async ({ page }) => {
   await primeDemoSession(page);
   await page.route('**/api/demo-auth', async route => {

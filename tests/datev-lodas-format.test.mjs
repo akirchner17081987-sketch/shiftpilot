@@ -12,7 +12,11 @@ const migration=fs.readFileSync(new URL('../supabase/migrations/20260911061817_c
 test('DATEV browser export module has valid JavaScript syntax',()=>{
   assert.doesNotThrow(()=>new vm.Script(ui,{filename:'datev-lodas-export-v1.js'}));
   assert.match(ui,/charset=us-ascii/);
-  assert.match(ui,/SchichtFunk_DATEV_LODAS_\$\{month\}\.txt/);
+  assert.match(ui,/id="sfDatevExtension"/);
+  assert.match(ui,/<option value="txt"[^>]*>\.txt \(empfohlen\)<\/option>/);
+  assert.match(ui,/<option value="sic"[^>]*>\.sic \(optional\)<\/option>/);
+  assert.match(ui,/value==='sic'\?'sic':'txt'/);
+  assert.match(ui,/SchichtFunk_DATEV_LODAS_\$\{month\}\.\$\{extension\}/);
 });
 
 test('DATEV download requires a successful server authorization first',()=>{
