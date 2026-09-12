@@ -61,6 +61,13 @@ test('Urlaub Tagesbasis exports days as quantity instead of hours',()=>{
   assert.match(content,/1;01\.08\.2026;2,00;26;141;1;NULL;/);
 });
 
+test('Krank Std. exports credited sickness hours as wage type 145',()=>{
+  const result=C.buildRows({rules:[{active:true,label:'Krank Std.',source_type:'ABSENCE_TYPE',source_key:'Krank',wage_type:'145',cost_center:null,sort_order:30}],employees:[{employee_id:'e1',employee_name:'Test',personnel_no:'26',confirmed_work_minutes:0}],details:[{employee_id:'e1',employee_name:'Test',work_date:'2026-08-05',absence_types:'Krank',absence_credit_minutes:480}],entries:[]});
+  assert.equal(result.errors.length,0);assert.equal(result.rows.length,1);assert.equal(result.rows[0].wage_type,'145');assert.equal(result.rows[0].minutes,480);
+  const content=C.formatContent({beraterNr:'1103899',mandantenNr:'62069',month:'2026-08',rows:result.rows});
+  assert.match(content,/1;01\.08\.2026;8,00;26;145;1;NULL;/);
+});
+
 test('night premium counts only 22:00-06:00 in Europe/Berlin',()=>{
   const entry={entry_status:'confirmed',actual_start:'2026-08-03T18:00:00+02:00',actual_end:'2026-08-04T04:00:00+02:00',actual_break_minutes:0};
   assert.equal(C.premiumMinutes(entry,'NIGHT_WINDOW'),360);
@@ -74,6 +81,13 @@ test('Sunday premium counts the full Sunday 00:00-24:00 window',()=>{
 test('premium rules aggregate 1214 and 2214 separately',()=>{
   const result=C.buildRows({rules:[{active:true,label:'Nacht',source_type:'NIGHT_WINDOW',source_key:'22:00-06:00',wage_type:'1214',cost_center:null,sort_order:20},{active:true,label:'Sonntag',source_type:'SUNDAY_WINDOW',source_key:'00:00-24:00',wage_type:'2214',cost_center:null,sort_order:30}],employees:[{employee_id:'e1',employee_name:'Test',personnel_no:'26',confirmed_work_minutes:0}],details:[],entries:[{employee_id:'e1',employee_name:'Test',entry_status:'confirmed',actual_start:'2026-08-01T22:00:00+02:00',actual_end:'2026-08-02T06:00:00+02:00',actual_break_minutes:0}]});
   assert.equal(result.errors.length,0);assert.equal(result.rows.find(x=>x.wage_type==='1214').minutes,480);assert.equal(result.rows.find(x=>x.wage_type==='2214').minutes,360);
+});
+
+test('Feiertagszuschlag 100% exports only confirmed work minutes inside a Sachsen holiday',()=>{
+  const result=C.buildRows({rules:[{active:true,label:'Feiertagszuschlag 100% frei',source_type:'HOLIDAY_WINDOW',source_key:'00:00-24:00',wage_type:'214',cost_center:null,sort_order:130}],employees:[{employee_id:'e1',employee_name:'Test',personnel_no:'26',confirmed_work_minutes:0}],details:[{employee_id:'e1',employee_name:'Test',work_date:'2026-10-31',holiday_name:'Reformationstag',absence_types:'',absence_credit_minutes:0}],entries:[{employee_id:'e1',employee_name:'Test',entry_status:'confirmed',actual_start:'2026-10-30T22:00:00+01:00',actual_end:'2026-10-31T06:00:00+01:00',actual_break_minutes:0}]});
+  assert.equal(result.errors.length,0);assert.equal(result.rows.length,1);assert.equal(result.rows[0].wage_type,'214');assert.equal(result.rows[0].minutes,360);
+  const content=C.formatContent({beraterNr:'1103899',mandantenNr:'62069',month:'2026-10',rows:result.rows});
+  assert.match(content,/1;01\.10\.2026;6,00;26;214;1;NULL;/);
 });
 
 test('premium calculation blocks ambiguous breaks without break placement',()=>{
