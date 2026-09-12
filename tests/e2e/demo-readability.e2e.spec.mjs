@@ -3,8 +3,8 @@ import { demoPerspectiveSwitch, primeDemoSession, waitForDemoReady } from './hel
 
 test('demo readability is applied to manager and employee perspectives', async ({ page }, testInfo) => {
   await primeDemoSession(page);
-  await page.route('**/api/demo-auth', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
+  await page.route('**/demo-auth', async route => {
+    await route.fulfill({headers:{'Access-Control-Allow-Origin':'*'}, status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
   });
   await page.goto('/demo');
   await waitForDemoReady(page);

@@ -8,7 +8,7 @@ test('demo never connects to Supabase in manager or employee views',async({page}
   page.on('console',message=>{if(/SF_DEMO_(?:UNHANDLED|NETWORK_BLOCKED)/.test(message.text()))isolationErrors.push(message.text())});
   page.on('pageerror',error=>{if(/SF_DEMO_(?:UNHANDLED|NETWORK_BLOCKED)/.test(error.message))isolationErrors.push(error.message)});
   await primeDemoSession(page);
-  await page.route('**/api/demo-auth',async route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({expiresAt:new Date(Date.now()+3_600_000).toISOString()})}));
+  await page.route('**/demo-auth',async route=>route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},status:200,contentType:'application/json',body:JSON.stringify({expiresAt:new Date(Date.now()+3_600_000).toISOString()})}));
 
   await page.goto('/demo');
   await waitForDemoReady(page, { scenarios: true });

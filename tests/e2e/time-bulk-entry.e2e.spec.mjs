@@ -5,8 +5,8 @@ const demoUrl=()=>process.env.E2E_BASE_URL?.startsWith('http://localhost')?'/dem
 
 test('manager records all eligible open times in one guarded action',async({page})=>{
   await primeDemoSession(page);
-  await page.route('**/api/demo-auth',async route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({expiresAt:new Date(Date.now()+3_600_000).toISOString()})}));
-  await page.route('**/api/demo-analytics',async route=>route.fulfill({status:204,body:''}));
+  await page.route('**/demo-auth',async route=>route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},status:200,contentType:'application/json',body:JSON.stringify({expiresAt:new Date(Date.now()+3_600_000).toISOString()})}));
+  await page.route('**/demo-analytics',async route=>route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},status:204,body:''}));
   const demoPath=demoUrl();
   await page.goto(demoPath);
   await waitForDemoReady(page);
@@ -38,8 +38,8 @@ test('manager records all eligible open times in one guarded action',async({page
 
 test('historical month selection wins over an older in-flight request',async({page})=>{
   await primeDemoSession(page);
-  await page.route('**/api/demo-auth',async route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({expiresAt:new Date(Date.now()+3_600_000).toISOString()})}));
-  await page.route('**/api/demo-analytics',async route=>route.fulfill({status:204,body:''}));
+  await page.route('**/demo-auth',async route=>route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},status:200,contentType:'application/json',body:JSON.stringify({expiresAt:new Date(Date.now()+3_600_000).toISOString()})}));
+  await page.route('**/demo-analytics',async route=>route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},status:204,body:''}));
   const demoPath=demoUrl();
   await page.goto(demoPath);
   await waitForDemoReady(page);
@@ -61,8 +61,8 @@ test('historical month selection wins over an older in-flight request',async({pa
 
 test('selected month remains readable while the native month input is focused',async({page})=>{
   await primeDemoSession(page);
-  await page.route('**/api/demo-auth',async route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({expiresAt:new Date(Date.now()+3_600_000).toISOString()})}));
-  await page.route('**/api/demo-analytics',async route=>route.fulfill({status:204,body:''}));
+  await page.route('**/demo-auth',async route=>route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},status:200,contentType:'application/json',body:JSON.stringify({expiresAt:new Date(Date.now()+3_600_000).toISOString()})}));
+  await page.route('**/demo-analytics',async route=>route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},status:204,body:''}));
   await page.goto(demoUrl());
   await waitForDemoReady(page);
   await openManagerArea(page,'time');

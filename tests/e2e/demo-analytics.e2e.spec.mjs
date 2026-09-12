@@ -4,8 +4,8 @@ import { demoPerspectiveSwitch, openManagerArea, primeDemoSession, waitForDemoRe
 test('demo explains and records only anonymous feature categories',async({page})=>{
   const events=[];
   await primeDemoSession(page);
-  await page.route('**/api/demo-auth',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,expiresAt:new Date(Date.now()+3_600_000).toISOString()})}));
-  await page.route('**/api/demo-analytics',async route=>{events.push(route.request().postDataJSON());await route.fulfill({status:204,body:''})});
+  await page.route('**/demo-auth',route=>route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},status:200,contentType:'application/json',body:JSON.stringify({ok:true,expiresAt:new Date(Date.now()+3_600_000).toISOString()})}));
+  await page.route('**/demo-analytics',async route=>{events.push(route.request().postDataJSON());await route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},status:204,body:''})});
   await page.goto('/demo');
   await waitForDemoReady(page);
 

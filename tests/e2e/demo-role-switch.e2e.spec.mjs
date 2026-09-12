@@ -3,8 +3,8 @@ import { demoPerspectiveSwitch, openEmployeeArea, openManagerArea, primeDemoSess
 
 test('demo switches between manager workspace and the existing employee portal', async ({ page }) => {
   await primeDemoSession(page);
-  await page.route('**/api/demo-auth', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
+  await page.route('**/demo-auth', async route => {
+    await route.fulfill({headers:{'Access-Control-Allow-Origin':'*'}, status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
   });
   await page.goto('/demo');
   await waitForDemoReady(page);
@@ -86,8 +86,8 @@ test('demo switches between manager workspace and the existing employee portal',
 
 test('demo employee can review and confirm presentation shift changes', async ({ page }) => {
   await primeDemoSession(page);
-  await page.route('**/api/demo-auth', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
+  await page.route('**/demo-auth', async route => {
+    await route.fulfill({headers:{'Access-Control-Allow-Origin':'*'}, status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
   });
   await page.goto('/demo');
   await waitForDemoReady(page);
@@ -111,8 +111,8 @@ test('demo employee can review and confirm presentation shift changes', async ({
 
 test('demo employee sees absence examples and can submit a local request', async ({ page }) => {
   await primeDemoSession(page);
-  await page.route('**/api/demo-auth', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
+  await page.route('**/demo-auth', async route => {
+    await route.fulfill({headers:{'Access-Control-Allow-Origin':'*'}, status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
   });
   await page.goto('/demo');
   await waitForDemoReady(page);
@@ -141,8 +141,8 @@ test('demo employee sees absence examples and can submit a local request', async
 
 test('demo time tracking persists employee entries and monthly accounts render', async ({ page }, testInfo) => {
   await primeDemoSession(page);
-  await page.route('**/api/demo-auth', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
+  await page.route('**/demo-auth', async route => {
+    await route.fulfill({headers:{'Access-Control-Allow-Origin':'*'}, status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
   });
   await page.goto('/demo');
   await waitForDemoReady(page);

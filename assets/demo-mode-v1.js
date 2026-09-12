@@ -266,7 +266,8 @@
       const result=await response.json();
       if(result.expiresAt)sessionStorage.setItem('sf_demo_expires_at_v1',result.expiresAt);
       start();
-    }catch{
+    }catch(err){
+      console.error('SchichtFunk Demo Start',err);
       clearLocalDemo();
       location.replace('/demo?expired=1');
     }
