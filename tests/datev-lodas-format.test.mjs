@@ -45,7 +45,7 @@ test('DATEV LODAS header and movement lines match the binding SchichtFunk patter
     month:'2026-08',
     rows:[
       {pnr:'26',wage_type:'1214',minutes:60,cost_center:'NULL'},
-      {pnr:'26',wage_type:'145',minutes:3000,cost_center:'NULL'},
+      {pnr:'26',wage_type:'2214',minutes:3000,cost_center:'NULL'},
       {pnr:'26',wage_type:'101',minutes:7800,cost_center:'NULL'}
     ]
   });
@@ -61,7 +61,7 @@ test('DATEV LODAS header and movement lines match the binding SchichtFunk patter
     '1;u_lod_bwd_buchung_standard;abrechnung_zeitraum#bwd;bs_wert_butab#bwd;pnr#bwd;la_eigene#bwd;bs_nr#bwd;kostenstelle#bwd;abw_lohnfaktor#bwd;bemerkung#bwd;',
     '[Bewegungsdaten]',
     '1;01.08.2026;1,00;26;1214;1;NULL;',
-    '1;01.08.2026;50,00;26;145;1;NULL;',
+    '1;01.08.2026;50,00;26;2214;1;NULL;',
     '1;01.08.2026;130,00;26;101;1;NULL;'
   ].join('\r\n');
   assert.equal(content,expected);
@@ -84,6 +84,41 @@ test('rules aggregate confirmed work and keep the configured own wage type',()=>
   assert.equal(result.rows[0].pnr,'26');
   assert.equal(result.rows[0].wage_type,'101');
   assert.equal(result.rows[0].cost_center,'NULL');
+});
+
+test('night premium counts only 22:00-06:00 in Europe/Berlin',()=>{
+  const entry={entry_status:'confirmed',actual_start:'2026-08-03T18:00:00+02:00',actual_end:'2026-08-04T04:00:00+02:00',actual_break_minutes:0};
+  assert.equal(C.premiumMinutes(entry,'NIGHT_WINDOW'),360);
+});
+
+test('Sunday premium counts the full Sunday 00:00-24:00 window',()=>{
+  const entry={entry_status:'confirmed',actual_start:'2026-08-01T22:00:00+02:00',actual_end:'2026-08-02T06:00:00+02:00',actual_break_minutes:0};
+  assert.equal(C.premiumMinutes(entry,'SUNDAY_WINDOW'),360);
+});
+
+test('premium rules aggregate 1214 and 2214 separately',()=>{
+  const result=C.buildRows({
+    rules:[
+      {active:true,label:'Nacht',source_type:'NIGHT_WINDOW',source_key:'22:00-06:00',wage_type:'1214',cost_center:null,sort_order:20},
+      {active:true,label:'Sonntag',source_type:'SUNDAY_WINDOW',source_key:'00:00-24:00',wage_type:'2214',cost_center:null,sort_order:30}
+    ],
+    employees:[{employee_id:'e1',employee_name:'Test',personnel_no:'26',confirmed_work_minutes:0}],
+    details:[],
+    entries:[{employee_id:'e1',employee_name:'Test',entry_status:'confirmed',actual_start:'2026-08-01T22:00:00+02:00',actual_end:'2026-08-02T06:00:00+02:00',actual_break_minutes:0}]
+  });
+  assert.equal(result.errors.length,0);
+  assert.equal(result.rows.find(x=>x.wage_type==='1214').minutes,480);
+  assert.equal(result.rows.find(x=>x.wage_type==='2214').minutes,360);
+});
+
+test('premium calculation blocks ambiguous breaks without break placement',()=>{
+  const result=C.buildRows({
+    rules:[{active:true,label:'Nacht',source_type:'NIGHT_WINDOW',source_key:'22:00-06:00',wage_type:'1214',cost_center:null,sort_order:20}],
+    employees:[{employee_id:'e1',employee_name:'Test',personnel_no:'26',confirmed_work_minutes:0}],
+    details:[],
+    entries:[{employee_id:'e1',employee_name:'Test',entry_status:'confirmed',actual_start:'2026-08-03T20:00:00+02:00',actual_end:'2026-08-04T06:00:00+02:00',actual_break_minutes:30}]
+  });
+  assert.ok(result.errors.some(x=>x.includes('Pause ohne genaue Pausenlage')));
 });
 
 test('empty movement exports are blocked instead of producing a misleading file',()=>{
