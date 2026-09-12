@@ -19,7 +19,7 @@ Stand: 12.09.2026
 - Supabase-Produktivprojekt ist `ACTIVE_HEALTHY` in Region `eu-central-1`.
 - IONOS Deploy Now Starter ist als künftiges Primärhosting eingerichtet; Projekt-ID `7bc70ac7-ec3b-4e7b-bae5-569c957e8514` stellt den geprüften Zweig `codex/ionos-migration` unter `home-5021411544.app-ionos.space` bereit. Die produktive Domain bleibt bis zur vollständigen Abnahme unverändert.
 - Der reproduzierbare statische Build umfasst 2,04 MiB und liegt damit deutlich unter dem Starter-Limit von 50 MB pro statischem Projekt.
-- Die beiden bislang Vercel-spezifischen Demo-Endpunkte `demo-auth` und `demo-analytics` wurden als Supabase Edge Functions in Frankfurt bereitgestellt. Sie sind ohne die noch zu übernehmenden/neu zu setzenden Demo-Geheimnisse absichtlich nicht nutzbar.
+- Die beiden bislang Vercel-spezifischen Demo-Endpunkte `demo-auth` und `demo-analytics` wurden als Supabase Edge Functions bereitgestellt, mit neu erzeugten Geheimnissen aktiviert und über die IONOS-Vorschau geprüft.
 - Der zuvor anonym ausführbare SECURITY-DEFINER-RPC `manager_import_month_matrix` wurde für `anon` gesperrt; die entsprechende Supabase-Security-Advisor-Warnung ist danach verschwunden.
 - Die Datenschutzerklärung bildet den tatsächlichen Funktionsumfang ab: Benutzerkonten, Rollen, Mitarbeiterstammdaten, Dienstplanung, Abwesenheiten/Krankheitsdaten, Zeiterfassung, QR, Stundenkonto, Feiertage, Schichtänderungen, Tausch, Marktplatz, Auto-Planung, Störfall-Autopilot, Push, PWA/Browser-Speicher, Demo und DATEV-LODAS-Export.
 - Vollständige Betreiberunterlage `documentation/avv-dpa-subprocessors-2026-09-12.md` für direkte Auftragsverarbeiter, DPA-Lage, Unterauftragsverarbeiter und Drittlandtransfers angelegt.
@@ -37,8 +37,9 @@ Stand: 12.09.2026
 
 ### IONOS
 - IONOS Deploy Now ist als primäre Auslieferungsplattform für die statische Webseite/PWA vorgesehen; IONOS verarbeitet dabei technisch erforderliche Webzugriffs- und Sicherheitsdaten.
-- Nach der offiziellen IONOS-Vertragsinformation ist der AVV für seit dem 19.07.2022 geschlossene Verträge Bestandteil der IONOS-AGB. Der im September 2026 gebuchte Deploy-Now-Vertrag fällt zeitlich in diesen Bereich; Vertragsunterlagen, maßgebliche AGB-/AVV-Fassung und Buchungsnachweis sind dennoch als Nachweis zu archivieren.
-- Vor Produktivfreigabe sind die für Deploy Now tatsächlich geltenden Protokollierungs-, Lösch- und Unterauftragsverarbeiterangaben nochmals anhand der konkreten Vertrags-/Produktunterlagen zu prüfen.
+- Nach der offiziellen IONOS-Vertragsinformation ist der AVV für seit dem 19.07.2022 geschlossene Verträge Bestandteil der IONOS-AGB; für den im September 2026 gebuchten Deploy-Now-Vertrag ist keine gesonderte Vereinbarung erforderlich.
+- Maßgeblicher AVV Version 1.3 (03/2026), Leistungsbeschreibung Version 3.0 (03/2026), TOM Version 1.0 und Unterauftragnehmerliste Version 4.5 (04/2026) sind mit Abrufstand und SHA-256-Prüfsummen dokumentiert.
+- Die allgemeine Hosting-Leistungsbeschreibung nennt eine Logfile-Frist von maximal sieben Tagen. Da Deploy Now dort nicht namentlich aufgeführt ist, bleibt die produktspezifische Bestätigung dieser Frist als transparenter Prüfhinweis bestehen.
 
 ### Vercel
 - Tatsächlicher Teamplan geprüft: **Hobby**.
@@ -50,12 +51,12 @@ Stand: 12.09.2026
 - DPA enthält EU-SCCs und Regelungen zur Unterauftragsverarbeitung.
 
 ### Supabase
-- Organisation geprüft: `Security_Plattform`, aktueller Plan: **Free**.
+- Organisation geprüft: `Security_Plattform`, aktueller Plan: **Pro**; Spend Cap aktiviert.
 - Produktivprojekt: `SchichtFunk`, Region **eu-central-1 (Frankfurt)**.
-- Aktuelles DPA geprüft: https://supabase.com/downloads/docs/Supabase%2BDPA%2B260317.pdf
-- Das DPA wird in den geprüften Anbieterunterlagen nicht auf einen bestimmten kostenpflichtigen Plan begrenzt, verlangt aber einen wirksamen Vertragsabschluss/Unterschriftsnachweis.
-- SchichtFunk-Verarbeitungsangaben einschließlich Gesundheitsdaten („Krank“), Betroffenenkategorien, Rollenlage und zuständiger Aufsichtsbehörde sind in der AVV/DPA-Unterlage vorausgefüllt/dokumentiert.
-- Aktuelle Supabase-Unterauftragsverarbeiter aus Schedule 3 sind dokumentiert.
+- Aktuelles DPA geprüft: https://supabase.com/legal/customer-resources/data-processing-addendum – Version 1 vom 01.08.2026.
+- Im angemeldeten Organisationsbereich `Legal Documents` bestätigt Supabase die automatische Einbeziehung des DPA in die Terms of Service für alle Organisationen; eine separate Unterschrift ist nicht erforderlich.
+- SchichtFunk-Verarbeitungsangaben einschließlich Gesundheitsdaten („Krank“), Betroffenenkategorien, Rollenlage und zuständiger Aufsichtsbehörde sind in der AVV/DPA-Unterlage dokumentiert.
+- Aktuelle Supabase-Unterauftragsverarbeiterliste vom 01.06.2026 und TIA vom 14.03.2025 sind dokumentiert.
 
 ### Weitere direkte Auftragsverarbeiter
 - Kein eigenständiger Analyse-/Marketinganbieter festgestellt.
@@ -66,26 +67,25 @@ Stand: 12.09.2026
 ### Teilstatus AVV/DPA + Auftragsverarbeiter
 
 - Auftragsverarbeiter-/Subprozessorenübersicht: 🟢 dokumentiert und geprüft.
-- IONOS-AVV: 🟡 zeitlich von der AGB-Einbeziehung erfasst; konkrete Vertragsfassung und Produktdetails noch zu archivieren/prüfen.
+- IONOS-AVV: 🟢 AGB-Einbeziehung und aktuelle AVV-Anlagen mit Versions-/Prüfsummennachweis dokumentiert.
 - Vercel-DPA: 🟡 für die inaktive Rückfallumgebung dokumentiert; kommerzielle Aktivierung mit Hobby ausgeschlossen.
-- Supabase-DPA: 🟡 fachlich vorbereitet; Unterschrift/wirksame Annahme und Archivierung als Vertragsnachweis erforderlich.
+- Supabase-DPA: 🟢 automatische Einbeziehung im angemeldeten Pro-Organisationsbereich bestätigt; DPA, SCC, TIA und Unterauftragsverarbeiter dokumentiert.
+- Nachweisregister: `documentation/avv-dpa-evidence-register-2026-09-12.md`.
 
 ## Noch offen – Punkt 9 bleibt IN ARBEIT
 
 1. Supabase Auth „Leaked Password Protection“ aktivieren. Der Security Advisor meldet die Funktion weiterhin als deaktiviert.
-2. **IONOS-Vertragsunterlagen einschließlich der für Deploy Now geltenden AGB-/AVV-Fassung, Protokollierungsfristen und Unterauftragsverarbeiter als Nachweis archivieren.**
-3. **Supabase-DPA unterzeichnen/wirksam annehmen und archivieren.**
-4. Für einen möglichen produktiven Vercel-Rollback vor Aktivierung eine kommerziell zulässige Tarif-/DPA-Grundlage herstellen; kein Upgrade ohne ausdrückliche Freigabe.
-5. Lösch- und Aufbewahrungskonzept mit konkreten Fristen/Kriterien pro Datenkategorie und Mandantenprozess finalisieren.
-6. TOM-Dokumentation (technische und organisatorische Maßnahmen) als Betreiberunterlage finalisieren.
-7. Verzeichnis von Verarbeitungstätigkeiten (VVT) für die Verarbeitungsvorgänge, bei denen der Betreiber selbst Verantwortlicher ist, und Auftragsverarbeitungsübersicht finalisieren.
-8. DSFA-Schwellenprüfung dokumentieren, insbesondere wegen systematischer Beschäftigtendatenverarbeitung, Arbeitszeiterfassung und Gesundheits-/Krankheitsdaten. Falls die Prüfung ein voraussichtlich hohes Risiko ergibt, vollständige DSFA durchführen.
-9. Backup-/Restore-Konzept und regelmäßigen Wiederherstellungstest dokumentieren.
-10. Logging-/Monitoring- und Incident-Response-Aufbewahrung sowie Datenschutzverletzungsprozess nach Art. 33/34 DSGVO dokumentieren.
-11. Prüfen, ob Registerangaben, USt-IdNr. oder weitere Impressumspflichten für den Betreiber einschlägig sind; falls ja, Impressum ergänzen.
+2. Für einen möglichen produktiven Vercel-Rollback vor Aktivierung eine kommerziell zulässige Tarif-/DPA-Grundlage herstellen; kein Upgrade ohne ausdrückliche Freigabe.
+3. Lösch- und Aufbewahrungskonzept mit konkreten Fristen/Kriterien pro Datenkategorie und Mandantenprozess finalisieren.
+4. TOM-Dokumentation (technische und organisatorische Maßnahmen) als Betreiberunterlage finalisieren.
+5. Verzeichnis von Verarbeitungstätigkeiten (VVT) für die Verarbeitungsvorgänge, bei denen der Betreiber selbst Verantwortlicher ist, und Auftragsverarbeitungsübersicht finalisieren.
+6. DSFA-Schwellenprüfung dokumentieren, insbesondere wegen systematischer Beschäftigtendatenverarbeitung, Arbeitszeiterfassung und Gesundheits-/Krankheitsdaten. Falls die Prüfung ein voraussichtlich hohes Risiko ergibt, vollständige DSFA durchführen.
+7. Backup-/Restore-Konzept und regelmäßigen Wiederherstellungstest dokumentieren.
+8. Logging-/Monitoring- und Incident-Response-Aufbewahrung sowie Datenschutzverletzungsprozess nach Art. 33/34 DSGVO dokumentieren.
+9. Prüfen, ob Registerangaben, USt-IdNr. oder weitere Impressumspflichten für den Betreiber einschlägig sind; falls ja, Impressum ergänzen.
 
 ## Gesamtstatus
 
 Roadmap-Punkt 9: 🟠 **In Arbeit**.
 
-Der öffentliche rechtliche Grundauftritt, die produktbezogene Datenschutzerklärung und die Auftragsverarbeiter-/Subprozessorendokumentation sind umgesetzt. Der AVV/DPA-Teil kann erst nach Archivierung der konkreten IONOS-Vertragsunterlagen, wirksamem Supabase-DPA-Nachweis und Abschluss der übrigen Betreiberunterlagen endgültig grün gesetzt werden. Vercel Pro ist für das geplante IONOS-Primärhosting nicht erforderlich, wohl aber vor einer kommerziellen Aktivierung des Vercel-Rollbacks.
+Der öffentliche rechtliche Grundauftritt, die produktbezogene Datenschutzerklärung sowie die AVV/DPA- und Auftragsverarbeiter-/Subprozessorendokumentation für IONOS + Supabase sind umgesetzt. Punkt 9 bleibt wegen der übrigen Betreiberunterlagen in Arbeit. Vercel Pro ist für das geplante IONOS-Primärhosting nicht erforderlich, wohl aber vor einer kommerziellen Aktivierung des Vercel-Rollbacks.

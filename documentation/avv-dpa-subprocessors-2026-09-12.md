@@ -28,10 +28,12 @@ Für Beschäftigtendaten ist regelmäßig das jeweilige Kundenunternehmen bzw. d
 
 ### AVV-/Vertragslage
 
-- Offizielle IONOS-Information zum AVV: https://www.ionos.de/hilfe/mein-konto/vertraege/auftragsverarbeitung-avv/
-- Nach dieser Anbieterinformation ist der AVV bei ab dem 19.07.2022 abgeschlossenen Verträgen Bestandteil der IONOS-AGB. Der aktuelle Deploy-Now-Vertrag wurde danach geschlossen.
-- Für den belastbaren Betreiber-Nachweis sind Buchungsbestätigung, die zum Vertrag gehörenden AGB-/AVV-Dokumente und deren Versionsstand zu archivieren.
-- Vor Produktivfreigabe sind zusätzlich die konkret für Deploy Now geltenden Angaben zu Serverprotokollen, Löschfristen, Hostingstandorten und Unterauftragsverarbeitern anhand der Vertrags-/Produktunterlagen festzuhalten. Allgemeine Angaben zu anderen IONOS-Hostingprodukten werden nicht ungeprüft auf Deploy Now übertragen.
+- Offizielle IONOS-Information: https://www.ionos.de/hilfe/datenschutz/allgemeine-informationen-zur-datenschutzgrundverordnung-dsgvo/vereinbarung-zur-auftragsverarbeitung-avv-mit-ionos-abschliessen/
+- IONOS bestätigt dort, dass der AVV seit dem 19.07.2022 Bestandteil der AGB ist und für danach geschlossene Verträge keine gesonderte Vereinbarung erforderlich ist. Der Deploy-Now-Vertrag wurde im September 2026 geschlossen.
+- Maßgeblicher AVV: https://www.ionos.de/terms-gtc/avv/ – Version 1.3, Stand 03/2026. Ziffer 1.1 erfasst alle zur Vertragserfüllung ausgeführten Auftragsverarbeitungen, auch wenn der Einzelauftrag nicht ausdrücklich auf den AVV verweist; Ziffer 12.3 bezieht den AVV als Teil der Produkt-AGB ein.
+- Archivierte Anlagen/Nachweise: Leistungsbeschreibungen Version 3.0 (03/2026), technische und organisatorische Maßnahmen Version 1.0 sowie genehmigte Subunternehmen Version 4.5 (04/2026). Abrufdaten, URLs, Dateigrößen und SHA-256-Prüfsummen stehen im Nachweisregister `documentation/avv-dpa-evidence-register-2026-09-12.md`.
+- Die allgemeine Leistungsbeschreibung für Hosting nennt Inhaltsdaten der Website, Domain und Logfiles sowie eine maximale Logfile-Speicherung von sieben Tagen. Deploy Now wird in der Anlage nicht namentlich aufgeführt; deshalb wird diese Frist nicht ohne zusätzliche Produktbestätigung als verbindliche Deploy-Now-Spezialfrist ausgegeben.
+- Die aktuelle Unterauftragnehmeranlage nennt Cloudflare für Hosting-Produkte (CDN, Standardvertragsklauseln). Weitere dort aufgeführte Dienstleister sind nur bei Nutzung der jeweils genannten Produkte relevant.
 
 ### Datenkategorien und Zweck
 
@@ -39,7 +41,7 @@ IONOS liefert ausschließlich die statischen SchichtFunk-Dateien/PWA aus. Dabei 
 
 ### Status IONOS
 
-🟡 **TECHNISCH VORBEREITET – Vertragsnachweise und produktspezifische Detailprüfung noch zu archivieren.**
+🟢 **AVV UND ANLAGEN DOKUMENTIERT – automatische AGB-Einbeziehung für den 2026 geschlossenen Vertrag nachgewiesen. Die produktspezifische Deploy-Now-Zuordnung der allgemeinen Logfrist bleibt als Prüfhinweis dokumentiert.**
 
 ---
 
@@ -79,13 +81,13 @@ Vercel bleibt während der kontrollierten Migration zunächst technisch erreichb
 
 ---
 
-## 3. Supabase Inc. – Backend, Datenbank, Auth, Realtime und Edge Functions
+## 3. Supabase Pte. Ltd – Backend, Datenbank, Auth, Realtime und Edge Functions
 
 ### Tatsächlich festgestellter Kontostand
 
 - Organisation: `Security_Plattform`
 - Organisations-ID: `iovtxoshcpbqkxieiovd`
-- Aktueller Plan: **Free**
+- Aktueller Plan: **Pro**, seit 12.09.2026; Spend Cap aktiviert
 - Produktivprojekt: `SchichtFunk`
 - Projekt-Ref: `zbvloohfjleadjnqhbbh`
 - Projektstatus: `ACTIVE_HEALTHY`
@@ -93,13 +95,14 @@ Vercel bleibt während der kontrollierten Migration zunächst technisch erreichb
 
 Die gewählte spezifische Region bestimmt laut Supabase die Region der primären Projektdaten. `eu-central-1` entspricht Central EU / Frankfurt.
 
-Die vormals bei Vercel ausgeführten Demo-Endpunkte `demo-auth` und `demo-analytics` sind nun als Supabase Edge Functions bereitgestellt. Ihre produktive Aktivierung setzt die sichere Übernahme bzw. Rotation der Demo-Geheimnisse voraus; es werden keine Standardzugangsdaten verwendet.
+Die vormals bei Vercel ausgeführten Demo-Endpunkte `demo-auth` und `demo-analytics` sind als Supabase Edge Functions bereitgestellt, mit neu erzeugten Geheimnissen aktiviert und über die IONOS-Vorschau geprüft. Es werden keine Standardzugangsdaten verwendet.
 
 ### AVV/DPA-Lage
 
-- Aktuelles DPA: https://supabase.com/downloads/docs/Supabase%2BDPA%2B260317.pdf
-- Supabase stellt ein DPA für Kunden bereit, die es für Datenschutzanforderungen benötigen; eine Beschränkung des DPA ausschließlich auf einen kostenpflichtigen Tarif ist in den geprüften Anbieterunterlagen nicht ausgewiesen.
-- Das DPA sieht eine Kundenunterschrift bzw. sonstige wirksame Zustimmung vor. Für einen belastbaren Nachweis wird die **unterzeichnete Fassung** als Betreiberunterlage empfohlen.
+- Aktuelles DPA: https://supabase.com/legal/customer-resources/data-processing-addendum – Version 1, 01.08.2026.
+- Das DPA ergänzt die Supabase Terms of Service, ist ab Wirksamwerden des Hauptvertrags gültig und umfasst je nach Rollenlage Controller→Processor bzw. Processor→Subprocessor. Die Annahme des Hauptvertrags hat nach DPA Ziffer 12.2 dieselbe Wirkung wie die Unterzeichnung der EU-Standardvertragsklauseln.
+- Im angemeldeten Bereich `Organization Settings > Legal Documents` wurde am 12.09.2026 für die Pro-Organisation bestätigt, dass das DPA automatisch in die Terms of Service einbezogen ist, alle Organisationen dadurch geschützt sind und kein separat unterschriebener DPA erforderlich ist.
+- DPA, aktuelle Unterauftragsverarbeiterliste und Transfer Impact Assessment sind mit Abrufstand und SHA-256-Prüfsummen im Nachweisregister dokumentiert.
 
 ### Für SchichtFunk einzutragende DPA-Verarbeitungsangaben
 
@@ -114,15 +117,15 @@ Die vormals bei Vercel ausgeführten Demo-Endpunkte `demo-auth` und `demo-analyt
 - Zweck: Bereitstellung der SchichtFunk-SaaS-Funktionen
 - Zuständige Aufsichtsbehörde für eigene Betreiberverarbeitung: Landesbeauftragte für den Datenschutz Sachsen-Anhalt
 
-### Supabase-Unterauftragsverarbeiter – DPA Schedule 3, geprüfter Anbieterstand 2026
+### Supabase-Unterauftragsverarbeiter – offizielle Liste, Stand 01.06.2026
 
 Die aktuelle DPA-Anlage nennt insbesondere:
 
-1. Supabase Pte. Ltd – Support
+1. Supabase, Inc. – Support
 2. Active Campaign, LLC d/b/a Postmark – Kommunikation/Support
 3. Amazon Web Services, Inc – Hosting
 4. Atlassian Corporation Plc – Statusseite
-5. Baintrust Data, Inc – Monitoring/Tracing
+5. Braintrust Data, Inc – Monitoring/Tracing
 6. Clay Labs Inc. – Customer Insights
 7. Clazar, Inc – Marketplace-Dienste
 8. Cloudflare, Inc – Hosting/Netzwerkdienste
@@ -135,11 +138,13 @@ Die aktuelle DPA-Anlage nennt insbesondere:
 15. Hex Technologies, Inc – Datenanalyse
 16. HubSpot, Inc – Kommunikation/Support
 17. Notion Labs, Inc – Kommunikation/Support
-18. OpenAI, LLC – Natural-Language-Processing/Generation im Rahmen von Supabase-Diensten
-19. PandaDoc, Inc – Kommunikation/Support
-20. Slack Technologies, LLC – Kommunikation/Support
-21. Upstash, Inc – serverloses Datenhosting
-22. Vercel, Inc – Hosting
+18. Sublime Security Inc – E-Mail-Sicherheit
+19. Latacora, LLC – Managed Security Service Provider
+20. OpenAI, LLC – Natural-Language-Processing/Generation im Rahmen von Supabase-Diensten
+21. PandaDoc, Inc – Kommunikation/Support
+22. Slack Technologies, LLC – Kommunikation/Support
+23. Upstash, Inc – serverloses Datenhosting
+24. Vercel, Inc – Hosting
 
 Diese Liste beschreibt die von Supabase allgemein autorisierten Unterauftragsverarbeiter. Nicht jeder Anbieter muss in jedem SchichtFunk-Datenfluss tatsächlich auf Kundendaten zugreifen. Maßgeblich bleiben die aktuelle DPA-Anlage sowie die tatsächlich aktivierten Supabase-Funktionen.
 
@@ -149,7 +154,7 @@ Supabase sieht für internationale Übermittlungen vertragliche Transfermechanis
 
 ### Status Supabase
 
-🟡 **TECHNISCH/DOKUMENTARISCH GEPRÜFT – Vertragsnachweis noch zu unterzeichnen/archivieren.**
+🟢 **DPA, SCC-EINBEZIEHUNG, TIA UND UNTERAUFTRAGSVERARBEITER DOKUMENTIERT – keine separate Unterschrift erforderlich.**
 
 ---
 
@@ -171,13 +176,11 @@ GitHub wird für Quellcode, Build-Automatisierung und Deployment verwendet. Prod
 
 ### AVV/DPA-Vertragsnachweise
 
-🟠 **NOCH NICHT VOLLSTÄNDIG ABGESCHLOSSEN**, weil externe Betreiberhandlungen erforderlich sind:
+🟢 **FÜR DIE VORGESEHENE PRODUKTIONSARCHITEKTUR IONOS + SUPABASE DOKUMENTIERT.**
 
-1. **IONOS: Buchungsbestätigung und die konkret einbezogene AGB-/AVV-Fassung archivieren; Deploy-Now-Protokollierung und Unterauftragsverarbeiter produktspezifisch dokumentieren.**
-2. **Supabase-DPA mit den oben dokumentierten SchichtFunk-Angaben unterzeichnen bzw. wirksam annehmen und als Vertragsnachweis archivieren.**
-3. **Vercel nur bei tatsächlich gewünschter kommerzieller Rückschaltung auf eine geeignete Tarif-/DPA-Grundlage umstellen.**
-
-Erst nach den für die tatsächlich eingesetzte Produktions- und Rückfallarchitektur erforderlichen Nachweisen darf der Teilpunkt „AVV/DPA + Auftragsverarbeiter“ auf 🟢 gesetzt werden.
+- IONOS: AVV-Einbeziehung über die AGB des 2026 geschlossenen Vertrags sowie aktuelle AVV-Anlagen nachgewiesen.
+- Supabase: automatische DPA-Einbeziehung im angemeldeten Organisationsbereich bestätigt; aktuelle DPA-/SCC-, TIA- und Subprocessor-Nachweise dokumentiert.
+- Vercel bleibt eine technisch erreichbare, aber nicht für kommerziellen Betrieb freigegebene Rückfallumgebung. Vor einer tatsächlichen kommerziellen Rückschaltung ist weiterhin eine Pro- oder sonstige geeignete Vertrags-/DPA-Grundlage erforderlich; ein Upgrade erfolgt nur nach ausdrücklicher Betreiberfreigabe.
 
 ## Prüfintervall
 
