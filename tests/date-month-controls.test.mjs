@@ -20,6 +20,9 @@ test('month inputs use compact logical German labels',()=>{
   }
   assert.match(format,/formatMonthShort/);
   assert.match(format,/sf-month-shortened/);
+  assert.match(css,/sf-month-shortened::\-webkit-datetime-edit/);
+  assert.match(css,/visibility:hidden!important/);
+  assert.match(css,/background:transparent!important/);
 });
 
 test('calendar icon area opens native date and month picker',()=>{
@@ -31,6 +34,6 @@ test('calendar icon area opens native date and month picker',()=>{
 });
 
 test('central date month controls are loaded together',()=>{
-  assert.match(navigation,/date-month-controls-v1\.css/);
+  assert.match(navigation,/date-month-controls-v1\.css\?v=20260912-focus1/);
   assert.match(navigation,/date-month-format-v1\.js\?v=20260904-2/);
 });

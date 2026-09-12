@@ -58,3 +58,30 @@ test('historical month selection wins over an older in-flight request',async({pa
   await expect(page.locator('#timeTableBody tr').first()).toContainText(/08\.2026/,{timeout:12_000});
   await expect(page.locator('#timeTableBody')).not.toContainText(/01\.09\.2026/);
 });
+
+test('selected month remains readable while the native month input is focused',async({page})=>{
+  await primeDemoSession(page);
+  await page.route('**/api/demo-auth',async route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({expiresAt:new Date(Date.now()+3_600_000).toISOString()})}));
+  await page.route('**/api/demo-analytics',async route=>route.fulfill({status:204,body:''}));
+  await page.goto(demoUrl());
+  await waitForDemoReady(page);
+  await openManagerArea(page,'time');
+
+  const picker=page.locator('#sfTimeMonthPicker');
+  await picker.fill('2026-08');
+  await picker.dispatchEvent('input');
+  await picker.dispatchEvent('change');
+  await expect(picker).toHaveAttribute('data-sf-month-short','Aug. 2026');
+  await picker.focus();
+
+  const appearance=await picker.evaluate(input=>({
+    value:input.value,
+    label:input.dataset.sfMonthShort,
+    focused:document.activeElement===input,
+    backgroundImage:getComputedStyle(input).backgroundImage
+  }));
+  expect(appearance.value).toBe('2026-08');
+  expect(appearance.label).toBe('Aug. 2026');
+  expect(appearance.focused).toBe(true);
+  expect(appearance.backgroundImage).toContain('data:image/svg+xml');
+});

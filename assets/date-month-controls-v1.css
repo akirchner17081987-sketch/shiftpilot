@@ -61,10 +61,22 @@ html body input[type="month"].sf-month-shortened{
   color:transparent!important;
   -webkit-text-fill-color:transparent!important;
   caret-color:transparent!important;
+  user-select:none;
   background-image:var(--sf-month-label-image),var(--sf-calendar-icon)!important;
   background-repeat:no-repeat,no-repeat!important;
   background-position:left 10px center,right 9px center!important;
   background-size:124px 20px,16px 16px!important;
+}
+
+/* Chromium markiert beim Fokus sonst einzelne, transparent gefärbte Monatsteile
+   mit einem blauen Rechteck über unserer kompakten Beschriftung. */
+html body input[type="month"].sf-month-shortened::-webkit-datetime-edit,
+html body input[type="month"].sf-month-shortened::-webkit-datetime-edit-fields-wrapper,
+html body input[type="month"].sf-month-shortened::-webkit-datetime-edit-text,
+html body input[type="month"].sf-month-shortened::-webkit-datetime-edit-month-field,
+html body input[type="month"].sf-month-shortened::-webkit-datetime-edit-year-field{
+  visibility:hidden!important;
+  background:transparent!important;
 }
 
 html body input[type="month"].sf-month-shortened:disabled{
