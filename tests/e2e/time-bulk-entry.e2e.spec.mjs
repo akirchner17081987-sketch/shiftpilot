@@ -46,14 +46,14 @@ test('historical month selection wins over an older in-flight request',async({pa
 
   const picker=page.locator('#sfTimeMonthPicker');
   await expect(picker).toHaveAttribute('data-sf-month-picker-bound','1');
-  await page.evaluate(()=>{const base=window.SFBackend.client.rpc.bind(window.SFBackend.client);window.__sfTimeRangeCalls=[];window.SFBackend.client.rpc=async(name,args)=>{if(name==='manager_list_time_entries')window.__sfTimeRangeCalls.push({start:args?.p_start_date,end:args?.p_end_date});return base(name,args)}});
+  await page.evaluate(()=>{const base=window.SFBackend.client.rpc.bind(window.SFBackend.client),pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));window.__sfTimeRangeCalls=[];window.SFBackend.client.rpc=async(name,args)=>{if(name!=='manager_list_time_entries')return base(name,args);const start=args?.p_start_date,end=args?.p_end_date;window.__sfTimeRangeCalls.push({start,end});await pause(start==='2026-09-01'?250:20);const result=await base(name,args);if(start!=='2026-08-01')return result;const august=(result?.data||[]).map(row=>{const move=value=>String(value||'').replace('2026-09','2026-08');return{...row,starts_at:move(row.starts_at),ends_at:move(row.ends_at),actual_start:move(row.actual_start),actual_end:move(row.actual_end)}});return{...result,data:august}}});
   await picker.fill('2026-09');
   await picker.dispatchEvent('change');
   await picker.fill('2026-08');
   await picker.dispatchEvent('change');
 
   await expect(picker).toHaveValue('2026-08');
-  await expect.poll(()=>page.evaluate(()=>window.__sfTimeRangeCalls)).toContainEqual({start:'2026-08-01',end:'2026-08-31'});
+  await expect.poll(()=>page.evaluate(()=>window.__sfTimeRangeCalls.some(x=>x.start==='2026-08-01'&&x.end==='2026-08-31'))).toBe(true);
   await expect(page.locator('#timeTableBody tr').first()).toContainText(/08\.2026/,{timeout:12_000});
   await expect(page.locator('#timeTableBody')).not.toContainText(/01\.09\.2026/);
 });
