@@ -66,6 +66,7 @@ test('IONOS build verifies the complete static PWA artifact before upload',()=>{
   ]) assert.match(buildScript,new RegExp(file.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
   assert.match(buildScript,/50 \* 1024 \* 1024/);
   assert.match(buildWorkflow,/DEPLOYMENT_FOLDER: dist/);
+  assert.match(buildWorkflow,/npm test/);
   assert.match(buildWorkflow,/npm run test:ionos/);
   assert.match(buildWorkflow,/config-file: \.deploy-now\/shiftpilot\/config\.yaml/);
   assert.match(deployConfig,/version: 1\.0/);

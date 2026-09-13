@@ -18,12 +18,13 @@ Stand: 12.09.2026
 - Laufzeit für den Build: Plain Node.js 22
 - Abhängigkeiten: `npm ci`
 - Build-Befehl: `npm run build`
-- Technische Vorabprüfung im IONOS-Build: `npm run test:ionos`
+- Technische Vorabprüfung im IONOS-Build: vollständige statische Regressionstests mit `npm test`, anschließend IONOS-spezifische Prüfung mit `npm run test:ionos`
 - Veröffentlichungsverzeichnis: `dist`
 - Deployment-Konfiguration: `.deploy-now/shiftpilot/config.yaml`; keine Laufzeitdateien werden zwischen statischen Veröffentlichungen ausgenommen oder dauerhaft weitergeführt.
 - Geprüfte Größe: 2.152.260 Byte / 2,05 MiB, Zielwert unter 50 MB
 - Die Dateiauswahl für `dist` ist ausdrücklich begrenzt; Quellcode, Tests, lokale Konfigurationen und Geheimnisse werden nicht veröffentlicht.
 - Der Build bricht vor dem Upload ab, wenn eine erforderliche Seite, ein PWA-Bestandteil, ein App-Icon oder der Supabase-Demo-Adapter fehlt, leer ist oder Manifest-Scope/-Startziel ungültig sind.
+- Live-Browsertests gegen eine entfernte Bereitstellung laufen bewusst seriell und mit einem Wiederholungsversuch, damit begrenzte Preview-Ressourcen nicht durch parallele Testlast verfälscht werden.
 
 ## Routing, PWA und Sicherheitsheader
 
