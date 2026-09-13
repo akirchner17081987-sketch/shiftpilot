@@ -15,6 +15,9 @@ const authFunction=read('supabase/functions/demo-auth/index.ts');
 const analyticsFunction=read('supabase/functions/demo-analytics/index.ts');
 const security=read('supabase/functions/_shared/demo-security.js');
 const apache=read('.htaccess');
+const buildScript=read('scripts/build-static.mjs');
+const buildWorkflow=read('.github/workflows/shiftpilot-build.yaml');
+const deployConfig=read('.deploy-now/shiftpilot/config.yaml');
 
 test('demo clients use Supabase Edge Functions and retain Vercel only as fallback code',()=>{
   assert.match(demo,/demo-api-v2\.js/);
@@ -53,4 +56,18 @@ test('Apache config handles clean routes, SPA fallback and PWA-safe caching',()=
   assert.match(apache,/Content-Security-Policy/);
   assert.match(apache,/schichtfunk-sw\\\.js/);
   assert.match(apache,/no-cache, no-store, must-revalidate/);
+});
+
+test('IONOS build verifies the complete static PWA artifact before upload',()=>{
+  for(const file of [
+    'index.html','demo.html','demo-abschluss.html','qr-time.html','impressum.html','datenschutz.html',
+    'schichtfunk-sw.js','site.webmanifest','assets/schichtfunk-app-icon-192.png',
+    'assets/schichtfunk-app-icon-512.png','assets/schichtfunk-app-icon-maskable-512.png','assets/demo-api-v2.js'
+  ]) assert.match(buildScript,new RegExp(file.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+  assert.match(buildScript,/50 \* 1024 \* 1024/);
+  assert.match(buildWorkflow,/DEPLOYMENT_FOLDER: dist/);
+  assert.match(buildWorkflow,/npm run test:ionos/);
+  assert.match(buildWorkflow,/config-file: \.deploy-now\/shiftpilot\/config\.yaml/);
+  assert.match(deployConfig,/bootstrap:\s+excludes: \[\]/);
+  assert.match(deployConfig,/recurring:\s+excludes: \[\]/);
 });

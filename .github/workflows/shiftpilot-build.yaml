@@ -40,6 +40,9 @@ jobs:
           npm ci
           npm run build
 
+      - name: Verify IONOS migration
+        run: npm run test:ionos
+
 # Please do not touch the following action
       - name: Store deployment content
         uses: ionos-deploy-now/artifact-action@v1

@@ -18,9 +18,12 @@ Stand: 12.09.2026
 - Laufzeit für den Build: Plain Node.js 22
 - Abhängigkeiten: `npm ci`
 - Build-Befehl: `npm run build`
+- Technische Vorabprüfung im IONOS-Build: `npm run test:ionos`
 - Veröffentlichungsverzeichnis: `dist`
+- Deployment-Konfiguration: `.deploy-now/shiftpilot/config.yaml`; keine Laufzeitdateien werden zwischen statischen Veröffentlichungen ausgenommen oder dauerhaft weitergeführt.
 - Geprüfte Größe: 2.152.260 Byte / 2,05 MiB, Zielwert unter 50 MB
 - Die Dateiauswahl für `dist` ist ausdrücklich begrenzt; Quellcode, Tests, lokale Konfigurationen und Geheimnisse werden nicht veröffentlicht.
+- Der Build bricht vor dem Upload ab, wenn eine erforderliche Seite, ein PWA-Bestandteil, ein App-Icon oder der Supabase-Demo-Adapter fehlt, leer ist oder Manifest-Scope/-Startziel ungültig sind.
 
 ## Routing, PWA und Sicherheitsheader
 
@@ -76,7 +79,7 @@ Die Domain `www.schichtfunk.de` wird erst verbunden bzw. per DNS umgeschaltet, w
 ## Aktueller Freigabestatus
 
 - Deploy-Now-Projekt und automatische GitHub-Actions-Bereitstellung: eingerichtet; Build- und Deployment-Läufe erfolgreich.
-- Statischer Build und 28 automatisierte lokale Funktions-/Regressionstestgruppen: bestanden.
+- Statischer Build und 29 automatisierte lokale Funktions-/Regressionstestgruppen: bestanden.
 - Öffentliche IONOS-Browserprüfung: 10 von 10 Desktop-/Mobiltests bestanden (Branding, PWA-Ressourcen, Login-Validierung, Supabase-Demo-Client, responsive Breite und Sicherheitsheader).
 - Kurze Seitenrouten, tiefe PWA-Routen, HTTPS/HSTS, Cache-Regeln und 404-Verhalten für fehlende statische Assets: direkt auf IONOS geprüft.
 - Isolierte Demo-Prüfungen mit simulierter Edge-Function-Freigabe: Manager-/Mitarbeiterwechsel, DATEV-Download, Arbeitszeiterfassung/Stundenkonto und weitere Demoabläufe wurden ohne Produktionsdaten erreicht. Ein gebündelter Kaltstart-Dauerlauf wurde wegen zeitweise stark schwankender Antwortzeiten der Vorschau nicht als alleiniger Freigabenachweis gewertet.
