@@ -79,6 +79,7 @@ Die Domain `www.schichtfunk.de` wird erst verbunden bzw. per DNS umgeschaltet, w
 
 ## Aktueller Freigabestatus
 
+- Produktive Betreiberabnahme: Alexander Kirchner hat das IONOS-Deployment am 13.09.2026 vollständig für den Produktivbetrieb abgenommen.
 - Deploy-Now-Projekt und automatische GitHub-Actions-Bereitstellung: eingerichtet; Build- und Deployment-Läufe erfolgreich.
 - Statischer Build und 29 automatisierte lokale Funktions-/Regressionstestgruppen: bestanden.
 - Öffentliche IONOS-Browserprüfung: 10 von 10 Desktop-/Mobiltests bestanden (Branding, PWA-Ressourcen, Login-Validierung, Supabase-Demo-Client, responsive Breite und Sicherheitsheader).
@@ -94,4 +95,4 @@ Die Domain `www.schichtfunk.de` wird erst verbunden bzw. per DNS umgeschaltet, w
 - AVV/DPA: IONOS-AVV-Einbeziehung und aktuelle Anlagen sowie Supabase-DPA, SCC, TIA und Unterauftragsverarbeiter sind mit Versionsstand und SHA-256-Prüfsummen im Nachweisregister dokumentiert. Supabase bestätigt im angemeldeten Pro-Organisationsbereich die automatische DPA-Einbeziehung ohne separate Unterschrift.
 - Betreiberunterlagen: TOM, VVT, Lösch-/Aufbewahrungskonzept und DSFA-Schwellenprüfung sind als Version 1.0 dokumentiert. Die Schwellenprüfung verlangt vor dem ersten kommerziellen Beschäftigtendaten-Echtbetrieb eine vollständige kundenspezifische DSFA, die Benennung einer datenschutzbeauftragten Person und den Abschluss der hoch priorisierten Sicherheits-/Löschmaßnahmen.
 - Supabase Pro: aktiv; Spend Cap eingeschaltet.
-- Domain-Umschaltung: gesperrt bis Staging-Abnahme und ausdrücklicher Betreiberfreigabe.
+- Domain-Umschaltung: noch nicht ausgeführt. Die Produktivabnahme ersetzt nicht die separat erforderliche ausdrückliche Anweisung zur Änderung von `www.schichtfunk.de` beziehungsweise der DNS-Zuordnung.
