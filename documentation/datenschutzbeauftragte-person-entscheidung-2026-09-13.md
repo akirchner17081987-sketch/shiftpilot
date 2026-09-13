@@ -1,7 +1,7 @@
 # SchichtFunk – Entscheidung zur datenschutzbeauftragten Person
 
 Stand: 13.09.2026
-Status: Entscheidungsvorlage, keine Benennung erfolgt
+Status: Option B (interne Person) am 13.09.2026 ausgewählt; konkrete Person, Fachkunde und Interessenkonfliktprüfung offen; keine Benennung erfolgt
 
 ## Ausgangspunkt
 
@@ -36,13 +36,20 @@ Für eine allein leitende Betreiberperson ist die Selbstbenennung regelmäßig k
 4. Stellungnahme zu DSFA, Löschkonzept, MFA, Backup/Restore und zulässigen Beschäftigtenauswertungen einholen.
 5. jährliche und anlassbezogene Reviews vereinbaren.
 
-## Noch benötigte Nutzerentscheidung
+## Festgehaltene Nutzerentscheidung
 
-SchichtFunk benötigt eine Entscheidung zwischen:
+Für SchichtFunk wurde **Option B: geeignete interne Person** ausgewählt. Diese Richtungsentscheidung ist noch keine Benennung, keine Vertragsannahme und keine Behördenmeldung.
 
-- **A: externe datenschutzbeauftragte Person auswählen** (empfohlen),
-- **B: geeignete interne Person benennen und Interessenkonflikt/Fachkunde prüfen**, oder
-- **C: vorerst nur anwaltliche/behördliche Pflichtprüfung beauftragen und den Echtbetrieb bis zur Klärung sperren**.
+Vor einer formellen Benennung werden noch benötigt:
+
+1. Name und betriebliche Funktion der vorgesehenen Person;
+2. dokumentierte Prüfung, dass die Person nicht selbst Zwecke und Mittel der maßgeblichen Verarbeitung bestimmt;
+3. Nachweis bzw. Fortbildungsplan zu Fachkunde im Beschäftigtendatenschutz und in Art. 35–39 DSGVO;
+4. zugesicherte Zeit, Ressourcen, Unabhängigkeit, unmittelbarer Zugang zur höchsten Leitungsebene und Schutz vor Benachteiligung;
+5. Vertretungs- und Erreichbarkeitsregelung;
+6. ausdrückliche Freigabe vor Benennung und Meldung an die Aufsicht.
+
+Ist die vorgesehene Person Alexander Kirchner oder zugleich alleinige Leitung/Produktverantwortung, ist ein Interessenkonflikt wahrscheinlich und Option B muss neu bewertet werden.
 
 Es wurde weder ein Vertrag angenommen noch eine Person benannt oder eine Behördenmeldung abgegeben.
 
