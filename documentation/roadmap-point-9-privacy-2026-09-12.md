@@ -79,6 +79,7 @@ Stand: 13.09.2026
 - Vercel-DPA: 🟡 für die inaktive Rückfallumgebung dokumentiert; kommerzielle Aktivierung mit Hobby ausgeschlossen.
 - Supabase-DPA: 🟢 automatische Einbeziehung im angemeldeten Pro-Organisationsbereich bestätigt; DPA, SCC, TIA und Unterauftragsverarbeiter dokumentiert.
 - Nachweisregister: `documentation/avv-dpa-evidence-register-2026-09-12.md`.
+- Finale Nachprüfung vom 13.09.2026: 🟢 offizielle IONOS-/Supabase-Nachweise erneut erreichbar und versioniert geprüft; unveränderliche PDF-Nachweise sowie Supabase-DPA bytegleich, aktueller Supabase-Pro-/Frankfurt-Projektstatus bestätigt. Vercel Hobby bleibt von einer kommerziellen Rückfallschaltung ausgeschlossen.
 
 ## Noch offen – Punkt 9 bleibt IN ARBEIT
 

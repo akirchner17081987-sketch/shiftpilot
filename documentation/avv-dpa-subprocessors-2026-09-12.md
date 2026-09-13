@@ -1,6 +1,6 @@
 # SchichtFunk – AVV/DPA- und Auftragsverarbeiterprüfung
 
-Stand: 12.09.2026
+Stand: 13.09.2026
 
 ## Zweck
 
@@ -177,6 +177,8 @@ GitHub wird für Quellcode, Build-Automatisierung und Deployment verwendet. Prod
 ### AVV/DPA-Vertragsnachweise
 
 🟢 **FÜR DIE VORGESEHENE PRODUKTIONSARCHITEKTUR IONOS + SUPABASE DOKUMENTIERT.**
+
+Die offiziellen Quellen, Fassungen und Prüfsummen wurden am 13.09.2026 erneut abgerufen. Die maßgeblichen PDF-Nachweise und die Supabase-DPA-Fassung waren unverändert; IONOS AVV Version 1.3 sowie Vercel DPA Stand 17.03.2026 wurden inhaltlich erneut bestätigt. Der vollständige Abschlussvermerk steht im Nachweisregister.
 
 - IONOS: AVV-Einbeziehung über die AGB des 2026 geschlossenen Vertrags sowie aktuelle AVV-Anlagen nachgewiesen.
 - Supabase: automatische DPA-Einbeziehung im angemeldeten Organisationsbereich bestätigt; aktuelle DPA-/SCC-, TIA- und Subprocessor-Nachweise dokumentiert.

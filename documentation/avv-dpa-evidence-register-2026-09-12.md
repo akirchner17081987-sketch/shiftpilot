@@ -1,6 +1,7 @@
 # SchichtFunk – AVV/DPA-Nachweisregister
 
-Stand und Abruf: 12.09.2026, Europe/Berlin
+Stand und Erstabruf: 12.09.2026, Europe/Berlin
+Finale Nachprüfung: 13.09.2026, Europe/Berlin
 
 ## Zweck und Prüfmethode
 
@@ -45,3 +46,22 @@ Das Vercel-DPA gilt laut Anbieter für Pro- und Enterprise-Pläne. Der vorhanden
 - Änderungen der Unterauftragsverarbeiter anlassbezogen übernehmen.
 - Bei einer späteren kommerziellen Vercel-Aktivierung vorab Tarif- und DPA-Grundlage erneut nachweisen.
 - Dieses Register dokumentiert die technische/vertragliche Anbieterprüfung und ersetzt keine individuelle Rechtsberatung.
+
+## Finale Nachprüfung vom 13.09.2026
+
+Alle aufgeführten offiziellen Abrufadressen antworteten mit HTTP 200. Die unveränderlichen PDF-Nachweise von IONOS sowie Supabase-Unterauftragsverarbeiterliste und -TIA waren byte- und SHA-256-identisch zum Erstabruf. Auch die Supabase-DPA-HTML-Fassung war bytegleich; sie weist weiterhin Version 1 vom 01.08.2026 aus und bildet nach ihrem Wortlaut einen Teil der Supabase-Nutzungsvereinbarung.
+
+| Nachweis | Ergebnis der Nachprüfung |
+|---|---|
+| IONOS AVV | Version 1.3, Stand 03/2026, weiterhin veröffentlicht; aktuelle Roh-HTML-Prüfsumme `c233752887a654f2c4e05f40e76fc599209585c1d3d8bb1e55843f442b86ebc4` bei unveränderter Dateigröße 56.216 Byte |
+| IONOS AVV-Anlagen | alle drei PDF-Dateien byte- und SHA-256-identisch zum Erstabruf |
+| Supabase DPA | Version 1, 01.08.2026; 101.512 Byte; SHA-256 weiterhin `08c01599e8c2ec50accff9d87f19fbcdeb4907bfcb2a6a94ab014e70daf6695c` |
+| Supabase Unterauftragsverarbeiter | Stand 01.06.2026; 63.579 Byte; SHA-256 weiterhin `e85324d3d26fd754755a8cbcf8ddf3f1e8b04f164eb4959a63e53f6aa3f5fa6d` |
+| Supabase TIA | Stand 14.03.2025; 856.710 Byte; SHA-256 weiterhin `1b71ea56e25b67cbfe0ac78eb5bc974faa875aae7ac5b95c25fc30b9227b90a3` |
+| Vercel DPA – nur Rückfall | weiterhin Stand 17.03.2026 / wirksam 31.03.2026; aktuelle Roh-HTML-Prüfsumme `4f0454be59a2ad972b1c180648c44ac3aa5be4f4187256caa8e04a50ffb2710a` bei 640.464 Byte; gilt weiterhin nur für Pro und Enterprise |
+
+Die geänderten Roh-HTML-Prüfsummen bei IONOS und Vercel betreffen dynamisch ausgelieferte Webseiten. Die ausgewiesenen Dokumentversionen und die hier maßgeblichen Vertragsaussagen sind unverändert. Für dauerhafte Beweiskraft werden deshalb Anbieterstand, Abrufdatum, URL, Dateigröße und Prüfsumme gemeinsam geführt.
+
+Kontostand bei Abschluss der Nachprüfung: Supabase-Organisation `Security_Plattform` im Plan **Pro**; Projekt `SchichtFunk` (`zbvloohfjleadjnqhbbh`) in `eu-central-1` mit Status `ACTIVE_HEALTHY`. IONOS Deploy Now bleibt das vorgesehene Primärhosting. Vercel Hobby bleibt für kommerzielle Nutzung gesperrte Rückfalltechnik.
+
+Teilstatus AVV/DPA: 🟢 **FÜR DIE GEPLANTE PRODUKTIONSARCHITEKTUR IONOS DEPLOY NOW + SUPABASE PRO FINAL NACHGEPRÜFT UND NACHWEISBAR DOKUMENTIERT.**
