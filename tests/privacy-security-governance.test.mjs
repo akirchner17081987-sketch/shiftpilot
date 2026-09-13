@@ -1,10 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { authorizeLifecycleRequest, parseLifecycleRequest } from '../supabase/functions/_shared/privacy-lifecycle.js';
-import { compareStorageManifests } from '../scripts/storage-restore-manifest.mjs';
+import {
+  buildStorageManifest, compareStorageManifests, resolveManifestPath, verifyStorageDirectory
+} from '../scripts/storage-restore-manifest.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const allowlist=JSON.parse(fs.readFileSync(path.join(root,'supabase','security-definer-allowlist.json'),'utf8'));
@@ -18,6 +21,7 @@ const lifecycleEdge=fs.readFileSync(path.join(root,'supabase','functions','priva
 const mfaClient=fs.readFileSync(path.join(root,'assets','supabase-mfa-v1.js'),'utf8');
 const moduleLoader=fs.readFileSync(path.join(root,'assets','conflict-plausibility-v1.js'),'utf8');
 const settingsClient=fs.readFileSync(path.join(root,'assets','settings-management-v2.js'),'utf8');
+const storageManifestSource=fs.readFileSync(path.join(root,'scripts','storage-restore-manifest.mjs'),'utf8');
 
 test('SECURITY DEFINER allowlist is exact and reviewable',()=>{
   assert.equal(allowlist.functions.length,35);
@@ -169,4 +173,39 @@ test('fictitious Storage restore requires exact object hashes',()=>{
   assert.deepEqual(bad.missing,['personnel-documents/tenant/employee/b.png']);
   assert.deepEqual(bad.mismatched,['personnel-documents/tenant/employee/a.pdf']);
   assert.deepEqual(bad.unexpected,['personnel-documents/tenant/employee/c.txt']);
+});
+
+test('fictitious Storage export and restore are hashed from disk and detect modification',async()=>{
+  assert.match(storageManifestSource,/entry\.isSymbolicLink\(\).*SYMLINK_NOT_ALLOWED/);
+  const temp=fs.mkdtempSync(path.join(os.tmpdir(),'schichtfunk-storage-'));
+  const resolvedTemp=path.resolve(temp);
+  const resolvedSystemTemp=`${path.resolve(os.tmpdir())}${path.sep}`;
+  assert.ok(resolvedTemp.startsWith(resolvedSystemTemp));
+  try{
+    const exported=path.join(temp,'exported');
+    const restored=path.join(temp,'restored');
+    fs.mkdirSync(path.join(exported,'tenant','employee'),{recursive:true});
+    fs.mkdirSync(path.join(restored,'tenant','employee'),{recursive:true});
+    assert.throws(
+      ()=>resolveManifestPath(path.join(exported,'..manifest.json'),exported),
+      /MANIFEST_MUST_BE_OUTSIDE_STORAGE_ROOT/
+    );
+    assert.equal(resolveManifestPath(path.join(temp,'manifest.json'),exported),path.join(temp,'manifest.json'));
+    fs.writeFileSync(path.join(exported,'tenant','employee','test.pdf'),'fictitious-pdf-content');
+    fs.copyFileSync(
+      path.join(exported,'tenant','employee','test.pdf'),
+      path.join(restored,'tenant','employee','test.pdf')
+    );
+    const manifest=await buildStorageManifest(exported,'personnel-documents');
+    assert.equal(manifest.length,1);
+    assert.deepEqual(await verifyStorageDirectory(manifest,restored,'personnel-documents'),{
+      ok:true,expectedCount:1,restoredCount:1,missing:[],unexpected:[],mismatched:[]
+    });
+    fs.appendFileSync(path.join(restored,'tenant','employee','test.pdf'),'-changed');
+    const changed=await verifyStorageDirectory(manifest,restored,'personnel-documents');
+    assert.equal(changed.ok,false);
+    assert.deepEqual(changed.mismatched,['personnel-documents/tenant/employee/test.pdf']);
+  }finally{
+    fs.rmSync(resolvedTemp,{recursive:true,force:true});
+  }
 });

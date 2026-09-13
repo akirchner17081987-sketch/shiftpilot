@@ -13,7 +13,16 @@ Damit ist die laufende Erzeugung täglicher Datenbankbackups belegt. Supabase we
 
 Es wurde **kein Restore** angeklickt oder gestartet. Ein Restore des Produktivprojekts verursacht Nichtverfügbarkeit und überschreibt den aktuellen Datenbankstand. „Restore to new project“ bzw. eine Supabase-Branch kann zusätzliche Kosten oder Ressourcen erzeugen. Dafür fehlt noch die ausdrückliche Bestätigung.
 
-Für den späteren Storage-Test liegt nun ein lokaler Manifestvergleich vor. Er vergleicht Bucket, Objektpfad, Dateigröße und SHA-256-Prüfsumme und meldet fehlende, unerwartete oder inhaltlich abweichende Dateien. Der Test mit ausschließlich fiktiven Dateien besteht; er ersetzt noch nicht den echten Export und Restore des privaten Buckets.
+Für den späteren Storage-Test liegt nun ein lokales Manifestwerkzeug vor. Es inventarisiert einen Exportordner rekursiv, berechnet für jede Datei Bucket, Objektpfad, Dateigröße und SHA-256-Prüfsumme und meldet beim Restore fehlende, unerwartete oder inhaltlich abweichende Dateien. Symbolische Verknüpfungen werden nicht verfolgt; die Manifestdatei muss außerhalb des geprüften Objektordners liegen und wird nicht überschrieben. Der Test mit ausschließlich fiktiven Dateien besteht; er ersetzt noch nicht den echten Export und Restore des privaten Buckets.
+
+Beispiel für die spätere Wegwerf-Umgebung:
+
+```text
+node scripts/storage-restore-manifest.mjs create personnel-documents <Exportordner> <Manifest-außerhalb-des-Exportordners.json>
+node scripts/storage-restore-manifest.mjs verify personnel-documents <Restoreordner> <dieselbe-Manifestdatei.json>
+```
+
+`verify` endet nur dann erfolgreich, wenn Anzahl, Pfade, Größen und Prüfsummen exakt übereinstimmen. Der Export selbst muss separat über eine freigegebene Storage-Sicherung erfolgen; das Werkzeug lädt keine Produktionsobjekte herunter und besitzt keine Supabase-Schlüssel.
 
 ## Abnahmeplan auf Wegwerf-Testumgebung
 
@@ -37,6 +46,6 @@ Für den späteren Storage-Test liegt nun ein lokaler Manifestvergleich vor. Er 
 | Wiederanlaufziel RTO | 8 Stunden, im Test zu messen |
 | Backup-Aufbewahrung Supabase Pro | 7 Tage laut Anbieterangabe |
 
-Status: 🟢 **TÄGLICHE DB-BACKUPS LIVE NACHGEWIESEN**, 🔴 **ECHTER RESTORE UND SEPARATE STORAGE-WIEDERHERSTELLUNG NOCH OFFEN**.
+Status: 🟢 **TÄGLICHE DB-BACKUPS LIVE NACHGEWIESEN UND LOKALER STORAGE-MANIFEST-/RESTORE-ABGLEICH BESTANDEN**, 🔴 **ECHTER RESTORE UND SEPARATER STORAGE-EXPORT AUF WEGWERF-UMGEBUNG NOCH OFFEN**.
 
 Quelle: https://supabase.com/docs/guides/platform/backups

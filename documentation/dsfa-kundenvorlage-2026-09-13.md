@@ -175,7 +175,7 @@ Nachweise: `tom-2026-09-12.md`, `vvt-2026-09-12.md`, `loesch-und-aufbewahrungsko
 | Leaked-Password-Schutz und MFA abgenommen | 🔴 | TOTP/App-Fluss und gemeinsame `aal2`-Serverprüfung vorbereitet; Zwei-Konten-, Recovery- und Aktivierungstest offen |
 | 35-RPC-Allowlist-Verhaltenstest bestanden | 🟡 | Liste/Drifttest vorhanden, Testbranch offen |
 | Lösch-/Offboarding-Test vollständig bestanden | 🟡 | V3-Dry-Run inventarisiert Fach-, Storage- und Auth-Verknüpfungen einschließlich Fremdschlüsselwirkung; statischer/fiktiver Test vorhanden, echte Wegwerf-DB offen |
-| DB- und Storage-Restore bestanden | 🔴 | tägliche Backups nachgewiesen, Restore offen |
+| DB- und Storage-Restore bestanden | 🔴 | tägliche DB-Backups und lokaler Storage-Hashvergleich nachgewiesen; echter Wegwerf-Restore und separater Storage-Export offen |
 | AVV/DPA/Unterauftragnehmer bestätigt | 🟢/kundenspezifisch | vorhandene Betreiberunterlage + Kundenfreigabe |
 | Beschäftigteninformation freigegeben | 🔴 | `[ ]` |
 
