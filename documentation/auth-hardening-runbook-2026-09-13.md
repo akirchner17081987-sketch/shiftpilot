@@ -1,6 +1,6 @@
 # SchichtFunk – Auth-Härtung: Passwortschutz und MFA
 
-Stand: 13.09.2026  
+Stand: 13.09.2026
 Prüfart: lesende Dashboard- und Advisor-Prüfung; keine Einstellung geändert
 
 ## Aktueller Zustand
@@ -41,4 +41,3 @@ Supabase-seitig ist TOTP bereits verfügbar. SchichtFunk besitzt aber noch keine
 Status: 🟡 **SUPABASE-VORAUSSETZUNGEN VORHANDEN; APP-FLOW UND SERVERSEITIGE AAL2-DURCHSETZUNG NOCH ZU IMPLEMENTIEREN.**
 
 Quellen: https://supabase.com/docs/guides/auth/password-security und https://supabase.com/docs/guides/auth/auth-mfa
-

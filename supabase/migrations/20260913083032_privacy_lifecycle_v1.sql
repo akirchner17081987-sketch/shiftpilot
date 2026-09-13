@@ -225,6 +225,48 @@ revoke all on function private.server_due_privacy_requests(integer)
 grant execute on function private.server_due_privacy_requests(integer)
   to service_role;
 
+-- PostgREST only exposes public RPCs. These invoker wrappers remain callable
+-- exclusively with the service-role key used inside the Edge Function.
+create or replace function public.server_employee_offboarding_preview(
+  p_company_id uuid,
+  p_employee_id uuid,
+  p_as_of date default current_date
+)
+returns jsonb
+language sql
+stable
+set search_path = ''
+as $$
+  select private.sf_employee_offboarding_preview(p_company_id, p_employee_id, p_as_of)
+$$;
+
+revoke all on function public.server_employee_offboarding_preview(uuid, uuid, date)
+  from public, anon, authenticated;
+grant execute on function public.server_employee_offboarding_preview(uuid, uuid, date)
+  to service_role;
+
+create or replace function public.server_stage_employee_offboarding(
+  p_idempotency_key uuid,
+  p_company_id uuid,
+  p_employee_id uuid,
+  p_requested_by uuid,
+  p_reason text,
+  p_as_of date default current_date
+)
+returns uuid
+language sql
+set search_path = ''
+as $$
+  select private.server_stage_employee_offboarding(
+    p_idempotency_key, p_company_id, p_employee_id, p_requested_by, p_reason, p_as_of
+  )
+$$;
+
+revoke all on function public.server_stage_employee_offboarding(uuid, uuid, uuid, uuid, text, date)
+  from public, anon, authenticated;
+grant execute on function public.server_stage_employee_offboarding(uuid, uuid, uuid, uuid, text, date)
+  to service_role;
+
 comment on table private.privacy_lifecycle_requests is
   'Two-person approval queue for privacy lifecycle actions. No deletion is performed by this migration.';
 comment on function private.sf_employee_offboarding_preview(uuid, uuid, date) is

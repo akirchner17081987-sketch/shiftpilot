@@ -1,7 +1,8 @@
 # SchichtFunk – SECURITY-DEFINER-Allowlist
 
-Stand: 13.09.2026  
-Projekt: Supabase `zbvloohfjleadjnqhbbh`, Frankfurt  
+Stand: 13.09.2026
+
+Projekt: Supabase `zbvloohfjleadjnqhbbh`, Frankfurt
 Prüfart: ausschließlich lesende Katalogabfragen gegen Produktion
 
 ## Ergebnis

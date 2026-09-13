@@ -1,6 +1,6 @@
 # SchichtFunk – Entscheidung zur datenschutzbeauftragten Person
 
-Stand: 13.09.2026  
+Stand: 13.09.2026
 Status: Entscheidungsvorlage, keine Benennung erfolgt
 
 ## Ausgangspunkt
@@ -47,4 +47,3 @@ SchichtFunk benötigt eine Entscheidung zwischen:
 Es wurde weder ein Vertrag angenommen noch eine Person benannt oder eine Behördenmeldung abgegeben.
 
 Quellen: Art. 37–39 DSGVO (https://eur-lex.europa.eu/eli/reg/2016/679/oj), § 38 BDSG (https://www.gesetze-im-internet.de/bdsg_2018/__38.html). Diese Vorlage ersetzt keine Rechtsberatung.
-

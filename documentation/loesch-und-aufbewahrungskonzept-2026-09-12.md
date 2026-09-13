@@ -73,7 +73,7 @@ Nicht jeder SchichtFunk-Datensatz ist automatisch Lohnkonto, Buchungsbeleg oder 
 - Für `expires_on`-Felder existieren Erinnerungen, aber keine generische automatische Löschung.
 - Supabase Auth-Konten, Storage-Objekte, Datenbankzeilen und Push-Abonnements werden nicht durch einen einzigen vorhandenen Offboardingprozess vollständig koordiniert.
 - Supabase Pro hält täglich erzeugte Datenbankbackups sieben Tage vor. Storage-Objekte sind nicht Teil des Datenbankbackups.
-- Eine automatische Fristlöschung ist deshalb **noch nicht produktiv umgesetzt**. Seit 13.09.2026 liegt im Repository eine nicht ausgerollte technische Grundlage mit privater, idempotenter Freigabewarteschlange, Legal-Hold-Feld und rein lesendem Mitarbeiter-Offboarding-Dry-Run vor. Sie führt absichtlich noch keine Löschung aus und behauptet keine bereits laufenden Jobs.
+- Eine automatische Fristlöschung ist deshalb **noch nicht produktiv umgesetzt**. Seit 13.09.2026 liegt im Repository eine nicht ausgerollte technische Grundlage mit privater, idempotenter Freigabewarteschlange, Legal-Hold-Feld und rein lesendem Mitarbeiter-Offboarding-Dry-Run vor. Eine vorbereitete Edge Function lässt Vorschauen nur für aktive OWNER/ADMIN zu und verlangt für das Einstellen eines Auftrags eine verifizierte `aal2`-Sitzung. Sie führt absichtlich noch keine Löschung aus und behauptet keine bereits laufenden Jobs.
 
 ## 5. Soll-Löschprozess
 

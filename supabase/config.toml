@@ -3,3 +3,6 @@ verify_jwt = false
 
 [functions.demo-analytics]
 verify_jwt = false
+
+[functions.privacy-lifecycle]
+verify_jwt = true

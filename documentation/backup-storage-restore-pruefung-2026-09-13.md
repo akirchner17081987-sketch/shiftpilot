@@ -1,6 +1,6 @@
 # SchichtFunk – Backup- und Storage-Restore-Prüfung
 
-Stand: 13.09.2026  
+Stand: 13.09.2026
 Produktivprojekt: `zbvloohfjleadjnqhbbh`, Frankfurt, PRODUCTION
 
 ## Heute verifiziert
@@ -38,4 +38,3 @@ Es wurde **kein Restore** angeklickt oder gestartet. Ein Restore des Produktivpr
 Status: 🟢 **TÄGLICHE DB-BACKUPS LIVE NACHGEWIESEN**, 🔴 **ECHTER RESTORE UND SEPARATE STORAGE-WIEDERHERSTELLUNG NOCH OFFEN**.
 
 Quelle: https://supabase.com/docs/guides/platform/backups
-
