@@ -1,0 +1,44 @@
+# SchichtFunk – Auth-Härtung: Passwortschutz und MFA
+
+Stand: 13.09.2026  
+Prüfart: lesende Dashboard- und Advisor-Prüfung; keine Einstellung geändert
+
+## Aktueller Zustand
+
+| Einstellung | Live-Status | Ziel |
+|---|---|---|
+| E-Mail-Anmeldung | aktiv | aktiv |
+| sichere E-Mail-Änderung | aktiv | aktiv |
+| sichere Passwortänderung / Reauthentisierung | aus | aktiv nach Login-Regressionsprüfung |
+| aktuelles Passwort bei Änderung erforderlich | aus | aktiv nach UI-Prüfung |
+| Schutz vor geleakten Passwörtern | aus; Advisor-Warnung | aktiv |
+| TOTP/App-Authenticator | in Supabase aktiviert | für privilegierte Rollen verpflichtend |
+| SMS-MFA | deaktiviert | bleibt deaktiviert, solange kein begründeter Bedarf besteht |
+| Dauer reiner AAL1-Sitzungen | auf 15 Minuten begrenzt | beibehalten |
+| MFA-Faktoren je Nutzer | maximal 10 | vor Echtbetrieb auf 2–3 prüfen |
+
+Supabase-seitig ist TOTP bereits verfügbar. SchichtFunk besitzt aber noch keinen vollständigen Einrichtungs-, Challenge-, Wiederherstellungs- und Sperrprozess und erzwingt `aal2` noch nicht an allen sensiblen Datenbank- und Servergrenzen. Deshalb darf MFA noch nicht als vollständig umgesetzt gelten.
+
+## Sichere Aktivierungsreihenfolge
+
+1. MFA-Oberfläche für Registrieren, QR-/Secret-Anzeige, TOTP-Prüfung, Faktorenliste und Entfernen bauen.
+2. Challenge nach normalem Login ergänzen; Recovery-Verfahren und mindestens einen Ersatzfaktor organisatorisch festlegen.
+3. `aal2` zunächst nur im Testmandanten für OWNER/ADMIN und sensible Aktionen prüfen: Personalakte, Benutzerverwaltung, DATEV, Exporte, Löschfreigaben und Sicherheitskonfiguration.
+4. Datenbank/RPCs müssen `aal2` serverseitig prüfen; eine reine UI-Sperre reicht nicht.
+5. Zwei Testkonten prüfen: korrektes TOTP, falsches TOTP, verlorener Faktor, neue Sitzung, abgelaufene Sitzung und Downgrade nach Faktorentfernung.
+6. Danach Schutz vor geleakten Passwörtern, sichere Passwortänderung und aktuelles Passwort bei Änderung aktivieren.
+7. Login, Passwortänderung, Einladung, Mitarbeiterzugang, iPhone-PWA und Wiederanmeldung erneut testen.
+8. Erst nach erfolgreichem Test für echte privilegierte Konten verpflichtend schalten.
+
+## Abnahmekriterien
+
+- OWNER/ADMIN kann ohne `aal2` keine Personalakte, Benutzerverwaltung, DATEV- oder Löschfreigabe verwenden.
+- Normale Mitarbeiterfunktionen bleiben nach regulärem Login nutzbar, sofern die Kundenrichtlinie keine allgemeine MFA fordert.
+- Bestehende schwache/geleakte Passwörter führen zu einem kontrollierten Änderungsprozess, nicht zu einer unverständlichen Kontosperre.
+- Support kann Identität prüfen, aber keinen MFA-Schutz heimlich umgehen.
+- Jede Änderung ist mit Datum, Prüfer, Testkonto und Ergebnis dokumentiert.
+
+Status: 🟡 **SUPABASE-VORAUSSETZUNGEN VORHANDEN; APP-FLOW UND SERVERSEITIGE AAL2-DURCHSETZUNG NOCH ZU IMPLEMENTIEREN.**
+
+Quellen: https://supabase.com/docs/guides/auth/password-security und https://supabase.com/docs/guides/auth/auth-mfa
+

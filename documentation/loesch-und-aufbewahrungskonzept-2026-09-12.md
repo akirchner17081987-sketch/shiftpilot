@@ -73,7 +73,7 @@ Nicht jeder SchichtFunk-Datensatz ist automatisch Lohnkonto, Buchungsbeleg oder 
 - Für `expires_on`-Felder existieren Erinnerungen, aber keine generische automatische Löschung.
 - Supabase Auth-Konten, Storage-Objekte, Datenbankzeilen und Push-Abonnements werden nicht durch einen einzigen vorhandenen Offboardingprozess vollständig koordiniert.
 - Supabase Pro hält täglich erzeugte Datenbankbackups sieben Tage vor. Storage-Objekte sind nicht Teil des Datenbankbackups.
-- Eine automatische Fristlöschung ist deshalb **noch nicht produktiv umgesetzt**. Dieses Dokument legt die Zielregeln fest, behauptet aber keine bereits laufenden Jobs.
+- Eine automatische Fristlöschung ist deshalb **noch nicht produktiv umgesetzt**. Seit 13.09.2026 liegt im Repository eine nicht ausgerollte technische Grundlage mit privater, idempotenter Freigabewarteschlange, Legal-Hold-Feld und rein lesendem Mitarbeiter-Offboarding-Dry-Run vor. Sie führt absichtlich noch keine Löschung aus und behauptet keine bereits laufenden Jobs.
 
 ## 5. Soll-Löschprozess
 
@@ -130,6 +130,6 @@ Vor produktiver Aktivierung der Standardfristen sind erforderlich:
 | Auftragsverarbeiter-/Backupprüfung | SchichtFunk |
 | jährliche Wirksamkeitsprüfung | SchichtFunk gemeinsam mit ausgewähltem Testkunden/Datenschutzberatung |
 
-Status Löschkonzept: 🟡 **FACHLICH DOKUMENTIERT, TECHNISCHE FRISTDURCHSETZUNG UND KUNDENFREIGABE NOCH OFFEN.**
+Status Löschkonzept: 🟡 **FACHLICH DOKUMENTIERT, SICHERE DRY-RUN-/FREIGABEGRUNDLAGE IM CODE; TECHNISCHE AUSFÜHRUNG, TESTBRANCH UND KUNDENFREIGABE NOCH OFFEN.**
 
 Quellen: Art. 5, 17 und 28 DSGVO (https://eur-lex.europa.eu/eli/reg/2016/679/oj), § 16 ArbZG (https://www.gesetze-im-internet.de/arbzg/__16.html), § 41 EStG (https://www.gesetze-im-internet.de/estg/__41.html), § 28f SGB IV (https://www.gesetze-im-internet.de/sgb_4/__28f.html), § 147 AO (https://www.gesetze-im-internet.de/ao_1977/__147.html), § 257 HGB (https://www.gesetze-im-internet.de/hgb/__257.html), §§ 195/199 BGB. Die konkrete arbeits-, tarif-, steuer- und sozialversicherungsrechtliche Einordnung muss der jeweilige Arbeitgeber prüfen.

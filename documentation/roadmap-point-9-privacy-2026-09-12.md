@@ -25,6 +25,11 @@ Stand: 12.09.2026
 - Vollständige Betreiberunterlage `documentation/avv-dpa-subprocessors-2026-09-12.md` für direkte Auftragsverarbeiter, DPA-Lage, Unterauftragsverarbeiter und Drittlandtransfers angelegt.
 - TOM Version 1.0, VVT Version 1.0, Lösch-/Aufbewahrungskonzept Version 1.0 und DSFA-Schwellenprüfung Version 1.0 sind als zusammenhängende Betreiberunterlagen dokumentiert.
 - Die DSFA-Schwellenprüfung ist abgeschlossen. Für den Beschäftigtendaten-Echtbetrieb ist vor dem ersten kommerziellen Echtkunden eine vollständige kundenspezifische DSFA erforderlich.
+- Die 35 vom Security Advisor gemeldeten öffentlichen `SECURITY DEFINER`-RPCs wurden am 13.09.2026 gegen eine exakte Allowlist geprüft: keine anonyme Ausführung, feste Suchpfade, keine Autorisierung über Benutzer-Metadaten und kein dynamisches SQL. Die neue Drift-Abfrage wurde gegen das Live-Schema ausgeführt und lieferte null Befunde; ein Regressionstest liegt im Repository.
+- Für Löschung/Offboarding liegt eine noch nicht ausgerollte private V1-Grundlage mit idempotenter Warteschlange, Freigabestatus, Legal Hold und rein lesendem Mitarbeiter-Dry-Run vor. Sie plant Datenbank-, Auth-, Storage- und Push-Schritte, führt aber bewusst noch keine Löschung aus.
+- Die Supabase-Backupseite weist tägliche physische Sicherungen bis 13.09.2026 nach. Ein Restore wurde wegen Produktionsrisiko nicht gestartet; Storage benötigt ausdrücklich eine getrennte Sicherung.
+- TOTP-MFA und die 15-Minuten-Begrenzung reiner AAL1-Sitzungen sind in Supabase aktiv. Leaked-Password-Schutz und sichere Passwortänderung sind noch aus; App-Challenge und serverseitige `aal2`-Erzwingung fehlen.
+- Die Entscheidungsvorlage zur datenschutzbeauftragten Person empfiehlt wegen Unabhängigkeit/Interessenkonflikt eine externe Lösung. Eine Benennung, ein Vertrag und eine Behördenmeldung wurden nicht vorgenommen und benötigen Nutzerentscheidung.
 
 ## Rechtliche Einordnung im Datenschutztext
 
@@ -78,10 +83,10 @@ Stand: 12.09.2026
 
 1. Supabase Auth „Leaked Password Protection“ aktivieren. Der Security Advisor meldet die Funktion weiterhin als deaktiviert.
 2. Für einen möglichen produktiven Vercel-Rollback vor Aktivierung eine kommerziell zulässige Tarif-/DPA-Grundlage herstellen; kein Upgrade ohne ausdrückliche Freigabe.
-3. Lösch- und Aufbewahrungskonzept technisch umsetzen: Dry-Run, kundenspezifische Fristprofile/Legal Holds, Auditredaktion, koordinierte Auth-/Storage-/Push-/Datenbanklöschung und Testnachweis.
-4. TOM-Härtung abschließen: alle 35 gemeldeten `SECURITY DEFINER`-RPCs anhand einer Allowlist prüfen, MFA-Konzept festlegen und hoch priorisierte Maßnahmen abnehmen.
+3. Lösch- und Aufbewahrungskonzept technisch fertigstellen: V1-Grundlage auf einer Wegwerf-Testumgebung prüfen; kundenspezifische Fristprofile, Vier-Augen-Freigabe, Auditredaktion und koordinierte Auth-/Storage-/Push-/Datenbankausführung ergänzen.
+4. TOM-Härtung abschließen: Allowlist-Negativtests auf der Wegwerf-Testumgebung ausführen, MFA-Appfluss und serverseitige `aal2`-Erzwingung implementieren sowie Leaked-Password-Schutz nach Regressionstest aktivieren.
 5. Vor dem ersten kommerziellen Echtkunden eine Datenschutzbeauftragte Person für SchichtFunk benennen, deren Kontaktdaten veröffentlichen/der Aufsicht mitteilen sowie das VVT-Kundenblatt und die vollständige kundenspezifische DSFA ergänzen/freigeben; Datenschutzbeauftragten und gegebenenfalls Betriebsrat des Kunden einbeziehen.
-6. Backup-/Restore-Konzept und regelmäßigen Wiederherstellungstest einschließlich Personalakten-Storage dokumentieren.
+6. Dokumentierten Backup-/Restore-Test auf einer ausdrücklich bestätigten Wegwerf-Testumgebung durchführen und einen separaten Personalakten-Storage-Export/-Restore einrichten.
 7. Logging-/Monitoring- und Incident-Response-Aufbewahrung sowie Datenschutzverletzungsprozess nach Art. 33/34 DSGVO dokumentieren und testen.
 8. IONOS-Deploy-Now-spezifische Logfrist bestätigen.
 9. Prüfen, ob Registerangaben, USt-IdNr. oder weitere Impressumspflichten für den Betreiber einschlägig sind; falls ja, Impressum ergänzen.
