@@ -115,7 +115,7 @@ Rein fiktive Annahme: Ein Kunden-Admin meldet, dass seine Sitzung möglicherweis
 |---|---|---|
 | Erstmeldung | Incident-ID, T0, Quelle und unveränderte Meldung erfassen | Prozessfeld vorhanden |
 | Soforteinstufung | wegen möglicher Mandantentrennung und Gesundheitsbezug P1 | Entscheidung eindeutig |
-| Eindämmung | Sitzung widerrufen, Konto/Mitgliedschaft sperren, Exportfunktion eingrenzen, Beweise sichern | technische Schritte benannt; echter Widerruf-Drill offen |
+| Eindämmung | Sitzung widerrufen, Konto/Mitgliedschaft sperren, Exportfunktion eingrenzen, Beweise sichern | technischer `others`-/`global`-Widerruf mit zwei synthetischen Konten bestanden; fachliche Sperr- und Exportmaßnahmen bleiben fallbezogen |
 | Kundeninformation | beide möglicherweise betroffenen Verantwortlichen unverzüglich mit vorläufigen Fakten informieren | Vorlage und schrittweise Nachmeldung vorhanden |
 | Umfang | Auditereignisse, Funktionsversion, Mandanten- und Datensatzumfang prüfen | Nachweisquellen benannt; zentrale Logzugriffsmatrix offen |
 | Wiederanlauf | RLS/RPC-Grenze prüfen, bekannten Stand bereitstellen, gezielte Negativtests ausführen | Git-/Testweg vorhanden |
@@ -128,7 +128,7 @@ Der Papierablauf ist schlüssig und deckt Erkennung, Eindämmung, Kundeninformat
 
 1. Vertretung und erreichbare Eskalationskette benennen.
 2. Überwachte Alarmierung und definierte Bereitschaftszeiten einrichten.
-3. Echten Sitzungswiderruf und Schlüsselrotation mit zwei sicheren Testkonten üben.
+3. Schlüsselrotation mit sicheren Testschlüsseln üben; der Zwei-Konten-Sitzungswiderruf ist technisch bestanden und in `mfa-session-recovery-test-2026-09-13.md` protokolliert.
 4. Zugriffswege und Aufbewahrung für IONOS-, Supabase-, Auth-, Edge-Function- und Anwendungsaudits tabellarisch festlegen.
 5. Kundenkontakte aus Anlage 4 des jeweiligen AVV vor Produktivbeginn vollständig eintragen.
 
@@ -141,5 +141,4 @@ Das Planspiel ist nach wesentlichen Architekturänderungen und mindestens jährl
 - Supabase Security: https://supabase.com/docs/guides/security
 - Supabase Backups: https://supabase.com/docs/guides/platform/backups
 
-Status: 🟡 **RUNBOOK UND PAPIER-PLANSPIEL DOKUMENTIERT; ALARMIERUNG, VERTRETUNG UND TECHNISCHER SITZUNGS-/SCHLÜSSEL-DRILL OFFEN.**
-
+Status: 🟡 **RUNBOOK, PAPIER-PLANSPIEL UND TECHNISCHER SITZUNGSWIDERRUF DOKUMENTIERT; ALARMIERUNG, VERTRETUNG UND SCHLÜSSELROTATIONSDRILL OFFEN.**
