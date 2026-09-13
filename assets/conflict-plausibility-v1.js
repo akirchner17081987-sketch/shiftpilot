@@ -6,6 +6,7 @@
     'assets/compliance-workflow-v2.js',
     'assets/compliance-ui-v2.js',
     'assets/noop-change-guard-v1.js',
+    'assets/supabase-auth-errors-v1.js',
     'assets/supabase-auth-v1.js',
     'assets/supabase-password-reset-v1.js',
     'assets/view-state-v1.js',

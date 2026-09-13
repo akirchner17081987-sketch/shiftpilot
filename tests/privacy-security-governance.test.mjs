@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import { authorizeLifecycleRequest, parseLifecycleRequest } from '../supabase/functions/_shared/privacy-lifecycle.js';
 import {
@@ -22,6 +23,7 @@ const mfaClient=fs.readFileSync(path.join(root,'assets','supabase-mfa-v1.js'),'u
 const moduleLoader=fs.readFileSync(path.join(root,'assets','conflict-plausibility-v1.js'),'utf8');
 const settingsClient=fs.readFileSync(path.join(root,'assets','settings-management-v2.js'),'utf8');
 const storageManifestSource=fs.readFileSync(path.join(root,'scripts','storage-restore-manifest.mjs'),'utf8');
+const authErrorsSource=fs.readFileSync(path.join(root,'assets','supabase-auth-errors-v1.js'),'utf8');
 
 test('SECURITY DEFINER allowlist is exact and reviewable',()=>{
   assert.equal(allowlist.functions.length,35);
@@ -115,6 +117,23 @@ test('browser MFA flow supports enrollment, login challenge and factor removal',
   assert.doesNotMatch(mfaClient,/service[_-]?role/i);
   assert.ok(moduleLoader.indexOf("'assets/supabase-mfa-v1.js'")>moduleLoader.indexOf("'assets/supabase-data-v1.js'"));
   assert.match(settingsClient,/Authenticator verwalten/);
+});
+
+test('leaked-password readiness maps auth failures without exposing raw provider errors',()=>{
+  const context={window:{}};
+  vm.runInNewContext(authErrorsSource,context);
+  const friendly=context.window.SFBackend.friendlyAuthError;
+  assert.match(friendly({code:'weak_password'}),/Datenleck/);
+  assert.match(friendly({message:'Password has been pwned'}),/Datenleck/);
+  assert.match(friendly({code:'over_email_send_rate_limit'}),/zu viele Versuche/i);
+  assert.equal(friendly({message:'internal provider detail'},'Sicherer Standardtext'),'Sicherer Standardtext');
+  assert.ok(moduleLoader.indexOf("'assets/supabase-auth-errors-v1.js'")<moduleLoader.indexOf("'assets/supabase-auth-v1.js'"));
+  for(const file of [
+    'supabase-auth-v1.js','supabase-password-reset-v1.js','team-admin-v1.js',
+    'supabase-employee-access-v1.js'
+  ]){
+    assert.match(fs.readFileSync(path.join(root,'assets',file),'utf8'),/friendlyAuthError/);
+  }
 });
 
 test('disposable database fixture is fictitious and always rolled back',()=>{

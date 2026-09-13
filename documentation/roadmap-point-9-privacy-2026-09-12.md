@@ -18,7 +18,7 @@ Stand: 12.09.2026
 - Öffentliche Analyse-/Marketingtracker wurden im aktuellen Repository-Stand nicht festgestellt.
 - Supabase-Produktivprojekt ist `ACTIVE_HEALTHY` in Region `eu-central-1`.
 - IONOS Deploy Now Starter ist als künftiges Primärhosting eingerichtet; Projekt-ID `7bc70ac7-ec3b-4e7b-bae5-569c957e8514` stellt den geprüften Zweig `codex/ionos-migration` unter `home-5021411544.app-ionos.space` bereit. Die produktive Domain bleibt bis zur vollständigen Abnahme unverändert.
-- Der reproduzierbare statische Build umfasst 2,04 MiB und liegt damit deutlich unter dem Starter-Limit von 50 MB pro statischem Projekt.
+- Der reproduzierbare statische Build umfasst aktuell 2.152.260 Byte (2,05 MiB) und liegt damit deutlich unter dem Starter-Limit von 50 MB pro statischem Projekt.
 - Die beiden bislang Vercel-spezifischen Demo-Endpunkte `demo-auth` und `demo-analytics` wurden als Supabase Edge Functions bereitgestellt, mit neu erzeugten Geheimnissen aktiviert und über die IONOS-Vorschau geprüft.
 - Der zuvor anonym ausführbare SECURITY-DEFINER-RPC `manager_import_month_matrix` wurde für `anon` gesperrt; die entsprechende Supabase-Security-Advisor-Warnung ist danach verschwunden.
 - Die Datenschutzerklärung bildet den tatsächlichen Funktionsumfang ab: Benutzerkonten, Rollen, Mitarbeiterstammdaten, Dienstplanung, Abwesenheiten/Krankheitsdaten, Zeiterfassung, QR, Stundenkonto, Feiertage, Schichtänderungen, Tausch, Marktplatz, Auto-Planung, Störfall-Autopilot, Push, PWA/Browser-Speicher, Demo und DATEV-LODAS-Export.

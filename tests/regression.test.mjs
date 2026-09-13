@@ -674,8 +674,13 @@ test('password recovery uses a parseable callback and requires a valid session',
   assert.match(passwordReset, /redirectTo:PROD\+'\?'\+RESET_PARAM\+'=1'/);
   assert.doesNotMatch(passwordReset, /redirectTo:[^\n]+#app/);
   assert.match(passwordReset, /normalizeLegacyRecoveryUrl\(\)/);
+  assert.match(passwordReset, /const initialRecoveryHint=recoveryFromUrl\(\)/);
   assert.match(passwordReset, /u\.hash\.startsWith\(marker\)/);
   assert.match(passwordReset, /const \{data\}=await B\.client\.auth\.getSession\(\)/);
   assert.match(passwordReset, /data\?\.session\?B\.passwordResetNewDialog\(\):B\.passwordResetInvalidDialog\(\)/);
   assert.match(passwordReset, /Neuen Link anfordern/);
+  assert.match(passwordReset, /auth\.reauthenticate\(\)/);
+  assert.match(passwordReset, /attributes\.current_password=current/);
+  assert.match(passwordReset, /attributes\.nonce=nonce/);
+  assert.match(passwordReset, /\^\\d\{6\}\$/);
 });

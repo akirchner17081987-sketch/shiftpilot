@@ -23,7 +23,7 @@ Für Beschäftigtendaten ist regelmäßig das jeweilige Kundenunternehmen bzw. d
 - IONOS Deploy Now Starter Membership wurde im September 2026 gebucht.
 - GitHub-Konto und Repository `akirchner17081987-sketch/shiftpilot` sind verbunden.
 - Vorgesehener Build: Plain Node.js 22, `npm ci`, `npm run build`, Veröffentlichungsverzeichnis `dist`.
-- Der geprüfte statische Build ist 2,04 MiB groß und liegt unter dem Tariflimit von 50 MB.
+- Der geprüfte statische Build ist aktuell 2.152.260 Byte (2,05 MiB) groß und liegt unter dem Tariflimit von 50 MB.
 - Die produktive Domain ist noch nicht auf Deploy Now umgestellt; zuerst erfolgt die Abnahme über die IONOS-Bereitstellungsadresse.
 
 ### AVV-/Vertragslage

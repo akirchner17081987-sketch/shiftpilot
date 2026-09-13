@@ -19,6 +19,8 @@ Prüfart: lesende Dashboard- und Advisor-Prüfung sowie nicht ausgerollte Umsetz
 
 Supabase-seitig ist TOTP bereits verfügbar. In der IONOS-Vorschau für Git-Commit `ff20020` liegt nun eine App-Oberfläche für Einrichtung per QR/Secret, Bestätigung des sechsstelligen Codes, Faktorenliste, Entfernung und den verpflichtenden Challenge-Schritt bei bereits registriertem Faktor vor. Build und IONOS-Deployment waren erfolgreich; Datei und Loader-Einbindung wurden öffentlich mit HTTP 200 geprüft. Abgebrochene Anmeldungen beenden die lokale Sitzung; unvollständig eingerichtete TOTP-Faktoren werden beim nächsten Einrichtungsversuch bereinigt. Dieser App-Fluss ist noch nicht mit den sicheren Konten abgenommen. Ein organisatorischer Wiederherstellungsweg und die verpflichtende Einführung für privilegierte Rollen fehlen weiterhin.
 
+Die Oberfläche ist nun auch auf die spätere Passwort-Härtung vorbereitet: bekannte Schwach-/Leak-, Rate-Limit-, Reauthentisierungs- und Anmeldefehler werden verständlich und ohne rohe Anbieterdetails angezeigt. Bei einer angemeldeten Passwortänderung werden aktuelles Passwort und optional der sechsstellige Reauthentisierungscode an `updateUser()` übergeben; der Code kann zuvor über `reauthenticate()` angefordert werden. Der Recovery-Link-Fluss bleibt davon getrennt. Diese Vorbereitung wurde noch nicht gegen aktivierte Produktionsschalter getestet.
+
 Die Datenschutz-Edge-Function verlangt für Auftrag und Freigabe bereits eine verifizierte `aal2`-Sitzung. Andere sensible Bereiche wie Personalakte, Benutzerverwaltung und DATEV erzwingen `aal2` noch nicht vollständig an ihren jeweiligen Server-/Datenbankgrenzen. Deshalb darf MFA insgesamt noch nicht als vollständig umgesetzt gelten.
 
 Im Prüfzweig liegt zusätzlich eine nicht ausgerollte gemeinsame Datenbankgrenze `private.sf_assert_aal2()` vor. Sie liest ausschließlich den signierten Supabase-Claim `aal`, behandelt fehlende Angaben sicher als `aal1` und liefert bei unzureichender Sitzung kontrolliert `MFA_REQUIRED`. Bestehende öffentliche RPCs werden durch diese Grundlagenmigration bewusst noch nicht verändert. Die stufenweise Zuordnung und Abnahme ist in `mfa-sensitive-rpc-rollout-2026-09-13.md` festgehalten.
@@ -32,7 +34,7 @@ Die Guard-Definition wurde am 13.09.2026 in einer sitzungsgebundenen `pg_temp`-K
 3. `aal2` zunächst nur im Testmandanten für OWNER/ADMIN und sensible Aktionen prüfen: Personalakte, Benutzerverwaltung, DATEV, Exporte, Löschfreigaben und Sicherheitskonfiguration.
 4. Datenbank/RPCs müssen `aal2` serverseitig prüfen; eine reine UI-Sperre reicht nicht.
 5. Zwei Testkonten prüfen: korrektes TOTP, falsches TOTP, verlorener Faktor, neue Sitzung, abgelaufene Sitzung und Downgrade nach Faktorentfernung.
-6. Danach Schutz vor geleakten Passwörtern, sichere Passwortänderung und aktuelles Passwort bei Änderung aktivieren.
+6. Danach Schutz vor geleakten Passwörtern, sichere Passwortänderung und aktuelles Passwort bei Änderung zunächst auf der Wegwerf-Umgebung aktivieren.
 7. Login, Passwortänderung, Einladung, Mitarbeiterzugang, iPhone-PWA und Wiederanmeldung erneut testen.
 8. Erst nach erfolgreichem Test für echte privilegierte Konten verpflichtend schalten.
 
