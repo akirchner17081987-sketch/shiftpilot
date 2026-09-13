@@ -8,6 +8,7 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const read=file=>fs.readFileSync(path.join(root,file),'utf8');
 const incident=read('documentation/incident-response-runbook-2026-09-13.md');
 const evidence=read('documentation/security-operations-evidence-2026-09-13.md');
+const crossTenant=read('documentation/security-definer-cross-tenant-test-2026-09-13.md');
 const monitoring=read('documentation/logging-monitoring-retention-2026-09-13.md');
 const tom=read('documentation/tom-2026-09-12.md');
 const apache=read('.htaccess');
@@ -31,7 +32,10 @@ test('evidence register is explicit about proof levels and unresolved controls',
   }
   assert.match(evidence,/2\.153\.075 Byte/);
   assert.match(evidence,/physischer Tagesbackup-Restore/i);
-  assert.match(evidence,/Fremdmandanten-Negativtests/i);
+  assert.match(evidence,/35\/35 Fremdmandantenprüfungen/i);
+  assert.match(crossTenant,/35\/35 bestanden, 0 fehlgeschlagen/i);
+  assert.match(crossTenant,/ROLLBACK/i);
+  assert.match(crossTenant,/Branch-Löschung bestätigt/i);
   assert.match(evidence,/keine 24\/7-Verfügbarkeitsmessung/i);
   assert.match(evidence,/keine Zugangsdaten enthalten/i);
 });

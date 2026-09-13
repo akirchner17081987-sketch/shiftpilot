@@ -47,6 +47,8 @@ Vor einer Produktivmigration muss die Abfrage `supabase/tests/security_definer_a
 
 Der exakte Prüflauf wurde am 13.09.2026 vor und nach den Datenschutzmigrationen auf `privacy-restore-test-2026-09-13` wiederholt; beide Läufe lieferten null Zeilen. Der Security Advisor meldete danach weiterhin exakt 35 Einträge dieser Klasse und keine neue öffentlich erreichbare `SECURITY DEFINER`-Funktion.
 
-Status: 🟢 **ALLOWLIST VOLLSTÄNDIG ERFASST; LIVE- UND TESTBRANCH-DRIFTTEST BESTANDEN**, 🟡 **ZUSÄTZLICHE FACHLICHE FREMDMANDANTEN-NEGATIVTESTS JE RPC-GRUPPE NOCH OFFEN**.
+Die fachlichen Fremdmandanten-Negativtests wurden anschließend auf dem datenlosen Wegwerf-Branch `rpc-cross-tenant-test-2026-09-13` ausgeführt. Alle 35 RPCs bestanden: 16 firmenbezogene Manager-, 10 objektbezogene Manager-, 5 Mitarbeiter- sowie 4 Push-/globale Prüfungen. Transaktions-Rollback, Leerstand und Branch-Löschung wurden bestätigt. Das vollständige Protokoll liegt in `documentation/security-definer-cross-tenant-test-2026-09-13.md`.
+
+Status: 🟢 **ALLOWLIST, LIVE-/TESTBRANCH-DRIFTTEST UND 35/35 FACHLICHE FREMDMANDANTEN-NEGATIVTESTS BESTANDEN.**
 
 Quelle: Supabase Database Linter, Warnung `authenticated_security_definer_function_executable`; Supabase RLS-Empfehlungen zu interner Authentisierung, festem `search_path` und minimalen Funktionsrechten.
