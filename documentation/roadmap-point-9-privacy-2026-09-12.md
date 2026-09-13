@@ -31,6 +31,7 @@ Stand: 13.09.2026
 - TOTP-MFA und die 15-Minuten-Begrenzung reiner AAL1-Sitzungen sind in Supabase aktiv. Die IONOS-Vorschau enthält seit Commit `ff20020` Einrichtung, Faktorenverwaltung und den Login-Challenge-Schritt für App-Authenticator; Build, Deployment sowie öffentliche Auslieferung der neuen Datei wurden bestätigt. Die Datenschutzfreigabe verlangt bereits serverseitig `aal2`; zusätzlich ist eine gemeinsame, noch nicht angeschlossene Datenbankprüfung für sensible RPCs samt Stufen- und Negativtestplan vorbereitet. Der echte Konten-/Gerätetest, Recovery und die Ausweitung auf Personalakte, Benutzerverwaltung, DATEV und Sicherheitskonfiguration stehen aus. Leaked Password Protection wurde am 13.09.2026 produktiv aktiviert und durch das Verschwinden der Advisor-Warnung verifiziert; sichere Passwortänderung und Pflicht zur Eingabe des aktuellen Passworts bleiben separat aus.
 - Für die datenschutzbeauftragte Person wurde Option B (geeignete interne Person) als Richtung gewählt. Die Auswahl und Benennung der konkreten Person wurde am 13.09.2026 auf Nutzerwunsch vorerst zurückgestellt. Es erfolgten weder Benennung noch Vertrag, Veröffentlichung oder Behördenmeldung.
 - Eine vollständige kundenspezifische DSFA-Vorlage mit Datenfluss, Zweck-/Rechtsgrundlagenmatrix, Risikoregister, Maßnahmenplan, Beteiligungs- und Freigabefeldern ist vorbereitet. Sie wird erst mit Pilotkundendaten, DSB-Stellungnahme und Testnachweisen freigabefähig.
+- Eine editierbare SchichtFunk-Kunden-AVV-Vorlage nach Art. 28 DSGVO ist erstellt. Sie enthält die Verarbeitung, TOM, Unterauftragsverarbeiter, kundenbezogene Löschfristen sowie Weisungs- und Kontaktrollen als Anlagen. Vor dem Einsatz sind die gelb markierten Kundendaten, Fristen, die aktuelle TOM-/Unterauftragnehmerlage und der konkrete Vertrag rechtlich zu prüfen; ein kundenspezifisch abgeschlossener AVV liegt damit noch nicht vor.
 
 ## Rechtliche Einordnung im Datenschutztext
 
@@ -97,9 +98,10 @@ Stand: 13.09.2026
 6. Logging-/Monitoring- und Incident-Response-Aufbewahrung sowie Datenschutzverletzungsprozess nach Art. 33/34 DSGVO dokumentieren und testen.
 7. IONOS-Deploy-Now-spezifische Logfrist bestätigen.
 8. Prüfen, ob Registerangaben, USt-IdNr. oder weitere Impressumspflichten für den Betreiber einschlägig sind; falls ja, Impressum ergänzen.
+9. Die vorhandene Kunden-AVV-Vorlage für den ersten Echtkunden vervollständigen, rechtlich prüfen lassen und beiderseitig abschließen.
 
 ## Gesamtstatus
 
 Roadmap-Punkt 9: 🟠 **In Arbeit**.
 
-Der öffentliche rechtliche Grundauftritt, die produktbezogene Datenschutzerklärung, AVV/DPA, VVT, TOM, Löschkonzept und DSFA-Schwellenprüfung sind dokumentiert. Punkt 9 bleibt wegen der technischen Löschumsetzung, Sicherheits-Härtung, vollständigen kundenspezifischen DSFA, Restore-/Incident-Nachweisen und Betreiberangaben in Arbeit. Vercel Pro ist für das geplante IONOS-Primärhosting nicht erforderlich, wohl aber vor einer kommerziellen Aktivierung des Vercel-Rollbacks.
+Der öffentliche rechtliche Grundauftritt, die produktbezogene Datenschutzerklärung, Anbieter-AVV/DPA, Kunden-AVV-Vorlage, VVT, TOM, Löschkonzept und DSFA-Schwellenprüfung sind dokumentiert. Punkt 9 bleibt wegen des kundenspezifischen Vertragsabschlusses, der technischen Löschumsetzung, Sicherheits-Härtung, vollständigen kundenspezifischen DSFA, Restore-/Incident-Nachweisen und Betreiberangaben in Arbeit. Vercel Pro ist für das geplante IONOS-Primärhosting nicht erforderlich, wohl aber vor einer kommerziellen Aktivierung des Vercel-Rollbacks.
