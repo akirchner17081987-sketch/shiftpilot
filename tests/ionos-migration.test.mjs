@@ -68,6 +68,7 @@ test('IONOS build verifies the complete static PWA artifact before upload',()=>{
   assert.match(buildWorkflow,/DEPLOYMENT_FOLDER: dist/);
   assert.match(buildWorkflow,/npm run test:ionos/);
   assert.match(buildWorkflow,/config-file: \.deploy-now\/shiftpilot\/config\.yaml/);
-  assert.match(deployConfig,/bootstrap:\s+excludes: \[\]/);
+  assert.match(deployConfig,/version: 1\.0/);
+  assert.match(deployConfig,/deploy:\s+bootstrap:\s+excludes: \[\]/);
   assert.match(deployConfig,/recurring:\s+excludes: \[\]/);
 });

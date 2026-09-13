@@ -1,4 +1,6 @@
-bootstrap:
-  excludes: []
-recurring:
-  excludes: []
+version: 1.0
+deploy:
+  bootstrap:
+    excludes: []
+  recurring:
+    excludes: []
