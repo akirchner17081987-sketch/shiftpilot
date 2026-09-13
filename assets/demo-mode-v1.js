@@ -216,7 +216,7 @@
     try{employees=readDemo('employees',employees);assignments=readDemo('assignments',assignments);absences=readDemo('absences',absences);globalSoll=readDemo('globalSoll',globalSoll);dailySoll=readDemo('dailySoll',dailySoll);timeEntries=readDemo('timeEntries',timeEntries)}catch(err){console.error('SchichtFunk Demo Snapshot',err)}
   }
   function controlsReady(){
-    return document.querySelectorAll('[data-demo-perspective]').length>=2&&!!(document.querySelector('[data-demo-scenarios]')&&document.getElementById('sfDemoResetBtn')&&document.getElementById('sfDemoExitBtn')&&document.getElementById('sfDemoBadge'));
+    return document.querySelectorAll('[data-demo-perspective]').length>=2&&!!(document.querySelector('[data-demo-scenarios]')&&document.getElementById('sfDemoExitBtn')&&document.getElementById('sfDemoBadge'));
   }
   const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
   async function nextPaint(){await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))}
