@@ -17,7 +17,7 @@ Prüfart: lesende Dashboard- und Advisor-Prüfung sowie nicht ausgerollte Umsetz
 | Dauer reiner AAL1-Sitzungen | auf 15 Minuten begrenzt | beibehalten |
 | MFA-Faktoren je Nutzer | maximal 10 | vor Echtbetrieb auf 2–3 prüfen |
 
-Supabase-seitig ist TOTP bereits verfügbar. Im Git-Prüfzweig liegt nun eine App-Oberfläche für Einrichtung per QR/Secret, Bestätigung des sechsstelligen Codes, Faktorenliste, Entfernung und den verpflichtenden Challenge-Schritt bei bereits registriertem Faktor vor. Abgebrochene Anmeldungen beenden die lokale Sitzung; unvollständig eingerichtete TOTP-Faktoren werden beim nächsten Einrichtungsversuch bereinigt. Dieser App-Fluss ist noch nicht mit den sicheren Konten abgenommen. Ein organisatorischer Wiederherstellungsweg und die verpflichtende Einführung für privilegierte Rollen fehlen weiterhin.
+Supabase-seitig ist TOTP bereits verfügbar. In der IONOS-Vorschau für Git-Commit `ff20020` liegt nun eine App-Oberfläche für Einrichtung per QR/Secret, Bestätigung des sechsstelligen Codes, Faktorenliste, Entfernung und den verpflichtenden Challenge-Schritt bei bereits registriertem Faktor vor. Build und IONOS-Deployment waren erfolgreich; Datei und Loader-Einbindung wurden öffentlich mit HTTP 200 geprüft. Abgebrochene Anmeldungen beenden die lokale Sitzung; unvollständig eingerichtete TOTP-Faktoren werden beim nächsten Einrichtungsversuch bereinigt. Dieser App-Fluss ist noch nicht mit den sicheren Konten abgenommen. Ein organisatorischer Wiederherstellungsweg und die verpflichtende Einführung für privilegierte Rollen fehlen weiterhin.
 
 Die Datenschutz-Edge-Function verlangt für Auftrag und Freigabe bereits eine verifizierte `aal2`-Sitzung. Andere sensible Bereiche wie Personalakte, Benutzerverwaltung und DATEV erzwingen `aal2` noch nicht vollständig an ihren jeweiligen Server-/Datenbankgrenzen. Deshalb darf MFA insgesamt noch nicht als vollständig umgesetzt gelten.
 
@@ -40,6 +40,6 @@ Die Datenschutz-Edge-Function verlangt für Auftrag und Freigabe bereits eine ve
 - Support kann Identität prüfen, aber keinen MFA-Schutz heimlich umgehen.
 - Jede Änderung ist mit Datum, Prüfer, Testkonto und Ergebnis dokumentiert.
 
-Status: 🟡 **SUPABASE-VORAUSSETZUNGEN UND APP-FLOW IM PRÜFZWEIG VORHANDEN; GERÄTETEST, RECOVERY UND BREITE SERVERSEITIGE AAL2-DURCHSETZUNG NOCH OFFEN.**
+Status: 🟡 **SUPABASE-VORAUSSETZUNGEN UND APP-FLOW IN DER IONOS-VORSCHAU VORHANDEN; ECHTKONTEN-/GERÄTETEST, RECOVERY UND BREITE SERVERSEITIGE AAL2-DURCHSETZUNG NOCH OFFEN.**
 
 Quellen: https://supabase.com/docs/guides/auth/password-security und https://supabase.com/docs/guides/auth/auth-mfa
