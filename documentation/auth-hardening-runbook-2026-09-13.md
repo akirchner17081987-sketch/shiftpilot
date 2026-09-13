@@ -1,7 +1,7 @@
 # SchichtFunk – Auth-Härtung: Passwortschutz und MFA
 
 Stand: 13.09.2026
-Prüfart: lesende Dashboard- und Advisor-Prüfung; keine Einstellung geändert
+Prüfart: lesende Dashboard- und Advisor-Prüfung sowie nicht ausgerollte Umsetzung im Git-Prüfzweig; keine Live-Einstellung geändert
 
 ## Aktueller Zustand
 
@@ -17,12 +17,14 @@ Prüfart: lesende Dashboard- und Advisor-Prüfung; keine Einstellung geändert
 | Dauer reiner AAL1-Sitzungen | auf 15 Minuten begrenzt | beibehalten |
 | MFA-Faktoren je Nutzer | maximal 10 | vor Echtbetrieb auf 2–3 prüfen |
 
-Supabase-seitig ist TOTP bereits verfügbar. SchichtFunk besitzt aber noch keinen vollständigen Einrichtungs-, Challenge-, Wiederherstellungs- und Sperrprozess und erzwingt `aal2` noch nicht an allen sensiblen Datenbank- und Servergrenzen. Deshalb darf MFA noch nicht als vollständig umgesetzt gelten.
+Supabase-seitig ist TOTP bereits verfügbar. Im Git-Prüfzweig liegt nun eine App-Oberfläche für Einrichtung per QR/Secret, Bestätigung des sechsstelligen Codes, Faktorenliste, Entfernung und den verpflichtenden Challenge-Schritt bei bereits registriertem Faktor vor. Abgebrochene Anmeldungen beenden die lokale Sitzung; unvollständig eingerichtete TOTP-Faktoren werden beim nächsten Einrichtungsversuch bereinigt. Dieser App-Fluss ist noch nicht mit den sicheren Konten abgenommen. Ein organisatorischer Wiederherstellungsweg und die verpflichtende Einführung für privilegierte Rollen fehlen weiterhin.
+
+Die Datenschutz-Edge-Function verlangt für Auftrag und Freigabe bereits eine verifizierte `aal2`-Sitzung. Andere sensible Bereiche wie Personalakte, Benutzerverwaltung und DATEV erzwingen `aal2` noch nicht vollständig an ihren jeweiligen Server-/Datenbankgrenzen. Deshalb darf MFA insgesamt noch nicht als vollständig umgesetzt gelten.
 
 ## Sichere Aktivierungsreihenfolge
 
-1. MFA-Oberfläche für Registrieren, QR-/Secret-Anzeige, TOTP-Prüfung, Faktorenliste und Entfernen bauen.
-2. Challenge nach normalem Login ergänzen; Recovery-Verfahren und mindestens einen Ersatzfaktor organisatorisch festlegen.
+1. Die vorbereitete MFA-Oberfläche mit zwei sicheren Testkonten im Wegwerf-Testmandanten prüfen.
+2. Recovery-Verfahren und mindestens einen Ersatzfaktor organisatorisch festlegen.
 3. `aal2` zunächst nur im Testmandanten für OWNER/ADMIN und sensible Aktionen prüfen: Personalakte, Benutzerverwaltung, DATEV, Exporte, Löschfreigaben und Sicherheitskonfiguration.
 4. Datenbank/RPCs müssen `aal2` serverseitig prüfen; eine reine UI-Sperre reicht nicht.
 5. Zwei Testkonten prüfen: korrektes TOTP, falsches TOTP, verlorener Faktor, neue Sitzung, abgelaufene Sitzung und Downgrade nach Faktorentfernung.
@@ -38,6 +40,6 @@ Supabase-seitig ist TOTP bereits verfügbar. SchichtFunk besitzt aber noch keine
 - Support kann Identität prüfen, aber keinen MFA-Schutz heimlich umgehen.
 - Jede Änderung ist mit Datum, Prüfer, Testkonto und Ergebnis dokumentiert.
 
-Status: 🟡 **SUPABASE-VORAUSSETZUNGEN VORHANDEN; APP-FLOW UND SERVERSEITIGE AAL2-DURCHSETZUNG NOCH ZU IMPLEMENTIEREN.**
+Status: 🟡 **SUPABASE-VORAUSSETZUNGEN UND APP-FLOW IM PRÜFZWEIG VORHANDEN; GERÄTETEST, RECOVERY UND BREITE SERVERSEITIGE AAL2-DURCHSETZUNG NOCH OFFEN.**
 
 Quellen: https://supabase.com/docs/guides/auth/password-security und https://supabase.com/docs/guides/auth/auth-mfa

@@ -13,6 +13,9 @@ const lifecycle=fs.readFileSync(path.join(root,'supabase','migrations','20260913
 const approvalSql=fs.readFileSync(path.join(root,'supabase','migrations','20260913084344_privacy_lifecycle_approval_v2.sql'),'utf8');
 const lifecycleDbTest=fs.readFileSync(path.join(root,'supabase','tests','privacy_lifecycle_test.sql'),'utf8');
 const lifecycleEdge=fs.readFileSync(path.join(root,'supabase','functions','privacy-lifecycle','index.ts'),'utf8');
+const mfaClient=fs.readFileSync(path.join(root,'assets','supabase-mfa-v1.js'),'utf8');
+const moduleLoader=fs.readFileSync(path.join(root,'assets','conflict-plausibility-v1.js'),'utf8');
+const settingsClient=fs.readFileSync(path.join(root,'assets','settings-management-v2.js'),'utf8');
 
 test('SECURITY DEFINER allowlist is exact and reviewable',()=>{
   assert.equal(allowlist.functions.length,35);
@@ -59,6 +62,18 @@ test('privacy approval enforces two-person control, legal holds and safe queue c
 test('privacy Edge Function pins its Supabase client dependency',()=>{
   assert.match(lifecycleEdge,/npm:@supabase\/supabase-js@\d+\.\d+\.\d+/);
   assert.doesNotMatch(lifecycleEdge,/npm:@supabase\/supabase-js@2["']/);
+});
+
+test('browser MFA flow supports enrollment, login challenge and factor removal',()=>{
+  for(const api of ['getAuthenticatorAssuranceLevel','listFactors','enroll','challenge','verify','unenroll']){
+    assert.match(mfaClient,new RegExp(`auth\\.mfa\\.${api}\\(`));
+  }
+  assert.match(mfaClient,/currentLevel!=='aal1'\|\|level\?\.nextLevel!=='aal2'/);
+  assert.match(mfaClient,/sixDigits\.test\(code\)/);
+  assert.match(mfaClient,/signOut\(\{scope:'local'\}\)/);
+  assert.doesNotMatch(mfaClient,/service[_-]?role/i);
+  assert.ok(moduleLoader.indexOf("'assets/supabase-mfa-v1.js'")>moduleLoader.indexOf("'assets/supabase-data-v1.js'"));
+  assert.match(settingsClient,/Authenticator verwalten/);
 });
 
 test('disposable database fixture is fictitious and always rolled back',()=>{

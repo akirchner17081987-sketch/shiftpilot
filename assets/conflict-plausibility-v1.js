@@ -11,6 +11,7 @@
     'assets/view-state-v1.js',
     'assets/supabase-auth-redirect-v1.js',
     'assets/supabase-data-v1.js',
+    'assets/supabase-mfa-v1.js',
     'assets/supabase-delta-sync-v1.js',
     'assets/supabase-employee-sync-reconcile-v1.js',
     'assets/supabase-upsert-batch-guard-v1.js',
