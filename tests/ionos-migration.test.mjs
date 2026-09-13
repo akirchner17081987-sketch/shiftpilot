@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { webcrypto } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
-globalThis.crypto=webcrypto;
+if(!globalThis.crypto)globalThis.crypto=webcrypto;
 const { createToken, safeEqual, sha256Hex, verifyToken }=await import('../supabase/functions/_shared/demo-security.js');
 
 const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
