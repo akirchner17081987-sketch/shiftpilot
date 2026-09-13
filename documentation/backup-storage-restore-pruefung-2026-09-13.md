@@ -15,6 +15,8 @@ Der nicht persistente Branch `privacy-restore-test-2026-09-13` wurde ohne Produk
 
 Zusätzlich wurde über die echte private Supabase-Storage-API eine 47 Byte große fiktive Datei hochgeladen, heruntergeladen, gelöscht, aus dem Export wiederhergestellt und erneut heruntergeladen. Größe und SHA-256 (`42b7a4667d9e167edf8b114bad417fd651d0bc683ad8815bb58e7c09fdc6039b`) waren identisch. Die Testdatei wurde danach über die Storage-API entfernt; die Kontrollabfrage ergab 0 verbleibende Objekte.
 
+Vor der Bereinigung enthielt der Wegwerf-Branch weder Lifecycle-Anträge, Fristprofile, Legal Holds, fiktive Auth-Nutzer, fiktive Unternehmen noch Storage-Objekte. Der Branch wurde danach gelöscht; die Kontrollabfrage vom 13.09.2026 um 10:09:34 UTC zeigt ausschließlich den Produktivbranch `main`.
+
 ## Nicht ausgeführt
 
 Es wurde **kein physischer Restore eines Supabase-Tagesbackups** angeklickt oder gestartet. Ein Restore des Produktivprojekts verursacht Nichtverfügbarkeit und überschreibt den aktuellen Datenbankstand. Auch der bestandene logische Branch-Test beweist deshalb noch keinen vollständigen physischen Backup-Restore.
@@ -41,7 +43,7 @@ node scripts/storage-restore-manifest.mjs verify personnel-documents <Restoreord
 7. Storage-Datei aus dem separaten Storage-Backup wiederherstellen und Hash vergleichen;
 8. sicherstellen, dass gelöschte Daten nicht versehentlich wieder in Produktion gelangen;
 9. RPO, RTO, Abweichungen und Verantwortliche dokumentieren;
-10. Wegwerf-Umgebung erst nach ausdrücklicher Bestätigung löschen.
+10. Wegwerf-Umgebung erst nach ausdrücklicher Bestätigung löschen. Für den Test vom 13.09.2026 wurde diese Bestätigung erteilt und die Löschung anschließend verifiziert.
 
 ## Zielwerte
 
@@ -52,6 +54,6 @@ node scripts/storage-restore-manifest.mjs verify personnel-documents <Restoreord
 | Wiederanlaufziel RTO | 8 Stunden, im Test zu messen |
 | Backup-Aufbewahrung Supabase Pro | 7 Tage laut Anbieterangabe |
 
-Status: 🟢 **TÄGLICHE DB-BACKUPS LIVE NACHGEWIESEN; LOGISCHER DB-RESTORE UND ECHTER PRIVATER STORAGE-RESTORE AUF WEGWERF-BRANCH BESTANDEN**, 🔴 **PHYSISCHER TAGESBACKUP-RESTORE UND DAUERHAFTER SEPARATER STORAGE-EXPORT NOCH OFFEN**.
+Status: 🟢 **TÄGLICHE DB-BACKUPS LIVE NACHGEWIESEN; LOGISCHER DB-RESTORE UND ECHTER PRIVATER STORAGE-RESTORE AUF WEGWERF-BRANCH BESTANDEN; BRANCH GELÖSCHT**, 🔴 **PHYSISCHER TAGESBACKUP-RESTORE UND DAUERHAFTER SEPARATER STORAGE-EXPORT NOCH OFFEN**.
 
 Quelle: https://supabase.com/docs/guides/platform/backups

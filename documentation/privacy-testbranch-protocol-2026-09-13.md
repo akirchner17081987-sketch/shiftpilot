@@ -9,6 +9,11 @@ Stand: 13.09.2026
 - Elternprojekt: `zbvloohfjleadjnqhbbh`
 - Modus: nicht persistent, ohne Produktionsdaten (`with_data=false`)
 - bestätigter Preis: 0,01344 USD pro Stunde bis zur Löschung des Branches
+- angelegt: 13.09.2026, 09:46:33 UTC
+- Löschung spätestens bestätigt: 13.09.2026, 10:09:34 UTC
+- nachweisbare Höchstlaufzeit: 23 Minuten 1 Sekunde
+
+Der Branch wurde nach Abschluss und einer letzten Leerstandskontrolle erfolgreich gelöscht. Die anschließende Branch-Liste enthält ausschließlich `main`. Bei höchstens einer berechneten vollen Stunde beträgt der Kostenrahmen 0,01344 USD zuzüglich möglicher Steuern. Die konkrete zeitanteilige Berechnung beziehungsweise Rundung bestimmt Supabase; dies ist keine Aussage über den endgültigen Rechnungsbetrag.
 
 Die anfänglich sichtbare Migrationshistorie des Branches enthielt nur elf Einträge. Ein read-only Objektvergleich ergab dennoch für Hauptprojekt und Branch exakt dieselben 41 Relationen sowie 183 Funktionen in `public` und `private`. Die unvollständige Historienanzeige wurde deshalb nicht als Schema-Nachweis verwendet.
 
@@ -52,4 +57,4 @@ Es wurde kein Zeitplan installiert und nichts auf das Produktivprojekt migriert.
 - Leaked Password Protection wird erst nach einem echten Branch-Auth-Test aktiviert. Die UI-Sicherheitsoption wurde lediglich gelesen.
 - Die 35 RPCs sind strukturell exakt geprüft; zusätzliche fachliche Fremdmandanten-Negativtests je RPC-Gruppe bleiben Teil der Produktivfreigabe.
 
-Status: 🟢 **WEGWERF-TESTS FÜR LIFECYCLE, LOGISCHEN DB-RESTORE UND STORAGE-RESTORE BESTANDEN**; 🟡 **PHYSISCHER BACKUP-RESTORE, AUTH-ADMIN-SCHRITT UND KUNDENSPEZIFISCHE LANGFRISTLÖSCHUNG OFFEN**.
+Status: 🟢 **WEGWERF-TESTS FÜR LIFECYCLE, LOGISCHEN DB-RESTORE UND STORAGE-RESTORE BESTANDEN; TESTBRANCH ANSCHLIESSEND GELÖSCHT**; 🟡 **PHYSISCHER BACKUP-RESTORE, AUTH-ADMIN-SCHRITT UND KUNDENSPEZIFISCHE LANGFRISTLÖSCHUNG OFFEN**.
