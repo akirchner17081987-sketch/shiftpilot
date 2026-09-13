@@ -11,6 +11,7 @@ const allowlist=JSON.parse(fs.readFileSync(path.join(root,'supabase','security-d
 const verifier=fs.readFileSync(path.join(root,'supabase','tests','security_definer_allowlist.sql'),'utf8');
 const lifecycle=fs.readFileSync(path.join(root,'supabase','migrations','20260913083032_privacy_lifecycle_v1.sql'),'utf8');
 const approvalSql=fs.readFileSync(path.join(root,'supabase','migrations','20260913084344_privacy_lifecycle_approval_v2.sql'),'utf8');
+const offboardingPlanSql=fs.readFileSync(path.join(root,'supabase','migrations','20260913091023_privacy_offboarding_plan_v3.sql'),'utf8');
 const lifecycleDbTest=fs.readFileSync(path.join(root,'supabase','tests','privacy_lifecycle_test.sql'),'utf8');
 const lifecycleEdge=fs.readFileSync(path.join(root,'supabase','functions','privacy-lifecycle','index.ts'),'utf8');
 const mfaClient=fs.readFileSync(path.join(root,'assets','supabase-mfa-v1.js'),'utf8');
@@ -59,6 +60,30 @@ test('privacy approval enforces two-person control, legal holds and safe queue c
   assert.doesNotMatch(approvalSql,/cron\.schedule/i);
 });
 
+test('expanded offboarding preview inventories all linked domains without mutating them',()=>{
+  for(const table of [
+    'employee_access_invites','shift_assignment_confirmations','time_entries','time_account_openings',
+    'shift_change_requests','shift_change_approvals','shift_swap_requests','disruption_incidents',
+    'disruption_offers','employee_personnel_details','employee_personnel_documents',
+    'notifications','push_subscriptions','audit_events','time_month_closures'
+  ])assert.match(offboardingPlanSql,new RegExp(`public\\.${table}\\b`));
+  assert.match(offboardingPlanSql,/'execution_enabled', false/i);
+  assert.match(offboardingPlanSql,/delete_eligible_after_session_revoke/i);
+  assert.match(offboardingPlanSql,/owned_companies/i);
+  assert.match(offboardingPlanSql,/cascading_auth_references/i);
+  assert.match(offboardingPlanSql,/set_null_auth_references/i);
+  assert.match(offboardingPlanSql,/'auth_reference_counts'/i);
+  for(const table of [
+    'datev_lodas_rules','datev_lodas_settings','plan_publications','time_account_settings',
+    'time_qr_terminals'
+  ])assert.match(offboardingPlanSql,new RegExp(`public\\.${table}\\b`));
+  assert.match(offboardingPlanSql,/CONTROLLED_REDACTION_REQUIRED/i);
+  assert.match(offboardingPlanSql,/sf_assert_service_role/i);
+  assert.doesNotMatch(offboardingPlanSql,/\bdelete\s+from\s+public\./i);
+  assert.doesNotMatch(offboardingPlanSql,/\bupdate\s+public\./i);
+  assert.doesNotMatch(offboardingPlanSql,/cron\.schedule/i);
+});
+
 test('privacy Edge Function pins its Supabase client dependency',()=>{
   assert.match(lifecycleEdge,/npm:@supabase\/supabase-js@\d+\.\d+\.\d+/);
   assert.doesNotMatch(lifecycleEdge,/npm:@supabase\/supabase-js@2["']/);
@@ -79,7 +104,11 @@ test('browser MFA flow supports enrollment, login challenge and factor removal',
 test('disposable database fixture is fictitious and always rolled back',()=>{
   assert.match(lifecycleDbTest,/example\.invalid/i);
   assert.match(lifecycleDbTest,/DSFA Wegwerf-Testmandant/i);
-  assert.match(lifecycleDbTest,/select plan\(16\)/i);
+  assert.match(lifecycleDbTest,/create extension if not exists pgtap with schema extensions/i);
+  assert.match(lifecycleDbTest,/set local search_path = public, extensions/i);
+  assert.match(lifecycleDbTest,/select plan\(23\)/i);
+  assert.match(lifecycleDbTest,/expanded preview inventories every offboarding data domain/i);
+  assert.match(lifecycleDbTest,/another company membership blocks auth account deletion/i);
   assert.match(lifecycleDbTest,/expired inline legal hold becomes claimable automatically/i);
   assert.match(lifecycleDbTest,/select \* from finish\(\)/i);
   assert.match(lifecycleDbTest,/rollback\s*;/i);

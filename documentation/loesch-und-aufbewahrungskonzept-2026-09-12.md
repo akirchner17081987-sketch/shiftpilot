@@ -73,7 +73,7 @@ Nicht jeder SchichtFunk-Datensatz ist automatisch Lohnkonto, Buchungsbeleg oder 
 - Für `expires_on`-Felder existieren Erinnerungen, aber keine generische automatische Löschung.
 - Supabase Auth-Konten, Storage-Objekte, Datenbankzeilen und Push-Abonnements werden nicht durch einen einzigen vorhandenen Offboardingprozess vollständig koordiniert.
 - Supabase Pro hält täglich erzeugte Datenbankbackups sieben Tage vor. Storage-Objekte sind nicht Teil des Datenbankbackups.
-- Eine automatische Fristlöschung ist deshalb **noch nicht produktiv umgesetzt**. Seit 13.09.2026 liegt im Repository eine nicht ausgerollte technische Grundlage mit privater, idempotenter Freigabewarteschlange, versioniertem Fristprofil, allgemeinen/mitarbeiterbezogenen Legal Holds und rein lesendem Mitarbeiter-Offboarding-Dry-Run vor. Eine vorbereitete Edge Function lässt Vorschauen nur für aktive OWNER/ADMIN zu und verlangt für Auftrag und Freigabe eine verifizierte `aal2`-Sitzung. Antragsteller und Freigeber müssen verschieden sein. Hintergrundarbeiter können fällige Aufträge atomar übernehmen, aber die V1/V2 führt absichtlich noch keine Löschung aus und installiert keinen Zeitplan.
+- Eine automatische Fristlöschung ist deshalb **noch nicht produktiv umgesetzt**. Seit 13.09.2026 liegt im Repository eine nicht ausgerollte technische Grundlage mit privater, idempotenter Freigabewarteschlange, versioniertem Fristprofil, allgemeinen/mitarbeiterbezogenen Legal Holds und rein lesendem Mitarbeiter-Offboarding-Dry-Run vor. Die V3-Vorschau inventarisiert die tatsächlich verknüpften Planungs-, Zeit-, QR-, Personalakten-, Push-, Audit-, Storage- und Auth-Domänen. Benutzerreferenzen werden dabei nach `RESTRICT/NO ACTION`, `CASCADE` und `SET NULL` getrennt, damit ein Auth-Konto weder fremde Mandantenzugänge noch unerkannte Nachweise mitlöscht. Eine vorbereitete Edge Function lässt Vorschauen nur für aktive OWNER/ADMIN zu und verlangt für Auftrag und Freigabe eine verifizierte `aal2`-Sitzung. Antragsteller und Freigeber müssen verschieden sein. Hintergrundarbeiter können fällige Aufträge atomar übernehmen, aber V1–V3 führen absichtlich noch keine Löschung aus und installieren keinen Zeitplan.
 
 ## 5. Soll-Löschprozess
 
@@ -119,7 +119,9 @@ Nicht jeder SchichtFunk-Datensatz ist automatisch Lohnkonto, Buchungsbeleg oder 
 - Allgemeine, mitarbeiterbezogene oder unmittelbar am Auftrag hinterlegte Legal Holds verhindern die Auftragsübernahme. Ein freigegebener Auftrag bleibt dabei `APPROVED` und wird nach Ablauf einer zeitlich befristeten Sperre automatisch wieder fällig.
 - `FOR UPDATE SKIP LOCKED` verhindert, dass zwei Hintergrundarbeiter denselben Auftrag übernehmen.
 - Ein Hintergrundarbeiter darf nur den von ihm übernommenen Auftrag abschließen.
-- V1/V2 enthält absichtlich keinen Löschbefehl und keinen Zeitplan. Erst ein bestandener Test auf einer Wegwerf-Umgebung darf die Ausführungsstufe freigeben.
+- V1–V3 enthalten absichtlich keinen Löschbefehl und keinen Zeitplan. Erst ein bestandener Test auf einer Wegwerf-Umgebung darf die Ausführungsstufe freigeben.
+- Die V3-Vorschau zählt vor einer Auth-Löschung alle bekannten Benutzerverknüpfungen nach Fremdschlüsselwirkung. Eigentum an einem Mandanten, weitere Mitgliedschaften/Mitarbeiterprofile sowie `RESTRICT`-/`NO ACTION`- oder unerwartete `CASCADE`-Verknüpfungen verhindern die Freigabe des Auth-Schritts. `SET NULL`-Folgen werden als eigener Prüfschritt ausgewiesen.
+- Historische `RESTRICT`-Beziehungen von Schichten, Änderungs-/Tauschanträgen, QR-Buchungen und Störfällen bestätigen, dass fachliche Nachweise nicht durch ein einfaches Löschen des Mitarbeiterstamms entfernt werden dürfen. Die spätere Ausführung muss je Datenklasse zwischen Aufbewahrung, kontrollierter Redaktion und Löschung entscheiden.
 
 ### 6.2 Geplante Ausführungsreihenfolge
 
@@ -152,6 +154,6 @@ Vor produktiver Aktivierung der Standardfristen sind erforderlich:
 | Auftragsverarbeiter-/Backupprüfung | SchichtFunk |
 | jährliche Wirksamkeitsprüfung | SchichtFunk gemeinsam mit ausgewähltem Testkunden/Datenschutzberatung |
 
-Status Löschkonzept: 🟡 **FACHLICH DOKUMENTIERT, SICHERE DRY-RUN-/FREIGABEGRUNDLAGE IM CODE; TECHNISCHE AUSFÜHRUNG, TESTBRANCH UND KUNDENFREIGABE NOCH OFFEN.**
+Status Löschkonzept: 🟡 **FACHLICH DOKUMENTIERT, ERWEITERTE V3-DRY-RUN-/FREIGABEGRUNDLAGE IM CODE; TECHNISCHE AUSFÜHRUNG, WEGWERF-TESTBRANCH UND KUNDENFREIGABE NOCH OFFEN.**
 
 Quellen: Art. 5, 17 und 28 DSGVO (https://eur-lex.europa.eu/eli/reg/2016/679/oj), § 16 ArbZG (https://www.gesetze-im-internet.de/arbzg/__16.html), § 41 EStG (https://www.gesetze-im-internet.de/estg/__41.html), § 28f SGB IV (https://www.gesetze-im-internet.de/sgb_4/__28f.html), § 147 AO (https://www.gesetze-im-internet.de/ao_1977/__147.html), § 257 HGB (https://www.gesetze-im-internet.de/hgb/__257.html), §§ 195/199 BGB. Die konkrete arbeits-, tarif-, steuer- und sozialversicherungsrechtliche Einordnung muss der jeweilige Arbeitgeber prüfen.

@@ -1,5 +1,7 @@
 begin;
-select plan(16);
+create extension if not exists pgtap with schema extensions;
+set local search_path = public, extensions;
+select plan(23);
 
 -- This fixture is intentionally fictitious and rolls back completely.
 select set_config('request.jwt.claim.role','service_role',true);
@@ -13,6 +15,9 @@ insert into auth.users(
    '{"provider":"email","providers":["email"]}'::jsonb,'{}'::jsonb,now(),now()),
   ('00000000-0000-0000-0000-000000000000','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','authenticated','authenticated',
    'privacy-approver@example.invalid',crypt('not-a-real-password',gen_salt('bf')),now(),
+   '{"provider":"email","providers":["email"]}'::jsonb,'{}'::jsonb,now(),now()),
+  ('00000000-0000-0000-0000-000000000000','abababab-abab-4aba-8aba-abababababab','authenticated','authenticated',
+   'privacy-employee@example.invalid',crypt('not-a-real-password',gen_salt('bf')),now(),
    '{"provider":"email","providers":["email"]}'::jsonb,'{}'::jsonb,now(),now());
 
 insert into public.companies(id,name,created_by)
@@ -20,13 +25,15 @@ values('cccccccc-cccc-4ccc-8ccc-cccccccccccc','DSFA Wegwerf-Testmandant','aaaaaa
 
 insert into public.company_members(company_id,user_id,role,status) values
   ('cccccccc-cccc-4ccc-8ccc-cccccccccccc','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','OWNER','ACTIVE'),
-  ('cccccccc-cccc-4ccc-8ccc-cccccccccccc','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','ADMIN','ACTIVE');
+  ('cccccccc-cccc-4ccc-8ccc-cccccccccccc','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','ADMIN','ACTIVE'),
+  ('cccccccc-cccc-4ccc-8ccc-cccccccccccc','abababab-abab-4aba-8aba-abababababab','EMPLOYEE','ACTIVE');
 
 insert into public.employees(
   id,company_id,first_name,last_name,personnel_no,contract_end,status,auth_user_id,access_status
 ) values (
   'dddddddd-dddd-4ddd-8ddd-dddddddddddd','cccccccc-cccc-4ccc-8ccc-cccccccccccc',
-  'Erika','Test','TEST-DSFA-001',current_date-31,'inactive',null,'DISABLED'
+  'Erika','Test','TEST-DSFA-001',current_date-31,'inactive',
+  'abababab-abab-4aba-8aba-abababababab','DISABLED'
 );
 
 insert into private.privacy_retention_profiles(
@@ -47,6 +54,69 @@ select is(
   private.sf_employee_offboarding_preview(
     'cccccccc-cccc-4ccc-8ccc-cccccccccccc','dddddddd-dddd-4ddd-8ddd-dddddddddddd',current_date-31
   )->>'employee_id','dddddddd-dddd-4ddd-8ddd-dddddddddddd','preview is bound to test employee'
+);
+
+select is(
+  private.sf_employee_offboarding_preview(
+    'cccccccc-cccc-4ccc-8ccc-cccccccccccc','dddddddd-dddd-4ddd-8ddd-dddddddddddd',current_date-31
+  )->>'version','2','expanded preview version is active'
+);
+
+select ok(
+  (private.sf_employee_offboarding_preview(
+    'cccccccc-cccc-4ccc-8ccc-cccccccccccc','dddddddd-dddd-4ddd-8ddd-dddddddddddd',current_date-31
+  )->'counts') ?& array[
+    'access_invites','assignment_confirmations','time_entries','time_account_openings',
+    'shift_change_requests','shift_swap_requests','disruption_incidents','disruption_offers',
+    'personnel_details','notifications','push_subscriptions','audit_payload_references',
+    'month_snapshot_references','restricting_auth_references','cascading_auth_references',
+    'set_null_auth_references'
+  ],
+  'expanded preview inventories every offboarding data domain'
+);
+
+select is(
+  private.sf_employee_offboarding_preview(
+    'cccccccc-cccc-4ccc-8ccc-cccccccccccc','dddddddd-dddd-4ddd-8ddd-dddddddddddd',current_date-31
+  )->'auth_user_ids'->>0,
+  'abababab-abab-4aba-8aba-abababababab',
+  'preview is bound to the employee auth account'
+);
+
+select is(
+  private.sf_employee_offboarding_preview(
+    'cccccccc-cccc-4ccc-8ccc-cccccccccccc','dddddddd-dddd-4ddd-8ddd-dddddddddddd',current_date-31
+  )->'auth_reference_counts'->'memberships'->>'current_company',
+  '1','preview identifies the current company membership'
+);
+
+select is(
+  private.sf_employee_offboarding_preview(
+    'cccccccc-cccc-4ccc-8ccc-cccccccccccc','dddddddd-dddd-4ddd-8ddd-dddddddddddd',current_date-31
+  )->'auth_account'->>'delete_eligible_after_session_revoke',
+  'true','account is eligible only after the expected current links are removed'
+);
+
+insert into public.companies(id,name,created_by)
+values('dededede-dede-4ede-8ede-dededededede','Zweiter DSFA Wegwerf-Testmandant',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+
+insert into public.company_members(company_id,user_id,role,status)
+values('dededede-dede-4ede-8ede-dededededede','abababab-abab-4aba-8aba-abababababab',
+  'EMPLOYEE','ACTIVE');
+
+select is(
+  private.sf_employee_offboarding_preview(
+    'cccccccc-cccc-4ccc-8ccc-cccccccccccc','dddddddd-dddd-4ddd-8ddd-dddddddddddd',current_date-31
+  )->'counts'->>'other_company_memberships',
+  '1','preview detects another company membership linked to the same auth account'
+);
+
+select is(
+  private.sf_employee_offboarding_preview(
+    'cccccccc-cccc-4ccc-8ccc-cccccccccccc','dddddddd-dddd-4ddd-8ddd-dddddddddddd',current_date-31
+  )->'auth_account'->>'delete_eligible_after_session_revoke',
+  'false','another company membership blocks auth account deletion'
 );
 
 select ok(
