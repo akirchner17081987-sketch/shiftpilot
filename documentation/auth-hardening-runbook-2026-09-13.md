@@ -21,6 +21,10 @@ Supabase-seitig ist TOTP bereits verfügbar. In der IONOS-Vorschau für Git-Comm
 
 Die Datenschutz-Edge-Function verlangt für Auftrag und Freigabe bereits eine verifizierte `aal2`-Sitzung. Andere sensible Bereiche wie Personalakte, Benutzerverwaltung und DATEV erzwingen `aal2` noch nicht vollständig an ihren jeweiligen Server-/Datenbankgrenzen. Deshalb darf MFA insgesamt noch nicht als vollständig umgesetzt gelten.
 
+Im Prüfzweig liegt zusätzlich eine nicht ausgerollte gemeinsame Datenbankgrenze `private.sf_assert_aal2()` vor. Sie liest ausschließlich den signierten Supabase-Claim `aal`, behandelt fehlende Angaben sicher als `aal1` und liefert bei unzureichender Sitzung kontrolliert `MFA_REQUIRED`. Bestehende öffentliche RPCs werden durch diese Grundlagenmigration bewusst noch nicht verändert. Die stufenweise Zuordnung und Abnahme ist in `mfa-sensitive-rpc-rollout-2026-09-13.md` festgehalten.
+
+Die Guard-Definition wurde am 13.09.2026 in einer sitzungsgebundenen `pg_temp`-Kopie gegen die aktuelle Supabase-Auth-Umgebung kompiliert. Der `aal1`-Negativpfad, der `aal2`-Erfolgspfad und der gesonderte Service-Role-Pfad verhielten sich wie vorgesehen; Transaktion und temporäre Funktionen wurden vollständig verworfen. Dies ist ein Syntax-/Grenztest, aber noch kein Ersatz für den Zwei-Konten-Test der tatsächlich geschützten RPCs.
+
 ## Sichere Aktivierungsreihenfolge
 
 1. Die vorbereitete MFA-Oberfläche mit zwei sicheren Testkonten im Wegwerf-Testmandanten prüfen.
@@ -40,6 +44,6 @@ Die Datenschutz-Edge-Function verlangt für Auftrag und Freigabe bereits eine ve
 - Support kann Identität prüfen, aber keinen MFA-Schutz heimlich umgehen.
 - Jede Änderung ist mit Datum, Prüfer, Testkonto und Ergebnis dokumentiert.
 
-Status: 🟡 **SUPABASE-VORAUSSETZUNGEN UND APP-FLOW IN DER IONOS-VORSCHAU VORHANDEN; ECHTKONTEN-/GERÄTETEST, RECOVERY UND BREITE SERVERSEITIGE AAL2-DURCHSETZUNG NOCH OFFEN.**
+Status: 🟡 **SUPABASE-VORAUSSETZUNGEN, APP-FLOW UND GEMEINSAME SERVERSEITIGE AAL2-GRUNDLAGE VORBEREITET; ECHTKONTEN-/GERÄTETEST, RECOVERY UND STUFENWEISE RPC-AKTIVIERUNG NOCH OFFEN.**
 
 Quellen: https://supabase.com/docs/guides/auth/password-security und https://supabase.com/docs/guides/auth/auth-mfa

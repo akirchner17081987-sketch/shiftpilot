@@ -1,10 +1,37 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(23);
+select plan(26);
 
 -- This fixture is intentionally fictitious and rolls back completely.
+select set_config('request.jwt.claim.role','authenticated',true);
+select set_config(
+  'request.jwt.claims',
+  '{"role":"authenticated","aal":"aal1","sub":"abababab-abab-4aba-8aba-abababababab"}',
+  true
+);
+
+select throws_ok(
+  $$select private.sf_assert_aal2('fictitious_sensitive_test')$$,
+  'P0001','MFA_REQUIRED','aal1 cannot pass the shared sensitive-action guard'
+);
+
+select set_config(
+  'request.jwt.claims',
+  '{"role":"authenticated","aal":"aal2","sub":"abababab-abab-4aba-8aba-abababababab"}',
+  true
+);
+select lives_ok(
+  $$select private.sf_assert_aal2('fictitious_sensitive_test')$$,
+  'aal2 passes the shared sensitive-action guard'
+);
+
 select set_config('request.jwt.claim.role','service_role',true);
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+select lives_ok(
+  $$select private.sf_assert_aal2('fictitious_worker_test')$$,
+  'service-role workers use their separate server authorization boundary'
+);
 
 insert into auth.users(
   instance_id,id,aud,role,email,encrypted_password,email_confirmed_at,

@@ -12,6 +12,7 @@ const verifier=fs.readFileSync(path.join(root,'supabase','tests','security_defin
 const lifecycle=fs.readFileSync(path.join(root,'supabase','migrations','20260913083032_privacy_lifecycle_v1.sql'),'utf8');
 const approvalSql=fs.readFileSync(path.join(root,'supabase','migrations','20260913084344_privacy_lifecycle_approval_v2.sql'),'utf8');
 const offboardingPlanSql=fs.readFileSync(path.join(root,'supabase','migrations','20260913091023_privacy_offboarding_plan_v3.sql'),'utf8');
+const mfaGuardSql=fs.readFileSync(path.join(root,'supabase','migrations','20260913092708_mfa_sensitive_action_guard_v1.sql'),'utf8');
 const lifecycleDbTest=fs.readFileSync(path.join(root,'supabase','tests','privacy_lifecycle_test.sql'),'utf8');
 const lifecycleEdge=fs.readFileSync(path.join(root,'supabase','functions','privacy-lifecycle','index.ts'),'utf8');
 const mfaClient=fs.readFileSync(path.join(root,'assets','supabase-mfa-v1.js'),'utf8');
@@ -89,6 +90,17 @@ test('privacy Edge Function pins its Supabase client dependency',()=>{
   assert.doesNotMatch(lifecycleEdge,/npm:@supabase\/supabase-js@2["']/);
 });
 
+test('shared MFA guard fails closed and remains disconnected from existing RPCs',()=>{
+  assert.match(mfaGuardSql,/auth\.jwt\(\)->>'aal'/i);
+  assert.match(mfaGuardSql,/v_role = 'service_role'/i);
+  assert.match(mfaGuardSql,/v_role <> 'authenticated' or v_aal <> 'aal2'/i);
+  assert.match(mfaGuardSql,/message = 'MFA_REQUIRED'/i);
+  assert.match(mfaGuardSql,/revoke all on function private\.sf_assert_aal2\(text\) from public, anon, authenticated/i);
+  assert.match(mfaGuardSql,/grant execute on function private\.sf_assert_aal2\(text\) to authenticated, service_role/i);
+  assert.doesNotMatch(mfaGuardSql,/create or replace function public\./i);
+  assert.doesNotMatch(mfaGuardSql,/\b(delete|update|insert)\b\s+(from|into)?\s*public\./i);
+});
+
 test('browser MFA flow supports enrollment, login challenge and factor removal',()=>{
   for(const api of ['getAuthenticatorAssuranceLevel','listFactors','enroll','challenge','verify','unenroll']){
     assert.match(mfaClient,new RegExp(`auth\\.mfa\\.${api}\\(`));
@@ -106,7 +118,9 @@ test('disposable database fixture is fictitious and always rolled back',()=>{
   assert.match(lifecycleDbTest,/DSFA Wegwerf-Testmandant/i);
   assert.match(lifecycleDbTest,/create extension if not exists pgtap with schema extensions/i);
   assert.match(lifecycleDbTest,/set local search_path = public, extensions/i);
-  assert.match(lifecycleDbTest,/select plan\(23\)/i);
+  assert.match(lifecycleDbTest,/select plan\(26\)/i);
+  assert.match(lifecycleDbTest,/aal1 cannot pass the shared sensitive-action guard/i);
+  assert.match(lifecycleDbTest,/aal2 passes the shared sensitive-action guard/i);
   assert.match(lifecycleDbTest,/expanded preview inventories every offboarding data domain/i);
   assert.match(lifecycleDbTest,/another company membership blocks auth account deletion/i);
   assert.match(lifecycleDbTest,/expired inline legal hold becomes claimable automatically/i);
