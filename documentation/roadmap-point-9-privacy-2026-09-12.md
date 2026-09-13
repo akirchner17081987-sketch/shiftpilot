@@ -1,7 +1,7 @@
 # SchichtFunk – Roadmap-Punkt 9
 ## Recht, Datenschutz, Hosting & Veröffentlichung
 
-Stand: 12.09.2026
+Stand: 13.09.2026
 
 ## Bereits umgesetzt / verifiziert
 
@@ -29,7 +29,7 @@ Stand: 12.09.2026
 - Für Löschung/Offboarding liegt eine noch nicht produktiv ausgerollte private V1–V5-Grundlage mit idempotenter Warteschlange, Kunden-Fristprofil, Legal Holds, Vier-Augen-Freigabe und vollständiger Vorschau vor. `ACCESS` sperrt den Zugang sofort; `ERASURE` wird getrennt nach Frist und Legal-Hold-Prüfung ausgeführt. Auth-Referenzen werden nach `RESTRICT/NO ACTION`, `CASCADE` und `SET NULL` getrennt; fremde Mandantenzugänge bleiben erhalten. Der Wegwerf-Testbranch bestand 41/41 Lifecycle-/Offboarding-/MFA-Prüfungen. Auth-Admin-/Personalakten-Storage-Schritt, Langfristredaktion und Zeitplanung sind bewusst noch nicht produktiv aktiv.
 - Die Supabase-Backupseite weist tägliche physische Sicherungen bis 13.09.2026 nach. Auf dem Wegwerf-Testbranch bestanden ein logischer Datenbank-Restore (4/4) und ein echter privater Storage-Export/Lösch-/Restorezyklus mit bytegleichem SHA-256 und 0 Restobjekten. Der Branch wurde nach der Leerstandskontrolle gelöscht; anschließend war nur noch `main` vorhanden. Ein physischer Tagesbackup-Restore bleibt wegen seines abweichenden Risiko-/Kostenprofils offen.
 - TOTP-MFA und die 15-Minuten-Begrenzung reiner AAL1-Sitzungen sind in Supabase aktiv. Die IONOS-Vorschau enthält seit Commit `ff20020` Einrichtung, Faktorenverwaltung und den Login-Challenge-Schritt für App-Authenticator; Build, Deployment sowie öffentliche Auslieferung der neuen Datei wurden bestätigt. Die Datenschutzfreigabe verlangt bereits serverseitig `aal2`; zusätzlich ist eine gemeinsame, noch nicht angeschlossene Datenbankprüfung für sensible RPCs samt Stufen- und Negativtestplan vorbereitet. Der echte Konten-/Gerätetest, Recovery und die Ausweitung auf Personalakte, Benutzerverwaltung, DATEV und Sicherheitskonfiguration stehen aus. Leaked-Password-Schutz und sichere Passwortänderung sind weiterhin aus.
-- Die Entscheidungsvorlage zur datenschutzbeauftragten Person empfiehlt wegen Unabhängigkeit/Interessenkonflikt eine externe Lösung. Eine Benennung, ein Vertrag und eine Behördenmeldung wurden nicht vorgenommen und benötigen Nutzerentscheidung.
+- Für die datenschutzbeauftragte Person wurde Option B (geeignete interne Person) als Richtung gewählt. Die Auswahl und Benennung der konkreten Person wurde am 13.09.2026 auf Nutzerwunsch vorerst zurückgestellt. Es erfolgten weder Benennung noch Vertrag, Veröffentlichung oder Behördenmeldung.
 - Eine vollständige kundenspezifische DSFA-Vorlage mit Datenfluss, Zweck-/Rechtsgrundlagenmatrix, Risikoregister, Maßnahmenplan, Beteiligungs- und Freigabefeldern ist vorbereitet. Sie wird erst mit Pilotkundendaten, DSB-Stellungnahme und Testnachweisen freigabefähig.
 
 ## Rechtliche Einordnung im Datenschutztext
@@ -82,11 +82,17 @@ Stand: 12.09.2026
 
 ## Noch offen – Punkt 9 bleibt IN ARBEIT
 
+### Bewusst zurückgestellt
+
+- **Konkrete interne DSB-Person benennen:** derzeit pausiert. Der Punkt wird vor dem ersten kommerziellen Beschäftigtendaten-Echtbetrieb wieder aufgenommen; bis dahin bleibt die kundenspezifische DSFA in diesem Teil vorläufig.
+
+### Nächste Arbeiten
+
 1. Supabase Auth „Leaked Password Protection“ aktivieren. Der Security Advisor meldet die Funktion weiterhin als deaktiviert.
 2. Für einen möglichen produktiven Vercel-Rollback vor Aktivierung eine kommerziell zulässige Tarif-/DPA-Grundlage herstellen; kein Upgrade ohne ausdrückliche Freigabe.
 3. Lösch- und Aufbewahrungskonzept technisch fertigstellen: Die V1–V5-Grundlage und erste Datenbankausführung sind auf dem Wegwerf-Testbranch geprüft. Offen bleiben Audit-/Monatssnapshot-Redaktion, Auth-Admin-/Personalakten-Storage-Koordination, Zeitplanung und kundenspezifische Langfristfristen; keine Produktivaktivierung ohne gesonderte Freigabe.
 4. TOM-Härtung abschließen: Allowlist-Negativtests auf der Wegwerf-Testumgebung ausführen, vorbereiteten MFA-Appfluss mit zwei sicheren Konten abnehmen, `aal2` auf weitere sensible Servergrenzen ausweiten sowie Leaked-Password-Schutz nach Regressionstest aktivieren.
-5. Für die Datenschutzbeauftragten-Rolle wurde Option B (interne Person) ausgewählt; die Benennung der konkreten Person ist auf Nutzerwunsch vorerst zurückgestellt. Vor dem ersten kommerziellen Echtkunden bleibt sie zwingend wieder aufzunehmen: konkrete Person, Fachkunde, Ressourcen und Interessenkonflikt prüfen; erst nach ausdrücklicher Freigabe benennen, Kontaktdaten veröffentlichen/der Aufsicht mitteilen sowie VVT-Kundenblatt und vollständige kundenspezifische DSFA ergänzen/freigeben. Datenschutzbeauftragte Person und gegebenenfalls Betriebsrat des Kunden einbeziehen.
+5. Kundenspezifische DSFA bis auf den pausierten DSB-Personenschritt vorbereiten: Pilotkundendaten, konkrete Verarbeitung, Rechtsgrundlagen, Betriebsrat/Personalvertretung, Kundenfristen, Risiken und Maßnahmen ergänzen. Die formelle DSFA-Freigabe erfolgt erst nach Wiederaufnahme der DSB-Prüfung.
 6. Der logische DB- und private Storage-Restore auf der bestätigten Wegwerf-Testumgebung ist dokumentiert bestanden. Noch offen: physischer Tagesbackup-Restore und dauerhaft betriebener separater Personalakten-Storage-Export.
 7. Logging-/Monitoring- und Incident-Response-Aufbewahrung sowie Datenschutzverletzungsprozess nach Art. 33/34 DSGVO dokumentieren und testen.
 8. IONOS-Deploy-Now-spezifische Logfrist bestätigen.
