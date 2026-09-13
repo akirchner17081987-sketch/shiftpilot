@@ -32,6 +32,9 @@ Stand: 13.09.2026
 - Für die datenschutzbeauftragte Person wurde Option B (geeignete interne Person) als Richtung gewählt. Die Auswahl und Benennung der konkreten Person wurde am 13.09.2026 auf Nutzerwunsch vorerst zurückgestellt. Es erfolgten weder Benennung noch Vertrag, Veröffentlichung oder Behördenmeldung.
 - Eine vollständige kundenspezifische DSFA-Vorlage mit Datenfluss, Zweck-/Rechtsgrundlagenmatrix, Risikoregister, Maßnahmenplan, Beteiligungs- und Freigabefeldern ist vorbereitet. Sie wird erst mit Pilotkundendaten, DSB-Stellungnahme und Testnachweisen freigabefähig.
 - Eine editierbare SchichtFunk-Kunden-AVV-Vorlage nach Art. 28 DSGVO ist erstellt. Sie enthält die Verarbeitung, TOM, Unterauftragsverarbeiter, kundenbezogene Löschfristen sowie Weisungs- und Kontaktrollen als Anlagen. Vor dem Einsatz sind die gelb markierten Kundendaten, Fristen, die aktuelle TOM-/Unterauftragnehmerlage und der konkrete Vertrag rechtlich zu prüfen; ein kundenspezifisch abgeschlossener AVV liegt damit noch nicht vor.
+- Ein versioniertes Sicherheits- und Betriebsnachweisregister verknüpft die TOM mit reproduzierbaren Tests, Anbieter-/Restorebelegen und einem öffentlichen IONOS-Livecheck. 30/30 Testdateien, IONOS-Migrationssuite, 2,05-MiB-Build und Abhängigkeitsprüfung bestanden; sechs öffentliche IONOS-Routen lieferten die erwarteten Sicherheits- und Cache-Header.
+- Der Incident-Response- und Datenschutzverletzungsprozess einschließlich Schweregraden, unverzüglicher Kundeninformation, 72-Stunden-Entscheidungsweg, Wiederanlauf und fiktivem Papier-Planspiel ist dokumentiert. Das Planspiel änderte keine Produktionsdaten; Vertretung, überwachte Alarmierung und ein technischer Sitzungs-/Schlüssel-Drill bleiben offen.
+- Eine Logging-/Monitoring- und Aufbewahrungsmatrix trennt vorhandene Anwendungsaudits, Supabase-/IONOS-/GitHub-Nachweise, verbindliche Prüfauslöser und geplante Alarme von noch nicht bestätigten Anbieterfristen und kundenbezogenen Löschfristen.
 
 ## Rechtliche Einordnung im Datenschutztext
 
@@ -95,7 +98,7 @@ Stand: 13.09.2026
 3. TOM-Härtung abschließen: fachliche Fremdmandanten-Negativtests je RPC-Gruppe ausführen, vorbereiteten MFA-Appfluss mit zwei sicheren Konten abnehmen und `aal2` auf weitere sensible Servergrenzen ausweiten.
 4. Kundenspezifische DSFA bis auf den pausierten DSB-Personenschritt vorbereiten: Pilotkundendaten, konkrete Verarbeitung, Rechtsgrundlagen, Betriebsrat/Personalvertretung, Kundenfristen, Risiken und Maßnahmen ergänzen. Die formelle DSFA-Freigabe erfolgt erst nach Wiederaufnahme der DSB-Prüfung.
 5. Der logische DB- und private Storage-Restore auf der bestätigten Wegwerf-Testumgebung ist dokumentiert bestanden. Noch offen: physischer Tagesbackup-Restore und dauerhaft betriebener separater Personalakten-Storage-Export.
-6. Logging-/Monitoring- und Incident-Response-Aufbewahrung sowie Datenschutzverletzungsprozess nach Art. 33/34 DSGVO dokumentieren und testen.
+6. Das dokumentierte Incident-Response-Verfahren betrieblich vervollständigen: Vertretung, überwachte Alarmierung, Bereitschaftszeiten, Logzugriffs-/Aufbewahrungsmatrix sowie echten Sitzungswiderruf-/Schlüsselrotationsdrill mit sicheren Testkonten festlegen und testen.
 7. IONOS-Deploy-Now-spezifische Logfrist bestätigen.
 8. Prüfen, ob Registerangaben, USt-IdNr. oder weitere Impressumspflichten für den Betreiber einschlägig sind; falls ja, Impressum ergänzen.
 9. Die vorhandene Kunden-AVV-Vorlage für den ersten Echtkunden vervollständigen, rechtlich prüfen lassen und beiderseitig abschließen.
