@@ -438,6 +438,7 @@ test('disruption autopilot ranks candidates and provides manager and employee wo
   assert.match(disruption, /Top 3 anfragen/);
   assert.match(disruption, /Schicht verbindlich übernehmen/);
   assert.match(disruption, /managerBusy=false,employeeBusy=false/);
+  assert.match(disruption, /JSON\.stringify\(next\)===JSON\.stringify\(employeeOffers\)/);
   assert.match(disruption, /data-sf-employee-view="disruptions"/);
   assert.match(disruption, /sf:demo-perspective-change/);
   assert.match(notifications, /DISRUPTION_OFFER:'⚡'/);

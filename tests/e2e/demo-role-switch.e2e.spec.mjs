@@ -37,10 +37,13 @@ test('demo switches between manager workspace and the existing employee portal',
   await page.getByRole('dialog').getByRole('button',{name:'Ablehnen'}).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(disruptions).toContainText('Abgelehnt');
-  await disruptions.locator('[data-accept]').first().click();
+  await openEmployeeArea(page,'disruptions',20_000);
+  const refreshedDisruptions=portal.locator('[data-sf-portal-section="disruptions"]');
+  await refreshedDisruptions.locator('[data-accept]').first().click();
   await page.getByRole('dialog').getByRole('button',{name:'Verbindlich übernehmen'}).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await expect(disruptions).toContainText('Übernommen');
+  await openEmployeeArea(page,'disruptions',20_000);
+  await expect(portal.locator('[data-sf-portal-section="disruptions"]')).toContainText('Übernommen');
   await openEmployeeArea(page,'shifts');
   await expect(portal.locator('.sf-shift-item').first()).toBeVisible();
   expect(await portal.locator('.sf-shift-item').count()).toBeGreaterThanOrEqual(2);
@@ -151,9 +154,11 @@ test('demo employee sees absence examples and can submit a local request', async
   await dialog.locator('#sfAe3Note').fill('Demo-Antrag zur Präsentation');
   await dialog.getByRole('button',{name:'Antrag senden'}).click();
   await expect(dialog).toHaveCount(0);
-  await expect(absences.locator('.sf-ae3-row')).toHaveCount(4);
-  await expect(absences).toContainText('Sonderurlaub');
-  await expect(absences).toContainText('Demo-Antrag zur Präsentation');
+  await openEmployeeArea(page,'absences',20_000);
+  const updatedAbsences=portal.locator('[data-sf-portal-section="absences"]');
+  await expect(updatedAbsences.locator('.sf-ae3-row')).toHaveCount(4);
+  await expect(updatedAbsences).toContainText('Sonderurlaub');
+  await expect(updatedAbsences).toContainText('Demo-Antrag zur Präsentation');
 });
 
 test('demo time tracking persists employee entries and monthly accounts render', async ({ page }, testInfo) => {
@@ -176,15 +181,15 @@ test('demo time tracking persists employee entries and monthly accounts render',
   if(testInfo.project.name==='desktop-chromium')await page.screenshot({path:testInfo.outputPath('arbeitszeiterfassung-demo-geprueft.png')});
 
   const editable=timeCard.locator('[data-time-report]').first();
-  const item=editable.locator('xpath=ancestor::*[@data-emp-time]');
   await editable.click();
   const dialog=page.locator('#sfTimeModal');
   await dialog.locator('#sfTimeNote').fill('Persistenzprüfung Demo');
   await dialog.locator('.sf-time-confirm').click();
   await expect(dialog).toHaveCount(0);
-  await expect(item).toContainText('Zur Prüfung');
+  await openEmployeeArea(page,'time',20_000);
+  await expect(portal.locator('#sfEmployeeTimeCard [data-emp-time]').first()).toContainText('Zur Prüfung');
 
-  await openEmployeeArea(page,'account');
+  await openEmployeeArea(page,'account',20_000);
   const account=portal.locator('#sfEmployeeTimeAccount');
   await expect(account).toBeVisible();
   const current=await account.locator('.sf-ta-employee-grid').innerText();

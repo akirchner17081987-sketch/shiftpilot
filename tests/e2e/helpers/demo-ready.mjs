@@ -7,9 +7,11 @@ export async function primeDemoSession(page) {
   });
 }
 
+const remoteTarget = /^https:\/\//i.test(process.env.E2E_BASE_URL || '');
+
 async function waitForVisibleDemoShell(page, timeout) {
-  const firstWindow = Math.min(timeout, 8_000);
-  const secondWindow = Math.max(8_000, Math.min(timeout, 12_000));
+  const firstWindow = Math.min(timeout, remoteTarget ? 15_000 : 8_000);
+  const secondWindow = Math.max(firstWindow, Math.min(timeout, remoteTarget ? 30_000 : 12_000));
 
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
@@ -42,7 +44,7 @@ export async function waitForDemoReady(page, options = {}) {
     perspective = true,
     scenarios = false,
     readability = true,
-    timeout = 20_000,
+    timeout = remoteTarget ? 40_000 : 20_000,
   } = options;
 
   // Die sichtbare Oberfläche ist das belastbare End-to-End-Signal. Falls nur
