@@ -45,6 +45,8 @@ Vor einer Produktivmigration muss die Abfrage `supabase/tests/security_definer_a
 5. QR-Token eines anderen Mandanten bzw. außerhalb der zulässigen Schicht wird abgelehnt.
 6. Push-Endpunkt kann nur durch seinen Besitzer entfernt werden.
 
-Status: 🟢 **ALLOWLIST VOLLSTÄNDIG ERFASST UND LIVE-DRIFTTEST BESTANDEN**, 🟡 **VERHALTENS-/MANDANTEN-NEGATIVTEST AUF WEGWERF-TESTUMGEBUNG NOCH OFFEN**.
+Der exakte Prüflauf wurde am 13.09.2026 vor und nach den Datenschutzmigrationen auf `privacy-restore-test-2026-09-13` wiederholt; beide Läufe lieferten null Zeilen. Der Security Advisor meldete danach weiterhin exakt 35 Einträge dieser Klasse und keine neue öffentlich erreichbare `SECURITY DEFINER`-Funktion.
+
+Status: 🟢 **ALLOWLIST VOLLSTÄNDIG ERFASST; LIVE- UND TESTBRANCH-DRIFTTEST BESTANDEN**, 🟡 **ZUSÄTZLICHE FACHLICHE FREMDMANDANTEN-NEGATIVTESTS JE RPC-GRUPPE NOCH OFFEN**.
 
 Quelle: Supabase Database Linter, Warnung `authenticated_security_definer_function_executable`; Supabase RLS-Empfehlungen zu interner Authentisierung, festem `search_path` und minimalen Funktionsrechten.

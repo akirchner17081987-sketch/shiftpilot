@@ -25,6 +25,8 @@ Die Datenschutz-Edge-Function verlangt für Auftrag und Freigabe bereits eine ve
 
 Im Prüfzweig liegt zusätzlich eine nicht ausgerollte gemeinsame Datenbankgrenze `private.sf_assert_aal2()` vor. Sie liest ausschließlich den signierten Supabase-Claim `aal`, behandelt fehlende Angaben sicher als `aal1` und liefert bei unzureichender Sitzung kontrolliert `MFA_REQUIRED`. Bestehende öffentliche RPCs werden durch diese Grundlagenmigration bewusst noch nicht verändert. Die stufenweise Zuordnung und Abnahme ist in `mfa-sensitive-rpc-rollout-2026-09-13.md` festgehalten.
 
+Auf dem Wegwerf-Testbranch wurden am 13.09.2026 TOTP „Enabled“, die AAL1-Begrenzung auf 15 Minuten, SMS „Disabled“ und maximal 10 Faktoren read-only bestätigt. Die gemeinsame AAL2-Grenze bestand dort AAL1-Ablehnung, AAL2-Zulassung und getrennten `service_role`-Workerpfad. Leaked Password Protection blieb deaktiviert, weil die Dashboard-Einstellung nicht automatisiert verändert wurde; die App behandelt den später möglichen `WeakPasswordError` bereits kontrolliert.
+
 Die Guard-Definition wurde am 13.09.2026 in einer sitzungsgebundenen `pg_temp`-Kopie gegen die aktuelle Supabase-Auth-Umgebung kompiliert. Der `aal1`-Negativpfad, der `aal2`-Erfolgspfad und der gesonderte Service-Role-Pfad verhielten sich wie vorgesehen; Transaktion und temporäre Funktionen wurden vollständig verworfen. Dies ist ein Syntax-/Grenztest, aber noch kein Ersatz für den Zwei-Konten-Test der tatsächlich geschützten RPCs.
 
 ## Sichere Aktivierungsreihenfolge

@@ -73,7 +73,7 @@ Nicht jeder SchichtFunk-Datensatz ist automatisch Lohnkonto, Buchungsbeleg oder 
 - Für `expires_on`-Felder existieren Erinnerungen, aber keine generische automatische Löschung.
 - Supabase Auth-Konten, Storage-Objekte, Datenbankzeilen und Push-Abonnements werden nicht durch einen einzigen vorhandenen Offboardingprozess vollständig koordiniert.
 - Supabase Pro hält täglich erzeugte Datenbankbackups sieben Tage vor. Storage-Objekte sind nicht Teil des Datenbankbackups.
-- Eine automatische Fristlöschung ist deshalb **noch nicht produktiv umgesetzt**. Seit 13.09.2026 liegt im Repository eine nicht ausgerollte technische Grundlage mit privater, idempotenter Freigabewarteschlange, versioniertem Fristprofil, allgemeinen/mitarbeiterbezogenen Legal Holds und rein lesendem Mitarbeiter-Offboarding-Dry-Run vor. Die V3-Vorschau inventarisiert die tatsächlich verknüpften Planungs-, Zeit-, QR-, Personalakten-, Push-, Audit-, Storage- und Auth-Domänen. Benutzerreferenzen werden dabei nach `RESTRICT/NO ACTION`, `CASCADE` und `SET NULL` getrennt, damit ein Auth-Konto weder fremde Mandantenzugänge noch unerkannte Nachweise mitlöscht. Eine vorbereitete Edge Function lässt Vorschauen nur für aktive OWNER/ADMIN zu und verlangt für Auftrag und Freigabe eine verifizierte `aal2`-Sitzung. Antragsteller und Freigeber müssen verschieden sein. Hintergrundarbeiter können fällige Aufträge atomar übernehmen, aber V1–V3 führen absichtlich noch keine Löschung aus und installieren keinen Zeitplan.
+- Eine automatische Fristlöschung ist deshalb **noch nicht produktiv aktiviert**. Die nicht ausgerollte V1–V5-Grundlage enthält eine private, idempotente Freigabewarteschlange, versionierte Fristprofile, Legal Holds, vollständige Offboarding-Vorschau und eine zweiphasige Ausführung. `ACCESS` deaktiviert den Mitarbeiterzugang sofort und entfernt Einladungen, Push-Endpunkte sowie QR-Pilotzuordnungen; `ERASURE` wird erst nach Kundenfrist und Legal-Hold-Prüfung claimbar und redigiert zunächst Kontakt-, Notfallkontakt- und kurzlebige Freitextdaten. Planungs-, Zeit-/Lohn-, Personalakten-, Audit- und Monatssnapshot-Nachweise bleiben bis zu ihrer jeweils freigegebenen Frist erhalten. Auth-Referenzen werden nach `RESTRICT/NO ACTION`, `CASCADE` und `SET NULL` getrennt, damit ein Konto weder fremde Mandantenzugänge noch unerkannte Nachweise mitlöscht. Die Wegwerf-Testbranch-Prüfung bestand 41 von 41 Lifecycle-Tests; es wurde kein Zeitplan installiert und keine Produktivmigration ausgeführt.
 
 ## 5. Soll-Löschprozess
 
@@ -109,17 +109,17 @@ Nicht jeder SchichtFunk-Datensatz ist automatisch Lohnkonto, Buchungsbeleg oder 
 
 ## 6. Technische Umsetzungspunkte
 
-### 6.1 Vorbereiteter Zustandsautomat (nicht ausgerollt)
+### 6.1 Vorbereiteter Zustandsautomat (nicht produktiv ausgerollt)
 
-`PENDING_APPROVAL` → `APPROVED` → `EXECUTING` → `COMPLETED` oder `BLOCKED`
+`PENDING_APPROVAL` → `APPROVED` → `EXECUTING/ACCESS` → `ACCESS_REVOKED` → `EXECUTING/ERASURE` → `COMPLETED` oder `BLOCKED`
 
 - Vorschau und Auftrag sind idempotent getrennt.
 - Antrag und Freigabe müssen von zwei unterschiedlichen aktiven OWNER/ADMIN stammen; beide schreibenden Schritte verlangen `aal2`.
 - Ein freigegebenes, versioniertes Kunden-Fristprofil ist Pflicht.
-- Allgemeine, mitarbeiterbezogene oder unmittelbar am Auftrag hinterlegte Legal Holds verhindern die Auftragsübernahme. Ein freigegebener Auftrag bleibt dabei `APPROVED` und wird nach Ablauf einer zeitlich befristeten Sperre automatisch wieder fällig.
+- Allgemeine, mitarbeiterbezogene oder unmittelbar am Auftrag hinterlegte Legal Holds verhindern die Löschphase. Sie verhindern bewusst nicht die sofortige Zugriffssperre. Nach Ablauf einer zeitlich befristeten Sperre wird die Löschphase wieder claimbar.
 - `FOR UPDATE SKIP LOCKED` verhindert, dass zwei Hintergrundarbeiter denselben Auftrag übernehmen.
 - Ein Hintergrundarbeiter darf nur den von ihm übernommenen Auftrag abschließen.
-- V1–V3 enthalten absichtlich keinen Löschbefehl und keinen Zeitplan. Erst ein bestandener Test auf einer Wegwerf-Umgebung darf die Ausführungsstufe freigeben.
+- V1–V5 installieren keinen Zeitplan. Die Ausführungsstufe ist nur für `service_role` erreichbar und wurde mit fiktiven Daten auf dem Wegwerf-Testbranch geprüft. Produktive Aktivierung benötigt weiterhin den Auth-/Storage-Worker, kundenspezifische Fristen und eine gesonderte Freigabe.
 - Die V3-Vorschau zählt vor einer Auth-Löschung alle bekannten Benutzerverknüpfungen nach Fremdschlüsselwirkung. Eigentum an einem Mandanten, weitere Mitgliedschaften/Mitarbeiterprofile sowie `RESTRICT`-/`NO ACTION`- oder unerwartete `CASCADE`-Verknüpfungen verhindern die Freigabe des Auth-Schritts. `SET NULL`-Folgen werden als eigener Prüfschritt ausgewiesen.
 - Historische `RESTRICT`-Beziehungen von Schichten, Änderungs-/Tauschanträgen, QR-Buchungen und Störfällen bestätigen, dass fachliche Nachweise nicht durch ein einfaches Löschen des Mitarbeiterstamms entfernt werden dürfen. Die spätere Ausführung muss je Datenklasse zwischen Aufbewahrung, kontrollierter Redaktion und Löschung entscheiden.
 
@@ -154,6 +154,6 @@ Vor produktiver Aktivierung der Standardfristen sind erforderlich:
 | Auftragsverarbeiter-/Backupprüfung | SchichtFunk |
 | jährliche Wirksamkeitsprüfung | SchichtFunk gemeinsam mit ausgewähltem Testkunden/Datenschutzberatung |
 
-Status Löschkonzept: 🟡 **FACHLICH DOKUMENTIERT, ERWEITERTE V3-DRY-RUN-/FREIGABEGRUNDLAGE IM CODE; TECHNISCHE AUSFÜHRUNG, WEGWERF-TESTBRANCH UND KUNDENFREIGABE NOCH OFFEN.**
+Status Löschkonzept: 🟡 **FACHLICH DOKUMENTIERT; V1–V5-ZUSTANDSAUTOMAT UND ERSTE AUSFÜHRUNG MIT 41/41 TESTS AUF WEGWERF-BRANCH BESTANDEN. AUTH-ADMIN-/PERSONALAKTEN-STORAGE-SCHRITT, LANGFRISTREDAKTION, ZEITPLAN UND KUNDENFREIGABE BLEIBEN OFFEN.**
 
 Quellen: Art. 5, 17 und 28 DSGVO (https://eur-lex.europa.eu/eli/reg/2016/679/oj), § 16 ArbZG (https://www.gesetze-im-internet.de/arbzg/__16.html), § 41 EStG (https://www.gesetze-im-internet.de/estg/__41.html), § 28f SGB IV (https://www.gesetze-im-internet.de/sgb_4/__28f.html), § 147 AO (https://www.gesetze-im-internet.de/ao_1977/__147.html), § 257 HGB (https://www.gesetze-im-internet.de/hgb/__257.html), §§ 195/199 BGB. Die konkrete arbeits-, tarif-, steuer- und sozialversicherungsrechtliche Einordnung muss der jeweilige Arbeitgeber prüfen.

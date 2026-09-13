@@ -9,9 +9,15 @@ Die Supabase-Backupseite wurde ausschließlich lesend geprüft. Sichtbar waren t
 
 Damit ist die laufende Erzeugung täglicher Datenbankbackups belegt. Supabase weist auf derselben Seite ausdrücklich darauf hin, dass Storage-Objekte nicht im Datenbankbackup enthalten sind. Ein Datenbank-Restore würde nur die Storage-Metadaten, nicht eine zwischenzeitlich gelöschte Personalakten-Datei wiederherstellen.
 
+## Auf dem Wegwerf-Testbranch ausgeführt
+
+Der nicht persistente Branch `privacy-restore-test-2026-09-13` wurde ohne Produktionsdaten angelegt. Ein logischer Export-/Lösch-/Restorezyklus für einen fiktiven Mitarbeiterdatensatz bestand 4 von 4 Prüfungen und wurde vollständig zurückgerollt.
+
+Zusätzlich wurde über die echte private Supabase-Storage-API eine 47 Byte große fiktive Datei hochgeladen, heruntergeladen, gelöscht, aus dem Export wiederhergestellt und erneut heruntergeladen. Größe und SHA-256 (`42b7a4667d9e167edf8b114bad417fd651d0bc683ad8815bb58e7c09fdc6039b`) waren identisch. Die Testdatei wurde danach über die Storage-API entfernt; die Kontrollabfrage ergab 0 verbleibende Objekte.
+
 ## Nicht ausgeführt
 
-Es wurde **kein Restore** angeklickt oder gestartet. Ein Restore des Produktivprojekts verursacht Nichtverfügbarkeit und überschreibt den aktuellen Datenbankstand. „Restore to new project“ bzw. eine Supabase-Branch kann zusätzliche Kosten oder Ressourcen erzeugen. Dafür fehlt noch die ausdrückliche Bestätigung.
+Es wurde **kein physischer Restore eines Supabase-Tagesbackups** angeklickt oder gestartet. Ein Restore des Produktivprojekts verursacht Nichtverfügbarkeit und überschreibt den aktuellen Datenbankstand. Auch der bestandene logische Branch-Test beweist deshalb noch keinen vollständigen physischen Backup-Restore.
 
 Für den späteren Storage-Test liegt nun ein lokales Manifestwerkzeug vor. Es inventarisiert einen Exportordner rekursiv, berechnet für jede Datei Bucket, Objektpfad, Dateigröße und SHA-256-Prüfsumme und meldet beim Restore fehlende, unerwartete oder inhaltlich abweichende Dateien. Symbolische Verknüpfungen werden nicht verfolgt; die Manifestdatei muss außerhalb des geprüften Objektordners liegen und wird nicht überschrieben. Der Test mit ausschließlich fiktiven Dateien besteht; er ersetzt noch nicht den echten Export und Restore des privaten Buckets.
 
@@ -46,6 +52,6 @@ node scripts/storage-restore-manifest.mjs verify personnel-documents <Restoreord
 | Wiederanlaufziel RTO | 8 Stunden, im Test zu messen |
 | Backup-Aufbewahrung Supabase Pro | 7 Tage laut Anbieterangabe |
 
-Status: 🟢 **TÄGLICHE DB-BACKUPS LIVE NACHGEWIESEN UND LOKALER STORAGE-MANIFEST-/RESTORE-ABGLEICH BESTANDEN**, 🔴 **ECHTER RESTORE UND SEPARATER STORAGE-EXPORT AUF WEGWERF-UMGEBUNG NOCH OFFEN**.
+Status: 🟢 **TÄGLICHE DB-BACKUPS LIVE NACHGEWIESEN; LOGISCHER DB-RESTORE UND ECHTER PRIVATER STORAGE-RESTORE AUF WEGWERF-BRANCH BESTANDEN**, 🔴 **PHYSISCHER TAGESBACKUP-RESTORE UND DAUERHAFTER SEPARATER STORAGE-EXPORT NOCH OFFEN**.
 
 Quelle: https://supabase.com/docs/guides/platform/backups

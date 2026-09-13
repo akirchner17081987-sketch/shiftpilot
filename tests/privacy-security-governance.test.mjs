@@ -17,12 +17,16 @@ const lifecycle=fs.readFileSync(path.join(root,'supabase','migrations','20260913
 const approvalSql=fs.readFileSync(path.join(root,'supabase','migrations','20260913084344_privacy_lifecycle_approval_v2.sql'),'utf8');
 const offboardingPlanSql=fs.readFileSync(path.join(root,'supabase','migrations','20260913091023_privacy_offboarding_plan_v3.sql'),'utf8');
 const mfaGuardSql=fs.readFileSync(path.join(root,'supabase','migrations','20260913092708_mfa_sensitive_action_guard_v1.sql'),'utf8');
+const overdueFixSql=fs.readFileSync(path.join(root,'supabase','migrations','20260913095100_privacy_lifecycle_overdue_fix_v4.sql'),'utf8');
+const executionSql=fs.readFileSync(path.join(root,'supabase','migrations','20260913101500_privacy_offboarding_execution_v5.sql'),'utf8');
 const lifecycleDbTest=fs.readFileSync(path.join(root,'supabase','tests','privacy_lifecycle_test.sql'),'utf8');
+const logicalRestoreDbTest=fs.readFileSync(path.join(root,'supabase','tests','privacy_logical_restore_test.sql'),'utf8');
 const lifecycleEdge=fs.readFileSync(path.join(root,'supabase','functions','privacy-lifecycle','index.ts'),'utf8');
 const mfaClient=fs.readFileSync(path.join(root,'assets','supabase-mfa-v1.js'),'utf8');
 const moduleLoader=fs.readFileSync(path.join(root,'assets','conflict-plausibility-v1.js'),'utf8');
 const settingsClient=fs.readFileSync(path.join(root,'assets','settings-management-v2.js'),'utf8');
 const storageManifestSource=fs.readFileSync(path.join(root,'scripts','storage-restore-manifest.mjs'),'utf8');
+const storageBranchSmokeSource=fs.readFileSync(path.join(root,'scripts','storage-branch-restore-smoke.mjs'),'utf8');
 const authErrorsSource=fs.readFileSync(path.join(root,'assets','supabase-auth-errors-v1.js'),'utf8');
 
 test('SECURITY DEFINER allowlist is exact and reviewable',()=>{
@@ -91,6 +95,22 @@ test('expanded offboarding preview inventories all linked domains without mutati
   assert.doesNotMatch(offboardingPlanSql,/cron\.schedule/i);
 });
 
+test('offboarding execution separates immediate access from held erasure',()=>{
+  assert.match(overdueFixSql,/greatest\(now\(\), v_as_of::timestamptz \+ interval '30 days'\)/i);
+  assert.match(executionSql,/'ACCESS_REVOKED'/);
+  assert.match(executionSql,/execution_phase in \('ACCESS','ERASURE'\)/i);
+  assert.match(executionSql,/case when r\.status = 'APPROVED' then 'ACCESS' else 'ERASURE' end/i);
+  assert.match(executionSql,/r\.status = 'APPROVED'[\s\S]*r\.access_revoke_after <= now\(\)/i);
+  assert.match(executionSql,/r\.status = 'ACCESS_REVOKED'[\s\S]*r\.erase_after <= now\(\)/i);
+  assert.match(executionSql,/Management membership requires separate offboarding approval/i);
+  assert.match(executionSql,/delete from public\.employee_access_invites/i);
+  assert.match(executionSql,/delete from public\.push_subscriptions/i);
+  assert.match(executionSql,/email=null, phone=null, address=null, zip=null, city=null, note=''/i);
+  assert.match(executionSql,/emergency_contact_name='', emergency_contact_phone='', private_note=''/i);
+  assert.doesNotMatch(executionSql,/cron\.schedule/i);
+  assert.doesNotMatch(executionSql,/delete from auth\./i);
+});
+
 test('privacy Edge Function pins its Supabase client dependency',()=>{
   assert.match(lifecycleEdge,/npm:@supabase\/supabase-js@\d+\.\d+\.\d+/);
   assert.doesNotMatch(lifecycleEdge,/npm:@supabase\/supabase-js@2["']/);
@@ -141,15 +161,41 @@ test('disposable database fixture is fictitious and always rolled back',()=>{
   assert.match(lifecycleDbTest,/DSFA Wegwerf-Testmandant/i);
   assert.match(lifecycleDbTest,/create extension if not exists pgtap with schema extensions/i);
   assert.match(lifecycleDbTest,/set local search_path = public, extensions/i);
-  assert.match(lifecycleDbTest,/select plan\(26\)/i);
+  assert.match(lifecycleDbTest,/select plan\(41\)/i);
   assert.match(lifecycleDbTest,/aal1 cannot pass the shared sensitive-action guard/i);
   assert.match(lifecycleDbTest,/aal2 passes the shared sensitive-action guard/i);
   assert.match(lifecycleDbTest,/expanded preview inventories every offboarding data domain/i);
   assert.match(lifecycleDbTest,/another company membership blocks auth account deletion/i);
-  assert.match(lifecycleDbTest,/expired inline legal hold becomes claimable automatically/i);
+  assert.match(lifecycleDbTest,/access revocation is claimable immediately/i);
+  assert.match(lifecycleDbTest,/active legal hold blocks erasure but not prior access revocation/i);
+  assert.match(lifecycleDbTest,/membership in another company is preserved/i);
+  assert.match(lifecycleDbTest,/due employee contact fields are redacted/i);
+  assert.match(lifecycleDbTest,/expired inline legal hold makes erasure claimable automatically/i);
   assert.match(lifecycleDbTest,/select \* from finish\(\)/i);
   assert.match(lifecycleDbTest,/rollback\s*;/i);
   assert.doesNotMatch(lifecycleDbTest,/schichtfunk\.de/i);
+});
+
+test('logical restore fixture proves exact row recovery and rollback',()=>{
+  assert.match(logicalRestoreDbTest,/example\.invalid/i);
+  assert.match(logicalRestoreDbTest,/Restore Wegwerf-Testmandant/i);
+  assert.match(logicalRestoreDbTest,/create temporary table restore_employee_snapshot/i);
+  assert.match(logicalRestoreDbTest,/delete from public\.employees/i);
+  assert.match(logicalRestoreDbTest,/insert into public\.employees select \* from restore_employee_snapshot/i);
+  assert.match(logicalRestoreDbTest,/md5\(row_to_json\(e\)::text\)/i);
+  assert.match(logicalRestoreDbTest,/select plan\(4\)/i);
+  assert.match(logicalRestoreDbTest,/rollback\s*;/i);
+});
+
+test('branch Storage smoke test uses an authenticated REST cycle and cleans up',()=>{
+  assert.match(storageBranchSmokeSource,/SUPABASE_TEST_URL/);
+  assert.match(storageBranchSmokeSource,/SUPABASE_TEST_ANON_KEY/);
+  assert.match(storageBranchSmokeSource,/\/storage\/v1/);
+  assert.match(storageBranchSmokeSource,/method:'DELETE'/);
+  assert.match(storageBranchSmokeSource,/sha256/);
+  assert.match(storageBranchSmokeSource,/cleanupVerified:true/);
+  assert.doesNotMatch(storageBranchSmokeSource,/service[_-]?role/i);
+  assert.doesNotMatch(storageBranchSmokeSource,/zbvloohfjleadjnqhbbh|hltqgxdhnpueweoyazea/);
 });
 
 test('fictitious tenant can preview but staging requires owner/admin with MFA',()=>{
