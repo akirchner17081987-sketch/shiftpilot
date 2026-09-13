@@ -10,7 +10,7 @@
   const DEMO_USER='Demo Administrator';
   const PERSPECTIVE_KEY='sf_demo_perspective_v1';
   const DATA_PREFIX='sf_demo_data_';
-  const READY_TIMEOUT_MS=12000;
+  const READY_TIMEOUT_MS=30000;
   let preparationStarted=false;
   const pad=n=>String(n).padStart(2,'0');
   const localIso=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
