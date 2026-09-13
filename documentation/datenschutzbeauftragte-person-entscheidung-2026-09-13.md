@@ -1,7 +1,7 @@
 # SchichtFunk – Entscheidung zur datenschutzbeauftragten Person
 
 Stand: 13.09.2026
-Status: Option B (interne Person) am 13.09.2026 ausgewählt; konkrete Person, Fachkunde und Interessenkonfliktprüfung offen; keine Benennung erfolgt
+Status: Option B (interne Person) am 13.09.2026 ausgewählt; Benennung der konkreten Person auf Nutzerwunsch vorerst zurückgestellt; Fachkunde und Interessenkonfliktprüfung offen; keine Benennung erfolgt
 
 ## Ausgangspunkt
 
@@ -39,6 +39,8 @@ Für eine allein leitende Betreiberperson ist die Selbstbenennung regelmäßig k
 ## Festgehaltene Nutzerentscheidung
 
 Für SchichtFunk wurde **Option B: geeignete interne Person** ausgewählt. Diese Richtungsentscheidung ist noch keine Benennung, keine Vertragsannahme und keine Behördenmeldung.
+
+Am 13.09.2026 wurde entschieden, die Auswahl und Benennung der konkreten Person vorerst zu überspringen. Bis zu einer späteren ausdrücklichen Fortsetzung werden keine Kontaktdaten ergänzt, keine Person formell benannt und keine Mitteilung an die Aufsichtsbehörde vorgenommen. Die kundenspezifische DSFA bleibt deshalb in diesem Punkt vorläufig und darf vor dem Beschäftigtendaten-Echtbetrieb nicht als abschließend freigegeben gelten.
 
 Vor einer formellen Benennung werden noch benötigt:
 
