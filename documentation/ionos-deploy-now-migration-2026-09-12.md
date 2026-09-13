@@ -1,6 +1,6 @@
 # SchichtFunk – IONOS-Deploy-Now-Migrations- und Rückfallplan
 
-Stand: 12.09.2026
+Stand: 13.09.2026
 
 ## Zielarchitektur
 
@@ -21,7 +21,7 @@ Stand: 12.09.2026
 - Technische Vorabprüfung im IONOS-Build: vollständige statische Regressionstests mit `npm test`, anschließend IONOS-spezifische Prüfung mit `npm run test:ionos`
 - Veröffentlichungsverzeichnis: `dist`
 - Deployment-Konfiguration: `.deploy-now/shiftpilot/config.yaml`; keine Laufzeitdateien werden zwischen statischen Veröffentlichungen ausgenommen oder dauerhaft weitergeführt.
-- Geprüfte Größe: 2.152.260 Byte / 2,05 MiB, Zielwert unter 50 MB
+- Geprüfte Größe: 2.153.122 Byte / 2,05 MiB, Zielwert unter 50 MB
 - Die Dateiauswahl für `dist` ist ausdrücklich begrenzt; Quellcode, Tests, lokale Konfigurationen und Geheimnisse werden nicht veröffentlicht.
 - Der Build bricht vor dem Upload ab, wenn eine erforderliche Seite, ein PWA-Bestandteil, ein App-Icon oder der Supabase-Demo-Adapter fehlt, leer ist oder Manifest-Scope/-Startziel ungültig sind.
 - Live-Browsertests gegen eine entfernte Bereitstellung laufen bewusst seriell und mit einem Wiederholungsversuch, damit begrenzte Preview-Ressourcen nicht durch parallele Testlast verfälscht werden.
@@ -84,6 +84,7 @@ Die Domain `www.schichtfunk.de` wird erst verbunden bzw. per DNS umgeschaltet, w
 - Öffentliche IONOS-Browserprüfung: 10 von 10 Desktop-/Mobiltests bestanden (Branding, PWA-Ressourcen, Login-Validierung, Supabase-Demo-Client, responsive Breite und Sicherheitsheader).
 - Kurze Seitenrouten, tiefe PWA-Routen, HTTPS/HSTS, Cache-Regeln und 404-Verhalten für fehlende statische Assets: direkt auf IONOS geprüft.
 - Isolierte Demo-Prüfungen mit simulierter Edge-Function-Freigabe: Manager-/Mitarbeiterwechsel, DATEV-Download, Arbeitszeiterfassung/Stundenkonto und weitere Demoabläufe wurden ohne Produktionsdaten erreicht. Ein gebündelter Kaltstart-Dauerlauf wurde wegen zeitweise stark schwankender Antwortzeiten der Vorschau nicht als alleiniger Freigabenachweis gewertet.
+- Finale Mobil-Nachprüfung am 13.09.2026: Ersatzanfragen, Dienstplan, Schicht-Marktplatz, Schichtänderungen, Abwesenheitsantrag, Zeiterfassung, Stundenkonto, DATEV-Auswertung und Rollenwechsel bestanden. Die Demo-Steuerung verdeckt auf kleinen Bildschirmen weder die Mitarbeiter-Navigation noch geöffnete Dialoge; unveränderte automatische Aktualisierungen bauen bedienbare Karten nicht erneut auf.
 - Supabase Edge Functions: bereitgestellt und mit neu erzeugten Geheimnissen aktiviert. Live-Prüfung: Anmeldung HTTP 200, Sitzungsprüfung HTTP 200, Analytics HTTP 204; CORS erlaubt exakt die IONOS-Prüfadresse.
 - Geschützte Echtkonto-Prüfungen: ein isolierter fiktiver Testmandant mit einem `OWNER`-Managerkonto und einem verknüpften `EMPLOYEE`-Konto wurde angelegt. Beide Anmeldungen, Rollen sowie die RLS-bedingte Sicht auf ausschließlich diesen Testmandanten wurden über die Live-API verifiziert. Die IONOS-Browserprüfung des Managers bestand in Desktop- und Mobilansicht für Inhaberrolle, Mandantenzuordnung, alle neun Kernbereiche, die isolierte Mitarbeiterliste und die Seitenbreite. Das Mitarbeiterportal bestand zusätzlich acht geschützte Desktop-/Mobilprüfungen gegen den isolierten Testmandanten. Kennwörter sind nicht im Repository oder in dieser Dokumentation gespeichert.
 - Geschützte Demo auf IONOS: echte Anmeldung, Managerbereich, Mitarbeiterportal, Dienstplan, Mitarbeiter, Abwesenheiten, Zeiterfassung/QR-Einstieg, Stundenkonto, Lohnvorschau, DATEV und beide Marktplatzansichten geprüft. Ein dabei gefundener rekursiver RPC-Wrapperfehler wurde behoben und durch Desktop-/Mobiltests abgesichert.

@@ -102,6 +102,9 @@ test('demo controls share a bottom dock and reserve content space', () => {
   assert.match(demoControlDock, /#sfEmployeePortal \.sf-portal-main\{bottom:var\(--sf-demo-dock-space\)!important/);
   assert.match(demoControlDock, /@media\(max-width:560px\)/);
   assert.match(demoControlDock, /--sf-demo-dock-space:132px/);
+  assert.match(demoControlDock, /#sfDemoControlDock\.sf-demo-dock-employee\{bottom:calc\(76px \+ max\(8px,env\(safe-area-inset-bottom\)\)\)\}/);
+  assert.match(demoControlDock, /root\.classList\.toggle\('sf-demo-dock-employee',employee\)/);
+  assert.match(demoControlDock, /root\.classList\.toggle\('sf-demo-dock-obscured',modal\)/);
 });
 
 test('global search exposes a programmatic accessible name', () => {
@@ -439,6 +442,7 @@ test('disruption autopilot ranks candidates and provides manager and employee wo
   assert.match(disruption, /Schicht verbindlich übernehmen/);
   assert.match(disruption, /managerBusy=false,employeeBusy=false/);
   assert.match(disruption, /JSON\.stringify\(next\)===JSON\.stringify\(employeeOffers\)/);
+  assert.match(marketplace, /JSON\.stringify\(next\) === JSON\.stringify\(rows\)/);
   assert.match(disruption, /data-sf-employee-view="disruptions"/);
   assert.match(disruption, /sf:demo-perspective-change/);
   assert.match(notifications, /DISRUPTION_OFFER:'⚡'/);

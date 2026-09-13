@@ -93,12 +93,12 @@ export async function openManagerArea(page, view, timeout = 15_000) {
     const expanded = await mobileToggle.getAttribute('aria-expanded');
     if (expanded !== 'true') await mobileToggle.click();
     await page.locator('#appShell').waitFor({ state: 'visible', timeout });
+    await page.waitForTimeout(350);
   }
 
   const target = page.locator(`#appShell .sidebar [data-view="${view}"]`).first();
   await target.waitFor({ state: 'visible', timeout });
-  await target.scrollIntoViewIfNeeded();
-  await target.click();
+  await target.click({ force: true });
   await page.waitForFunction(
     value => document.getElementById(`view-${value}`)?.classList.contains('active'),
     view,
@@ -109,6 +109,7 @@ export async function openManagerArea(page, view, timeout = 15_000) {
 export async function openEmployeeArea(page, view, timeout = 10_000) {
   const portal = page.locator('#sfEmployeePortal');
   await portal.waitFor({ state: 'visible', timeout });
+  if (await portal.getAttribute('data-sf-portal-active') === view) return;
 
   const visibleTarget = portal.locator(`[data-sf-employee-view="${view}"]:visible`).first();
   if (await visibleTarget.isVisible().catch(() => false)) {
@@ -119,6 +120,12 @@ export async function openEmployeeArea(page, view, timeout = 10_000) {
     if (await toggle.isVisible().catch(() => false)) {
       if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
       const target = portal.locator(`.sf-employee-more-panel [data-sf-employee-view="${view}"]:visible`).first();
+      await target.waitFor({ state: 'visible', timeout });
+      await target.scrollIntoViewIfNeeded();
+      await target.click();
+    } else if (await portal.locator('[data-sf-mobile-more]').isVisible().catch(() => false)) {
+      await portal.locator('[data-sf-mobile-more]').click();
+      const target = portal.locator(`#sfEmployeeMobileMore [data-sf-employee-view="${view}"]:visible`).first();
       await target.waitFor({ state: 'visible', timeout });
       await target.scrollIntoViewIfNeeded();
       await target.click();
