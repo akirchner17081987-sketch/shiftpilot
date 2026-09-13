@@ -22,24 +22,32 @@ export function parseLifecycleRequest(input){
   const action=String(input?.action||'').toLowerCase();
   const companyId=String(input?.companyId||'');
   const employeeId=String(input?.employeeId||'');
+  const requestId=input?.requestId==null?null:String(input.requestId);
+  const retentionProfileId=input?.retentionProfileId==null?null:String(input.retentionProfileId);
+  const legalHoldUntil=input?.legalHoldUntil==null?null:String(input.legalHoldUntil);
   const reason=String(input?.reason||'').trim();
   const asOf=input?.asOf==null?null:String(input.asOf);
   const idempotencyKey=input?.idempotencyKey==null?null:String(input.idempotencyKey);
-  if(!['preview','stage'].includes(action))throw new Error('INVALID_ACTION');
-  if(!uuidRe.test(companyId)||!uuidRe.test(employeeId))throw new Error('INVALID_TARGET');
+  if(!['preview','stage','approve'].includes(action))throw new Error('INVALID_ACTION');
+  if(!uuidRe.test(companyId))throw new Error('INVALID_TARGET');
+  if(action!=='approve'&&!uuidRe.test(employeeId))throw new Error('INVALID_TARGET');
   if(asOf&&!/^\d{4}-\d{2}-\d{2}$/.test(asOf))throw new Error('INVALID_DATE');
   if(action==='stage'){
     if(!uuidRe.test(idempotencyKey||''))throw new Error('INVALID_IDEMPOTENCY_KEY');
     if(reason.length<10||reason.length>1000)throw new Error('INVALID_REASON');
   }
-  return {action,companyId,employeeId,reason,asOf,idempotencyKey};
+  if(action==='approve'){
+    if(!uuidRe.test(requestId||'')||!uuidRe.test(retentionProfileId||''))throw new Error('INVALID_APPROVAL');
+    if(legalHoldUntil&&!Number.isFinite(Date.parse(legalHoldUntil)))throw new Error('INVALID_LEGAL_HOLD');
+  }
+  return {action,companyId,employeeId,reason,asOf,idempotencyKey,requestId,retentionProfileId,legalHoldUntil};
 }
 
 export function authorizeLifecycleRequest({membership,userId,aal,request}){
   if(!userId)throw new Error('UNAUTHENTICATED');
   if(!membership||membership.user_id!==userId||membership.company_id!==request.companyId
     ||membership.status!=='ACTIVE'||!allowedRoles.has(membership.role))throw new Error('FORBIDDEN');
-  if(request.action==='stage'&&aal!=='aal2')throw new Error('MFA_REQUIRED');
+  if(request.action!=='preview'&&aal!=='aal2')throw new Error('MFA_REQUIRED');
   return true;
 }
 

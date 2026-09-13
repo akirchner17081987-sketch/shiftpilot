@@ -73,7 +73,7 @@ Nicht jeder SchichtFunk-Datensatz ist automatisch Lohnkonto, Buchungsbeleg oder 
 - Für `expires_on`-Felder existieren Erinnerungen, aber keine generische automatische Löschung.
 - Supabase Auth-Konten, Storage-Objekte, Datenbankzeilen und Push-Abonnements werden nicht durch einen einzigen vorhandenen Offboardingprozess vollständig koordiniert.
 - Supabase Pro hält täglich erzeugte Datenbankbackups sieben Tage vor. Storage-Objekte sind nicht Teil des Datenbankbackups.
-- Eine automatische Fristlöschung ist deshalb **noch nicht produktiv umgesetzt**. Seit 13.09.2026 liegt im Repository eine nicht ausgerollte technische Grundlage mit privater, idempotenter Freigabewarteschlange, Legal-Hold-Feld und rein lesendem Mitarbeiter-Offboarding-Dry-Run vor. Eine vorbereitete Edge Function lässt Vorschauen nur für aktive OWNER/ADMIN zu und verlangt für das Einstellen eines Auftrags eine verifizierte `aal2`-Sitzung. Sie führt absichtlich noch keine Löschung aus und behauptet keine bereits laufenden Jobs.
+- Eine automatische Fristlöschung ist deshalb **noch nicht produktiv umgesetzt**. Seit 13.09.2026 liegt im Repository eine nicht ausgerollte technische Grundlage mit privater, idempotenter Freigabewarteschlange, versioniertem Fristprofil, allgemeinen/mitarbeiterbezogenen Legal Holds und rein lesendem Mitarbeiter-Offboarding-Dry-Run vor. Eine vorbereitete Edge Function lässt Vorschauen nur für aktive OWNER/ADMIN zu und verlangt für Auftrag und Freigabe eine verifizierte `aal2`-Sitzung. Antragsteller und Freigeber müssen verschieden sein. Hintergrundarbeiter können fällige Aufträge atomar übernehmen, aber die V1/V2 führt absichtlich noch keine Löschung aus und installiert keinen Zeitplan.
 
 ## 5. Soll-Löschprozess
 
@@ -85,7 +85,7 @@ Nicht jeder SchichtFunk-Datensatz ist automatisch Lohnkonto, Buchungsbeleg oder 
 4. Legal Holds und kundenspezifische Abweichungen vor der Löschung anwenden;
 5. zunächst Prüfbericht mit Anzahl je Tabelle/Storage-Prefix erzeugen;
 6. Freigabe durch Weisungsberechtigten des Kunden für Beschäftigtendaten;
-7. transaktionale Löschung/Anonymisierung aus der Datenbank, danach Storage/Auth/Push bereinigen;
+7. Storage-Pfade aus dem unveränderlichen Prüfplan löschen und verifizieren, anschließend Datenbank in einer kurzen Transaktion redigieren/löschen; Push und Auth-Sitzungen koordinieren, Auth-Konto nur ohne verbleibende Mandantenzuordnung entfernen;
 8. Erfolg und Abweichungen ohne gelöschte Klarinhalte protokollieren;
 9. sieben Tage später prüfen, ob Backupfenster und verwaiste Storage-Objekte abgearbeitet sind.
 
@@ -108,6 +108,28 @@ Nicht jeder SchichtFunk-Datensatz ist automatisch Lohnkonto, Buchungsbeleg oder 
 - Wo Löschung noch nicht zulässig ist, wird der Datensatz gesperrt und der verbleibende Zweck dokumentiert.
 
 ## 6. Technische Umsetzungspunkte
+
+### 6.1 Vorbereiteter Zustandsautomat (nicht ausgerollt)
+
+`PENDING_APPROVAL` → `APPROVED` → `EXECUTING` → `COMPLETED` oder `BLOCKED`
+
+- Vorschau und Auftrag sind idempotent getrennt.
+- Antrag und Freigabe müssen von zwei unterschiedlichen aktiven OWNER/ADMIN stammen; beide schreibenden Schritte verlangen `aal2`.
+- Ein freigegebenes, versioniertes Kunden-Fristprofil ist Pflicht.
+- Allgemeine, mitarbeiterbezogene oder unmittelbar am Auftrag hinterlegte Legal Holds verhindern die Auftragsübernahme. Ein freigegebener Auftrag bleibt dabei `APPROVED` und wird nach Ablauf einer zeitlich befristeten Sperre automatisch wieder fällig.
+- `FOR UPDATE SKIP LOCKED` verhindert, dass zwei Hintergrundarbeiter denselben Auftrag übernehmen.
+- Ein Hintergrundarbeiter darf nur den von ihm übernommenen Auftrag abschließen.
+- V1/V2 enthält absichtlich keinen Löschbefehl und keinen Zeitplan. Erst ein bestandener Test auf einer Wegwerf-Umgebung darf die Ausführungsstufe freigeben.
+
+### 6.2 Geplante Ausführungsreihenfolge
+
+1. Auftrag, Freigabe, Fristprofil und Legal Hold erneut prüfen.
+2. Zugriff sofort sperren und offene Einladungen/Push-Sitzungen widerrufen.
+3. im Prüfplan eingefrorene Storage-Objekte löschen und durch erneute Auflistung/Hash-Manifest bestätigen;
+4. fachliche Live-Daten in kurzer Datenbanktransaktion löschen oder fristgerecht pseudonymisieren;
+5. Auth-Sitzungen widerrufen und Auth-Konto nur löschen, wenn keine andere zulässige Mandantenzuordnung besteht;
+6. Ergebnis ausschließlich mit Mengen, Hash-/Manifestnachweis, Zeitpunkten und Abweichungen dokumentieren;
+7. fehlgeschlagene externe Schritte als `BLOCKED` wiederholbar machen, ohne bereits bestätigte Schritte doppelt auszuführen.
 
 Vor produktiver Aktivierung der Standardfristen sind erforderlich:
 

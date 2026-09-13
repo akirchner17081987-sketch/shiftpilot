@@ -46,9 +46,27 @@ create index if not exists privacy_lifecycle_requests_due_idx
 create index if not exists privacy_lifecycle_requests_company_idx
   on private.privacy_lifecycle_requests(company_id, requested_at desc);
 
+alter table private.privacy_lifecycle_requests enable row level security;
+
 revoke all on table private.privacy_lifecycle_requests from public, anon, authenticated;
 grant usage on schema private to service_role;
 grant select, insert, update on table private.privacy_lifecycle_requests to service_role;
+
+create or replace function private.sf_assert_service_role()
+returns void
+language plpgsql
+stable
+set search_path = ''
+as $$
+begin
+  if coalesce(current_setting('request.jwt.claim.role', true), '') <> 'service_role' then
+    raise exception 'Service role required';
+  end if;
+end;
+$$;
+
+revoke all on function private.sf_assert_service_role() from public, anon, authenticated;
+grant execute on function private.sf_assert_service_role() to service_role;
 
 create or replace function private.sf_employee_offboarding_preview(
   p_company_id uuid,
@@ -71,6 +89,8 @@ declare
   v_future_assignments bigint;
   v_open_time_entries bigint;
 begin
+  perform private.sf_assert_service_role();
+
   select e.* into v_employee
   from public.employees e
   where e.id = p_employee_id and e.company_id = p_company_id;
@@ -170,15 +190,28 @@ declare
   v_auth_user_ids uuid[];
   v_as_of date := coalesce(p_as_of, current_date);
 begin
+  perform private.sf_assert_service_role();
+
   if length(btrim(coalesce(p_reason, ''))) < 10 then
     raise exception 'Documented reason is required';
   end if;
 
   select r.id into v_request_id
   from private.privacy_lifecycle_requests r
-  where r.idempotency_key = p_idempotency_key;
+  where r.idempotency_key = p_idempotency_key
+    and r.request_kind = 'EMPLOYEE_OFFBOARDING'
+    and r.company_id = p_company_id
+    and r.employee_id = p_employee_id
+    and r.requested_by = p_requested_by;
   if v_request_id is not null then
     return v_request_id;
+  end if;
+
+  if exists (
+    select 1 from private.privacy_lifecycle_requests r
+    where r.idempotency_key = p_idempotency_key
+  ) then
+    raise exception 'Idempotency key belongs to another request';
   end if;
 
   v_preview := private.sf_employee_offboarding_preview(p_company_id, p_employee_id, v_as_of);
@@ -194,7 +227,21 @@ begin
     p_idempotency_key, 'EMPLOYEE_OFFBOARDING', p_company_id, p_employee_id, p_requested_by,
     now(), v_as_of::timestamptz + interval '30 days', btrim(p_reason), v_preview,
     v_storage_paths, v_auth_user_ids
-  ) returning id into v_request_id;
+  ) on conflict (idempotency_key) do nothing
+  returning id into v_request_id;
+
+  if v_request_id is null then
+    select r.id into v_request_id
+    from private.privacy_lifecycle_requests r
+    where r.idempotency_key = p_idempotency_key
+      and r.request_kind = 'EMPLOYEE_OFFBOARDING'
+      and r.company_id = p_company_id
+      and r.employee_id = p_employee_id
+      and r.requested_by = p_requested_by;
+    if v_request_id is null then
+      raise exception 'Idempotency key belongs to another request';
+    end if;
+  end if;
 
   return v_request_id;
 end;
@@ -213,7 +260,8 @@ set search_path = ''
 as $$
   select r.*
   from private.privacy_lifecycle_requests r
-  where r.status = 'APPROVED'
+  where current_setting('request.jwt.claim.role', true) = 'service_role'
+    and r.status = 'APPROVED'
     and r.erase_after <= now()
     and (r.legal_hold_until is null or r.legal_hold_until < now())
   order by r.erase_after, r.requested_at

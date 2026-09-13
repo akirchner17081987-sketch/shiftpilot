@@ -13,6 +13,8 @@ Damit ist die laufende Erzeugung täglicher Datenbankbackups belegt. Supabase we
 
 Es wurde **kein Restore** angeklickt oder gestartet. Ein Restore des Produktivprojekts verursacht Nichtverfügbarkeit und überschreibt den aktuellen Datenbankstand. „Restore to new project“ bzw. eine Supabase-Branch kann zusätzliche Kosten oder Ressourcen erzeugen. Dafür fehlt noch die ausdrückliche Bestätigung.
 
+Für den späteren Storage-Test liegt nun ein lokaler Manifestvergleich vor. Er vergleicht Bucket, Objektpfad, Dateigröße und SHA-256-Prüfsumme und meldet fehlende, unerwartete oder inhaltlich abweichende Dateien. Der Test mit ausschließlich fiktiven Dateien besteht; er ersetzt noch nicht den echten Export und Restore des privaten Buckets.
+
 ## Abnahmeplan auf Wegwerf-Testumgebung
 
 1. fiktiven Testmandanten mit zwei Testkonten, Dienstplan, Zeitbuchung, Abwesenheit und einer harmlosen Testdatei anlegen;

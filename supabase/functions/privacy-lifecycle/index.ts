@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.116.0";
 import { authorizeLifecycleRequest, lifecycleCors, parseLifecycleRequest, readJwtAal } from "../_shared/privacy-lifecycle.js";
 
 const json=(body:unknown,status=200,headers:HeadersInit={})=>Response.json(body,{status,headers:{'Cache-Control':'no-store',...headers}});
@@ -43,6 +43,14 @@ Deno.serve(async req=>{
       p_company_id:request.companyId,p_employee_id:request.employeeId,p_as_of:request.asOf
     });
     return error?json({error:'PREVIEW_FAILED'},400,cors):json({ok:true,preview:data},200,cors);
+  }
+
+  if(request.action==='approve'){
+    const {data,error}=await admin.rpc('server_approve_privacy_request',{
+      p_request_id:request.requestId,p_approved_by:userData.user.id,
+      p_retention_profile_id:request.retentionProfileId,p_legal_hold_until:request.legalHoldUntil
+    });
+    return error?json({error:'APPROVAL_FAILED'},400,cors):json({ok:true,request:data},200,cors);
   }
 
   const {data,error}=await admin.rpc('server_stage_employee_offboarding',{
