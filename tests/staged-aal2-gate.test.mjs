@@ -39,6 +39,7 @@ test('initial staged migration is non-locking and protects its private configura
   assert.match(migration,/enable row level security/i);
   assert.match(migration,/force row level security/i);
   assert.match(migration,/revoke all on table private\.sf_mfa_protected_rpcs from public, anon, authenticated/i);
+  assert.match(migration,/create policy sf_mfa_protected_rpcs_deny_all[\s\S]*?to public[\s\S]*?using \(false\)[\s\S]*?with check \(false\)/i);
 });
 
 test('all 27 sensitive RPCs are assigned once to the reviewed rollout stages',()=>{

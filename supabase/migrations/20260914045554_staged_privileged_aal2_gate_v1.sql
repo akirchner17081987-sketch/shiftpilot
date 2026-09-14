@@ -17,6 +17,15 @@ alter table private.sf_mfa_protected_rpcs enable row level security;
 alter table private.sf_mfa_protected_rpcs force row level security;
 revoke all on table private.sf_mfa_protected_rpcs from public, anon, authenticated;
 
+drop policy if exists sf_mfa_protected_rpcs_deny_all
+  on private.sf_mfa_protected_rpcs;
+create policy sf_mfa_protected_rpcs_deny_all
+  on private.sf_mfa_protected_rpcs
+  for all
+  to public
+  using (false)
+  with check (false);
+
 insert into private.sf_mfa_protected_rpcs(function_name, rollout_stage, control_area, enabled)
 values
   ('manager_list_company_users', 2, 'Benutzer und Rechte', false),

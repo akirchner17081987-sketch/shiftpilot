@@ -2,7 +2,7 @@
 
 Stand: 14.09.2026
 
-Status: Stufensteuerung und verpflichtende Bedienoberfläche im Prüfzweig vorbereitet; nicht produktiv aktiviert
+Status: Stufensteuerung und verpflichtende Bedienoberfläche im Prüfzweig vorbereitet, 59/59 Branch-Assertions und echter Data-API-Negativtest bestanden; nicht produktiv aktiviert
 
 ## Sicherheitsgrenze
 
@@ -52,7 +52,9 @@ MFA-Pflicht ist eine separate Kundenentscheidung.
 ## Freigabegrenze
 
 Vor der Produktivaktivierung werden die vier Stufen auf einer ausdrücklich
-bestätigten Wegwerf-Umgebung geprüft. Im Produktivprojekt bestehen derzeit zwei
+bestätigten Wegwerf-Umgebung geprüft. Diese Abnahme wurde am 14.09.2026 mit
+59/59 Assertions und einem echten `MFA_REQUIRED`-Data-API-Test bestanden; der
+Branch wurde nach der Leerstandskontrolle gelöscht. Im Produktivprojekt bestehen derzeit zwei
 aktive `OWNER`-Konten, aber noch keines mit verifiziertem MFA-Faktor. Beide
 Kontoinhaber müssen deshalb zunächst persönlich einen Authenticator einrichten.
 Zusätzlich bleiben Recovery-Verfahren und Login-/Einladungs-/PWA-Regressionslauf

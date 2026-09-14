@@ -1,7 +1,7 @@
 # SchichtFunk – verpflichtende MFA für privilegierte Konten
 
 Stand: 14.09.2026  
-Status: technisch vorbereitet; Produktivschutz noch nicht aktiviert
+Status: technische Branch-Abnahme bestanden; Produktivschutz noch nicht aktiviert
 
 ## Sicher festgestellter Ausgangszustand
 
@@ -42,6 +42,32 @@ Insgesamt sind 27 sensible RPCs exakt einer Stufe zugeordnet. Eine Stufe wird er
 6. Stufe 2 separat produktiv aktivieren und Benutzerverwaltung mit AAL1/AAL2 prüfen; danach Stufen 3 bis 5 einzeln wiederholen.
 7. Bei jeder Stufe Zeitpunkt, Konto-Rolle, Testfall und Ergebnis protokollieren. Keine Echtdaten für Negativtests verwenden.
 
+## Branch-Abnahme vom 14.09.2026
+
+Nach ausdrücklicher Kostenbestätigung wurde der datenlose, nicht dauerhafte Branch
+`aal2-staged-gate-test-2026-09-14` kurzzeitig angelegt. Darauf wurden ausschließlich
+die gemeinsame AAL2-Prüfung und die deaktiviert startende Stufensteuerung angewendet.
+
+- 27/27 RPCs waren vorhanden und anfangs deaktiviert.
+- Stufe 2: 4/4 AAL1-Ablehnungen und 4/4 AAL2-Freigaben am Guard.
+- Stufe 3: 8/8 AAL1-Ablehnungen und 8/8 AAL2-Freigaben am Guard.
+- Stufe 4: 9/9 AAL1-Ablehnungen und 9/9 AAL2-Freigaben am Guard.
+- Stufe 5: 6/6 AAL1-Ablehnungen und 6/6 AAL2-Freigaben am Guard.
+- Nicht gelistete Tabellen-/RPC-Pfade: 2/2 unverändert durchgelassen.
+- Service-Role-Pfad und PostgREST-Registrierung: jeweils bestanden.
+- Gesamtergebnis: 12/12 Gruppen und 59/59 Einzelassertions bestanden.
+- Ein echter anonymer Data-API-Aufruf mit formal gültiger fiktiver UUID wurde vor
+  der RPC-Ausführung mit HTTP 400, Code `P0001` und Nachricht `MFA_REQUIRED`
+  abgewiesen. Es wurden keine Geschäftsdaten geschrieben.
+- Der neue Advisor-Infohinweis zur privaten Allowlist wurde durch eine explizite
+  Deny-All-RLS-Policy beseitigt. Die 35 bekannten Security-Definer-Hinweise und
+  drei bekannten QR-Tabellenhinweise blieben unverändert; sie gehören zum bereits
+  separat geprüften Ausgangsbestand.
+- Abschlusskontrolle vor Löschung: 0 Auth-Benutzer, 0 Unternehmen, 0 aktive
+  AAL2-Schalter, 27 konfigurierte RPCs und eine private Deny-All-Policy.
+- Der Branch wurde unmittelbar danach gelöscht. Die Branch-Liste enthielt
+  anschließend nur noch `main`.
+
 ## Rückfall
 
 Die jeweilige Stufe lässt sich durch eine neue Migration wieder auf `enabled=false` setzen. Ein vollständiger Rückfall setzt zusätzlich `pgrst.db_pre_request` für die Rolle `authenticator` zurück und lädt die PostgREST-Konfiguration neu. Faktor-Geheimnisse werden dabei nicht verändert. Bereits ausgestellte Zugriffstoken können bis zu ihrem Ablauf gültig bleiben; bei einem Sicherheitsvorfall sind deshalb zusätzlich die betroffenen Sitzungen global zu widerrufen.
@@ -49,6 +75,4 @@ Die jeweilige Stufe lässt sich durch eine neue Migration wieder auf `enabled=fa
 ## Noch notwendige Freigaben
 
 - Beide echten `OWNER` müssen ihren persönlichen Authenticator selbst einrichten.
-- Für einen weiteren kostenpflichtigen Supabase-Wegwerf-Branch ist vor Erstellung erneut die konkrete Preisbestätigung erforderlich.
 - Die produktive Aktivierung jeder AAL2-Stufe benötigt eine ausdrückliche Freigabe nach bestandenem Branch- und Vorschautest.
-

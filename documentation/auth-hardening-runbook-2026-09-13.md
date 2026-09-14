@@ -25,7 +25,7 @@ Die Datenschutz-Edge-Function verlangt für Auftrag und Freigabe bereits eine ve
 
 Im Prüfzweig liegt zusätzlich die gemeinsame Datenbankgrenze `private.sf_assert_aal2()` vor. Sie liest ausschließlich den signierten Supabase-Claim `aal`, behandelt fehlende Angaben sicher als `aal1` und liefert bei unzureichender Sitzung kontrolliert `MFA_REQUIRED`. Die neue Allowlist ordnet 27 sensible RPCs den Bereichen Benutzer/Rechte, Personalakte, DATEV/Berichte und QR-Sicherheitskonfiguration zu; alle Einträge sind zunächst aus. Die stufenweise Zuordnung und Abnahme ist in `mfa-sensitive-rpc-rollout-2026-09-13.md` und `privileged-mfa-rollout-2026-09-14.md` festgehalten.
 
-Eine rein lesende Produktivprüfung am 14.09.2026 ergab zwei aktive `OWNER`-Konten, kein aktives `ADMIN`-Konto und noch keinen verifizierten Faktor bei den beiden OWNERn. Die verpflichtende App-Oberfläche ist daher vorbereitet, die produktive Serverpflicht bleibt aber bis zur persönlichen Einrichtung beider Konten deaktiviert.
+Eine rein lesende Produktivprüfung am 14.09.2026 ergab zwei aktive `OWNER`-Konten, kein aktives `ADMIN`-Konto und noch keinen verifizierten Faktor bei den beiden OWNERn. Die verpflichtende App-Oberfläche ist daher vorbereitet, die produktive Serverpflicht bleibt aber bis zur persönlichen Einrichtung beider Konten deaktiviert. Die vier RPC-Stufen bestanden anschließend auf einem datenlosen Wegwerf-Branch 59/59 Assertions einschließlich echtem PostgREST-Data-API-Negativtest. Vor der Branch-Löschung wurden 0 Auth-Benutzer, 0 Unternehmen und 0 aktive Schutzschalter bestätigt; danach blieb nur `main` bestehen.
 
 Auf einem früheren Wegwerf-Testbranch wurden am 13.09.2026 TOTP „Enabled“, die AAL1-Begrenzung auf 15 Minuten, SMS „Disabled“ und maximal 10 Faktoren read-only bestätigt. Die gemeinsame AAL2-Grenze bestand dort AAL1-Ablehnung, AAL2-Zulassung und getrennten `service_role`-Workerpfad. Auf dem anschließenden datenlosen Branch `mfa-session-recovery-test-2026-09-13` bestanden OWNER und Mitarbeiter jeweils Passwortlogin auf AAL1, primären TOTP, zweiten Ersatzfaktor, Falschcode-Ablehnung, Faktorverlust, Wiederanmeldung mit Ersatzfaktor auf AAL2 sowie `others`- und `global`-Sitzungswiderruf. 12/12 Gruppenprüfungen bestanden; danach waren 0 aktive Test-Refresh-Tokens vorhanden und der Branch wurde gelöscht. Details stehen in `mfa-session-recovery-test-2026-09-13.md`.
 
@@ -52,6 +52,6 @@ Die Guard-Definition wurde am 13.09.2026 in einer sitzungsgebundenen `pg_temp`-K
 - Support kann Identität prüfen, aber keinen MFA-Schutz heimlich umgehen.
 - Jede Änderung ist mit Datum, Prüfer, Testkonto und Ergebnis dokumentiert.
 
-Status: 🟢 **LEAKED PASSWORD PROTECTION SOWIE TECHNISCHER ZWEI-KONTEN-MFA-/RECOVERY-/SITZUNGSWIDERRUF-NACHWEIS BESTANDEN**; 🟡 **PFLICHT-UI UND 27-RPC-STUFENSTEUERUNG VORBEREITET, ABER ECHTKONTEN-EINRICHTUNG, BRANCH-ABNAHME, SICHERE PASSWORTÄNDERUNG UND PRODUKTIVE AAL2-AKTIVIERUNG NOCH OFFEN.**
+Status: 🟢 **LEAKED PASSWORD PROTECTION, ZWEI-KONTEN-MFA-/RECOVERY-/SITZUNGSWIDERRUF-NACHWEIS UND 59/59 AAL2-BRANCH-ASSERTIONS BESTANDEN**; 🟡 **PFLICHT-UI VORBEREITET, ABER ECHTKONTEN-EINRICHTUNG, SICHERE PASSWORTÄNDERUNG UND PRODUKTIVE AAL2-AKTIVIERUNG NOCH OFFEN.**
 
 Quellen: https://supabase.com/docs/guides/auth/password-security, https://supabase.com/docs/guides/auth/auth-mfa und https://supabase.com/docs/guides/auth/signout
