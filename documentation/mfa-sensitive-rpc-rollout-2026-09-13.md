@@ -1,8 +1,8 @@
 # SchichtFunk – MFA-Rollout für sensible Serveraktionen
 
-Stand: 13.09.2026
+Stand: 14.09.2026
 
-Status: technische Vorbereitung; nicht ausgerollt
+Status: Stufensteuerung und verpflichtende Bedienoberfläche im Prüfzweig vorbereitet; nicht produktiv aktiviert
 
 ## Sicherheitsgrenze
 
@@ -14,7 +14,16 @@ Service-Role-Aufrufe bleiben für eng begrenzte Hintergrundprozesse möglich und
 benötigen weiterhin die jeweilige separate Rollen- und Auftragsprüfung.
 
 Die Migration verändert noch keinen bestehenden öffentlichen RPC. Damit entsteht
-beim bloßen Anwenden der Grundlage keine unangekündigte Kontensperre.
+beim bloßen Anwenden der Grundlage keine unangekündigte Kontensperre. Die
+Folgemigration `20260914045554_staged_privileged_aal2_gate_v1.sql` ordnet 27
+sensible Data-API-RPCs den Stufen 2 bis 5 zu und registriert den zentralen
+Pre-Request-Guard. Sämtliche Allowlist-Einträge starten mit `enabled=false`.
+
+Die App öffnet für `OWNER` und `ADMIN` ohne verifizierten Faktor eine
+verpflichtende Authenticator-Einrichtung. Eine serverseitige Antwort
+`MFA_REQUIRED` führt zu einer Challenge und genau einem kontrollierten
+Wiederholungsversuch. Die vollständige Arbeitsanweisung und der Rückfallweg
+stehen in `privileged-mfa-rollout-2026-09-14.md`.
 
 ## Vorgesehene Einführungsgruppen
 
@@ -42,8 +51,9 @@ MFA-Pflicht ist eine separate Kundenentscheidung.
 
 ## Freigabegrenze
 
-Vor dem Test auf einer ausdrücklich bestätigten Wegwerf-Umgebung wird die
-gemeinsame Prüfung nicht in vorhandene öffentliche RPCs eingebaut. Vor der
-Produktivaktivierung sind außerdem zwei sichere privilegierte Konten, ein
-Recovery-Verfahren und ein bestandener Login-/Einladungs-/PWA-Regressionslauf
-erforderlich.
+Vor der Produktivaktivierung werden die vier Stufen auf einer ausdrücklich
+bestätigten Wegwerf-Umgebung geprüft. Im Produktivprojekt bestehen derzeit zwei
+aktive `OWNER`-Konten, aber noch keines mit verifiziertem MFA-Faktor. Beide
+Kontoinhaber müssen deshalb zunächst persönlich einen Authenticator einrichten.
+Zusätzlich bleiben Recovery-Verfahren und Login-/Einladungs-/PWA-Regressionslauf
+Voraussetzung.
