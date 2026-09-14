@@ -18,7 +18,7 @@ Stand: 14.09.2026
 - Öffentliche Analyse-/Marketingtracker wurden im aktuellen Repository-Stand nicht festgestellt.
 - **Supabase Pro: ✅ erledigt.** Der Pro-Tarif ist für die Organisation `Security_Plattform` aktiv, der Spend Cap ist eingeschaltet und das Produktivprojekt `SchichtFunk` ist `ACTIVE_HEALTHY` in Region `eu-central-1` (Frankfurt).
 - IONOS Deploy Now Starter ist als Primärhosting eingerichtet; Projekt-ID `7bc70ac7-ec3b-4e7b-bae5-569c957e8514` stellt den geprüften Zweig `codex/ionos-migration` unter `home-5021411544.app-ionos.space` bereit. Alexander Kirchner hat das Deployment am 13.09.2026 vollständig für den Produktivbetrieb abgenommen. Die produktive Domain bleibt bis zu einer separaten ausdrücklichen DNS-/Domain-Umschaltanweisung unverändert.
-- Der reproduzierbare statische Build umfasst aktuell 2.153.075 Byte (2,05 MiB) und liegt damit deutlich unter dem Starter-Limit von 50 MB pro statischem Projekt.
+- Der reproduzierbare statische Build umfasst aktuell 2.159.480 Byte (2,06 MiB) und liegt damit deutlich unter dem Starter-Limit von 50 MB pro statischem Projekt.
 - Die beiden bislang Vercel-spezifischen Demo-Endpunkte `demo-auth` und `demo-analytics` wurden als Supabase Edge Functions bereitgestellt, mit neu erzeugten Geheimnissen aktiviert und über die IONOS-Vorschau geprüft.
 - Der zuvor anonym ausführbare SECURITY-DEFINER-RPC `manager_import_month_matrix` wurde für `anon` gesperrt; die entsprechende Supabase-Security-Advisor-Warnung ist danach verschwunden.
 - Die Datenschutzerklärung bildet den tatsächlichen Funktionsumfang ab: Benutzerkonten, Rollen, Mitarbeiterstammdaten, Dienstplanung, Abwesenheiten/Krankheitsdaten, Zeiterfassung, QR, Stundenkonto, Feiertage, Schichtänderungen, Tausch, Marktplatz, Auto-Planung, Störfall-Autopilot, Push, PWA/Browser-Speicher, Demo und DATEV-LODAS-Export.
@@ -32,7 +32,7 @@ Stand: 14.09.2026
 - Für die datenschutzbeauftragte Person wurde Option B (geeignete interne Person) als Richtung gewählt. Die Auswahl und Benennung der konkreten Person wurde am 13.09.2026 auf Nutzerwunsch vorerst zurückgestellt. Es erfolgten weder Benennung noch Vertrag, Veröffentlichung oder Behördenmeldung.
 - Eine vollständige kundenspezifische DSFA-Vorlage mit Datenfluss, Zweck-/Rechtsgrundlagenmatrix, Risikoregister, Maßnahmenplan, Beteiligungs- und Freigabefeldern ist vorbereitet. Sie wird erst mit Pilotkundendaten, DSB-Stellungnahme und Testnachweisen freigabefähig.
 - Eine editierbare SchichtFunk-Kunden-AVV-Vorlage nach Art. 28 DSGVO ist erstellt. Sie enthält die Verarbeitung, TOM, Unterauftragsverarbeiter, kundenbezogene Löschfristen sowie Weisungs- und Kontaktrollen als Anlagen. Vor dem Einsatz sind die gelb markierten Kundendaten, Fristen, die aktuelle TOM-/Unterauftragnehmerlage und der konkrete Vertrag rechtlich zu prüfen; ein kundenspezifisch abgeschlossener AVV liegt damit noch nicht vor.
-- Ein versioniertes Sicherheits- und Betriebsnachweisregister verknüpft die TOM mit reproduzierbaren Tests, Anbieter-/Restorebelegen und einem öffentlichen IONOS-Livecheck. 32/32 Testdateien, IONOS-Migrationssuite, 2,06-MiB-Build und Abhängigkeitsprüfung bestanden; sechs öffentliche IONOS-Routen lieferten die erwarteten Sicherheits- und Cache-Header.
+- Ein versioniertes Sicherheits- und Betriebsnachweisregister verknüpft die TOM mit reproduzierbaren Tests, Anbieter-/Restorebelegen und einem öffentlichen IONOS-Livecheck. 33/33 Testdateien, IONOS-Migrationssuite, 2,06-MiB-Build und Abhängigkeitsprüfung bestanden; sechs öffentliche IONOS-Routen lieferten die erwarteten Sicherheits- und Cache-Header.
 - Der Incident-Response- und Datenschutzverletzungsprozess einschließlich Schweregraden, unverzüglicher Kundeninformation, 72-Stunden-Entscheidungsweg, Wiederanlauf, fiktivem Papier-Planspiel und technischem Zwei-Konten-Sitzungswiderruf ist dokumentiert. Die Prüfungen änderten keine Produktionsdaten; Vertretung, überwachte Alarmierung und ein Schlüsselrotationsdrill bleiben offen.
 - Eine Logging-/Monitoring- und Aufbewahrungsmatrix trennt vorhandene Anwendungsaudits, Supabase-/IONOS-/GitHub-Nachweise, verbindliche Prüfauslöser und geplante Alarme von noch nicht bestätigten Anbieterfristen und kundenbezogenen Löschfristen.
 
@@ -84,6 +84,14 @@ Stand: 14.09.2026
 - Supabase-DPA: 🟢 automatische Einbeziehung im angemeldeten Pro-Organisationsbereich bestätigt; DPA, SCC, TIA und Unterauftragsverarbeiter dokumentiert.
 - Nachweisregister: `documentation/avv-dpa-evidence-register-2026-09-12.md`.
 - Finale Nachprüfung vom 13.09.2026: 🟢 offizielle IONOS-/Supabase-Nachweise erneut erreichbar und versioniert geprüft; unveränderliche PDF-Nachweise sowie Supabase-DPA bytegleich, aktueller Supabase-Pro-/Frankfurt-Projektstatus bestätigt. Vercel Hobby bleibt von einer kommerziellen Rückfallschaltung ausgeschlossen.
+
+## Teilpunkt 9.1 – IONOS/Supabase technisch fertigstellen
+
+Status: 🟢 **TECHNISCH ABGESCHLOSSEN am 14.09.2026.**
+
+Der abschließende Nachweis ist in `documentation/ionos-supabase-technical-final-check-2026-09-14.md` dokumentiert. 174/174 ausgelieferte Build-Dateien stimmten inhaltlich mit dem lokalen Build überein, die öffentlichen Routen und Sicherheitsheader waren korrekt, Browserkonsole und JavaScript-Fehlerliste blieben leer, 33/33 Testdateien sowie die IONOS-Migrationssuite bestanden. Die Supabase Edge Functions lehnten unberechtigte Aufrufe korrekt ab; der aktive 15-Minuten-Job des Privacy Workers hatte zuletzt den Status `succeeded`.
+
+Die Umschaltung von `www.schichtfunk.de` ist **nicht** Bestandteil dieses technischen Abschlusses und wurde nicht vorgenommen. Sie bleibt ein separater, ausdrücklich zu bestätigender Freigabeschritt mit anschließender HTTPS-/Login-/PWA-/Push-Nachprüfung.
 
 ## Noch offen – Punkt 9 bleibt IN ARBEIT
 

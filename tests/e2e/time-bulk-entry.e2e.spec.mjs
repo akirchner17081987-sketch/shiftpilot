@@ -10,9 +10,24 @@ test('manager records all eligible open times in one guarded action',async({page
   const demoPath=demoUrl();
   await page.goto(demoPath);
   await waitForDemoReady(page);
+  // The demo week follows the real calendar. Move its open example into a
+  // completed, fixed month so this guard test remains valid on every weekday.
+  await page.evaluate(()=>{
+    const key='sf_demo_time_tracking_v2';
+    const rows=JSON.parse(sessionStorage.getItem(key)||'[]');
+    const open=rows.find(row=>row.entry_status==='open'&&!row.actual_start&&!row.actual_end);
+    if(!open)throw new Error('Open demo time entry is missing.');
+    Object.assign(open,{
+      starts_at:'2026-09-01T07:00:00+02:00',
+      ends_at:'2026-09-01T15:00:00+02:00',
+      actual_start:null,
+      actual_end:null,
+      actual_break_minutes:null
+    });
+    sessionStorage.setItem(key,JSON.stringify(rows));
+  });
   await openManagerArea(page,'time');
-  const currentMonth=await page.evaluate(()=>new Date().toISOString().slice(0,7));
-  await page.locator('#sfTimeMonthPicker').fill(currentMonth);
+  await page.locator('#sfTimeMonthPicker').fill('2026-09');
   await page.locator('#sfTimeMonthPicker').dispatchEvent('change');
 
   const bulk=page.locator('#sfTimeBulkOpen');

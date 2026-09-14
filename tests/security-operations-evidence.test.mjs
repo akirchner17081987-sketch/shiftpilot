@@ -30,7 +30,7 @@ test('evidence register is explicit about proof levels and unresolved controls',
   for(const level of ['Live-Nachweis','technischer Nachweis','Prozessnachweis','Anbieternachweis','offen']){
     assert.match(evidence,new RegExp(level,'i'));
   }
-  assert.match(evidence,/2\.156\.091 Byte/);
+  assert.match(evidence,/2\.159\.480 Byte/);
   assert.match(evidence,/physischer Tagesbackup-Restore/i);
   assert.match(evidence,/35\/35 Fremdmandantenprüfungen/i);
   assert.match(crossTenant,/35\/35 bestanden, 0 fehlgeschlagen/i);

@@ -18,10 +18,10 @@ Ein dokumentierter Entwurf oder ein statischer Test ersetzt keinen echten Wieder
 
 ## 2. Nachweismatrix
 
-| Kontrollbereich | Nachweis | Ergebnis am 13.09.2026 | Restgrenze |
+| Kontrollbereich | Nachweis | Letzter bestätigter Stand | Restgrenze |
 |---|---|---|---|
-| Reproduzierbarer IONOS-Build | `npm run build`; Vollständigkeits- und Größenprüfung durch `scripts/build-static.mjs` | bestanden; 2.156.091 Byte (2,06 MiB), damit unter 50 MiB | erneuter Lauf vor jeder Freigabe erforderlich |
-| Statische Regression | `npm test` einschließlich Datenschutz-, Auth-, RLS-/RPC-, QR-, Push-, DATEV- und Restore-Prüfungen | 32/32 Testdateien bestanden; 0 fehlgeschlagen | vor sicherheitsrelevanten Freigaben erneut ausführen |
+| Reproduzierbarer IONOS-Build | `npm run build`; Vollständigkeits- und Größenprüfung durch `scripts/build-static.mjs` | am 14.09.2026 bestanden; 2.159.480 Byte (2,06 MiB), damit unter 50 MiB | erneuter Lauf vor jeder Freigabe erforderlich |
+| Statische Regression | `npm test` einschließlich Datenschutz-, Auth-, RLS-/RPC-, QR-, Push-, DATEV- und Restore-Prüfungen | am 14.09.2026: 33/33 Testdateien bestanden; 0 fehlgeschlagen | vor sicherheitsrelevanten Freigaben erneut ausführen |
 | IONOS-Migrationskontrollen | `npm run test:ionos` | bestanden; Edge-Function-Umschaltung, HMAC-Schutz, Routing, Header und Buildkonfiguration geprüft | kein Nachweis der IONOS-internen Betriebsprozesse |
 | Abhängigkeiten | `npm audit --audit-level=high` gegen `package-lock.json` | 0 bekannte Schwachstellen zum Prüfzeitpunkt | Datenbank ändert sich; bei Releases erneut prüfen |
 | Öffentliche Verfügbarkeit | HTTP-Prüfung von `/`, `/impressum`, `/datenschutz`, Service Worker, Manifest und einer unbekannten SPA-Route auf `home-5021411544.app-ionos.space` | alle sechs Ziele HTTP 200; korrekte Inhaltstypen; SPA-Fallback aktiv | keine 24/7-Verfügbarkeitsmessung oder Alarmierung |
@@ -50,6 +50,10 @@ Prüfzeit: 13.09.2026, 17:36:23 UTC. Es wurden ausschließlich öffentliche GET-
 | `/nicht-vorhandene-spa-route` | 200 | `text/html` | 198.925 Byte | `no-cache, no-store, must-revalidate` |
 
 Auf allen Antworten waren Content-Security-Policy, HSTS, X-Content-Type-Options, X-Frame-Options und Referrer-Policy vorhanden. Der unbekannte Pfad lieferte bytegleich die App-Shell und bestätigt damit den SPA-Fallback.
+
+### Technische Abschlussnachprüfung am 14.09.2026
+
+Der erneute Vollvergleich bestätigte 174/174 öffentliche Build-Dateien ohne inhaltliche Abweichung zum lokalen `dist`-Stand. 25 Dateien waren bytegleich; 149 Textdateien unterschieden sich ausschließlich durch CRLF-/LF-Zeilenenden. Ein absichtlich fehlendes JavaScript-Asset lieferte korrekt HTTP 404. Browserkonsole und JavaScript-Fehlerliste blieben leer. Die Supabase-Funktionsgrenzen lehnten anonyme beziehungsweise ungültige Aufrufe mit HTTP 401 ab; der aktive 15-Minuten-Job `schichtfunk-privacy-lifecycle-worker` meldete für den kontrollierten Lauf um 07:15 UTC `succeeded`. Vollständiger Nachweis: `documentation/ionos-supabase-technical-final-check-2026-09-14.md`.
 
 ## 4. Reproduzierbarkeit
 
