@@ -2,9 +2,98 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { withSupabase } from "npm:@supabase/server@1.5.3";
 import { sendPushBatch } from "npm:@mmmike/web-push@1.3.0/send";
 import { generateVapidKeys } from "npm:@mmmike/web-push@1.3.0/vapid";
+import { buildPushPayload } from "npm:@block65/webcrypto-web-push@2.0.0";
 
 const uuidRe=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const base64url=(bytes:Uint8Array)=>btoa(String.fromCharCode(...bytes)).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/g,"");
+const fallbackAppOrigin="https://shiftpilot-two.vercel.app";
+
+type StoredSubscription={
+  id:string;
+  endpoint:string;
+  p256dh:string;
+  auth_key:string;
+  user_agent:string|null;
+};
+
+const appOrigin=()=>{
+  try{return new URL(Deno.env.get("SCHICHTFUNK_APP_ORIGIN")||fallbackAppOrigin).origin}
+  catch{return fallbackAppOrigin}
+};
+
+const versionAtLeast=(major:number,minor:number,targetMajor:number,targetMinor:number)=>
+  major>targetMajor||(major===targetMajor&&minor>=targetMinor);
+
+const supportsDeclarativeApplePush=(subscription:StoredSubscription)=>{
+  let host="";
+  try{host=new URL(subscription.endpoint).hostname.toLowerCase()}catch{return false}
+  if(!host.endsWith(".push.apple.com"))return false;
+
+  const ua=String(subscription.user_agent||"");
+  const ios=ua.match(/(?:CPU(?: iPhone)? OS|iPhone OS)\s+(\d+)[_.](\d+)/i);
+  if(ios)return versionAtLeast(Number(ios[1]),Number(ios[2]),18,4);
+
+  // Safari 18.5+ on macOS supports Declarative Web Push.
+  const safari=ua.match(/Version\/(\d+)\.(\d+)/i);
+  if(/Macintosh/i.test(ua)&&safari){
+    return versionAtLeast(Number(safari[1]),Number(safari[2]),18,5);
+  }
+  return false;
+};
+
+async function sendDeclarativeAppleBatch(
+  subscriptions:StoredSubscription[],
+  payload:Record<string,unknown>,
+  vapid:{publicKey:string;privateKey:string;subject:string},
+  urgency:"normal"|"high",
+){
+  let delivered=0;
+  const gone:string[]=[];
+  const failed:{endpoint:string;error:unknown}[]=[];
+  let cursor=0;
+
+  const sendOne=async(subscription:StoredSubscription)=>{
+    try{
+      const request=await buildPushPayload(
+        {data:payload,options:{ttl:86400,urgency}},
+        {
+          endpoint:subscription.endpoint,
+          expirationTime:null,
+          keys:{p256dh:subscription.p256dh,auth:subscription.auth_key},
+        },
+        vapid,
+      );
+      const headers=new Headers(request.headers);
+      // WebKit's Declarative Web Push dispatch is selected by this media type.
+      headers.set("content-type","application/notification+json");
+
+      const response=await fetch(subscription.endpoint,{
+        method:"POST",
+        headers,
+        body:request.body,
+        signal:AbortSignal.timeout(12000),
+      });
+      const responseText=await response.text();
+      if(response.ok){delivered+=1;return}
+      if(response.status===404||response.status===410){gone.push(subscription.endpoint);return}
+      failed.push({
+        endpoint:subscription.endpoint,
+        error:new Error(`Declarative push service error: ${response.status} ${response.statusText} ${responseText.slice(0,300)}`),
+      });
+    }catch(error){
+      failed.push({endpoint:subscription.endpoint,error});
+    }
+  };
+
+  const workers=Array.from({length:Math.min(20,subscriptions.length)},async()=>{
+    while(cursor<subscriptions.length){
+      const current=subscriptions[cursor++];
+      await sendOne(current);
+    }
+  });
+  await Promise.all(workers);
+  return {delivered,gone,failed};
+}
 
 const handler=withSupabase({auth:"none"},async(req,ctx)=>{
   if(req.method!=="POST")return Response.json({error:"METHOD_NOT_ALLOWED"},{status:405});
@@ -64,33 +153,87 @@ const handler=withSupabase({auth:"none"},async(req,ctx)=>{
   if(!membership&&!activeEmployee){await mark("SKIPPED");return Response.json({ok:true,status:"SKIPPED",reason:"INACTIVE_ACCOUNT"})}
 
   const {data:subs,error:sError}=await ctx.supabaseAdmin.from("push_subscriptions")
-    .select("id,endpoint,p256dh,auth_key")
+    .select("id,endpoint,p256dh,auth_key,user_agent")
     .eq("user_id",notification.user_id).eq("enabled",true);
   if(sError)throw sError;
   if(!subs?.length){await mark("SKIPPED");return Response.json({ok:true,status:"SKIPPED",delivered:0})}
 
-  const link=notification.link_view?`/?sf_push_view=${encodeURIComponent(notification.link_view)}#app`:"/#app";
-  const payload={
-    title:notification.title||"SchichtFunk",
-    body:notification.message||"Neue Benachrichtigung in SchichtFunk",
-    url:link,
-    tag:`sf-${notification.kind||"notice"}-${notification.entity_id||notification.id}`
+  const origin=appOrigin();
+  const relativeLink=notification.link_view?`/?sf_push_view=${encodeURIComponent(notification.link_view)}#app`:"/#app";
+  const navigate=new URL(relativeLink,`${origin}/`).href;
+  const tag=`sf-${notification.kind||"notice"}-${notification.entity_id||notification.id}`;
+  const title=notification.title||"SchichtFunk";
+  const message=notification.message||"Neue Benachrichtigung in SchichtFunk";
+  const urgency=new Set(["DISRUPTION_OFFER","ABSENCE_CONFLICT","TIME_ENTRY_CORRECTION"]).has(notification.kind)?"high":"normal";
+
+  // Nicht-Apple bzw. ältere Apple-Clients behalten den bewährten Legacy-Payload.
+  const legacyPayload={title,body:message,url:relativeLink,tag};
+
+  // Moderne Apple-Clients erhalten den standardisierten Declarative-Web-Push-Payload.
+  // Dadurch kann iOS die Mitteilung selbst anzeigen, auch wenn Service-Worker-JS
+  // nicht rechtzeitig ausgeführt wird.
+  const declarativePayload={
+    web_push:8030,
+    notification:{
+      title,
+      lang:"de",
+      dir:"auto",
+      body:message,
+      navigate,
+      silent:false,
+      icon:`${origin}/assets/schichtfunk-app-icon-192.png`,
+      badge:`${origin}/assets/schichtfunk-app-icon-192.png`,
+      tag,
+    },
   };
-  const subscriptions=subs.map((s:any)=>({endpoint:s.endpoint,keys:{p256dh:s.p256dh,auth:s.auth_key}}));
-  const urgent=new Set(["DISRUPTION_OFFER","ABSENCE_CONFLICT","TIME_ENTRY_CORRECTION"]);
+
+  const typedSubs=subs as StoredSubscription[];
+  const declarativeSubs=typedSubs.filter(supportsDeclarativeApplePush);
+  const standardSubs=typedSubs.filter(sub=>!supportsDeclarativeApplePush(sub));
+  const vapid={
+    publicKey:cfg.vapid_public_key,
+    privateKey:cfg.vapid_private_key,
+    subject:cfg.vapid_subject,
+  };
 
   try{
-    const result=await sendPushBatch(subscriptions,payload,{
-      publicKey:cfg.vapid_public_key,privateKey:cfg.vapid_private_key,subject:cfg.vapid_subject
-    },{ttl:86400,urgency:urgent.has(notification.kind)?"high":"normal",concurrency:20,timeoutMs:12000});
+    let delivered=0;
+    const goneEndpoints:string[]=[];
+    const failures:{endpoint:string;error:unknown}[]=[];
 
-    const goneEndpoints=(result.gone||[]).map((g:any)=>typeof g==="string"?g:g?.endpoint).filter(Boolean);
+    if(standardSubs.length){
+      const standardResult=await sendPushBatch(
+        standardSubs.map(s=>({endpoint:s.endpoint,keys:{p256dh:s.p256dh,auth:s.auth_key}})),
+        legacyPayload,
+        vapid,
+        {ttl:86400,urgency,concurrency:20,timeoutMs:12000},
+      );
+      delivered+=Number(standardResult.delivered||0);
+      goneEndpoints.push(...(standardResult.gone||[]).map((g:any)=>typeof g==="string"?g:g?.endpoint).filter(Boolean));
+      failures.push(...(standardResult.failed||[]));
+    }
+
+    if(declarativeSubs.length){
+      const declarativeResult=await sendDeclarativeAppleBatch(declarativeSubs,declarativePayload,vapid,urgency);
+      delivered+=declarativeResult.delivered;
+      goneEndpoints.push(...declarativeResult.gone);
+      failures.push(...declarativeResult.failed);
+    }
+
     if(goneEndpoints.length)await ctx.supabaseAdmin.from("push_subscriptions").delete().in("endpoint",goneEndpoints);
-    const delivered=Number(result.delivered||0),failed=(result.failed||[]).length;
-    const errors=(result.failed||[]).slice(0,3).map((x:any)=>String(x?.error?.message||x?.error||"push failed")).join(" | ");
+    const failed=failures.length;
+    const errors=failures.slice(0,3).map((x:any)=>String(x?.error?.message||x?.error||"push failed")).join(" | ");
     const status=delivered>0?(failed>0?"PARTIAL":"SENT"):(failed>0?"FAILED":"SKIPPED");
     await mark(status,delivered,failed,errors||null);
-    return Response.json({ok:status!=="FAILED",status,delivered,failed,gone:goneEndpoints.length});
+    return Response.json({
+      ok:status!=="FAILED",
+      status,
+      delivered,
+      failed,
+      gone:goneEndpoints.length,
+      declarative:declarativeSubs.length,
+      legacy:standardSubs.length,
+    });
   }catch(error){
     const message=String((error as Error)?.message||error).slice(0,1800);
     await mark("FAILED",0,subs.length,message);
