@@ -2,7 +2,7 @@
 
 Stand: 14.09.2026
 
-Dokumentstatus: Verbindliche Betriebsregel; technische V6-Erweiterung auf Wegwerf-Testbranch bestanden, Produktivaktivierung steht noch aus.
+Dokumentstatus: Verbindliche Betriebsregel; V6 auf Wegwerf-Testbranch bestanden und Löschautomatisierung am 14.09.2026 produktiv aktiviert.
 
 ## 1. Entscheidung und Geltungsbereich
 
@@ -139,4 +139,4 @@ Vor einer Produktivaktivierung müssen auf einer Wegwerf-Testumgebung mindestens
 
 ## 7. Einführungsstatus
 
-Die Betriebsregel ist hiermit für den vorgesehenen Ein-OWNER-Betrieb festgelegt. Die technische V6-Erweiterung mit gehashten Sitzungsnachweisen, Fristprofil-Doppelbestätigung, Rollen-/Zielsperren und Edge-Function-Endpunkten bestand auf dem datenlosen Wegwerf-Testbranch 22/22 neue sowie 41/41 bestehende Datenbankprüfungen. Alle Testdaten wurden zurückgerollt und der Branch danach gelöscht. V6 ist nicht produktiv aktiviert und ändert weder Produktionsdaten noch die aktuelle Supabase-Konfiguration. Vor Produktion sind deshalb der Auth-/Storage-Worker, ein Zeitplan und eine ausdrückliche Produktivfreigabe erforderlich.
+Die Betriebsregel ist hiermit für den vorgesehenen Ein-OWNER-Betrieb festgelegt. Die technische V6-Erweiterung mit gehashten Sitzungsnachweisen, Fristprofil-Doppelbestätigung, Rollen-/Zielsperren und Edge-Function-Endpunkten bestand auf dem datenlosen Wegwerf-Testbranch 22/22 neue sowie 41/41 bestehende Datenbankprüfungen. Alle Testdaten wurden zurückgerollt und der Branch danach gelöscht. Am 14.09.2026 wurden V1–V9, der Auth-/Storage-Worker und ein geschützter 15-Minuten-Zeitplan produktiv aktiviert. Der echte Scheduler-Leerlauf endete mit HTTP 200 und 0 verarbeiteten Aufträgen; die Abnahme änderte keine Nutzdaten. Auth- und Storage-Löschung bleiben ohne ausdrückliche Aktivierung und konkrete Fristen im freigegebenen Kundenprofil technisch aus. Vollständiger Nachweis: `privacy-lifecycle-production-activation-2026-09-14.md`.

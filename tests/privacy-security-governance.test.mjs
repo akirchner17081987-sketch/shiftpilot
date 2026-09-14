@@ -20,10 +20,14 @@ const mfaGuardSql=fs.readFileSync(path.join(root,'supabase','migrations','202609
 const overdueFixSql=fs.readFileSync(path.join(root,'supabase','migrations','20260913095100_privacy_lifecycle_overdue_fix_v4.sql'),'utf8');
 const executionSql=fs.readFileSync(path.join(root,'supabase','migrations','20260913101500_privacy_offboarding_execution_v5.sql'),'utf8');
 const soleOwnerSql=fs.readFileSync(path.join(root,'supabase','migrations','20260914055344_privacy_sole_owner_delayed_approval_v6.sql'),'utf8');
+const privacyWorkerSql=fs.readFileSync(path.join(root,'supabase','migrations','20260914062506_privacy_lifecycle_worker_v7.sql'),'utf8');
+const privacyScheduleSql=fs.readFileSync(path.join(root,'supabase','migrations','20260914062509_privacy_lifecycle_schedule_v8.sql'),'utf8');
+const privacyRoleCompatSql=fs.readFileSync(path.join(root,'supabase','migrations','20260914063206_privacy_service_role_claim_compat_v9.sql'),'utf8');
 const lifecycleDbTest=fs.readFileSync(path.join(root,'supabase','tests','privacy_lifecycle_test.sql'),'utf8');
 const soleOwnerDbTest=fs.readFileSync(path.join(root,'supabase','tests','privacy_sole_owner_delayed_test.sql'),'utf8');
 const logicalRestoreDbTest=fs.readFileSync(path.join(root,'supabase','tests','privacy_logical_restore_test.sql'),'utf8');
 const lifecycleEdge=fs.readFileSync(path.join(root,'supabase','functions','privacy-lifecycle','index.ts'),'utf8');
+const privacyWorkerEdge=fs.readFileSync(path.join(root,'supabase','functions','privacy-worker','index.ts'),'utf8');
 const mfaClient=fs.readFileSync(path.join(root,'assets','supabase-mfa-v1.js'),'utf8');
 const moduleLoader=fs.readFileSync(path.join(root,'assets','conflict-plausibility-v1.js'),'utf8');
 const settingsClient=fs.readFileSync(path.join(root,'assets','settings-management-v2.js'),'utf8');
@@ -32,6 +36,7 @@ const storageBranchSmokeSource=fs.readFileSync(path.join(root,'scripts','storage
 const authErrorsSource=fs.readFileSync(path.join(root,'assets','supabase-auth-errors-v1.js'),'utf8');
 const soleOwnerDeletionPolicy=fs.readFileSync(path.join(root,'documentation','ein-owner-loeschfreigabe-2026-09-14.md'),'utf8');
 const soleOwnerBranchProtocol=fs.readFileSync(path.join(root,'documentation','privacy-sole-owner-testbranch-protocol-2026-09-14.md'),'utf8');
+const privacyProductionProtocol=fs.readFileSync(path.join(root,'documentation','privacy-lifecycle-production-activation-2026-09-14.md'),'utf8');
 
 test('SECURITY DEFINER allowlist is exact and reviewable',()=>{
   assert.equal(allowlist.functions.length,35);
@@ -86,7 +91,8 @@ test('sole-owner deletion policy requires delayed independent-session confirmati
   assert.match(soleOwnerDeletionPolicy,/einzige aktive OWNER-Konto darf niemals/i);
   assert.match(soleOwnerDeletionPolicy,/Mandantenlöschung ist im Ein-OWNER-Modus nicht zulässig/i);
   assert.match(soleOwnerDeletionPolicy,/technische V6-Erweiterung/i);
-  assert.match(soleOwnerDeletionPolicy,/nicht produktiv aktiviert/i);
+  assert.match(soleOwnerDeletionPolicy,/produktiv aktiviert/i);
+  assert.match(soleOwnerDeletionPolicy,/15-Minuten-Zeitplan/i);
 });
 
 test('sole-owner v6 is private, delayed, session-separated and non-destructive',()=>{
@@ -260,6 +266,56 @@ test('sole-owner branch protocol records tests, rollback, isolation and deletion
   assert.match(soleOwnerBranchProtocol,/Lösch-Zeitpläne \| 0/i);
   assert.match(soleOwnerBranchProtocol,/Branch gelöscht/i);
   assert.match(soleOwnerBranchProtocol,/0,01344 USD/);
+});
+
+test('privacy worker is token-protected, bounded, idempotent and fail-closed',()=>{
+  assert.match(privacyWorkerEdge,/x-privacy-worker-token/);
+  assert.match(privacyWorkerEdge,/safeEqual\(supplied,expected\)/);
+  assert.match(privacyWorkerEdge,/Math\.max\(1,Math\.min\(requested,10\)\)/);
+  assert.match(privacyWorkerEdge,/server_execute_privacy_access/);
+  assert.match(privacyWorkerEdge,/server_privacy_erasure_external_plan/);
+  assert.match(privacyWorkerEdge,/STORAGE_DELETE_NOT_CONFIRMED/);
+  assert.match(privacyWorkerEdge,/auth\.admin\.deleteUser/);
+  assert.match(privacyWorkerEdge,/server_fail_privacy_request/);
+  assert.doesNotMatch(privacyWorkerEdge,/console\.(log|error).*serviceKey/);
+
+  assert.match(privacyWorkerSql,/delete from auth\.sessions/i);
+  assert.match(privacyWorkerSql,/Management membership requires separate offboarding approval/i);
+  assert.match(privacyWorkerSql,/STORAGE_MANIFEST_CHANGED/);
+  assert.match(privacyWorkerSql,/AUTH_ACCOUNT_DELETE_BLOCKED/);
+  assert.match(privacyWorkerSql,/deletePersonnelDocuments/);
+  assert.match(privacyWorkerSql,/deleteAuthAccount/);
+  assert.match(privacyWorkerSql,/greatest\([\s\S]*new\.access_revoke_after[\s\S]*new\.requested_at/i);
+  assert.match(privacyWorkerSql,/from public,anon,authenticated/i);
+});
+
+test('privacy schedule uses Vault secrets and one bounded 15-minute job',()=>{
+  assert.match(privacyScheduleSql,/privacy_worker_url/);
+  assert.match(privacyScheduleSql,/privacy_worker_token/);
+  assert.match(privacyScheduleSql,/cron\.unschedule/);
+  assert.match(privacyScheduleSql,/cron\.schedule/);
+  assert.match(privacyScheduleSql,/'\*\/15 \* \* \* \*'/);
+  assert.match(privacyScheduleSql,/timeout_milliseconds := 10000/);
+  assert.doesNotMatch(privacyScheduleSql,/service[_-]?role/i);
+});
+
+test('privacy service-role boundary supports current claims JSON and remains fail-closed',()=>{
+  assert.match(privacyRoleCompatSql,/request\.jwt\.claim\.role/);
+  assert.match(privacyRoleCompatSql,/request\.jwt\.claims/);
+  assert.match(privacyRoleCompatSql,/v_claims->>'role'/);
+  assert.match(privacyRoleCompatSql,/Service role required/);
+  assert.match(privacyRoleCompatSql,/perform private\.sf_assert_service_role\(\)/);
+  assert.match(privacyRoleCompatSql,/from public,anon,authenticated/i);
+});
+
+test('production protocol proves scheduler path without touching a deletion request',()=>{
+  assert.match(privacyProductionProtocol,/V1 bis V9/);
+  assert.match(privacyProductionProtocol,/HTTP 200/);
+  assert.match(privacyProductionProtocol,/0 Aufträge/);
+  assert.match(privacyProductionProtocol,/0 Nutzdatenänderungen/);
+  assert.match(privacyProductionProtocol,/anon=false.*authenticated=false.*service_role=true/i);
+  assert.match(privacyProductionProtocol,/\*\/15 \* \* \* \*/);
+  assert.match(privacyProductionProtocol,/35 allowlist-geprüften Bestandswarnungen/i);
 });
 
 test('logical restore fixture proves exact row recovery and rollback',()=>{

@@ -73,7 +73,7 @@ Nicht jeder SchichtFunk-Datensatz ist automatisch Lohnkonto, Buchungsbeleg oder 
 - Für `expires_on`-Felder existieren Erinnerungen, aber keine generische automatische Löschung.
 - Supabase Auth-Konten, Storage-Objekte, Datenbankzeilen und Push-Abonnements werden nicht durch einen einzigen vorhandenen Offboardingprozess vollständig koordiniert.
 - Supabase Pro hält täglich erzeugte Datenbankbackups sieben Tage vor. Storage-Objekte sind nicht Teil des Datenbankbackups.
-- Eine automatische Fristlöschung ist deshalb **noch nicht produktiv aktiviert**. Die nicht ausgerollte V1–V5-Grundlage enthält eine private, idempotente Freigabewarteschlange, versionierte Fristprofile, Legal Holds, vollständige Offboarding-Vorschau und eine zweiphasige Ausführung. `ACCESS` deaktiviert den Mitarbeiterzugang sofort und entfernt Einladungen, Push-Endpunkte sowie QR-Pilotzuordnungen; `ERASURE` wird erst nach Kundenfrist und Legal-Hold-Prüfung claimbar und redigiert zunächst Kontakt-, Notfallkontakt- und kurzlebige Freitextdaten. Planungs-, Zeit-/Lohn-, Personalakten-, Audit- und Monatssnapshot-Nachweise bleiben bis zu ihrer jeweils freigegebenen Frist erhalten. Auth-Referenzen werden nach `RESTRICT/NO ACTION`, `CASCADE` und `SET NULL` getrennt, damit ein Konto weder fremde Mandantenzugänge noch unerkannte Nachweise mitlöscht. Die Wegwerf-Testbranch-Prüfung bestand 41 von 41 Lifecycle-Tests; es wurde kein Zeitplan installiert und keine Produktivmigration ausgeführt.
+- Die automatische Fristbearbeitung ist seit dem 14.09.2026 produktiv aktiviert. V1–V9 enthalten eine private, idempotente Freigabewarteschlange, versionierte Fristprofile, Legal Holds, vollständige Offboarding-Vorschau, Ein-OWNER-Doppelbestätigung und eine zweiphasige Ausführung. `ACCESS` deaktiviert den Mitarbeiterzugang sofort und entfernt Einladungen, Push-Endpunkte sowie QR-Pilotzuordnungen; `ERASURE` wird erst nach Kundenfrist und Legal-Hold-Prüfung claimbar und redigiert zunächst Kontakt-, Notfallkontakt- und kurzlebige Freitextdaten. Planungs-, Zeit-/Lohn-, Personalakten-, Audit- und Monatssnapshot-Nachweise bleiben bis zu ihrer jeweils freigegebenen Frist erhalten. Auth- und Storage-Löschung sind standardmäßig aus und verlangen ausdrückliche Profilregeln; veränderte Manifeste oder Kontozuordnungen sperren die Ausführung. Der 15-Minuten-Zeitplan bestand einen echten produktiven Leerlauf mit HTTP 200 und 0 Datenänderungen.
 
 ## 5. Soll-Löschprozess
 
@@ -109,7 +109,7 @@ Nicht jeder SchichtFunk-Datensatz ist automatisch Lohnkonto, Buchungsbeleg oder 
 
 ## 6. Technische Umsetzungspunkte
 
-### 6.1 Vorbereiteter Zustandsautomat (nicht produktiv ausgerollt)
+### 6.1 Produktiver Zustandsautomat
 
 `PENDING_APPROVAL` → `APPROVED` → `EXECUTING/ACCESS` → `ACCESS_REVOKED` → `EXECUTING/ERASURE` → `COMPLETED` oder `BLOCKED`
 
@@ -119,7 +119,7 @@ Nicht jeder SchichtFunk-Datensatz ist automatisch Lohnkonto, Buchungsbeleg oder 
 - Allgemeine, mitarbeiterbezogene oder unmittelbar am Auftrag hinterlegte Legal Holds verhindern die Löschphase. Sie verhindern bewusst nicht die sofortige Zugriffssperre. Nach Ablauf einer zeitlich befristeten Sperre wird die Löschphase wieder claimbar.
 - `FOR UPDATE SKIP LOCKED` verhindert, dass zwei Hintergrundarbeiter denselben Auftrag übernehmen.
 - Ein Hintergrundarbeiter darf nur den von ihm übernommenen Auftrag abschließen.
-- V1–V5 installieren keinen Zeitplan. Die Ausführungsstufe ist nur für `service_role` erreichbar und wurde mit fiktiven Daten auf dem Wegwerf-Testbranch geprüft. Produktive Aktivierung benötigt weiterhin den Auth-/Storage-Worker, kundenspezifische Fristen und eine gesonderte Freigabe.
+- V1–V9 und der Auth-/Storage-Worker sind produktiv aktiv. Der Ausführungsweg ist nur für `service_role` erreichbar und wird alle 15 Minuten über ein getrenntes Vault-Geheimnis aufgerufen. Ohne kundenspezifisch freigegebenes Fristprofil und gültig bestätigten Auftrag wird nichts verarbeitet.
 - Die V3-Vorschau zählt vor einer Auth-Löschung alle bekannten Benutzerverknüpfungen nach Fremdschlüsselwirkung. Eigentum an einem Mandanten, weitere Mitgliedschaften/Mitarbeiterprofile sowie `RESTRICT`-/`NO ACTION`- oder unerwartete `CASCADE`-Verknüpfungen verhindern die Freigabe des Auth-Schritts. `SET NULL`-Folgen werden als eigener Prüfschritt ausgewiesen.
 - Historische `RESTRICT`-Beziehungen von Schichten, Änderungs-/Tauschanträgen, QR-Buchungen und Störfällen bestätigen, dass fachliche Nachweise nicht durch ein einfaches Löschen des Mitarbeiterstamms entfernt werden dürfen. Die spätere Ausführung muss je Datenklasse zwischen Aufbewahrung, kontrollierter Redaktion und Löschung entscheiden.
 
@@ -134,7 +134,7 @@ Hat ein Kundenunternehmen genau einen aktiven `OWNER` und keinen aktiven `ADMIN`
 - unveränderliches Prüfprotokoll sowie Widerrufsmöglichkeit bis zur Ausführung;
 - harte Sperre gegen automatische Mandantenlöschung und gegen Deaktivierung/Löschung des einzigen OWNER-Kontos.
 
-Dies ist ausdrücklich keine Vier-Augen-Kontrolle, sondern eine kompensierende Ein-OWNER-Regel. Sobald eine zweite aktive freigabeberechtigte Person vorhanden ist, gilt wieder das Zwei-Personen-Verfahren. Details und technische Abnahmekriterien enthält `documentation/ein-owner-loeschfreigabe-2026-09-14.md`. V6 bestand auf dem datenlosen Wegwerf-Testbranch 22/22 neue und 41/41 bestehende Datenbankprüfungen; alle Testdaten wurden zurückgerollt und der Branch gelöscht. Die Produktivaktivierung steht noch aus.
+Dies ist ausdrücklich keine Vier-Augen-Kontrolle, sondern eine kompensierende Ein-OWNER-Regel. Sobald eine zweite aktive freigabeberechtigte Person vorhanden ist, gilt wieder das Zwei-Personen-Verfahren. Details und technische Abnahmekriterien enthält `documentation/ein-owner-loeschfreigabe-2026-09-14.md`. V6 bestand auf dem datenlosen Wegwerf-Testbranch 22/22 neue und 41/41 bestehende Datenbankprüfungen; alle Testdaten wurden zurückgerollt und der Branch gelöscht. V1–V9 und der Zeitplan wurden danach mit ausdrücklicher Freigabe produktiv aktiviert; die Abnahme verarbeitete 0 Aufträge.
 
 ### 6.3 Geplante Ausführungsreihenfolge
 
@@ -167,6 +167,6 @@ Vor produktiver Aktivierung der Standardfristen sind erforderlich:
 | Auftragsverarbeiter-/Backupprüfung | SchichtFunk |
 | jährliche Wirksamkeitsprüfung | SchichtFunk gemeinsam mit ausgewähltem Testkunden/Datenschutzberatung |
 
-Status Löschkonzept: 🟡 **FACHLICH DOKUMENTIERT; DIE EIN-OWNER-FREIGABE IST ALS ZEITVERSETZTE DOPPELBESTÄTIGUNG FESTGELEGT. V6 HAT AUF DEM DATENLOSEN WEGWERF-BRANCH 22/22 NEUE UND 41/41 BESTEHENDE DATENBANKTESTS BESTANDEN; TESTDATEN WURDEN ZURÜCKGEROLLT UND DER BRANCH GELÖSCHT. AUTH-ADMIN-/PERSONALAKTEN-STORAGE-SCHRITT, LANGFRISTREDAKTION, ZEITPLAN, PRODUKTIVAKTIVIERUNG UND KUNDENFREIGABE BLEIBEN OFFEN.**
+Status Löschkonzept: 🟡 **EIN-OWNER-FREIGABE, AUTH-/STORAGE-WORKER UND 15-MINUTEN-ZEITPLAN SIND PRODUKTIV AKTIV; BRANCH- UND PRODUKTIV-LEERLAUFPRÜFUNGEN SIND BESTANDEN. KUNDENSPEZIFISCHE FRISTPROFILE SOWIE DIE LANGFRISTREDAKTION VON AUDIT- UND MONATSSNAPSHOTS BLEIBEN VOR DER JEWEILIGEN NUTZUNG OFFEN.**
 
 Quellen: Art. 5, 17 und 28 DSGVO (https://eur-lex.europa.eu/eli/reg/2016/679/oj), § 16 ArbZG (https://www.gesetze-im-internet.de/arbzg/__16.html), § 41 EStG (https://www.gesetze-im-internet.de/estg/__41.html), § 28f SGB IV (https://www.gesetze-im-internet.de/sgb_4/__28f.html), § 147 AO (https://www.gesetze-im-internet.de/ao_1977/__147.html), § 257 HGB (https://www.gesetze-im-internet.de/hgb/__257.html), §§ 195/199 BGB. Die konkrete arbeits-, tarif-, steuer- und sozialversicherungsrechtliche Einordnung muss der jeweilige Arbeitgeber prüfen.
