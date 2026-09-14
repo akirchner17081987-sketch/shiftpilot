@@ -395,7 +395,11 @@ begin
     confirmed_by = p_confirmed_by, confirmed_at = now(),
     confirmed_session_fingerprint = v_fingerprint,
     retention_profile_id = v_profile.id,
-    erase_after = greatest(r.requested_at, v_employment_end::timestamptz + make_interval(days => v_contact_days)),
+    erase_after = greatest(
+      r.access_revoke_after,
+      r.requested_at,
+      v_employment_end::timestamptz + make_interval(days => v_contact_days)
+    ),
     updated_at = now()
   where r.id = p_request_id;
 

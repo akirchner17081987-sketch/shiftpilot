@@ -31,6 +31,7 @@ const storageManifestSource=fs.readFileSync(path.join(root,'scripts','storage-re
 const storageBranchSmokeSource=fs.readFileSync(path.join(root,'scripts','storage-branch-restore-smoke.mjs'),'utf8');
 const authErrorsSource=fs.readFileSync(path.join(root,'assets','supabase-auth-errors-v1.js'),'utf8');
 const soleOwnerDeletionPolicy=fs.readFileSync(path.join(root,'documentation','ein-owner-loeschfreigabe-2026-09-14.md'),'utf8');
+const soleOwnerBranchProtocol=fs.readFileSync(path.join(root,'documentation','privacy-sole-owner-testbranch-protocol-2026-09-14.md'),'utf8');
 
 test('SECURITY DEFINER allowlist is exact and reviewable',()=>{
   assert.equal(allowlist.functions.length,35);
@@ -99,6 +100,7 @@ test('sole-owner v6 is private, delayed, session-separated and non-destructive',
   assert.match(soleOwnerSql,/NEW_AUTH_SESSION_REQUIRED/i);
   assert.match(soleOwnerSql,/OFFBOARDING_PREVIEW_CHANGED/i);
   assert.match(soleOwnerSql,/RETENTION_PROFILE_CHANGED/i);
+  assert.match(soleOwnerSql,/greatest\([\s\S]*r\.access_revoke_after[\s\S]*r\.requested_at/i);
   assert.match(soleOwnerSql,/for update/i);
   assert.match(soleOwnerSql,/privacy_lifecycle_sole_owner_pending_idx/i);
   assert.match(soleOwnerSql,/where approval_mode = 'SOLE_OWNER_DELAYED' and status = 'PENDING_APPROVAL'/i);
@@ -247,6 +249,17 @@ test('sole-owner database fixture covers delayed approval and always rolls back'
   assert.match(soleOwnerDbTest,/select \* from finish\(\)/i);
   assert.match(soleOwnerDbTest,/rollback\s*;/i);
   assert.doesNotMatch(soleOwnerDbTest,/schichtfunk\.de/i);
+});
+
+test('sole-owner branch protocol records tests, rollback, isolation and deletion',()=>{
+  assert.match(soleOwnerBranchProtocol,/with_data=false/);
+  assert.match(soleOwnerBranchProtocol,/22 geplant, 22 ausgeführt, 0 fehlgeschlagen/i);
+  assert.match(soleOwnerBranchProtocol,/41 geplant, 41 ausgeführt, 0 fehlgeschlagen/i);
+  assert.match(soleOwnerBranchProtocol,/anon=false.*authenticated=false.*service_role=true/i);
+  assert.match(soleOwnerBranchProtocol,/0 fiktive Auth-Benutzer/i);
+  assert.match(soleOwnerBranchProtocol,/Lösch-Zeitpläne \| 0/i);
+  assert.match(soleOwnerBranchProtocol,/Branch gelöscht/i);
+  assert.match(soleOwnerBranchProtocol,/0,01344 USD/);
 });
 
 test('logical restore fixture proves exact row recovery and rollback',()=>{

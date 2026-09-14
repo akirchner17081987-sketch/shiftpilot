@@ -2,7 +2,7 @@
 
 Stand: 14.09.2026
 
-Dokumentstatus: Verbindliche Betriebsregel; technische V6-Erweiterung im Prüfzweig vorbereitet, Datenbanktest und Produktivaktivierung stehen noch aus.
+Dokumentstatus: Verbindliche Betriebsregel; technische V6-Erweiterung auf Wegwerf-Testbranch bestanden, Produktivaktivierung steht noch aus.
 
 ## 1. Entscheidung und Geltungsbereich
 
@@ -139,4 +139,4 @@ Vor einer Produktivaktivierung müssen auf einer Wegwerf-Testumgebung mindestens
 
 ## 7. Einführungsstatus
 
-Die Betriebsregel ist hiermit für den vorgesehenen Ein-OWNER-Betrieb festgelegt. Die technische V6-Erweiterung mit gehashten Sitzungsnachweisen, Fristprofil-Doppelbestätigung, Rollen-/Zielsperren und Edge-Function-Endpunkten ist im Prüfzweig vorbereitet. Der zugehörige Datenbanktest umfasst 22 ausschließlich fiktive, vollständig zurückgerollte Prüffälle. Mangels lokaler Supabase-Datenbank wurde er noch nicht ausgeführt. V6 ist nicht produktiv aktiviert und ändert weder Produktionsdaten noch die aktuelle Supabase-Konfiguration. Vor Produktion sind deshalb der Test auf einer Wegwerf-Testumgebung, der Auth-/Storage-Worker, ein Zeitplan und eine ausdrückliche Produktivfreigabe erforderlich.
+Die Betriebsregel ist hiermit für den vorgesehenen Ein-OWNER-Betrieb festgelegt. Die technische V6-Erweiterung mit gehashten Sitzungsnachweisen, Fristprofil-Doppelbestätigung, Rollen-/Zielsperren und Edge-Function-Endpunkten bestand auf dem datenlosen Wegwerf-Testbranch 22/22 neue sowie 41/41 bestehende Datenbankprüfungen. Alle Testdaten wurden zurückgerollt und der Branch danach gelöscht. V6 ist nicht produktiv aktiviert und ändert weder Produktionsdaten noch die aktuelle Supabase-Konfiguration. Vor Produktion sind deshalb der Auth-/Storage-Worker, ein Zeitplan und eine ausdrückliche Produktivfreigabe erforderlich.

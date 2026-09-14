@@ -134,7 +134,7 @@ Hat ein Kundenunternehmen genau einen aktiven `OWNER` und keinen aktiven `ADMIN`
 - unveränderliches Prüfprotokoll sowie Widerrufsmöglichkeit bis zur Ausführung;
 - harte Sperre gegen automatische Mandantenlöschung und gegen Deaktivierung/Löschung des einzigen OWNER-Kontos.
 
-Dies ist ausdrücklich keine Vier-Augen-Kontrolle, sondern eine kompensierende Ein-OWNER-Regel. Sobald eine zweite aktive freigabeberechtigte Person vorhanden ist, gilt wieder das Zwei-Personen-Verfahren. Details und technische Abnahmekriterien enthält `documentation/ein-owner-loeschfreigabe-2026-09-14.md`. V6 und ein 22-Fälle-Datenbanktest sind im Prüfzweig vorbereitet; der Datenbanktest und die Produktivaktivierung stehen noch aus.
+Dies ist ausdrücklich keine Vier-Augen-Kontrolle, sondern eine kompensierende Ein-OWNER-Regel. Sobald eine zweite aktive freigabeberechtigte Person vorhanden ist, gilt wieder das Zwei-Personen-Verfahren. Details und technische Abnahmekriterien enthält `documentation/ein-owner-loeschfreigabe-2026-09-14.md`. V6 bestand auf dem datenlosen Wegwerf-Testbranch 22/22 neue und 41/41 bestehende Datenbankprüfungen; alle Testdaten wurden zurückgerollt und der Branch gelöscht. Die Produktivaktivierung steht noch aus.
 
 ### 6.3 Geplante Ausführungsreihenfolge
 
@@ -167,6 +167,6 @@ Vor produktiver Aktivierung der Standardfristen sind erforderlich:
 | Auftragsverarbeiter-/Backupprüfung | SchichtFunk |
 | jährliche Wirksamkeitsprüfung | SchichtFunk gemeinsam mit ausgewähltem Testkunden/Datenschutzberatung |
 
-Status Löschkonzept: 🟡 **FACHLICH DOKUMENTIERT; DIE EIN-OWNER-FREIGABE IST ALS ZEITVERSETZTE DOPPELBESTÄTIGUNG FESTGELEGT. V1–V5-ZUSTANDSAUTOMAT UND ERSTE AUSFÜHRUNG HABEN 41/41 TESTS AUF DEM WEGWERF-BRANCH BESTANDEN. V6 UND 22 FIKTIVE PRÜFFÄLLE SIND IM PRÜFZWEIG VORBEREITET, ABER NOCH NICHT AUF EINER DATENBANK AUSGEFÜHRT. AUTH-ADMIN-/PERSONALAKTEN-STORAGE-SCHRITT, LANGFRISTREDAKTION, ZEITPLAN UND KUNDENFREIGABE BLEIBEN OFFEN.**
+Status Löschkonzept: 🟡 **FACHLICH DOKUMENTIERT; DIE EIN-OWNER-FREIGABE IST ALS ZEITVERSETZTE DOPPELBESTÄTIGUNG FESTGELEGT. V6 HAT AUF DEM DATENLOSEN WEGWERF-BRANCH 22/22 NEUE UND 41/41 BESTEHENDE DATENBANKTESTS BESTANDEN; TESTDATEN WURDEN ZURÜCKGEROLLT UND DER BRANCH GELÖSCHT. AUTH-ADMIN-/PERSONALAKTEN-STORAGE-SCHRITT, LANGFRISTREDAKTION, ZEITPLAN, PRODUKTIVAKTIVIERUNG UND KUNDENFREIGABE BLEIBEN OFFEN.**
 
 Quellen: Art. 5, 17 und 28 DSGVO (https://eur-lex.europa.eu/eli/reg/2016/679/oj), § 16 ArbZG (https://www.gesetze-im-internet.de/arbzg/__16.html), § 41 EStG (https://www.gesetze-im-internet.de/estg/__41.html), § 28f SGB IV (https://www.gesetze-im-internet.de/sgb_4/__28f.html), § 147 AO (https://www.gesetze-im-internet.de/ao_1977/__147.html), § 257 HGB (https://www.gesetze-im-internet.de/hgb/__257.html), §§ 195/199 BGB. Die konkrete arbeits-, tarif-, steuer- und sozialversicherungsrechtliche Einordnung muss der jeweilige Arbeitgeber prüfen.
