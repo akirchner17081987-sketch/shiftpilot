@@ -5,8 +5,9 @@ Status: technische Branch-Abnahme bestanden; Produktivschutz noch nicht aktivier
 
 ## Sicher festgestellter Ausgangszustand
 
-- Das Produktivprojekt enthält zwei aktive `OWNER`-Konten und kein aktives `ADMIN`-Konto.
-- Für keines der beiden `OWNER`-Konten war bei der letzten rein lesenden Prüfung ein bestätigter MFA-Faktor vorhanden.
+- Das Produktivprojekt enthält genau ein echtes `OWNER`-Konto für den Mandanten `SchichtFunk` und kein aktives `ADMIN`-Konto.
+- Ein zweiter technisch als `OWNER` gezählter Datensatz gehört ausschließlich zum getrennten Mandanten `SchichtFunk Abnahme … (FIKTIV)`. Er ist ein älteres Abnahmekonto und kein zweiter produktiver Inhaber.
+- Für das echte `OWNER`-Konto war bei der letzten rein lesenden Prüfung noch kein bestätigter MFA-Faktor vorhanden.
 - TOTP/App-Authenticator und Leaked Password Protection sind im Supabase-Projekt aktiv.
 - Die vorhandene Datenschutz-Lifecycle-Grenze verlangt bereits `aal2`.
 - Die neue Stufensteuerung für weitere sensible RPCs startet vollständig deaktiviert. Das Anwenden ihrer Grundlagenmigration allein sperrt deshalb keine Funktion.
@@ -37,8 +38,8 @@ Insgesamt sind 27 sensible RPCs exakt einer Stufe zugeordnet. Eine Stufe wird er
 1. Neue Grundlagenmigration und Anwendung auf einer datenlosen Wegwerf-Umgebung anwenden.
 2. Prüfen, dass alle 27 Einträge vorhanden und zunächst deaktiviert sind.
 3. Je Stufe nur in der Wegwerf-Umgebung aktivieren: `aal1` muss mit `MFA_REQUIRED` scheitern; `aal2` muss zur bereits vorhandenen Rollen- und Mandantenprüfung gelangen.
-4. IONOS-Vorschau mit beiden echten `OWNER`-Konten öffnen und je Konto einen persönlichen Authenticator einrichten. QR-Code, Secret und Einmalcode werden ausschließlich von der jeweiligen Person verarbeitet.
-5. Produktiv rein lesend bestätigen, dass beide aktiven `OWNER`-Konten mindestens einen verifizierten Faktor besitzen.
+4. IONOS-Vorschau mit dem echten `OWNER`-Konto öffnen und einen persönlichen Authenticator einrichten. QR-Code, Secret und Einmalcode werden ausschließlich vom Kontoinhaber verarbeitet.
+5. Produktiv rein lesend bestätigen, dass das echte `OWNER`-Konto mindestens einen verifizierten Faktor besitzt. Das getrennte fiktive Abnahmekonto wird nicht als Produktivvoraussetzung gezählt.
 6. Stufe 2 separat produktiv aktivieren und Benutzerverwaltung mit AAL1/AAL2 prüfen; danach Stufen 3 bis 5 einzeln wiederholen.
 7. Bei jeder Stufe Zeitpunkt, Konto-Rolle, Testfall und Ergebnis protokollieren. Keine Echtdaten für Negativtests verwenden.
 
@@ -74,5 +75,5 @@ Die jeweilige Stufe lässt sich durch eine neue Migration wieder auf `enabled=fa
 
 ## Noch notwendige Freigaben
 
-- Beide echten `OWNER` müssen ihren persönlichen Authenticator selbst einrichten.
+- Der eine echte `OWNER` muss seinen persönlichen Authenticator selbst einrichten.
 - Die produktive Aktivierung jeder AAL2-Stufe benötigt eine ausdrückliche Freigabe nach bestandenem Branch- und Vorschautest.

@@ -54,8 +54,10 @@ MFA-Pflicht ist eine separate Kundenentscheidung.
 Vor der Produktivaktivierung werden die vier Stufen auf einer ausdrücklich
 bestätigten Wegwerf-Umgebung geprüft. Diese Abnahme wurde am 14.09.2026 mit
 59/59 Assertions und einem echten `MFA_REQUIRED`-Data-API-Test bestanden; der
-Branch wurde nach der Leerstandskontrolle gelöscht. Im Produktivprojekt bestehen derzeit zwei
-aktive `OWNER`-Konten, aber noch keines mit verifiziertem MFA-Faktor. Beide
-Kontoinhaber müssen deshalb zunächst persönlich einen Authenticator einrichten.
+Branch wurde nach der Leerstandskontrolle gelöscht. Im Produktivprojekt besteht
+genau ein echtes `OWNER`-Konto für `SchichtFunk`, aber noch ohne verifizierten
+MFA-Faktor. Ein zweiter technisch gezählter OWNER gehört zu einem getrennten,
+ausdrücklich fiktiven Abnahmemandanten und ist keine Produktivvoraussetzung. Der
+echte Kontoinhaber muss deshalb zunächst persönlich einen Authenticator einrichten.
 Zusätzlich bleiben Recovery-Verfahren und Login-/Einladungs-/PWA-Regressionslauf
 Voraussetzung.
