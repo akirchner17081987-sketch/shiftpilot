@@ -490,6 +490,17 @@ test('expired sessions clear protected state and reopen login with an explanatio
   assert.match(supabaseAuth, /document\.getElementById\('sfEmployeePortal'\)\?\.remove\(\)/);
 });
 
+test('verified MFA factors are challenged before cloud data is loaded', () => {
+  assert.match(supabaseAuth, /getAuthenticatorAssuranceLevel\(\)/);
+  assert.match(supabaseAuth, /listFactors\(\)/);
+  assert.match(supabaseAuth, /challengeAndVerify\(\{factorId:factor\.id,code\}\)/);
+  assert.match(supabaseAuth, /autocomplete="one-time-code"/);
+  assert.match(supabaseAuth, /level\?\.currentLevel!==['"]aal2['"]/);
+  assert.match(supabaseData, /const verifiedSession=B\.ensureAal2\?await B\.ensureAal2\(session\):session/);
+  assert.ok(supabaseData.indexOf('await B.ensureAal2(session)') < supabaseData.indexOf('await B.ensureCompany()'));
+  assert.match(moduleLoader, /\['assets\/supabase-auth-v1\.js','assets\/supabase-data-v1\.js'\]\.includes\(file\)\?'20260914-mfa1'/);
+});
+
 test('concurrent absence requests are serialized per employee before overlap validation', () => {
   assert.match(absenceConcurrencyMigration, /pg_advisory_xact_lock/);
   assert.match(absenceConcurrencyMigration, /absence-request:' \|\| v_employee\.id::text/);
