@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.116.0";
-import { authorizeLifecycleRequest, lifecycleCors, parseLifecycleRequest, readJwtAal } from "../_shared/privacy-lifecycle.js";
+import { authorizeLifecycleRequest, lifecycleCors, parseLifecycleRequest, readJwtAal, readJwtSessionId } from "../_shared/privacy-lifecycle.js";
 
 const json=(body:unknown,status=200,headers:HeadersInit={})=>Response.json(body,{status,headers:{'Cache-Control':'no-store',...headers}});
 
@@ -38,6 +38,12 @@ Deno.serve(async req=>{
     return json({error:code},code==='MFA_REQUIRED'?403:code==='UNAUTHENTICATED'?401:403,cors);
   }
 
+  let sessionId:string|null=null;
+  if(['stage-sole-owner','confirm-sole-owner','stage-retention-profile','confirm-retention-profile'].includes(request.action)){
+    try{sessionId=readJwtSessionId(token)}
+    catch{return json({error:'SESSION_REQUIRED'},403,cors)}
+  }
+
   if(request.action==='preview'){
     const {data,error}=await admin.rpc('server_employee_offboarding_preview',{
       p_company_id:request.companyId,p_employee_id:request.employeeId,p_as_of:request.asOf
@@ -51,6 +57,38 @@ Deno.serve(async req=>{
       p_retention_profile_id:request.retentionProfileId,p_legal_hold_until:request.legalHoldUntil
     });
     return error?json({error:'APPROVAL_FAILED'},400,cors):json({ok:true,request:data},200,cors);
+  }
+
+  if(request.action==='stage-sole-owner'){
+    const {data,error}=await admin.rpc('server_stage_sole_owner_employee_offboarding',{
+      p_idempotency_key:request.idempotencyKey,p_company_id:request.companyId,
+      p_employee_id:request.employeeId,p_requested_by:userData.user.id,p_session_id:sessionId,
+      p_reason:request.reason,p_as_of:request.asOf
+    });
+    return error?json({error:'SOLE_OWNER_STAGE_FAILED'},400,cors):json({ok:true,request:data},202,cors);
+  }
+
+  if(request.action==='confirm-sole-owner'){
+    const {data,error}=await admin.rpc('server_confirm_sole_owner_privacy_request',{
+      p_request_id:request.requestId,p_confirmed_by:userData.user.id,p_session_id:sessionId,
+      p_retention_profile_id:request.retentionProfileId
+    });
+    return error?json({error:'SOLE_OWNER_CONFIRMATION_FAILED'},400,cors):json({ok:true,request:data},200,cors);
+  }
+
+  if(request.action==='stage-retention-profile'){
+    const {data,error}=await admin.rpc('server_stage_sole_owner_retention_profile',{
+      p_company_id:request.companyId,p_version:request.version,p_rules:request.rules,
+      p_created_by:userData.user.id,p_session_id:sessionId,p_approval_reference:request.approvalReference
+    });
+    return error?json({error:'RETENTION_PROFILE_STAGE_FAILED'},400,cors):json({ok:true,profile:data},202,cors);
+  }
+
+  if(request.action==='confirm-retention-profile'){
+    const {data,error}=await admin.rpc('server_confirm_sole_owner_retention_profile',{
+      p_profile_id:request.retentionProfileId,p_confirmed_by:userData.user.id,p_session_id:sessionId
+    });
+    return error?json({error:'RETENTION_PROFILE_CONFIRMATION_FAILED'},400,cors):json({ok:true,profile:data},200,cors);
   }
 
   const {data,error}=await admin.rpc('server_stage_employee_offboarding',{

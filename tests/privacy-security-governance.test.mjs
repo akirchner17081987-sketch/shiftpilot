@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
-import { authorizeLifecycleRequest, parseLifecycleRequest } from '../supabase/functions/_shared/privacy-lifecycle.js';
+import { authorizeLifecycleRequest, parseLifecycleRequest, readJwtSessionId } from '../supabase/functions/_shared/privacy-lifecycle.js';
 import {
   buildStorageManifest, compareStorageManifests, resolveManifestPath, verifyStorageDirectory
 } from '../scripts/storage-restore-manifest.mjs';
@@ -19,7 +19,9 @@ const offboardingPlanSql=fs.readFileSync(path.join(root,'supabase','migrations',
 const mfaGuardSql=fs.readFileSync(path.join(root,'supabase','migrations','20260914053039_mfa_sensitive_action_guard_v1.sql'),'utf8');
 const overdueFixSql=fs.readFileSync(path.join(root,'supabase','migrations','20260913095100_privacy_lifecycle_overdue_fix_v4.sql'),'utf8');
 const executionSql=fs.readFileSync(path.join(root,'supabase','migrations','20260913101500_privacy_offboarding_execution_v5.sql'),'utf8');
+const soleOwnerSql=fs.readFileSync(path.join(root,'supabase','migrations','20260914055344_privacy_sole_owner_delayed_approval_v6.sql'),'utf8');
 const lifecycleDbTest=fs.readFileSync(path.join(root,'supabase','tests','privacy_lifecycle_test.sql'),'utf8');
+const soleOwnerDbTest=fs.readFileSync(path.join(root,'supabase','tests','privacy_sole_owner_delayed_test.sql'),'utf8');
 const logicalRestoreDbTest=fs.readFileSync(path.join(root,'supabase','tests','privacy_logical_restore_test.sql'),'utf8');
 const lifecycleEdge=fs.readFileSync(path.join(root,'supabase','functions','privacy-lifecycle','index.ts'),'utf8');
 const mfaClient=fs.readFileSync(path.join(root,'assets','supabase-mfa-v1.js'),'utf8');
@@ -82,7 +84,48 @@ test('sole-owner deletion policy requires delayed independent-session confirmati
   assert.match(soleOwnerDeletionPolicy,/SHA-256/);
   assert.match(soleOwnerDeletionPolicy,/einzige aktive OWNER-Konto darf niemals/i);
   assert.match(soleOwnerDeletionPolicy,/Mandantenlöschung ist im Ein-OWNER-Modus nicht zulässig/i);
-  assert.match(soleOwnerDeletionPolicy,/noch nicht technisch implementiert oder produktiv aktiviert/i);
+  assert.match(soleOwnerDeletionPolicy,/technische V6-Erweiterung/i);
+  assert.match(soleOwnerDeletionPolicy,/nicht produktiv aktiviert/i);
+});
+
+test('sole-owner v6 is private, delayed, session-separated and non-destructive',()=>{
+  assert.match(soleOwnerSql,/approval_mode in \('TWO_PERSON','SOLE_OWNER_DELAYED'\)/i);
+  assert.match(soleOwnerSql,/interval '24 hours'/i);
+  assert.match(soleOwnerSql,/interval '7 days'/i);
+  assert.match(soleOwnerSql,/confirmed_session_fingerprint <> first_session_fingerprint/i);
+  assert.match(soleOwnerSql,/extensions\.digest\(p_session_id::text, 'sha256'\)/i);
+  assert.match(soleOwnerSql,/SOLE_OWNER_TARGET_BLOCKED/i);
+  assert.match(soleOwnerSql,/SOLE_OWNER_MODE_NOT_AVAILABLE/i);
+  assert.match(soleOwnerSql,/NEW_AUTH_SESSION_REQUIRED/i);
+  assert.match(soleOwnerSql,/OFFBOARDING_PREVIEW_CHANGED/i);
+  assert.match(soleOwnerSql,/RETENTION_PROFILE_CHANGED/i);
+  assert.match(soleOwnerSql,/for update/i);
+  assert.match(soleOwnerSql,/privacy_lifecycle_sole_owner_pending_idx/i);
+  assert.match(soleOwnerSql,/where approval_mode = 'SOLE_OWNER_DELAYED' and status = 'PENDING_APPROVAL'/i);
+  assert.doesNotMatch(soleOwnerSql,/cron\.schedule/i);
+  assert.doesNotMatch(soleOwnerSql,/\bdelete\s+from\s+(public|auth|storage)\./i);
+  assert.doesNotMatch(soleOwnerSql,/\bupdate\s+public\./i);
+});
+
+test('sole-owner Edge API requires owner AAL2 and a signed session claim',()=>{
+  const company='33333333-3333-4333-8333-333333333333';
+  const owner='11111111-1111-4111-8111-111111111111';
+  const employee='44444444-4444-4444-8444-444444444444';
+  const request=parseLifecycleRequest({
+    action:'stage-sole-owner',companyId:company,employeeId:employee,
+    idempotencyKey:'55555555-5555-4555-8555-555555555555',reason:'Fiktiver Ein-OWNER-Test'
+  });
+  const membership={company_id:company,user_id:owner,role:'OWNER',status:'ACTIVE'};
+  assert.throws(()=>authorizeLifecycleRequest({membership,userId:owner,aal:'aal1',request}),/MFA_REQUIRED/);
+  assert.equal(authorizeLifecycleRequest({membership,userId:owner,aal:'aal2',request}),true);
+  assert.throws(()=>authorizeLifecycleRequest({membership:{...membership,role:'ADMIN'},userId:owner,aal:'aal2',request}),/SOLE_OWNER_REQUIRED/);
+
+  const payload=Buffer.from(JSON.stringify({
+    aal:'aal2',session_id:'88888888-8888-4888-8888-888888888888'
+  })).toString('base64url');
+  assert.equal(readJwtSessionId(`header.${payload}.signature`),'88888888-8888-4888-8888-888888888888');
+  const missing=Buffer.from(JSON.stringify({aal:'aal2'})).toString('base64url');
+  assert.throws(()=>readJwtSessionId(`header.${missing}.signature`),/SESSION_REQUIRED/);
 });
 
 test('expanded offboarding preview inventories all linked domains without mutating them',()=>{
@@ -188,6 +231,22 @@ test('disposable database fixture is fictitious and always rolled back',()=>{
   assert.match(lifecycleDbTest,/select \* from finish\(\)/i);
   assert.match(lifecycleDbTest,/rollback\s*;/i);
   assert.doesNotMatch(lifecycleDbTest,/schichtfunk\.de/i);
+});
+
+test('sole-owner database fixture covers delayed approval and always rolls back',()=>{
+  assert.match(soleOwnerDbTest,/example\.invalid/i);
+  assert.match(soleOwnerDbTest,/Ein-OWNER Wegwerf-Testmandant/i);
+  assert.match(soleOwnerDbTest,/select plan\(22\)/i);
+  assert.match(soleOwnerDbTest,/SOLE_OWNER_MODE_NOT_AVAILABLE/i);
+  assert.match(soleOwnerDbTest,/SOLE_OWNER_TARGET_BLOCKED/i);
+  assert.match(soleOwnerDbTest,/SOLE_OWNER_COOLING_OFF_ACTIVE/i);
+  assert.match(soleOwnerDbTest,/NEW_AUTH_SESSION_REQUIRED/i);
+  assert.match(soleOwnerDbTest,/OFFBOARDING_PREVIEW_CHANGED/i);
+  assert.match(soleOwnerDbTest,/active legal hold blocks confirmation/i);
+  assert.match(soleOwnerDbTest,/SOLE_OWNER_CONFIRMATION_EXPIRED/i);
+  assert.match(soleOwnerDbTest,/select \* from finish\(\)/i);
+  assert.match(soleOwnerDbTest,/rollback\s*;/i);
+  assert.doesNotMatch(soleOwnerDbTest,/schichtfunk\.de/i);
 });
 
 test('logical restore fixture proves exact row recovery and rollback',()=>{
