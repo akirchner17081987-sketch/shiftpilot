@@ -30,7 +30,7 @@ stehen in `privileged-mfa-rollout-2026-09-14.md`.
 | Stufe | Aktionen | Voraussetzung |
 |---|---|---|
 | 1 | Löschauftrag und Vier-Augen-Freigabe | bereits an der Edge-Grenze vorbereitet; zwei Konten testen |
-| 2 | Benutzer einladen, Einladung widerrufen, Rolle/Status ändern | Recovery-Prozess und zweites OWNER-Konto bestätigt |
+| 2 | Benutzer einladen, Einladung widerrufen, Rolle/Status ändern | Authenticator des einzigen echten OWNER und Recovery-Prozess bestätigt |
 | 3 | Personalakte lesen, ändern, Dokumente registrieren/löschen, Notizen verwalten | iPhone-/Desktop-Test und Storage-Negativtest |
 | 4 | DATEV-Export autorisieren/protokollieren sowie sensible Audit-/Monatsberichte abrufen | Export- und Monatsabschluss-Regressionsprüfung |
 | 5 | QR-Terminal-Geheimnis rotieren und sicherheitsrelevante Konfiguration ändern | Terminal-Rückfallplan und erneute Anmeldung geprüft |
@@ -45,7 +45,7 @@ MFA-Pflicht ist eine separate Kundenentscheidung.
 2. Nach erfolgreicher TOTP-Challenge wird derselbe Vorgang mit `aal2` ausgeführt.
 3. Falscher und abgelaufener Code bleiben gesperrt.
 4. Faktorentfernung oder neue Anmeldung senkt die Sitzung wieder auf `aal1`.
-5. Zweites OWNER-Konto und dokumentierter Recovery-Weg verhindern Aussperrung.
+5. Verifizierter Ersatzfaktor und dokumentierter Recovery-Weg begrenzen das Aussperrungsrisiko; ein zweites produktives OWNER-Konto ist nicht vorhanden.
 6. Berechtigungsprüfung und Mandantengrenze bleiben zusätzlich zur MFA-Prüfung aktiv.
 7. Ergebnis wird mit Testkonto, Gerät, Zeitpunkt und geprüfter Funktionsgruppe dokumentiert.
 
@@ -55,9 +55,9 @@ Vor der Produktivaktivierung werden die vier Stufen auf einer ausdrücklich
 bestätigten Wegwerf-Umgebung geprüft. Diese Abnahme wurde am 14.09.2026 mit
 59/59 Assertions und einem echten `MFA_REQUIRED`-Data-API-Test bestanden; der
 Branch wurde nach der Leerstandskontrolle gelöscht. Im Produktivprojekt besteht
-genau ein echtes `OWNER`-Konto für `SchichtFunk`, aber noch ohne verifizierten
-MFA-Faktor. Ein zweiter technisch gezählter OWNER gehört zu einem getrennten,
-ausdrücklich fiktiven Abnahmemandanten und ist keine Produktivvoraussetzung. Der
-echte Kontoinhaber muss deshalb zunächst persönlich einen Authenticator einrichten.
-Zusätzlich bleiben Recovery-Verfahren und Login-/Einladungs-/PWA-Regressionslauf
-Voraussetzung.
+genau ein echtes `OWNER`-Konto für `SchichtFunk`. Für dieses Konto wurde am
+14.09.2026 um 05:23:54 UTC rein lesend ein verifizierter TOTP-Faktor bestätigt.
+Ein zweiter technisch gezählter OWNER gehört zu einem getrennten, ausdrücklich
+fiktiven Abnahmemandanten und ist keine Produktivvoraussetzung. Vor der jeweiligen
+Produktivstufe bleiben die ausdrückliche Freigabe sowie der Login-/Einladungs-/
+PWA-Regressionslauf Voraussetzung.

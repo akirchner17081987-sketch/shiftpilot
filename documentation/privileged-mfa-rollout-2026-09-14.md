@@ -1,13 +1,13 @@
 # SchichtFunk – verpflichtende MFA für privilegierte Konten
 
 Stand: 14.09.2026  
-Status: technische Branch-Abnahme bestanden; Produktivschutz noch nicht aktiviert
+Status: technische Branch-Abnahme und Echtkonto-Einrichtung bestätigt; Produktivschutz noch nicht aktiviert
 
 ## Sicher festgestellter Ausgangszustand
 
 - Das Produktivprojekt enthält genau ein echtes `OWNER`-Konto für den Mandanten `SchichtFunk` und kein aktives `ADMIN`-Konto.
 - Ein zweiter technisch als `OWNER` gezählter Datensatz gehört ausschließlich zum getrennten Mandanten `SchichtFunk Abnahme … (FIKTIV)`. Er ist ein älteres Abnahmekonto und kein zweiter produktiver Inhaber.
-- Für das echte `OWNER`-Konto war bei der letzten rein lesenden Prüfung noch kein bestätigter MFA-Faktor vorhanden.
+- Für das echte `OWNER`-Konto wurde am 14.09.2026 um 05:23:54 UTC rein lesend ein verifizierter TOTP-Faktor bestätigt. Faktor-Geheimnis und vollständige Kontoadresse wurden nicht ausgelesen oder dokumentiert.
 - TOTP/App-Authenticator und Leaked Password Protection sind im Supabase-Projekt aktiv.
 - Die vorhandene Datenschutz-Lifecycle-Grenze verlangt bereits `aal2`.
 - Die neue Stufensteuerung für weitere sensible RPCs startet vollständig deaktiviert. Das Anwenden ihrer Grundlagenmigration allein sperrt deshalb keine Funktion.
@@ -75,5 +75,4 @@ Die jeweilige Stufe lässt sich durch eine neue Migration wieder auf `enabled=fa
 
 ## Noch notwendige Freigaben
 
-- Der eine echte `OWNER` muss seinen persönlichen Authenticator selbst einrichten.
 - Die produktive Aktivierung jeder AAL2-Stufe benötigt eine ausdrückliche Freigabe nach bestandenem Branch- und Vorschautest.
