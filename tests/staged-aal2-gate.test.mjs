@@ -5,7 +5,8 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
-const migration=fs.readFileSync(path.join(root,'supabase','migrations','20260914045554_staged_privileged_aal2_gate_v1.sql'),'utf8');
+const migration=fs.readFileSync(path.join(root,'supabase','migrations','20260914053105_staged_privileged_aal2_gate_v1.sql'),'utf8');
+const stage2Activation=fs.readFileSync(path.join(root,'supabase','migrations','20260914053115_enable_privileged_aal2_stage_2.sql'),'utf8');
 
 const stages={
   2:[
@@ -63,4 +64,12 @@ test('PostgREST gate applies only to enabled RPC paths and delegates to the shar
   assert.match(migration,/perform private\.sf_assert_aal2\('rpc:' \|\| v_rpc\)/i);
   assert.match(migration,/alter role authenticator\s+set pgrst\.db_pre_request = 'gateway\.sf_enforce_staged_aal2'/i);
   assert.match(migration,/notify pgrst, 'reload config'/i);
+});
+
+test('stage 2 activation enables exactly its four RPCs and refuses later-stage drift',()=>{
+  assert.match(stage2Activation,/where rollout_stage = 2/i);
+  assert.match(stage2Activation,/v_enabled_stage_2 <> 4/i);
+  assert.match(stage2Activation,/where rollout_stage between 3 and 5\s+and enabled/i);
+  assert.match(stage2Activation,/v_enabled_later_stages <> 0/i);
+  assert.doesNotMatch(stage2Activation,/where rollout_stage\s*=\s*[3-5]/i);
 });

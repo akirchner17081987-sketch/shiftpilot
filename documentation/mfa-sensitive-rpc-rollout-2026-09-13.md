@@ -2,11 +2,11 @@
 
 Stand: 14.09.2026
 
-Status: Stufensteuerung und verpflichtende Bedienoberfläche im Prüfzweig vorbereitet, 59/59 Branch-Assertions und echter Data-API-Negativtest bestanden; nicht produktiv aktiviert
+Status: 59/59 Branch-Assertions bestanden; Stufe 2 produktiv aktiviert und über Data API sowie IONOS-Oberfläche abgenommen, Stufen 3 bis 5 deaktiviert
 
 ## Sicherheitsgrenze
 
-Die Migration `20260913092708_mfa_sensitive_action_guard_v1.sql` stellt mit
+Die Migration `20260914053039_mfa_sensitive_action_guard_v1.sql` stellt mit
 `private.sf_assert_aal2()` eine gemeinsame serverseitige MFA-Prüfung bereit. Sie
 vertraut auf den signierten Supabase-JWT-Claim `aal`, behandelt fehlende Angaben
 als `aal1` und lässt ausschließlich authentifizierte `aal2`-Sitzungen passieren.
@@ -15,7 +15,7 @@ benötigen weiterhin die jeweilige separate Rollen- und Auftragsprüfung.
 
 Die Migration verändert noch keinen bestehenden öffentlichen RPC. Damit entsteht
 beim bloßen Anwenden der Grundlage keine unangekündigte Kontensperre. Die
-Folgemigration `20260914045554_staged_privileged_aal2_gate_v1.sql` ordnet 27
+Folgemigration `20260914053105_staged_privileged_aal2_gate_v1.sql` ordnet 27
 sensible Data-API-RPCs den Stufen 2 bis 5 zu und registriert den zentralen
 Pre-Request-Guard. Sämtliche Allowlist-Einträge starten mit `enabled=false`.
 
@@ -61,3 +61,11 @@ Ein zweiter technisch gezählter OWNER gehört zu einem getrennten, ausdrücklic
 fiktiven Abnahmemandanten und ist keine Produktivvoraussetzung. Vor der jeweiligen
 Produktivstufe bleiben die ausdrückliche Freigabe sowie der Login-/Einladungs-/
 PWA-Regressionslauf Voraussetzung.
+
+Stufe 2 wurde nach ausdrücklicher Freigabe am 14.09.2026 produktiv aktiviert.
+Die vier zugeordneten RPCs verlangen nun `aal2`; alle 23 RPCs der Stufen 3 bis 5
+bleiben deaktiviert. AAL1-Ablehnung, AAL2-Zulassung, Service-Role-Ausnahme,
+unveränderter Stufe-3-Pfad und der externe Data-API-Negativpfad wurden ohne
+Geschäftsdatenänderung bestätigt. Die Benutzer-und-Rechte-Ansicht der
+IONOS-Bereitstellung lud mit der echten AAL2-Sitzung vollständig und ohne
+Browser-Konsolenfehler.

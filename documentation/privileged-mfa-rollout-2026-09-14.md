@@ -1,7 +1,7 @@
 # SchichtFunk – verpflichtende MFA für privilegierte Konten
 
 Stand: 14.09.2026  
-Status: technische Branch-Abnahme und Echtkonto-Einrichtung bestätigt; Produktivschutz noch nicht aktiviert
+Status: technische Branch-Abnahme und Echtkonto-Einrichtung bestätigt; Stufe 2 produktiv aktiviert
 
 ## Sicher festgestellter Ausgangszustand
 
@@ -10,7 +10,7 @@ Status: technische Branch-Abnahme und Echtkonto-Einrichtung bestätigt; Produkti
 - Für das echte `OWNER`-Konto wurde am 14.09.2026 um 05:23:54 UTC rein lesend ein verifizierter TOTP-Faktor bestätigt. Faktor-Geheimnis und vollständige Kontoadresse wurden nicht ausgelesen oder dokumentiert.
 - TOTP/App-Authenticator und Leaked Password Protection sind im Supabase-Projekt aktiv.
 - Die vorhandene Datenschutz-Lifecycle-Grenze verlangt bereits `aal2`.
-- Die neue Stufensteuerung für weitere sensible RPCs startet vollständig deaktiviert. Das Anwenden ihrer Grundlagenmigration allein sperrt deshalb keine Funktion.
+- Die Stufensteuerung ist produktiv vorhanden. Genau die vier RPCs der Stufe 2 sind aktiviert; Stufen 3 bis 5 bleiben deaktiviert.
 
 Kontoadressen und Faktor-Geheimnisse werden im Nachweis bewusst nicht aufgeführt.
 
@@ -20,13 +20,13 @@ Die Anwendung verlangt von `OWNER` und `ADMIN` ohne bestätigten Faktor beim Sta
 
 Antwortet die Datenbank bei einer sensiblen Aktion mit `MFA_REQUIRED`, öffnet die Anwendung die TOTP-Challenge und wiederholt genau diesen Aufruf einmal nach erfolgreicher Bestätigung. Fehlt noch ein Faktor, wird stattdessen die Pflicht-Einrichtung geöffnet. Die serverseitige Entscheidung bleibt damit maßgeblich; die Oberfläche ist nur die verständliche Bedienebene.
 
-Die Migration `20260914045554_staged_privileged_aal2_gate_v1.sql` registriert einen PostgREST-Pre-Request-Guard. Er gilt ausschließlich für Aufrufe unter `rpc/...`, liest eine private Allowlist und delegiert an `private.sf_assert_aal2()`. Tabellenzugriffe, Storage, Realtime und nicht gelistete RPCs werden dadurch nicht verändert. Rollen- und Mandantenprüfungen in den geschützten Funktionen bleiben zusätzlich bestehen.
+Die Migration `20260914053105_staged_privileged_aal2_gate_v1.sql` registriert einen PostgREST-Pre-Request-Guard. Er gilt ausschließlich für Aufrufe unter `rpc/...`, liest eine private Allowlist und delegiert an `private.sf_assert_aal2()`. Tabellenzugriffe, Storage, Realtime und nicht gelistete RPCs werden dadurch nicht verändert. Rollen- und Mandantenprüfungen in den geschützten Funktionen bleiben zusätzlich bestehen. Die Migration `20260914053115_enable_privileged_aal2_stage_2.sql` aktiviert ausschließlich Stufe 2 und bricht bei einer unerwarteten Anzahl oder bereits aktiven späteren Stufe ab.
 
 ## Aktivierungsstufen
 
 | Stufe | Bereich | RPCs | Ausgangswert |
 |---|---|---:|---|
-| 2 | Benutzer und Rechte | 4 | aus |
+| 2 | Benutzer und Rechte | 4 | **produktiv aktiv** |
 | 3 | Personalakte | 8 | aus |
 | 4 | DATEV, Audit und Monatsberichte | 9 | aus |
 | 5 | QR-Sicherheitskonfiguration | 6 | aus |
@@ -73,6 +73,16 @@ die gemeinsame AAL2-Prüfung und die deaktiviert startende Stufensteuerung angew
 
 Die jeweilige Stufe lässt sich durch eine neue Migration wieder auf `enabled=false` setzen. Ein vollständiger Rückfall setzt zusätzlich `pgrst.db_pre_request` für die Rolle `authenticator` zurück und lädt die PostgREST-Konfiguration neu. Faktor-Geheimnisse werden dabei nicht verändert. Bereits ausgestellte Zugriffstoken können bis zu ihrem Ablauf gültig bleiben; bei einem Sicherheitsvorfall sind deshalb zusätzlich die betroffenen Sitzungen global zu widerrufen.
 
+## Produktivabnahme Stufe 2 vom 14.09.2026
+
+- Grundlagen- und Aktivierungsmigration sind in der Produktionshistorie erfasst.
+- Vier von vier Stufe-2-RPCs sind aktiviert; Stufen 3 bis 5 haben zusammen null aktive RPCs.
+- Der PostgREST-Pre-Request-Guard ist für die Rolle `authenticator` registriert.
+- Kontrolltest ohne Geschäftsdaten: AAL1 wurde abgewiesen, AAL2 zugelassen, der Service-Role-Pfad zugelassen und ein deaktivierter Stufe-3-Pfad unverändert durchgelassen.
+- Ein echter externer Data-API-Aufruf ohne Benutzersitzung wurde vor der RPC-Ausführung mit HTTP 400, Code `P0001` und `MFA_REQUIRED` abgewiesen.
+- Die IONOS-Benutzer-und-Rechte-Ansicht lud mit der echten AAL2-Sitzung vollständig; es wurden keine Browser-Konsolenfehler festgestellt und keine Benutzer- oder Rechteänderung ausgelöst.
+- Der Security Advisor meldete keine neue Befundklasse; die bekannten 35 SECURITY-DEFINER- und drei QR-RLS-Hinweise blieben unverändert.
+
 ## Noch notwendige Freigaben
 
-- Die produktive Aktivierung jeder AAL2-Stufe benötigt eine ausdrückliche Freigabe nach bestandenem Branch- und Vorschautest.
+- Die produktive Aktivierung der Stufen 3 bis 5 benötigt jeweils eine eigene ausdrückliche Freigabe nach bestandenem Regressions- und Vorschautest.
