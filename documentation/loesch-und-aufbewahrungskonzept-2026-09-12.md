@@ -1,6 +1,6 @@
 # SchichtFunk – Lösch- und Aufbewahrungskonzept
 
-Stand: 12.09.2026
+Stand: 14.09.2026
 
 Dokumentstatus: Zielkonzept, Version 1.0
 
@@ -114,7 +114,7 @@ Nicht jeder SchichtFunk-Datensatz ist automatisch Lohnkonto, Buchungsbeleg oder 
 `PENDING_APPROVAL` → `APPROVED` → `EXECUTING/ACCESS` → `ACCESS_REVOKED` → `EXECUTING/ERASURE` → `COMPLETED` oder `BLOCKED`
 
 - Vorschau und Auftrag sind idempotent getrennt.
-- Antrag und Freigabe müssen von zwei unterschiedlichen aktiven OWNER/ADMIN stammen; beide schreibenden Schritte verlangen `aal2`.
+- Standardmäßig müssen Antrag und Freigabe von zwei unterschiedlichen aktiven OWNER/ADMIN stammen; beide schreibenden Schritte verlangen `aal2`.
 - Ein freigegebenes, versioniertes Kunden-Fristprofil ist Pflicht.
 - Allgemeine, mitarbeiterbezogene oder unmittelbar am Auftrag hinterlegte Legal Holds verhindern die Löschphase. Sie verhindern bewusst nicht die sofortige Zugriffssperre. Nach Ablauf einer zeitlich befristeten Sperre wird die Löschphase wieder claimbar.
 - `FOR UPDATE SKIP LOCKED` verhindert, dass zwei Hintergrundarbeiter denselben Auftrag übernehmen.
@@ -123,7 +123,20 @@ Nicht jeder SchichtFunk-Datensatz ist automatisch Lohnkonto, Buchungsbeleg oder 
 - Die V3-Vorschau zählt vor einer Auth-Löschung alle bekannten Benutzerverknüpfungen nach Fremdschlüsselwirkung. Eigentum an einem Mandanten, weitere Mitgliedschaften/Mitarbeiterprofile sowie `RESTRICT`-/`NO ACTION`- oder unerwartete `CASCADE`-Verknüpfungen verhindern die Freigabe des Auth-Schritts. `SET NULL`-Folgen werden als eigener Prüfschritt ausgewiesen.
 - Historische `RESTRICT`-Beziehungen von Schichten, Änderungs-/Tauschanträgen, QR-Buchungen und Störfällen bestätigen, dass fachliche Nachweise nicht durch ein einfaches Löschen des Mitarbeiterstamms entfernt werden dürfen. Die spätere Ausführung muss je Datenklasse zwischen Aufbewahrung, kontrollierter Redaktion und Löschung entscheiden.
 
-### 6.2 Geplante Ausführungsreihenfolge
+### 6.2 Ein-OWNER-Ausnahme mit kompensierenden Kontrollen
+
+Hat ein Kundenunternehmen genau einen aktiven `OWNER` und keinen aktiven `ADMIN`, darf das reguläre Zwei-Personen-Verfahren nicht durch eine sofortige Selbstfreigabe ersetzt werden. Für Mitarbeiter-Offboarding ist stattdessen der dokumentierte Modus `SOLE_OWNER_DELAYED` vorgesehen:
+
+- erste Bestätigung mit `aal2`, eingefrorener Löschvorschau und Sitzungsfingerabdruck;
+- mindestens 24 Stunden Abkühlfrist und höchstens 7 Tage Bestätigungsfenster;
+- zweite Bestätigung durch denselben OWNER nur nach neuer Anmeldung, erneutem `aal2` und abweichender `session_id`;
+- erneute Prüfung von Rollenlage, Vorschau-Hash, Fristprofil, Fälligkeit und Legal Hold;
+- unveränderliches Prüfprotokoll sowie Widerrufsmöglichkeit bis zur Ausführung;
+- harte Sperre gegen automatische Mandantenlöschung und gegen Deaktivierung/Löschung des einzigen OWNER-Kontos.
+
+Dies ist ausdrücklich keine Vier-Augen-Kontrolle, sondern eine kompensierende Ein-OWNER-Regel. Sobald eine zweite aktive freigabeberechtigte Person vorhanden ist, gilt wieder das Zwei-Personen-Verfahren. Details und technische Abnahmekriterien enthält `documentation/ein-owner-loeschfreigabe-2026-09-14.md`. Die Regel ist festgelegt, aber noch nicht technisch implementiert oder produktiv aktiviert.
+
+### 6.3 Geplante Ausführungsreihenfolge
 
 1. Auftrag, Freigabe, Fristprofil und Legal Hold erneut prüfen.
 2. Zugriff sofort sperren und offene Einladungen/Push-Sitzungen widerrufen.
@@ -154,6 +167,6 @@ Vor produktiver Aktivierung der Standardfristen sind erforderlich:
 | Auftragsverarbeiter-/Backupprüfung | SchichtFunk |
 | jährliche Wirksamkeitsprüfung | SchichtFunk gemeinsam mit ausgewähltem Testkunden/Datenschutzberatung |
 
-Status Löschkonzept: 🟡 **FACHLICH DOKUMENTIERT; V1–V5-ZUSTANDSAUTOMAT UND ERSTE AUSFÜHRUNG MIT 41/41 TESTS AUF WEGWERF-BRANCH BESTANDEN. AUTH-ADMIN-/PERSONALAKTEN-STORAGE-SCHRITT, LANGFRISTREDAKTION, ZEITPLAN UND KUNDENFREIGABE BLEIBEN OFFEN.**
+Status Löschkonzept: 🟡 **FACHLICH DOKUMENTIERT; DIE EIN-OWNER-FREIGABE IST ALS ZEITVERSETZTE DOPPELBESTÄTIGUNG FESTGELEGT. V1–V5-ZUSTANDSAUTOMAT UND ERSTE AUSFÜHRUNG HABEN 41/41 TESTS AUF DEM WEGWERF-BRANCH BESTANDEN. TECHNISCHE EIN-OWNER-ERWEITERUNG, AUTH-ADMIN-/PERSONALAKTEN-STORAGE-SCHRITT, LANGFRISTREDAKTION, ZEITPLAN UND KUNDENFREIGABE BLEIBEN OFFEN.**
 
 Quellen: Art. 5, 17 und 28 DSGVO (https://eur-lex.europa.eu/eli/reg/2016/679/oj), § 16 ArbZG (https://www.gesetze-im-internet.de/arbzg/__16.html), § 41 EStG (https://www.gesetze-im-internet.de/estg/__41.html), § 28f SGB IV (https://www.gesetze-im-internet.de/sgb_4/__28f.html), § 147 AO (https://www.gesetze-im-internet.de/ao_1977/__147.html), § 257 HGB (https://www.gesetze-im-internet.de/hgb/__257.html), §§ 195/199 BGB. Die konkrete arbeits-, tarif-, steuer- und sozialversicherungsrechtliche Einordnung muss der jeweilige Arbeitgeber prüfen.

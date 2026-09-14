@@ -28,6 +28,7 @@ const settingsClient=fs.readFileSync(path.join(root,'assets','settings-managemen
 const storageManifestSource=fs.readFileSync(path.join(root,'scripts','storage-restore-manifest.mjs'),'utf8');
 const storageBranchSmokeSource=fs.readFileSync(path.join(root,'scripts','storage-branch-restore-smoke.mjs'),'utf8');
 const authErrorsSource=fs.readFileSync(path.join(root,'assets','supabase-auth-errors-v1.js'),'utf8');
+const soleOwnerDeletionPolicy=fs.readFileSync(path.join(root,'documentation','ein-owner-loeschfreigabe-2026-09-14.md'),'utf8');
 
 test('SECURITY DEFINER allowlist is exact and reviewable',()=>{
   assert.equal(allowlist.functions.length,35);
@@ -69,6 +70,19 @@ test('privacy approval enforces two-person control, legal holds and safe queue c
   assert.doesNotMatch(approvalSql,/\bdelete\s+from\s+public\./i);
   assert.doesNotMatch(approvalSql,/\bupdate\s+public\./i);
   assert.doesNotMatch(approvalSql,/cron\.schedule/i);
+});
+
+test('sole-owner deletion policy requires delayed independent-session confirmation and hard blocks',()=>{
+  assert.match(soleOwnerDeletionPolicy,/SOLE_OWNER_DELAYED/);
+  assert.match(soleOwnerDeletionPolicy,/keine Vier-Augen-Kontrolle/i);
+  assert.match(soleOwnerDeletionPolicy,/24 Stunden/);
+  assert.match(soleOwnerDeletionPolicy,/7 Tage/);
+  assert.match(soleOwnerDeletionPolicy,/aal2/);
+  assert.match(soleOwnerDeletionPolicy,/session_id/);
+  assert.match(soleOwnerDeletionPolicy,/SHA-256/);
+  assert.match(soleOwnerDeletionPolicy,/einzige aktive OWNER-Konto darf niemals/i);
+  assert.match(soleOwnerDeletionPolicy,/Mandantenlöschung ist im Ein-OWNER-Modus nicht zulässig/i);
+  assert.match(soleOwnerDeletionPolicy,/noch nicht technisch implementiert oder produktiv aktiviert/i);
 });
 
 test('expanded offboarding preview inventories all linked domains without mutating them',()=>{
