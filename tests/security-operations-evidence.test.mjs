@@ -53,17 +53,22 @@ test('monitoring matrix distinguishes active controls from unresolved operationa
   assert.match(monitoring,/5\/5 Prüfungen bestanden/i);
 });
 
-test('synthetic operational health watch is read-only, scheduled and proves failure detection',()=>{
+test('synthetic operational health watch is read-only, scheduled and retains evidence',()=>{
   assert.match(healthWorkflow,/cron:\s*'17,47 \* \* \* \*'/);
   assert.match(healthWorkflow,/permissions:\s*\n\s*contents:\s*read/);
   assert.match(healthWorkflow,/Verify failure detection without touching production/i);
   assert.match(healthWorkflow,/127\.0\.0\.1:9/);
+  assert.match(healthWorkflow,/actions\/upload-artifact@v4/);
+  assert.match(healthWorkflow,/retention-days:\s*30/);
+  assert.match(healthWorkflow,/HEALTHCHECK_REPORT_PATH:\s*artifacts\/operational-health\.json/);
   assert.match(healthScript,/site\.webmanifest/);
   assert.match(healthScript,/schichtfunk-sw\.js/);
   assert.match(healthScript,/datenschutz\.html/);
   assert.match(healthScript,/auth\/v1\/health/);
   assert.match(healthScript,/content-security-policy/);
   assert.match(healthScript,/strict-transport-security/);
+  assert.match(healthScript,/HEALTHCHECK_REPORT_PATH/);
+  assert.match(healthScript,/mode:0o600/);
   assert.match(healthScript,/process\.exit\(1\)/);
 });
 
