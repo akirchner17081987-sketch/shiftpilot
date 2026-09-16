@@ -31,7 +31,9 @@ Es wurde **kein physischer Restore des Produktivprojekts** angeklickt oder gesta
 
 Supabase stellt für Backups die Funktion **Restore to a New Project** bereit. Sie erstellt aus einer Sicherung ein separates Projekt und lässt das Quellprojekt unverändert. Für SchichtFunk ist dies der vorgesehene Abnahmeweg für den noch offenen physischen Restore, weil dadurch das Produktivprojekt nicht überschrieben wird.
 
-Die Durchführung wurde am 16.09.2026 bewusst noch nicht ausgelöst: Das neue Projekt ist ein zusätzliches abrechenbares Supabase-Projekt. Eine kostenwirksame Ressourcenerstellung darf erst nach ausdrücklicher Betreiberfreigabe erfolgen. Bis dahin bleibt der physische Restore-Nachweis offen, obwohl die sichere Testmethode festgelegt ist.
+Die aktuelle Kostenabfrage für ein zusätzliches Projekt in der Organisation `Security_Plattform` ergab **10 USD pro Monat**. Der Betreiber hat am 16.09.2026 festgelegt: Der physische Restore-Test wird durchgeführt, wenn er für die belastbare Abnahme tatsächlich notwendig ist und kein gleichwertiger, kostenfreier Nachweis möglich ist. Bis zu dieser Entscheidung wird kein zusätzliches Projekt angelegt und keine kostenpflichtige Ressource erzeugt.
+
+Diese Entscheidung ist bewusst risikobasiert: Die tägliche Backup-Erzeugung, ein logischer Datenbank-Restore und ein privater Storage-Restore mit Hashvergleich sind bereits technisch nachgewiesen. Der physische Restore bleibt deshalb ein separater letzter Abnahmenachweis und kein Grund, vorsorglich sofort Kosten auszulösen.
 
 ### Abnahmekriterien für `Restore to a New Project`
 
@@ -95,11 +97,11 @@ Der dauerhafte separate Storage-Export ist **noch nicht eingerichtet**. Dafür m
 
 ## 7. Offene Freigabegrenzen
 
-1. **Physischer Tagesbackup-Restore:** technisch sicherer Weg `Restore to a New Project` festgelegt; Ausführung wegen zusätzlicher Projektkosten nur nach ausdrücklicher Betreiberfreigabe.
+1. **Physischer Tagesbackup-Restore:** technisch sicherer Weg `Restore to a New Project` festgelegt; bedingte Betreiberfreigabe liegt vor. Durchführung nur, wenn kein gleichwertiger kostenfreier Nachweis möglich ist und der physische Abnahmenachweis für den Echtbetrieb benötigt wird.
 2. **Dauerhafter separater Storage-Export:** aktuell 0 produktive Objekte/Metadatensätze; Zielarchitektur und Manifestprüfung definiert, unabhängiges Backupziel/Vertrag/Zugang aber noch festzulegen, bevor echte Personalakten-Dateien produktiv genutzt werden.
 3. **Wiederkehrende Übung:** nach erster physischer Abnahme mindestens jährlich und nach wesentlichen Backup-/Provideränderungen wiederholen.
 
-Status: 🟡 **TÄGLICHE DB-BACKUPS LIVE NACHGEWIESEN; LOGISCHER DB-RESTORE UND PRIVATER STORAGE-RESTORE MIT HASH BESTANDEN; SICHERE PHYSISCHE RESTORE-METHODE FESTGELEGT; PRODUKTIVER PERSONALAKTEN-STORAGE AKTUELL LEER. OFFEN SIND DIE KOSTENPFLICHTIGE AUSFÜHRUNG DES PHYSISCHEN RESTORES UND EIN DAUERHAFTER, VOM PRODUKTIONSPROJEKT GETRENNTER STORAGE-EXPORT VOR ERSTER ECHTER DOKUMENTABLAGE.**
+Status: 🟡 **TÄGLICHE DB-BACKUPS LIVE NACHGEWIESEN; LOGISCHER DB-RESTORE UND PRIVATER STORAGE-RESTORE MIT HASH BESTANDEN; SICHERE PHYSISCHE RESTORE-METHODE FESTGELEGT; BEDINGTE BETREIBERFREIGABE FÜR DEN KOSTENPFLICHTIGEN TEST DOKUMENTIERT; PRODUKTIVER PERSONALAKTEN-STORAGE AKTUELL LEER. OFFEN SIND DIE BEI BEDARF AUSZUFÜHRENDE PHYSISCHE RESTORE-ABNAHME UND EIN DAUERHAFTER, VOM PRODUKTIONSPROJEKT GETRENNTER STORAGE-EXPORT VOR ERSTER ECHTER DOKUMENTABLAGE.**
 
 Quellen:
 - https://supabase.com/docs/guides/platform/backups
