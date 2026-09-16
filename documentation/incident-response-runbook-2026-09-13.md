@@ -1,7 +1,7 @@
 # SchichtFunk – Incident-Response- und Datenschutzverletzungsprozess
 
 Stand: 16.09.2026  
-Dokumentstatus: Betreiberunterlage, Version 1.1  
+Dokumentstatus: Betreiberunterlage, Version 1.2  
 
 ## 1. Zweck und Geltungsbereich
 
@@ -60,7 +60,7 @@ Am 16.09.2026 bestand der positive Healthcheck 5/5 Prüfungen. Zusätzlich wurde
 ### T+15 bis T+60 Minuten – eindämmen und Kunden informieren
 
 1. Betroffene Konten oder Mitgliedschaften deaktivieren und Sitzungen widerrufen, soweit technisch erforderlich.
-2. Betroffene Schlüssel, QR-Tokens oder Push-Geheimnisse nach Abhängigkeitsprüfung rotieren.
+2. Betroffene Schlüssel, QR-Tokens oder Push-Geheimnisse nach Abhängigkeitsprüfung rotieren. Für den Privacy-Worker ist die getestete Cutover-/Rückfallreihenfolge in `secret-rotation-drill-2026-09-16.md` festgelegt.
 3. Gefährdete Funktion eingrenzen; bei Integritätszweifel Schreibzugriffe stoppen oder einen bekannten sicheren Anwendungsstand bereitstellen.
 4. Als Auftragsverarbeiter den betroffenen Kunden unverzüglich mit den bereits verfügbaren Fakten informieren. Fehlende Angaben werden gekennzeichnet und nachgereicht.
 5. Anbieterfälle bei IONOS oder Supabase eröffnen, wenn deren Infrastruktur betroffen sein kann; Ticketnummern im Lageprotokoll erfassen.
@@ -121,7 +121,7 @@ Diese Meldung ist vorläufig. Fehlende Informationen werden ohne unangemessene V
 5. Folgeaufgaben mit Frist und Verantwortlichen verfolgen; Runbook und TOM bei Bedarf aktualisieren.
 6. Nach einem Verfügbarkeitsvorfall muss der synthetische Healthcheck wieder grün sein; nach einem Berechtigungs- oder Datenschutzvorfall sind zusätzlich die betroffenen Negativtests erforderlich.
 
-## 9. Dokumentiertes Planspiel vom 13.09.2026 und technischer Alarmtest vom 16.09.2026
+## 9. Dokumentiertes Planspiel vom 13.09.2026 und technische Drills vom 16.09.2026
 
 ### Szenario
 
@@ -140,16 +140,18 @@ Rein fiktive Annahme: Ein Kunden-Admin meldet, dass seine Sitzung möglicherweis
 | Rechtsentscheidung | Risiko sowie Art.-33-/34-Entscheidung durch den jeweiligen Verantwortlichen dokumentieren | Verantwortungsgrenze korrekt abgebildet |
 | Abschluss | Ursache, Abhilfe, Wirksamkeit und Folgemaßnahmen dokumentieren | Abschlusskriterien vorhanden |
 | Alarm-Negativtest | künstlich unerreichbaren lokalen Endpunkt erkennen, ohne Produktion zu verändern | am 16.09.2026 erfolgreich; Fehlererkennung des Healthchecks bestätigt |
+| Schlüsselrotation | Wechsel vom alten auf neuen Worker-Token ohne unnötiges Ausfallfenster und mit Rückfallweg | automatisierter Drill mit ausschließlich fiktiven Tokens bestanden; alter Token nach Ende des Überlappungsfensters abgelehnt; Produktivsecret unverändert |
 
 ### Ergebnis und offene Feststellungen
 
-Der Ablauf deckt Erkennung, Eindämmung, Kundeninformation, Bewertung, Wiederanlauf und Nachbereitung ab. Technische Verfügbarkeits-/Auth-Erkennung und der synthetische Negativtest sind nun vorhanden. Der Prozess gilt **nicht als vollständig betrieblich abgenommen**, bis folgende Feststellungen erledigt sind:
+Der Ablauf deckt Erkennung, Eindämmung, Kundeninformation, Bewertung, Wiederanlauf und Nachbereitung ab. Technische Verfügbarkeits-/Auth-Erkennung, synthetischer Negativtest und der technische Schlüsselrotations-Drill sind vorhanden. Der Prozess gilt **nicht als vollständig betrieblich abgenommen**, bis folgende Feststellungen erledigt sind:
 
 1. Vertretung und erreichbare Eskalationskette benennen.
 2. Verbindliche Bereitschaftszeiten und deren organisatorische Überwachung festlegen; die technischen Watches alleine begründen keine 24/7-Zusage.
-3. Schlüsselrotation mit sicheren Testschlüsseln üben; der Zwei-Konten-Sitzungswiderruf ist technisch bestanden und in `mfa-session-recovery-test-2026-09-13.md` protokolliert.
-4. IONOS-Deploy-Now-spezifische Logzugriffe/-fristen sowie die noch offenen Anbieter-/Workflow-Aufbewahrungsdetails abschließend belegen.
-5. Kundenkontakte aus Anlage 4 des jeweiligen AVV vor Produktivbeginn vollständig eintragen.
+3. IONOS-Deploy-Now-spezifische Logzugriffe/-fristen sowie die noch offenen Anbieter-/Workflow-Aufbewahrungsdetails abschließend belegen.
+4. Kundenkontakte aus Anlage 4 des jeweiligen AVV vor Produktivbeginn vollständig eintragen.
+
+Eine reale Schlüsselrotation des produktiven Privacy-Worker-Tokens wurde für diesen Drill bewusst **nicht** durchgeführt. Der technische Rotationsweg ist automatisiert abgesichert; ein echter Wechsel erfolgt nur geplant mit anschließendem Scheduler-Nachweis.
 
 Das Planspiel ist nach wesentlichen Architekturänderungen und mindestens jährlich zu wiederholen. Ein technischer Drill darf nur mit fiktiven Daten und ausdrücklich freigegebener Testumgebung erfolgen.
 
@@ -160,7 +162,8 @@ Das Planspiel ist nach wesentlichen Architekturänderungen und mindestens jährl
 - Supabase Security: https://supabase.com/docs/guides/security
 - Supabase Backups: https://supabase.com/docs/guides/platform/backups
 - `documentation/logging-monitoring-retention-2026-09-13.md`
+- `documentation/secret-rotation-drill-2026-09-16.md`
 - `.github/workflows/operational-health-watch.yml`
 - `scripts/operational-healthcheck.mjs`
 
-Status: 🟡 **RUNBOOK, PAPIER-PLANSPIEL, SITZUNGSWIDERRUF, SYNTHETISCHE ERKENNUNG UND NEGATIVER ALARMTEST BESTANDEN; VERTRETUNG, BEREITSCHAFTSREGELUNG, SCHLÜSSELROTATIONSDRILL UND RESTLICHE ANBIETER-NACHWEISE OFFEN.**
+Status: 🟡 **RUNBOOK, PAPIER-PLANSPIEL, SITZUNGSWIDERRUF, SYNTHETISCHE ERKENNUNG, NEGATIVER ALARMTEST UND TECHNISCHER SCHLÜSSELROTATIONSDRILL BESTANDEN; VERTRETUNG, BEREITSCHAFTSREGELUNG UND RESTLICHE ANBIETER-/KUNDENNACHWEISE OFFEN.**
