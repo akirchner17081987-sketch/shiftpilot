@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.116.0";
-import { workerTokenAccepted } from "../_shared/worker-auth.mjs";
+import { safeEqual, workerTokenAccepted } from "../_shared/worker-auth.mjs";
 
 const json=(body:unknown,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store'}});
 const message=(error:unknown)=>String((error as {message?:string})?.message||error||'UNKNOWN_WORKER_ERROR').slice(0,1800);
@@ -17,7 +17,11 @@ Deno.serve(async req=>{
   const current=Deno.env.get('PRIVACY_WORKER_TOKEN')||'';
   const previous=Deno.env.get('PRIVACY_WORKER_TOKEN_PREVIOUS')||'';
   const supplied=req.headers.get('x-privacy-worker-token')||'';
-  if(!workerTokenAccepted(supplied,current,previous))return json({error:'UNAUTHENTICATED'},401);
+  const expected=current;
+  const accepted=previous
+    ? workerTokenAccepted(supplied,current,previous)
+    : safeEqual(supplied,expected);
+  if(!supplied||!current||!accepted)return json({error:'UNAUTHENTICATED'},401);
 
   const url=Deno.env.get('SUPABASE_URL')||'';
   const serviceKey=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||'';
