@@ -7,9 +7,11 @@ export async function primeDemoSession(page) {
   });
 }
 
+const remoteTarget = /^https:\/\//i.test(process.env.E2E_BASE_URL || '');
+
 async function waitForVisibleDemoShell(page, timeout) {
-  const firstWindow = Math.min(timeout, 8_000);
-  const secondWindow = Math.max(8_000, Math.min(timeout, 12_000));
+  const firstWindow = Math.min(timeout, remoteTarget ? 15_000 : 8_000);
+  const secondWindow = Math.max(firstWindow, Math.min(timeout, remoteTarget ? 30_000 : 12_000));
 
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
@@ -42,7 +44,7 @@ export async function waitForDemoReady(page, options = {}) {
     perspective = true,
     scenarios = false,
     readability = true,
-    timeout = 20_000,
+    timeout = remoteTarget ? 40_000 : 20_000,
   } = options;
 
   // Die sichtbare Oberfläche ist das belastbare End-to-End-Signal. Falls nur
@@ -91,12 +93,12 @@ export async function openManagerArea(page, view, timeout = 15_000) {
     const expanded = await mobileToggle.getAttribute('aria-expanded');
     if (expanded !== 'true') await mobileToggle.click();
     await page.locator('#appShell').waitFor({ state: 'visible', timeout });
+    await page.waitForTimeout(350);
   }
 
   const target = page.locator(`#appShell .sidebar [data-view="${view}"]`).first();
   await target.waitFor({ state: 'visible', timeout });
-  await target.scrollIntoViewIfNeeded();
-  await target.click();
+  await target.click({ force: true });
   await page.waitForFunction(
     value => document.getElementById(`view-${value}`)?.classList.contains('active'),
     view,
@@ -107,6 +109,7 @@ export async function openManagerArea(page, view, timeout = 15_000) {
 export async function openEmployeeArea(page, view, timeout = 10_000) {
   const portal = page.locator('#sfEmployeePortal');
   await portal.waitFor({ state: 'visible', timeout });
+  if (await portal.getAttribute('data-sf-portal-active') === view) return;
 
   const visibleTarget = portal.locator(`[data-sf-employee-view="${view}"]:visible`).first();
   if (await visibleTarget.isVisible().catch(() => false)) {
@@ -117,6 +120,12 @@ export async function openEmployeeArea(page, view, timeout = 10_000) {
     if (await toggle.isVisible().catch(() => false)) {
       if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
       const target = portal.locator(`.sf-employee-more-panel [data-sf-employee-view="${view}"]:visible`).first();
+      await target.waitFor({ state: 'visible', timeout });
+      await target.scrollIntoViewIfNeeded();
+      await target.click();
+    } else if (await portal.locator('[data-sf-mobile-more]').isVisible().catch(() => false)) {
+      await portal.locator('[data-sf-mobile-more]').click();
+      const target = portal.locator(`#sfEmployeeMobileMore [data-sf-employee-view="${view}"]:visible`).first();
       await target.waitFor({ state: 'visible', timeout });
       await target.scrollIntoViewIfNeeded();
       await target.click();

@@ -3,8 +3,8 @@ import { openManagerArea, primeDemoSession, waitForDemoReady } from './helpers/d
 
 test('manager filters employees by team or location',async({page})=>{
   await primeDemoSession(page);
-  await page.route('**/api/demo-auth',async route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({expiresAt:new Date(Date.now()+3_600_000).toISOString()})}));
-  await page.route('**/api/demo-analytics',async route=>route.fulfill({status:204,body:''}));
+  await page.route('**/demo-auth',async route=>route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},status:200,contentType:'application/json',body:JSON.stringify({expiresAt:new Date(Date.now()+3_600_000).toISOString()})}));
+  await page.route('**/demo-analytics',async route=>route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},status:204,body:''}));
   await page.goto('/demo');
   await waitForDemoReady(page);
   await openManagerArea(page,'employees');

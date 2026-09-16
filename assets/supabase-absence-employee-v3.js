@@ -26,15 +26,17 @@
     if(B.role!=='EMPLOYEE')return false;
     const sec=section(),d=B.employeePortalData;if(!sec||!d)return false;
     if(!force&&sec.dataset.sfAbsenceV3==='1'&&sec.querySelector('[data-sf-absence-request="1"]'))return true;
+    const restoreRequestFocus=sec.contains(document.activeElement)&&document.activeElement.matches?.('[data-sf-absence-request="1"]');
     css();
     const rows=(d.absences||[]).slice().sort((a,b)=>String(b.requested_at||b.created_at||b.start_date).localeCompare(String(a.requested_at||a.created_at||a.start_date)));
     const body=rows.length?`<div class="sf-ae3-list">${rows.slice(0,12).map(a=>{const [label,cl]=state(a.status);return `<div class="sf-ae3-row"><div class="sf-ae3-top"><div class="sf-ae3-icon">${a.absence_type==='Krank'?'✚':'☼'}</div><div class="sf-ae3-main"><b>${esc(a.absence_type)}</b><small>${esc(fmt(a.start_date))}${a.end_date&&a.end_date!==a.start_date?' – '+esc(fmt(a.end_date)):''}</small></div><span class="sf-ae3-state ${cl}">${esc(label)}</span></div>${a.note?`<div class="sf-ae3-note">Hinweis: ${esc(a.note)}</div>`:''}${a.review_note?`<div class="sf-ae3-note">Rückmeldung: ${esc(a.review_note)}</div>`:''}</div>`}).join('')}</div>`:'<div class="sf-empty">Noch keine Abwesenheiten oder Anträge vorhanden.</div>';
     sec.dataset.sfAbsenceV3='1';
     sec.innerHTML=`<div class="sf-ae3-head"><h3>Abwesenheiten</h3><button type="button" class="primary sf-ae3-add" data-sf-absence-request="1">＋ Antrag stellen</button></div>${body}`;
+    if(restoreRequestFocus)requestAnimationFrame(()=>sec.querySelector('[data-sf-absence-request="1"]')?.focus());
     return true;
   }
 
-  function open(){
+  function open(opener){
     css();document.getElementById('sfAbsenceEmployeeV3Modal')?.remove();
     const today=new Date().toISOString().slice(0,10),m=document.createElement('div');m.id='sfAbsenceEmployeeV3Modal';m.className='sf-ae3-modal';
     m.innerHTML=`<div class="sf-ae3-card" role="dialog" aria-modal="true" aria-labelledby="sfAe3Title" tabindex="-1"><div class="sf-ae3-mh"><div><div class="eyebrow">ABWESENHEITSANTRAG</div><h2 id="sfAe3Title">Abwesenheit melden</h2><p>Der Antrag wird an die Dienstplanung übermittelt.</p></div><button type="button" class="sf-ae3-x" aria-label="Dialog schließen">✕</button></div><div class="sf-ae3-body"><div class="sf-ae3-field"><label>Art</label><select id="sfAe3Type">${TYPES.map(x=>`<option>${esc(x)}</option>`).join('')}</select></div><div class="sf-ae3-grid"><div class="sf-ae3-field"><label>Von</label><input id="sfAe3From" type="date" value="${today}"></div><div class="sf-ae3-field"><label>Bis</label><input id="sfAe3To" type="date" value="${today}"></div></div><div class="sf-ae3-field"><label>Umfang</label><select id="sfAe3Full"><option value="1">Ganztägig</option><option value="0">Teil des Tages</option></select></div><div id="sfAe3Times" class="sf-ae3-grid" style="display:none"><div class="sf-ae3-field"><label>Beginn</label><input id="sfAe3Start" type="time"></div><div class="sf-ae3-field"><label>Ende</label><input id="sfAe3End" type="time"></div></div><div class="sf-ae3-field"><label>Bemerkung (optional)</label><textarea id="sfAe3Note" rows="3" maxlength="2000"></textarea></div><div class="sf-ae3-help">Der Antrag ist zunächst „In Prüfung“. Erst nach Freigabe wird die Abwesenheit planungswirksam.</div><div class="sf-ae3-msg" id="sfAe3Msg" role="alert" aria-live="assertive"></div></div><div class="sf-ae3-foot"><button type="button" class="ghost" id="sfAe3Cancel">Abbrechen</button><button type="button" class="primary" id="sfAe3Submit">Antrag senden</button></div></div>`;
@@ -42,7 +44,7 @@
     const help=m.querySelector('.sf-ae3-help');help.id='sfAe3Help';help.textContent='Mit * gekennzeichnete Felder sind Pflichtfelder. '+help.textContent;
     [['sfAe3Type',true],['sfAe3From',true],['sfAe3To',true],['sfAe3Full',true],['sfAe3Start',true],['sfAe3End',true],['sfAe3Note',false]].forEach(([id,required])=>{const field=m.querySelector('#'+id),label=field?.previousElementSibling;if(!field||label?.tagName!=='LABEL')return;label.htmlFor=id;if(required){label.insertAdjacentHTML('beforeend',' <span aria-hidden="true">*</span>');field.required=true;field.setAttribute('aria-required','true')}field.setAttribute('aria-describedby','sfAe3Help')});
     ['#sfAe3Start','#sfAe3End'].forEach(sel=>{const field=m.querySelector(sel);field.required=false;field.setAttribute('aria-required','false')});
-    const close=B.bindAccessibleModal?.(m,{initialFocus:'#sfAe3Type'})||(()=>m.remove()),msg=m.querySelector('#sfAe3Msg');
+    const close=B.bindAccessibleModal?.(m,{initialFocus:'#sfAe3Type',returnFocus:opener,returnFocusSelector:'[data-sf-absence-request="1"]'})||(()=>m.remove()),msg=m.querySelector('#sfAe3Msg');
     m.querySelector('.sf-ae3-x').onclick=close;m.querySelector('#sfAe3Cancel').onclick=close;m.addEventListener('click',e=>{if(e.target===m)close()});
     m.querySelector('#sfAe3Full').onchange=e=>{const partial=e.target.value==='0';m.querySelector('#sfAe3Times').style.display=partial?'grid':'none';['#sfAe3Start','#sfAe3End'].forEach(sel=>{const field=m.querySelector(sel);field.required=partial;field.setAttribute('aria-required',String(partial))})};
     m.querySelector('#sfAe3Submit').onclick=async()=>{
@@ -68,11 +70,11 @@
   document.addEventListener('click',e=>{
     const btn=e.target.closest?.('[data-sf-absence-request="1"],#sfEmployeeAbsenceAdd,#sfEmployeeAbsenceAddV2');
     if(!btn||B.role!=='EMPLOYEE')return;
-    e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();open();
+    e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();open(btn);
   },true);
 
   const old=B.openEmployeePortal;
-  if(typeof old==='function')B.openEmployeePortal=function(){const r=old.apply(this,arguments);setTimeout(()=>render(true),0);setTimeout(()=>render(),120);setTimeout(()=>render(),500);return r};
+  if(typeof old==='function')B.openEmployeePortal=function(){const r=old.apply(this,arguments);setTimeout(()=>render(),0);setTimeout(()=>render(),120);setTimeout(()=>render(),500);return r};
 
   // Beobachtet nur, ob das Portal komplett neu aufgebaut wurde; eigener Render löst keine Schleife aus.
   let queued=false;

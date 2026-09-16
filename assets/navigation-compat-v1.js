@@ -81,8 +81,8 @@
   // Einheitliche SchichtFunk-Scrollleisten in Darkmode + Teal statt Browser-Standard.
   loadStyle('/assets/schichtfunk-scrollbars-v1.css?v=20260911-1','data-sf-scrollbars');
 
-  loadIntegration('/assets/o1s-integration-v1.js?v=20260904-1','data-sf-o1s-integration');
-  loadIntegration('/assets/qa-integration-v1.js?v=20260904-1','data-sf-qa-integration');
+  loadIntegration('/assets/o1s-integration-v1.js?v=20260912-marketplace1','data-sf-o1s-integration');
+  loadIntegration('/assets/qa-integration-v1.js?v=20260912-marketplace1','data-sf-qa-integration');
   loadIntegration('/assets/calendar-view-switch-v1.js?v=20260904-1','data-sf-calendar-view');
   loadIntegration('/assets/publish-dialog-design-v1.js?v=20260904-1','data-sf-publish-dialog-design');
   loadIntegration('/assets/demo-reset-v1.js?v=20260906-absences1','data-sf-demo-reset');

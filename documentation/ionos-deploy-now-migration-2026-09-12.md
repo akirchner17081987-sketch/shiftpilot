@@ -1,0 +1,99 @@
+# SchichtFunk – IONOS-Deploy-Now-Migrations- und Rückfallplan
+
+Stand: 13.09.2026
+
+## Zielarchitektur
+
+- IONOS Deploy Now liefert ausschließlich den statischen SchichtFunk-Webauftritt und die PWA aus.
+- Supabase bleibt das Backend für Datenbank, Authentifizierung, Realtime, Storage und Edge Functions; Projektregion ist `eu-central-1` (Frankfurt). Der Pro-Tarif ist seit dem 12.09.2026 für die Organisation aktiv; der Spend Cap ist eingeschaltet.
+- Vercel bleibt während der Migration technisch als Rückfallstand erhalten. Mit dem aktuellen Hobby-Tarif ist eine kommerzielle Produktiv-Rückschaltung nicht freigegeben.
+- Die IONOS-Domain- und E-Mail-Verträge bleiben organisatorisch unverändert. Eine DNS-/Domain-Umschaltung erfolgt erst nach dokumentierter Staging-Abnahme und ausdrücklicher Bestätigung.
+
+## Deploy-Now-Build
+
+- Repository: `akirchner17081987-sketch/shiftpilot`
+- Deploy-Now-Projekt-ID: `7bc70ac7-ec3b-4e7b-bae5-569c957e8514`
+- Prüfbasis/Zielzweig: `codex/ionos-migration`
+- IONOS-Prüfadresse: https://home-5021411544.app-ionos.space/
+- Laufzeit für den Build: Plain Node.js 22
+- Abhängigkeiten: `npm ci`
+- Build-Befehl: `npm run build`
+- Technische Vorabprüfung im IONOS-Build: vollständige statische Regressionstests mit `npm test`, anschließend IONOS-spezifische Prüfung mit `npm run test:ionos`
+- Veröffentlichungsverzeichnis: `dist`
+- Deployment-Konfiguration: `.deploy-now/shiftpilot/config.yaml`; keine Laufzeitdateien werden zwischen statischen Veröffentlichungen ausgenommen oder dauerhaft weitergeführt.
+- Geprüfte Größe: 2.153.075 Byte / 2,05 MiB, Zielwert unter 50 MB
+- Die Dateiauswahl für `dist` ist ausdrücklich begrenzt; Quellcode, Tests, lokale Konfigurationen und Geheimnisse werden nicht veröffentlicht.
+- Der Build bricht vor dem Upload ab, wenn eine erforderliche Seite, ein PWA-Bestandteil, ein App-Icon oder der Supabase-Demo-Adapter fehlt, leer ist oder Manifest-Scope/-Startziel ungültig sind.
+- Live-Browsertests gegen eine entfernte Bereitstellung laufen bewusst seriell und mit einem Wiederholungsversuch, damit begrenzte Preview-Ressourcen nicht durch parallele Testlast verfälscht werden.
+
+## Routing, PWA und Sicherheitsheader
+
+- Apache-Regeln in `.htaccess` erzwingen HTTPS, liefern kurze Routen wie `/demo`, `/impressum` und `/datenschutz` aus und fallen für clientseitige Routen auf `index.html` zurück.
+- HTML, Manifest und Service Worker werden nicht langfristig zwischengespeichert; statische Assets erhalten einen begrenzten Browser-Cache.
+- Content-Security-Policy, HSTS, MIME-Schutz, Frame-Schutz, Referrer-Policy und Permissions-Policy werden auf IONOS über `.htaccess` gesetzt.
+- `site.webmanifest`, Icons und `schichtfunk-sw.js` sind Bestandteil des statischen Builds.
+- Reale Geräteabnahme am 12.09.2026: Die IONOS-Vorschau wurde auf einem iPhone als Home-Bildschirm-Web-App installiert. Anmeldung, Push-Freigabe, serverseitig bestätigte Geräteregistrierung, Testzustellung und Öffnen der Mitteilung wurden mit dem Betreiberkonto erfolgreich bestätigt.
+- Push-Abonnements sind an die jeweilige Herkunft gebunden. Nach der späteren Domain-Umschaltung muss Push unter `www.schichtfunk.de` einmal erneut aktiviert und mit einer Testzustellung bestätigt werden.
+
+## Serverlogik und Geheimnisse
+
+- `demo-auth` und `demo-analytics` laufen als Supabase Edge Functions. Die bisherigen Vercel-Funktionen bleiben unverändert im Repository, damit der alte Vercel-Stand technisch rückfallfähig bleibt.
+- Die Edge Functions verwenden kurzlebige HMAC-signierte Demo-Sitzungstoken, eine strenge Herkunftsliste und keine Standardzugangsdaten.
+- Für die Demo-Abnahme wurden folgende Supabase-Geheimnisse am 12.09.2026 neu erzeugt und gesetzt:
+  - `DEMO_USER_SHA256`
+  - `DEMO_PASSWORD_SHA256`
+  - `DEMO_SESSION_SECRET`
+  - `DEMO_ANALYTICS_INGEST_SECRET`
+  - `DEMO_ALLOWED_ORIGINS` mit der aktuellen IONOS-Prüfadresse und den vorgesehenen Produktionsdomains
+- Geheimniswerte dürfen weder im Git-Repository noch in Build-Ausgaben oder dieser Dokumentation gespeichert werden.
+
+## Staging-Abnahme vor Domain-Umschaltung
+
+Folgende Punkte sind auf der IONOS-Bereitstellungsadresse zu prüfen und zu protokollieren:
+
+1. Öffentliche Startseite, Navigation, Markenauftritt, Impressum und Datenschutz.
+2. HTTPS, Sicherheitsheader, kurze Routen, direkte Browser-Aktualisierung auf Unterseiten und 404-/SPA-Verhalten.
+3. Manifest, Installierbarkeit, Service-Worker-Registrierung, Cache-Aktualisierung und Offline-Verhalten.
+4. Regulärer Login, Rollenwechsel sowie Abmeldung und Sitzungsablauf.
+5. Managerbereich, Mitarbeiterportal, Dienstplan und Veröffentlichungsfluss.
+6. Zeiterfassung einschließlich QR, Stundenkonto und Korrektur-/Freigabeabläufe.
+7. Abwesenheiten, Urlaub und Krankheitsstatus mit korrekter Mandanten-/Rollenbegrenzung.
+8. Push-Abonnement und Zustellung auf mindestens einem unterstützten Gerät/Browser.
+9. DATEV-LODAS-Export einschließlich plausibler Testdatei ohne Änderung von Produktionsdaten.
+10. Demo-Anmeldung, Demo-Sitzung, Analytics-RPC und Zurücksetzen der fiktiven Demodaten.
+11. Browser-Konsole, Netzwerkfehler, mobile Darstellung und wesentliche Barrierefreiheitsprüfungen.
+
+Die Abnahme erfolgt mit Test-/Demo-Konten in einem getrennten, ausdrücklich als fiktiv gekennzeichneten Testmandanten. Produktionsdaten werden nicht verändert.
+
+## Freigabe und Umschaltung
+
+Die Domain `www.schichtfunk.de` wird erst verbunden bzw. per DNS umgeschaltet, wenn alle Staging-Prüfungen bestanden sind, die rechtlichen Seiten den tatsächlichen Anbieterstand wiedergeben, die erforderlichen Demo-Geheimnisse gesetzt sind und der Betreiber die Umschaltung ausdrücklich bestätigt hat. Kostenpflichtige IONOS- oder Supabase-Upgrades werden ebenfalls nur nach ausdrücklicher Bestätigung vorgenommen.
+
+## Rückfallplan
+
+1. Vor der Umschaltung werden letzte funktionierende IONOS- und Vercel-Bereitstellungskennungen sowie die bisherigen DNS-Werte dokumentiert.
+2. Bei einem Fehler wird zuerst die letzte funktionierende IONOS-Bereitstellung wiederhergestellt.
+3. Nur wenn IONOS nicht rechtzeitig wiederherstellbar ist, kommt Vercel als zweiter Rückfallweg in Betracht. Vor kommerzieller Aktivierung muss dessen Tarif-/DPA-Grundlage freigegeben sein.
+4. Supabase-Datenbank, Authentifizierung und Projektregion bleiben beim Hosting-Rückfall unverändert; es findet keine Datenmigration zurück zu Vercel statt.
+5. DNS-Änderungen erfolgen kontrolliert und ausschließlich nach ausdrücklicher Freigabe. Die vorherigen Werte werden für die Rücknahme aufbewahrt.
+
+## Aktueller Freigabestatus
+
+- Produktive Betreiberabnahme: Alexander Kirchner hat das IONOS-Deployment am 13.09.2026 vollständig für den Produktivbetrieb abgenommen.
+- Deploy-Now-Projekt und automatische GitHub-Actions-Bereitstellung: eingerichtet; Build- und Deployment-Läufe erfolgreich.
+- Statischer Build und 29 automatisierte lokale Funktions-/Regressionstestgruppen: bestanden.
+- Öffentliche IONOS-Browserprüfung: 10 von 10 Desktop-/Mobiltests bestanden (Branding, PWA-Ressourcen, Login-Validierung, Supabase-Demo-Client, responsive Breite und Sicherheitsheader).
+- Kurze Seitenrouten, tiefe PWA-Routen, HTTPS/HSTS, Cache-Regeln und 404-Verhalten für fehlende statische Assets: direkt auf IONOS geprüft.
+- Isolierte Demo-Prüfungen mit simulierter Edge-Function-Freigabe: Manager-/Mitarbeiterwechsel, DATEV-Download, Arbeitszeiterfassung/Stundenkonto und weitere Demoabläufe wurden ohne Produktionsdaten erreicht. Ein gebündelter Kaltstart-Dauerlauf wurde wegen zeitweise stark schwankender Antwortzeiten der Vorschau nicht als alleiniger Freigabenachweis gewertet.
+- Finale Mobil-Nachprüfung am 13.09.2026: Ersatzanfragen, Dienstplan, Schicht-Marktplatz, Schichtänderungen, Abwesenheitsantrag, Zeiterfassung, Stundenkonto, DATEV-Auswertung und Rollenwechsel bestanden. Die Demo-Steuerung verdeckt auf kleinen Bildschirmen weder die Mitarbeiter-Navigation noch geöffnete Dialoge; unveränderte automatische Aktualisierungen bauen bedienbare Karten nicht erneut auf.
+- Der entfernte Demo-Kaltstart wartet auf der IONOS-Vorschau bis zu 30 Sekunden auf die erforderlichen Daten und Kernbedienelemente. Die nicht kritische Reset-Funktion wird davon unabhängig nachgeladen und kann den Start deshalb nicht mehr vorzeitig abbrechen.
+- Supabase Edge Functions: bereitgestellt und mit neu erzeugten Geheimnissen aktiviert. Live-Prüfung: Anmeldung HTTP 200, Sitzungsprüfung HTTP 200, Analytics HTTP 204; CORS erlaubt exakt die IONOS-Prüfadresse.
+- Geschützte Echtkonto-Prüfungen: ein isolierter fiktiver Testmandant mit einem `OWNER`-Managerkonto und einem verknüpften `EMPLOYEE`-Konto wurde angelegt. Beide Anmeldungen, Rollen sowie die RLS-bedingte Sicht auf ausschließlich diesen Testmandanten wurden über die Live-API verifiziert. Die IONOS-Browserprüfung des Managers bestand in Desktop- und Mobilansicht für Inhaberrolle, Mandantenzuordnung, alle neun Kernbereiche, die isolierte Mitarbeiterliste und die Seitenbreite. Das Mitarbeiterportal bestand zusätzlich acht geschützte Desktop-/Mobilprüfungen gegen den isolierten Testmandanten. Kennwörter sind nicht im Repository oder in dieser Dokumentation gespeichert.
+- Geschützte Demo auf IONOS: echte Anmeldung, Managerbereich, Mitarbeiterportal, Dienstplan, Mitarbeiter, Abwesenheiten, Zeiterfassung/QR-Einstieg, Stundenkonto, Lohnvorschau, DATEV und beide Marktplatzansichten geprüft. Ein dabei gefundener rekursiver RPC-Wrapperfehler wurde behoben und durch Desktop-/Mobiltests abgesichert.
+- Technische IONOS-Staging-Abnahme: bestanden. Beide isolierten Testrollen sind im Browser abgenommen; zusätzlich wurden PWA-Installation, Push-Aktivierung, Testzustellung und Öffnen der Mitteilung auf einem realen iPhone mit dem Betreiberkonto bestätigt.
+- Demo-Geheimnisse in Supabase: gesetzt; Klartextwerte sind nicht im Repository oder in dieser Dokumentation gespeichert.
+- AVV/DPA: IONOS-AVV-Einbeziehung und aktuelle Anlagen sowie Supabase-DPA, SCC, TIA und Unterauftragsverarbeiter sind mit Versionsstand und SHA-256-Prüfsummen im Nachweisregister dokumentiert. Supabase bestätigt im angemeldeten Pro-Organisationsbereich die automatische DPA-Einbeziehung ohne separate Unterschrift.
+- Betreiberunterlagen: TOM, VVT, Lösch-/Aufbewahrungskonzept und DSFA-Schwellenprüfung sind als Version 1.0 dokumentiert. Die Schwellenprüfung verlangt vor dem ersten kommerziellen Beschäftigtendaten-Echtbetrieb eine vollständige kundenspezifische DSFA, die Benennung einer datenschutzbeauftragten Person und den Abschluss der hoch priorisierten Sicherheits-/Löschmaßnahmen.
+- Supabase Pro: aktiv; Spend Cap eingeschaltet.
+- Technische Abschlussnachprüfung am 14.09.2026: 174/174 IONOS-Build-Dateien ohne inhaltliche Abweichung, 33/33 lokale Testdateien, IONOS-Migrationssuite und 2.159.480-Byte-Build bestanden. Die öffentlichen Routen, SPA-Fallback, PWA-/Service-Worker-Dateien, Sicherheitsheader und Supabase-Funktionsgrenzen wurden live bestätigt. Der aktive Privacy-Worker-Zeitplan meldete zuletzt `succeeded`. Detailnachweis: `documentation/ionos-supabase-technical-final-check-2026-09-14.md`.
+- Domain-Umschaltung: noch nicht ausgeführt. Die Produktivabnahme ersetzt nicht die separat erforderliche ausdrückliche Anweisung zur Änderung von `www.schichtfunk.de` beziehungsweise der DNS-Zuordnung.

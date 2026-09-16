@@ -12,12 +12,13 @@
     }catch{}
   }
   normalizeLegacyRecoveryUrl();
-  const recoveryHint=(()=>{
+  const recoveryFromUrl=()=>{
     try{
       const u=new URL(location.href);
       return u.searchParams.get(RESET_PARAM)==='1'||/\btype=recovery\b/i.test(location.hash||'');
     }catch{return false}
-  })();
+  };
+  const initialRecoveryHint=recoveryFromUrl();
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
   function css(){
@@ -75,23 +76,43 @@
         m.querySelector('#sfResetSend').disabled=true;
         m.querySelector('#sfResetSend').textContent='✓ E-Mail angefordert';
       }catch(e){
-        B.hideLoading?.();say(e?.message||String(e),'bad');
+        B.hideLoading?.();say(B.friendlyAuthError?.(e,'Der Reset-Link konnte nicht angefordert werden. Bitte versuche es erneut.')||'Der Reset-Link konnte nicht angefordert werden.','bad');
       }
     };
   };
 
   B.passwordResetNewDialog=function(){
     B.closeAuth?.();
-    const m=dialogShell('Neues Passwort setzen','Lege jetzt ein neues Passwort mit mindestens 8 Zeichen fest.',`<div class="sf-reset-field"><label>Neues Passwort</label><input id="sfNewPassword" type="password" minlength="8" autocomplete="new-password"></div><div class="sf-reset-field"><label>Passwort wiederholen</label><input id="sfNewPassword2" type="password" minlength="8" autocomplete="new-password"></div>`,`<button class="primary" id="sfSaveNewPassword">Passwort speichern</button>`);
+    const recoveryFlow=recoveryFromUrl();
+    const accountFields=recoveryFlow?'':`<div class="sf-reset-field"><label>Aktuelles Passwort</label><input id="sfCurrentPassword" type="password" minlength="8" autocomplete="current-password"></div><div class="sf-reset-field"><label>Bestätigungscode (nur falls angefordert)</label><input id="sfPasswordNonce" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-stelliger Code"></div><button class="ghost" type="button" id="sfSendReauth">Bestätigungscode senden</button>`;
+    const m=dialogShell('Neues Passwort setzen','Lege jetzt ein neues Passwort mit mindestens 8 Zeichen fest. Verwende ein einzigartiges Passwort, das du nirgendwo sonst nutzt.',`${accountFields}<div class="sf-reset-field"><label>Neues Passwort</label><input id="sfNewPassword" type="password" minlength="8" autocomplete="new-password"></div><div class="sf-reset-field"><label>Passwort wiederholen</label><input id="sfNewPassword2" type="password" minlength="8" autocomplete="new-password"></div>`,`<button class="primary" id="sfSaveNewPassword">Passwort speichern</button>`);
     const msg=m.querySelector('#sfResetMsg');
     const say=(text,kind)=>{msg.textContent=text;msg.className='sf-reset-msg show '+kind};
+    m.querySelector('#sfSendReauth')?.addEventListener('click',async event=>{
+      const button=event.currentTarget;button.disabled=true;
+      try{
+        const {error}=await B.client.auth.reauthenticate();
+        if(error)throw error;
+        say('Der Bestätigungscode wurde an deinen hinterlegten Anmeldeweg gesendet.','good');
+        m.querySelector('#sfPasswordNonce')?.focus();
+      }catch(e){
+        say(B.friendlyAuthError?.(e,'Der Bestätigungscode konnte nicht gesendet werden. Bitte melde dich erneut an und versuche es noch einmal.')||'Der Bestätigungscode konnte nicht gesendet werden.','bad');
+      }finally{button.disabled=false}
+    });
     m.querySelector('#sfSaveNewPassword').onclick=async()=>{
       const p1=m.querySelector('#sfNewPassword').value,p2=m.querySelector('#sfNewPassword2').value;
+      const current=m.querySelector('#sfCurrentPassword')?.value||'';
+      const nonce=(m.querySelector('#sfPasswordNonce')?.value||'').replace(/\s/g,'');
+      if(!recoveryFlow&&current.length<8)return say('Bitte gib zuerst dein aktuelles Passwort ein.','bad');
+      if(nonce&&!/^\d{6}$/.test(nonce))return say('Der Bestätigungscode muss aus genau sechs Ziffern bestehen.','bad');
       if(p1.length<8)return say('Das neue Passwort muss mindestens 8 Zeichen haben.','bad');
       if(p1!==p2)return say('Die beiden Passwörter stimmen nicht überein.','bad');
       try{
         B.showLoading?.('Neues Passwort wird gespeichert …');
-        const {error}=await B.client.auth.updateUser({password:p1});
+        const attributes={password:p1};
+        if(!recoveryFlow)attributes.current_password=current;
+        if(nonce)attributes.nonce=nonce;
+        const {error}=await B.client.auth.updateUser(attributes);
         if(error)throw error;
         B.hideLoading?.();cleanRecoveryUrl();
         say('Dein Passwort wurde erfolgreich geändert.','good');
@@ -99,7 +120,7 @@
           try{await B.client.auth.signOut()}catch{}
           close();setTimeout(()=>B.authDialog?.('login'),100);
         };
-      }catch(e){B.hideLoading?.();say(e?.message||String(e),'bad')}
+      }catch(e){B.hideLoading?.();say(B.friendlyAuthError?.(e,'Das Passwort konnte nicht geändert werden. Bitte versuche es erneut.')||'Das Passwort konnte nicht geändert werden.','bad')}
     };
   };
 
@@ -130,7 +151,7 @@
   const baseInit=B.init;
   if(typeof baseInit==='function')B.init=async function(){
     const r=await baseInit.apply(this,arguments);
-    if(recoveryHint){
+    if(initialRecoveryHint){
       const {data}=await B.client.auth.getSession();
       setTimeout(()=>data?.session?B.passwordResetNewDialog():B.passwordResetInvalidDialog(),60);
     }
