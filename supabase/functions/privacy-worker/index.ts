@@ -9,6 +9,13 @@ const safeEqual=(left:string,right:string)=>{
   return difference===0;
 };
 const message=(error:unknown)=>String((error as {message?:string})?.message||error||'UNKNOWN_WORKER_ERROR').slice(0,1800);
+const berlinDate=()=>{
+  const parts=new Intl.DateTimeFormat('en-GB',{
+    timeZone:'Europe/Berlin',year:'numeric',month:'2-digit',day:'2-digit'
+  }).formatToParts(new Date());
+  const value=Object.fromEntries(parts.map(part=>[part.type,part.value]));
+  return `${value.year}-${value.month}-${value.day}`;
+};
 
 Deno.serve(async req=>{
   if(req.method!=='POST')return json({error:'METHOD_NOT_ALLOWED'},405);
@@ -105,5 +112,11 @@ Deno.serve(async req=>{
       processed.push({id:request.id,phase:request.execution_phase,status:'BLOCKED',failureRecorded:!failed.error});
     }
   }
-  return json({ok:true,workerId,processed,count:processed.length});
+
+  const retention=await admin.rpc('server_run_due_privacy_longterm_redactions',{
+    p_as_of:berlinDate(),p_limit:5
+  });
+  if(retention.error)return json({error:'RETENTION_REDACTION_FAILED',detail:message(retention.error),processed},500);
+
+  return json({ok:true,workerId,processed,count:processed.length,retention:retention.data});
 });
