@@ -1,5 +1,5 @@
-// SchichtFunk – sicherer PWA App-Shell + Web Push Service Worker V4
-const CACHE='schichtfunk-shell-v4';
+// SchichtFunk – sicherer PWA App-Shell + Web Push Service Worker V5
+const CACHE='schichtfunk-shell-v5';
 const STATIC=[
   '/index.html',
   '/site.webmanifest',
@@ -68,19 +68,53 @@ self.addEventListener('fetch',event=>{
   }));
 });
 
-self.addEventListener('push',event=>{
+function parsePushPayload(event){
   let payload={};
-  try{payload=event.data?.json?.()||{}}catch{try{payload={title:'SchichtFunk',body:event.data?.text?.()||''}}catch{payload={}}}
-  const title=payload.title||'SchichtFunk';
-  const options={
+  try{
+    payload=event.data?.json?.()||{};
+  }catch{
+    try{payload={title:'SchichtFunk',body:event.data?.text?.()||''}}catch{payload={}}
+  }
+
+  // Declarative Web Push (WebKit/iOS 18.4+) nutzt ein standardisiertes JSON.
+  // Browser ohne native Unterstützung bekommen dasselbe JSON weiterhin als
+  // normalen PushEvent und landen hier im rückwärtskompatiblen Fallback.
+  if(payload?.web_push===8030&&payload?.notification&&typeof payload.notification==='object'){
+    const notification=payload.notification;
+    return {
+      title:notification.title||'SchichtFunk',
+      body:notification.body||'Neue Benachrichtigung in SchichtFunk',
+      icon:notification.icon||'/assets/schichtfunk-app-icon-192.png',
+      badge:notification.badge||'/assets/schichtfunk-app-icon-192.png',
+      tag:notification.tag||'schichtfunk-notification',
+      silent:notification.silent===true,
+      url:notification.navigate||'/#app'
+    };
+  }
+
+  return {
+    title:payload.title||'SchichtFunk',
     body:payload.body||'Neue Benachrichtigung in SchichtFunk',
-    icon:'/assets/schichtfunk-app-icon-192.png',
-    badge:'/assets/schichtfunk-app-icon-192.png',
+    icon:payload.icon||'/assets/schichtfunk-app-icon-192.png',
+    badge:payload.badge||'/assets/schichtfunk-app-icon-192.png',
     tag:payload.tag||'schichtfunk-notification',
-    renotify:true,
-    data:{url:payload.url||'/#app'}
+    silent:payload.silent===true,
+    url:payload.url||'/#app'
   };
-  event.waitUntil(self.registration.showNotification(title,options));
+}
+
+self.addEventListener('push',event=>{
+  const payload=parsePushPayload(event);
+  const options={
+    body:payload.body,
+    icon:payload.icon,
+    badge:payload.badge,
+    tag:payload.tag,
+    renotify:true,
+    silent:payload.silent,
+    data:{url:payload.url}
+  };
+  event.waitUntil(self.registration.showNotification(payload.title,options));
 });
 
 self.addEventListener('notificationclick',event=>{
