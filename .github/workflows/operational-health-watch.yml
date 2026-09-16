@@ -37,12 +37,24 @@ jobs:
           node-version: '22.x'
 
       - name: Run operational checks
+        env:
+          HEALTHCHECK_REPORT_PATH: artifacts/operational-health.json
         run: node scripts/operational-healthcheck.mjs
+
+      - name: Retain operational evidence for 30 days
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: schichtfunk-operational-health-${{ github.run_id }}
+          path: artifacts/operational-health.json
+          if-no-files-found: warn
+          retention-days: 30
 
       - name: Verify failure detection without touching production
         env:
           SCHICHTFUNK_SITE_URL: http://127.0.0.1:9
           HEALTHCHECK_TIMEOUT_MS: '500'
+          HEALTHCHECK_REPORT_PATH: /tmp/expected-health-failure.json
         run: |
           if node scripts/operational-healthcheck.mjs >/tmp/expected-health-failure.log 2>&1; then
             echo "Expected the synthetic check to fail against the closed local port."
