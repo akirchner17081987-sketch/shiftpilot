@@ -89,7 +89,8 @@ test('storage backup architecture keeps personnel documents out of repository ev
   assert.match(storageArch,/Storage-RPO: höchstens 24 Stunden/i);
   assert.match(storageArch,/SHA-256/i);
   assert.match(storageArch,/GitHub-Repository oder GitHub-Actions-Artefakte/i);
-  assert.match(storageArch,/erste echte Dokumentablage/i);
+  assert.match(storageArch,/Einführungs-Gate/i);
+  assert.match(storageArch,/täglicher Zeitplan und Fehleralarm aktiviert/i);
 });
 
 test('IONOS security headers and PWA cache exclusions remain fail-safe',()=>{
