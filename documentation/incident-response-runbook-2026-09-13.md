@@ -1,7 +1,7 @@
 # SchichtFunk – Incident-Response- und Datenschutzverletzungsprozess
 
-Stand: 13.09.2026  
-Dokumentstatus: Betreiberunterlage, Version 1.0  
+Stand: 16.09.2026  
+Dokumentstatus: Betreiberunterlage, Version 1.1  
 
 ## 1. Zweck und Geltungsbereich
 
@@ -19,7 +19,7 @@ SchichtFunk kann je nach Verarbeitung Verantwortlicher oder Auftragsverarbeiter 
 | Datenschutzbeauftragte Person | Auswahl nach Option B derzeit zurückgestellt | unabhängige Beratung und Überwachung nach späterer Benennung |
 | Kundenkontakt | gemäß Kunden-AVV, Anlage 4 | Weisungen, Risikobewertung und Meldeentscheidung des Kunden |
 
-Bis eine überwachte Alarmierung und Vertretung eingerichtet sind, wird **keine 24/7-Reaktionsbereitschaft behauptet**. Anbieterstatusseiten und Sicherheitsmeldungen sind zusätzlich zum Postfach zu beobachten.
+Technisch existieren seit 16.09.2026 zwei ergänzende Erkennungsebenen: ein synthetischer GitHub-Healthcheck für IONOS/PWA/Supabase und ein stündlicher, rein lesender Betreiber-Condition-Watch. Beide melden technische Auffälligkeiten, ersetzen aber keine menschliche Bereitschaft. Bis eine Vertretung und verbindliche Bereitschaftszeiten eingerichtet sind, wird **keine 24/7-Reaktionsbereitschaft behauptet**. Anbieterstatusseiten und Sicherheitsmeldungen sind zusätzlich zum Postfach zu beobachten.
 
 ## 3. Schweregrade
 
@@ -32,14 +32,30 @@ Bis eine überwachte Alarmierung und Vertretung eingerichtet sind, wird **keine 
 
 Bei Unsicherheit ist zunächst die höhere Stufe anzunehmen. Gesundheits-, Personalakten-, Arbeitszeit- und Authentifizierungsdaten erhöhen den Schutzbedarf.
 
-## 4. Ablauf ab Kenntniszeitpunkt T0
+## 4. Erkennungs- und Meldequellen
+
+Ein Incident darf nicht ausschließlich von automatischem Monitoring abhängen. Als Kenntnisquelle gelten insbesondere:
+
+1. synthetischer `SchichtFunk: Operational Health Watch` in GitHub Actions;
+2. stündlicher Betreiber-Condition-Watch für IONOS- und Supabase-Gesundheitsstatus;
+3. fehlgeschlagene IONOS-/GitHub-Deployments oder Regressionstests;
+4. Supabase Security Advisor, Auth-/Edge-/Datenbanklogs und Providerstatus;
+5. Kunden-, Mitarbeiter- oder Supportmeldung;
+6. unerwartete Audit-, Export-, Rechte- oder Mandantengrenzen-Ereignisse.
+
+Der synthetische Healthcheck prüft ausschließlich technische Endpunkte. Ein grüner Healthcheck beweist daher nicht, dass kein Datenschutz- oder Berechtigungsincident vorliegt.
+
+Am 16.09.2026 bestand der positive Healthcheck 5/5 Prüfungen. Zusätzlich wurde der Fehlerpfad ohne Berührung der Produktion gegen einen absichtlich geschlossenen lokalen Port getestet. Der Workflow erkannte den künstlichen Fehler erwartungsgemäß und wertete den Negativtest als bestanden. Damit ist die technische Fehlererkennung des Checks nachgewiesen.
+
+## 5. Ablauf ab Kenntniszeitpunkt T0
 
 ### T0 bis T+15 Minuten – aufnehmen und sichern
 
-1. Zeitpunkt, Meldekanal, meldende Person und unveränderte Erstbeschreibung erfassen.
+1. Zeitpunkt, Meldekanal, meldende Person bzw. technische Quelle und unveränderte Erstbeschreibung erfassen.
 2. Incident-ID `SF-INC-YYYYMMDD-NNN` vergeben und ein zugriffsbeschränktes Lageprotokoll beginnen.
 3. Keine verdächtigen Dateien öffnen und keine Beweise überschreiben; relevante Zeitstempel, Anbieterereignisse und Audit-IDs sichern.
 4. P1/P2 vorläufig klassifizieren und die Einsatzleitung informieren.
+5. Bei einem automatischen Healthcheck-Alarm zuerst zwischen Erreichbarkeitsfehler, Deploymentfehler und möglichem Sicherheitsereignis unterscheiden; ein fehlgeschlagener Check allein ist noch keine Datenschutzverletzung.
 
 ### T+15 bis T+60 Minuten – eindämmen und Kunden informieren
 
@@ -64,13 +80,14 @@ Bei Unsicherheit ist zunächst die höhere Stufe anzunehmen. Gesundheits-, Perso
 - Unvollständige Informationen dürfen schrittweise nachgereicht werden; eine fehlende Einzelangabe ist kein Grund, die Erstmeldung unnötig zu verzögern.
 - SchichtFunk liefert als Auftragsverarbeiter die verfügbaren technischen Tatsachen und Maßnahmen, trifft aber nicht anstelle des Kunden dessen Rechtsentscheidung.
 
-## 5. Mindestinhalt des Lageprotokolls
+## 6. Mindestinhalt des Lageprotokolls
 
 - Incident-ID, Kenntniszeitpunkt, Meldekanal und Bearbeitende;
 - System, Mandant und betroffene Funktion;
 - Kategorien und ungefähre Zahl betroffener Personen und Datensätze;
 - Ereignisablauf in UTC und lokaler Zeit;
 - gesicherte Audit-/Anbieterreferenzen, Hashes und relevante Versionsstände;
+- Healthcheck-/Workflow-Run-ID, soweit der Vorfall technisch erkannt wurde;
 - Eindämmungs-, Wiederherstellungs- und Präventionsmaßnahmen;
 - Risikobewertung sowie Kunden-/Behörden-/Betroffenenentscheidung;
 - Kommunikationszeitpunkte, Empfänger und freigegebener Inhalt;
@@ -78,7 +95,7 @@ Bei Unsicherheit ist zunächst die höhere Stufe anzunehmen. Gesundheits-, Perso
 
 Protokolle dürfen keine unnötigen Vollkopien von Personalakten oder Gesundheitsdaten enthalten. Geheimnisse, Zugriffstoken und vollständige Authentifizierungsdaten werden niemals in Git, Tickets oder E-Mails übernommen.
 
-## 6. Vorlage für die erste Kundeninformation
+## 7. Vorlage für die erste Kundeninformation
 
 ```text
 Betreff: SchichtFunk – vorläufige Information zu einem Datenschutz-/Sicherheitsereignis [Incident-ID]
@@ -95,15 +112,16 @@ Kontakt: info@schichtfunk.de
 Diese Meldung ist vorläufig. Fehlende Informationen werden ohne unangemessene Verzögerung nachgereicht.
 ```
 
-## 7. Wiederanlauf und Abschluss
+## 8. Wiederanlauf und Abschluss
 
 1. Wiederanlauf nur aus einem bekannten, geprüften Stand; vor Freigabe Build, Regression, Mandantentrennung und betroffene Kernfunktion prüfen.
 2. Bei Restore die in `backup-storage-restore-pruefung-2026-09-13.md` beschriebenen Datenbank- und Storage-Grenzen beachten.
 3. Wiederhergestellte Systeme auf überfällige Löschungen, zurückgesetzte Anmeldedaten, RLS/Grants, Edge Functions, Auth- und Realtime-Einstellungen prüfen.
 4. Ursache, Wirksamkeit der Maßnahmen und Wiederholungsrisiko dokumentieren.
 5. Folgeaufgaben mit Frist und Verantwortlichen verfolgen; Runbook und TOM bei Bedarf aktualisieren.
+6. Nach einem Verfügbarkeitsvorfall muss der synthetische Healthcheck wieder grün sein; nach einem Berechtigungs- oder Datenschutzvorfall sind zusätzlich die betroffenen Negativtests erforderlich.
 
-## 8. Dokumentiertes Planspiel vom 13.09.2026
+## 9. Dokumentiertes Planspiel vom 13.09.2026 und technischer Alarmtest vom 16.09.2026
 
 ### Szenario
 
@@ -117,28 +135,32 @@ Rein fiktive Annahme: Ein Kunden-Admin meldet, dass seine Sitzung möglicherweis
 | Soforteinstufung | wegen möglicher Mandantentrennung und Gesundheitsbezug P1 | Entscheidung eindeutig |
 | Eindämmung | Sitzung widerrufen, Konto/Mitgliedschaft sperren, Exportfunktion eingrenzen, Beweise sichern | technischer `others`-/`global`-Widerruf mit zwei synthetischen Konten bestanden; fachliche Sperr- und Exportmaßnahmen bleiben fallbezogen |
 | Kundeninformation | beide möglicherweise betroffenen Verantwortlichen unverzüglich mit vorläufigen Fakten informieren | Vorlage und schrittweise Nachmeldung vorhanden |
-| Umfang | Auditereignisse, Funktionsversion, Mandanten- und Datensatzumfang prüfen | Nachweisquellen benannt; zentrale Logzugriffsmatrix offen |
+| Umfang | Auditereignisse, Funktionsversion, Mandanten- und Datensatzumfang prüfen | Nachweisquellen und aktuelle Logging-/Monitoring-Matrix vorhanden |
 | Wiederanlauf | RLS/RPC-Grenze prüfen, bekannten Stand bereitstellen, gezielte Negativtests ausführen | Git-/Testweg vorhanden |
 | Rechtsentscheidung | Risiko sowie Art.-33-/34-Entscheidung durch den jeweiligen Verantwortlichen dokumentieren | Verantwortungsgrenze korrekt abgebildet |
 | Abschluss | Ursache, Abhilfe, Wirksamkeit und Folgemaßnahmen dokumentieren | Abschlusskriterien vorhanden |
+| Alarm-Negativtest | künstlich unerreichbaren lokalen Endpunkt erkennen, ohne Produktion zu verändern | am 16.09.2026 erfolgreich; Fehlererkennung des Healthchecks bestätigt |
 
 ### Ergebnis und offene Feststellungen
 
-Der Papierablauf ist schlüssig und deckt Erkennung, Eindämmung, Kundeninformation, Bewertung, Wiederanlauf und Nachbereitung ab. Der Prozess gilt **nicht als vollständig betrieblich abgenommen**, bis folgende Feststellungen erledigt sind:
+Der Ablauf deckt Erkennung, Eindämmung, Kundeninformation, Bewertung, Wiederanlauf und Nachbereitung ab. Technische Verfügbarkeits-/Auth-Erkennung und der synthetische Negativtest sind nun vorhanden. Der Prozess gilt **nicht als vollständig betrieblich abgenommen**, bis folgende Feststellungen erledigt sind:
 
 1. Vertretung und erreichbare Eskalationskette benennen.
-2. Überwachte Alarmierung und definierte Bereitschaftszeiten einrichten.
+2. Verbindliche Bereitschaftszeiten und deren organisatorische Überwachung festlegen; die technischen Watches alleine begründen keine 24/7-Zusage.
 3. Schlüsselrotation mit sicheren Testschlüsseln üben; der Zwei-Konten-Sitzungswiderruf ist technisch bestanden und in `mfa-session-recovery-test-2026-09-13.md` protokolliert.
-4. Zugriffswege und Aufbewahrung für IONOS-, Supabase-, Auth-, Edge-Function- und Anwendungsaudits tabellarisch festlegen.
+4. IONOS-Deploy-Now-spezifische Logzugriffe/-fristen sowie die noch offenen Anbieter-/Workflow-Aufbewahrungsdetails abschließend belegen.
 5. Kundenkontakte aus Anlage 4 des jeweiligen AVV vor Produktivbeginn vollständig eintragen.
 
 Das Planspiel ist nach wesentlichen Architekturänderungen und mindestens jährlich zu wiederholen. Ein technischer Drill darf nur mit fiktiven Daten und ausdrücklich freigegebener Testumgebung erfolgen.
 
-## 9. Quellen
+## 10. Quellen
 
 - DSGVO Artikel 33 und 34: https://eur-lex.europa.eu/eli/reg/2016/679/deu
 - BSI Vorfallunterstützung: https://www.bsi.bund.de/DE/Themen/Unternehmen-und-Organisationen/Cyber-Sicherheitslage/Reaktion/Vorfallunterstuetzung/vorfallsunterstuetzung.html
 - Supabase Security: https://supabase.com/docs/guides/security
 - Supabase Backups: https://supabase.com/docs/guides/platform/backups
+- `documentation/logging-monitoring-retention-2026-09-13.md`
+- `.github/workflows/operational-health-watch.yml`
+- `scripts/operational-healthcheck.mjs`
 
-Status: 🟡 **RUNBOOK, PAPIER-PLANSPIEL UND TECHNISCHER SITZUNGSWIDERRUF DOKUMENTIERT; ALARMIERUNG, VERTRETUNG UND SCHLÜSSELROTATIONSDRILL OFFEN.**
+Status: 🟡 **RUNBOOK, PAPIER-PLANSPIEL, SITZUNGSWIDERRUF, SYNTHETISCHE ERKENNUNG UND NEGATIVER ALARMTEST BESTANDEN; VERTRETUNG, BEREITSCHAFTSREGELUNG, SCHLÜSSELROTATIONSDRILL UND RESTLICHE ANBIETER-NACHWEISE OFFEN.**
