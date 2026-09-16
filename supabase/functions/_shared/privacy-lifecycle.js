@@ -31,7 +31,7 @@ export function parseLifecycleRequest(input){
   const version=input?.version==null?null:Number(input.version);
   const rules=input?.rules;
   const approvalReference=input?.approvalReference==null?null:String(input.approvalReference).trim();
-  if(!['preview','stage','approve','stage-sole-owner','confirm-sole-owner',
+  if(!['preview','retention-status','stage','approve','stage-sole-owner','confirm-sole-owner',
     'stage-retention-profile','confirm-retention-profile'].includes(action))throw new Error('INVALID_ACTION');
   if(!uuidRe.test(companyId))throw new Error('INVALID_TARGET');
   if(['preview','stage','stage-sole-owner'].includes(action)&&!uuidRe.test(employeeId))throw new Error('INVALID_TARGET');
@@ -58,7 +58,7 @@ export function authorizeLifecycleRequest({membership,userId,aal,request}){
   if(!userId)throw new Error('UNAUTHENTICATED');
   if(!membership||membership.user_id!==userId||membership.company_id!==request.companyId
     ||membership.status!=='ACTIVE'||!allowedRoles.has(membership.role))throw new Error('FORBIDDEN');
-  if(request.action!=='preview'&&aal!=='aal2')throw new Error('MFA_REQUIRED');
+  if(!['preview','retention-status'].includes(request.action)&&aal!=='aal2')throw new Error('MFA_REQUIRED');
   if(['stage-sole-owner','confirm-sole-owner','stage-retention-profile','confirm-retention-profile'].includes(request.action)
     &&membership.role!=='OWNER')throw new Error('SOLE_OWNER_REQUIRED');
   return true;
