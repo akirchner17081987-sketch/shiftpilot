@@ -32,5 +32,5 @@ test('default retention profile remains conservative for destructive external de
   assert.match(ui,/datevAuditYears:6/);
   assert.match(ui,/deletePersonnelDocuments:false/);
   assert.match(ui,/deleteAuthAccount:false/);
-  assert.match(ui,/rechtlich\/vertraglich/);
+  assert.match(ui,/vertraglich\/rechtlich/);
 });
