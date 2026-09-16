@@ -28,8 +28,10 @@
       <a href="#abwesenheit">7. Abwesenheiten & Gesundheit</a><a href="#zeit">8. Zeiterfassung & QR</a>
       <a href="#funktionen">9. Weitere Produktfunktionen</a><a href="#push">10. Push-Benachrichtigungen</a>
       <a href="#datev">11. DATEV-Export</a><a href="#browser">12. PWA, Cookies & Speicher</a>
-      <a href="#empfaenger">13. Empfänger & Drittstaaten</a><a href="#loeschung">14. Löschung</a>
-      <a href="#sicherheit">15. Sicherheit</a><a href="#rechte">16. Betroffenenrechte</a>
+      <a href="#demo">13. Demo-Modus</a><a href="#empfaenger">14. Empfänger & Drittstaaten</a>
+      <a href="#loeschung">15. Löschung</a><a href="#sicherheit">16. Sicherheit</a>
+      <a href="#rechte">17. Betroffenenrechte</a><a href="#quellen">18. Datenquellen</a>
+      <a href="#aenderung">19. Änderungen</a>
     </nav>
 
     <section id="verantwortlicher">
@@ -47,11 +49,11 @@
 
     <section id="hosting">
       <h2>3. Hosting, Backend und technische Infrastruktur</h2>
-      <h3>Vercel</h3>
-      <p>Die Weboberfläche von SchichtFunk wird über Vercel bereitgestellt. Dabei können technisch notwendige Verbindungs- und Protokolldaten verarbeitet werden, insbesondere IP-Adresse, Datum und Uhrzeit, aufgerufene Ressource, Browser-/Geräteinformationen sowie technische Fehler- und Sicherheitsdaten. Zweck ist die zuverlässige, schnelle und sichere Bereitstellung des Dienstes.</p>
+      <h3>IONOS Deploy Now und vorübergehende Rückfallumgebung</h3>
+      <p>Die Weboberfläche und PWA von SchichtFunk werden nach Abschluss der kontrollierten Umstellung über IONOS Deploy Now bereitgestellt. Während der technischen Migration kann Vercel vorübergehend parallel als bestehende Bereitstellungs- und Rückfallumgebung erreichbar bleiben. Der Anbieter, über den eine Seite tatsächlich abgerufen wird, kann technisch notwendige Verbindungs- und Protokolldaten verarbeiten, insbesondere IP-Adresse, Datum und Uhrzeit, aufgerufene Ressource, Browser-/Geräteinformationen sowie technische Fehler- und Sicherheitsdaten. Zweck ist die zuverlässige und sichere Bereitstellung des Dienstes.</p>
       <h3>Supabase</h3>
       <p>Das SchichtFunk-Backend nutzt Supabase für Datenbank- und Authentifizierungsfunktionen sowie – soweit eingesetzt – serverseitige Funktionen und Echtzeitfunktionen. Das produktive Supabase-Projekt ist in der Region <strong>eu-central-1</strong> eingerichtet. Verarbeitet werden dort insbesondere Benutzer-, Mandanten-, Personal-, Dienstplan-, Arbeitszeit-, Abwesenheits-, Benachrichtigungs- und Auditdaten.</p>
-      <p>Soweit Vercel, Supabase oder deren Unterauftragnehmer Daten in unserem Auftrag verarbeiten, werden sie im Rahmen der jeweils einschlägigen vertraglichen Datenschutzregelungen und der Anforderungen des Art. 28 DSGVO eingesetzt.</p>
+      <p>Soweit IONOS, Vercel, Supabase oder deren Unterauftragnehmer Daten in unserem Auftrag verarbeiten, werden sie im Rahmen der jeweils einschlägigen vertraglichen Datenschutzregelungen und der Anforderungen des Art. 28 DSGVO eingesetzt.</p>
     </section>
 
     <section id="website">
@@ -129,7 +131,8 @@
       <p>Personenbezogene Daten werden nur solchen Empfängern zugänglich gemacht, die sie für die jeweilige Aufgabe benötigen. Dazu können gehören:</p>
       <ul>
         <li>berechtigte Nutzer des jeweiligen Kundenmandanten entsprechend ihrer Rolle,</li>
-        <li>Vercel für Webhosting und Auslieferung,</li>
+        <li>IONOS für das primäre statische Webhosting und die Auslieferung der PWA,</li>
+        <li>Vercel vorübergehend als bestehende Bereitstellungs- und technische Rückfallumgebung,</li>
         <li>Supabase für Backend-, Datenbank-, Authentifizierungs- und Serverfunktionen,</li>
         <li>Push-Infrastrukturanbieter des jeweiligen Browsers bzw. Betriebssystems bei aktivierten Push-Mitteilungen,</li>
         <li>rechtlich oder technisch erforderliche Dienstleister, Berater oder Behörden, soweit eine entsprechende Verpflichtung oder Berechtigung besteht.</li>

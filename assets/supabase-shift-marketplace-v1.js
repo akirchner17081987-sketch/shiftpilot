@@ -92,8 +92,13 @@
     if (employeeBusy || B.role !== "EMPLOYEE") return;
     employeeBusy = true;
     try {
-      rows = (await rpc("employee_list_shift_marketplace")) || [];
-      renderEmployee();
+      const next = (await rpc("employee_list_shift_marketplace")) || [];
+      const unchanged = JSON.stringify(next) === JSON.stringify(rows);
+      rows = next;
+      if (!unchanged || !document.getElementById("sfMarketEmployee"))
+        renderEmployee();
+      else
+        addOfferButtons();
     } catch (e) {
       console.warn("Marktplatz", e);
       renderEmployeeError(e);

@@ -24,11 +24,7 @@
     const key=`${event}:${value}`,used=seen();
     if(once&&used.has(key))return false;
     if(once){used.add(key);save(used)}
-    fetch('/api/demo-analytics',{
-      method:'POST',credentials:'same-origin',keepalive:true,
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({event,value})
-    }).catch(()=>{});
+    window.SFDemoAPI?.fetchAnalytics({event,value}).catch(()=>{});
     return true;
   }
 

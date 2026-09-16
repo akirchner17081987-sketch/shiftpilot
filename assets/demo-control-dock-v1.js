@@ -11,6 +11,7 @@
     const style=document.createElement('style');style.id='sfDemoControlDockCss';style.textContent=`
       html[data-sf-demo="1"]{--sf-demo-dock-space:86px}
       #sfDemoControlDock{position:fixed;z-index:30000;left:50%;bottom:max(10px,env(safe-area-inset-bottom));transform:translateX(-50%);width:max-content;max-width:calc(100vw - 22px);padding:7px;border:1px solid #31536a;border-radius:15px;background:rgba(7,20,31,.96);box-shadow:0 18px 55px rgba(0,0,0,.48);backdrop-filter:blur(14px);color:#eaf5fd}
+      #sfDemoControlDock.sf-demo-dock-obscured{opacity:0;visibility:hidden;pointer-events:none}
       #sfDemoControlDock .sf-demo-dock-controls{display:flex;align-items:center;justify-content:center;gap:7px;max-width:100%;overflow-x:auto;overscroll-behavior-inline:contain;scrollbar-width:thin;scrollbar-color:#31536a transparent}
       #sfDemoControlDock #sfDemoBadge{position:static!important;right:auto!important;bottom:auto!important;display:block!important;flex:0 0 auto;margin:0;padding:7px 10px;box-shadow:none;white-space:nowrap}
       #sfDemoControlDock .sf-demo-perspective{position:static!important;inset:auto!important;transform:none!important;flex:0 0 auto;margin:0!important;box-shadow:none}
@@ -23,7 +24,8 @@
       @media(max-width:560px){
         html[data-sf-demo="1"]{--sf-demo-dock-space:132px}
         #sfDemoControlDock{width:calc(100vw - 16px);bottom:max(8px,env(safe-area-inset-bottom));padding:7px 6px;border-radius:14px}
-        #sfDemoControlDock .sf-demo-dock-controls{flex-wrap:wrap;gap:5px;overflow:visible}
+        #sfDemoControlDock.sf-demo-dock-employee{bottom:calc(76px + max(8px,env(safe-area-inset-bottom)))}
+        #sfDemoControlDock .sf-demo-dock-controls{justify-content:flex-start;flex-wrap:nowrap;gap:5px;overflow-x:auto;overflow-y:hidden}
         #sfDemoControlDock #sfDemoBadge{width:74px;font-size:0;padding:6px 8px;text-align:center}
         #sfDemoControlDock #sfDemoBadge:after{content:'DEMO';font-size:9px;letter-spacing:.1em}
         #sfDemoControlDock .sf-demo-perspective{order:1}
@@ -49,6 +51,9 @@
       const selectors=['#sfDemoBadge','#sfDemoPerspectiveSwitch','[data-demo-scenarios]','#sfDemoResetBtn','#sfDemoExitBtn','#sfDemoEmployeeExit'];
       selectors.forEach(selector=>{const node=[...document.querySelectorAll(selector)].find(item=>!root.contains(item));if(node)controls.appendChild(node)});
       const employee=!!document.getElementById('sfEmployeePortal'),managerExit=document.getElementById('sfDemoExitBtn'),employeeExit=document.getElementById('sfDemoEmployeeExit');
+      root.classList.toggle('sf-demo-dock-employee',employee);
+      const modal=[...document.querySelectorAll('[role="dialog"],[aria-modal="true"]')].some(node=>!root.contains(node)&&node.getClientRects().length>0);
+      root.classList.toggle('sf-demo-dock-obscured',modal);
       if(managerExit)managerExit.hidden=employee&&!!employeeExit;if(employeeExit)employeeExit.hidden=!employee;
       document.documentElement.dataset.sfDemoDock='1';
     }finally{syncing=false}
