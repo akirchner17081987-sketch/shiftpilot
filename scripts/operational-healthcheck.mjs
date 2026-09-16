@@ -2,6 +2,7 @@ const siteUrl=(process.env.SCHICHTFUNK_SITE_URL||'https://home-5021411544.app-io
 const supabaseUrl=(process.env.SUPABASE_URL||'https://zbvloohfjleadjnqhbbh.supabase.co').replace(/\/$/,'');
 const publishableKey=String(process.env.SUPABASE_PUBLISHABLE_KEY||'').trim();
 const timeoutMs=Number(process.env.HEALTHCHECK_TIMEOUT_MS||10000);
+const reportPath=String(process.env.HEALTHCHECK_REPORT_PATH||'').trim();
 
 const checks=[];
 const now=new Date().toISOString();
@@ -78,7 +79,16 @@ if(!publishableKey){
 
 const failed=checks.filter(check=>check.status!=='ok');
 const report={checkedAt:now,siteUrl,supabaseUrl,ok:failed.length===0,checks};
-console.log(JSON.stringify(report,null,2));
+const reportJson=`${JSON.stringify(report,null,2)}\n`;
+console.log(reportJson.trimEnd());
+
+if(reportPath){
+  const fs=await import('node:fs/promises');
+  const path=await import('node:path');
+  const resolved=path.resolve(reportPath);
+  await fs.mkdir(path.dirname(resolved),{recursive:true});
+  await fs.writeFile(resolved,reportJson,{encoding:'utf8',mode:0o600});
+}
 
 if(process.env.GITHUB_STEP_SUMMARY){
   const fs=await import('node:fs/promises');
