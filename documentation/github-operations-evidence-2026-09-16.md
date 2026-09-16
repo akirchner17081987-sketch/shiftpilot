@@ -1,7 +1,7 @@
 # SchichtFunk – GitHub Betriebs- und Workflow-Nachweis
 
 Stand: 16.09.2026
-Dokumentstatus: Betreiberunterlage, Version 1.0
+Dokumentstatus: Betreiberunterlage, Version 1.1
 
 ## 1. Repository-Grundzustand
 
@@ -56,6 +56,20 @@ Der Healthcheck schreibt pro Lauf eine JSON-Nachweisdatei `artifacts/operational
 
 Der Nachweis enthält ausschließlich technische Endpunkt-URLs, Zeitstempel, HTTP-Status, Laufzeiten und Prüfergebnis. Er enthält keine Beschäftigten-/Kundendaten und keine geheimen Schlüssel.
 
+Die Funktion wurde nicht nur konfiguriert, sondern am 16.09.2026 live über GitHub Actions verifiziert:
+
+- Workflow: `SchichtFunk: Operational Health Watch`
+- Run: `35051715937`
+- Commit: `a0c91083305a7bc5036779781e37d0da5368e446`
+- Ergebnis: `success`
+- Artefakt: `schichtfunk-operational-health-35051715937`
+- Größe: 512 Byte
+- erstellt: 16.09.2026 03:25:15 UTC
+- Ablauf: 16.10.2026 03:25:14 UTC
+- GitHub-Digest: `sha256:a3ac5bcf006decf17422b85331f00af13a3a9dc36eaeae21ad31ef3e27d5e1d2`
+
+Damit ist die tatsächliche 30-Tage-Artefaktaufbewahrung für einen erfolgreichen Health-Lauf als Anbieter-/Live-Nachweis bestätigt und nicht nur als Workflow-Konfiguration dokumentiert.
+
 Fehlläufe erzeugen ebenfalls den JSON-Nachweis, soweit der Runner den Check bis zur Berichtserstellung ausführen kann. Damit steht neben der GitHub-Laufhistorie ein klar begrenzter technischer Nachweiszeitraum von 30 Tagen zur Verfügung.
 
 ## 5. Zeitplanung und Integrationsgrenze
@@ -68,10 +82,10 @@ Bis dahin läuft ergänzend der stündliche Betreiber-Condition-Watch. Dieser is
 
 🟢 Healthcheck technisch vorhanden und positiv/negativ getestet.
 
-🟢 Technischer Health-Nachweis wird nach Integration des aktualisierten Workflows explizit 30 Tage als Artefakt aufbewahrt.
+🟢 30-Tage-Health-Artefaktaufbewahrung live nachgewiesen.
 
 🟡 30-Minuten-Cron wartet auf Integration in `main`.
 
 🔴 `main` ist derzeit nicht branchgeschützt; keine Required Checks und kein Ruleset sind live nachgewiesen.
 
-Status: 🟡 **WORKFLOW-/MONITORING-NACHWEIS TECHNISCH GESCHÄRFT; BRANCH-SCHUTZ VOR FINALER KOMMERZIELLER FREIGABE NOCH EINZURICHTEN.**
+Status: 🟡 **WORKFLOW-/MONITORING-NACHWEIS TECHNISCH UND ÜBER EIN ECHTES GITHUB-ARTEFAKT BELEGT; BRANCH-SCHUTZ VOR FINALER KOMMERZIELLER FREIGABE NOCH EINZURICHTEN.**
