@@ -15,6 +15,8 @@ const apache=read('.htaccess');
 const worker=read('schichtfunk-sw.js');
 const build=read('scripts/build-static.mjs');
 const workflow=read('.github/workflows/regression-tests.yml');
+const healthWorkflow=read('.github/workflows/operational-health-watch.yml');
+const healthScript=read('scripts/operational-healthcheck.mjs');
 
 test('incident runbook preserves processor duties and the 72-hour decision path',()=>{
   assert.match(incident,/Auftragsverarbeiter[\s\S]*unverzüglich/i);
@@ -40,13 +42,29 @@ test('evidence register is explicit about proof levels and unresolved controls',
   assert.match(evidence,/keine Zugangsdaten enthalten/i);
 });
 
-test('monitoring matrix distinguishes current evidence from unproved alerting',()=>{
+test('monitoring matrix distinguishes active controls from unresolved operational dependencies',()=>{
   assert.match(monitoring,/public\.audit_events/);
   assert.match(monitoring,/FORCE ROW LEVEL SECURITY/);
-  assert.match(monitoring,/keine pauschalen automatischen Löschfristen/i);
-  assert.match(monitoring,/automatische Alarmierung nicht nachgewiesen/i);
+  assert.match(monitoring,/Langfristredaktion technisch aktiv/i);
+  assert.match(monitoring,/genehmigtes kundenspezifisches Fristprofil/i);
+  assert.match(monitoring,/automatische projektbezogene Backup-Alarmierung nicht nachgewiesen/i);
   assert.match(monitoring,/IONOS-Deploy-Now-Logzugriff/i);
-  assert.match(monitoring,/Alarmtest mit ausschließlich fiktiven Daten/i);
+  assert.match(monitoring,/Alarm-Negativtest mit ausschließlich fiktivem Fehlerzustand/i);
+  assert.match(monitoring,/5\/5 Prüfungen bestanden/i);
+});
+
+test('synthetic operational health watch is read-only, scheduled and proves failure detection',()=>{
+  assert.match(healthWorkflow,/cron:\s*'17,47 \* \* \* \*'/);
+  assert.match(healthWorkflow,/permissions:\s*\n\s*contents:\s*read/);
+  assert.match(healthWorkflow,/Verify failure detection without touching production/i);
+  assert.match(healthWorkflow,/127\.0\.0\.1:9/);
+  assert.match(healthScript,/site\.webmanifest/);
+  assert.match(healthScript,/schichtfunk-sw\.js/);
+  assert.match(healthScript,/datenschutz\.html/);
+  assert.match(healthScript,/auth\/v1\/health/);
+  assert.match(healthScript,/content-security-policy/);
+  assert.match(healthScript,/strict-transport-security/);
+  assert.match(healthScript,/process\.exit\(1\)/);
 });
 
 test('IONOS security headers and PWA cache exclusions remain fail-safe',()=>{
