@@ -1,13 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.116.0";
+import { workerTokenAccepted } from "../_shared/worker-auth.mjs";
 
 const json=(body:unknown,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store'}});
-const safeEqual=(left:string,right:string)=>{
-  if(left.length!==right.length)return false;
-  let difference=0;
-  for(let index=0;index<left.length;index++)difference|=left.charCodeAt(index)^right.charCodeAt(index);
-  return difference===0;
-};
 const message=(error:unknown)=>String((error as {message?:string})?.message||error||'UNKNOWN_WORKER_ERROR').slice(0,1800);
 const berlinDate=()=>{
   const parts=new Intl.DateTimeFormat('en-GB',{
@@ -19,9 +14,10 @@ const berlinDate=()=>{
 
 Deno.serve(async req=>{
   if(req.method!=='POST')return json({error:'METHOD_NOT_ALLOWED'},405);
-  const expected=Deno.env.get('PRIVACY_WORKER_TOKEN')||'';
+  const current=Deno.env.get('PRIVACY_WORKER_TOKEN')||'';
+  const previous=Deno.env.get('PRIVACY_WORKER_TOKEN_PREVIOUS')||'';
   const supplied=req.headers.get('x-privacy-worker-token')||'';
-  if(!expected||!safeEqual(supplied,expected))return json({error:'UNAUTHENTICATED'},401);
+  if(!workerTokenAccepted(supplied,current,previous))return json({error:'UNAUTHENTICATED'},401);
 
   const url=Deno.env.get('SUPABASE_URL')||'';
   const serviceKey=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||'';
@@ -84,9 +80,9 @@ Deno.serve(async req=>{
 
       let authDeleted=false;
       if(plan.delete_auth_account&&plan.auth_user_id){
-        const current=await admin.auth.admin.getUserById(plan.auth_user_id);
-        if(current.error&&current.error.status!==404&&current.error.code!=='user_not_found')throw current.error;
-        if(!current.error&&current.data.user){
+        const currentUser=await admin.auth.admin.getUserById(plan.auth_user_id);
+        if(currentUser.error&&currentUser.error.status!==404&&currentUser.error.code!=='user_not_found')throw currentUser.error;
+        if(!currentUser.error&&currentUser.data.user){
           const deleted=await admin.auth.admin.deleteUser(plan.auth_user_id,false);
           if(deleted.error)throw deleted.error;
         }
