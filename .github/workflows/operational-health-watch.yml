@@ -1,0 +1,40 @@
+name: "SchichtFunk: Operational Health Watch"
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/operational-health-watch.yml'
+      - 'scripts/operational-healthcheck.mjs'
+  schedule:
+    - cron: '17,47 * * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: schichtfunk-operational-health-watch
+  cancel-in-progress: true
+
+env:
+  SCHICHTFUNK_SITE_URL: https://home-5021411544.app-ionos.space
+  SUPABASE_URL: https://zbvloohfjleadjnqhbbh.supabase.co
+  SUPABASE_PUBLISHABLE_KEY: sb_publishable_Y78saCIbksWRAkP2yQYofw_4Er0WZU7
+  HEALTHCHECK_TIMEOUT_MS: '10000'
+
+jobs:
+  synthetic-health:
+    name: IONOS + Supabase synthetic health
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+
+      - name: Run operational checks
+        run: node scripts/operational-healthcheck.mjs
