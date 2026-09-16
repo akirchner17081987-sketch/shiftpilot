@@ -46,6 +46,7 @@
     <a class="back" href="/">← Zur SchichtFunk Startseite</a>
   </section>
 </main>
+<script src="/assets/demo-api-v2.js?v=20260912-ionos1"></script>
 <script>
 (function(){
   const form=document.getElementById('demoForm'),user=document.getElementById('demoUser'),password=document.getElementById('demoPassword'),submit=document.getElementById('demoSubmit'),msg=document.getElementById('demoMsg');
@@ -60,7 +61,7 @@
     }
     sessionStorage.setItem('sf_demo_auth_backup_v1',JSON.stringify(backup));
   }
-  function clearDemoState(preserveTour=false){Object.keys(sessionStorage).filter(k=>k.startsWith('sf_demo_')&&k!=='sf_demo_auth_backup_v1'&&(!preserveTour||k!=='sf_demo_tour_seen_v1')).forEach(k=>sessionStorage.removeItem(k))}
+  function clearDemoState(preserveTour=false){Object.keys(sessionStorage).filter(k=>k.startsWith('sf_demo_')&&!['sf_demo_auth_backup_v1','sf_demo_access_token_v2','sf_demo_failure_token_v2'].includes(k)&&(!preserveTour||k!=='sf_demo_tour_seen_v1')).forEach(k=>sessionStorage.removeItem(k))}
   async function launchSandbox(){
     const response=await fetch('/?sf_demo_source=1',{cache:'no-store',credentials:'same-origin'});
     if(!response.ok)throw new Error('SchichtFunk Oberfläche konnte nicht geladen werden.');
@@ -74,13 +75,13 @@
     const gateBody=`<div id="sfDemoBootGate" role="status" aria-live="polite" aria-busy="true"><section class="sf-demo-boot-card"><img class="sf-demo-boot-logo" src="/assets/schichtfunk-logo.svg" alt="SchichtFunk"><div class="sf-demo-boot-kicker">GESCHÜTZTE LIVE-DEMO</div><h1>Demo wird vorbereitet</h1><p id="sfDemoBootStatus">Beispieldaten werden sicher geladen …</p><div class="sf-demo-boot-track" aria-hidden="true"><span></span></div><small class="sf-demo-boot-note">Die Oberfläche erscheint, sobald alle Bereiche bereit sind.</small><button class="sf-demo-boot-retry" type="button" onclick="location.reload()">Erneut versuchen</button></section></div>`;
     html=html.replace(/<head([^>]*)>/i,`<head$1>${gateHead}`);
     html=html.replace(/<body([^>]*)>/i,`<body$1>${gateBody}`);
-    const loader='<script src="/assets/scrollbar-design-v1.js?v=20260904-1"><\/script><script src="/assets/demo-marketplace-v1.js?v=20260911-bulk2"><\/script><script src="/assets/demo-mode-v1.js?v=20260907-startgate6"><\/script><script src="/assets/demo-session-v1.js?v=20260904-1"><\/script><script src="/assets/demo-tour-v1.js?v=20260904-3"><\/script><script src="/assets/demo-role-switch-v1.js?v=20260907-dock1"><\/script><script src="/assets/demo-scenarios-v1.js?v=20260907-dock1"><\/script><script src="/assets/demo-readability-v1.js?v=20260904-1"><\/script><script src="/assets/demo-analytics-v1.js?v=20260904-1"><\/script><script src="/assets/demo-control-dock-v1.js?v=20260907-1"><\/script>';
+    const loader='<script src="/assets/scrollbar-design-v1.js?v=20260904-1"><\/script><script src="/assets/demo-marketplace-v1.js?v=20260911-bulk2"><\/script><script src="/assets/demo-api-v2.js?v=20260912-ionos1"><\/script><script src="/assets/demo-mode-v1.js?v=20260912-ionos1"><\/script><script src="/assets/demo-session-v1.js?v=20260904-1"><\/script><script src="/assets/demo-tour-v1.js?v=20260904-3"><\/script><script src="/assets/demo-role-switch-v1.js?v=20260907-dock1"><\/script><script src="/assets/demo-scenarios-v1.js?v=20260907-dock1"><\/script><script src="/assets/demo-readability-v1.js?v=20260904-1"><\/script><script src="/assets/demo-analytics-v1.js?v=20260912-ionos1"><\/script><script src="/assets/demo-control-dock-v1.js?v=20260907-1"><\/script>';
     html=/<\/body>/i.test(html)?html.replace(/<\/body>/i,loader+'</body>'):html+loader;
     document.open();document.write(html);document.close();
   }
   async function checkExistingSession(){
     try{
-      const response=await fetch('/api/demo-auth',{cache:'no-store',credentials:'same-origin'});
+      const response=await window.SFDemoAPI.fetchAuth();
       if(!response.ok)return;
       clearDemoState(true);isolateAuth();
       sessionStorage.setItem('sf_demo_session_v1','active');
@@ -90,11 +91,14 @@
   form.addEventListener('submit',async e=>{
     e.preventDefault();submit.disabled=true;submit.textContent='Zugang wird geprüft …';msg.className='msg';
     try{
-      const response=await fetch('/api/demo-auth',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user.value,password:password.value})});
+      const response=await window.SFDemoAPI.fetchAuth({method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user.value,password:password.value})});
       const result=await response.json().catch(()=>({}));
+      if(result.failureToken)window.SFDemoAPI.setFailureToken(result.failureToken);
       if(response.status===429){const minutes=Math.max(1,Math.ceil(Number(result.retryAfter||60)/60));say(`Zu viele Versuche. Bitte in ${minutes} Minute${minutes===1?'':'n'} erneut versuchen.`);return}
       if(!response.ok){say(response.status===503?'Der Demo-Zugang wird gerade eingerichtet. Bitte später erneut versuchen.':'Benutzer oder Passwort ist nicht korrekt.');return}
       clearDemoState();isolateAuth();
+      window.SFDemoAPI.setAccessToken(result.accessToken);
+      window.SFDemoAPI.clearFailureToken();
       sessionStorage.setItem('sf_demo_session_v1','active');
       sessionStorage.setItem('sf_demo_started_at_v1',new Date().toISOString());
       if(result.expiresAt)sessionStorage.setItem('sf_demo_expires_at_v1',result.expiresAt);
