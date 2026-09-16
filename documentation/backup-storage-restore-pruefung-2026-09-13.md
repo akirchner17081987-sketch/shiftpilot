@@ -19,6 +19,12 @@ Vor der Bereinigung enthielt der Wegwerf-Branch weder Lifecycle-Anträge, Fristp
 
 Damit sind der logische Datenbank-Wiederherstellungsweg, die private Storage-API und die Hash-basierte Inhaltskontrolle technisch nachgewiesen. Dies ersetzt nicht den Restore eines echten physischen Tagesbackups.
 
+### Aktueller produktiver Storage-Zustand
+
+Eine rein lesende Bestandsprüfung am 16.09.2026 ergab für den privaten Bucket `personnel-documents` **0 Objekte und 0 Byte**. Auch `public.employee_personnel_documents` enthält aktuell **0 Dokument-Metadatensätze**.
+
+Damit liegen derzeit keine produktiven Personalakten-Dateien ohne separaten Storage-Backupweg vor. Dieser Befund beseitigt die künftige Backup-Anforderung nicht: Vor der ersten echten Personalakten-Datei muss entweder der getrennte Storage-Export betriebsbereit sein oder die Nutzung der Dokumentablage organisatorisch zurückgestellt bleiben.
+
 ## 3. Physischer Restore – sichere Zielmethode festgelegt
 
 Es wurde **kein physischer Restore des Produktivprojekts** angeklickt oder gestartet. Ein In-place-Restore kann Nichtverfügbarkeit verursachen und den aktuellen Datenbankstand ersetzen. Dieser Weg wird für die reguläre Abnahme deshalb nicht verwendet.
@@ -90,10 +96,10 @@ Der dauerhafte separate Storage-Export ist **noch nicht eingerichtet**. Dafür m
 ## 7. Offene Freigabegrenzen
 
 1. **Physischer Tagesbackup-Restore:** technisch sicherer Weg `Restore to a New Project` festgelegt; Ausführung wegen zusätzlicher Projektkosten nur nach ausdrücklicher Betreiberfreigabe.
-2. **Dauerhafter separater Storage-Export:** Zielarchitektur und Manifestprüfung definiert; unabhängiges Backupziel/Vertrag/Zugang noch festzulegen.
+2. **Dauerhafter separater Storage-Export:** aktuell 0 produktive Objekte/Metadatensätze; Zielarchitektur und Manifestprüfung definiert, unabhängiges Backupziel/Vertrag/Zugang aber noch festzulegen, bevor echte Personalakten-Dateien produktiv genutzt werden.
 3. **Wiederkehrende Übung:** nach erster physischer Abnahme mindestens jährlich und nach wesentlichen Backup-/Provideränderungen wiederholen.
 
-Status: 🟡 **TÄGLICHE DB-BACKUPS LIVE NACHGEWIESEN; LOGISCHER DB-RESTORE UND PRIVATER STORAGE-RESTORE MIT HASH BESTANDEN; SICHERE PHYSISCHE RESTORE-METHODE FESTGELEGT. OFFEN SIND DIE KOSTENPFLICHTIGE AUSFÜHRUNG DES PHYSISCHEN RESTORES UND EIN DAUERHAFTER, VOM PRODUKTIONSPROJEKT GETRENNTER STORAGE-EXPORT.**
+Status: 🟡 **TÄGLICHE DB-BACKUPS LIVE NACHGEWIESEN; LOGISCHER DB-RESTORE UND PRIVATER STORAGE-RESTORE MIT HASH BESTANDEN; SICHERE PHYSISCHE RESTORE-METHODE FESTGELEGT; PRODUKTIVER PERSONALAKTEN-STORAGE AKTUELL LEER. OFFEN SIND DIE KOSTENPFLICHTIGE AUSFÜHRUNG DES PHYSISCHEN RESTORES UND EIN DAUERHAFTER, VOM PRODUKTIONSPROJEKT GETRENNTER STORAGE-EXPORT VOR ERSTER ECHTER DOKUMENTABLAGE.**
 
 Quellen:
 - https://supabase.com/docs/guides/platform/backups
