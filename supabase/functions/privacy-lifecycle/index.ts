@@ -44,6 +44,11 @@ Deno.serve(async req=>{
     catch{return json({error:'SESSION_REQUIRED'},403,cors)}
   }
 
+  if(request.action==='retention-status'){
+    const {data,error}=await admin.rpc('server_privacy_retention_status',{p_company_id:request.companyId});
+    return error?json({error:'RETENTION_STATUS_FAILED'},400,cors):json({ok:true,status:data},200,cors);
+  }
+
   if(request.action==='preview'){
     const {data,error}=await admin.rpc('server_employee_offboarding_preview',{
       p_company_id:request.companyId,p_employee_id:request.employeeId,p_as_of:request.asOf
