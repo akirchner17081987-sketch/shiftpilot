@@ -10,6 +10,8 @@ const incident=read('documentation/incident-response-runbook-2026-09-13.md');
 const evidence=read('documentation/security-operations-evidence-2026-09-13.md');
 const crossTenant=read('documentation/security-definer-cross-tenant-test-2026-09-13.md');
 const monitoring=read('documentation/logging-monitoring-retention-2026-09-13.md');
+const githubOps=read('documentation/github-operations-evidence-2026-09-16.md');
+const storageArch=read('documentation/storage-backup-target-architecture-2026-09-16.md');
 const tom=read('documentation/tom-2026-09-12.md');
 const apache=read('.htaccess');
 const worker=read('schichtfunk-sw.js');
@@ -48,9 +50,11 @@ test('monitoring matrix distinguishes active controls from unresolved operationa
   assert.match(monitoring,/Langfristredaktion technisch aktiv/i);
   assert.match(monitoring,/genehmigtes kundenspezifisches Fristprofil/i);
   assert.match(monitoring,/automatische projektbezogene Backup-Alarmierung nicht nachgewiesen/i);
-  assert.match(monitoring,/IONOS-Deploy-Now-Logzugriff/i);
+  assert.match(monitoring,/IONOS-Deploy-Now-(?:Roh)?logzugriff/i);
   assert.match(monitoring,/Alarm-Negativtest mit ausschließlich fiktivem Fehlerzustand/i);
   assert.match(monitoring,/5\/5 Prüfungen bestanden/i);
+  assert.match(monitoring,/30 Tagen expliziter Aufbewahrung/i);
+  assert.match(monitoring,/letzten 12 Monate/i);
 });
 
 test('synthetic operational health watch is read-only, scheduled and retains evidence',()=>{
@@ -70,6 +74,22 @@ test('synthetic operational health watch is read-only, scheduled and retains evi
   assert.match(healthScript,/HEALTHCHECK_REPORT_PATH/);
   assert.match(healthScript,/mode:0o600/);
   assert.match(healthScript,/process\.exit\(1\)/);
+});
+
+test('github operations evidence records the live branch protection gap',()=>{
+  assert.match(githubOps,/protected: false/);
+  assert.match(githubOps,/keine verpflichtenden Status-Checks/i);
+  assert.match(githubOps,/leere Liste/i);
+  assert.match(githubOps,/retention-days: 30/);
+  assert.match(githubOps,/Force-Push/i);
+});
+
+test('storage backup architecture keeps personnel documents out of repository evidence',()=>{
+  assert.match(storageArch,/0 Objekte und 0 Byte/i);
+  assert.match(storageArch,/Storage-RPO: höchstens 24 Stunden/i);
+  assert.match(storageArch,/SHA-256/i);
+  assert.match(storageArch,/GitHub-Repository oder GitHub-Actions-Artefakte/i);
+  assert.match(storageArch,/erste echte Dokumentablage/i);
 });
 
 test('IONOS security headers and PWA cache exclusions remain fail-safe',()=>{
