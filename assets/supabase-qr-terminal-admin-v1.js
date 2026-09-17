@@ -76,17 +76,17 @@
 
   async function createTerminal(name,locationNote){
     name=String(name||'').trim();locationNote=String(locationNote||'').trim();if(!name){document.getElementById('sfQrtName')?.focus();return}
-    try{B.showLoading?.('QR-Terminal wird angelegt …');const q=await B.client.rpc('manager_create_time_qr_terminal',{p_company_id:B.companyId,p_name:name,p_location_note:locationNote});if(q.error)throw q.error;await refresh();openQrModal({name:q.data.name,location_note:q.data.location_note||locationNote},q.data.qr_path);if(typeof showSaveToast==='function')showSaveToast('QR-Terminal angelegt',name)}catch(e){alert(rpcError(e))}finally{B.hideLoading?.()}
+    try{B.showLoading?.('QR-Terminal wird angelegt …');const q=await B.withAal2(()=>B.client.rpc('manager_create_time_qr_terminal',{p_company_id:B.companyId,p_name:name,p_location_note:locationNote}));if(q.error)throw q.error;await refresh();openQrModal({name:q.data.name,location_note:q.data.location_note||locationNote},q.data.qr_path);if(typeof showSaveToast==='function')showSaveToast('QR-Terminal angelegt',name)}catch(e){alert(rpcError(e))}finally{B.hideLoading?.()}
   }
 
   async function rotateTerminal(t){
     if(!confirm(`Neuen QR-Code für „${t.name}“ erzeugen? Der bisherige Ausdruck wird sofort ungültig.`))return;
-    try{B.showLoading?.('QR-Code wird neu erzeugt …');const q=await B.client.rpc('manager_rotate_time_qr_terminal',{p_terminal_id:t.id});if(q.error)throw q.error;await refresh();openQrModal({...t,name:q.data.name||t.name},q.data.qr_path);if(typeof showSaveToast==='function')showSaveToast('Neuer QR-Code erzeugt',t.name)}catch(e){alert(rpcError(e))}finally{B.hideLoading?.()}
+    try{B.showLoading?.('QR-Code wird neu erzeugt …');const q=await B.withAal2(()=>B.client.rpc('manager_rotate_time_qr_terminal',{p_terminal_id:t.id}));if(q.error)throw q.error;await refresh();openQrModal({...t,name:q.data.name||t.name},q.data.qr_path);if(typeof showSaveToast==='function')showSaveToast('Neuer QR-Code erzeugt',t.name)}catch(e){alert(rpcError(e))}finally{B.hideLoading?.()}
   }
 
   async function toggleTerminal(t){
     const next=!t.is_active;if(!confirm(`${t.name} ${next?'aktivieren':'deaktivieren'}?${next?'':' Der ausgehängte QR-Code ist danach nicht mehr nutzbar.'}`))return;
-    try{B.showLoading?.(next?'Terminal wird aktiviert …':'Terminal wird deaktiviert …');const q=await B.client.rpc('manager_set_time_qr_terminal_active',{p_terminal_id:t.id,p_is_active:next});if(q.error)throw q.error;await refresh();if(typeof showSaveToast==='function')showSaveToast(next?'QR-Terminal aktiviert':'QR-Terminal deaktiviert',t.name)}catch(e){alert(rpcError(e))}finally{B.hideLoading?.()}
+    try{B.showLoading?.(next?'Terminal wird aktiviert …':'Terminal wird deaktiviert …');const q=await B.withAal2(()=>B.client.rpc('manager_set_time_qr_terminal_active',{p_terminal_id:t.id,p_is_active:next}));if(q.error)throw q.error;await refresh();if(typeof showSaveToast==='function')showSaveToast(next?'QR-Terminal aktiviert':'QR-Terminal deaktiviert',t.name)}catch(e){alert(rpcError(e))}finally{B.hideLoading?.()}
   }
 
   const baseRender=window.renderTimeTracking;
