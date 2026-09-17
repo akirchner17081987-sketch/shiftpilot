@@ -58,14 +58,20 @@ test('secondary text is readable across public, manager, demo and employee surfa
 });
 
 test('mobile interactive controls provide at least 44 by 44 pixel touch targets', () => {
-  assert.match(index, /mobile-responsive-v1\.css\?v=20260907-touch44/);
-  assert.match(demoPage, /mobile-responsive-v1\.css\?v=20260907-touch44/);
-  assert.match(demoCompletionPage, /mobile-responsive-v1\.css\?v=20260907-touch44/);
+  assert.match(index, /mobile-responsive-v1\.css\?v=20260917-compact-manager1/);
+  assert.match(demoPage, /mobile-responsive-v1\.css\?v=20260917-compact-manager1/);
+  assert.match(demoCompletionPage, /mobile-responsive-v1\.css\?v=20260917-compact-manager1/);
   assert.match(mobileCss, /min-height:\s*44px !important/);
   assert.match(mobileCss, /min-width:\s*44px !important/);
   assert.match(mobileCss, /label:has\(input\[type="checkbox"\]\)/);
   assert.match(mobileCss, /touch-action:\s*manipulation/);
   assert.doesNotMatch(mobileCss, /\.nav button\s*\{[^}]*min-height:\s*42px/s);
+});
+
+test('mobile manager schedule keeps the compact two-column KPI layout', () => {
+  assert.match(mobileCss, /#view-schedule \.stats[\s\S]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
+  assert.match(mobileCss, /#sfAdminLogout::before[\s\S]*content:\s*"↪"/);
+  assert.match(mobileCss, /@media\s*\(max-width:\s*340px\)[\s\S]*#view-schedule \.stats[\s\S]*grid-template-columns:\s*1fr/);
 });
 
 test('mobile manager navigation is labelled, expandable and keyboard dismissible', () => {
