@@ -74,6 +74,15 @@ test('mobile manager schedule keeps the compact two-column KPI layout', () => {
   assert.match(mobileCss, /@media\s*\(max-width:\s*340px\)[\s\S]*#view-schedule \.stats[\s\S]*grid-template-columns:\s*1fr/);
 });
 
+test('employee PWA keeps QR scan prominent in a compact two-column mobile layout', () => {
+  const employeeMobileVisual = read('assets/employee-mobile-pwa-visual-fix-v1.css');
+  const navigationCompat = read('assets/navigation-compat-v1.js');
+  assert.match(navigationCompat, /employee-mobile-pwa-visual-fix-v1\.css\?v=20260917-compact2/);
+  assert.match(employeeMobileVisual, /#sfEmployeePortal \.sf-employee-tiles[\s\S]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/);
+  assert.match(employeeMobileVisual, /#sfEmployeePortal \.sf-qr-scan-actions \.sf-qr-scan-btn[\s\S]*min-height:44px!important/);
+  assert.match(employeeMobileVisual, /#sfEmployeePortal #sfEmployeeLogout::before[\s\S]*content:"↪"/);
+});
+
 test('mobile manager navigation is labelled, expandable and keyboard dismissible', () => {
   assert.match(index, /mobile-manager-navigation-v1\.css\?v=20260907-1/);
   assert.match(index, /mobile-manager-navigation-v1\.js\?v=20260907-1/);
