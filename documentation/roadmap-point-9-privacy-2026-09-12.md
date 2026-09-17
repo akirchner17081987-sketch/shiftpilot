@@ -16,7 +16,9 @@ Stand: 17.09.2026
 - Rechtliche Links werden auf der öffentlichen SchichtFunk-Seite und im Managerbereich eingeblendet.
 - Produktive Sicherheitsheader vorhanden: Content-Security-Policy, HSTS, X-Content-Type-Options, X-Frame-Options, Referrer-Policy und Permissions-Policy.
 - Öffentliche Analyse-/Marketingtracker wurden im aktuellen Repository-Stand nicht festgestellt.
-- Supabase-Produktivprojekt ist `ACTIVE_HEALTHY` in Region `eu-central-1`.
+- Supabase Pro ist für die Organisation `Security_Plattform` aktiv; Spend Cap ist eingeschaltet und das Produktivprojekt `SchichtFunk` ist `ACTIVE_HEALTHY` in Region `eu-central-1` (Frankfurt).
+- IONOS Deploy Now ist als Primärhosting für die statische SchichtFunk-Webanwendung/PWA eingerichtet und technisch abgenommen. Die Umschaltung von `www.schichtfunk.de` bleibt ein separater, ausdrücklich freizugebender Schritt.
+- Vercel bleibt ausschließlich als technischer Rückfallstand erhalten. Für den IONOS-Primärbetrieb ist kein Vercel-Pro-Upgrade erforderlich.
 - Der zuvor anonym ausführbare SECURITY-DEFINER-RPC `manager_import_month_matrix` wurde für `anon` gesperrt; die entsprechende Supabase-Security-Advisor-Warnung ist danach verschwunden.
 - Die Datenschutzerklärung bildet den tatsächlichen Funktionsumfang ab: Benutzerkonten, Rollen, Mitarbeiterstammdaten, Dienstplanung, Abwesenheiten/Krankheitsdaten, Zeiterfassung, QR, Stundenkonto, Feiertage, Schichtänderungen, Tausch, Marktplatz, Auto-Planung, Störfall-Autopilot, Push, PWA/Browser-Speicher, Demo und DATEV-LODAS-Export.
 - Vollständige Betreiberunterlage `documentation/avv-dpa-subprocessors-2026-09-12.md` für direkte Auftragsverarbeiter, DPA-Lage, Unterauftragsverarbeiter und Drittlandtransfers angelegt.
@@ -34,22 +36,25 @@ Stand: 17.09.2026
 
 ## Auftragsverarbeiter / AVV-DPA-Prüfung
 
+### IONOS
+- IONOS Deploy Now ist als primäre Auslieferungsplattform für die statische Webseite/PWA vorgesehen.
+- IONOS-Staging, statischer Build, Sicherheitsheader, PWA-Funktionen und Supabase-Anbindung wurden technisch abgenommen.
+- Die produktive Domain `www.schichtfunk.de` ist noch nicht auf IONOS umgeschaltet; die DNS-/Domain-Umschaltung erfolgt erst nach ausdrücklicher Betreiberfreigabe.
+- Nach der Umschaltung werden HTTPS, Login, PWA-Installation, Push-Neuregistrierung und Testzustellung erneut geprüft.
+
 ### Vercel
-- Tatsächlicher Teamplan geprüft: **Hobby**.
-- Vercel Terms: Hobby ist auf persönliche/nicht-kommerzielle Nutzung beschränkt.
-- Aktuelles Vercel-DPA gilt laut Anbieter für **Pro und Enterprise**.
-- Ergebnis: Für den vorgesehenen geschäftlichen SchichtFunk-Produktivbetrieb muss der Vercel-Tarif **mindestens auf Pro** angehoben werden. Bis dahin ist der Vercel-AVV/DPA-Nachweis nicht freigabefähig.
-- DPA: https://vercel.com/legal/dpa
-- Unterauftragsverarbeiter: https://security.vercel.com
-- DPA enthält EU-SCCs und Regelungen zur Unterauftragsverarbeitung.
+- Tatsächlicher Teamplan: **Hobby**.
+- Vercel ist nicht mehr als Primärhosting vorgesehen, sondern ausschließlich als technischer Rückfallstand.
+- Für den geplanten geschäftlichen Betrieb über IONOS ist **kein Vercel-Pro-Upgrade erforderlich**.
+- Mit dem Hobby-Tarif ist eine kommerzielle Rückschaltung auf Vercel nicht freigegeben.
+- Nur falls Vercel später wieder kommerziell produktiv aktiviert werden soll, muss vorher eine geeignete Tarif-/DPA-Grundlage hergestellt werden; ein Upgrade erfolgt nicht vorsorglich.
 
 ### Supabase
-- Organisation geprüft: `Security_Plattform`, aktueller Plan: **Free**.
+- Organisation `Security_Plattform`: **Pro**, Spend Cap aktiviert.
 - Produktivprojekt: `SchichtFunk`, Region **eu-central-1 (Frankfurt)**.
-- Aktuelles DPA geprüft: https://supabase.com/downloads/docs/Supabase%2BDPA%2B260317.pdf
-- Das DPA wird in den geprüften Anbieterunterlagen nicht auf einen bestimmten kostenpflichtigen Plan begrenzt, verlangt aber einen wirksamen Vertragsabschluss/Unterschriftsnachweis.
-- SchichtFunk-Verarbeitungsangaben einschließlich Gesundheitsdaten („Krank“), Betroffenenkategorien, Rollenlage und zuständiger Aufsichtsbehörde sind in der AVV/DPA-Unterlage vorausgefüllt/dokumentiert.
-- Aktuelle Supabase-Unterauftragsverarbeiter aus Schedule 3 sind dokumentiert.
+- Supabase bestätigt die automatische Einbeziehung des DPA in die Nutzungsbedingungen; eine separate Unterschrift ist nicht erforderlich.
+- DPA, SCC, TIA und Unterauftragsverarbeiter sind dokumentiert.
+- SchichtFunk-Verarbeitungsangaben einschließlich Gesundheitsdaten („Krank“), Betroffenenkategorien, Rollenlage und zuständiger Aufsichtsbehörde sind in der AVV/DPA-Unterlage dokumentiert.
 
 ### Weitere direkte Auftragsverarbeiter
 - Kein eigenständiger Analyse-/Marketinganbieter festgestellt.
@@ -60,8 +65,9 @@ Stand: 17.09.2026
 ### Teilstatus AVV/DPA + Auftragsverarbeiter
 
 - Auftragsverarbeiter-/Subprozessorenübersicht: 🟢 dokumentiert und geprüft.
-- Vercel-DPA: 🟠 blockiert durch aktuellen Hobby-Plan; Upgrade mindestens auf Pro erforderlich.
-- Supabase-DPA: 🟡 fachlich vorbereitet; Unterschrift/wirksame Annahme und Archivierung als Vertragsnachweis erforderlich.
+- IONOS-AVV: 🟢 für das vorgesehene Primärhosting dokumentiert.
+- Vercel-DPA: 🟡 nur für eine mögliche spätere kommerzielle Rückschaltung relevant; kein Blocker für IONOS.
+- Supabase-DPA: 🟢 automatische Einbeziehung sowie DPA-/SCC-/TIA-Nachweise dokumentiert.
 
 ## 9.4 Produktions-Sicherheit / MFA / AAL2
 
@@ -91,18 +97,19 @@ Produktive Abnahme am 17.09.2026:
 
 ## Noch offen – Punkt 9 bleibt IN ARBEIT
 
-1. **Vercel Hobby → mindestens Pro umstellen und danach DPA-Geltung als Vertragsnachweis archivieren.**
-2. **Supabase-DPA unterzeichnen/wirksam annehmen und archivieren.**
-3. Lösch- und Aufbewahrungskonzept mit konkreten Fristen/Kriterien pro Datenkategorie und Mandantenprozess finalisieren.
-4. TOM-Dokumentation (technische und organisatorische Maßnahmen) als Betreiberunterlage finalisieren.
-5. Verzeichnis von Verarbeitungstätigkeiten (VVT) für die Verarbeitungsvorgänge, bei denen der Betreiber selbst Verantwortlicher ist, und Auftragsverarbeitungsübersicht finalisieren.
-6. DSFA-Schwellenprüfung dokumentieren, insbesondere wegen systematischer Beschäftigtendatenverarbeitung, Arbeitszeiterfassung und Gesundheits-/Krankheitsdaten. Falls die Prüfung ein voraussichtlich hohes Risiko ergibt, vollständige DSFA durchführen.
-7. Backup-/Restore-Konzept und regelmäßigen Wiederherstellungstest dokumentieren.
-8. Logging-/Monitoring- und Incident-Response-Aufbewahrung sowie Datenschutzverletzungsprozess nach Art. 33/34 DSGVO dokumentieren.
-9. Prüfen, ob Registerangaben, USt-IdNr. oder weitere Impressumspflichten für den Betreiber einschlägig sind; falls ja, Impressum ergänzen.
+1. **`www.schichtfunk.de` nach ausdrücklicher Freigabe per DNS auf IONOS umschalten und anschließend HTTPS, Login, PWA sowie Push erneut prüfen.**
+2. Lösch- und Aufbewahrungskonzept mit konkreten Fristen/Kriterien pro Datenkategorie und Mandantenprozess finalisieren.
+3. TOM-Dokumentation (technische und organisatorische Maßnahmen) als Betreiberunterlage finalisieren.
+4. Verzeichnis von Verarbeitungstätigkeiten (VVT) für die Verarbeitungsvorgänge, bei denen der Betreiber selbst Verantwortlicher ist, und Auftragsverarbeitungsübersicht finalisieren.
+5. DSFA-Schwellenprüfung dokumentieren, insbesondere wegen systematischer Beschäftigtendatenverarbeitung, Arbeitszeiterfassung und Gesundheits-/Krankheitsdaten. Falls die Prüfung ein voraussichtlich hohes Risiko ergibt, vollständige DSFA durchführen.
+6. Backup-/Restore-Konzept und regelmäßigen Wiederherstellungstest dokumentieren.
+7. Logging-/Monitoring- und Incident-Response-Aufbewahrung sowie Datenschutzverletzungsprozess nach Art. 33/34 DSGVO dokumentieren.
+8. Prüfen, ob Registerangaben, USt-IdNr. oder weitere Impressumspflichten für den Betreiber einschlägig sind; falls ja, Impressum ergänzen.
+
+Hinweis: Ein Vercel-Pro-Upgrade ist kein offener Pflichtpunkt. Es wird nur erforderlich, wenn Vercel später wieder kommerziell produktiv genutzt werden soll.
 
 ## Gesamtstatus
 
 Roadmap-Punkt 9: 🟠 **In Arbeit**.
 
-Der öffentliche rechtliche Grundauftritt, die produktbezogene Datenschutzerklärung und die Auftragsverarbeiter-/Subprozessorendokumentation sind umgesetzt. Der AVV/DPA-Teil kann erst nach Vercel-Pro-Upgrade und Supabase-DPA-Vertragsnachweis endgültig grün gesetzt werden.
+Der öffentliche rechtliche Grundauftritt, die produktbezogene Datenschutzerklärung und die Anbieter-AVV/DPA-Nachweise für IONOS und Supabase sind umgesetzt. Punkt 9 bleibt bis zur ausdrücklich freigegebenen IONOS-Domainumschaltung mit anschließender Produktionsnachprüfung sowie den übrigen rechtlichen und betrieblichen Abschlussarbeiten in Arbeit. Vercel Pro ist für das IONOS-Primärhosting nicht erforderlich.
