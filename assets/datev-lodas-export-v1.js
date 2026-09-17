@@ -87,7 +87,7 @@
       const content=result.C.formatContent({beraterNr:settings.berater_nr,mandantenNr:settings.mandanten_nr,month,rows:result.rows});
       const hash=await sha256(content);if(!/^[0-9a-f]{64}$/.test(hash))throw new Error('Die DATEV-Datei konnte nicht sicher geprüft werden.');
       setStatus(`DATEV LODAS ${monthLabel(month)} wird serverseitig freigegeben …`);
-      const audit=await B.client.rpc('manager_authorize_datev_lodas_export',{p_company_id:B.companyId,p_month:`${month}-01`,p_row_count:result.rows.length,p_content_sha256:hash,p_expected_closure_revision:revision});
+      const audit=await B.withAal2(()=>B.client.rpc('manager_authorize_datev_lodas_export',{p_company_id:B.companyId,p_month:`${month}-01`,p_row_count:result.rows.length,p_content_sha256:hash,p_expected_closure_revision:revision}));
       if(audit.error)throw audit.error;if(!audit.data)throw new Error('Die serverseitige Exportfreigabe wurde nicht bestätigt.');
       const extension=normalizeExtension(exportExtension),blob=new Blob([content],{type:'text/plain;charset=us-ascii'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`SchichtFunk_DATEV_LODAS_${month}.${extension}`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1200);
       setStatus(`DATEV LODAS ${monthLabel(month)} als .${extension} erstellt und protokolliert ✓ · ${result.rows.length} Zeilen`,'good');
