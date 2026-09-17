@@ -51,7 +51,7 @@
       busy=true;submit.disabled=true;submit.textContent='Wird gelöscht …';
       try{
         B.showLoading?.('Gesamter Dienstplan wird sicher gelöscht …');
-        const {data,error}=await B.client.rpc('reset_company_schedule',{p_company_id:B.companyId,p_confirmation:'LÖSCHEN'});
+        const {data,error}=await B.withAal2(()=>B.client.rpc('reset_company_schedule',{p_company_id:B.companyId,p_confirmation:'LÖSCHEN'}));
         if(error)throw error;
         await B.hydrate();
         m.remove();
