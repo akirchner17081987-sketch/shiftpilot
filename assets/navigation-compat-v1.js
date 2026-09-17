@@ -109,7 +109,7 @@
   loadStyle('/assets/employee-mobile-pwa-visual-fix-v1.css?v=20260911-1','data-sf-employee-mobile-visual-fix');
 
   // Echte Browser-/PWA-Push-Mitteilungen auf Basis der bestehenden Benachrichtigungszentrale.
-  loadIntegration('/assets/push-notifications-v1.js?v=20260910-4','data-sf-push-notifications');
+  loadIntegration('/assets/push-notifications-v1.js?v=20260917-domain1','data-sf-push-notifications');
 
   // QR-Zeiterfassung: Objekt-Terminals mit allgemeinem Betrieb oder optionalem Pilotmodus.
   loadIntegration('/assets/supabase-qr-terminal-admin-v1.js?v=20260908-1','data-sf-qr-terminal-admin');

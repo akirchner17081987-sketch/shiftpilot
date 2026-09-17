@@ -10,6 +10,10 @@ const push = read('assets/push-notifications-v1.js');
 const loader = read('assets/navigation-compat-v1.js');
 const worker = read('schichtfunk-sw.js');
 const vercel = JSON.parse(read('vercel.json'));
+const authRedirect = read('assets/supabase-auth-redirect-v1.js');
+const passwordReset = read('assets/supabase-password-reset-v1.js');
+const dispatcher = read('supabase/functions/push-dispatch/index.ts');
+const playwright = read('playwright.config.cjs');
 
 test('push activation keeps permission request in the explicit button flow', () => {
   assert.match(push, /data-sf-push-enable/);
@@ -42,7 +46,18 @@ test('service worker and server registration remain wired for push', () => {
   assert.match(worker, /addEventListener\('push'/);
   assert.match(worker, /showNotification/);
   assert.match(worker, /addEventListener\('notificationclick'/);
-  assert.match(loader, /push-notifications-v1\.js\?v=20260910-4/);
+  assert.match(loader, /push-notifications-v1\.js\?v=20260917-domain1/);
+});
+
+test('production PWA and push flows use the canonical SchichtFunk origin', () => {
+  for(const source of [authRedirect,passwordReset,dispatcher,playwright]){
+    assert.match(source, /https:\/\/schichtfunk\.de/);
+    assert.doesNotMatch(source, /shiftpilot-two\.vercel\.app/);
+  }
+  assert.match(push, /canonicalHost/);
+  assert.match(push, /Push für schichtfunk\.de aktivieren/);
+  assert.match(push, /Push-Abos der bisherigen Vorschau-Adresse können nicht übertragen werden/);
+  assert.match(worker, /schichtfunk-shell-v6/);
 });
 
 test('push hardening preserves QR camera and PWA capabilities', () => {

@@ -5,6 +5,7 @@
 
   let busy=false,lastSync='',rendering=false,renderAgain=false,renderTimer=0,notice=null;
   const demo=()=>sessionStorage.getItem('sf_demo_session_v1')==='active';
+  const canonicalHost=()=>/^(?:www\.)?schichtfunk\.de$/i.test(location.hostname);
   const isIos=()=>/iphone|ipad|ipod/i.test(navigator.userAgent||'');
   const standalone=()=>window.matchMedia?.('(display-mode: standalone)').matches===true||window.navigator.standalone===true;
   const supported=()=>window.isSecureContext&&'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
@@ -80,9 +81,9 @@
     if(mode==='ios-install')return[mode,'SchichtFunk zuerst installieren',reason];
     if(mode!=='ok')return[mode,'Push nicht verfügbar',reason];
     if(Notification.permission==='denied')return['denied','Push im Browser blockiert','Bitte Benachrichtigungen in den Website-/App-Einstellungen wieder erlauben.'];
-    if(sub&&Notification.permission==='granted')return['active','Push ist aktiv','Schichtangebote, Änderungen und wichtige Meldungen können auch außerhalb von SchichtFunk erscheinen.'];
-    if(Notification.permission==='granted')return['ready','Berechtigung erteilt – Gerät registrieren','iOS erlaubt Mitteilungen bereits. Dieses Gerät muss noch bei SchichtFunk registriert werden.'];
-    return['ready','Push-Mitteilungen aktivieren','Erhalte wichtige SchichtFunk-Meldungen direkt auf diesem Gerät.'];
+    if(sub&&Notification.permission==='granted')return['active','Push ist aktiv','Dieses Gerät ist für '+location.hostname+' registriert. Schichtangebote, Änderungen und wichtige Meldungen können auch außerhalb von SchichtFunk erscheinen.'];
+    if(Notification.permission==='granted')return['ready','Berechtigung erteilt – Gerät registrieren',canonicalHost()?'Nach der Domain-Umstellung muss dieses Gerät einmal neu bei schichtfunk.de registriert werden.':'Dieses Gerät muss noch bei SchichtFunk registriert werden.'];
+    return['ready',canonicalHost()?'Push für schichtfunk.de aktivieren':'Push-Mitteilungen aktivieren',canonicalHost()?'Push-Abos der bisherigen Vorschau-Adresse können nicht übertragen werden. Bitte dieses Gerät einmal für schichtfunk.de aktivieren.':'Erhalte wichtige SchichtFunk-Meldungen direkt auf diesem Gerät.'];
   }
 
   function paint(sub,override=notice){
@@ -121,6 +122,8 @@
       pushManager:'PushManager' in window,
       notificationApi:'Notification' in window,
       permission:'Notification' in window?Notification.permission:'unavailable',
+      origin:location.origin,
+      canonicalProductionOrigin:canonicalHost(),
       browserSubscription:!!sub,
       backendClient:!!B.client,
       backendUser:!!B.user?.id,

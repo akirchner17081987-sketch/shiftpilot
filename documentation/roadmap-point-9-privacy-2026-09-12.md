@@ -1,7 +1,7 @@
 # SchichtFunk – Roadmap-Punkt 9
 ## Recht, Datenschutz, Hosting & Veröffentlichung
 
-Stand: 14.09.2026
+Stand: 17.09.2026
 
 ## Bereits umgesetzt / verifiziert
 
@@ -17,7 +17,7 @@ Stand: 14.09.2026
 - Produktive Sicherheitsheader vorhanden: Content-Security-Policy, HSTS, X-Content-Type-Options, X-Frame-Options, Referrer-Policy und Permissions-Policy.
 - Öffentliche Analyse-/Marketingtracker wurden im aktuellen Repository-Stand nicht festgestellt.
 - **Supabase Pro: ✅ erledigt.** Der Pro-Tarif ist für die Organisation `Security_Plattform` aktiv, der Spend Cap ist eingeschaltet und das Produktivprojekt `SchichtFunk` ist `ACTIVE_HEALTHY` in Region `eu-central-1` (Frankfurt).
-- IONOS Deploy Now Starter ist als Primärhosting eingerichtet; Projekt-ID `7bc70ac7-ec3b-4e7b-bae5-569c957e8514` stellt den geprüften Zweig `codex/ionos-migration` unter `home-5021411544.app-ionos.space` bereit. Alexander Kirchner hat das Deployment am 13.09.2026 vollständig für den Produktivbetrieb abgenommen. Die produktive Domain bleibt bis zu einer separaten ausdrücklichen DNS-/Domain-Umschaltanweisung unverändert.
+- IONOS Deploy Now Starter ist als Primärhosting eingerichtet; Projekt-ID `7bc70ac7-ec3b-4e7b-bae5-569c957e8514` stellt den geprüften Zweig `codex/ionos-migration` bereit. Alexander Kirchner hat das Deployment am 13.09.2026 vollständig für den Produktivbetrieb abgenommen. Die anschließend ausdrücklich freigegebene Domain-Umschaltung ist abgeschlossen: `schichtfunk.de` ist die kanonische Produktionsadresse, `www.schichtfunk.de` leitet dorthin weiter und die Anwendung ist über den vorgeschalteten Login geschützt.
 - Der reproduzierbare statische Build umfasst aktuell 2.159.480 Byte (2,06 MiB) und liegt damit deutlich unter dem Starter-Limit von 50 MB pro statischem Projekt.
 - Die beiden bislang Vercel-spezifischen Demo-Endpunkte `demo-auth` und `demo-analytics` wurden als Supabase Edge Functions bereitgestellt, mit neu erzeugten Geheimnissen aktiviert und über die IONOS-Vorschau geprüft.
 - Der zuvor anonym ausführbare SECURITY-DEFINER-RPC `manager_import_month_matrix` wurde für `anon` gesperrt; die entsprechende Supabase-Security-Advisor-Warnung ist danach verschwunden.
@@ -91,7 +91,7 @@ Status: 🟢 **TECHNISCH ABGESCHLOSSEN am 14.09.2026.**
 
 Der abschließende Nachweis ist in `documentation/ionos-supabase-technical-final-check-2026-09-14.md` dokumentiert. 174/174 ausgelieferte Build-Dateien stimmten inhaltlich mit dem lokalen Build überein, die öffentlichen Routen und Sicherheitsheader waren korrekt, Browserkonsole und JavaScript-Fehlerliste blieben leer, 33/33 Testdateien sowie die IONOS-Migrationssuite bestanden. Die Supabase Edge Functions lehnten unberechtigte Aufrufe korrekt ab; der aktive 15-Minuten-Job des Privacy Workers hatte zuletzt den Status `succeeded`.
 
-Die Umschaltung von `www.schichtfunk.de` ist **nicht** Bestandteil dieses technischen Abschlusses und wurde nicht vorgenommen. Sie bleibt ein separater, ausdrücklich zu bestätigender Freigabeschritt mit anschließender HTTPS-/Login-/PWA-/Push-Nachprüfung.
+Die Domain-Umschaltung wurde anschließend am 17.09.2026 nach ausdrücklicher Freigabe vorgenommen. HTTPS, Login, App-Bereich, Manifest und Service Worker wurden auf `schichtfunk.de` geprüft. PWA-/Push-Zieladressen sind auf die kanonische Domain umgestellt; Push muss wegen der Herkunftsbindung auf jedem realen Gerät einmal neu aktiviert und per Testnachricht bestätigt werden.
 
 ## Noch offen – Punkt 9 bleibt IN ARBEIT
 

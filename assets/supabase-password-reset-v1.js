@@ -1,7 +1,7 @@
 // SchichtFunk – Passwort vergessen / Passwort zurücksetzen V1
 (function(){
   const B=window.SFBackend=window.SFBackend||{};
-  const PROD='https://shiftpilot-two.vercel.app/';
+  const PROD='https://schichtfunk.de/';
   const RESET_PARAM='passwordReset';
   function normalizeLegacyRecoveryUrl(){
     try{

@@ -1,13 +1,13 @@
 # SchichtFunk – IONOS-Deploy-Now-Migrations- und Rückfallplan
 
-Stand: 13.09.2026
+Stand: 17.09.2026
 
 ## Zielarchitektur
 
 - IONOS Deploy Now liefert ausschließlich den statischen SchichtFunk-Webauftritt und die PWA aus.
 - Supabase bleibt das Backend für Datenbank, Authentifizierung, Realtime, Storage und Edge Functions; Projektregion ist `eu-central-1` (Frankfurt). Der Pro-Tarif ist seit dem 12.09.2026 für die Organisation aktiv; der Spend Cap ist eingeschaltet.
 - Vercel bleibt während der Migration technisch als Rückfallstand erhalten. Mit dem aktuellen Hobby-Tarif ist eine kommerzielle Produktiv-Rückschaltung nicht freigegeben.
-- Die IONOS-Domain- und E-Mail-Verträge bleiben organisatorisch unverändert. Eine DNS-/Domain-Umschaltung erfolgt erst nach dokumentierter Staging-Abnahme und ausdrücklicher Bestätigung.
+- Die IONOS-Domain- und E-Mail-Verträge bleiben organisatorisch unverändert. Die ausdrücklich freigegebene Domain-Umschaltung ist abgeschlossen: `https://schichtfunk.de/` ist die kanonische Produktionsadresse; `https://www.schichtfunk.de/` leitet dorthin weiter. Die E-Mail-Konfiguration wurde dabei nicht verändert.
 
 ## Deploy-Now-Build
 
@@ -33,7 +33,7 @@ Stand: 13.09.2026
 - Content-Security-Policy, HSTS, MIME-Schutz, Frame-Schutz, Referrer-Policy und Permissions-Policy werden auf IONOS über `.htaccess` gesetzt.
 - `site.webmanifest`, Icons und `schichtfunk-sw.js` sind Bestandteil des statischen Builds.
 - Reale Geräteabnahme am 12.09.2026: Die IONOS-Vorschau wurde auf einem iPhone als Home-Bildschirm-Web-App installiert. Anmeldung, Push-Freigabe, serverseitig bestätigte Geräteregistrierung, Testzustellung und Öffnen der Mitteilung wurden mit dem Betreiberkonto erfolgreich bestätigt.
-- Push-Abonnements sind an die jeweilige Herkunft gebunden. Nach der späteren Domain-Umschaltung muss Push unter `www.schichtfunk.de` einmal erneut aktiviert und mit einer Testzustellung bestätigt werden.
+- Push-Abonnements sind an die jeweilige Herkunft gebunden. Nach der Domain-Umschaltung muss Push auf jedem Gerät unter `schichtfunk.de` einmal erneut aktiviert und mit einer Testzustellung bestätigt werden. Vorschau-/Vercel-Abos können nicht auf die neue Herkunft übertragen werden; ungültig gewordene Endpunkte entfernt der Dispatcher bei `404/410` automatisch.
 
 ## Serverlogik und Geheimnisse
 
@@ -67,7 +67,15 @@ Die Abnahme erfolgt mit Test-/Demo-Konten in einem getrennten, ausdrücklich als
 
 ## Freigabe und Umschaltung
 
-Die Domain `www.schichtfunk.de` wird erst verbunden bzw. per DNS umgeschaltet, wenn alle Staging-Prüfungen bestanden sind, die rechtlichen Seiten den tatsächlichen Anbieterstand wiedergeben, die erforderlichen Demo-Geheimnisse gesetzt sind und der Betreiber die Umschaltung ausdrücklich bestätigt hat. Kostenpflichtige IONOS- oder Supabase-Upgrades werden ebenfalls nur nach ausdrücklicher Bestätigung vorgenommen.
+Die Domain-Umschaltung wurde nach bestandener Staging-Prüfung und ausdrücklicher Betreiberfreigabe am 17.09.2026 durchgeführt. `schichtfunk.de` ist mit dem IONOS-Deploy-Now-Projekt verbunden; `www.schichtfunk.de` leitet auf die kanonische Adresse weiter. Der vorgeschaltete Login schützt die Anwendung vor einem öffentlichen Landingpage-Zugriff. HTTPS, Login, App-Bereich, rechtliche Seiten, Manifest und Service Worker wurden auf der Produktionsdomain geprüft.
+
+## PWA-/Push-Nachlauf nach Domainwechsel
+
+1. Auth-, Passwort-Reset-, E2E- und Push-Zieladressen verwenden `https://schichtfunk.de/` als kanonische Produktionsadresse.
+2. Der PWA-App-Shell-Cache wurde versioniert, damit installierte Apps aktualisierte Laufzeitdateien laden.
+3. Die Push-Oberfläche weist auf der Produktionsdomain ausdrücklich auf die erforderliche einmalige Geräteaktivierung hin.
+4. VAPID-Schlüssel werden nicht rotiert; eine Rotation würde bestehende Abonnements unnötig ungültig machen.
+5. Die technische Veröffentlichung kann automatisiert geprüft werden. Die abschließende Benachrichtigungsfreigabe benötigt aus Browser-Sicherheitsgründen pro Gerät eine sichtbare Benutzeraktion und danach eine Testzustellung.
 
 ## Rückfallplan
 
@@ -96,4 +104,4 @@ Die Domain `www.schichtfunk.de` wird erst verbunden bzw. per DNS umgeschaltet, w
 - Betreiberunterlagen: TOM, VVT, Lösch-/Aufbewahrungskonzept und DSFA-Schwellenprüfung sind als Version 1.0 dokumentiert. Die Schwellenprüfung verlangt vor dem ersten kommerziellen Beschäftigtendaten-Echtbetrieb eine vollständige kundenspezifische DSFA, die Benennung einer datenschutzbeauftragten Person und den Abschluss der hoch priorisierten Sicherheits-/Löschmaßnahmen.
 - Supabase Pro: aktiv; Spend Cap eingeschaltet.
 - Technische Abschlussnachprüfung am 14.09.2026: 174/174 IONOS-Build-Dateien ohne inhaltliche Abweichung, 33/33 lokale Testdateien, IONOS-Migrationssuite und 2.159.480-Byte-Build bestanden. Die öffentlichen Routen, SPA-Fallback, PWA-/Service-Worker-Dateien, Sicherheitsheader und Supabase-Funktionsgrenzen wurden live bestätigt. Der aktive Privacy-Worker-Zeitplan meldete zuletzt `succeeded`. Detailnachweis: `documentation/ionos-supabase-technical-final-check-2026-09-14.md`.
-- Domain-Umschaltung: noch nicht ausgeführt. Die Produktivabnahme ersetzt nicht die separat erforderliche ausdrückliche Anweisung zur Änderung von `www.schichtfunk.de` beziehungsweise der DNS-Zuordnung.
+- Domain-Umschaltung: abgeschlossen. `schichtfunk.de` liefert die Login-geschützte IONOS-Anwendung aus; `www.schichtfunk.de` leitet auf die kanonische Adresse weiter. HTTPS, Login und PWA-Ressourcen wurden bestätigt. Die Push-Neuregistrierung und Testzustellung bleibt pro realem Gerät auszuführen.

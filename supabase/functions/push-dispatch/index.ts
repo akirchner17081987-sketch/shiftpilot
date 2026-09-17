@@ -6,7 +6,7 @@ import { buildPushPayload } from "npm:@block65/webcrypto-web-push@2.0.0";
 
 const uuidRe=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const base64url=(bytes:Uint8Array)=>btoa(String.fromCharCode(...bytes)).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/g,"");
-const fallbackAppOrigin="https://shiftpilot-two.vercel.app";
+const fallbackAppOrigin="https://schichtfunk.de";
 
 type StoredSubscription={
   id:string;
@@ -113,7 +113,7 @@ const handler=withSupabase({auth:"none"},async(req,ctx)=>{
       p_webhook_secret:base64url(random),
       p_vapid_public_key:vapid.publicKey,
       p_vapid_private_key:vapid.privateKey,
-      p_vapid_subject:"https://shiftpilot-two.vercel.app/"
+      p_vapid_subject:"https://schichtfunk.de/"
     });
     if(bootstrapError)return Response.json({error:"BOOTSTRAP_FAILED"},{status:500});
     return Response.json({ok:true,status:created?"CONFIGURED":"ALREADY_CONFIGURED"});

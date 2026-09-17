@@ -1,6 +1,6 @@
 const { defineConfig, devices } = require('@playwright/test');
 
-const baseURL = process.env.E2E_BASE_URL || 'https://shiftpilot-two.vercel.app';
+const baseURL = process.env.E2E_BASE_URL || 'https://schichtfunk.de';
 const remoteTarget = /^https:\/\//i.test(baseURL);
 
 module.exports = defineConfig({
