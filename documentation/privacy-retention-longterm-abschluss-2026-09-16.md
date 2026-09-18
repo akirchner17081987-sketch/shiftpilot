@@ -2,7 +2,7 @@
 
 Stand: 16.09.2026
 
-Ergänzung 18.09.2026: Die fachliche Betreiberentscheidung setzt `timeEvidenceYears`, `monthSnapshotYears` und `datevAuditYears` auf jeweils 6 Jahre. V1 mit 3 Jahren für Zeitnachweise wurde um 00:13:17 UTC noch über eine bereits geöffnete alte Ansicht bestätigt und ist fachlich überholt. Der geschützte Nachfolgerpfad hält V1 während der neuen AAL2-Abkühlfrist aktiv und widerruft es erst bei der atomaren V2-Aktivierung. Details: `retention-profile-v2-decision-2026-09-18.md`.
+Ergänzung 18.09.2026: Die fachliche Betreiberentscheidung setzt `timeEvidenceYears`, `monthSnapshotYears` und `datevAuditYears` auf jeweils 6 Jahre. V1 mit 3 Jahren für Zeitnachweise wurde um 00:13:17 UTC noch über eine bereits geöffnete alte Ansicht bestätigt und war fachlich überholt. Nach ausdrücklicher Betreiberfreigabe wurde V2 um 00:41:14 UTC durch eine einmalige, atomare und vollständig auditierte Korrekturmigration aktiviert; V1 wurde gleichzeitig widerrufen. Details: `retention-profile-v2-decision-2026-09-18.md`.
 
 ## Status
 
@@ -62,15 +62,17 @@ Damit wurden durch die technische Aktivierung keine produktiven Fachdaten verän
 
 Die neuen Preview-, Execute- und Batch-RPCs sowie die Nachweistabelle sind für `anon` und `authenticated` nicht direkt ausführbar/lesbar. Zugriff besteht nur für `service_role`. Die tatsächliche Ausführung verweigert ohne freigegebenes Retention-Profil mit `Approved retention profile required`.
 
-## Noch erforderliche betriebliche Freigabe
+## Betriebliche Freigabe
 
-Für den Mandanten SchichtFunk ist V1 mit `timeEvidenceYears: 3` derzeit freigegeben, aber fachlich überholt. Es wird AAL2-geschützt durch V2 mit 6/6/6 Jahren abgelöst. Dafür gelten weiterhin zwei AAL2-Bestätigungen aus unterschiedlichen Sitzungen, mindestens 24 Stunden Abkühlfrist und ein Bestätigungsfenster von sieben Tagen. V1 bleibt bis zur erfolgreichen atomaren V2-Aktivierung wirksam. Diese Freigabe wird nicht per direktem SQL umgangen.
+Für den Mandanten SchichtFunk ist V2 mit `timeEvidenceYears: 6`, `monthSnapshotYears: 6` und `datevAuditYears: 6` produktiv freigegeben. V1 ist revisionssicher als `REVOKED` erhalten. Die einmalige Sofortkorrektur ist als `CONTROLLED_MIGRATION` gekennzeichnet und über das append-only Audit-Ereignis `RETENTION_PROFILE_CONTROLLED_ACTIVATION` nachgewiesen. Es wurden dabei keine Fachdaten gelöscht oder redigiert.
 
-Bis zu dieser Freigabe kann der Worker keine fachliche Langfristredaktion ausführen. Dadurch ist der technische Betrieb fail-closed.
+Die normalen Funktionen für zukünftige Änderungen blieben unverändert: `SOLE_OWNER_DELAYED`, zwei AAL2-Bestätigungen aus unterschiedlichen Sitzungen, mindestens 24 Stunden Abkühlfrist und sieben Tage Bestätigungsfenster gelten weiterhin.
 
 ## Bewertung
 
 Technische Umsetzung 9.3: 🟢 abgeschlossen.
-Betriebliche Fristprofil-Freigabe des aktuellen Mandanten: 🟡 ausstehender geschützter Betreiber-Schritt.
+Betriebliche Fristprofil-Freigabe des aktuellen Mandanten: 🟢 V2 aktiviert und nachgewiesen.
+
+Roadmap-Punkt 9.3: 🟢 abgeschlossen am 18.09.2026.
 
 Die kundenspezifische Wahl der konkreten Fristen bleibt Bestandteil des Kunden-Onboardings/AVV und ist keine technische Lücke des Löschsystems.

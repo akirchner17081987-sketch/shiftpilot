@@ -49,4 +49,6 @@ test('9.3 evidence records dry-run and unchanged production hashes',()=>{
   assert.match(evidence,/a882926769e5c8102adbbbcb7e9dbc6944aa3e7b63636904d93415328fd2d1fe/);
   assert.match(evidence,/f34928133241c355c6213d69368ee41550fd3200d3e02d1656747f2278111d9c/);
   assert.match(evidence,/Technische Umsetzung 9\.3: 🟢 abgeschlossen/);
+  assert.match(evidence,/Betriebliche Fristprofil-Freigabe des aktuellen Mandanten: 🟢 V2 aktiviert und nachgewiesen/);
+  assert.match(evidence,/Roadmap-Punkt 9\.3: 🟢 abgeschlossen am 18\.09\.2026/);
 });

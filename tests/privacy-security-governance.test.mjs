@@ -25,6 +25,8 @@ const privacyScheduleSql=fs.readFileSync(path.join(root,'supabase','migrations',
 const privacyRoleCompatSql=fs.readFileSync(path.join(root,'supabase','migrations','20260914063206_privacy_service_role_claim_compat_v9.sql'),'utf8');
 const retentionReplacementSql=fs.readFileSync(path.join(root,'supabase','migrations','20260918000550_privacy_retention_profile_draft_replacement_v12.sql'),'utf8');
 const retentionSuccessorSql=fs.readFileSync(path.join(root,'supabase','migrations','20260918001808_privacy_retention_profile_successor_v13.sql'),'utf8');
+const retentionControlledActivationSql=fs.readFileSync(path.join(root,'supabase','migrations','20260918004114_privacy_retention_profile_v2_controlled_activation.sql'),'utf8');
+const retentionDirectWriteGuardSql=fs.readFileSync(path.join(root,'supabase','migrations','20260918004539_restrict_retention_profile_direct_writes.sql'),'utf8');
 const lifecycleDbTest=fs.readFileSync(path.join(root,'supabase','tests','privacy_lifecycle_test.sql'),'utf8');
 const soleOwnerDbTest=fs.readFileSync(path.join(root,'supabase','tests','privacy_sole_owner_delayed_test.sql'),'utf8');
 const logicalRestoreDbTest=fs.readFileSync(path.join(root,'supabase','tests','privacy_logical_restore_test.sql'),'utf8');
@@ -165,6 +167,24 @@ test('approved retention profiles remain active until an AAL2-confirmed successo
   assert.match(retentionSuccessorSql,/server_confirm_sole_owner_retention_profile/i);
   assert.match(retentionSuccessorSql,/revoke all on function private\.server_confirm_sole_owner_retention_profile[\s\S]*from public, anon, authenticated/i);
   assert.doesNotMatch(retentionSuccessorSql,/\bdelete\s+from\b/i);
+});
+
+test('one-time V2 correction is explicit, audited and leaves the normal delayed path unchanged',()=>{
+  assert.match(retentionControlledActivationSql,/approval_mode = 'CONTROLLED_MIGRATION'/i);
+  assert.match(retentionControlledActivationSql,/version = 2/i);
+  assert.match(retentionControlledActivationSql,/timeEvidenceYears'\)::integer = 6/i);
+  assert.match(retentionControlledActivationSql,/RETENTION_PROFILE_CONTROLLED_ACTIVATION/i);
+  assert.match(retentionControlledActivationSql,/normal SOLE_OWNER_DELAYED AAL2 and 24-hour controls remain unchanged/i);
+  assert.match(retentionControlledActivationSql,/status = 'REVOKED', revoked_at = v_now/i);
+  assert.match(retentionControlledActivationSql,/status, rules, created_by, created_at,[\s\S]*approved_by, approved_at, approval_mode/i);
+  assert.doesNotMatch(retentionControlledActivationSql,/create or replace function .*server_(stage|confirm)_sole_owner_retention_profile/is);
+  assert.doesNotMatch(retentionControlledActivationSql,/\bdelete\s+from\b/i);
+});
+
+test('retention profiles cannot be written directly with the application service role',()=>{
+  assert.match(retentionDirectWriteGuardSql,/revoke insert, update, delete[\s\S]*from service_role/i);
+  assert.match(retentionDirectWriteGuardSql,/grant select[\s\S]*to service_role/i);
+  assert.match(retentionDirectWriteGuardSql,/protected stage\/confirm RPCs/i);
 });
 
 test('expanded offboarding preview inventories all linked domains without mutating them',()=>{
