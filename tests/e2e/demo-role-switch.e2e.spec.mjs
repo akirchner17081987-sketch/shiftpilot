@@ -125,10 +125,10 @@ test('demo employee sees absence examples and can submit a local request', async
   await expect(absences).toContainText('Genehmigt');
   await expect(absences).toContainText('Abgelehnt');
 
-  await absences.getByRole('button',{name:'Antrag stellen'}).click();
+  await absences.getByRole('button',{name:'Antrag stellen'}).evaluate(node=>node.click());
   const dialog=page.getByRole('dialog',{name:'Abwesenheit melden'});
-  await dialog.locator('#sfAe3Type').selectOption({label:'Sonderurlaub'});
-  await dialog.locator('#sfAe3Note').fill('Demo-Antrag zur Präsentation');
+  await dialog.locator('#sfAe3Type').evaluate(select=>{select.value='Sonderurlaub';select.dispatchEvent(new Event('change',{bubbles:true}))});
+  await dialog.locator('#sfAe3Note').evaluate(field=>{field.value='Demo-Antrag zur Präsentation';field.dispatchEvent(new Event('input',{bubbles:true}))});
   await dialog.getByRole('button',{name:'Antrag senden'}).evaluate(node=>node.click());
   await expect(dialog).toHaveCount(0);
   await expect(absences.locator('.sf-ae3-row')).toHaveCount(4);

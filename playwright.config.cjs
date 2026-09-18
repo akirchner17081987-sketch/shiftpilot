@@ -5,6 +5,7 @@ module.exports = defineConfig({
   timeout: 30_000,
   expect: { timeout: 8_000 },
   fullyParallel: false,
+  workers: process.env.CI ? 1 : undefined,
   forbidOnly: true,
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? [['line'], ['html', { open: 'never' }]] : 'line',
