@@ -39,7 +39,7 @@ Deno.serve(async req=>{
   }
 
   let sessionId:string|null=null;
-  if(['stage-sole-owner','confirm-sole-owner','stage-retention-profile','confirm-retention-profile'].includes(request.action)){
+  if(['stage-sole-owner','confirm-sole-owner','stage-retention-profile','replace-retention-profile','confirm-retention-profile'].includes(request.action)){
     try{sessionId=readJwtSessionId(token)}
     catch{return json({error:'SESSION_REQUIRED'},403,cors)}
   }
@@ -87,6 +87,15 @@ Deno.serve(async req=>{
       p_created_by:userData.user.id,p_session_id:sessionId,p_approval_reference:request.approvalReference
     });
     return error?json({error:'RETENTION_PROFILE_STAGE_FAILED'},400,cors):json({ok:true,profile:data},202,cors);
+  }
+
+  if(request.action==='replace-retention-profile'){
+    const {data,error}=await admin.rpc('server_replace_sole_owner_retention_profile_draft',{
+      p_profile_id:request.retentionProfileId,p_company_id:request.companyId,
+      p_version:request.version,p_rules:request.rules,p_created_by:userData.user.id,
+      p_session_id:sessionId,p_approval_reference:request.approvalReference
+    });
+    return error?json({error:'RETENTION_PROFILE_REPLACEMENT_FAILED'},400,cors):json({ok:true,profile:data},202,cors);
   }
 
   if(request.action==='confirm-retention-profile'){

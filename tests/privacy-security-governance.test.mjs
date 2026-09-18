@@ -23,6 +23,7 @@ const soleOwnerSql=fs.readFileSync(path.join(root,'supabase','migrations','20260
 const privacyWorkerSql=fs.readFileSync(path.join(root,'supabase','migrations','20260914062506_privacy_lifecycle_worker_v7.sql'),'utf8');
 const privacyScheduleSql=fs.readFileSync(path.join(root,'supabase','migrations','20260914062509_privacy_lifecycle_schedule_v8.sql'),'utf8');
 const privacyRoleCompatSql=fs.readFileSync(path.join(root,'supabase','migrations','20260914063206_privacy_service_role_claim_compat_v9.sql'),'utf8');
+const retentionReplacementSql=fs.readFileSync(path.join(root,'supabase','migrations','20260918000550_privacy_retention_profile_draft_replacement_v12.sql'),'utf8');
 const lifecycleDbTest=fs.readFileSync(path.join(root,'supabase','tests','privacy_lifecycle_test.sql'),'utf8');
 const soleOwnerDbTest=fs.readFileSync(path.join(root,'supabase','tests','privacy_sole_owner_delayed_test.sql'),'utf8');
 const logicalRestoreDbTest=fs.readFileSync(path.join(root,'supabase','tests','privacy_logical_restore_test.sql'),'utf8');
@@ -134,6 +135,25 @@ test('sole-owner Edge API requires owner AAL2 and a signed session claim',()=>{
   assert.equal(readJwtSessionId(`header.${payload}.signature`),'88888888-8888-4888-8888-888888888888');
   const missing=Buffer.from(JSON.stringify({aal:'aal2'})).toString('base64url');
   assert.throws(()=>readJwtSessionId(`header.${missing}.signature`),/SESSION_REQUIRED/);
+});
+
+test('obsolete retention drafts can only be atomically replaced by the sole owner',()=>{
+  const company='33333333-3333-4333-8333-333333333333';
+  const owner='11111111-1111-4111-8111-111111111111';
+  const request=parseLifecycleRequest({
+    action:'replace-retention-profile',companyId:company,
+    retentionProfileId:'99999999-9999-4999-8999-999999999999',version:2,
+    rules:{timeEvidenceYears:6},approvalReference:'Fristprofil V2 Arbeitszeit/DATEV'
+  });
+  const membership={company_id:company,user_id:owner,role:'OWNER',status:'ACTIVE'};
+  assert.throws(()=>authorizeLifecycleRequest({membership,userId:owner,aal:'aal1',request}),/MFA_REQUIRED/);
+  assert.equal(authorizeLifecycleRequest({membership,userId:owner,aal:'aal2',request}),true);
+  assert.match(retentionReplacementSql,/for update/i);
+  assert.match(retentionReplacementSql,/status = 'REVOKED', revoked_at = now\(\)/i);
+  assert.match(retentionReplacementSql,/server_stage_sole_owner_retention_profile/i);
+  assert.match(retentionReplacementSql,/Replacement version must be newer/i);
+  assert.match(retentionReplacementSql,/revoke all on function public\.server_replace_sole_owner_retention_profile_draft[\s\S]*from public, anon, authenticated/i);
+  assert.match(retentionReplacementSql,/grant execute on function public\.server_replace_sole_owner_retention_profile_draft[\s\S]*to service_role/i);
 });
 
 test('expanded offboarding preview inventories all linked domains without mutating them',()=>{

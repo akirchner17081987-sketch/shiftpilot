@@ -32,7 +32,7 @@ export function parseLifecycleRequest(input){
   const rules=input?.rules;
   const approvalReference=input?.approvalReference==null?null:String(input.approvalReference).trim();
   if(!['preview','retention-status','stage','approve','stage-sole-owner','confirm-sole-owner',
-    'stage-retention-profile','confirm-retention-profile'].includes(action))throw new Error('INVALID_ACTION');
+    'stage-retention-profile','replace-retention-profile','confirm-retention-profile'].includes(action))throw new Error('INVALID_ACTION');
   if(!uuidRe.test(companyId))throw new Error('INVALID_TARGET');
   if(['preview','stage','stage-sole-owner'].includes(action)&&!uuidRe.test(employeeId))throw new Error('INVALID_TARGET');
   if(asOf&&!/^\d{4}-\d{2}-\d{2}$/.test(asOf))throw new Error('INVALID_DATE');
@@ -44,11 +44,12 @@ export function parseLifecycleRequest(input){
     if(!uuidRe.test(requestId||'')||!uuidRe.test(retentionProfileId||''))throw new Error('INVALID_APPROVAL');
     if(legalHoldUntil&&!Number.isFinite(Date.parse(legalHoldUntil)))throw new Error('INVALID_LEGAL_HOLD');
   }
-  if(action==='stage-retention-profile'){
+  if(['stage-retention-profile','replace-retention-profile'].includes(action)){
     if(!Number.isInteger(version)||version<1||version>100000)throw new Error('INVALID_PROFILE_VERSION');
     if(!rules||Array.isArray(rules)||typeof rules!=='object')throw new Error('INVALID_PROFILE_RULES');
     if(!approvalReference||approvalReference.length<10||approvalReference.length>500)throw new Error('INVALID_APPROVAL_REFERENCE');
   }
+  if(action==='replace-retention-profile'&&!uuidRe.test(retentionProfileId||''))throw new Error('INVALID_APPROVAL');
   if(action==='confirm-retention-profile'&&!uuidRe.test(retentionProfileId||''))throw new Error('INVALID_APPROVAL');
   return {action,companyId,employeeId,reason,asOf,idempotencyKey,requestId,retentionProfileId,
     legalHoldUntil,version,rules,approvalReference};
@@ -59,7 +60,7 @@ export function authorizeLifecycleRequest({membership,userId,aal,request}){
   if(!membership||membership.user_id!==userId||membership.company_id!==request.companyId
     ||membership.status!=='ACTIVE'||!allowedRoles.has(membership.role))throw new Error('FORBIDDEN');
   if(!['preview','retention-status'].includes(request.action)&&aal!=='aal2')throw new Error('MFA_REQUIRED');
-  if(['stage-sole-owner','confirm-sole-owner','stage-retention-profile','confirm-retention-profile'].includes(request.action)
+  if(['stage-sole-owner','confirm-sole-owner','stage-retention-profile','replace-retention-profile','confirm-retention-profile'].includes(request.action)
     &&membership.role!=='OWNER')throw new Error('SOLE_OWNER_REQUIRED');
   return true;
 }

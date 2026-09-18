@@ -21,6 +21,8 @@ test('retention profile first and second approvals require AAL2 and use the prot
   assert.match(ui,/privacy-lifecycle/);
   assert.match(ui,/stage-retention-profile/);
   assert.match(ui,/confirm-retention-profile/);
+  assert.match(ui,/replace-retention-profile/);
+  assert.match(ui,/fachlich überholt und gesperrt/);
   assert.match(ui,/Zweite Freigabe/);
   assert.match(ui,/neuen Anmeldung/);
 });
@@ -28,6 +30,7 @@ test('retention profile first and second approvals require AAL2 and use the prot
 test('default retention profile remains conservative for destructive external deletion',()=>{
   assert.match(ui,/contactDays:30/);
   assert.match(ui,/auditYears:3/);
+  assert.match(ui,/timeEvidenceYears:6/);
   assert.match(ui,/monthSnapshotYears:6/);
   assert.match(ui,/datevAuditYears:6/);
   assert.match(ui,/deletePersonnelDocuments:false/);

@@ -2,7 +2,7 @@
 (function(){
   if(window.__sfPrivacyRetentionUiV1)return;window.__sfPrivacyRetentionUiV1=true;
   const DEFAULT_RULES=Object.freeze({
-    contactDays:30,planningYears:3,absenceYears:3,timeEvidenceYears:3,personnelYears:3,
+    contactDays:30,planningYears:3,absenceYears:3,timeEvidenceYears:6,personnelYears:3,
     auditYears:3,monthSnapshotYears:6,datevAuditYears:6,
     deletePersonnelDocuments:false,deleteAuthAccount:false
   });
@@ -21,6 +21,7 @@
       const map={
         MFA_REQUIRED:'Bitte den zweiten Faktor bestätigen.',
         RETENTION_PROFILE_STAGE_FAILED:'Das Fristprofil konnte nicht vorbereitet werden.',
+        RETENTION_PROFILE_REPLACEMENT_FAILED:'Der veraltete Entwurf konnte nicht sicher ersetzt werden.',
         RETENTION_PROFILE_CONFIRMATION_FAILED:'Die zweite Freigabe konnte noch nicht abgeschlossen werden.',
         SESSION_REQUIRED:'Bitte neu anmelden und den zweiten Faktor erneut bestätigen.'
       };
@@ -50,6 +51,7 @@
     ['Auth-Konto automatisch löschen',rules.deleteAuthAccount?'Ja':'Nein'],
     ['Personalakten-Dateien automatisch löschen',rules.deletePersonnelDocuments?'Ja':'Nein']
   ];
+  const rulesMatchDefault=rules=>rules&&Object.entries(DEFAULT_RULES).every(([key,value])=>rules[key]===value);
 
   function css(){
     if(document.getElementById('sfPrivacyRetentionCss'))return;
@@ -76,19 +78,24 @@
       const approved=profiles.find(p=>p.status==='APPROVED');
       const draft=profiles.find(p=>p.status==='DRAFT');
       const shown=draft?.rules||approved?.rules||DEFAULT_RULES;
+      const draftIsCurrent=!draft||rulesMatchDefault(draft.rules);
       const nextVersion=Number(status.next_version||1);
       const now=Date.now();
       const notBefore=draft?.confirmation_not_before?Date.parse(draft.confirmation_not_before):null;
-      const canConfirm=!!draft&&Number.isFinite(notBefore)&&now>=notBefore;
+      const canConfirm=!!draft&&draftIsCurrent&&Number.isFinite(notBefore)&&now>=notBefore;
       const state=approved
         ?`<div class="sf-pr-state ok"><b>Aktives Fristprofil V${approved.version}</b><br>Freigegeben: ${esc(deDate(approved.approved_at))}. Der Privacy-Worker darf fällige Regeln anwenden; Legal Holds bleiben vorrangig.</div>`
+        :draft&&!draftIsCurrent
+          ?`<div class="sf-pr-state bad"><b>Fristprofil V${draft.version} ist fachlich überholt und gesperrt.</b><br>Der Entwurf enthält nicht die freigegebenen V2-Regeln für Arbeitszeit-/DATEV-Daten und darf nicht bestätigt werden. Ersetzen legt revisionssicher eine neue Version mit frischer 24-Stunden-Frist an.</div>`
         :draft
           ?`<div class="sf-pr-state wait"><b>Fristprofil V${draft.version} wartet auf zweite Bestätigung.</b><br>Frühestens: ${esc(deDate(draft.confirmation_not_before))}. Die Bestätigung muss nach neuer Anmeldung in einer anderen MFA-Sitzung erfolgen.</div>`
           :'<div class="sf-pr-state wait"><b>Noch kein Fristprofil freigegeben.</b><br>Der Löschbetrieb arbeitet deshalb fail-closed und führt keine fachliche Langfristredaktion aus.</div>';
-      host.innerHTML=`<h3>Datenschutz & Löschung</h3><p>Technische Schutzregeln sind aktiv. Konkrete Fristen werden erst nach geschützter Betreiberfreigabe wirksam. Vor der Freigabe müssen die Werte vertraglich/rechtlich zum tatsächlichen Einsatz passen.</p>${state}<div class="sf-pr-grid">${rulesSummary(shown).map(([k,v])=>`<div class="sf-pr-row"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join('')}</div>${!approved&&!draft?`<label style="display:block;margin-top:12px;font-size:11px;color:#9fb3c7">Freigabevermerk<input id="sfPrApprovalRef" class="sf-pr-ref" maxlength="500" value="SchichtFunk Fristprofil V${nextVersion} – Betreiberprüfung und Freigabe"></label>`:''}<div id="sfPrMessage"></div><div class="sf-pr-actions"><button class="ghost" id="sfPrReload" type="button">Status neu laden</button>${!approved&&!draft?'<button class="primary" id="sfPrStage" type="button">Fristprofil vorbereiten</button>':''}${draft?`<button class="primary" id="sfPrConfirm" type="button" ${canConfirm?'':'disabled'}>${canConfirm?'Zweite Freigabe bestätigen':'Abkühlfrist läuft'}</button>`:''}</div>`;
+      const needsProfileInput=!approved&&(!draft||!draftIsCurrent);
+      host.innerHTML=`<h3>Datenschutz & Löschung</h3><p>Technische Schutzregeln sind aktiv. Konkrete Fristen werden erst nach geschützter Betreiberfreigabe wirksam. Vor der Freigabe müssen die Werte vertraglich/rechtlich zum tatsächlichen Einsatz passen.</p>${state}<div class="sf-pr-grid">${rulesSummary(draft&&!draftIsCurrent?DEFAULT_RULES:shown).map(([k,v])=>`<div class="sf-pr-row"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join('')}</div>${needsProfileInput?`<label style="display:block;margin-top:12px;font-size:11px;color:#9fb3c7">Freigabevermerk<input id="sfPrApprovalRef" class="sf-pr-ref" maxlength="500" value="SchichtFunk Fristprofil V${nextVersion} – Arbeitszeit/DATEV 6 Jahre; ersetzt V${draft?.version||'—'}"></label>`:''}<div id="sfPrMessage"></div><div class="sf-pr-actions"><button class="ghost" id="sfPrReload" type="button">Status neu laden</button>${!approved&&!draft?'<button class="primary" id="sfPrStage" type="button">Fristprofil vorbereiten</button>':''}${draft&&!draftIsCurrent?'<button class="primary" id="sfPrReplace" type="button">Entwurf durch V2 ersetzen</button>':''}${draft&&draftIsCurrent?`<button class="primary" id="sfPrConfirm" type="button" ${canConfirm?'':'disabled'}>${canConfirm?'Zweite Freigabe bestätigen':'Abkühlfrist läuft'}</button>`:''}</div>`;
       host.querySelector('#sfPrReload').onclick=()=>render(container);
       const say=(text,bad=false)=>{const box=host.querySelector('#sfPrMessage');box.className=`sf-pr-state ${bad?'bad':'ok'}`;box.textContent=text};
       const stage=host.querySelector('#sfPrStage');if(stage)stage.onclick=async()=>{stage.disabled=true;try{await aal2();const approvalReference=host.querySelector('#sfPrApprovalRef').value.trim();if(approvalReference.length<10)throw new Error('Bitte einen nachvollziehbaren Freigabevermerk eintragen.');await invoke({action:'stage-retention-profile',version:nextVersion,rules:DEFAULT_RULES,approvalReference});say('Erste MFA-Freigabe gespeichert. Die zweite Bestätigung ist nach 24 Stunden und einer neuen Anmeldung möglich.');setTimeout(()=>render(container),900)}catch(e){say(e?.message||'Vorbereitung fehlgeschlagen.',true);stage.disabled=false}};
+      const replace=host.querySelector('#sfPrReplace');if(replace)replace.onclick=async()=>{replace.disabled=true;try{await aal2();const approvalReference=host.querySelector('#sfPrApprovalRef').value.trim();if(approvalReference.length<10)throw new Error('Bitte einen nachvollziehbaren Freigabevermerk eintragen.');await invoke({action:'replace-retention-profile',retentionProfileId:draft.id,version:nextVersion,rules:DEFAULT_RULES,approvalReference});say('Der alte Entwurf wurde widerrufen und V2 mit 6 Jahren vorbereitet. Die zweite Bestätigung ist nach 24 Stunden und einer neuen Anmeldung möglich.');setTimeout(()=>render(container),900)}catch(e){say(e?.message||'Ersetzen fehlgeschlagen.',true);replace.disabled=false}};
       const confirm=host.querySelector('#sfPrConfirm');if(confirm)confirm.onclick=async()=>{confirm.disabled=true;try{await aal2();await invoke({action:'confirm-retention-profile',retentionProfileId:draft.id});say('Fristprofil wurde geschützt freigegeben.');setTimeout(()=>render(container),900)}catch(e){say(`${e?.message||'Bestätigung fehlgeschlagen.'} Falls die Abkühlfrist abgelaufen ist: vollständig abmelden, neu anmelden und erneut MFA bestätigen.`,true);confirm.disabled=false}};
     }catch(e){host.innerHTML=`<h3>Datenschutz & Löschung</h3><div class="sf-pr-state bad">${esc(e?.message||'Datenschutzstatus konnte nicht geladen werden.')}</div><div class="sf-pr-actions"><button class="ghost" id="sfPrRetry" type="button">Erneut versuchen</button></div>`;host.querySelector('#sfPrRetry').onclick=()=>render(container)}
   }

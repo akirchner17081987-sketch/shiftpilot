@@ -53,11 +53,11 @@ Nicht jeder SchichtFunk-Datensatz ist automatisch Lohnkonto, Buchungsbeleg oder 
 | Sonstige Abwesenheiten | Ende Kalenderjahr | regelmäßig 3 Jahre | kundenbezogene Tarif-/Urlaubs-/Anspruchsregeln können abweichen |
 | Dienstplan und Veröffentlichungen | Ende Kalenderjahr des Dienstes | 3 Jahre | Anspruchs-/Organisationsnachweis; nicht lohnrelevante Details danach anonymisieren |
 | Schichtänderungen, Tausch, Bestätigungen, Compliancebefunde, Störfälle | Abschluss/Jahresende | 3 Jahre | bei Lohn-/Gerichts-/Betriebsratsbezug dokumentierter Legal Hold oder längere Kundenfrist |
-| Ist-Arbeitszeit und QR-Buchungen | Ende Kalenderjahr | Standard 3 Jahre; mindestens 2 Jahre, soweit § 16 Abs. 2 ArbZG einschlägig | wenn Bestandteil des Lohnkontos/Entgeltunterlage: bis 6 Jahre oder nach § 28f SGB IV |
-| Stundenkonto, Monatsabschluss und Berichtssnapshot | Ende Kalenderjahr | 6 Jahre, wenn lohnabrechnungsrelevant; sonst 3 Jahre | geschlossene Monate müssen vor Ablauf unverändert nachweisbar bleiben |
+| Ist-Arbeitszeit, Korrekturen und QR-Buchungen | Ende Abrechnungs-/Kalenderjahr | 6 Jahre | SchichtFunk-Festlegung für lohn-/DATEV-relevante Nutzung; Legal Hold und dokumentierte längere Kundenregel gehen vor |
+| Stundenkonto, Monatsabschluss und Berichtssnapshot | Ende Abrechnungs-/Kalenderjahr | 6 Jahre | geschlossene Monate müssen vor Ablauf unverändert nachweisbar bleiben |
 | DATEV-Einstellungen und Lohnartenregeln | Vertrags-/Nutzungsende | 30 Tage nach Exportfenster | keine Beschäftigtendaten erforderlich, außer Zuordnung über Mandant |
 | Generierte DATEV-Datei | Download | keine dauerhafte Serverspeicherung | Aufbewahrung der heruntergeladenen Datei ist Kundenpflicht; als Buchungsbeleg ggf. 8 Jahre |
-| DATEV-Export-Audit (Monat, Zeilen, Hash) | Ende Kalenderjahr | 6 Jahre; 8 Jahre, wenn als Buchungsbeleg eingeordnet | keine vollständige Datei im Audit speichern |
+| DATEV-Export-Audit (Monat, Zeilen, Hash) | Ende Abrechnungs-/Kalenderjahr | 6 Jahre | keine vollständige Datei im Audit speichern; generierte Kunden-Datei ggf. 8 Jahre bei Einordnung als Buchungsbeleg |
 | Fachliche Auditereignisse | Ereignis/Jahresende | 3 Jahre; 6 Jahre bei Zeit-/Lohn-/Sicherheitsnachweis | `old_values`/`new_values` können sensible Inhalte enthalten und müssen fristgerecht reduziert werden |
 | Sicherheitsvorfallakte | Abschluss/Jahresende | 3 Jahre | Legal Hold/Behördenverfahren kann verlängern; Zugriff stark begrenzen |
 | Legacy-Importmarker | bestätigter Import | 90 Tage, sofern kein Konflikt; spätestens bei Mandantenlöschung | lokale Quelldaten nach bestätigtem Import entfernen |
