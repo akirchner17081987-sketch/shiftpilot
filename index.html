@@ -11,6 +11,9 @@
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
 <link rel="manifest" href="/site.webmanifest" />
 <title>SchichtFunk – Dienstplanung</title>
+<script>
+try{document.documentElement.dataset.sfTheme=localStorage.getItem('schichtfunk-manager-theme')==='light'?'light':'dark'}catch(e){document.documentElement.dataset.sfTheme='dark'}
+</script>
 <style>
 :root{
   --bg:#08111f; --bg2:#0b1524; --panel:#101d2d; --panel2:#132338; --line:#21334a;
@@ -96,6 +99,7 @@ button,input,select,textarea{font:inherit} button{cursor:pointer}
 <link rel="stylesheet" href="assets/mobile-manager-navigation-v1.css?v=20260907-1">
 <link rel="stylesheet" href="assets/auto-plan-period-v1.css?v=20260902-1">
 <link rel="stylesheet" href="assets/secondary-text-readability-v1.css?v=20260906-1">
+<link rel="stylesheet" href="assets/manager-theme-v1.css?v=20260918-1">
 </head>
 <body>
 
@@ -145,7 +149,7 @@ button,input,select,textarea{font:inherit} button{cursor:pointer}
   </aside>
   <header class="topbar">
     <div class="search" role="search"><input id="globalSearch" type="search" aria-label="Globale Suche nach Mitarbeitern oder Schichten" aria-controls="spEmployeeList" placeholder="Mitarbeiter oder Schicht suchen ..."/><span class="kbd" aria-hidden="true">⌘ K</span></div>
-    <div class="top-actions"><button class="iconbtn">?</button><button class="iconbtn">♧</button><button class="primary" id="newTemplateBtn">＋ Neue Vorlage</button></div>
+    <div class="top-actions"><button class="iconbtn">?</button><button class="iconbtn" id="sfThemeToggle" type="button" aria-label="Zum hellen Modus wechseln" title="Zum hellen Modus wechseln"><span aria-hidden="true">☀</span></button><button class="primary" id="newTemplateBtn">＋ Neue Vorlage</button></div>
   </header>
   <main class="main"><div class="content">
   <section id="view-schedule" class="view active">
@@ -1027,6 +1031,6 @@ table th,table td{font-size:13px;line-height:1.35}
 <script src="assets/navigation-compat-v1.js"></script>
 <script src="assets/mobile-manager-navigation-v1.js?v=20260907-1"></script>
 <script src="assets/schichtfunk-brand-cleanup-v2.js"></script>
+<script src="assets/manager-theme-v1.js?v=20260918-1"></script>
 </body>
 </html>
-
