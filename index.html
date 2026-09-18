@@ -1056,5 +1056,24 @@ function open(){modal.hidden=false;draw();setTimeout(function(){search.focus()},
 document.addEventListener('click',function(e){var c=e.target.closest('[data-hcat]');if(c){active=c.dataset.hcat;search.value='';draw();return}var q=e.target.closest('.sf-help-article>button');if(q)q.parentElement.classList.toggle('open')});document.getElementById('sfHelpClose').addEventListener('click',close);document.getElementById('sfHelpClear').addEventListener('click',function(){search.value='';draw();search.focus()});search.addEventListener('input',draw);modal.addEventListener('click',function(e){if(e.target===modal)close()});document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!modal.hidden)close();if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();open()}});var hb=document.querySelector('.top-actions .iconbtn');if(hb){hb.id='sfHelpButton';hb.type='button';hb.title='Hilfe-Center';hb.setAttribute('aria-label','Hilfe-Center öffnen');hb.addEventListener('click',open)}})();
 </script>
 <!-- /SCHICHTFUNK_HELP_CENTER_V2 -->
+<script id="schichtfunk-help-dedupe-v1">
+(function(){
+  function dedupe(){
+    var nodes=[].slice.call(document.querySelectorAll('[id="sfHelpModal"]'));
+    if(nodes.length<2) nodes=[].slice.call(document.querySelectorAll('.sf-help-backdrop'));
+    if(nodes.length<2)return;
+    nodes.slice(1).forEach(function(n){if(n&&n.parentNode)n.parentNode.removeChild(n)});
+  }
+  function run(){
+    dedupe();
+    if(window.MutationObserver){
+      var obs=new MutationObserver(function(){dedupe()});
+      obs.observe(document.body,{childList:true,subtree:true});
+      setTimeout(function(){obs.disconnect();dedupe()},3000);
+    }
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run);else run();
+})();
+</script>
 </body>
 </html>
