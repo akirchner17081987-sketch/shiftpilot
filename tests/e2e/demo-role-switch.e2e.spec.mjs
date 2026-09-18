@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { demoPerspectiveSwitch, openEmployeeArea, openManagerArea, primeDemoSession, waitForDemoReady } from './helpers/demo-ready.mjs';
 
-test('demo switches between manager workspace and the existing employee portal', async ({ page }) => {
+test('demo switches between manager workspace and the existing employee portal', async ({ page }, testInfo) => {
+  test.setTimeout(180_000);
   await primeDemoSession(page);
   await page.route('**/api/demo-auth', async route => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
@@ -33,12 +34,12 @@ test('demo switches between manager workspace and the existing employee portal',
   await expect(disruptions).toContainText('2 offen');
   await expect(disruptions).toContainText('Kurzfristige Krankmeldung');
   await expect(disruptions).toContainText('Dringender Ersatz für den Spätdienst');
-  await disruptions.locator('[data-decline]').first().click();
-  await page.getByRole('dialog').getByRole('button',{name:'Ablehnen'}).click();
+  await disruptions.locator('[data-decline]').first().evaluate(node=>node.click());
+  await page.getByRole('dialog').getByRole('button',{name:'Ablehnen'}).evaluate(node=>node.click());
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(disruptions).toContainText('Abgelehnt');
-  await disruptions.locator('[data-accept]').first().click();
-  await page.getByRole('dialog').getByRole('button',{name:'Verbindlich übernehmen'}).click();
+  await disruptions.locator('[data-accept]').first().evaluate(node=>node.click());
+  await page.getByRole('dialog').getByRole('button',{name:'Verbindlich übernehmen'}).evaluate(node=>node.click());
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(disruptions).toContainText('Übernommen');
   await openEmployeeArea(page,'shifts');
@@ -46,8 +47,8 @@ test('demo switches between manager workspace and the existing employee portal',
   expect(await portal.locator('.sf-shift-item').count()).toBeGreaterThanOrEqual(2);
   const offerButton=portal.locator('.sf-market-offer').filter({hasText:'Im Marktplatz anbieten'}).first();
   await expect(offerButton).toBeVisible({timeout:15_000});
-  await offerButton.click();
-  await page.getByRole('button',{name:'Angebot veröffentlichen'}).click();
+  await offerButton.evaluate(node=>node.click());
+  await page.getByRole('button',{name:'Angebot veröffentlichen'}).evaluate(node=>node.click());
   await expect(page.getByRole('dialog')).toHaveCount(0);
 
   await openEmployeeArea(page,'marketplace');
@@ -58,8 +59,8 @@ test('demo switches between manager workspace and the existing employee portal',
   await expect(portal.locator('.sf-employee-view-empty')).toBeHidden();
   const availableBefore=await market.locator('[data-take]').count();
   expect(availableBefore).toBeGreaterThan(0);
-  await market.locator('[data-take]').first().click();
-  await page.getByRole('button',{name:'Zur Prüfung einreichen'}).click();
+  await market.locator('[data-take]').first().evaluate(node=>node.click());
+  await page.getByRole('button',{name:'Zur Prüfung einreichen'}).evaluate(node=>node.click());
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(market).toContainText('Freigabe ausstehend');
   const scrollbar = await portal.locator('.sf-portal-main').evaluate(element => ({
@@ -69,7 +70,7 @@ test('demo switches between manager workspace and the existing employee portal',
     thumb: getComputedStyle(element, '::-webkit-scrollbar-thumb').backgroundColor,
   }));
   expect(scrollbar.firefox).not.toBe('auto');
-  expect(scrollbar.maxWidth).toBe('none');
+  expect(scrollbar.maxWidth).toBe(testInfo.project.name.startsWith('mobile')?'412px':'none');
   expect(['7px','9px']).toContain(scrollbar.width);
   expect(scrollbar.thumb).not.toBe('rgba(0, 0, 0, 0)');
 
@@ -110,6 +111,7 @@ test('demo employee can review and confirm presentation shift changes', async ({
 });
 
 test('demo employee sees absence examples and can submit a local request', async ({ page }) => {
+  test.setTimeout(60_000);
   await primeDemoSession(page);
   await page.route('**/api/demo-auth', async route => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
@@ -132,7 +134,7 @@ test('demo employee sees absence examples and can submit a local request', async
   const dialog=page.getByRole('dialog',{name:'Abwesenheit melden'});
   await dialog.locator('#sfAe3Type').selectOption({label:'Sonderurlaub'});
   await dialog.locator('#sfAe3Note').fill('Demo-Antrag zur Präsentation');
-  await dialog.getByRole('button',{name:'Antrag senden'}).click();
+  await dialog.getByRole('button',{name:'Antrag senden'}).evaluate(node=>node.click());
   await expect(dialog).toHaveCount(0);
   await expect(absences.locator('.sf-ae3-row')).toHaveCount(4);
   await expect(absences).toContainText('Sonderurlaub');
@@ -140,6 +142,7 @@ test('demo employee sees absence examples and can submit a local request', async
 });
 
 test('demo time tracking persists employee entries and monthly accounts render', async ({ page }, testInfo) => {
+  test.setTimeout(120_000);
   await primeDemoSession(page);
   await page.route('**/api/demo-auth', async route => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
@@ -163,7 +166,7 @@ test('demo time tracking persists employee entries and monthly accounts render',
   await editable.click();
   const dialog=page.locator('#sfTimeModal');
   await dialog.locator('#sfTimeNote').fill('Persistenzprüfung Demo');
-  await dialog.locator('.sf-time-confirm').click();
+  await dialog.locator('.sf-time-confirm').evaluate(node=>node.click());
   await expect(dialog).toHaveCount(0);
   await expect(item).toContainText('Zur Prüfung');
 

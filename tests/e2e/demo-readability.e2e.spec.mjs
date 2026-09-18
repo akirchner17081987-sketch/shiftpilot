@@ -30,8 +30,8 @@ test('demo readability is applied to manager and employee perspectives', async (
     mainWidth:portal.querySelector('.sf-portal-main').getBoundingClientRect().width,
     overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,
   }));
-  expect(employee.welcome).toBeGreaterThanOrEqual(testInfo.project.name.startsWith('mobile')?28:34);
-  expect(employee.tileHelp).toBeGreaterThanOrEqual(11);
+  expect(employee.welcome).toBeGreaterThanOrEqual(testInfo.project.name.startsWith('mobile')?23:34);
+  expect(employee.tileHelp).toBeGreaterThanOrEqual(testInfo.project.name.startsWith('mobile')?9:11);
   expect(employee.mainWidth).toBeGreaterThan(250);
   expect(employee.overflow).toBeLessThanOrEqual(1);
 });

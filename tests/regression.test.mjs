@@ -100,8 +100,11 @@ test('demo controls share a bottom dock and reserve content space', () => {
   assert.match(demoControlDock, /#sfDemoBadge','#sfDemoPerspectiveSwitch','\[data-demo-scenarios\]','#sfDemoResetBtn','#sfDemoExitBtn'/);
   assert.match(demoControlDock, /#appShell \.main\{margin-bottom:var\(--sf-demo-dock-space\)!important/);
   assert.match(demoControlDock, /#sfEmployeePortal \.sf-portal-main\{bottom:var\(--sf-demo-dock-space\)!important/);
+  assert.match(demoControlDock, /body:has\(\[role="dialog"\]\[aria-modal="true"\]:not\(\.sf-emp-more-sheet\):not\(\.sf-employee-more-panel\)\) #sfDemoControlDock/);
+  assert.match(demoControlDock, /body:has\(#sfEmployeeMobileMore\.open\) #sfDemoControlDock/);
   assert.match(demoControlDock, /@media\(max-width:560px\)/);
-  assert.match(demoControlDock, /--sf-demo-dock-space:132px/);
+  assert.match(demoControlDock, /--sf-demo-dock-space:86px/);
+  assert.match(demoControlDock, /flex-wrap:nowrap;justify-content:flex-start/);
 });
 
 test('global search exposes a programmatic accessible name', () => {

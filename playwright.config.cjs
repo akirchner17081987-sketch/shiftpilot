@@ -10,9 +10,9 @@ module.exports = defineConfig({
   reporter: process.env.CI ? [['line'], ['html', { open: 'never' }]] : 'line',
   use: {
     baseURL: process.env.E2E_BASE_URL || 'https://shiftpilot-two.vercel.app',
-    trace: 'retain-on-failure',
+    trace: process.env.CI ? 'on-first-retry' : 'retain-on-failure',
     screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    video: process.env.CI ? 'on-first-retry' : 'retain-on-failure',
     locale: 'de-DE',
     timezoneId: 'Europe/Berlin',
   },

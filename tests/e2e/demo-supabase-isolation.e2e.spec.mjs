@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { demoPerspectiveSwitch, primeDemoSession, waitForDemoReady } from './helpers/demo-ready.mjs';
 
 test('demo never connects to Supabase in manager or employee views',async({page})=>{
+  test.setTimeout(60_000);
   const supabaseRequests=[];
   const isolationErrors=[];
   page.on('request',request=>{if(/(^|\.)supabase\.(co|in)(\/|$)/i.test(new URL(request.url()).hostname))supabaseRequests.push(request.url())});

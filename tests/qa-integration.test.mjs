@@ -33,3 +33,7 @@ test('QA appears in demo planning, time tracking and marketplace',()=>{
   assert.match(integration,/a\.type='QA'/);
   assert.match(integration,/shift_code:'QA'/);
 });
+
+test('QA preserves existing demo RPC wrapper markers',()=>{
+  assert.match(integration,/Object\.assign\(wrapped,rpc,/);
+});

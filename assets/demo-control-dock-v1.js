@@ -17,13 +17,14 @@
       #sfDemoControlDock .sf-demo-perspective button{min-width:auto!important;min-height:44px!important}
       #sfDemoControlDock [data-demo-scenarios],#sfDemoControlDock #sfDemoResetBtn,#sfDemoControlDock #sfDemoExitBtn,#sfDemoControlDock #sfDemoEmployeeExit{position:static!important;inset:auto!important;display:block!important;flex:0 0 auto;min-height:44px!important;margin:0!important;box-shadow:none!important;white-space:nowrap}
       #sfDemoControlDock #sfDemoExitBtn[hidden],#sfDemoControlDock #sfDemoEmployeeExit[hidden]{display:none!important}
+      body:has([role="dialog"][aria-modal="true"]:not(.sf-emp-more-sheet):not(.sf-employee-more-panel)) #sfDemoControlDock,body:has(#sfEmployeeMobileMore.open) #sfDemoControlDock,body:has(.sf-employee-mobile-more-layer:not([hidden])) #sfDemoControlDock{opacity:0;pointer-events:none}
       html[data-sf-demo="1"] #appShell{height:100vh;min-height:0;overflow:hidden}
       html[data-sf-demo="1"] #appShell .main{margin-bottom:var(--sf-demo-dock-space)!important;padding-bottom:40px!important;scroll-padding-bottom:24px}
       html[data-sf-demo="1"] #sfEmployeePortal .sf-portal-main{bottom:var(--sf-demo-dock-space)!important;padding-bottom:40px!important;scroll-padding-bottom:24px}
       @media(max-width:560px){
-        html[data-sf-demo="1"]{--sf-demo-dock-space:132px}
+        html[data-sf-demo="1"]{--sf-demo-dock-space:86px}
         #sfDemoControlDock{width:calc(100vw - 16px);bottom:max(8px,env(safe-area-inset-bottom));padding:7px 6px;border-radius:14px}
-        #sfDemoControlDock .sf-demo-dock-controls{flex-wrap:wrap;gap:5px;overflow:visible}
+        #sfDemoControlDock .sf-demo-dock-controls{flex-wrap:nowrap;justify-content:flex-start;gap:5px;overflow-x:auto}
         #sfDemoControlDock #sfDemoBadge{width:74px;font-size:0;padding:6px 8px;text-align:center}
         #sfDemoControlDock #sfDemoBadge:after{content:'DEMO';font-size:9px;letter-spacing:.1em}
         #sfDemoControlDock .sf-demo-perspective{order:1}

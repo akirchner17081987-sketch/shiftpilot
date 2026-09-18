@@ -114,7 +114,7 @@
       }
       return res;
     };
-    wrapped.__sfDemoCloudV2=true;wrapped.__sfQAIntegrationV1=true;B.client.rpc=wrapped;return true;
+    Object.assign(wrapped,rpc,{__sfDemoCloudV2:true,__sfQAIntegrationV1:true});B.client.rpc=wrapped;return true;
   }
 
   function patchDemoPlanning(){
