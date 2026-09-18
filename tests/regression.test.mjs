@@ -84,7 +84,7 @@ test('employee PWA keeps QR scan prominent in a compact two-column mobile layout
 });
 
 test('mobile manager navigation is labelled, expandable and keyboard dismissible', () => {
-  assert.match(index, /mobile-manager-navigation-v1\.css\?v=20260907-1/);
+  assert.match(index, /mobile-manager-navigation-v1\.css\?v=20260918-static-brand/);
   assert.match(index, /mobile-manager-navigation-v1\.js\?v=20260907-1/);
   assert.match(mobileManagerNavigationCss, /#appShell\.sf-mobile-nav-open \.sidebar/);
   assert.match(mobileManagerNavigationCss, /\.sf-mobile-manager-nav-copy/);
