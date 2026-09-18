@@ -490,15 +490,19 @@ test('expired sessions clear protected state and reopen login with an explanatio
   assert.match(supabaseAuth, /document\.getElementById\('sfEmployeePortal'\)\?\.remove\(\)/);
 });
 
-test('verified MFA factors are challenged before cloud data is loaded', () => {
+test('verified MFA factors are challenged only for protected admin actions', () => {
   assert.match(supabaseAuth, /getAuthenticatorAssuranceLevel\(\)/);
   assert.match(supabaseAuth, /listFactors\(\)/);
   assert.match(supabaseAuth, /challengeAndVerify\(\{factorId:factor\.id,code\}\)/);
   assert.match(supabaseAuth, /autocomplete="one-time-code"/);
   assert.match(supabaseAuth, /level\?\.currentLevel!==['"]aal2['"]/);
-  assert.match(supabaseData, /const verifiedSession=B\.ensureAal2\?await B\.ensureAal2\(session\):session/);
-  assert.ok(supabaseData.indexOf('await B.ensureAal2(session)') < supabaseData.indexOf('await B.ensureCompany()'));
-  assert.match(moduleLoader, /\['assets\/supabase-auth-v1\.js','assets\/supabase-data-v1\.js'\]\.includes\(file\)\?'20260914-mfa1'/);
+  assert.match(supabaseAuth, /B\.withAal2=async operation=>/);
+  assert.match(supabaseAuth, /if\(!B\.isMfaRequired\(result\?\.error\)\)return result/);
+  assert.match(supabaseAuth, /try\{await B\.ensureAal2\(current\?\.session\)\}/);
+  assert.match(supabaseAuth, /return operation\(\)/);
+  assert.doesNotMatch(supabaseData, /ensureAal2/);
+  assert.match(supabaseData, /B\.user=session\.user;await B\.ensureCompany\(\)/);
+  assert.match(moduleLoader, /\['assets\/supabase-auth-v1\.js','assets\/supabase-data-v1\.js',[\s\S]*\]\.includes\(file\)\?'20260917-aal2-stepup1'/);
 });
 
 test('concurrent absence requests are serialized per employee before overlap validation', () => {
@@ -671,7 +675,8 @@ test('month picker wraps the shared time renderer only once', () => {
   assert.match(monthPicker, /if\(wrapper\|\|typeof current!==['"]function['"]\)return/);
   assert.match(moduleLoader, /time-month-picker-v1\.js'\?'20260912-monthfix2'/);
   assert.match(brandCleanup, /time-month-picker-v1\.js\?v=20260912-monthfix2/);
-  assert.doesNotMatch(index, /schichtfunk-brand-cleanup-v2\.js(?:"|\?v=20260906-accounttabs1)/);
+  assert.equal((index.match(/schichtfunk-brand-cleanup-v2\.js/g)||[]).length, 1);
+  assert.match(index, /schichtfunk-brand-cleanup-v2\.js\?v=20260912-datev-extension1/);
 });
 
 test('password recovery uses a parseable callback and requires a valid session', () => {
