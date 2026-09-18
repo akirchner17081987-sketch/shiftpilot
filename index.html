@@ -1077,18 +1077,14 @@ document.addEventListener('click',function(e){var c=e.target.closest('[data-hcat
 </script>
 </body>
 </html>
-
 <script>
 (function(){
   function removeLegacyHelp(){var legacy=document.getElementById("sfHelpCenter");if(legacy&&legacy.parentNode)legacy.parentNode.removeChild(legacy);}
   document.addEventListener("click",function(event){
     var trigger=event.target&&event.target.closest?event.target.closest("#sfHelpButton"):null;
     if(!trigger)return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    removeLegacyHelp();
-    var modern=document.getElementById("sfHelpModal");
-    if(modern){modern.hidden=false;document.body.style.overflow="hidden";var search=document.getElementById("sfHelpSearch");if(search)setTimeout(function(){search.focus();},0);}
+    setTimeout(removeLegacyHelp,0);
+    setTimeout(removeLegacyHelp,100);
   },true);
   removeLegacyHelp();
 })();
