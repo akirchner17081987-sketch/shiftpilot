@@ -49,7 +49,7 @@
     css();const host=document.querySelector('.topbar .top-actions');if(!host)return;
     const legacy=[...host.children].filter(x=>x.matches?.('.iconbtn'));
     if(legacy[0]){legacy[0].setAttribute('aria-label','Hilfe');legacy[0].title='Hilfe'}
-    if(legacy[1]){legacy[1].classList.add('sp-legacy-action');legacy[1].setAttribute('aria-hidden','true');legacy[1].tabIndex=-1}
+    if(legacy[1]&&legacy[1].id!=='sfThemeToggle'){legacy[1].classList.add('sp-legacy-action');legacy[1].setAttribute('aria-hidden','true');legacy[1].tabIndex=-1}
     const cloud=document.getElementById('sfCloudState');
     if(cloud&&B.ready){if(cloud.textContent!=='✓ Cloud verbunden')cloud.textContent='✓ Cloud verbunden';const mins=Math.max(0,Math.floor((Date.now()-statusCheckedAt)/60000)),checked=mins<1?'gerade eben':mins===1?'vor 1 Minute':`vor ${mins} Minuten`;cloud.dataset.info=`CLOUD VERBUNDEN\nAutomatische Synchronisierung aktiv\nAngemeldet als: ${B.user?.email||'Cloud-Konto'}\nStatus geprüft: ${checked}`;cloud.classList.add('sp-cloud-passive');cloud.setAttribute('role','status');cloud.setAttribute('aria-label','Cloud verbunden und synchronisiert. Weitere Informationen beim Darüberfahren.');cloud.title='';cloud.tabIndex=0;cloud.onclick=e=>{e.preventDefault();e.stopPropagation()}}
     else if(cloud){cloud.classList.remove('sp-cloud-passive');cloud.removeAttribute('role');cloud.title='Mit der SchichtFunk Cloud anmelden';cloud.tabIndex=0}

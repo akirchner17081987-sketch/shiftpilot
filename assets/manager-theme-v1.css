@@ -1,0 +1,101 @@
+/* SchichtFunk manager portal – light/dark appearance toggle */
+#sfThemeToggle{position:relative;display:inline-flex!important;align-items:center;justify-content:center;width:42px;min-width:42px;height:42px;padding:0!important;font-size:19px!important;line-height:1;transition:background .16s ease,border-color .16s ease,color .16s ease,transform .16s ease!important}
+#sfThemeToggle:hover{transform:translateY(-1px)}
+#sfThemeToggle span{display:block;line-height:1;transform:translateY(-.5px)}
+html[data-sf-theme="dark"] #sfThemeToggle{color:#ffd86a;border-color:#2c425b;background:#101e2f}
+html[data-sf-theme="light"] #sfThemeToggle{color:#40536b;border-color:#cbd6e2;background:#f7fafc}
+html[data-sf-theme="light"] #sfThemeToggle:hover{color:#17283a;border-color:#9cabbc;background:#edf3f8}
+
+html[data-sf-theme="light"]{
+  --bg:#eef3f7;--bg2:#f6f8fb;--panel:#ffffff;--panel2:#f4f7fa;--line:#d8e1e9;
+  --text:#172434;--muted:#5b6d80;--shadow:0 12px 32px rgba(32,54,74,.09);
+  --sp-muted-readable:#566b7f;--sf-secondary-dark:#566b7f;--sf-secondary-dark-strong:#40566b;
+}
+html[data-sf-theme="light"] body{background:#e8eef4;color:var(--text)}
+html[data-sf-theme="light"] #appShell .app{background:#eef3f7!important;color:#172434!important}
+html[data-sf-theme="light"] #appShell .sidebar{background:#ffffff!important;border-color:#d9e2ea!important;box-shadow:5px 0 20px rgba(39,62,82,.045)}
+html[data-sf-theme="light"] #appShell .brand span:last-child{color:#172434!important}
+html[data-sf-theme="light"] #appShell .company-card{background:#f4f7fa!important;border-color:#d6e0e8!important;color:#172434!important}
+html[data-sf-theme="light"] #appShell .nav button{color:#52677a!important}
+html[data-sf-theme="light"] #appShell .nav button:hover{background:#edf5f5!important;color:#174f4a!important}
+html[data-sf-theme="light"] #appShell .nav button.active{background:#e5f6f2!important;color:#126c60!important;box-shadow:inset 3px 0 0 var(--teal)!important}
+html[data-sf-theme="light"] #appShell .nav-group-label,
+html[data-sf-theme="light"] #appShell .side-bottom{border-color:#e1e8ee!important;color:#718296!important}
+html[data-sf-theme="light"] #appShell .avatar{background:#dfe9f1!important;color:#29445d!important}
+
+html[data-sf-theme="light"] #appShell .topbar{background:#ffffff!important;border-color:#d9e2ea!important;box-shadow:0 4px 18px rgba(39,62,82,.04)}
+html[data-sf-theme="light"] #appShell .search input,
+html[data-sf-theme="light"] #appShell input,
+html[data-sf-theme="light"] #appShell select,
+html[data-sf-theme="light"] #appShell textarea{background:#ffffff!important;border-color:#cbd7e2!important;color:#172434!important;color-scheme:light!important}
+html[data-sf-theme="light"] #appShell input::placeholder,
+html[data-sf-theme="light"] #appShell textarea::placeholder{color:#8090a0!important}
+html[data-sf-theme="light"] #appShell .kbd{border-color:#cbd6e0!important;color:#66788a!important;background:#f3f6f9!important}
+html[data-sf-theme="light"] #appShell .main{background:#eef3f7!important}
+html[data-sf-theme="light"] #appShell .page-head h1,
+html[data-sf-theme="light"] #appShell h2,
+html[data-sf-theme="light"] #appShell h3,
+html[data-sf-theme="light"] #appShell h4,
+html[data-sf-theme="light"] #appShell b,
+html[data-sf-theme="light"] #appShell strong{color:#172434}
+html[data-sf-theme="light"] #appShell .page-head p,
+html[data-sf-theme="light"] #appShell small{color:#5b6d80}
+
+html[data-sf-theme="light"] #appShell .card,
+html[data-sf-theme="light"] #appShell .stat,
+html[data-sf-theme="light"] #appShell .section-box,
+html[data-sf-theme="light"] #appShell .profile-summary,
+html[data-sf-theme="light"] #appShell .profile-metric,
+html[data-sf-theme="light"] #appShell .emp,
+html[data-sf-theme="light"] #appShell .absence-item,
+html[data-sf-theme="light"] #appShell .employee-drag,
+html[data-sf-theme="light"] #appShell .shift-chip,
+html[data-sf-theme="light"] #appShell .sp-empty,
+html[data-sf-theme="light"] #appShell [class*="sf-set-card"],
+html[data-sf-theme="light"] #appShell [class*="sf-dashboard-card"]{background:#ffffff!important;border-color:#d8e1e9!important;color:#172434!important;box-shadow:var(--shadow)}
+html[data-sf-theme="light"] #appShell .profile-summary{background:linear-gradient(135deg,#fff,#f4f8fb)!important}
+html[data-sf-theme="light"] #appShell .emp:hover{background:#f4f8fb!important}
+html[data-sf-theme="light"] #appShell .employee-drag.selected,
+html[data-sf-theme="light"] #appShell .shift-chip.selected{background:#e6f7f2!important;border-color:#27b99d!important}
+
+html[data-sf-theme="light"] #appShell .ghost,
+html[data-sf-theme="light"] #appShell .iconbtn,
+html[data-sf-theme="light"] #appShell .seg button,
+html[data-sf-theme="light"] #appShell .absence-action{background:#ffffff!important;border-color:#cbd7e2!important;color:#40566b!important}
+html[data-sf-theme="light"] #appShell .ghost:hover,
+html[data-sf-theme="light"] #appShell .iconbtn:hover,
+html[data-sf-theme="light"] #appShell .seg button:hover{background:#edf3f7!important;color:#172434!important}
+html[data-sf-theme="light"] #appShell .seg button.active{background:#dce9f1!important;color:#172434!important}
+html[data-sf-theme="light"] #appShell .primary{color:#05261f!important}
+html[data-sf-theme="light"] #appShell .sp-topbar-logout{background:#fff4f5!important;border-color:#efc7ce!important;color:#a33b4d!important}
+html[data-sf-theme="light"] #appShell #sfCloudState{background:#effaf6!important;border-color:#b8dfd4!important;color:#16735f!important}
+
+html[data-sf-theme="light"] #appShell .calendar,
+html[data-sf-theme="light"] #appShell .cal-toolbar,
+html[data-sf-theme="light"] #appShell .sollist,
+html[data-sf-theme="light"] #appShell .day-col,
+html[data-sf-theme="light"] #appShell .time-col,
+html[data-sf-theme="light"] #appShell .day-head,
+html[data-sf-theme="light"] #appShell .time-head,
+html[data-sf-theme="light"] #appShell .day-slot,
+html[data-sf-theme="light"] #appShell .time-slot,
+html[data-sf-theme="light"] #appShell .soll-day{border-color:#dce4eb!important}
+html[data-sf-theme="light"] #appShell .sollist{background:#f7f9fb!important}
+html[data-sf-theme="light"] #appShell .day-col.today .day-body{background:rgba(39,214,180,.09)!important}
+html[data-sf-theme="light"] #appShell .pill,
+html[data-sf-theme="light"] #appShell .tag,
+html[data-sf-theme="light"] #appShell .pool-shift-tag{background:#edf2f6!important;border-color:#d3dee7!important;color:#40566b!important}
+html[data-sf-theme="light"] #appShell table{color:#243548!important}
+html[data-sf-theme="light"] #appShell table th{color:#52677a!important}
+html[data-sf-theme="light"] #appShell table tr,
+html[data-sf-theme="light"] #appShell table td,
+html[data-sf-theme="light"] #appShell table th{border-color:#dfe6ec!important}
+
+/* Manager dialogs are appended outside #appShell. */
+html[data-sf-theme="light"] :is(.abs-modal,.tpl-modal,.sf-auth-card,.sf-account-card,.sp-logout-dialog,.sf-mi-modal,.sf-publish-dialog,.sf-team-modal){background:#ffffff!important;border-color:#d6e0e8!important;color:#172434!important;box-shadow:0 28px 80px rgba(35,55,75,.22)!important}
+html[data-sf-theme="light"] :is(.abs-modal,.tpl-modal,.sf-auth-card,.sf-account-card,.sp-logout-dialog,.sf-mi-modal,.sf-publish-dialog,.sf-team-modal) :is(h2,h3,h4,b,strong){color:#172434!important}
+html[data-sf-theme="light"] :is(.abs-modal,.tpl-modal,.sf-auth-card,.sf-account-card,.sp-logout-dialog,.sf-mi-modal,.sf-publish-dialog,.sf-team-modal) :is(p,small,label){color:#586c7f!important}
+html[data-sf-theme="light"] :is(.abs-modal,.tpl-modal,.sf-auth-card,.sf-account-card,.sp-logout-dialog,.sf-mi-modal,.sf-publish-dialog,.sf-team-modal) :is(input,select,textarea){background:#fff!important;border-color:#cbd7e2!important;color:#172434!important;color-scheme:light!important}
+html[data-sf-theme="light"] :is(.abs-modal-head,.abs-modal-foot,.tpl-head,.tpl-foot,.sf-auth-head,.sf-auth-foot,.sf-account-head,.sf-account-foot,.sp-logout-head,.sp-logout-actions,.sf-mi-head,.sf-mi-foot){border-color:#dce4eb!important;background:#f8fafc!important}
+
+@media(max-width:560px){#sfThemeToggle{display:inline-flex!important;width:44px;min-width:44px;height:44px}}
