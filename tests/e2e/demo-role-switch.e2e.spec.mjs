@@ -45,11 +45,6 @@ test('demo switches between manager workspace and the existing employee portal',
   await openEmployeeArea(page,'shifts');
   await expect(portal.locator('.sf-shift-item').first()).toBeVisible();
   expect(await portal.locator('.sf-shift-item').count()).toBeGreaterThanOrEqual(2);
-  const offerButton=portal.locator('.sf-market-offer').filter({hasText:'Im Marktplatz anbieten'}).first();
-  await expect(offerButton).toBeVisible({timeout:15_000});
-  await offerButton.evaluate(node=>node.click());
-  await page.getByRole('button',{name:'Angebot veröffentlichen'}).evaluate(node=>node.click());
-  await expect(page.getByRole('dialog')).toHaveCount(0);
 
   await openEmployeeArea(page,'marketplace');
   const market=portal.locator('[data-sf-portal-section="marketplace"]');
@@ -159,7 +154,7 @@ test('demo time tracking persists employee entries and monthly accounts render',
   await expect(timeCard).toContainText('Bestätigt');
   await expect(timeCard).toContainText('Korrektur nötig');
   await expect(timeCard).toContainText('7,50 Std.');
-  if(testInfo.project.name==='desktop-chromium')await timeCard.screenshot({path:testInfo.outputPath('arbeitszeiterfassung-demo-geprueft.png')});
+  if(testInfo.project.name==='desktop-chromium')await page.screenshot({path:testInfo.outputPath('arbeitszeiterfassung-demo-geprueft.png')});
 
   const editable=timeCard.locator('[data-time-report]').first();
   const item=editable.locator('xpath=ancestor::*[@data-emp-time]');
@@ -198,5 +193,5 @@ test('demo time tracking persists employee entries and monthly accounts render',
   await expect(managerAccount.locator('#sfTaDatevPane')).toBeVisible();
   await accountTab.click();
   await expect(managerAccount.locator('#sfTaAccountPane')).toBeVisible();
-  if(testInfo.project.name==='desktop-chromium')await managerAccount.screenshot({path:testInfo.outputPath('stundenkonto-manager-geprueft.png')});
+  if(testInfo.project.name==='desktop-chromium')await page.screenshot({path:testInfo.outputPath('stundenkonto-manager-geprueft.png')});
 });

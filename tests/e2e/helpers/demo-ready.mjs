@@ -108,44 +108,51 @@ export async function openEmployeeArea(page, view, timeout = 10_000) {
   const portal = page.locator('#sfEmployeePortal');
   await portal.waitFor({ state: 'visible', timeout });
 
-  const mobileMode = await portal.evaluate(node => node.classList.contains('sf-employee-mobile-pwa'));
-  if (mobileMode) {
-    const mobileDock = portal.locator('#sfEmployeeMobileDock');
-    await mobileDock.waitFor({ state: 'visible', timeout });
-    const mobileTarget = mobileDock.locator(`[data-sf-employee-view="${view}"]`).first();
-    if (await mobileTarget.isVisible().catch(() => false)) {
-      await mobileTarget.evaluate(node => node.click());
-    } else {
-      const mobileMore = mobileDock.locator('[data-sf-mobile-more]').first();
-      await mobileMore.evaluate(node => node.click());
-      const target = portal.locator(`#sfEmployeeMobileMore.open [data-sf-employee-view="${view}"]:visible`).first();
-      await target.waitFor({ state: 'visible', timeout });
-      await target.evaluate(node => node.click());
-    }
-  } else {
-    const visibleTarget = portal.locator(`[data-sf-employee-view="${view}"]:visible`).first();
-    if (await visibleTarget.isVisible().catch(() => false)) {
-      await visibleTarget.scrollIntoViewIfNeeded();
-      await visibleTarget.click();
-    } else {
-      const toggle = portal.locator('.sf-employee-more-toggle');
-      if (await toggle.isVisible().catch(() => false)) {
-        if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
-        const target = portal.locator(`.sf-employee-more-panel [data-sf-employee-view="${view}"]:visible`).first();
-        await target.waitFor({ state: 'visible', timeout });
-        await target.scrollIntoViewIfNeeded();
-        await target.click();
+  const mobileMode = (page.viewportSize()?.width || Number.POSITIVE_INFINITY) <= 820;
+  const navigate = async () => {
+    if (mobileMode) {
+      const mobileDock = portal.locator('#sfEmployeeMobileDock');
+      await mobileDock.waitFor({ state: 'visible', timeout });
+      const mobileTarget = mobileDock.locator(`[data-sf-employee-view="${view}"]`).first();
+      if (await mobileTarget.isVisible().catch(() => false)) {
+        await mobileTarget.evaluate(node => node.click());
       } else {
-        throw new Error(`Mitarbeiterbereich "${view}" ist in der aktuellen Ansicht nicht erreichbar.`);
+        const mobileMore = mobileDock.locator('[data-sf-mobile-more]').first();
+        await mobileMore.evaluate(node => node.click());
+        const target = portal.locator(`#sfEmployeeMobileMore.open [data-sf-employee-view="${view}"]:visible`).first();
+        await target.waitFor({ state: 'visible', timeout });
+        await target.evaluate(node => node.click());
+      }
+    } else {
+      const visibleTarget = portal.locator(`[data-sf-employee-view="${view}"]:visible`).first();
+      if (await visibleTarget.isVisible().catch(() => false)) {
+        await visibleTarget.evaluate(node => node.click());
+      } else {
+        const toggle = portal.locator('.sf-employee-more-toggle');
+        if (await toggle.isVisible().catch(() => false)) {
+          if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.evaluate(node => node.click());
+          const target = portal.locator(`.sf-employee-more-panel [data-sf-employee-view="${view}"]:visible`).first();
+          await target.waitFor({ state: 'visible', timeout });
+          await target.evaluate(node => node.click());
+        } else {
+          throw new Error(`Mitarbeiterbereich "${view}" ist in der aktuellen Ansicht nicht erreichbar.`);
+        }
       }
     }
-  }
+  };
 
-  await page.waitForFunction(
+  const active = wait => page.waitForFunction(
     value => document.getElementById('sfEmployeePortal')?.dataset.sfPortalActive === value,
     view,
-    { timeout },
+    { timeout: wait },
   );
+  await navigate();
+  try {
+    await active(Math.min(3_000, timeout));
+  } catch {
+    await navigate();
+    await active(timeout);
+  }
 }
 
 export function demoPerspectiveSwitch(page) {
