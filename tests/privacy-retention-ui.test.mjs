@@ -23,7 +23,11 @@ test('retention profile first and second approvals require AAL2 and use the prot
   assert.match(ui,/confirm-retention-profile/);
   assert.match(ui,/replace-retention-profile/);
   assert.match(ui,/fachlich überholt und gesperrt/);
-  assert.match(ui,/Zweite Freigabe/);
+  assert.match(ui,/Aktives Fristprofil V\$\{approved\.version\} ist fachlich überholt/);
+  assert.match(ui,/Korrektes V2 vorbereiten/);
+  assert.match(ui,/V2 aktivieren und V1 ablösen/);
+  assert.match(loader,/privacy-retention-ui-v1\.js'\?'20260918-successor1/);
+  assert.match(ui,/zweite Freigabe/i);
   assert.match(ui,/neuen Anmeldung/);
 });
 

@@ -18,11 +18,11 @@ Nach Fristablauf erfolgt Löschung oder kontrollierte Anonymisierung/Redaktion, 
 
 ## Technische Freigabe
 
-Der am 16.09.2026 vorbereitete Entwurf V1 enthält für `timeEvidenceYears` noch 3 Jahre. Er ist fachlich überholt und darf nicht bestätigt werden. Die Admin-Oberfläche sperrt deshalb seine zweite Freigabe.
+Der am 16.09.2026 vorbereitete Entwurf V1 enthält für `timeEvidenceYears` noch 3 Jahre. Er wurde am 18.09.2026 um 00:13:17 UTC aus einer bereits geöffneten alten Adminansicht bestätigt und ist damit technisch aktiv, fachlich aber überholt. Die Profilregeln und ihr Hash blieben unverändert; es liegt keine nachträgliche Manipulation des Entwurfs vor.
 
-Der neue AAL2-geschützte Ersatzpfad widerruft V1 revisionssicher und legt V2 mit den freigegebenen Werten an. Dieser Vorgang startet bewusst eine neue 24-Stunden-Abkühlfrist. Die endgültige Aktivierung benötigt danach eine zweite AAL2-Bestätigung in einer neuen Sitzung innerhalb des Sieben-Tage-Fensters. Direkte SQL-Freigaben bleiben ausgeschlossen.
+Der AAL2-geschützte Nachfolgerpfad legt V2 mit den freigegebenen Werten parallel zu V1 an und startet bewusst eine neue 24-Stunden-Abkühlfrist. V1 bleibt bis dahin aktiv. Erst die zweite AAL2-Bestätigung in einer neuen Sitzung widerruft V1 und aktiviert V2 atomar in derselben Datenbanktransaktion. Direkte SQL-Freigaben bleiben ausgeschlossen; bei einem Fehler bleibt V1 aktiv und V2 unbestätigt.
 
-Bis V2 vollständig bestätigt ist, arbeitet die Langfristredaktion weiterhin fail-closed. Die vorhandene Automatik redigiert DATEV-/Audit-Klarinhalte und Monats-Snapshots nach dem freigegebenen Profil. Die spätere physische Löschung oder Anonymisierung der eigentlichen Arbeitszeit-/QR-Nachweise muss vor Fälligkeit der ersten Sechsjahresfrist als eigener, getesteter Datenklassenpfad ergänzt werden; die V2-Freigabe allein löscht keine historischen Zeitbuchungen.
+Bis V2 vollständig bestätigt ist, gilt weiterhin V1. Die vorhandene Automatik redigiert DATEV-/Audit-Klarinhalte und Monats-Snapshots nach dem jeweils freigegebenen Profil. Die spätere physische Löschung oder Anonymisierung der eigentlichen Arbeitszeit-/QR-Nachweise muss vor Fälligkeit der ersten Sechsjahresfrist als eigener, getesteter Datenklassenpfad ergänzt werden; die V2-Freigabe allein löscht keine historischen Zeitbuchungen.
 
 ## Rechtsrahmen der Entscheidung
 

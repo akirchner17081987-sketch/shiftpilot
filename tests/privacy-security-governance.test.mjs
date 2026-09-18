@@ -24,6 +24,7 @@ const privacyWorkerSql=fs.readFileSync(path.join(root,'supabase','migrations','2
 const privacyScheduleSql=fs.readFileSync(path.join(root,'supabase','migrations','20260914062509_privacy_lifecycle_schedule_v8.sql'),'utf8');
 const privacyRoleCompatSql=fs.readFileSync(path.join(root,'supabase','migrations','20260914063206_privacy_service_role_claim_compat_v9.sql'),'utf8');
 const retentionReplacementSql=fs.readFileSync(path.join(root,'supabase','migrations','20260918000550_privacy_retention_profile_draft_replacement_v12.sql'),'utf8');
+const retentionSuccessorSql=fs.readFileSync(path.join(root,'supabase','migrations','20260918001808_privacy_retention_profile_successor_v13.sql'),'utf8');
 const lifecycleDbTest=fs.readFileSync(path.join(root,'supabase','tests','privacy_lifecycle_test.sql'),'utf8');
 const soleOwnerDbTest=fs.readFileSync(path.join(root,'supabase','tests','privacy_sole_owner_delayed_test.sql'),'utf8');
 const logicalRestoreDbTest=fs.readFileSync(path.join(root,'supabase','tests','privacy_logical_restore_test.sql'),'utf8');
@@ -154,6 +155,16 @@ test('obsolete retention drafts can only be atomically replaced by the sole owne
   assert.match(retentionReplacementSql,/Replacement version must be newer/i);
   assert.match(retentionReplacementSql,/revoke all on function public\.server_replace_sole_owner_retention_profile_draft[\s\S]*from public, anon, authenticated/i);
   assert.match(retentionReplacementSql,/grant execute on function public\.server_replace_sole_owner_retention_profile_draft[\s\S]*to service_role/i);
+});
+
+test('approved retention profiles remain active until an AAL2-confirmed successor atomically replaces them',()=>{
+  assert.match(retentionSuccessorSql,/v_profile\.version <= v_current\.version/i);
+  assert.match(retentionSuccessorSql,/status = 'REVOKED', revoked_at = v_approved_at/i);
+  assert.match(retentionSuccessorSql,/status = 'APPROVED'[\s\S]*confirmed_session_fingerprint = v_fingerprint/i);
+  assert.match(retentionSuccessorSql,/superseded_profile_id/i);
+  assert.match(retentionSuccessorSql,/server_confirm_sole_owner_retention_profile/i);
+  assert.match(retentionSuccessorSql,/revoke all on function private\.server_confirm_sole_owner_retention_profile[\s\S]*from public, anon, authenticated/i);
+  assert.doesNotMatch(retentionSuccessorSql,/\bdelete\s+from\b/i);
 });
 
 test('expanded offboarding preview inventories all linked domains without mutating them',()=>{

@@ -2,7 +2,7 @@
 
 Stand: 16.09.2026
 
-Ergänzung 18.09.2026: Die fachliche Betreiberentscheidung setzt `timeEvidenceYears`, `monthSnapshotYears` und `datevAuditYears` auf jeweils 6 Jahre. Der ältere V1-Entwurf mit 3 Jahren für Zeitnachweise ist gesperrt und wird über den geschützten Ersatzpfad als widerrufen erhalten; V2 beginnt danach eine neue AAL2-Abkühlfrist. Details: `retention-profile-v2-decision-2026-09-18.md`.
+Ergänzung 18.09.2026: Die fachliche Betreiberentscheidung setzt `timeEvidenceYears`, `monthSnapshotYears` und `datevAuditYears` auf jeweils 6 Jahre. V1 mit 3 Jahren für Zeitnachweise wurde um 00:13:17 UTC noch über eine bereits geöffnete alte Ansicht bestätigt und ist fachlich überholt. Der geschützte Nachfolgerpfad hält V1 während der neuen AAL2-Abkühlfrist aktiv und widerruft es erst bei der atomaren V2-Aktivierung. Details: `retention-profile-v2-decision-2026-09-18.md`.
 
 ## Status
 
@@ -64,7 +64,7 @@ Die neuen Preview-, Execute- und Batch-RPCs sowie die Nachweistabelle sind für 
 
 ## Noch erforderliche betriebliche Freigabe
 
-Für den Mandanten SchichtFunk ist noch kein Retention-Profil freigegeben. V1 mit `timeEvidenceYears: 3` darf nicht bestätigt werden. Er wird AAL2-geschützt durch V2 mit 6/6/6 Jahren ersetzt. Dafür gelten weiterhin zwei AAL2-Bestätigungen aus unterschiedlichen Sitzungen, mindestens 24 Stunden Abkühlfrist und ein Bestätigungsfenster von sieben Tagen. Diese Freigabe wird nicht per direktem SQL umgangen.
+Für den Mandanten SchichtFunk ist V1 mit `timeEvidenceYears: 3` derzeit freigegeben, aber fachlich überholt. Es wird AAL2-geschützt durch V2 mit 6/6/6 Jahren abgelöst. Dafür gelten weiterhin zwei AAL2-Bestätigungen aus unterschiedlichen Sitzungen, mindestens 24 Stunden Abkühlfrist und ein Bestätigungsfenster von sieben Tagen. V1 bleibt bis zur erfolgreichen atomaren V2-Aktivierung wirksam. Diese Freigabe wird nicht per direktem SQL umgangen.
 
 Bis zu dieser Freigabe kann der Worker keine fachliche Langfristredaktion ausführen. Dadurch ist der technische Betrieb fail-closed.
 
