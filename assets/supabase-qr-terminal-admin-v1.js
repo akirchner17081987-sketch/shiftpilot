@@ -8,10 +8,22 @@
   let terminals=[];
   let loading=false;
   let qrLibPromise=null;
+  const qrPaths=new Map();
 
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const tz=()=>B.companyTimeZone||'Europe/Berlin';
   const fmt=v=>v?new Intl.DateTimeFormat('de-DE',{timeZone:tz(),day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(v)).replace('24:','00:'):'–';
+  const qrCacheKey=id=>`sf:qr-terminal:${B.companyId||'company'}:${String(id||'')}`;
+  function rememberQrPath(id,path){
+    if(!id||!path)return;
+    qrPaths.set(String(id),path);
+    try{sessionStorage.setItem(qrCacheKey(id),path)}catch(_){}
+  }
+  function knownQrPath(id){
+    const direct=qrPaths.get(String(id));if(direct)return direct;
+    try{const cached=sessionStorage.getItem(qrCacheKey(id));if(cached){qrPaths.set(String(id),cached);return cached}}catch(_){}
+    return '';
+  }
 
   function css(){
     if(document.getElementById('sfQrTerminalAdminCss'))return;
@@ -51,7 +63,7 @@
   function openQrModal(terminal,qrPath){
     css();document.getElementById('sfQrTerminalModal')?.remove();
     const url=new URL(qrPath,location.origin).toString();
-    const back=document.createElement('div');back.id='sfQrTerminalModal';back.className='sf-qrt-modal-back';back.innerHTML=`<div class="sf-qrt-modal" role="dialog" aria-modal="true" aria-labelledby="sfQrtTitle" tabindex="-1"><div class="sf-qrt-modal-head"><div class="eyebrow">QR-ZEITERFASSUNG</div><h2 id="sfQrtTitle">${esc(terminal.name)}</h2><p>${esc(terminal.location_note||'QR-Stempelstation')}</p></div><div class="sf-qrt-modal-body"><div class="sf-qrt-canvas"><canvas id="sfQrtCanvas" width="320" height="320"></canvas></div><div class="sf-qrt-url">${esc(url)}</div><div class="sf-qrt-warning"><b>Wichtig:</b> Diesen QR-Code jetzt speichern oder drucken. SchichtFunk speichert den geheimen Terminalschlüssel nicht im Klartext. Ein neu erzeugter QR-Code macht den bisherigen Ausdruck sofort ungültig.</div></div><div class="sf-qrt-modal-foot"><button class="ghost" id="sfQrtClose">Schließen</button><button class="ghost" id="sfQrtSave">PNG speichern</button><button class="primary" id="sfQrtPrint">Drucken</button></div></div>`;document.body.appendChild(back);
+    const back=document.createElement('div');back.id='sfQrTerminalModal';back.className='sf-qrt-modal-back';back.innerHTML=`<div class="sf-qrt-modal" role="dialog" aria-modal="true" aria-labelledby="sfQrtTitle" tabindex="-1"><div class="sf-qrt-modal-head"><div class="eyebrow">QR-ZEITERFASSUNG</div><h2 id="sfQrtTitle">${esc(terminal.name)}</h2><p>${esc(terminal.location_note||'QR-Stempelstation')}</p></div><div class="sf-qrt-modal-body"><div class="sf-qrt-canvas"><canvas id="sfQrtCanvas" width="320" height="320"></canvas></div><div class="sf-qrt-url">${esc(url)}</div><div class="sf-qrt-warning"><b>Wichtig:</b> Diesen QR-Code speichern oder drucken. Innerhalb dieser Browser-Sitzung kann er über „QR anzeigen“ erneut geöffnet werden. SchichtFunk speichert den geheimen Terminalschlüssel weiterhin nicht im Klartext in der Datenbank. „QR erneuern“ macht den bisherigen Ausdruck sofort ungültig.</div></div><div class="sf-qrt-modal-foot"><button class="ghost" id="sfQrtClose">Schließen</button><button class="ghost" id="sfQrtSave">PNG speichern</button><button class="primary" id="sfQrtPrint">Drucken</button></div></div>`;document.body.appendChild(back);
     const close=B.bindAccessibleModal?.(back,{initialFocus:'button'})||(()=>back.remove());back.querySelector('#sfQrtClose').onclick=close;back.addEventListener('click',e=>{if(e.target===back)close()});
     loadQrLib().then(async QR=>{
       const canvas=back.querySelector('#sfQrtCanvas');await QR.toCanvas(canvas,url,{width:320,margin:2,errorCorrectionLevel:'M'});
@@ -61,10 +73,10 @@
   }
 
   function render(card,error=''){
-    const rows=terminals.map(t=>`<div class="sf-qrt-row" data-qrt-id="${esc(t.id)}"><div class="sf-qrt-main"><b>${esc(t.name)} <span class="sf-qrt-state ${t.is_active?'':'off'}">${t.is_active?'● Aktiv':'○ Deaktiviert'}</span></b><small>${esc(t.location_note||'Kein Standort-Hinweis')} · Startfenster ${Number(t.start_window_minutes||0)} Min. · Endfenster ${Number(t.end_window_minutes||0)} Min.<br>Zuletzt geändert: ${esc(fmt(t.updated_at))}</small></div><div class="sf-qrt-actions"><button class="ghost" data-qrt-rotate>QR neu erzeugen</button><button class="ghost" data-qrt-toggle>${t.is_active?'Deaktivieren':'Aktivieren'}</button></div></div>`).join('');
-    card.innerHTML=`<div class="sf-qrt-head"><div class="sf-qrt-icon">▦</div><div class="sf-qrt-copy"><div class="eyebrow">QR-STEMPELSTATIONEN</div><h3>Dienstbeginn & Dienstende per QR-Code</h3><p>Der QR-Code identifiziert nur den Standort. Mitarbeiteridentität und Buchungszeit kommen aus dem persönlichen SchichtFunk-Konto und der Serverzeit.</p></div><div class="sf-qrt-create"><input id="sfQrtName" maxlength="120" placeholder="Name, z. B. Objekt A"><input id="sfQrtLocation" maxlength="300" placeholder="Standort, z. B. Haupteingang"><button class="primary" id="sfQrtCreate">＋ Anlegen</button></div></div>${error?`<div class="sf-qrt-empty">${esc(error)}</div>`:`<div class="sf-qrt-list">${rows||'<div class="sf-qrt-empty">Noch kein QR-Terminal angelegt.</div>'}</div><div class="sf-qrt-note">Ein bestehender QR-Code kann aus Sicherheitsgründen nicht erneut aus der Datenbank gelesen werden. Falls der Ausdruck verloren geht, einfach „QR neu erzeugen“ verwenden.</div>`}`;
+    const rows=terminals.map(t=>`<div class="sf-qrt-row" data-qrt-id="${esc(t.id)}"><div class="sf-qrt-main"><b>${esc(t.name)} <span class="sf-qrt-state ${t.is_active?'':'off'}">${t.is_active?'● Aktiv':'○ Deaktiviert'}</span></b><small>${esc(t.location_note||'Kein Standort-Hinweis')} · Startfenster ${Number(t.start_window_minutes||0)} Min. · Endfenster ${Number(t.end_window_minutes||0)} Min.<br>Zuletzt geändert: ${esc(fmt(t.updated_at))}</small></div><div class="sf-qrt-actions"><button class="primary" data-qrt-show>QR anzeigen</button><button class="ghost" data-qrt-rotate>QR erneuern</button><button class="ghost" data-qrt-toggle>${t.is_active?'Deaktivieren':'Aktivieren'}</button></div></div>`).join('');
+    card.innerHTML=`<div class="sf-qrt-head"><div class="sf-qrt-icon">▦</div><div class="sf-qrt-copy"><div class="eyebrow">QR-STEMPELSTATIONEN</div><h3>Dienstbeginn & Dienstende per QR-Code</h3><p>Der QR-Code identifiziert nur den Standort. Mitarbeiteridentität und Buchungszeit kommen aus dem persönlichen SchichtFunk-Konto und der Serverzeit.</p></div><div class="sf-qrt-create"><input id="sfQrtName" maxlength="120" placeholder="Name, z. B. Objekt A"><input id="sfQrtLocation" maxlength="300" placeholder="Standort, z. B. Haupteingang"><button class="primary" id="sfQrtCreate">＋ Anlegen</button></div></div>${error?`<div class="sf-qrt-empty">${esc(error)}</div>`:`<div class="sf-qrt-list">${rows||'<div class="sf-qrt-empty">Noch kein QR-Terminal angelegt.</div>'}</div><div class="sf-qrt-note"><b>QR anzeigen</b> öffnet einen in dieser Browser-Sitzung bekannten QR erneut. Ist der Schlüssel hier nicht mehr verfügbar, bietet SchichtFunk kontrolliert an, einen neuen QR zu erzeugen. <b>QR erneuern</b> macht den bisherigen Ausdruck sofort ungültig.</div>`}`;
     const create=card.querySelector('#sfQrtCreate');if(create)create.onclick=()=>createTerminal(card.querySelector('#sfQrtName')?.value,card.querySelector('#sfQrtLocation')?.value);
-    card.querySelectorAll('[data-qrt-id]').forEach(row=>{const t=terminals.find(x=>String(x.id)===row.dataset.qrtId);if(!t)return;row.querySelector('[data-qrt-rotate]')?.addEventListener('click',()=>rotateTerminal(t));row.querySelector('[data-qrt-toggle]')?.addEventListener('click',()=>toggleTerminal(t))});
+    card.querySelectorAll('[data-qrt-id]').forEach(row=>{const t=terminals.find(x=>String(x.id)===row.dataset.qrtId);if(!t)return;row.querySelector('[data-qrt-show]')?.addEventListener('click',()=>showTerminalQr(t));row.querySelector('[data-qrt-rotate]')?.addEventListener('click',()=>rotateTerminal(t));row.querySelector('[data-qrt-toggle]')?.addEventListener('click',()=>toggleTerminal(t))});
   }
 
   async function refresh(){
@@ -76,12 +88,19 @@
 
   async function createTerminal(name,locationNote){
     name=String(name||'').trim();locationNote=String(locationNote||'').trim();if(!name){document.getElementById('sfQrtName')?.focus();return}
-    try{B.showLoading?.('QR-Terminal wird angelegt …');const q=await B.withAal2(()=>B.client.rpc('manager_create_time_qr_terminal',{p_company_id:B.companyId,p_name:name,p_location_note:locationNote}));if(q.error)throw q.error;await refresh();openQrModal({name:q.data.name,location_note:q.data.location_note||locationNote},q.data.qr_path);if(typeof showSaveToast==='function')showSaveToast('QR-Terminal angelegt',name)}catch(e){alert(rpcError(e))}finally{B.hideLoading?.()}
+    try{B.showLoading?.('QR-Terminal wird angelegt …');const q=await B.withAal2(()=>B.client.rpc('manager_create_time_qr_terminal',{p_company_id:B.companyId,p_name:name,p_location_note:locationNote}));if(q.error)throw q.error;rememberQrPath(q.data.id,q.data.qr_path);await refresh();openQrModal({id:q.data.id,name:q.data.name,location_note:q.data.location_note||locationNote},q.data.qr_path);if(typeof showSaveToast==='function')showSaveToast('QR-Terminal angelegt',name)}catch(e){alert(rpcError(e))}finally{B.hideLoading?.()}
   }
 
-  async function rotateTerminal(t){
-    if(!confirm(`Neuen QR-Code für „${t.name}“ erzeugen? Der bisherige Ausdruck wird sofort ungültig.`))return;
-    try{B.showLoading?.('QR-Code wird neu erzeugt …');const q=await B.withAal2(()=>B.client.rpc('manager_rotate_time_qr_terminal',{p_terminal_id:t.id}));if(q.error)throw q.error;await refresh();openQrModal({...t,name:q.data.name||t.name},q.data.qr_path);if(typeof showSaveToast==='function')showSaveToast('Neuer QR-Code erzeugt',t.name)}catch(e){alert(rpcError(e))}finally{B.hideLoading?.()}
+  async function showTerminalQr(t){
+    const path=knownQrPath(t.id);
+    if(path){openQrModal(t,path);return}
+    if(!confirm(`Der aktuelle QR-Code für „${t.name}“ ist in dieser Browser-Sitzung nicht mehr verfügbar. Soll jetzt ein neuer QR-Code erzeugt und direkt angezeigt werden? Der bisherige Ausdruck wird dadurch ungültig.`))return;
+    await rotateTerminal(t,true);
+  }
+
+  async function rotateTerminal(t,skipConfirm=false){
+    if(!skipConfirm&&!confirm(`Neuen QR-Code für „${t.name}“ erzeugen? Der bisherige Ausdruck wird sofort ungültig.`))return;
+    try{B.showLoading?.('QR-Code wird neu erzeugt …');const q=await B.withAal2(()=>B.client.rpc('manager_rotate_time_qr_terminal',{p_terminal_id:t.id}));if(q.error)throw q.error;rememberQrPath(t.id,q.data.qr_path);await refresh();openQrModal({...t,name:q.data.name||t.name},q.data.qr_path);if(typeof showSaveToast==='function')showSaveToast('Neuer QR-Code erzeugt',t.name)}catch(e){alert(rpcError(e))}finally{B.hideLoading?.()}
   }
 
   async function toggleTerminal(t){
