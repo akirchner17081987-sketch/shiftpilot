@@ -3,7 +3,7 @@ create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
 -- Exactly one assertion per allowlisted authenticated SECURITY DEFINER RPC.
-select plan(35);
+select plan(38);
 
 -- The fixture is deliberately fictitious and the enclosing transaction always rolls back.
 insert into auth.users(
@@ -159,6 +159,10 @@ select ok(pg_temp.rpc_auth_rejected($call$select public.manager_update_time_acco
 select ok(pg_temp.rpc_auth_rejected($call$select public.manager_update_time_account_settings_v2('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',date '2026-01-01',array['Urlaub']::text[],'DE')$call$),'manager_update_time_account_settings_v2 rejects company B');
 
 -- Group B: entity-scoped manager RPCs. Every target entity belongs to company B.
+-- rpc: manager_delete_time_qr_terminal
+select ok(pg_temp.rpc_auth_rejected($call$select public.manager_delete_time_qr_terminal('b5b5b5b5-b5b5-4b5b-8b5b-b5b5b5b5b5b5')$call$),'manager_delete_time_qr_terminal rejects terminal B');
+-- rpc: manager_get_time_qr_terminal_qr_path
+select ok(pg_temp.rpc_auth_rejected($call$select public.manager_get_time_qr_terminal_qr_path('b5b5b5b5-b5b5-4b5b-8b5b-b5b5b5b5b5b5')$call$),'manager_get_time_qr_terminal_qr_path rejects terminal B');
 -- rpc: manager_review_time_entry
 select ok(pg_temp.rpc_auth_rejected($call$select public.manager_review_time_entry('b2b2b2b2-b2b2-4b2b-8b2b-b2b2b2b2b2b2','APPROVED','foreign')$call$),'manager_review_time_entry rejects assignment B');
 -- rpc: manager_revoke_company_invite
@@ -183,6 +187,8 @@ select ok(pg_temp.rpc_auth_rejected($call$select public.manager_update_company_m
 -- Group C: employee RPCs. Employee/user A must not use entities or QR terminals of B.
 -- rpc: employee_clock_from_qr
 select ok(pg_temp.rpc_auth_rejected($call$select public.employee_clock_from_qr(repeat('b',64),'IN')$call$),'employee_clock_from_qr rejects terminal B');
+-- rpc: employee_qr_break_from_qr
+select ok(pg_temp.rpc_auth_rejected($call$select public.employee_qr_break_from_qr(repeat('b',64),'BREAK_START')$call$),'employee_qr_break_from_qr rejects terminal B');
 -- rpc: employee_qr_time_status
 select ok(pg_temp.rpc_auth_rejected($call$select public.employee_qr_time_status(repeat('b',64))$call$),'employee_qr_time_status rejects terminal B');
 -- rpc: employee_respond_to_shift_change
@@ -230,11 +236,10 @@ select set_config(
 select ok(pg_temp.rpc_auth_rejected($call$select public.get_push_public_key()$call$),'get_push_public_key rejects a user without active tenant context');
 
 select jsonb_build_object(
-  'planned',35,
+  'planned',38,
   'executed',_currtest(),
   'failed',num_failed(),
   'groups',jsonb_build_array('manager-company','manager-entity','employee','push-global')
 ) as pgtap_summary;
 select * from finish();
 rollback;
-
