@@ -26,6 +26,7 @@
     {"name":"manager_import_month_matrix","arguments":"p_company_id uuid, p_rows jsonb, p_apply boolean","boundary":"manager membership"},
     {"name":"manager_list_company_users","arguments":"p_company_id uuid","boundary":"owner/admin membership"},
     {"name":"manager_list_time_entries","arguments":"p_company_id uuid, p_start_date date, p_end_date date","boundary":"private.sf_is_manager"},
+    {"name":"manager_qr_independent_report","arguments":"p_company_id uuid, p_start_date date, p_end_date date","boundary":"private.sf_is_manager"},
     {"name":"manager_list_time_qr_pilot_candidates","arguments":"p_company_id uuid","boundary":"private.sf_is_manager"},
     {"name":"manager_list_time_qr_terminals","arguments":"p_company_id uuid","boundary":"private.sf_is_manager"},
     {"name":"manager_log_datev_lodas_export","arguments":"p_company_id uuid, p_month date, p_row_count integer, p_content_sha256 text","boundary":"manager membership"},

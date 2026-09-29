@@ -32,15 +32,6 @@
     `;document.head.appendChild(s);
   }
 
-  function shifts(){return Array.isArray(B.employeePortalData?.shifts)?B.employeePortalData.shifts:[]}
-  function relevantShift(){
-    const now=Date.now();
-    const current=shifts().filter(s=>s.published_at&&now>=new Date(s.starts_at).getTime()-60*60000&&now<=new Date(s.ends_at).getTime()+120*60000).sort((a,b)=>Math.abs(new Date(a.starts_at)-now)-Math.abs(new Date(b.starts_at)-now))[0];
-    if(current)return{shift:current,current:true};
-    const next=shifts().filter(s=>s.published_at&&new Date(s.starts_at).getTime()>now).sort((a,b)=>new Date(a.starts_at)-new Date(b.starts_at))[0];
-    return next?{shift:next,current:false}:null;
-  }
-
   function target(){
     const portal=document.getElementById('sfEmployeePortal');
     if(!portal)return null;
@@ -57,38 +48,17 @@
   }
 
   function renderDemo(){
-    mount(`<div class="sf-emp-qr-head"><h3>QR-Zeiterfassung</h3><span class="sf-emp-qr-badge demo">DEMO</span></div><div class="sf-emp-qr-body"><div class="sf-emp-qr-icon">▦</div><div class="sf-emp-qr-main"><b>Beginn, Pausen &amp; Ende per QR-Code</b><small>Im Echtbetrieb scannt der Mitarbeiter den QR-Code am Objekt/Einsatzort mit der Smartphone-Kamera. SchichtFunk prüft Konto, Schicht und Terminal.</small><span class="sf-emp-qr-hint">📱 QR-Code am Einsatzort scannen</span></div></div><div class="sf-emp-qr-live done">Demo-Vorschau · Es wird keine echte Zeitbuchung ausgelöst.</div>`);
+    mount(`<div class="sf-emp-qr-head"><h3>QR-Zeiterfassung</h3><span class="sf-emp-qr-badge demo">DEMO</span></div><div class="sf-emp-qr-body"><div class="sf-emp-qr-icon">▦</div><div class="sf-emp-qr-main"><b>Beginn, Pausen &amp; Ende per QR-Code</b><small>Im Echtbetrieb scannt der Mitarbeiter den QR-Code am Objekt/Einsatzort mit der Smartphone-Kamera. SchichtFunk prüft Personalnummer, Eintrittsdatum und Terminal.</small><span class="sf-emp-qr-hint">📱 QR-Code am Einsatzort scannen</span></div></div><div class="sf-emp-qr-live done">Demo-Vorschau · Es wird keine echte Zeitbuchung ausgelöst.</div>`);
   }
 
-  function render(info,entry){
-    if(!info){
-      mount('<div class="sf-emp-qr-head"><h3>QR-Zeiterfassung</h3><span class="sf-emp-qr-badge done">BEREIT</span></div><div class="sf-emp-qr-body"><div class="sf-emp-qr-icon">▦</div><div class="sf-emp-qr-main"><b>Beginn, Pausen &amp; Ende per QR-Code</b><small>Aktuell steht keine veröffentlichte Schicht an. Bei Dienstbeginn den QR-Code am Objekt/Einsatzort mit der Smartphone-Kamera scannen.</small><span class="sf-emp-qr-hint">📱 QR-Code am Einsatzort scannen</span></div></div>');
-      return;
-    }
-    const s=info.shift,started=!!entry?.actual_start,ended=!!entry?.actual_end;
-    const badge=ended?'<span class="sf-emp-qr-badge done">BEENDET</span>':started?'<span class="sf-emp-qr-badge">● EINGECHECKT</span>':'<span class="sf-emp-qr-badge wait">NOCH NICHT EINGECHECKT</span>';
-    const note=ended
-      ?`<div class="sf-emp-qr-live done">QR-Zeiterfassung abgeschlossen · Kommen ${esc(fmtTime(entry.actual_start))} · Gehen ${esc(fmtTime(entry.actual_end))}</div>`
-      :started
-        ?`<div class="sf-emp-qr-live">● Arbeitszeit läuft seit <b>${esc(fmtTime(entry.actual_start))}</b>. Für Pause und Dienstende den QR-Code am Einsatzort scannen.</div>`
-        :info.current
-          ?'<div class="sf-emp-qr-live wait"><b>Jetzt am Einsatzort:</b> QR-Code mit der Smartphone-Kamera scannen und „Arbeitszeit starten“ wählen.</div>'
-          :'<div class="sf-emp-qr-live done">Der QR-Check-in wird im Startfenster vor Dienstbeginn freigeschaltet.</div>';
-    mount(`<div class="sf-emp-qr-head"><h3>QR-Zeiterfassung</h3>${badge}</div><div class="sf-emp-qr-body"><div class="sf-emp-qr-icon">▦</div><div class="sf-emp-qr-main"><b>${esc(s.shift_code||'Schicht')} · ${esc(fmtDate(s.starts_at))}</b><small>Geplant ${esc(fmtTime(s.starts_at))}–${esc(fmtTime(s.ends_at))} · QR-Code am Objekt/Einsatzort</small><span class="sf-emp-qr-hint">📱 QR-Code am Einsatzort scannen</span></div></div>${note}`);
+  function render(){
+    mount('<div class="sf-emp-qr-head"><h3>QR-Zeiterfassung</h3><span class="sf-emp-qr-badge done">BEREIT</span></div><div class="sf-emp-qr-body"><div class="sf-emp-qr-icon">▦</div><div class="sf-emp-qr-main"><b>Beginn, Pausen & Ende per QR-Code</b><small>Am Standort scannen und mit Personalnummer sowie Eintrittsdatum anmelden. Die Buchung ist unabhängig vom Dienstplan.</small><span class="sf-emp-qr-hint">📱 QR-Code am Einsatzort scannen</span></div></div>');
   }
 
-  async function refresh(){
-    if(B.role!=='EMPLOYEE'||busy)return;
+  function refresh(){
+    if(B.role!=='EMPLOYEE')return;
     if(demo()){renderDemo();return}
-    const info=relevantShift();
-    if(!info){render(null,null);return}
-    if(!B.client){render(info,null);return}
-    busy=true;
-    try{
-      const q=await B.client.from('time_entries').select('assignment_id,actual_start,actual_end,status,source,employee_note').eq('assignment_id',info.shift.id).maybeSingle();
-      if(q.error)throw q.error;
-      render(info,q.data||null);
-    }catch(e){console.debug('[SchichtFunk Mitarbeiter QR]',e?.message||e);render(info,null)}finally{busy=false}
+    render();
   }
 
   function schedule(delay=80){setTimeout(refresh,delay)}

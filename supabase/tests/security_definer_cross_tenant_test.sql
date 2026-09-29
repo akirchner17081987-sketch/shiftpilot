@@ -3,7 +3,7 @@ create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
 -- Exactly one assertion per allowlisted authenticated SECURITY DEFINER RPC.
-select plan(38);
+select plan(39);
 
 -- The fixture is deliberately fictitious and the enclosing transaction always rolls back.
 insert into auth.users(
@@ -137,6 +137,8 @@ select ok(pg_temp.rpc_auth_rejected($call$select public.manager_import_month_mat
 select ok(pg_temp.rpc_auth_rejected($call$select * from public.manager_list_company_users('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb')$call$),'manager_list_company_users rejects company B');
 -- rpc: manager_list_time_entries
 select ok(pg_temp.rpc_auth_rejected($call$select * from public.manager_list_time_entries('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',date '2026-09-01',date '2026-09-30')$call$),'manager_list_time_entries rejects company B');
+-- rpc: manager_qr_independent_report
+select ok(pg_temp.rpc_auth_rejected($call$select public.manager_qr_independent_report('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',date '2026-09-01',date '2026-09-30')$call$),'manager_qr_independent_report rejects company B');
 -- rpc: manager_list_time_qr_pilot_candidates
 select ok(pg_temp.rpc_auth_rejected($call$select * from public.manager_list_time_qr_pilot_candidates('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb')$call$),'manager_list_time_qr_pilot_candidates rejects company B');
 -- rpc: manager_list_time_qr_terminals
@@ -236,7 +238,7 @@ select set_config(
 select ok(pg_temp.rpc_auth_rejected($call$select public.get_push_public_key()$call$),'get_push_public_key rejects a user without active tenant context');
 
 select jsonb_build_object(
-  'planned',38,
+  'planned',39,
   'executed',_currtest(),
   'failed',num_failed(),
   'groups',jsonb_build_array('manager-company','manager-entity','employee','push-global')

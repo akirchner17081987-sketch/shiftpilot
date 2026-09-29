@@ -15,6 +15,7 @@ with allowlist(name, arguments) as (values
   ('manager_import_month_matrix','p_company_id uuid, p_rows jsonb, p_apply boolean'),
   ('manager_list_company_users','p_company_id uuid'),
   ('manager_list_time_entries','p_company_id uuid, p_start_date date, p_end_date date'),
+  ('manager_qr_independent_report','p_company_id uuid, p_start_date date, p_end_date date'),
   ('manager_list_time_qr_pilot_candidates','p_company_id uuid'),
   ('manager_list_time_qr_terminals','p_company_id uuid'),
   ('manager_log_datev_lodas_export','p_company_id uuid, p_month date, p_row_count integer, p_content_sha256 text'),
