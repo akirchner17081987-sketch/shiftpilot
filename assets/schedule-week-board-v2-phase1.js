@@ -6,7 +6,7 @@
   const MODE_KEY='sf_schedule_week_view_v2';
   const ORDER=['OT1','OT2','OT3','OT','TR','O1','O1S','Teamleiter','O2','O2S','QA','O3'];
   const accent={teal:'#2ed9b8',cyan:'#38d7d4',violet:'#8f7dff',blue:'#62a0ff',amber:'#ffbd4f',pink:'#ff6f9d',red:'#ff6677'};
-  let mode=sessionStorage.getItem(MODE_KEY)||'board';
+  let mode=sessionStorage.getItem(MODE_KEY)||'compact';
   let dragPayload=null,undoTimer=null;
 
   const css=document.createElement('style');
@@ -66,6 +66,18 @@
     .sf-week-undo{position:fixed;left:50%;bottom:24px;z-index:13000;display:flex;align-items:center;gap:16px;max-width:min(560px,calc(100vw - 32px));padding:12px 14px 12px 16px;border:1px solid #31506a;border-radius:10px;background:#102235;color:#e9f4ff;box-shadow:0 18px 50px rgba(0,0,0,.46);font-size:12px}
     .sf-week-undo span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .sf-week-undo button{flex:none;border:1px solid #2d7967;border-radius:7px;background:#173c33;color:#aaf4db;padding:7px 10px;font-weight:800}
+    #view-schedule .sf-week-board.is-compact{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;min-width:0;align-items:start}
+    #view-schedule .sf-week-compact-day{min-width:0;display:flex;flex-direction:column;gap:8px;padding:8px;border:1px solid #29445c;border-radius:14px;background:#0e1b2a;box-shadow:0 10px 26px rgba(0,0,0,.16)}
+    #view-schedule .sf-week-compact-day.is-today{border-color:#2ed9b8;background:linear-gradient(180deg,rgba(46,217,184,.09),#0e1b2a 130px)}
+    #view-schedule .sf-week-compact-day.is-weekend{background:#0b1725}
+    #view-schedule .sf-week-compact-day .sf-week-day{position:static;border:0;box-shadow:none;background:transparent}
+    #view-schedule .sf-week-compact-day .sf-week-day-head{padding:5px 4px 10px;background:transparent;border-bottom:1px solid #29445c}
+    #view-schedule .sf-week-compact-day .sf-week-shift-cell{padding:0;border:0;background:transparent}
+    #view-schedule .sf-week-compact-day .sf-week-shift{height:auto;border-radius:10px;background:#142436}
+    #view-schedule .sf-week-compact-day .sf-week-shift-head{padding:10px 9px}
+    #view-schedule .sf-week-compact-day .sf-week-open{min-height:36px}
+    #view-schedule .sf-week-compact-empty{padding:20px 8px;text-align:center;color:#9fb4c8;font-size:12px}
+    @media(max-width:1180px){#view-schedule .sf-week-board.is-compact{grid-template-columns:repeat(7,180px);min-width:max-content}}
     @media(max-width:1500px){.sf-week-board{grid-template-columns:repeat(7,190px);min-width:max-content}}
   `;
   document.head.appendChild(css);
@@ -168,10 +180,10 @@
     }
     if(!document.getElementById('sfWeekModeSeg')){
       const seg=document.createElement('div');seg.id='sfWeekModeSeg';seg.className='sf-week-mode-seg';
-      seg.innerHTML='<button type="button" data-sf-week-mode="board">Besetzung</button><button type="button" data-sf-week-mode="timeline">Zeitachse</button>';
+      seg.innerHTML='<button type="button" data-sf-week-mode="compact">Übersicht</button><button type="button" data-sf-week-mode="board">Besetzung</button><button type="button" data-sf-week-mode="timeline">Zeitachse</button>';
       const oldSeg=toolbar.querySelector('.seg');
       toolbar.insertBefore(seg,oldSeg||null);
-      seg.addEventListener('click',e=>{const b=e.target.closest('[data-sf-week-mode]');if(!b)return;mode=b.dataset.sfWeekMode;sessionStorage.setItem(MODE_KEY,mode);applyMode();if(mode==='board')renderBoard()});
+      seg.addEventListener('click',e=>{const b=e.target.closest('[data-sf-week-mode]');if(!b)return;mode=b.dataset.sfWeekMode;sessionStorage.setItem(MODE_KEY,mode);applyMode();if(mode!=='timeline')renderBoard()});
     }
     return wrap;
   }
@@ -182,14 +194,22 @@
     wrap.classList.toggle('active',board);
     grid.style.display=board?'none':'';
     if(soll)soll.style.display=board?'none':'';
-    document.querySelectorAll('#sfWeekModeSeg [data-sf-week-mode]').forEach(b=>b.classList.toggle('active',b.dataset.sfWeekMode===(board?'board':'timeline')));
+    document.querySelectorAll('#sfWeekModeSeg [data-sf-week-mode]').forEach(b=>{const active=b.dataset.sfWeekMode===mode;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))});
   }
   function renderBoard(){
     const wrap=ensureUi();if(!wrap)return;
     const ds=currentWeekDates(),ids=shiftOrder();
-    const headers=ds.map((d,i)=>dayHeader(d,i)).join('');
-    const rows=ids.map((id,rowIndex)=>ds.map((d,i)=>shiftCell(d,i,id,rowIndex,ids.length)).join('')).join('');
-    wrap.innerHTML=`<div class="sf-week-board">${headers}${rows}</div>`;
+    if(mode==='compact'){
+      const days=ds.map((d,i)=>{
+        const active=ids.filter(id=>getSoll(iso(d),id)>0||assignmentsFor(iso(d),id).length>0);
+        return `<div class="sf-week-compact-day ${iso(d)===iso(new Date())?'is-today':''} ${i>4?'is-weekend':''}">${dayHeader(d,i)}${active.length?active.map(id=>shiftCell(d,i,id,0,1)).join(''):'<div class="sf-week-compact-empty">Keine Schichten geplant</div>'}</div>`;
+      }).join('');
+      wrap.innerHTML=`<div class="sf-week-board is-compact">${days}</div>`;
+    }else{
+      const headers=ds.map((d,i)=>dayHeader(d,i)).join('');
+      const rows=ids.map((id,rowIndex)=>ds.map((d,i)=>shiftCell(d,i,id,rowIndex,ids.length)).join('')).join('');
+      wrap.innerHTML=`<div class="sf-week-board">${headers}${rows}</div>`;
+    }
     installInteractions(wrap);
     applyMode();
   }
