@@ -143,7 +143,7 @@
     if(document.getElementById('sfTimeMonthPickerScript'))return;
     const s=document.createElement('script');
     s.id='sfTimeMonthPickerScript';
-    s.src='assets/time-month-picker-v1.js?v=20260912-monthfix2';
+    s.src='assets/time-month-picker-v1.js?v=20260929-periods1';
     s.async=true;
     document.head.appendChild(s);
   }

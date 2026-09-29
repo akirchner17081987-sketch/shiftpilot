@@ -29,27 +29,29 @@
     `;document.head.appendChild(s);
   }
 
+  const shiftDate=(value,days)=>{const d=new Date(value+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10)};
+  const todayDate=()=>{const p=zonedParts(Date.now());return `${p.year}-${p.month}-${p.day}`};
   function periodRange(monthOverride=''){
-    const mode=document.getElementById('timePeriod')?.value||'week';
-    if(mode==='month'){
-      const selected=/^\d{4}-(0[1-9]|1[0-2])$/.test(monthOverride)?monthOverride:document.getElementById('sfTimeMonthPicker')?.value||'';
-      if(/^\d{4}-(0[1-9]|1[0-2])$/.test(selected)){
-        const [year,month]=selected.split('-').map(Number),last=String(new Date(year,month,0).getDate()).padStart(2,'0');
-        return{start:`${selected}-01`,end:`${selected}-${last}`};
-      }
+    const mode=document.getElementById('timePeriod')?.value||'day',today=todayDate();
+    if(mode==='day')return{start:today,end:today};
+    if(mode==='week'){
+      const weekday=(new Date(today+'T12:00:00Z').getUTCDay()+6)%7,start=shiftDate(today,-weekday);
+      return{start,end:shiftDate(start,6)};
     }
-    let dates=[];
-    try{if(typeof window.currentWeekDates==='function')dates=window.currentWeekDates()}catch{}
-    if(!dates.length){const d=new Date(),day=(d.getDay()+6)%7,start=new Date(d);start.setDate(d.getDate()-day);start.setHours(0,0,0,0);dates=Array.from({length:7},(_,i)=>new Date(start.getFullYear(),start.getMonth(),start.getDate()+i))}
-    const z=d=>{const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),x=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${x}`};
-    if(mode==='week')return{start:z(dates[0]),end:z(dates[6])};
-    const b=dates[0],first=new Date(b.getFullYear(),b.getMonth(),1),last=new Date(b.getFullYear(),b.getMonth()+1,0);return{start:z(first),end:z(last)};
+    const selected=/^\d{4}-(0[1-9]|1[0-2])$/.test(monthOverride)?monthOverride:document.getElementById('sfTimeMonthPicker')?.value||today.slice(0,7);
+    const [year,month]=selected.split('-').map(Number),last=String(new Date(Date.UTC(year,month,0)).getUTCDate()).padStart(2,'0');
+    return{start:`${selected}-01`,end:`${selected}-${last}`};
+  }
+  function rowInPeriod(row,range){
+    const lower=toIso(range.start+'T00:00'),upper=toIso(shiftDate(range.end,1)+'T00:00');
+    const overlaps=(start,end)=>start&&end&&new Date(start)<new Date(upper)&&new Date(end)>new Date(lower);
+    return overlaps(row.starts_at,row.ends_at)||overlaps(row.actual_start,row.actual_end);
   }
 
   async function loadManager(monthOverride=''){
     if(!MANAGER.has(B.role)||!B.client||!B.companyId)return false;
-    const request=++managerLoadSequence,r=periodRange(monthOverride);
-    try{const q=await B.client.rpc('manager_list_time_entries',{p_company_id:B.companyId,p_start_date:r.start,p_end_date:r.end});if(request!==managerLoadSequence)return false;if(monthOverride&&document.getElementById('sfTimeMonthPicker')?.value!==monthOverride)return false;if(q.error)throw q.error;managerRows=q.data||[];return true}catch(e){if(request!==managerLoadSequence)return false;console.warn('Zeiterfassung konnte nicht geladen werden',e);managerRows=[];return true}
+    const request=++managerLoadSequence,r=periodRange(monthOverride),mode=document.getElementById('timePeriod')?.value||'day';
+    try{const q=await B.client.rpc('manager_list_time_entries',{p_company_id:B.companyId,p_start_date:mode==='month'?r.start:shiftDate(r.start,-2),p_end_date:mode==='month'?r.end:shiftDate(r.end,1)});if(request!==managerLoadSequence)return false;if(monthOverride&&document.getElementById('sfTimeMonthPicker')?.value!==monthOverride)return false;if(q.error)throw q.error;managerRows=(q.data||[]).filter(row=>rowInPeriod(row,r));return true}catch(e){if(request!==managerLoadSequence)return false;console.warn('Zeiterfassung konnte nicht geladen werden',e);managerRows=[];return true}
   }
 
   function renderManagerRows(){
