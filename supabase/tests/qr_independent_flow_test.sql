@@ -38,6 +38,22 @@ update public.time_qr_independent_shifts set started_at=clock_timestamp()-interv
 update public.time_qr_independent_breaks set started_at=clock_timestamp()-interval '1 hour';
 select public.qr_independent_action(repeat('e',64),repeat('f',64),'BREAK_END');
 select public.qr_independent_action(repeat('e',64),repeat('f',64),'CLOCK_OUT');
+insert into public.company_members(company_id,user_id,role,status)
+values('d2d2d2d2-d2d2-4d2d-8d2d-d2d2d2d2d2d2','d1d1d1d1-d1d1-4d1d-8d1d-d1d1d1d1d1d1','OWNER','ACTIVE');
+set local role authenticated;
+select set_config('request.jwt.claim.role','authenticated',true);
+select set_config('request.jwt.claims','{"role":"authenticated","sub":"d1d1d1d1-d1d1-4d1d-8d1d-d1d1d1d1d1d1"}',true);
+select pg_temp.assert_true(
+  jsonb_array_length(public.manager_qr_independent_report(
+    'd2d2d2d2-d2d2-4d2d-8d2d-d2d2d2d2d2d2',current_date-1,current_date+1))=1,
+  'manager sees the independent booking');
+select pg_temp.assert_true(
+  (public.manager_qr_independent_report(
+    'd2d2d2d2-d2d2-4d2d-8d2d-d2d2d2d2d2d2',current_date-1,current_date+1)->0->>'paid_minutes')::integer between 599 and 601
+  and (public.manager_qr_independent_report(
+    'd2d2d2d2-d2d2-4d2d-8d2d-d2d2d2d2d2d2',current_date-1,current_date+1)->0->>'pause_minutes')::integer between 59 and 61,
+  'manager report keeps paid time and pause separate');
+set local role postgres;
 select pg_temp.assert_true((select round(extract(epoch from (ended_at-started_at))/60)::integer
   from public.time_qr_independent_shifts where employee_id='d3d3d3d3-d3d3-4d3d-8d3d-d3d3d3d3d3d3') between 599 and 601
   and (select round(extract(epoch from (ended_at-started_at))/60)::integer from public.time_qr_independent_breaks) between 59 and 61
