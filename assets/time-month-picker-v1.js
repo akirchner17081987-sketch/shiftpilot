@@ -9,7 +9,7 @@
   let wrappedBase=null;
 
   const pad=n=>String(n).padStart(2,'0');
-  const currentMonth=()=>{const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}`};
+  const currentMonth=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:B.companyTimeZone||'Europe/Berlin',year:'numeric',month:'2-digit'}).format(new Date());
   const validMonth=v=>/^\d{4}-(0[1-9]|1[0-2])$/.test(String(v||''));
   const storedMonth=()=>{try{const v=sessionStorage.getItem(KEY);return validMonth(v)?v:currentMonth()}catch{return currentMonth()}};
   const saveMonth=v=>{try{sessionStorage.setItem(KEY,v)}catch{}};
@@ -31,7 +31,7 @@
     s.textContent=`
       #view-time .sf-time-period-controls{display:flex;align-items:flex-end;justify-content:flex-end;gap:8px;flex-wrap:wrap}
       #view-time .sf-time-period-field{display:flex;flex-direction:column;gap:4px;color:#8fa5ba;font-size:10px;font-weight:750}
-      #view-time .sf-time-period-field span{padding-left:2px}
+      #view-time .sf-time-period-field span{padding-left:2px}#view-time .sf-time-period-field[hidden]{display:none}
       #view-time #timePeriod,#view-time #sfTimeMonthPicker{min-height:38px;border:1px solid #2a4058;border-radius:8px;background:#0b1725;color:#e9f3fb;padding:7px 9px;font-size:12px}
       #view-time #sfTimeMonthPicker{min-width:160px;color-scheme:dark}
       #view-time .sf-time-period-hint{align-self:center;color:#7891a7;font-size:9px;white-space:nowrap}
@@ -55,7 +55,10 @@
     css();
 
     const monthOption=[...select.options].find(o=>o.value==='month');
-    if(monthOption)monthOption.textContent='Monat';
+    if(monthOption)monthOption.textContent='Gesamter Monat';
+    if(!select.querySelector('option[value=\"day\"]')){const option=document.createElement('option');option.value='day';option.textContent='Aktueller Tag';select.prepend(option);select.value='day'}
+    const dayOption=[...select.options].find(o=>o.value==='day'),weekOption=[...select.options].find(o=>o.value==='week');
+    if(dayOption)dayOption.textContent='Aktueller Tag';if(weekOption)weekOption.textContent='Aktuelle KW';
 
     let controls=document.getElementById('sfTimePeriodControls');
     if(!controls){
@@ -71,22 +74,26 @@
       periodField.appendChild(select);
 
       const monthField=document.createElement('label');
-      monthField.className='sf-time-period-field';
+      monthField.className='sf-time-period-field';monthField.id='sfTimeMonthField';
       monthField.innerHTML='<span>Monat auswählen</span><input id="sfTimeMonthPicker" type="month" aria-label="Monat für Zeiterfassung auswählen">';
       controls.appendChild(monthField);
 
       const hint=document.createElement('span');
       hint.className='sf-time-period-hint';
-      hint.textContent='Beliebiger Monat möglich';
+      hint.id='sfTimePeriodHint';
       controls.appendChild(hint);
     }
 
+    const monthField=document.getElementById('sfTimeMonthField'),hint=document.getElementById('sfTimePeriodHint');
+    if(monthField)monthField.hidden=select.value!=='month';
+    if(hint)hint.textContent=select.value==='day'?'Inklusive vollständiger Nachtschichten':select.value==='week'?'Montag bis Sonntag · inklusive Nachtschichten':'';
     const picker=document.getElementById('sfTimeMonthPicker');
     if(picker&&!validMonth(picker.value))picker.value=storedMonth();
 
     if(select.dataset.sfMonthPickerBound!=='1'){
       select.dataset.sfMonthPickerBound='1';
       select.addEventListener('change',()=>{
+        ensureControls();
         if(select.value==='month'){
           const m=selectedMonth();saveMonth(m);syncDatevMonth(m);
         }
@@ -99,6 +106,7 @@
         if(!validMonth(picker.value))return;
         saveMonth(picker.value);
         select.value='month';
+        ensureControls();
         syncDatevMonth(picker.value);
         const refresh=B.timeTracking?.refreshManager;
         if(typeof refresh==='function')await refresh(picker.value);
