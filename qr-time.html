@@ -1,186 +1,32 @@
 <!doctype html>
-<html lang="de">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#07131f">
-  <title>QR-Zeiterfassung | SchichtFunk</title>
-  <style>
-    :root{color-scheme:dark;--bg:#07131f;--card:#0d1c2b;--line:#27425b;--text:#eef7ff;--muted:#9bb0c5;--good:#73e5c8;--warn:#ffd38a;--bad:#ff9aaa;--accent:#4fb8ff}
-    *{box-sizing:border-box}body{margin:0;min-height:100dvh;background:radial-gradient(circle at 50% -20%,#17324a 0,#07131f 48%,#040b12 100%);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
-    main{width:min(560px,100%);min-height:100dvh;margin:auto;padding:max(22px,env(safe-area-inset-top)) 18px max(28px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:18px}
-    .brand{display:flex;align-items:center;justify-content:space-between;gap:14px}.brand img{width:178px;max-width:56vw;height:auto}.secure{font-size:11px;color:var(--good);font-weight:800;letter-spacing:.04em}
-    .card{background:linear-gradient(180deg,rgba(17,35,52,.96),rgba(9,23,36,.98));border:1px solid var(--line);border-radius:22px;box-shadow:0 28px 80px rgba(0,0,0,.34);padding:22px}
-    .eyebrow{font-size:11px;font-weight:900;letter-spacing:.13em;color:#73bddf}.hero h1{margin:7px 0 8px;font-size:30px;line-height:1.04}.hero p{margin:0;color:var(--muted);line-height:1.5;font-size:14px}
-    .state{display:flex;align-items:center;gap:12px;padding:14px 15px;border:1px solid var(--line);border-radius:14px;margin-top:18px;background:#091724}.dot{width:11px;height:11px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 5px rgba(79,184,255,.12)}.state.good .dot{background:var(--good)}.state.warn .dot{background:var(--warn)}.state.bad .dot{background:var(--bad)}.state b{display:block;font-size:14px}.state span{display:block;color:var(--muted);font-size:12px;margin-top:2px}
-    .details{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}.detail{padding:13px;border:1px solid #203a52;background:#091724;border-radius:13px}.detail.wide{grid-column:1/-1}.detail label{display:block;color:#86a1b9;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}.detail strong{font-size:14px;word-break:break-word}
-    button{appearance:none;border:1px solid var(--line);border-radius:13px;padding:14px 16px;font:inherit;font-weight:900;cursor:pointer;color:var(--text);background:#10273a}button.primary{width:100%;margin-top:17px;background:linear-gradient(180deg,#2b9fdb,#1975ad);border-color:#50bdf5;box-shadow:0 12px 32px rgba(25,117,173,.26)}button.primary.out{background:linear-gradient(180deg,#d08738,#a85f20);border-color:#efad67}button:disabled{opacity:.55;cursor:not-allowed}.minor{background:transparent;padding:9px 11px;font-size:12px}
-    .book-actions{display:grid;gap:10px;margin-top:17px}.book-actions button{width:100%;min-height:52px}.book-actions button.primary{margin-top:0}.book-actions button.pause{background:linear-gradient(180deg,#198b75,#106f60);border-color:#60d8bb}
-    .login{display:none}.field{display:flex;flex-direction:column;gap:6px;margin:13px 0}.field label{font-size:11px;font-weight:800;color:#9eb3c9}.field input{width:100%;background:#081522;border:1px solid #294159;color:var(--text);border-radius:11px;padding:13px;outline:none;font-size:16px}.msg{display:none;margin-top:13px;padding:12px;border-radius:11px;font-size:13px;line-height:1.45}.msg.show{display:block}.msg.good{background:#0e2d26;border:1px solid #216b59;color:#9af1d9}.msg.bad{background:#321822;border:1px solid #7a2d3c;color:#ffafba}.msg.info{background:#102538;border:1px solid #2c5474;color:#b9d8ee}
-    .footer{margin-top:auto;text-align:center;color:#6f879d;font-size:11px;line-height:1.5}.spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.24);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
-    @media(max-width:420px){.details{grid-template-columns:1fr}.detail.wide{grid-column:auto}.card{padding:18px}.hero h1{font-size:27px}}
-  </style>
-</head>
-<body>
-<main>
-  <div class="brand">
-    <img src="assets/schichtfunk-logo.svg" alt="SchichtFunk">
-    <span class="secure">● SICHERE BUCHUNG</span>
-  </div>
-
-  <section class="card hero" id="clockCard">
-    <div class="eyebrow">MITARBEITER · ZEITERFASSUNG</div>
-    <h1>QR-Zeiterfassung</h1>
-    <p>Der QR-Code identifiziert nur den Standort. Mitarbeiter und Buchungszeit werden sicher über dein angemeldetes SchichtFunk-Konto und die Serverzeit bestimmt.</p>
-    <div class="state" id="stateBox"><div class="spinner"></div><div><b>Scan wird geprüft …</b><span>SchichtFunk lädt den aktuellen Buchungsstatus.</span></div></div>
-    <div class="details" id="details" hidden></div>
-    <div class="book-actions"><button class="primary" id="bookBtn" hidden></button><button id="endBtn" hidden></button></div>
-    <div class="msg" id="clockMsg"></div>
-  </section>
-
-  <section class="card login" id="loginCard">
-    <div class="eyebrow">SCHICHTFUNK CLOUD</div>
-    <h2 style="margin:7px 0 6px">Anmelden</h2>
-    <p style="margin:0;color:var(--muted);font-size:13px">Für die QR-Buchung musst du mit deinem persönlichen Mitarbeiterkonto angemeldet sein.</p>
-    <form id="loginForm">
-      <div class="field"><label for="email">E-Mail</label><input id="email" type="email" autocomplete="email" required></div>
-      <div class="field"><label for="password">Passwort</label><input id="password" type="password" autocomplete="current-password" minlength="8" required></div>
-      <button class="primary" type="submit" id="loginBtn">Anmelden &amp; Scan prüfen</button>
-      <div class="msg" id="loginMsg"></div>
-    </form>
-  </section>
-
-  <div style="display:flex;justify-content:center"><button class="minor" id="logoutBtn" hidden>Abmelden</button></div>
-  <div class="footer">SchichtFunk · Klar geplant. Stark besetzt.<br>Eine Buchung wird erst nach deiner Bestätigung gespeichert.</div>
-</main>
-
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#07131f"><title>QR-Zeiterfassung | SchichtFunk</title>
+<style>
+:root{color-scheme:dark;--line:#294559;--text:#eef7ff;--muted:#a7bbcb}*{box-sizing:border-box}body{margin:0;min-height:100dvh;background:radial-gradient(circle at 50% -20%,#17324a 0,#07131f 48%,#040b12 100%);color:var(--text);font-family:Inter,system-ui,sans-serif}main{width:min(560px,100%);min-height:100dvh;margin:auto;padding:24px 18px;display:flex;flex-direction:column;gap:18px}.brand{display:flex;justify-content:space-between;align-items:center}.brand img{width:178px;max-width:56vw}.brand span{color:#72e1c5;font-size:11px;font-weight:800}.card{background:linear-gradient(180deg,#112334,#091724);border:1px solid var(--line);border-radius:22px;box-shadow:0 28px 80px #0006;padding:22px}.eyebrow{font-size:11px;font-weight:900;letter-spacing:.13em;color:#73bddf}h1{font-size:30px;margin:8px 0 10px}p{margin:0;color:var(--muted);font-size:14px;line-height:1.5}.field{display:flex;flex-direction:column;gap:6px;margin:16px 0}.field label{font-size:12px;font-weight:800}.field input{background:#081522;border:1px solid #34566e;color:var(--text);border-radius:11px;padding:13px;font-size:16px}button{appearance:none;min-height:52px;border:1px solid #4db8d9;border-radius:13px;padding:12px 16px;font:inherit;font-weight:800;cursor:pointer;color:#fff;background:linear-gradient(180deg,#299fd0,#1775a5)}button:disabled{opacity:.55}.actions{display:grid;gap:11px}.actions .pause{border-color:#67ddbf;background:linear-gradient(180deg,#1c9c80,#116f5f)}.actions .out{border-color:#efad67;background:linear-gradient(180deg,#d08738,#a85f20)}.minor{min-height:38px;border-color:var(--line);background:#10273a;font-size:12px}.status{padding:15px;border:1px solid var(--line);border-radius:13px;background:#091724;margin:17px 0}.status b{display:block}.status small{display:block;margin-top:5px;color:var(--muted)}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.detail{padding:12px;border:1px solid #203a52;border-radius:12px;background:#091724}.detail label{display:block;font-size:10px;color:var(--muted);margin-bottom:4px}.breaks{margin:15px 0;padding:0;list-style:none}.breaks li{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13px}.breaks span{color:var(--muted)}.message{padding:12px;border-radius:11px;margin-top:13px;font-size:13px}.message:empty{display:none}.message.error{background:#321822;color:#ffb0bd}.message.ok{background:#0e2d26;color:#a1f0db}.footer{margin-top:auto;text-align:center;font-size:11px;color:#7892a6}@media(max-width:420px){.grid{grid-template-columns:1fr}.card{padding:18px}}
+</style></head><body><main><div class="brand"><img src="assets/schichtfunk-logo.svg" alt="SchichtFunk"><span>● ZEITERFASSUNG</span></div><section class="card"><div class="eyebrow">MITARBEITER · QR-BUCHUNG</div><h1>Arbeitszeit erfassen</h1><p>Der QR-Code bezeichnet den Standort. Beginn, Ende und Pausen werden unabhängig vom Dienstplan erfasst.</p><div id="invalid" class="status" hidden><b>Ungültiger QR-Code</b><small>Bitte den aktuellen Code am Standort scannen.</small></div><form id="login"><div class="field"><label for="personnel">Personalnummer</label><input id="personnel" autocomplete="username" required maxlength="100"></div><div class="field"><label for="startDate">Kennwort: Eintrittsdatum</label><input id="startDate" type="date" autocomplete="off" required></div><button id="loginButton" type="submit" style="width:100%">Anmelden</button></form><div id="clock" hidden><div class="status"><b id="state">Bereit</b><small id="stateDetail"></small></div><div class="grid"><div class="detail"><label>Mitarbeiter</label><strong id="name"></strong></div><div class="detail"><label>Beginn</label><strong id="begin">–</strong></div></div><ol class="breaks" id="breaks"></ol><p style="margin:15px 0">Pausen werden einzeln dokumentiert. Die bezahlte Zeit zwischen Beginn und Ende wird dadurch nicht gekürzt.</p><div class="actions"><button id="start" type="button">Arbeitszeit beginnen</button><button id="pauseStart" class="pause" type="button">Pause beginnen</button><button id="pauseEnd" class="pause" type="button">Pause beenden</button><button id="end" class="out" type="button">Arbeitszeit beenden</button></div><button id="logout" class="minor" type="button" style="margin-top:14px">Abmelden</button></div><div id="message" class="message" role="status" aria-live="polite"></div></section><div class="footer">SchichtFunk · Klar geplant. Stark besetzt.<br>Jede Buchung erfolgt erst nach einem Tipp.</div></main>
 <script type="module">
-  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/+esm';
-
-  const projectUrl='https://zbvloohfjleadjnqhbbh.supabase.co';
-  const publishableKey='sb_publishable_Y78saCIbksWRAkP2yQYofw_4Er0WZU7';
-  const supabase=createClient(projectUrl,publishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-  const token=new URLSearchParams(location.search).get('t')?.trim()||'';
-  const $=id=>document.getElementById(id);
-  const stateBox=$('stateBox'),details=$('details'),bookBtn=$('bookBtn'),endBtn=$('endBtn'),clockMsg=$('clockMsg');
-  const loginCard=$('loginCard'),loginForm=$('loginForm'),loginMsg=$('loginMsg'),logoutBtn=$('logoutBtn');
-  let currentStatus=null,busy=false;
-
-  function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-  function showMessage(el,text,type='info'){el.className='msg show '+type;el.textContent=text;}
-  function clearMessage(el){el.className='msg';el.textContent='';}
-  function setState(title,subtitle,type=''){
-    stateBox.className='state '+type;
-    stateBox.innerHTML=`<span class="dot"></span><div><b>${esc(title)}</b><span>${esc(subtitle)}</span></div>`;
-  }
-  function fmtDateTime(value){if(!value)return '–';return new Intl.DateTimeFormat('de-DE',{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}).format(new Date(value));}
-  function fmtTime(value){if(!value)return '–';return new Intl.DateTimeFormat('de-DE',{hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date(value));}
-
-  function renderStatus(s){
-    currentStatus=s;
-    const completed=s.state==='COMPLETED';
-    const running=s.action==='CLOCK_OUT';
-    const onBreak=!!s.break_started_at;
-    details.hidden=false;
-    details.innerHTML=`
-      <div class="detail wide"><label>QR-Terminal</label><strong>${esc(s.terminal_name||'–')}</strong>${s.location_note?`<div style="color:#8fa7bc;font-size:12px;margin-top:3px">${esc(s.location_note)}</div>`:''}</div>
-      <div class="detail"><label>Schicht</label><strong>${esc(s.shift_code||'–')}</strong></div>
-      <div class="detail"><label>${s.break_tracking_enabled?'Pause bisher':'Pause geplant'}</label><strong>${s.break_tracking_enabled?Math.round(Number(s.break_seconds||0)/60):Number(s.planned_break_minutes||0)} Min.</strong></div>
-      <div class="detail"><label>Geplanter Start</label><strong>${esc(fmtDateTime(s.planned_start))}</strong></div>
-      <div class="detail"><label>Geplantes Ende</label><strong>${esc(fmtDateTime(s.planned_end))}</strong></div>
-      ${s.clocked_in_at?`<div class="detail wide"><label>Eingestempelt</label><strong>${esc(fmtDateTime(s.clocked_in_at))}</strong></div>`:''}
-      ${onBreak?`<div class="detail wide"><label>Pause seit</label><strong>${esc(fmtDateTime(s.break_started_at))}</strong></div>`:''}`;
-    if(completed){
-      setState('Schicht bereits vollständig gebucht','Für diese Schicht ist keine weitere QR-Buchung notwendig.','good');
-      bookBtn.hidden=true;endBtn.hidden=true;
-      return;
-    }
-    if(running){
-      if(onBreak){
-        setState('Pause läuft','Nach der Rückkehr die Pause mit einem Tipp beenden.','warn');
-        bookBtn.textContent='Pause jetzt beenden';
-        bookBtn.dataset.action='BREAK_END';
-        bookBtn.className='primary pause';
-        endBtn.hidden=true;
-      }else{
-        setState('Arbeitszeit läuft','Pause beginnen oder am Dienstende ausstempeln.','good');
-        bookBtn.textContent='Pause jetzt beginnen';
-        bookBtn.dataset.action='BREAK_START';
-        bookBtn.className='primary pause';
-        endBtn.textContent='Arbeitszeit jetzt beenden';
-        endBtn.hidden=false;
-        endBtn.disabled=false;
-      }
-      if(!s.break_tracking_enabled){
-        setState('Arbeitszeit läuft','Für diese bereits laufende Schicht gilt noch die bisherige Pausenregel.','warn');
-        bookBtn.textContent='Arbeitszeit jetzt beenden';
-        bookBtn.dataset.action='CLOCK_OUT';
-        bookBtn.className='primary out';
-        endBtn.hidden=true;
-      }
-    }else{
-      setState('Bereit zum Einstempeln','Prüfe die Schichtdaten und bestätige anschließend den Start.','good');
-      bookBtn.textContent='Arbeitszeit jetzt starten';
-      bookBtn.dataset.action='CLOCK_IN';
-      bookBtn.className='primary';
-      endBtn.hidden=true;
-    }
-    bookBtn.hidden=false;
-    bookBtn.disabled=false;
-  }
-
-  async function loadStatus(){
-    clearMessage(clockMsg);details.hidden=true;bookBtn.hidden=true;endBtn.hidden=true;
-    if(!/^[0-9a-f]{64}$/i.test(token)){
-      setState('Ungültiger QR-Code','Dieser Link enthält keinen gültigen SchichtFunk-Terminalcode.','bad');
-      return;
-    }
-    const {data:{session}}=await supabase.auth.getSession();
-    if(!session){
-      setState('Anmeldung erforderlich','Melde dich mit deinem Mitarbeiterkonto an, um den Scan zu prüfen.','warn');
-      loginCard.style.display='block';logoutBtn.hidden=true;return;
-    }
-    loginCard.style.display='none';logoutBtn.hidden=false;
-    setState('Scan wird geprüft …','SchichtFunk gleicht Terminal, Mitarbeiter und veröffentlichte Schicht ab.');
-    const {data,error}=await supabase.rpc('employee_qr_time_status',{p_token:token});
-    if(error){setState('Buchung derzeit nicht möglich',error.message||'Der QR-Scan konnte nicht geprüft werden.','bad');return;}
-    renderStatus(data);
-  }
-
-  loginForm.addEventListener('submit',async e=>{
-    e.preventDefault();clearMessage(loginMsg);
-    const email=$('email').value.trim(),password=$('password').value;
-    if(!email||password.length<8){showMessage(loginMsg,'Bitte E-Mail und Passwort vollständig eingeben.','bad');return;}
-    $('loginBtn').disabled=true;$('loginBtn').textContent='Anmeldung läuft …';
-    const {error}=await supabase.auth.signInWithPassword({email,password});
-    $('loginBtn').disabled=false;$('loginBtn').textContent='Anmelden & Scan prüfen';
-    if(error){showMessage(loginMsg,error.message||'Anmeldung fehlgeschlagen.','bad');return;}
-    await loadStatus();
-  });
-
-  async function book(expected){
-    if(busy||!currentStatus||!expected)return;
-    busy=true;bookBtn.disabled=true;endBtn.disabled=true;clearMessage(clockMsg);
-    const isBreak=expected==='BREAK_START'||expected==='BREAK_END';
-    const {data,error}=await supabase.rpc(isBreak?'employee_qr_break_from_qr':'employee_clock_from_qr',
-      {p_token:token,p_expected_action:expected});
-    busy=false;
-    if(error){
-      const message=error.message||'Buchung fehlgeschlagen.';
-      await loadStatus();
-      showMessage(clockMsg,message,'bad');
-      return;
-    }
-    const verb={CLOCK_IN:'Arbeitszeit gestartet',CLOCK_OUT:'Arbeitszeit beendet',BREAK_START:'Pause begonnen',BREAK_END:'Pause beendet'}[expected];
-    await loadStatus();
-    showMessage(clockMsg,`${verb} · ${fmtTime(data?.punched_at)} Uhr`,'good');
-  }
-  bookBtn.addEventListener('click',()=>book(bookBtn.dataset.action));
-  endBtn.addEventListener('click',()=>book('CLOCK_OUT'));
-
-  logoutBtn.addEventListener('click',async()=>{await supabase.auth.signOut({scope:'local'});currentStatus=null;await loadStatus();});
-  supabase.auth.onAuthStateChange((event)=>{if(event==='SIGNED_OUT')loadStatus();});
-  loadStatus().catch(err=>setState('Technischer Fehler',err?.message||String(err),'bad'));
-</script>
-</body>
-</html>
+const qrToken=new URLSearchParams(location.search).get('t')?.trim()||'';
+const endpoint='https://zbvloohfjleadjnqhbbh.supabase.co/functions/v1/qr-independent';
+const $=id=>document.getElementById(id);
+let sessionToken='',busy=false;
+const time=v=>v?new Intl.DateTimeFormat('de-DE',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Berlin'}).format(new Date(v)):'–';
+const msg=(value,type='')=>{const el=$('message');el.textContent=value;el.className='message '+type};
+async function call(action,extra={}){
+  const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',body:JSON.stringify({action,qrToken,sessionToken,...extra})});
+  const data=await response.json().catch(()=>({}));if(!response.ok||!data.ok)throw new Error(data.error||'Buchung derzeit nicht möglich');return data;
+}
+function show(status){
+  $('login').hidden=true;$('clock').hidden=false;$('name').textContent=status.name||'–';$('begin').textContent=time(status.started_at);
+  const breaks=Array.isArray(status.breaks)?status.breaks:[];$('breaks').replaceChildren();
+  breaks.forEach(b=>{const li=document.createElement('li'),label=document.createElement('b'),span=document.createElement('span');label.textContent='Pause '+b.number;span.textContent=time(b.started_at)+' – '+time(b.ended_at);li.append(label,span);$('breaks').append(li)});
+  const state=status.state;$('state').textContent=state==='BREAK'?'Pause läuft':state==='RUNNING'?'Arbeitszeit läuft':'Bereit für den Arbeitsbeginn';
+  $('stateDetail').textContent=state==='BREAK'?'Nach der Pause auf „Pause beenden“ tippen.':state==='RUNNING'?'Pause oder Dienstende mit einem Tipp buchen.':'Es ist keine Arbeitszeit offen.';
+  $('start').hidden=state!=='READY';$('pauseStart').hidden=state!=='RUNNING'||breaks.length>=5;$('pauseEnd').hidden=state!=='BREAK';$('end').hidden=state!=='RUNNING';
+  if(state==='RUNNING'&&breaks.length>=5)$('stateDetail').textContent='Fünf Pausen erfasst. Arbeitszeit kann beendet werden.';
+}
+async function action(value){if(busy)return;busy=true;document.querySelectorAll('button').forEach(b=>b.disabled=true);msg('');try{const data=await call(value);show(data);msg(({CLOCK_IN:'Beginn',BREAK_START:'Pausenbeginn',BREAK_END:'Pausenende',CLOCK_OUT:'Ende'})[value]+' um '+time(data.punched_at)+' Uhr gespeichert.','ok')}catch(error){msg(error.message,'error');if(/Anmeldung abgelaufen/.test(error.message))logout()}finally{busy=false;document.querySelectorAll('button').forEach(b=>b.disabled=false)}}
+function logout(){sessionToken='';$('clock').hidden=true;$('login').hidden=false;$('startDate').value=''}
+$('login').addEventListener('submit',async e=>{e.preventDefault();if(busy)return;busy=true;$('loginButton').disabled=true;msg('');try{const result=await call('LOGIN',{personnelNo:$('personnel').value.trim(),startDate:$('startDate').value});sessionToken=result.sessionToken;$('startDate').value='';show(await call('STATUS'))}catch(error){msg(error.message,'error');sessionToken=''}finally{busy=false;$('loginButton').disabled=false}});
+for(const [id,value] of [['start','CLOCK_IN'],['pauseStart','BREAK_START'],['pauseEnd','BREAK_END'],['end','CLOCK_OUT']])$(id).addEventListener('click',()=>action(value));
+$('logout').addEventListener('click',logout);
+if(!/^[0-9a-f]{64}$/i.test(qrToken)){$('login').hidden=true;$('invalid').hidden=false}
+</script></body></html>

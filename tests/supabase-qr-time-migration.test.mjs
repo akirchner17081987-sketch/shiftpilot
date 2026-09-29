@@ -51,10 +51,13 @@ test('QR booking protects closed months and duplicate/stale submissions',()=>{
 });
 
 test('mobile QR page does not accept employee id or timestamp from the browser',()=>{
-  assert.match(html,/employee_qr_time_status/,'status RPC is not used by scan page');
-  assert.match(html,/employee_clock_from_qr/,'clock RPC is not used by scan page');
+  assert.match(html,/functions\/v1\/qr-independent/,'independent QR function is used by scan page');
+  assert.match(html,/personnelNo:/,'personnel number is supplied for the separate login');
+  assert.match(html,/startDate:/,'entry date is supplied for the separate login');
   assert.doesNotMatch(html,/p_employee_id\s*:/i,'browser must never supply employee id');
   assert.doesNotMatch(html,/p_actual_(start|end)\s*:/i,'browser must never supply actual timestamps');
-  assert.match(html,/Arbeitszeit jetzt starten/,'clock-in confirmation missing');
-  assert.match(html,/Arbeitszeit jetzt beenden/,'clock-out confirmation missing');
+  assert.match(html,/Arbeitszeit beginnen/,'clock-in confirmation missing');
+  assert.match(html,/Arbeitszeit beenden/,'clock-out confirmation missing');
+  assert.match(html,/Pause beginnen/);
+  assert.match(html,/Pause beenden/);
 });
