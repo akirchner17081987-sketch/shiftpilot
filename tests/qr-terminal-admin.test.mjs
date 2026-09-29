@@ -60,7 +60,7 @@ test('dispatcher and planner receive read-only QR terminal controls',()=>{
 test('QR terminal UI and role guard are loaded by the existing integration loader',()=>{
   assert.match(nav,/supabase-qr-terminal-admin-v1\.js\?v=20260929-3/);
   assert.match(nav,/supabase-qr-terminal-role-guard-v1\.js\?v=20260908-1/);
-  assert.match(index,/navigation-compat-v1\.js\?v=20260930-timeonly2/);
+  assert.match(index,/navigation-compat-v1\.js\?v=20260930-timeonly3/);
 });
 
 test('time workspace exposes QR terminals as a dedicated third tab',()=>{
