@@ -2,7 +2,7 @@
 (function(){
   const B=window.SFBackend=window.SFBackend||{};
   if(B.__qrIndependentReport)return;B.__qrIndependentReport=true;
-  const MANAGER=new Set(['OWNER','ADMIN','DISPATCHER','PLANNER']);
+  const MANAGER=new Set(['OWNER','ADMIN','DISPATCHER','PLANNER','TIME_TRACKING']);
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const tz=()=>B.companyTimeZone||'Europe/Berlin';
   const format=(v,options)=>v?new Intl.DateTimeFormat('de-DE',{timeZone:tz(),...options}).format(new Date(v)):'–';

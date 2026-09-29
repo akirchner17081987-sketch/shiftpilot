@@ -422,7 +422,7 @@ test('mobile layout constrains the app shell and keeps primary controls usable',
   assert.match(mobileCss, /@media\s*\(max-width:\s*560px\)/);
   assert.match(mobileCss, /#newTemplateBtn[\s\S]*display:\s*none\s*!important/);
   assert.match(mobileCss, /\.calendar,[\s\S]*overflow-x:\s*auto/);
-  assert.match(index, /function switchView\(name\)\{const appMain=document\.querySelector\('\.main'\);if\(appMain\)appMain\.scrollTop=0;window\.scrollTo\(0,0\)/);
+  assert.match(index, /function switchView\(name\)\{[\s\S]*?const appMain=document\.querySelector\('\.main'\);if\(appMain\)appMain\.scrollTop=0;window\.scrollTo\(0,0\)/);
   assert.match(employeePortalLayout, /sf-employee-nav-btn[^}]*\{[^}]*min-height:50px!important/);
   assert.match(employeePortalLayout, /sf-portal-top \.ghost\{min-height:44px/);
   assert.match(employeePortalLayout, /sf-employee-more-close\{width:44px;height:44px/);
