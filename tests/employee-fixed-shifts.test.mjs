@@ -53,6 +53,8 @@ test('employee form offers editable working and free blocks with a separate cycl
   assert.match(management,/id="spRhythmKind"/);
   assert.match(management,/Tagesrhythmus \(Arbeiten \/ Frei\)/);
   assert.match(management,/id="spCycleAdd"/);
+  assert.match(management,/id="spCyclePreset"/);
+  assert.match(management,/cycleGrid\.innerHTML=cycleBlocks\(\[\]\)\.map\(cycleRow\)/);
   assert.match(management,/rhythmKind=/);
   assert.match(management,/kind==='week'&&!legacyUnedited&&startDay!==1/);
 });
