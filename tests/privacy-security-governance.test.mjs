@@ -43,8 +43,8 @@ const soleOwnerBranchProtocol=fs.readFileSync(path.join(root,'documentation','pr
 const privacyProductionProtocol=fs.readFileSync(path.join(root,'documentation','privacy-lifecycle-production-activation-2026-09-14.md'),'utf8');
 
 test('SECURITY DEFINER allowlist is exact and reviewable',()=>{
-  assert.equal(allowlist.functions.length,35);
-  assert.equal(new Set(allowlist.functions.map(x=>`${x.name}(${x.arguments})`)).size,35);
+  assert.equal(allowlist.functions.length,38);
+  assert.equal(new Set(allowlist.functions.map(x=>`${x.name}(${x.arguments})`)).size,38);
   for(const fn of allowlist.functions){
     assert.ok(fn.boundary.length>=8,`${fn.name} needs an authorization boundary`);
     assert.match(verifier,new RegExp(`'${fn.name}'`));

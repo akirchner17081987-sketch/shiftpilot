@@ -1,5 +1,6 @@
 -- Read-only verifier. Run against a disposable Supabase branch before release.
 with allowlist(name, arguments) as (values
+  ('employee_qr_break_from_qr','p_token text, p_expected_action text'),
   ('employee_clock_from_qr','p_token text, p_expected_action text'),
   ('employee_my_time_account_month','p_month date'),
   ('employee_qr_time_status','p_token text'),
@@ -9,6 +10,8 @@ with allowlist(name, arguments) as (values
   ('manager_close_time_month','p_company_id uuid, p_month date, p_note text'),
   ('manager_create_company_invite','p_company_id uuid, p_email text, p_role text, p_token_hash text'),
   ('manager_create_time_qr_terminal','p_company_id uuid, p_name text, p_location_note text'),
+  ('manager_delete_time_qr_terminal','p_terminal_id uuid'),
+  ('manager_get_time_qr_terminal_qr_path','p_terminal_id uuid'),
   ('manager_import_month_matrix','p_company_id uuid, p_rows jsonb, p_apply boolean'),
   ('manager_list_company_users','p_company_id uuid'),
   ('manager_list_time_entries','p_company_id uuid, p_start_date date, p_end_date date'),

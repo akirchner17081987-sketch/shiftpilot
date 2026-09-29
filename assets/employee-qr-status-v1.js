@@ -57,12 +57,12 @@
   }
 
   function renderDemo(){
-    mount(`<div class="sf-emp-qr-head"><h3>QR-Zeiterfassung</h3><span class="sf-emp-qr-badge demo">DEMO</span></div><div class="sf-emp-qr-body"><div class="sf-emp-qr-icon">▦</div><div class="sf-emp-qr-main"><b>Kommen &amp; Gehen per QR-Code</b><small>Im Echtbetrieb scannt der Mitarbeiter den QR-Code am Objekt/Einsatzort mit der Smartphone-Kamera. SchichtFunk prüft Konto, Schicht und Terminal.</small><span class="sf-emp-qr-hint">📱 QR-Code am Einsatzort scannen</span></div></div><div class="sf-emp-qr-live done">Demo-Vorschau · Es wird keine echte Zeitbuchung ausgelöst.</div>`);
+    mount(`<div class="sf-emp-qr-head"><h3>QR-Zeiterfassung</h3><span class="sf-emp-qr-badge demo">DEMO</span></div><div class="sf-emp-qr-body"><div class="sf-emp-qr-icon">▦</div><div class="sf-emp-qr-main"><b>Beginn, Pausen &amp; Ende per QR-Code</b><small>Im Echtbetrieb scannt der Mitarbeiter den QR-Code am Objekt/Einsatzort mit der Smartphone-Kamera. SchichtFunk prüft Konto, Schicht und Terminal.</small><span class="sf-emp-qr-hint">📱 QR-Code am Einsatzort scannen</span></div></div><div class="sf-emp-qr-live done">Demo-Vorschau · Es wird keine echte Zeitbuchung ausgelöst.</div>`);
   }
 
   function render(info,entry){
     if(!info){
-      mount('<div class="sf-emp-qr-head"><h3>QR-Zeiterfassung</h3><span class="sf-emp-qr-badge done">BEREIT</span></div><div class="sf-emp-qr-body"><div class="sf-emp-qr-icon">▦</div><div class="sf-emp-qr-main"><b>Kommen &amp; Gehen per QR-Code</b><small>Aktuell steht keine veröffentlichte Schicht an. Bei Dienstbeginn den QR-Code am Objekt/Einsatzort mit der Smartphone-Kamera scannen.</small><span class="sf-emp-qr-hint">📱 QR-Code am Einsatzort scannen</span></div></div>');
+      mount('<div class="sf-emp-qr-head"><h3>QR-Zeiterfassung</h3><span class="sf-emp-qr-badge done">BEREIT</span></div><div class="sf-emp-qr-body"><div class="sf-emp-qr-icon">▦</div><div class="sf-emp-qr-main"><b>Beginn, Pausen &amp; Ende per QR-Code</b><small>Aktuell steht keine veröffentlichte Schicht an. Bei Dienstbeginn den QR-Code am Objekt/Einsatzort mit der Smartphone-Kamera scannen.</small><span class="sf-emp-qr-hint">📱 QR-Code am Einsatzort scannen</span></div></div>');
       return;
     }
     const s=info.shift,started=!!entry?.actual_start,ended=!!entry?.actual_end;
@@ -70,7 +70,7 @@
     const note=ended
       ?`<div class="sf-emp-qr-live done">QR-Zeiterfassung abgeschlossen · Kommen ${esc(fmtTime(entry.actual_start))} · Gehen ${esc(fmtTime(entry.actual_end))}</div>`
       :started
-        ?`<div class="sf-emp-qr-live">● Arbeitszeit läuft seit <b>${esc(fmtTime(entry.actual_start))}</b>. Zum Dienstende den QR-Code am Einsatzort erneut scannen.</div>`
+        ?`<div class="sf-emp-qr-live">● Arbeitszeit läuft seit <b>${esc(fmtTime(entry.actual_start))}</b>. Für Pause und Dienstende den QR-Code am Einsatzort scannen.</div>`
         :info.current
           ?'<div class="sf-emp-qr-live wait"><b>Jetzt am Einsatzort:</b> QR-Code mit der Smartphone-Kamera scannen und „Arbeitszeit starten“ wählen.</div>'
           :'<div class="sf-emp-qr-live done">Der QR-Check-in wird im Startfenster vor Dienstbeginn freigeschaltet.</div>';

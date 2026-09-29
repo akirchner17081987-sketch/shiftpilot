@@ -46,7 +46,7 @@
     }
     const time=document.querySelector('#sfEmployeePortal .sf-portal-card[data-sf-portal-section="time"]');
     if(time&&!time.querySelector('.sf-qr-scan-inline')){
-      const box=document.createElement('section');box.className='sf-qr-scan-inline';box.innerHTML='<div class="sf-qr-scan-inline-copy"><b>📷 QR-Zeiterfassung</b><small>Kommen und Gehen direkt mit der Smartphone-Kamera am Objekt/Einsatzort erfassen.</small></div><button type="button" class="sf-qr-scan-btn" data-sf-qr-scan>QR-Code scannen</button>';time.insertBefore(box,time.firstChild);
+      const box=document.createElement('section');box.className='sf-qr-scan-inline';box.innerHTML='<div class="sf-qr-scan-inline-copy"><b>📷 QR-Zeiterfassung</b><small>Beginn, Pausen und Ende mit der Smartphone-Kamera am Einsatzort erfassen.</small></div><button type="button" class="sf-qr-scan-btn" data-sf-qr-scan>QR-Code scannen</button>';time.insertBefore(box,time.firstChild);
     }
   }
 
