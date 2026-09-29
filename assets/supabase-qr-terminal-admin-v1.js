@@ -61,10 +61,10 @@
   }
 
   function render(card,error=''){
-    const rows=terminals.map(t=>`<div class="sf-qrt-row" data-qrt-id="${esc(t.id)}"><div class="sf-qrt-main"><b>${esc(t.name)} <span class="sf-qrt-state ${t.is_active?'':'off'}">${t.is_active?'● Aktiv':'○ Deaktiviert'}</span></b><small>${esc(t.location_note||'Kein Standort-Hinweis')} · Startfenster ${Number(t.start_window_minutes||0)} Min. · Endfenster ${Number(t.end_window_minutes||0)} Min.<br>Zuletzt geändert: ${esc(fmt(t.updated_at))}</small></div><div class="sf-qrt-actions"><button class="primary" data-qrt-show>QR anzeigen</button><button class="ghost" data-qrt-rotate>QR erneuern</button><button class="ghost" data-qrt-toggle>${t.is_active?'Deaktivieren':'Aktivieren'}</button></div></div>`).join('');
+    const rows=terminals.map(t=>`<div class="sf-qrt-row" data-qrt-id="${esc(t.id)}"><div class="sf-qrt-main"><b>${esc(t.name)} <span class="sf-qrt-state ${t.is_active?'':'off'}">${t.is_active?'● Aktiv':'○ Deaktiviert'}</span></b><small>${esc(t.location_note||'Kein Standort-Hinweis')} · Startfenster ${Number(t.start_window_minutes||0)} Min. · Endfenster ${Number(t.end_window_minutes||0)} Min.<br>Zuletzt geändert: ${esc(fmt(t.updated_at))}</small></div><div class="sf-qrt-actions"><button class="primary" data-qrt-show>QR anzeigen</button><button class="ghost" data-qrt-rotate>QR erneuern</button><button class="ghost" data-qrt-toggle>${t.is_active?'Deaktivieren':'Aktivieren'}</button>${t.is_active?'':'<button class="ghost" data-qrt-delete>Löschen</button>'}</div></div>`).join('');
     card.innerHTML=`<div class="sf-qrt-head"><div class="sf-qrt-icon">▦</div><div class="sf-qrt-copy"><div class="eyebrow">QR-STEMPELSTATIONEN</div><h3>Dienstbeginn & Dienstende per QR-Code</h3><p>Der QR-Code identifiziert nur den Standort. Mitarbeiteridentität und Buchungszeit kommen aus dem persönlichen SchichtFunk-Konto und der Serverzeit.</p></div><div class="sf-qrt-create"><input id="sfQrtName" maxlength="120" placeholder="Name, z. B. Objekt A"><input id="sfQrtLocation" maxlength="300" placeholder="Standort, z. B. Haupteingang"><button class="primary" id="sfQrtCreate">＋ Anlegen</button></div></div>${error?`<div class="sf-qrt-empty">${esc(error)}</div>`:`<div class="sf-qrt-list">${rows||'<div class="sf-qrt-empty">Noch kein QR-Terminal angelegt.</div>'}</div><div class="sf-qrt-note"><b>QR anzeigen</b> lädt den aktuellen Code aus dem sicheren Serverspeicher. Bei deaktivierten Terminals lässt er sich drucken, wird aber erst nach Aktivierung beim Scannen akzeptiert. <b>QR erneuern</b> macht den bisherigen Ausdruck sofort ungültig.</div>`}`;
     const create=card.querySelector('#sfQrtCreate');if(create)create.onclick=()=>createTerminal(card.querySelector('#sfQrtName')?.value,card.querySelector('#sfQrtLocation')?.value);
-    card.querySelectorAll('[data-qrt-id]').forEach(row=>{const t=terminals.find(x=>String(x.id)===row.dataset.qrtId);if(!t)return;row.querySelector('[data-qrt-show]')?.addEventListener('click',()=>showTerminalQr(t));row.querySelector('[data-qrt-rotate]')?.addEventListener('click',()=>rotateTerminal(t));row.querySelector('[data-qrt-toggle]')?.addEventListener('click',()=>toggleTerminal(t))});
+    card.querySelectorAll('[data-qrt-id]').forEach(row=>{const t=terminals.find(x=>String(x.id)===row.dataset.qrtId);if(!t)return;row.querySelector('[data-qrt-show]')?.addEventListener('click',()=>showTerminalQr(t));row.querySelector('[data-qrt-rotate]')?.addEventListener('click',()=>rotateTerminal(t));row.querySelector('[data-qrt-toggle]')?.addEventListener('click',()=>toggleTerminal(t));row.querySelector('[data-qrt-delete]')?.addEventListener('click',()=>deleteTerminal(t))});
   }
 
   async function refresh(){
@@ -104,6 +104,18 @@
   async function toggleTerminal(t){
     const next=!t.is_active;if(!confirm(`${t.name} ${next?'aktivieren':'deaktivieren'}?${next?'':' Der ausgehängte QR-Code ist danach nicht mehr nutzbar.'}`))return;
     try{B.showLoading?.(next?'Terminal wird aktiviert …':'Terminal wird deaktiviert …');const q=await B.client.rpc('manager_set_time_qr_terminal_active',{p_terminal_id:t.id,p_is_active:next});if(q.error)throw q.error;await refresh();if(typeof showSaveToast==='function')showSaveToast(next?'QR-Terminal aktiviert':'QR-Terminal deaktiviert',t.name)}catch(e){alert(rpcError(e))}finally{B.hideLoading?.()}
+  }
+
+  async function deleteTerminal(t){
+    if(t.is_active)return;
+    if(!confirm(`„${t.name}“ dauerhaft löschen? Der QR-Code wird ungültig. Terminals mit Zeitbuchungen können nicht gelöscht werden.`))return;
+    try{
+      B.showLoading?.('QR-Terminal wird gelöscht …');
+      const q=await B.client.rpc('manager_delete_time_qr_terminal',{p_terminal_id:t.id});
+      if(q.error)throw q.error;
+      await refresh();
+      if(typeof showSaveToast==='function')showSaveToast('QR-Terminal gelöscht',t.name);
+    }catch(e){alert(rpcError(e))}finally{B.hideLoading?.()}
   }
 
   const baseRender=window.renderTimeTracking;
