@@ -25,6 +25,8 @@
     const value=theme==='light'?'light':'dark';
     root.dataset.sfTheme=value;
     root.style.colorScheme=value;
+    const themeColor=document.querySelector('meta[name="theme-color"]');
+    if(themeColor)themeColor.setAttribute('content',value==='light'?'#dce5ea':'#08111f');
     if(persist){try{localStorage.setItem(KEY,value)}catch(e){}}
     updateButton(value);
     window.dispatchEvent(new CustomEvent('schichtfunk:themechange',{detail:{theme:value}}));

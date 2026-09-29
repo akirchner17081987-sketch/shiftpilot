@@ -99,3 +99,208 @@ html[data-sf-theme="light"] :is(.abs-modal,.tpl-modal,.sf-auth-card,.sf-account-
 html[data-sf-theme="light"] :is(.abs-modal-head,.abs-modal-foot,.tpl-head,.tpl-foot,.sf-auth-head,.sf-auth-foot,.sf-account-head,.sf-account-foot,.sp-logout-head,.sp-logout-actions,.sf-mi-head,.sf-mi-foot){border-color:#dce4eb!important;background:#f8fafc!important}
 
 @media(max-width:560px){#sfThemeToggle{display:inline-flex!important;width:44px;min-width:44px;height:44px}}
+
+/* SchichtFunk light appearance v2 — layered grey surfaces instead of a white canvas. */
+html[data-sf-theme="light"]{
+  --bg:#e3e9ee;
+  --bg2:#edf1f4;
+  --panel:#f5f7f8;
+  --panel2:#e8edf1;
+  --line:#b9c5ce;
+  --text:#17232e;
+  --muted:#536474;
+  --teal:#16b8a3;
+  --teal2:#0f9f8c;
+  --shadow:0 8px 24px rgba(38,55,69,.10),0 1px 2px rgba(38,55,69,.08);
+  --sp-muted-readable:#536474;
+  --sf-secondary-dark:#536474;
+  --sf-secondary-dark-strong:#34495a;
+  color-scheme:light;
+}
+html[data-sf-theme="light"] body{background:#d7e0e6;color:#17232e}
+html[data-sf-theme="light"] #appShell .app{background:#e3e9ee!important;color:#17232e!important}
+html[data-sf-theme="light"] #appShell .main{background:linear-gradient(145deg,#e7ecef 0%,#dfe6eb 100%)!important}
+html[data-sf-theme="light"] #appShell .content{color:#17232e}
+
+/* App frame */
+html[data-sf-theme="light"] #appShell .sidebar{
+  background:#dce4e9!important;border-color:#b8c6d0!important;
+  box-shadow:6px 0 24px rgba(43,61,76,.08)
+}
+html[data-sf-theme="light"] #appShell .topbar{
+  background:#e8edf1!important;border-color:#bdc9d2!important;
+  box-shadow:0 4px 18px rgba(43,61,76,.08)
+}
+html[data-sf-theme="light"] #appShell .company-card{
+  background:#eef2f4!important;border-color:#b9c7d0!important;
+  box-shadow:0 3px 10px rgba(46,64,78,.07)
+}
+html[data-sf-theme="light"] #appShell .nav button{color:#405465!important}
+html[data-sf-theme="light"] #appShell .nav button:hover{background:#cfdbe2!important;color:#173f3b!important}
+html[data-sf-theme="light"] #appShell .nav button.active{
+  background:#cbe9e3!important;color:#0b6155!important;
+  box-shadow:inset 4px 0 0 #10a993!important
+}
+html[data-sf-theme="light"] #appShell .nav-group-label,
+html[data-sf-theme="light"] #appShell .side-bottom{border-color:#b9c7d0!important;color:#617382!important}
+html[data-sf-theme="light"] #appShell .avatar{background:#cbd8e1!important;color:#243d50!important}
+html[data-sf-theme="light"] #appShell .search input,
+html[data-sf-theme="light"] #appShell input,
+html[data-sf-theme="light"] #appShell select,
+html[data-sf-theme="light"] #appShell textarea{
+  background:#f4f6f7!important;border-color:#aebdc8!important;color:#17232e!important;
+  box-shadow:inset 0 1px 2px rgba(43,61,76,.05);color-scheme:light!important
+}
+html[data-sf-theme="light"] #appShell :is(input,select,textarea):focus{
+  border-color:#0f9f8c!important;box-shadow:0 0 0 3px rgba(15,159,140,.14)!important;outline:0
+}
+html[data-sf-theme="light"] #appShell input::placeholder,
+html[data-sf-theme="light"] #appShell textarea::placeholder{color:#71808d!important}
+html[data-sf-theme="light"] #appShell .kbd{background:#dce4e9!important;border-color:#b3c0ca!important;color:#4f6374!important}
+html[data-sf-theme="light"] #sfThemeToggle{background:#d5dee5!important;border-color:#aab9c5!important;color:#20394d!important}
+html[data-sf-theme="light"] #sfThemeToggle:hover{background:#c8d4dc!important;border-color:#879aa8!important}
+
+/* Reusable elevated and inset surfaces */
+html[data-sf-theme="light"] #appShell :is(
+  .card,.stat,.profile-summary,.emp,.employee-drag,.shift-chip,.absence-item,
+  [class*="sf-set-card"],[class*="sf-dashboard-card"],.absence-manage-card,.absence-summary-card,
+  .preview-kpi,.preview-panel,.auto-period-card,.sp-employee-stat
+){
+  background:#f5f7f8!important;border-color:#b9c5ce!important;color:#17232e!important;
+  box-shadow:var(--shadow)!important
+}
+html[data-sf-theme="light"] #appShell :is(
+  .section-box,.profile-metric,.sp-empty,.employee-pool,.library,.table-card,.form-card,
+  .sp-availability-wrap,.auto-period-result,.abs-calendar-days,.sollist
+){background:#e9eef1!important;border-color:#bec9d1!important;color:#243746!important}
+html[data-sf-theme="light"] #appShell :is(.emp,.employee-drag,.shift-chip,.section-box,.profile-metric,.absence-item):hover{
+  border-color:#97aab7!important;background:#edf2f4!important
+}
+html[data-sf-theme="light"] #appShell .profile-summary{background:linear-gradient(135deg,#f7f9fa,#e9eef1)!important}
+html[data-sf-theme="light"] #appShell :is(.employee-drag.selected,.shift-chip.selected,.sp-selected){
+  background:#d7eee9!important;border-color:#0fa78f!important;box-shadow:0 0 0 2px rgba(15,167,143,.14)!important
+}
+html[data-sf-theme="light"] #appShell :is(h1,h2,h3,h4,b,strong){color:#17232e}
+html[data-sf-theme="light"] #appShell :is(p,small,label,.empty){color:#536474}
+html[data-sf-theme="light"] #appShell .eyebrow{color:#087b6d!important}
+
+/* Buttons, badges and statuses */
+html[data-sf-theme="light"] #appShell :is(.ghost,.iconbtn,.seg button,.absence-action){
+  background:#e4eaee!important;border-color:#afbdc7!important;color:#34495a!important;
+  box-shadow:0 2px 6px rgba(41,59,73,.06)
+}
+html[data-sf-theme="light"] #appShell :is(.ghost,.iconbtn,.seg button,.absence-action):hover{
+  background:#d7e0e6!important;border-color:#91a3b0!important;color:#17232e!important
+}
+html[data-sf-theme="light"] #appShell .seg{border-color:#aebcc7!important}
+html[data-sf-theme="light"] #appShell .seg button.active{background:#c6d3dc!important;color:#17232e!important}
+html[data-sf-theme="light"] #appShell .primary{
+  background:#19bfa9!important;border-color:#119e8c!important;color:#062b25!important;
+  box-shadow:0 5px 14px rgba(17,158,140,.18)
+}
+html[data-sf-theme="light"] #appShell .primary:hover{background:#10ad98!important}
+html[data-sf-theme="light"] #appShell .danger{background:#f5e1e4!important;border-color:#d9aab2!important;color:#8b2f40!important}
+html[data-sf-theme="light"] #appShell .notice{background:#f2e9d5!important;border-color:#d4bb7d!important;color:#714d12!important}
+html[data-sf-theme="light"] #appShell #sfCloudState{background:#d9eee8!important;border-color:#8fc5b7!important;color:#0c6658!important}
+html[data-sf-theme="light"] #appShell :is(.pill,.tag,.pool-shift-tag,.sp-profile-chip){
+  background:#dce4e9!important;border-color:#b4c1ca!important;color:#34495a!important
+}
+html[data-sf-theme="light"] #appShell :is(.pill.good,.status.active,.sp-profile-chip.good){
+  background:#d5ebe4!important;border-color:#8bc5b5!important;color:#0b6656!important
+}
+html[data-sf-theme="light"] #appShell :is(.pill.warn,.sp-profile-chip.warn,.pool-absence.has-absence){
+  background:#f2e6cf!important;border-color:#d6b978!important;color:#775018!important
+}
+html[data-sf-theme="light"] #appShell .preview-open{
+  background:#f1e3c9!important;border-color:#d3ae68!important;color:#70460d!important
+}
+html[data-sf-theme="light"] #appShell .status.inactive{background:#e2dde4!important;color:#67566a!important}
+
+/* Schedule and calendar */
+html[data-sf-theme="light"] #appShell .calendar{background:#f2f5f6!important;border-color:#b7c4ce!important;box-shadow:var(--shadow)}
+html[data-sf-theme="light"] #appShell .cal-toolbar{background:#e2e8ec!important;border-color:#b8c5ce!important}
+html[data-sf-theme="light"] #appShell :is(.day-col,.time-col,.day-head,.time-head,.day-slot,.time-slot,.soll-day){border-color:#c5cfd6!important}
+html[data-sf-theme="light"] #appShell :is(.day-head,.time-head){background:#dce4e9!important;color:#4e6171!important}
+html[data-sf-theme="light"] #appShell .day-head b{color:#243746!important}
+html[data-sf-theme="light"] #appShell .day-body{background:#f4f6f7!important}
+html[data-sf-theme="light"] #appShell .day-col:nth-child(odd) .day-body{background:#eef2f4!important}
+html[data-sf-theme="light"] #appShell .day-col.today .day-body{background:#dff1ed!important}
+html[data-sf-theme="light"] #appShell .time-slot{background:#e5ebef!important;color:#526575!important}
+html[data-sf-theme="light"] #appShell .sollist{background:#dde5ea!important}
+html[data-sf-theme="light"] #appShell .assignment{box-shadow:0 4px 12px rgba(38,55,69,.16)!important}
+html[data-sf-theme="light"] #appShell .ass-teal{background:#167e70!important}
+html[data-sf-theme="light"] #appShell .ass-blue{background:#315f99!important}
+html[data-sf-theme="light"] #appShell .ass-amber{background:#986c25!important}
+html[data-sf-theme="light"] #appShell .ass-violet{background:#67528f!important}
+html[data-sf-theme="light"] #appShell .ass-pink{background:#94506a!important}
+html[data-sf-theme="light"] #appShell .ass-cyan{background:#277785!important}
+html[data-sf-theme="light"] #appShell .ass-red{background:#934556!important}
+
+/* Tables and list rows */
+html[data-sf-theme="light"] #appShell table{color:#243746!important}
+html[data-sf-theme="light"] #appShell table th{background:#dfe6ea!important;color:#405464!important}
+html[data-sf-theme="light"] #appShell table :is(tr,td,th){border-color:#c3cdd4!important}
+html[data-sf-theme="light"] #appShell table tbody tr{background:#f3f6f7!important}
+html[data-sf-theme="light"] #appShell table tbody tr:nth-child(even){background:#e9eef1!important}
+html[data-sf-theme="light"] #appShell :is(.absence-table-head,.absence-row-final){border-color:#c0cbd3!important}
+html[data-sf-theme="light"] #appShell .absence-row-final:nth-child(even){background:#e9eef1!important}
+
+/* Dialogs and flyouts rendered outside the manager shell */
+html[data-sf-theme="light"] :is(
+  .abs-modal,.tpl-modal,.sf-auth-card,.sf-account-card,.sp-logout-dialog,.sf-mi-modal,
+  .sf-publish-dialog,.sf-team-modal,.sp-assign-modal,.sf-help
+){
+  background:#edf1f4!important;border-color:#aebdc8!important;color:#17232e!important;
+  box-shadow:0 28px 80px rgba(35,55,75,.26)!important
+}
+html[data-sf-theme="light"] :is(.abs-modal-backdrop,.tpl-back,.sp-assign-backdrop,.sf-help-backdrop){background:rgba(40,54,65,.48)!important}
+html[data-sf-theme="light"] :is(
+  .abs-modal,.tpl-modal,.sf-auth-card,.sf-account-card,.sp-logout-dialog,.sf-mi-modal,
+  .sf-publish-dialog,.sf-team-modal,.sp-assign-modal,.sf-help
+) :is(h2,h3,h4,b,strong){color:#17232e!important}
+html[data-sf-theme="light"] :is(
+  .abs-modal,.tpl-modal,.sf-auth-card,.sf-account-card,.sp-logout-dialog,.sf-mi-modal,
+  .sf-publish-dialog,.sf-team-modal,.sp-assign-modal,.sf-help
+) :is(p,small,label,.sf-help-answer){color:#536474!important}
+html[data-sf-theme="light"] :is(
+  .abs-modal,.tpl-modal,.sf-auth-card,.sf-account-card,.sp-logout-dialog,.sf-mi-modal,
+  .sf-publish-dialog,.sf-team-modal,.sp-assign-modal,.sf-help
+) :is(input,select,textarea){background:#f7f8f9!important;border-color:#aab9c4!important;color:#17232e!important;color-scheme:light!important}
+html[data-sf-theme="light"] :is(
+  .abs-modal-head,.abs-modal-foot,.tpl-head,.tpl-foot,.sf-auth-head,.sf-auth-foot,
+  .sf-account-head,.sf-account-foot,.sp-logout-head,.sp-logout-actions,.sf-mi-head,.sf-mi-foot,
+  .sp-assign-head,.sp-assign-foot,.sf-help-head,.sf-help-foot
+){border-color:#bdc8d0!important;background:#dde5ea!important}
+html[data-sf-theme="light"] :is(.tpl-main-tabs button,.tpl-type,.tpl-row,.tpl-standard-row,.tpl-inline-note,.abs-type-card,.abs-toggle-row,.sp-assign-person,.sf-help-article){
+  background:#e3e9ed!important;border-color:#b5c2cc!important;color:#273b4b!important
+}
+html[data-sf-theme="light"] :is(.tpl-main-tabs button.active,.tpl-type.active,.abs-type-card.active,.sp-assign-person:not(.blocked):hover){
+  background:#d4ebe6!important;border-color:#159f8d!important;color:#0c5f54!important
+}
+html[data-sf-theme="light"] .sf-help-nav{background:#dbe3e8!important;border-color:#b9c5ce!important}
+html[data-sf-theme="light"] .sf-help-main{background:#eef2f4!important}
+html[data-sf-theme="light"] .sf-help-nav button{color:#405464!important}
+html[data-sf-theme="light"] .sf-help-nav button:hover,
+html[data-sf-theme="light"] .sf-help-nav button.active{background:#cce8e2!important;color:#0a6155!important}
+html[data-sf-theme="light"] .sf-help-article button{color:#1d3141!important}
+html[data-sf-theme="light"] .sf-help-article button:hover{background:#d9e2e7!important}
+
+/* Mobile keeps the same contrast hierarchy and full-size touch targets. */
+@media(max-width:760px){
+  html[data-sf-theme="light"] #appShell .topbar{background:#dce5ea!important}
+  html[data-sf-theme="light"] #appShell .main{background:#e3e9ee!important}
+  html[data-sf-theme="light"] #appShell .sf-mobile-manager-nav{
+    background:#e7ecef!important;border-color:#a9bac6!important;color:#1d3445!important;
+    box-shadow:0 2px 8px rgba(42,59,73,.08)
+  }
+  html[data-sf-theme="light"] #appShell .sf-mobile-manager-nav-icon{color:#0b8878!important}
+  html[data-sf-theme="light"] #appShell .sf-mobile-manager-nav-copy>small{color:#536879!important}
+  html[data-sf-theme="light"] #appShell .sf-mobile-nav-head{border-color:#b5c3cc!important}
+  html[data-sf-theme="light"] #appShell .sf-mobile-nav-title strong{color:#17232e!important}
+  html[data-sf-theme="light"] #appShell .sf-mobile-nav-title small{color:#536879!important}
+  html[data-sf-theme="light"] #appShell .sf-mobile-nav-close{
+    background:#e4eaee!important;border-color:#aab9c4!important;color:#273d4e!important
+  }
+  html[data-sf-theme="light"] #appShell :is(.card,.stat,.section-box,.profile-summary,.profile-metric){border-width:1px!important}
+  html[data-sf-theme="light"] #appShell :is(button,.iconbtn,.ghost,#sfThemeToggle){min-height:44px}
+}
