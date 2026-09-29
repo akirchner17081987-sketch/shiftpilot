@@ -216,6 +216,46 @@ html[data-sf-theme="light"] #appShell .preview-open{
 }
 html[data-sf-theme="light"] #appShell .status.inactive{background:#e2dde4!important;color:#67566a!important}
 
+/* Employee workspace v2 owns its surfaces at runtime, so it needs an explicit light layer. */
+html[data-sf-theme="light"] #view-employees :is(.sp-emp-list-card,.sp-emp-profile){
+  background:#f3f6f7!important;border-color:#b7c4cd!important;color:#17232e!important;
+  box-shadow:var(--shadow)!important
+}
+html[data-sf-theme="light"] #view-employees :is(.sp-profile-head,.sp-profile-tabs){border-color:#bcc8d0!important}
+html[data-sf-theme="light"] #view-employees .sp-emp-row{
+  background:#e7ecef!important;border-color:#bdc8d0!important;color:#263a49!important
+}
+html[data-sf-theme="light"] #view-employees .sp-emp-row:hover{background:#dde6ea!important;border-color:#91a5b2!important}
+html[data-sf-theme="light"] #view-employees .sp-emp-row.selected{
+  background:#d5ebe6!important;border-color:#119f8b!important;color:#173a35!important
+}
+html[data-sf-theme="light"] #view-employees .sp-emp-row small,
+html[data-sf-theme="light"] #view-employees :is(.sp-profile-head p,.sp-profile-grid label,.sp-emp-count,.sp-rhythm-section>p,.sp-rhythm-head label,.sp-rhythm-day label,.sp-cycle-hint){color:#536777!important}
+html[data-sf-theme="light"] #view-employees .sp-filter-chip{
+  background:#dce4e9!important;border-color:#b5c1ca!important;color:#405465!important
+}
+html[data-sf-theme="light"] #view-employees .sp-filter-chip.active{
+  background:#d2eae4!important;border-color:#119f8b!important;color:#0a6759!important
+}
+html[data-sf-theme="light"] #view-employees .sp-q{
+  background:#d5dee4!important;border:1px solid #b4c1ca!important;color:#354b5b!important
+}
+html[data-sf-theme="light"] #view-employees .sp-profile-tab{color:#4f6373!important}
+html[data-sf-theme="light"] #view-employees .sp-profile-tab:hover{background:#dfe6ea!important;color:#17232e!important}
+html[data-sf-theme="light"] #view-employees .sp-profile-tab.active{background:#cfe7e1!important;color:#096659!important}
+html[data-sf-theme="light"] #view-employees :is(.sp-section,.sp-kpi,.sp-rhythm-day,.sp-cycle-row){
+  background:#e6ecef!important;border-color:#b9c5ce!important;color:#243746!important
+}
+html[data-sf-theme="light"] #view-employees .sp-rhythm-day span{color:#243746!important}
+html[data-sf-theme="light"] #view-employees .sp-rhythm-summary{
+  background:#d6ebe5!important;border-color:#8bc1b4!important;color:#0b6658!important
+}
+html[data-sf-theme="light"] #view-employees .sp-warning{background:#f2e5ce!important;border-color:#d5b675!important;color:#734d13!important}
+html[data-sf-theme="light"] #view-employees .sp-ok{background:#d6ebe5!important;border-color:#8bc1b4!important;color:#0b6658!important}
+html[data-sf-theme="light"] #view-employees .sp-emp-list{scrollbar-color:#9aacb8 #dce4e9}
+html[data-sf-theme="light"] #view-employees .sp-emp-list::-webkit-scrollbar-track{background:#dce4e9!important;border-color:#bdc8d0!important}
+html[data-sf-theme="light"] #view-employees .sp-emp-list::-webkit-scrollbar-thumb{background:#9aacb8!important;border-color:#dce4e9!important}
+
 /* Schedule and calendar */
 html[data-sf-theme="light"] #appShell .calendar{background:#f2f5f6!important;border-color:#b7c4ce!important;box-shadow:var(--shadow)}
 html[data-sf-theme="light"] #appShell .cal-toolbar{background:#e2e8ec!important;border-color:#b8c5ce!important}

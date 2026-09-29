@@ -40,5 +40,7 @@ test('light appearance uses layered grey surfaces with strong contrast',()=>{
   assert.match(style,/--panel:#f5f7f8/);
   assert.match(style,/--text:#17232e/);
   assert.match(style,/\.day-col\.today \.day-body\{background:#dff1ed!important\}/);
+  assert.match(style,/#view-employees :is\(\.sp-emp-list-card,\.sp-emp-profile\)/);
+  assert.match(style,/#view-employees \.sp-emp-row\.selected/);
   assert.match(script,/value==='light'\?'#dce5ea':'#08111f'/);
 });
