@@ -1,3 +1,4 @@
+import vm from 'node:vm';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -60,4 +61,24 @@ test('mobile QR page does not accept employee id or timestamp from the browser',
   assert.match(html,/Arbeitszeit beenden/,'clock-out confirmation missing');
   assert.match(html,/Pause beginnen/);
   assert.match(html,/Pause beenden/);
+});
+
+function qrLoginHarness(){
+  const elements=new Map();const get=id=>{if(!elements.has(id))elements.set(id,{value:'',hidden:false,textContent:'',addEventListener(event,handler){this[event]=handler},replaceChildren(){},append(){}});return elements.get(id)};
+  const requests=[];
+  const script=html.match(/<script type="module">([\s\S]*?)<\/script>/)[1];
+  vm.runInNewContext(script,{document:{getElementById:get,querySelectorAll:()=>[],createElement:()=>({append(){}})},location:{search:'?t='+'0'.repeat(64)},URLSearchParams,Intl,Date,Number,fetch:async(_url,options)=>{const body=JSON.parse(options.body);requests.push(body);return{ok:true,json:async()=>body.action==='LOGIN'?{ok:true,sessionToken:'test-session'}:{ok:true,state:'READY',name:'Fiktiver Mitarbeiter',breaks:[]}}}});
+  return{get,requests,submit:()=>get('login').submit({preventDefault(){}})};
+}
+test('QR login accepts the eight-digit joining date and sends its original ISO date',async()=>{
+  const h=qrLoginHarness();h.get('personnel').value='TEST-1001';h.get('startDate').value='16102024';await h.submit();
+  assert.equal(h.requests[0].action,'LOGIN');assert.equal(h.requests[0].startDate,'2024-10-16');assert.equal(h.requests[0].personnelNo,'TEST-1001');
+  assert.equal(h.requests[1].action,'STATUS');assert.equal(h.get('startDate').value,'');assert.equal(h.get('login').hidden,true);
+  assert.match(html,/inputmode="numeric"[^>]*placeholder="TTMMJJJJ"[^>]*pattern="\[0-9\]\{8\}"[^>]*maxlength="8"/);
+});
+test('QR login validates calendar dates without any requests for invalid entries',async()=>{
+  for(const entered of ['161024','16.10.2024','31042024','29022023','00000000']){
+    const h=qrLoginHarness();h.get('startDate').value=entered;await h.submit();assert.equal(h.requests.length,0,entered);assert.ok(h.get('message').textContent);
+  }
+  const h=qrLoginHarness();h.get('startDate').value='29022024';await h.submit();assert.equal(h.requests[0].startDate,'2024-02-29');
 });
