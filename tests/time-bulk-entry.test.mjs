@@ -35,7 +35,7 @@ test('selected month drives the query and stale requests cannot overwrite it',()
   assert.match(ui,/const applied=await loadManager\(monthOverride\);if\(applied\)renderManagerRows\(\)/);
   assert.match(ui,/periodRange\(monthOverride\)/);
   assert.match(ui,/sfTimeMonthPicker'\)\?\.value!==monthOverride/);
-  assert.match(loader,/supabase-time-tracking-v1\.js'\]\.includes\(file\)\?'20260929-timeonly1'/);
+  assert.match(loader,/supabase-time-tracking-v1\.js'\]\.includes\(file\)\?'20260930-timeonly2'/);
   assert.match(loader,/time-month-picker-v1\.js'\?'20260929-customday1'/);
 });
 

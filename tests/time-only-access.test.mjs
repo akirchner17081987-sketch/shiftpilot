@@ -43,3 +43,36 @@ test('role guard loads before boot and direct navigation is restricted',()=>{
   assert.match(read('index.html'),/function switchView\(name\)\{if\(window.SFBackend\?\.role==='TIME_TRACKING'\)name='time'/);
   assert.match(read('assets/time-workspace-v2.js'),/if\(B.role==='TIME_TRACKING'&&next!=='entries'\)return/);
 });
+
+test('cold login and subsequent reload use the restricted core boot',async()=>{
+  const {B,calls,context}=harness();
+  B.role=null;B.ready=false;
+  context.localStorage={getItem:()=>null,removeItem(){throw new Error('must not clear legacy data')}};
+  B.showLoading=()=>{};B.hideLoading=()=>{};
+  B.ensureCompany=async()=>{B.companyId='company-a';B.role='TIME_TRACKING'};
+  B.client.from=table=>{throw new Error('unexpected table access: '+table)};
+  vm.runInNewContext(read('assets/supabase-data-v1.js'),context);
+  for(let i=0;i<2;i++){
+    assert.equal(await B.boot({user:{id:'fixture'}}),true);
+    assert.equal(B.ready,true);assert.equal(B.role,'TIME_TRACKING');
+  }
+  await B.hydrate();
+  assert.equal(calls.filter(x=>x[0]==='time_access_context').length,3);
+  assert.equal(B.storeBridged,undefined);
+});
+
+test('service worker refreshes auth and role scripts despite cached HTTP assets',async()=>{
+  const events={},requests=[],cacheWrites=[];
+  const cache={match:async()=>({stale:true}),put:(request,response)=>cacheWrites.push(request.url)};
+  const fresh={ok:true,headers:{get:()=>''},clone(){return this}};
+  const context={URL,Response,console,self:{location:{origin:'https://example.invalid'},addEventListener:(type,fn)=>events[type]=fn},
+    caches:{open:async()=>cache},fetch:async(request,options)=>{requests.push(options);return fresh}};
+  vm.runInNewContext(read('schichtfunk-sw.js'),context);
+  for(const file of ['conflict-plausibility-v1','supabase-auth-v1','supabase-data-v1','time-only-access-v1']){
+    let response;
+    events.fetch({request:{method:'GET',url:'https://example.invalid/assets/'+file+'.js?v=old',mode:'cors'},respondWith:p=>response=p,
+      waitUntil(){throw new Error('must not serve stale role scripts')}});
+    assert.equal(await response,fresh);
+  }
+  assert.equal(cacheWrites.length,4);assert.ok(requests.every(x=>x.cache==='no-cache'));
+});

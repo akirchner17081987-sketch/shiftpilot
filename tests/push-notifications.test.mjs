@@ -57,7 +57,7 @@ test('production PWA and push flows use the canonical SchichtFunk origin', () =>
   assert.match(push, /canonicalHost/);
   assert.match(push, /Push für schichtfunk\.de aktivieren/);
   assert.match(push, /Push-Abos der bisherigen Vorschau-Adresse können nicht übertragen werden/);
-  assert.match(worker, /schichtfunk-shell-v6/);
+  assert.match(worker, /schichtfunk-shell-v7/);
 });
 
 test('push hardening preserves QR camera and PWA capabilities', () => {
