@@ -41,7 +41,31 @@ test('role guard loads before boot and direct navigation is restricted',()=>{
   const loader=read('assets/conflict-plausibility-v1.js');assert.ok(loader.indexOf("'assets/time-only-access-v1.js'")<loader.indexOf("'assets/supabase-time-month-close-v1.js'"));
   const data=read('assets/supabase-data-v1.js');assert.ok(data.indexOf("if(B.role==='TIME_TRACKING')")<data.indexOf('await B.importLegacy();await B.hydrate()'));
   assert.match(read('index.html'),/function switchView\(name\)\{if\(window.SFBackend\?\.role==='TIME_TRACKING'\)name='time'/);
-  assert.match(read('assets/time-workspace-v2.js'),/if\(B.role==='TIME_TRACKING'&&next!=='entries'\)return/);
+  assert.match(read('assets/time-workspace-v2.js'),/if\(B.role==='TIME_TRACKING'&&next==='account'\)return/);
+});
+
+test('restricted workspace opens QR bookings but keeps accounts and terminal management blocked',async()=>{
+  const nodes=new Map(),timers=[],calls=[],storage=new Map();
+  function element(){
+    const classes=new Set();
+    return {dataset:{},attrs:{},children:[],classList:{toggle(k,on){on?classes.add(k):classes.delete(k)},contains:k=>classes.has(k)},
+      setAttribute(k,v){this.attrs[k]=v},appendChild(node){this.children.push(node);if(node.id)nodes.set(node.id,node)},
+      set innerHTML(value){this.children=[...value.matchAll(/data-time-mode="([^"]+)"/g)].map(match=>Object.assign(element(),{dataset:{timeMode:match[1]}}))},
+      querySelectorAll:()=>nodes.get('sfTimeWorkspaceTabs')?.children||[],
+      querySelector(selector){return this.children.find(node=>selector.includes(node.dataset.timeMode))||null}};
+  }
+  const view=element(),head=element();view.querySelector=()=>head;nodes.set('view-time',view);
+  const B={role:'TIME_TRACKING',qrIndependentReport:{refresh:async()=>calls.push('report')},qrTerminalAdmin:{refresh:async()=>calls.push('terminal')},timeAccounts:{refreshManager:async()=>calls.push('account')}};
+  const document={head:element(),documentElement:{},getElementById:id=>nodes.get(id)||null,createElement:element,
+    querySelector:()=>null,querySelectorAll:()=>nodes.get('sfTimeWorkspaceTabs')?.children||[],addEventListener(){}};
+  vm.runInNewContext(read('assets/time-workspace-v2.js'),{window:{SFBackend:B},document,sessionStorage:{getItem:()=>null,setItem:(k,v)=>storage.set(k,v)},
+    MutationObserver:class{observe(){}},setTimeout:fn=>timers.push(fn),requestAnimationFrame:fn=>fn(),console});
+  await timers[0]();
+  const tabs=nodes.get('sfTimeWorkspaceTabs'),qr=tabs.children.find(b=>b.dataset.timeMode==='qr'),account=tabs.children.find(b=>b.dataset.timeMode==='account');
+  assert.equal(qr.textContent,'QR-Erfassung');assert.notEqual(qr.disabled,true);assert.equal(account.disabled,true);
+  await qr.onclick();assert.equal(storage.get('sf.time.mode'),'qr');assert.equal(view.classList.contains('sf-tw-qr'),true);assert.deepEqual(calls,['report']);
+  await account.onclick();assert.equal(storage.get('sf.time.mode'),'qr');assert.deepEqual(calls,['report']);
+  assert.match(nodes.get('sfTimeWorkspaceV2Css').textContent,/\.sf-tw-qr>\.card:not\(#sfQrTerminalAdmin\):not\(#sfQrIndependentReport\)/);
 });
 
 test('cold login and subsequent reload use the restricted core boot',async()=>{

@@ -3,11 +3,11 @@
   const B=window.SFBackend=window.SFBackend||{};
   if(B.__timeOnlyAccess)return;B.__timeOnlyAccess=true;
   const restricted=()=>B.role==='TIME_TRACKING';
-  const blockedSelector='[data-view]:not([data-view="time"]),#globalSearch,#newTemplateBtn,#sfTimeWorkspaceTabs [data-time-mode]:not([data-time-mode="entries"])';
+  const blockedSelector='[data-view]:not([data-view="time"]),#globalSearch,#newTemplateBtn,#sfTimeWorkspaceTabs [data-time-mode="account"]';
   const css=document.createElement('style');css.textContent=`
     body.sf-time-only .view:not(#view-time){display:none!important}
     body.sf-time-only [data-view]:not([data-view="time"]),body.sf-time-only #newTemplateBtn,body.sf-time-only #globalSearch,body.sf-time-only #sfTimeWorkspaceTabs button:disabled{opacity:.35!important;filter:grayscale(1);cursor:not-allowed!important;transform:none!important}
-    body.sf-time-only .sf-notify-wrap,body.sf-time-only #sfNotifyPanel,body.sf-time-only #sfTimeAccounts,body.sf-time-only #sfQrTerminalAdmin{display:none!important}
+    body.sf-time-only .sf-notify-wrap,body.sf-time-only #sfNotifyPanel,body.sf-time-only #sfTimeAccounts,body.sf-time-only #view-time #sfQrTerminalAdmin{display:none!important}
   `;document.head.appendChild(css);
   function apply(){
     const on=restricted();document.body.classList.toggle('sf-time-only',on);
@@ -44,7 +44,7 @@
   const hydrate=B.hydrate;B.hydrate=async function(){return restricted()?B.hydrateTimeOnly():hydrate.apply(this,arguments)};
   for(const key of ['sync','importLegacy']){const original=B[key];if(typeof original==='function')B[key]=function(){if(restricted())return Promise.resolve();return original.apply(this,arguments)};}
   const open=B.baseOpenApp;B.baseOpenApp=function(view){const result=open.call(this,restricted()?'time':view);apply();return result};
-  const update=B.updateState;B.updateState=function(){const result=update?.apply(this,arguments);apply();return result};
+  const update=B.updateState;B.updateState=function(){const result=update?.apply(this,arguments);apply();if(B.ready&&restricted())B.qrIndependentReport?.refresh?.();return result};
   document.addEventListener('click',e=>{if(restricted()&&e.target.closest?.(blockedSelector)){e.preventDefault();e.stopImmediatePropagation();B.pendingView='time';}},true);
   document.addEventListener('keydown',e=>{if(restricted()&&(e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();e.stopImmediatePropagation();}},true);
   let queued=false;new MutationObserver(()=>{if(queued)return;queued=true;queueMicrotask(()=>{queued=false;apply()})}).observe(document.body,{childList:true,subtree:true});
