@@ -21,10 +21,17 @@ test('new terminal token is only consumed through the returned QR path',()=>{
 });
 
 test('manager can save and print the generated QR code',()=>{
-  assert.match(admin,/qrcode@1\.5\.4\/build\/qrcode\.min\.js/);
+  assert.match(admin,/\/assets\/vendor\/qrcode-1\.5\.4\.min\.js/);
+  assert.ok(fs.statSync(new URL('../assets/vendor/qrcode-1.5.4.min.js',import.meta.url)).size>1000);
   assert.match(admin,/PNG speichern/);
   assert.match(admin,/Drucken/);
   assert.match(admin,/toDataURL\('image\/png'\)/);
+});
+
+test('manager loads the current code from the server each time',()=>{
+  assert.match(admin,/manager_get_time_qr_terminal_qr_path/);
+  assert.doesNotMatch(admin,/sessionStorage/);
+  assert.doesNotMatch(admin,/knownQrPath/);
 });
 
 test('dispatcher and planner receive read-only QR terminal controls',()=>{
@@ -37,7 +44,7 @@ test('dispatcher and planner receive read-only QR terminal controls',()=>{
 });
 
 test('QR terminal UI and role guard are loaded by the existing integration loader',()=>{
-  assert.match(nav,/supabase-qr-terminal-admin-v1\.js\?v=20260908-1/);
+  assert.match(nav,/supabase-qr-terminal-admin-v1\.js\?v=20260929-2/);
   assert.match(nav,/supabase-qr-terminal-role-guard-v1\.js\?v=20260908-1/);
 });
 
