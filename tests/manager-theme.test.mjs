@@ -9,7 +9,7 @@ const style=fs.readFileSync(new URL('../assets/manager-theme-v1.css',import.meta
 test('manager topbar exposes an accessible appearance toggle in the former legacy action slot',()=>{
   assert.match(index,/id="sfThemeToggle"/);
   assert.match(index,/aria-label="Zum hellen Modus wechseln"/);
-  assert.match(index,/manager-theme-v1\.css\?v=20260929-1/);
+  assert.match(index,/manager-theme-v1\.css\?v=20260929-2/);
   assert.match(index,/manager-theme-v1\.js\?v=20260929-1/);
   assert.doesNotMatch(index,/<button class="iconbtn">♧<\/button>/);
 });
