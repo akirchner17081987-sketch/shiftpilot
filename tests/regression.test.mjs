@@ -303,6 +303,10 @@ test('production responses are protected by restrictive security headers', () =>
   assert.match(values['Permissions-Policy'], /camera=\(self\)/);
 });
 
+test('Vercel backup publishes the generated static site', () => {
+  assert.equal(vercelConfig.outputDirectory, 'dist');
+});
+
 test('all JavaScript assets pass the Node syntax check', () => {
   const scripts = [...index.matchAll(/<script\b[^>]+src=["']([^"']+\.js)(?:\?[^"']*)?["']/gi)]
     .map(match => match[1])
