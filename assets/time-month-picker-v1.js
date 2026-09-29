@@ -10,6 +10,7 @@
 
   const pad=n=>String(n).padStart(2,'0');
   const currentMonth=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:B.companyTimeZone||'Europe/Berlin',year:'numeric',month:'2-digit'}).format(new Date());
+  const currentDay=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:B.companyTimeZone||'Europe/Berlin',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
   const validMonth=v=>/^\d{4}-(0[1-9]|1[0-2])$/.test(String(v||''));
   const storedMonth=()=>{try{const v=sessionStorage.getItem(KEY);return validMonth(v)?v:currentMonth()}catch{return currentMonth()}};
   const saveMonth=v=>{try{sessionStorage.setItem(KEY,v)}catch{}};
@@ -57,6 +58,7 @@
     const monthOption=[...select.options].find(o=>o.value==='month');
     if(monthOption)monthOption.textContent='Gesamter Monat';
     if(!select.querySelector('option[value=\"day\"]')){const option=document.createElement('option');option.value='day';option.textContent='Aktueller Tag';select.prepend(option);select.value='day'}
+    if(!select.querySelector('option[value=\"custom\"]')){const option=document.createElement('option');option.value='custom';option.textContent='Benutzerdefiniertes Datum';select.appendChild(option)}
     const dayOption=[...select.options].find(o=>o.value==='day'),weekOption=[...select.options].find(o=>o.value==='week');
     if(dayOption)dayOption.textContent='Aktueller Tag';if(weekOption)weekOption.textContent='Aktuelle KW';
 
@@ -78,6 +80,11 @@
       monthField.innerHTML='<span>Monat auswählen</span><input id="sfTimeMonthPicker" type="month" aria-label="Monat für Zeiterfassung auswählen">';
       controls.appendChild(monthField);
 
+      const customField=document.createElement('label');customField.className='sf-time-period-field';customField.id='sfTimeCustomDateField';
+      customField.innerHTML='<span>Datum auswählen</span><input id=\"sfTimeCustomDate\" type=\"date\" aria-label=\"Benutzerdefiniertes Datum für Zeiterfassung\">';controls.appendChild(customField);
+      const customDate=document.getElementById('sfTimeCustomDate');customDate.value=currentDay();
+      customDate.addEventListener('change',()=>window.renderTimeTracking?.());
+
       const hint=document.createElement('span');
       hint.className='sf-time-period-hint';
       hint.id='sfTimePeriodHint';
@@ -86,7 +93,8 @@
 
     const monthField=document.getElementById('sfTimeMonthField'),hint=document.getElementById('sfTimePeriodHint');
     if(monthField)monthField.hidden=select.value!=='month';
-    if(hint)hint.textContent=select.value==='day'?'Inklusive vollständiger Nachtschichten':select.value==='week'?'Montag bis Sonntag · inklusive Nachtschichten':'';
+    const customField=document.getElementById('sfTimeCustomDateField');if(customField)customField.hidden=select.value!=='custom';
+    if(hint)hint.textContent=(select.value==='day'||select.value==='custom')?'Inklusive vollständiger Nachtschichten':select.value==='week'?'Montag bis Sonntag · inklusive Nachtschichten':'';
     const picker=document.getElementById('sfTimeMonthPicker');
     if(picker&&!validMonth(picker.value))picker.value=storedMonth();
 

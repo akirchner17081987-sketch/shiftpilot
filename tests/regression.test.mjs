@@ -689,8 +689,8 @@ test('month picker wraps the shared time renderer only once', () => {
   const monthPicker = read('assets/time-month-picker-v1.js');
   const brandCleanup = read('assets/schichtfunk-brand-cleanup-v2.js');
   assert.match(monthPicker, /if\(wrapper\|\|typeof current!==['"]function['"]\)return/);
-  assert.match(moduleLoader, /time-month-picker-v1\.js'\?'20260929-periods1'/);
-  assert.match(brandCleanup, /time-month-picker-v1\.js\?v=20260929-periods1/);
+  assert.match(moduleLoader, /time-month-picker-v1\.js'\?'20260929-customday1'/);
+  assert.match(brandCleanup, /time-month-picker-v1\.js\?v=20260929-customday1/);
   assert.doesNotMatch(index, /schichtfunk-brand-cleanup-v2\.js(?:"|\?v=20260906-accounttabs1)/);
 });
 

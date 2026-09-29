@@ -4,11 +4,11 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 const source=fs.readFileSync(new URL('../assets/supabase-time-tracking-v1.js',import.meta.url),'utf8');
 function harness(now='2026-09-29T20:15:00Z'){
-  const mode={value:'day'},month={value:'2026-09'},B={companyTimeZone:'Europe/Berlin'};
+  const mode={value:'day'},month={value:'2026-09'},custom={value:'2026-08-15'},B={companyTimeZone:'Europe/Berlin'};
   class Clock extends Date{constructor(...args){super(...(args.length?args:[now]))}static now(){return new Date(now).getTime()}}
   const code=source.replace('B.timeTracking={refreshManager:renderManager,refreshEmployee:augmentEmployee}', 'B.timeTracking={periodRange,rowInPeriod,loadManager,rows:()=>managerRows}');
-  vm.runInNewContext(code,{window:{SFBackend:B},document:{getElementById:id=>id==='timePeriod'?mode:id==='sfTimeMonthPicker'?month:null,addEventListener(){}},Date:Clock,Intl,Map,Set,Number,String,Math,setTimeout(){},console});
-  return{B,mode,month,api:B.timeTracking};
+  vm.runInNewContext(code,{window:{SFBackend:B},document:{getElementById:id=>id==='timePeriod'?mode:id==='sfTimeMonthPicker'?month:id==='sfTimeCustomDate'?custom:null,addEventListener(){}},Date:Clock,Intl,Map,Set,Number,String,Math,setTimeout(){},console});
+  return{B,mode,month,custom,api:B.timeTracking};
 }
 const row=(start,end)=>({starts_at:start,ends_at:end});
 test('current day includes whole nights on both sides and excludes yesterday daytime',()=>{
@@ -43,4 +43,16 @@ test('server lookback includes prior night but rows and bulk actions only get ov
   const {api,B}=harness();B.role='OWNER';B.companyId='fixture';let params;
   B.client={rpc:async(_name,args)=>{params=args;return{data:[row('2026-09-28T06:00:00+02:00','2026-09-28T16:00:00+02:00'),row('2026-09-28T22:00:00+02:00','2026-09-29T08:00:00+02:00'),row('2026-09-29T22:00:00+02:00','2026-09-30T08:00:00+02:00')]}}};
   await api.loadManager();assert.equal(params.p_start_date,'2026-09-27');assert.equal(params.p_end_date,'2026-09-30');assert.equal(api.rows().length,2);
+});
+
+test('custom date shows both whole overnight shifts for the chosen historical day',async()=>{
+  const {api,B,mode,custom}=harness();mode.value='custom';custom.value='2026-08-15';const range=api.periodRange();
+  assert.equal(range.start,'2026-08-15');assert.equal(range.end,'2026-08-15');
+  assert.ok(api.rowInPeriod(row('2026-08-14T22:00:00+02:00','2026-08-15T08:00:00+02:00'),range));
+  assert.ok(api.rowInPeriod(row('2026-08-15T22:00:00+02:00','2026-08-16T08:00:00+02:00'),range));
+  assert.ok(!api.rowInPeriod(row('2026-08-14T06:00:00+02:00','2026-08-14T16:00:00+02:00'),range));
+  B.role='OWNER';B.companyId='fixture';let params;B.client={rpc:async(_name,args)=>{params=args;return{data:[]}}};
+  await api.loadManager();assert.equal(params.p_start_date,'2026-08-13');assert.equal(params.p_end_date,'2026-08-16');
+  custom.value='';assert.equal(api.periodRange(),null);await api.loadManager();assert.equal(params.p_start_date,'2026-08-13');
+  custom.value='2026-02-30';assert.equal(api.periodRange(),null);
 });
