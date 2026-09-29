@@ -4,9 +4,9 @@ import { demoExitControl, primeDemoSession, waitForDemoReady } from './helpers/d
 test('ending the demo opens the responsive completion page', async ({ page }) => {
   let signedOut=false;
   await primeDemoSession(page);
-  await page.route('**/api/demo-auth', async route => {
-    if(route.request().method()==='DELETE'){signedOut=true;await route.fulfill({status:200,contentType:'application/json',body:'{"ok":true}'});return}
-    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({expiresAt:new Date(Date.now()+3_600_000).toISOString()})});
+  await page.route('**/demo-auth', async route => {
+    if(route.request().method()==='DELETE'){signedOut=true;await route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},status:200,contentType:'application/json',body:'{"ok":true}'});return}
+    await route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},status:200,contentType:'application/json',body:JSON.stringify({expiresAt:new Date(Date.now()+3_600_000).toISOString()})});
   });
   await page.goto('/demo');
   await waitForDemoReady(page);

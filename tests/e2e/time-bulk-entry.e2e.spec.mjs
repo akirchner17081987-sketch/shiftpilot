@@ -5,14 +5,29 @@ const demoUrl=()=>process.env.E2E_BASE_URL?.startsWith('http://localhost')?'/dem
 
 test('manager records all eligible open times in one guarded action',async({page})=>{
   await primeDemoSession(page);
-  await page.route('**/api/demo-auth',async route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({expiresAt:new Date(Date.now()+3_600_000).toISOString()})}));
-  await page.route('**/api/demo-analytics',async route=>route.fulfill({status:204,body:''}));
+  await page.route('**/demo-auth',async route=>route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},status:200,contentType:'application/json',body:JSON.stringify({expiresAt:new Date(Date.now()+3_600_000).toISOString()})}));
+  await page.route('**/demo-analytics',async route=>route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},status:204,body:''}));
   const demoPath=demoUrl();
   await page.goto(demoPath);
   await waitForDemoReady(page);
+  // The demo week follows the real calendar. Move its open example into a
+  // completed, fixed month so this guard test remains valid on every weekday.
+  await page.evaluate(()=>{
+    const key='sf_demo_time_tracking_v2';
+    const rows=JSON.parse(sessionStorage.getItem(key)||'[]');
+    const open=rows.find(row=>row.entry_status==='open'&&!row.actual_start&&!row.actual_end);
+    if(!open)throw new Error('Open demo time entry is missing.');
+    Object.assign(open,{
+      starts_at:'2026-09-01T07:00:00+02:00',
+      ends_at:'2026-09-01T15:00:00+02:00',
+      actual_start:null,
+      actual_end:null,
+      actual_break_minutes:null
+    });
+    sessionStorage.setItem(key,JSON.stringify(rows));
+  });
   await openManagerArea(page,'time');
-  const currentMonth=await page.evaluate(()=>new Date().toISOString().slice(0,7));
-  await page.locator('#sfTimeMonthPicker').fill(currentMonth);
+  await page.locator('#sfTimeMonthPicker').fill('2026-09');
   await page.locator('#sfTimeMonthPicker').dispatchEvent('change');
 
   const bulk=page.locator('#sfTimeBulkOpen');
@@ -38,8 +53,8 @@ test('manager records all eligible open times in one guarded action',async({page
 
 test('historical month selection wins over an older in-flight request',async({page})=>{
   await primeDemoSession(page);
-  await page.route('**/api/demo-auth',async route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({expiresAt:new Date(Date.now()+3_600_000).toISOString()})}));
-  await page.route('**/api/demo-analytics',async route=>route.fulfill({status:204,body:''}));
+  await page.route('**/demo-auth',async route=>route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},status:200,contentType:'application/json',body:JSON.stringify({expiresAt:new Date(Date.now()+3_600_000).toISOString()})}));
+  await page.route('**/demo-analytics',async route=>route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},status:204,body:''}));
   const demoPath=demoUrl();
   await page.goto(demoPath);
   await waitForDemoReady(page);
@@ -61,8 +76,8 @@ test('historical month selection wins over an older in-flight request',async({pa
 
 test('selected month remains readable while the native month input is focused',async({page})=>{
   await primeDemoSession(page);
-  await page.route('**/api/demo-auth',async route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({expiresAt:new Date(Date.now()+3_600_000).toISOString()})}));
-  await page.route('**/api/demo-analytics',async route=>route.fulfill({status:204,body:''}));
+  await page.route('**/demo-auth',async route=>route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},status:200,contentType:'application/json',body:JSON.stringify({expiresAt:new Date(Date.now()+3_600_000).toISOString()})}));
+  await page.route('**/demo-analytics',async route=>route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},status:204,body:''}));
   await page.goto(demoUrl());
   await waitForDemoReady(page);
   await openManagerArea(page,'time');

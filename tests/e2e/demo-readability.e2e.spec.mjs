@@ -3,8 +3,8 @@ import { demoPerspectiveSwitch, primeDemoSession, waitForDemoReady } from './hel
 
 test('demo readability is applied to manager and employee perspectives', async ({ page }, testInfo) => {
   await primeDemoSession(page);
-  await page.route('**/api/demo-auth', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
+  await page.route('**/demo-auth', async route => {
+    await route.fulfill({headers:{'Access-Control-Allow-Origin':'*'}, status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
   });
   await page.goto('/demo');
   await waitForDemoReady(page);
@@ -30,8 +30,8 @@ test('demo readability is applied to manager and employee perspectives', async (
     mainWidth:portal.querySelector('.sf-portal-main').getBoundingClientRect().width,
     overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,
   }));
-  expect(employee.welcome).toBeGreaterThanOrEqual(testInfo.project.name.startsWith('mobile')?23:34);
-  expect(employee.tileHelp).toBeGreaterThanOrEqual(testInfo.project.name.startsWith('mobile')?9:11);
+  expect(employee.welcome).toBeGreaterThanOrEqual(testInfo.project.name.startsWith('mobile')?28:34);
+  expect(employee.tileHelp).toBeGreaterThanOrEqual(11);
   expect(employee.mainWidth).toBeGreaterThan(250);
   expect(employee.overflow).toBeLessThanOrEqual(1);
 });

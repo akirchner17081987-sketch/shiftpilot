@@ -1,5 +1,5 @@
-// SchichtFunk – sicherer PWA App-Shell + Web Push Service Worker V5
-const CACHE='schichtfunk-shell-v5';
+// SchichtFunk – sicherer PWA App-Shell + Web Push Service Worker V6
+const CACHE='schichtfunk-shell-v6';
 const STATIC=[
   '/index.html',
   '/site.webmanifest',

@@ -10,7 +10,7 @@
   const DEMO_USER='Demo Administrator';
   const PERSPECTIVE_KEY='sf_demo_perspective_v1';
   const DATA_PREFIX='sf_demo_data_';
-  const READY_TIMEOUT_MS=12000;
+  const READY_TIMEOUT_MS=30000;
   let preparationStarted=false;
   const pad=n=>String(n).padStart(2,'0');
   const localIso=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
@@ -183,8 +183,8 @@
 
   function finishDemo(target,reason){
     document.dispatchEvent(new CustomEvent('sf:demo-finish',{detail:{reason}}));
+    window.SFDemoAPI?.fetchAuth({method:'DELETE',keepalive:true}).catch(()=>{});
     clearLocalDemo();
-    fetch('/api/demo-auth',{method:'DELETE',credentials:'same-origin',keepalive:true}).catch(()=>{});
     location.replace(target);
   }
   function exitDemo(){finishDemo('/demo-abschluss','manual')}
@@ -216,7 +216,7 @@
     try{employees=readDemo('employees',employees);assignments=readDemo('assignments',assignments);absences=readDemo('absences',absences);globalSoll=readDemo('globalSoll',globalSoll);dailySoll=readDemo('dailySoll',dailySoll);timeEntries=readDemo('timeEntries',timeEntries)}catch(err){console.error('SchichtFunk Demo Snapshot',err)}
   }
   function controlsReady(){
-    return document.querySelectorAll('[data-demo-perspective]').length>=2&&!!(document.querySelector('[data-demo-scenarios]')&&document.getElementById('sfDemoResetBtn')&&document.getElementById('sfDemoExitBtn')&&document.getElementById('sfDemoBadge'));
+    return document.querySelectorAll('[data-demo-perspective]').length>=2&&!!(document.querySelector('[data-demo-scenarios]')&&document.getElementById('sfDemoExitBtn')&&document.getElementById('sfDemoBadge'));
   }
   const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
   async function nextPaint(){await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))}
@@ -261,12 +261,13 @@
 
   async function authorizeThenStart(){
     try{
-      const response=await fetch('/api/demo-auth',{cache:'no-store',credentials:'same-origin'});
+      const response=await window.SFDemoAPI.fetchAuth();
       if(!response.ok)throw new Error('expired');
       const result=await response.json();
       if(result.expiresAt)sessionStorage.setItem('sf_demo_expires_at_v1',result.expiresAt);
       start();
-    }catch{
+    }catch(err){
+      console.error('SchichtFunk Demo Start',err);
       clearLocalDemo();
       location.replace('/demo?expired=1');
     }

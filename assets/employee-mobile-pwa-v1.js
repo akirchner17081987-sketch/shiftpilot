@@ -25,7 +25,7 @@
         #sfEmployeePortal .sf-portal-main{left:0!important;right:0!important;top:var(--sf-employee-head)!important;bottom:calc(68px + env(safe-area-inset-bottom))!important;padding:16px 13px 28px!important;overflow-y:auto!important;overflow-x:hidden!important;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;scrollbar-gutter:auto!important}
         #sfEmployeePortal .sf-portal-welcome{display:block!important;margin:0 0 12px!important}
         #sfEmployeePortal:not([data-sf-portal-active="dashboard"]) .sf-portal-welcome{display:none!important}
-        #sfEmployeePortal .sf-portal-welcome h1{font-size:23px!important;line-height:1.15!important;margin:3px 0 5px!important}
+        #sfEmployeePortal .sf-portal-welcome h1{font-size:28px!important;line-height:1.15!important;margin:3px 0 5px!important}
         #sfEmployeePortal .sf-portal-welcome p{font-size:11px!important;line-height:1.45!important}
         #sfEmployeePortal .sf-portal-stats{display:flex!important;grid-template-columns:none!important;gap:10px!important;margin:12px -13px 16px!important;padding:0 13px 3px!important;overflow-x:auto!important;scroll-snap-type:x proximity;scrollbar-width:none}
         #sfEmployeePortal:not([data-sf-portal-active="dashboard"]) .sf-portal-stats{display:none!important}

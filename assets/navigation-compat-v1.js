@@ -81,8 +81,8 @@
   // Einheitliche SchichtFunk-Scrollleisten in Darkmode + Teal statt Browser-Standard.
   loadStyle('/assets/schichtfunk-scrollbars-v1.css?v=20260911-1','data-sf-scrollbars');
 
-  loadIntegration('/assets/o1s-integration-v1.js?v=20260904-1','data-sf-o1s-integration');
-  loadIntegration('/assets/qa-integration-v1.js?v=20260904-1','data-sf-qa-integration');
+  loadIntegration('/assets/o1s-integration-v1.js?v=20260912-marketplace1','data-sf-o1s-integration');
+  loadIntegration('/assets/qa-integration-v1.js?v=20260912-marketplace1','data-sf-qa-integration');
   loadIntegration('/assets/calendar-view-switch-v1.js?v=20260904-1','data-sf-calendar-view');
   loadIntegration('/assets/publish-dialog-design-v1.js?v=20260904-1','data-sf-publish-dialog-design');
   loadIntegration('/assets/demo-reset-v1.js?v=20260906-absences1','data-sf-demo-reset');
@@ -106,13 +106,13 @@
   // Feinschliff: Safe Areas, Tastatur, Offline-Status, Fokusführung, Scrollpositionen und breite Inhalte.
   loadIntegration('/assets/employee-mobile-pwa-polish-v2.js?v=20260911-1','data-sf-employee-mobile-pwa-polish');
   // Visueller iPhone-Feinschliff nach Geräteabnahme: vollständige KPI-Karten und mehr Abstand zur Bottom-Navigation.
-  loadStyle('/assets/employee-mobile-pwa-visual-fix-v1.css?v=20260911-1','data-sf-employee-mobile-visual-fix');
+  loadStyle('/assets/employee-mobile-pwa-visual-fix-v1.css?v=20260917-compact2','data-sf-employee-mobile-visual-fix');
 
   // Echte Browser-/PWA-Push-Mitteilungen auf Basis der bestehenden Benachrichtigungszentrale.
-  loadIntegration('/assets/push-notifications-v1.js?v=20260910-4','data-sf-push-notifications');
+  loadIntegration('/assets/push-notifications-v1.js?v=20260917-domain1','data-sf-push-notifications');
 
   // QR-Zeiterfassung: Objekt-Terminals mit allgemeinem Betrieb oder optionalem Pilotmodus.
-  loadIntegration('/assets/supabase-qr-terminal-admin-v1.js?v=20260908-1','data-sf-qr-terminal-admin');
+  loadIntegration('/assets/supabase-qr-terminal-admin-v1.js?v=20260929-3','data-sf-qr-terminal-admin');
   loadIntegration('/assets/supabase-qr-terminal-role-guard-v1.js?v=20260908-1','data-sf-qr-terminal-role-guard');
   loadIntegration('/assets/supabase-qr-pilot-guard-v1.js?v=20260910-1','data-sf-qr-pilot-guard');
 

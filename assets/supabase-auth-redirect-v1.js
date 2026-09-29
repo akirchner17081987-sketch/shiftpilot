@@ -1,7 +1,7 @@
 // SchichtFunk – feste Supabase Auth-Weiterleitung auf Produktion
 (function(){
   const B=window.SFBackend=window.SFBackend||{};
-  B.productionUrl='https://shiftpilot-two.vercel.app/';
+  B.productionUrl='https://schichtfunk.de/';
   const baseInit=B.init;
   if(typeof baseInit!=='function') return;
   B.init=async function(){

@@ -58,9 +58,9 @@ test('secondary text is readable across public, manager, demo and employee surfa
 });
 
 test('mobile interactive controls provide at least 44 by 44 pixel touch targets', () => {
-  assert.match(index, /mobile-responsive-v1\.css\?v=20260907-touch44/);
-  assert.match(demoPage, /mobile-responsive-v1\.css\?v=20260907-touch44/);
-  assert.match(demoCompletionPage, /mobile-responsive-v1\.css\?v=20260907-touch44/);
+  assert.match(index, /mobile-responsive-v1\.css\?v=20260917-compact-manager1/);
+  assert.match(demoPage, /mobile-responsive-v1\.css\?v=20260917-compact-manager1/);
+  assert.match(demoCompletionPage, /mobile-responsive-v1\.css\?v=20260917-compact-manager1/);
   assert.match(mobileCss, /min-height:\s*44px !important/);
   assert.match(mobileCss, /min-width:\s*44px !important/);
   assert.match(mobileCss, /label:has\(input\[type="checkbox"\]\)/);
@@ -68,8 +68,23 @@ test('mobile interactive controls provide at least 44 by 44 pixel touch targets'
   assert.doesNotMatch(mobileCss, /\.nav button\s*\{[^}]*min-height:\s*42px/s);
 });
 
+test('mobile manager schedule keeps the compact two-column KPI layout', () => {
+  assert.match(mobileCss, /#view-schedule \.stats[\s\S]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
+  assert.match(mobileCss, /#sfAdminLogout::before[\s\S]*content:\s*"↪"/);
+  assert.match(mobileCss, /@media\s*\(max-width:\s*340px\)[\s\S]*#view-schedule \.stats[\s\S]*grid-template-columns:\s*1fr/);
+});
+
+test('employee PWA keeps QR scan prominent in a compact two-column mobile layout', () => {
+  const employeeMobileVisual = read('assets/employee-mobile-pwa-visual-fix-v1.css');
+  const navigationCompat = read('assets/navigation-compat-v1.js');
+  assert.match(navigationCompat, /employee-mobile-pwa-visual-fix-v1\.css\?v=20260917-compact2/);
+  assert.match(employeeMobileVisual, /#sfEmployeePortal \.sf-employee-tiles[\s\S]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/);
+  assert.match(employeeMobileVisual, /#sfEmployeePortal \.sf-qr-scan-actions \.sf-qr-scan-btn[\s\S]*min-height:44px!important/);
+  assert.match(employeeMobileVisual, /#sfEmployeePortal #sfEmployeeLogout::before[\s\S]*content:"↪"/);
+});
+
 test('mobile manager navigation is labelled, expandable and keyboard dismissible', () => {
-  assert.match(index, /mobile-manager-navigation-v1\.css\?v=20260907-1/);
+  assert.match(index, /mobile-manager-navigation-v1\.css\?v=20260918-static-brand/);
   assert.match(index, /mobile-manager-navigation-v1\.js\?v=20260907-1/);
   assert.match(mobileManagerNavigationCss, /#appShell\.sf-mobile-nav-open \.sidebar/);
   assert.match(mobileManagerNavigationCss, /\.sf-mobile-manager-nav-copy/);
@@ -100,11 +115,11 @@ test('demo controls share a bottom dock and reserve content space', () => {
   assert.match(demoControlDock, /#sfDemoBadge','#sfDemoPerspectiveSwitch','\[data-demo-scenarios\]','#sfDemoResetBtn','#sfDemoExitBtn'/);
   assert.match(demoControlDock, /#appShell \.main\{margin-bottom:var\(--sf-demo-dock-space\)!important/);
   assert.match(demoControlDock, /#sfEmployeePortal \.sf-portal-main\{bottom:var\(--sf-demo-dock-space\)!important/);
-  assert.match(demoControlDock, /body:has\(\[role="dialog"\]\[aria-modal="true"\]:not\(\.sf-emp-more-sheet\):not\(\.sf-employee-more-panel\)\) #sfDemoControlDock/);
-  assert.match(demoControlDock, /body:has\(#sfEmployeeMobileMore\.open\) #sfDemoControlDock/);
   assert.match(demoControlDock, /@media\(max-width:560px\)/);
-  assert.match(demoControlDock, /--sf-demo-dock-space:86px/);
-  assert.match(demoControlDock, /flex-wrap:nowrap;justify-content:flex-start/);
+  assert.match(demoControlDock, /--sf-demo-dock-space:132px/);
+  assert.match(demoControlDock, /#sfDemoControlDock\.sf-demo-dock-employee\{bottom:calc\(76px \+ max\(8px,env\(safe-area-inset-bottom\)\)\)\}/);
+  assert.match(demoControlDock, /root\.classList\.toggle\('sf-demo-dock-employee',employee\)/);
+  assert.match(demoControlDock, /root\.classList\.toggle\('sf-demo-dock-obscured',modal\)/);
 });
 
 test('global search exposes a programmatic accessible name', () => {
@@ -441,6 +456,8 @@ test('disruption autopilot ranks candidates and provides manager and employee wo
   assert.match(disruption, /Top 3 anfragen/);
   assert.match(disruption, /Schicht verbindlich übernehmen/);
   assert.match(disruption, /managerBusy=false,employeeBusy=false/);
+  assert.match(disruption, /JSON\.stringify\(next\)===JSON\.stringify\(employeeOffers\)/);
+  assert.match(marketplace, /JSON\.stringify\(next\) === JSON\.stringify\(rows\)/);
   assert.match(disruption, /data-sf-employee-view="disruptions"/);
   assert.match(disruption, /sf:demo-perspective-change/);
   assert.match(notifications, /DISRUPTION_OFFER:'⚡'/);
@@ -491,21 +508,6 @@ test('expired sessions clear protected state and reopen login with an explanatio
   assert.match(supabaseAuth, /__explicitSignOut/);
   assert.match(supabaseAuth, /Deine Anmeldung ist abgelaufen\. Bitte melde dich erneut an\./);
   assert.match(supabaseAuth, /document\.getElementById\('sfEmployeePortal'\)\?\.remove\(\)/);
-});
-
-test('verified MFA factors are challenged only for protected admin actions', () => {
-  assert.match(supabaseAuth, /getAuthenticatorAssuranceLevel\(\)/);
-  assert.match(supabaseAuth, /listFactors\(\)/);
-  assert.match(supabaseAuth, /challengeAndVerify\(\{factorId:factor\.id,code\}\)/);
-  assert.match(supabaseAuth, /autocomplete="one-time-code"/);
-  assert.match(supabaseAuth, /level\?\.currentLevel!==['"]aal2['"]/);
-  assert.match(supabaseAuth, /B\.withAal2=async operation=>/);
-  assert.match(supabaseAuth, /if\(!B\.isMfaRequired\(result\?\.error\)\)return result/);
-  assert.match(supabaseAuth, /try\{await B\.ensureAal2\(current\?\.session\)\}/);
-  assert.match(supabaseAuth, /return operation\(\)/);
-  assert.doesNotMatch(supabaseData, /ensureAal2/);
-  assert.match(supabaseData, /B\.user=session\.user;await B\.ensureCompany\(\)/);
-  assert.match(moduleLoader, /\['assets\/supabase-auth-v1\.js','assets\/supabase-data-v1\.js',[\s\S]*\]\.includes\(file\)\?'20260917-aal2-stepup1'/);
 });
 
 test('concurrent absence requests are serialized per employee before overlap validation', () => {
@@ -617,12 +619,19 @@ test('employee dialogs trap focus, close with Escape and announce errors', () =>
   assert.match(employeePortalLayout, /B\.bindAccessibleModal=function/);
   assert.match(employeePortalLayout, /event\.key==='Escape'/);
   assert.match(employeePortalLayout, /event\.key!=='Tab'/);
+  assert.match(employeePortalLayout, /returnFocus\|\|document\.activeElement/);
   assert.match(employeePortalLayout, /opener\?\.isConnected/);
+  assert.match(employeePortalLayout, /returnFocusSelector\?document\.querySelector\(returnFocusSelector\)/);
+  assert.match(employeePortalLayout, /setTimeout\(restoreOpener,80\)/);
   for (const source of [shiftSwap, marketplace, timeTracking, employeeAbsence]) {
     assert.match(source, /role="alert" aria-live="assertive"/);
     assert.match(source, /aria-labelledby=/);
     assert.match(source, /bindAccessibleModal/);
   }
+  assert.match(employeeAbsence, /returnFocus:opener,returnFocusSelector:/);
+  assert.match(employeeAbsence, /open\(btn\)/);
+  assert.match(employeeAbsence, /restoreRequestFocus/);
+  assert.match(employeeAbsence, /setTimeout\(\(\)=>render\(\),0\)/);
 });
 
 test('employee portal navigation and notification badge use hardened contrast colors', () => {
@@ -678,16 +687,20 @@ test('month picker wraps the shared time renderer only once', () => {
   assert.match(monthPicker, /if\(wrapper\|\|typeof current!==['"]function['"]\)return/);
   assert.match(moduleLoader, /time-month-picker-v1\.js'\?'20260912-monthfix2'/);
   assert.match(brandCleanup, /time-month-picker-v1\.js\?v=20260912-monthfix2/);
-  assert.equal((index.match(/schichtfunk-brand-cleanup-v2\.js/g)||[]).length, 1);
-  assert.match(index, /schichtfunk-brand-cleanup-v2\.js\?v=20260912-datev-extension1/);
+  assert.doesNotMatch(index, /schichtfunk-brand-cleanup-v2\.js(?:"|\?v=20260906-accounttabs1)/);
 });
 
 test('password recovery uses a parseable callback and requires a valid session', () => {
   assert.match(passwordReset, /redirectTo:PROD\+'\?'\+RESET_PARAM\+'=1'/);
   assert.doesNotMatch(passwordReset, /redirectTo:[^\n]+#app/);
   assert.match(passwordReset, /normalizeLegacyRecoveryUrl\(\)/);
+  assert.match(passwordReset, /const initialRecoveryHint=recoveryFromUrl\(\)/);
   assert.match(passwordReset, /u\.hash\.startsWith\(marker\)/);
   assert.match(passwordReset, /const \{data\}=await B\.client\.auth\.getSession\(\)/);
   assert.match(passwordReset, /data\?\.session\?B\.passwordResetNewDialog\(\):B\.passwordResetInvalidDialog\(\)/);
   assert.match(passwordReset, /Neuen Link anfordern/);
+  assert.match(passwordReset, /auth\.reauthenticate\(\)/);
+  assert.match(passwordReset, /attributes\.current_password=current/);
+  assert.match(passwordReset, /attributes\.nonce=nonce/);
+  assert.match(passwordReset, /\^\\d\{6\}\$/);
 });

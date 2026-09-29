@@ -9,8 +9,8 @@ const style=fs.readFileSync(new URL('../assets/manager-theme-v1.css',import.meta
 test('manager topbar exposes an accessible appearance toggle in the former legacy action slot',()=>{
   assert.match(index,/id="sfThemeToggle"/);
   assert.match(index,/aria-label="Zum hellen Modus wechseln"/);
-  assert.match(index,/manager-theme-v1\.css\?v=20260918-1/);
-  assert.match(index,/manager-theme-v1\.js\?v=20260918-1/);
+  assert.match(index,/manager-theme-v1\.css\?v=20260929-2/);
+  assert.match(index,/manager-theme-v1\.js\?v=20260929-1/);
   assert.doesNotMatch(index,/<button class="iconbtn">♧<\/button>/);
 });
 
@@ -32,4 +32,15 @@ test('light appearance is scoped to the manager portal and remains mobile-access
   assert.match(style,/html\[data-sf-theme="light"\] #appShell \.app/);
   assert.match(style,/@media\(max-width:560px\)\{#sfThemeToggle\{display:inline-flex!important;width:44px;min-width:44px;height:44px\}\}/);
   assert.doesNotMatch(style,/html\[data-sf-theme="light"\] #sfEmployeePortal/);
+});
+
+test('light appearance uses layered grey surfaces with strong contrast',()=>{
+  assert.match(style,/light appearance v2/);
+  assert.match(style,/--bg:#e3e9ee/);
+  assert.match(style,/--panel:#f5f7f8/);
+  assert.match(style,/--text:#17232e/);
+  assert.match(style,/\.day-col\.today \.day-body\{background:#dff1ed!important\}/);
+  assert.match(style,/#view-employees :is\(\.sp-emp-list-card,\.sp-emp-profile\)/);
+  assert.match(style,/#view-employees \.sp-emp-row\.selected/);
+  assert.match(script,/value==='light'\?'#dce5ea':'#08111f'/);
 });

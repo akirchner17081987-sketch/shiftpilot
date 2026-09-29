@@ -34,6 +34,6 @@ test('QA appears in demo planning, time tracking and marketplace',()=>{
   assert.match(integration,/shift_code:'QA'/);
 });
 
-test('QA preserves existing demo RPC wrapper markers',()=>{
-  assert.match(integration,/Object\.assign\(wrapped,rpc,/);
+test('QA demo RPC wrapper preserves the O1S integration marker',()=>{
+  assert.match(integration,/wrapped\.__sfO1SIntegrationV1=rpc\.__sfO1SIntegrationV1===true/);
 });

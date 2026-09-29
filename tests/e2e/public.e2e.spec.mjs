@@ -33,6 +33,13 @@ test('public page has no horizontal document overflow', async ({ page }) => {
   expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.width + 1);
 });
 
+test('protected demo loads the Supabase Edge Function client', async ({ page }) => {
+  await page.goto('/demo.html');
+  await expect(page.locator('#demoForm')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => Boolean(window.SFDemoAPI))).toBe(true);
+  expect(await page.evaluate(() => window.SFDemoAPI.authUrl)).toContain('.supabase.co/functions/v1/demo-auth');
+});
+
 test('production response sends the required browser security headers', async ({ request }) => {
   const response = await request.get('/');
   const headers = response.headers();

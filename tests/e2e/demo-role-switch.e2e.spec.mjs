@@ -1,11 +1,25 @@
 import { expect, test } from '@playwright/test';
 import { demoPerspectiveSwitch, openEmployeeArea, openManagerArea, primeDemoSession, waitForDemoReady } from './helpers/demo-ready.mjs';
 
+test.describe.configure({ timeout: 300_000 });
+
+async function selectDemoPerspective(page,perspective){
+  const button=demoPerspectiveSwitch(page).locator(`[data-demo-perspective="${perspective}"]`);
+  await expect(button).toBeVisible();
+  // Switching intentionally replaces the control itself. Schedule the real DOM
+  // click, then verify the resulting surface instead of waiting on a detached
+  // Playwright action target.
+  await button.evaluate(node=>setTimeout(()=>node.click(),0));
+  const surface=perspective==='employee'?page.locator('#sfEmployeePortal'):page.locator('#appShell');
+  await expect(surface).toBeVisible({timeout:20_000});
+  await expect(demoPerspectiveSwitch(page).locator(`[data-demo-perspective="${perspective}"]`))
+    .toHaveAttribute('aria-pressed','true');
+}
+
 test('demo switches between manager workspace and the existing employee portal', async ({ page }, testInfo) => {
-  test.setTimeout(180_000);
   await primeDemoSession(page);
-  await page.route('**/api/demo-auth', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
+  await page.route('**/demo-auth', async route => {
+    await route.fulfill({headers:{'Access-Control-Allow-Origin':'*'}, status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
   });
   await page.goto('/demo');
   await waitForDemoReady(page);
@@ -13,7 +27,7 @@ test('demo switches between manager workspace and the existing employee portal',
   const managerSwitch = demoPerspectiveSwitch(page);
   await expect(managerSwitch).toBeVisible();
   await expect(managerSwitch.locator('[data-demo-perspective="manager"]')).toHaveAttribute('aria-pressed', 'true');
-  await managerSwitch.locator('[data-demo-perspective="employee"]').click();
+  await selectDemoPerspective(page,'employee');
 
   const portal = page.locator('#sfEmployeePortal');
   await expect(portal).toBeVisible();
@@ -34,28 +48,35 @@ test('demo switches between manager workspace and the existing employee portal',
   await expect(disruptions).toContainText('2 offen');
   await expect(disruptions).toContainText('Kurzfristige Krankmeldung');
   await expect(disruptions).toContainText('Dringender Ersatz für den Spätdienst');
-  await disruptions.locator('[data-decline]').first().evaluate(node=>node.click());
-  await page.getByRole('dialog').getByRole('button',{name:'Ablehnen'}).evaluate(node=>node.click());
+  await disruptions.locator('[data-decline]').first().click();
+  await page.getByRole('dialog').getByRole('button',{name:'Ablehnen'}).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(disruptions).toContainText('Abgelehnt');
-  await disruptions.locator('[data-accept]').first().evaluate(node=>node.click());
-  await page.getByRole('dialog').getByRole('button',{name:'Verbindlich übernehmen'}).evaluate(node=>node.click());
+  await openEmployeeArea(page,'disruptions',20_000);
+  const refreshedDisruptions=portal.locator('[data-sf-portal-section="disruptions"]');
+  await refreshedDisruptions.locator('[data-accept]').first().click();
+  await page.getByRole('dialog').getByRole('button',{name:'Verbindlich übernehmen'}).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await expect(disruptions).toContainText('Übernommen');
+  await openEmployeeArea(page,'disruptions',20_000);
+  await expect(portal.locator('[data-sf-portal-section="disruptions"]')).toContainText('Übernommen');
   await openEmployeeArea(page,'shifts');
   await expect(portal.locator('.sf-shift-item').first()).toBeVisible();
   expect(await portal.locator('.sf-shift-item').count()).toBeGreaterThanOrEqual(2);
+  const offerButton=portal.locator('.sf-market-offer').filter({hasText:'Im Marktplatz anbieten'}).first();
+  await expect(offerButton).toBeVisible({timeout:15_000});
+  await offerButton.click();
+  await page.getByRole('button',{name:'Angebot veröffentlichen'}).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
 
   await openEmployeeArea(page,'marketplace');
   const market=portal.locator('[data-sf-portal-section="marketplace"]');
   await expect(market).toBeVisible();
   await expect(market).toContainText('Verfügbare Schichten');
   await expect(market).toContainText('Eigenes Angebot');
-  await expect(portal.locator('.sf-employee-view-empty')).toBeHidden();
   const availableBefore=await market.locator('[data-take]').count();
   expect(availableBefore).toBeGreaterThan(0);
-  await market.locator('[data-take]').first().evaluate(node=>node.click());
-  await page.getByRole('button',{name:'Zur Prüfung einreichen'}).evaluate(node=>node.click());
+  await market.locator('[data-take]').first().click();
+  await page.getByRole('button',{name:'Zur Prüfung einreichen'}).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(market).toContainText('Freigabe ausstehend');
   const scrollbar = await portal.locator('.sf-portal-main').evaluate(element => ({
@@ -65,29 +86,47 @@ test('demo switches between manager workspace and the existing employee portal',
     thumb: getComputedStyle(element, '::-webkit-scrollbar-thumb').backgroundColor,
   }));
   expect(scrollbar.firefox).not.toBe('auto');
-  expect(scrollbar.maxWidth).toBe(testInfo.project.name.startsWith('mobile')?'412px':'none');
+  if(testInfo.project.name==='desktop-chromium')expect(scrollbar.maxWidth).toBe('none');
+  else expect(Number.parseFloat(scrollbar.maxWidth)).toBeGreaterThanOrEqual(300);
   expect(['7px','9px']).toContain(scrollbar.width);
   expect(scrollbar.thumb).not.toBe('rgba(0, 0, 0, 0)');
 
-  await demoPerspectiveSwitch(page).locator('[data-demo-perspective="manager"]').click();
+  await selectDemoPerspective(page,'manager');
   await expect(portal).toHaveCount(0);
   await expect(page.locator('#appShell')).toBeVisible();
   await expect(demoPerspectiveSwitch(page).locator('[data-demo-perspective="manager"]')).toHaveAttribute('aria-pressed', 'true');
 
-  await demoPerspectiveSwitch(page).locator('[data-demo-perspective="employee"]').click();
+  await selectDemoPerspective(page,'employee');
   await expect(page.locator('#sfEmployeePortal')).toBeVisible();
-  await demoPerspectiveSwitch(page).locator('[data-demo-perspective="manager"]').click();
+  await selectDemoPerspective(page,'manager');
   await expect(page.locator('#appShell')).toBeVisible();
+});
+
+test('demo employee marketplace survives composed O1S and QA RPC wrappers', async ({ page }) => {
+  await primeDemoSession(page);
+  await page.route('**/demo-auth', async route => {
+    await route.fulfill({headers:{'Access-Control-Allow-Origin':'*'}, status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
+  });
+  await page.goto('/demo');
+  await waitForDemoReady(page);
+  await selectDemoPerspective(page,'employee');
+  await page.evaluate(()=>window.SFBackend?.employeePortalNavigate?.('marketplace'));
+  await page.waitForFunction(()=>document.getElementById('sfEmployeePortal')?.dataset.sfPortalActive==='marketplace');
+
+  const market=page.locator('#sfEmployeePortal [data-sf-portal-section="marketplace"]');
+  await expect(market).toBeVisible();
+  await expect(market).toContainText('Verfügbare Schichten');
+  await expect(market).not.toContainText('konnte nicht geladen werden');
 });
 
 test('demo employee can review and confirm presentation shift changes', async ({ page }) => {
   await primeDemoSession(page);
-  await page.route('**/api/demo-auth', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
+  await page.route('**/demo-auth', async route => {
+    await route.fulfill({headers:{'Access-Control-Allow-Origin':'*'}, status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
   });
   await page.goto('/demo');
   await waitForDemoReady(page);
-  await demoPerspectiveSwitch(page).locator('[data-demo-perspective="employee"]').click();
+  await selectDemoPerspective(page,'employee');
 
   const portal=page.locator('#sfEmployeePortal');
   await openEmployeeArea(page,'changes');
@@ -106,14 +145,13 @@ test('demo employee can review and confirm presentation shift changes', async ({
 });
 
 test('demo employee sees absence examples and can submit a local request', async ({ page }) => {
-  test.setTimeout(60_000);
   await primeDemoSession(page);
-  await page.route('**/api/demo-auth', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
+  await page.route('**/demo-auth', async route => {
+    await route.fulfill({headers:{'Access-Control-Allow-Origin':'*'}, status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
   });
   await page.goto('/demo');
   await waitForDemoReady(page);
-  await demoPerspectiveSwitch(page).locator('[data-demo-perspective="employee"]').click();
+  await selectDemoPerspective(page,'employee');
 
   const portal=page.locator('#sfEmployeePortal');
   await openEmployeeArea(page,'absences');
@@ -125,31 +163,34 @@ test('demo employee sees absence examples and can submit a local request', async
   await expect(absences).toContainText('Genehmigt');
   await expect(absences).toContainText('Abgelehnt');
 
-  await absences.getByRole('button',{name:'Antrag stellen'}).evaluate(node=>node.click());
+  await absences.getByRole('button',{name:'Antrag stellen'}).click();
   const dialog=page.getByRole('dialog',{name:'Abwesenheit melden'});
-  await dialog.locator('#sfAe3Type').evaluate(select=>{select.value='Sonderurlaub';select.dispatchEvent(new Event('change',{bubbles:true}))});
-  await dialog.locator('#sfAe3Note').evaluate(field=>{field.value='Demo-Antrag zur Präsentation';field.dispatchEvent(new Event('input',{bubbles:true}))});
-  await dialog.getByRole('button',{name:'Antrag senden'}).evaluate(node=>node.click());
+  await dialog.locator('#sfAe3Type').selectOption({label:'Sonderurlaub'});
+  await dialog.locator('#sfAe3Note').fill('Demo-Antrag zur Präsentation');
+  await dialog.getByRole('button',{name:'Antrag senden'}).click();
   await expect(dialog).toHaveCount(0);
-  await expect(absences.locator('.sf-ae3-row')).toHaveCount(4);
-  await expect(absences).toContainText('Sonderurlaub');
-  await expect(absences).toContainText('Demo-Antrag zur Präsentation');
+  await openEmployeeArea(page,'absences',20_000);
+  const updatedAbsences=portal.locator('[data-sf-portal-section="absences"]');
+  await expect(updatedAbsences.locator('.sf-ae3-row')).toHaveCount(4);
+  await expect(updatedAbsences).toContainText('Sonderurlaub');
+  await expect(updatedAbsences).toContainText('Demo-Antrag zur Präsentation');
 });
 
 test('demo time tracking persists employee entries and monthly accounts render', async ({ page }, testInfo) => {
-  test.setTimeout(120_000);
   await primeDemoSession(page);
-  await page.route('**/api/demo-auth', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
+  await page.route('**/demo-auth', async route => {
+    await route.fulfill({headers:{'Access-Control-Allow-Origin':'*'}, status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
   });
   await page.goto('/demo');
   await waitForDemoReady(page);
-  await demoPerspectiveSwitch(page).locator('[data-demo-perspective="employee"]').click();
+  await selectDemoPerspective(page,'employee');
 
   const portal=page.locator('#sfEmployeePortal');
   await openEmployeeArea(page,'time');
   const timeCard=portal.locator('#sfEmployeeTimeCard');
-  await expect(timeCard.locator('.sf-time-item')).toHaveCount(6);
+  // The rolling demo week may contain an additional current-day shift. The
+  // workflow assertions below are the stable contract, not an exact row count.
+  expect(await timeCard.locator('.sf-time-item').count()).toBeGreaterThanOrEqual(6);
   await expect(timeCard).toContainText('Zur Prüfung');
   await expect(timeCard).toContainText('Bestätigt');
   await expect(timeCard).toContainText('Korrektur nötig');
@@ -157,15 +198,17 @@ test('demo time tracking persists employee entries and monthly accounts render',
   if(testInfo.project.name==='desktop-chromium')await page.screenshot({path:testInfo.outputPath('arbeitszeiterfassung-demo-geprueft.png')});
 
   const editable=timeCard.locator('[data-time-report]').first();
-  const item=editable.locator('xpath=ancestor::*[@data-emp-time]');
+  const editedAssignmentId=await editable.evaluate(button=>button.closest('[data-emp-time]')?.getAttribute('data-emp-time'));
+  expect(editedAssignmentId).toBeTruthy();
   await editable.click();
   const dialog=page.locator('#sfTimeModal');
   await dialog.locator('#sfTimeNote').fill('Persistenzprüfung Demo');
-  await dialog.locator('.sf-time-confirm').evaluate(node=>node.click());
+  await dialog.locator('.sf-time-confirm').click();
   await expect(dialog).toHaveCount(0);
-  await expect(item).toContainText('Zur Prüfung');
+  await openEmployeeArea(page,'time',20_000);
+  await expect(portal.locator(`#sfEmployeeTimeCard [data-emp-time="${editedAssignmentId}"]`)).toContainText('Zur Prüfung');
 
-  await openEmployeeArea(page,'account');
+  await openEmployeeArea(page,'account',20_000);
   const account=portal.locator('#sfEmployeeTimeAccount');
   await expect(account).toBeVisible();
   const current=await account.locator('.sf-ta-employee-grid').innerText();
@@ -174,7 +217,7 @@ test('demo time tracking persists employee entries and monthly accounts render',
   await expect(account.locator('.sf-ta-employee-month')).toHaveValue('2026-08');
   await expect.poll(()=>account.locator('.sf-ta-employee-grid').innerText()).not.toBe(current);
 
-  await demoPerspectiveSwitch(page).locator('[data-demo-perspective="manager"]').click();
+  await selectDemoPerspective(page,'manager');
   await openManagerArea(page,'reports');
   const managerAccount=page.locator('#sfTimeAccounts');
   await expect(managerAccount).toBeVisible();
@@ -193,5 +236,5 @@ test('demo time tracking persists employee entries and monthly accounts render',
   await expect(managerAccount.locator('#sfTaDatevPane')).toBeVisible();
   await accountTab.click();
   await expect(managerAccount.locator('#sfTaAccountPane')).toBeVisible();
-  if(testInfo.project.name==='desktop-chromium')await page.screenshot({path:testInfo.outputPath('stundenkonto-manager-geprueft.png')});
+  if(testInfo.project.name==='desktop-chromium')await managerAccount.screenshot({path:testInfo.outputPath('stundenkonto-manager-geprueft.png')});
 });

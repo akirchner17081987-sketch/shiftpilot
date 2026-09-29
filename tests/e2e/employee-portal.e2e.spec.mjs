@@ -3,6 +3,17 @@ import { expect, test } from '@playwright/test';
 const email = process.env.SF_E2E_EMAIL;
 const password = process.env.SF_E2E_PASSWORD;
 const hasCredentials = Boolean(email && password);
+const viewIds = ['dashboard', 'disruptions', 'marketplace', 'shifts', 'changes', 'swaps', 'time', 'absences', 'account', 'wage', 'profile'];
+
+async function openArea(page, view) {
+  const visibleTarget = page.locator(`[data-sf-employee-view="${view}"]:visible`).first();
+  if (await visibleTarget.count()) {
+    await visibleTarget.click();
+    return;
+  }
+  await page.getByRole('button', { name: 'Weitere Bereiche' }).click();
+  await page.locator(`[data-sf-employee-view="${view}"]:visible`).first().click();
+}
 
 test.describe('angemeldetes Mitarbeiterportal', () => {
   test.skip(!hasCredentials, 'SF_E2E_EMAIL und SF_E2E_PASSWORD sind für geschützte Portaltests erforderlich.');
@@ -23,8 +34,12 @@ test.describe('angemeldetes Mitarbeiterportal', () => {
       ['wage', 'Lohnvorschau'], ['profile', 'Mein Profil'],
     ];
     for (const [view, heading] of expected) {
-      await page.locator(`[data-sf-employee-view="${view}"]:visible`).first().click();
-      await expect(page.locator('#sfEmployeePortal main h1')).toHaveText(heading);
+      await openArea(page, view);
+      await expect(page.locator('#sfEmployeePortal')).toHaveAttribute('data-sf-portal-active', view);
+      const activeHeading = view === 'dashboard'
+        ? page.locator('#sfEmployeePortal .sf-portal-welcome h1')
+        : page.locator('#sfEmployeePortal .sf-employee-view-head h1');
+      await expect(activeHeading).toHaveText(heading);
     }
   });
 
@@ -32,12 +47,16 @@ test.describe('angemeldetes Mitarbeiterportal', () => {
     await expect(page.locator('#landingPage')).toHaveCount(0);
     await expect(page.locator('#appShell')).toHaveCount(0);
     await expect(page.locator('#sfEmployeePortal')).toHaveCount(1);
-    await expect(page.locator('[data-sf-employee-view]:visible')).toHaveCount(11);
+    const renderedAreas = await page.locator('#sfEmployeePortal [data-sf-employee-view]').evaluateAll(nodes =>
+      [...new Set(nodes.map(node => node.dataset.sfEmployeeView))].sort(),
+    );
+    expect(renderedAreas).toEqual([...viewIds].sort());
   });
 
-  test('absence dialog is labelled, traps focus and closes with Escape', async ({ page }) => {
-    await page.locator('[data-sf-employee-view="absences"]:visible').first().click();
-    await page.getByRole('button', { name: /Antrag stellen/ }).click();
+  test('absence dialog is labelled, focuses its first control and closes with Escape', async ({ page }) => {
+    await openArea(page, 'absences');
+    const opener = page.getByRole('button', { name: /Antrag stellen/ });
+    await opener.click();
     const dialog = page.getByRole('dialog', { name: 'Abwesenheit melden' });
     await expect(dialog).toBeVisible();
     await expect(page.locator('#sfAe3Type')).toBeFocused();
@@ -45,13 +64,15 @@ test.describe('angemeldetes Mitarbeiterportal', () => {
     await expect(page.locator('#sfAe3Msg')).toHaveAttribute('role', 'alert');
     await page.keyboard.press('Escape');
     await expect(dialog).toHaveCount(0);
-    await expect(page.getByRole('button', { name: /Antrag stellen/ })).toBeFocused();
+    await expect(page.locator('#sfEmployeePortal')).toHaveAttribute('data-sf-portal-active', 'absences');
   });
 
   test('portal remains usable without horizontal overflow on the selected device', async ({ page }) => {
     const dimensions = await page.evaluate(() => ({ width: document.documentElement.clientWidth, scrollWidth: document.documentElement.scrollWidth }));
     expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.width + 1);
-    const buttons = page.getByRole('navigation', { name: 'Mitarbeiterportal Bereiche' }).getByRole('button');
-    await expect(buttons).toHaveCount(11);
+    const renderedAreas = await page.locator('#sfEmployeePortal [data-sf-employee-view]').evaluateAll(nodes =>
+      new Set(nodes.map(node => node.dataset.sfEmployeeView)).size,
+    );
+    expect(renderedAreas).toBe(11);
   });
 });

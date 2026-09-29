@@ -3,8 +3,8 @@ import { demoScenarioControl, waitForDemoReady } from './helpers/demo-ready.mjs'
 
 test('all prepared demo scenarios open their matching workspace', async ({ page }) => {
   await page.addInitScript(() => sessionStorage.setItem('sf_demo_tour_seen_v1', 'complete'));
-  await page.route('**/api/demo-auth', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
+  await page.route('**/demo-auth', async route => {
+    await route.fulfill({headers:{'Access-Control-Allow-Origin':'*'}, status: 200, contentType: 'application/json', body: JSON.stringify({ expiresAt: new Date(Date.now() + 3_600_000).toISOString() }) });
   });
   await page.goto('/demo');
   await waitForDemoReady(page, { scenarios: true });

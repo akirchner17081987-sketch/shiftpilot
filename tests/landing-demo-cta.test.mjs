@@ -36,7 +36,9 @@ test('demo page requires username and password before sandbox start',()=>{
   assert.match(demo,/id="demoForm"/);
   assert.match(demo,/id="demoUser"/);
   assert.match(demo,/type="password"/);
-  assert.match(demo,/fetch\('\/api\/demo-auth'/);
+  assert.match(demo,/demo-api-v2\.js/);
+  assert.match(demo,/SFDemoAPI\.fetchAuth/);
+  assert.doesNotMatch(demo,/fetch\('\/api\/demo-auth'/);
   assert.match(demo,/Benutzer oder Passwort ist nicht korrekt/);
   assert.doesNotMatch(demo,/USER_SHA256/);
   assert.doesNotMatch(demo,/PASSWORD_SHA256/);

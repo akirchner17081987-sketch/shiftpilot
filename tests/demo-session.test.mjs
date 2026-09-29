@@ -52,7 +52,7 @@ test('demo surface remains hidden until all presentation data is ready',()=>{
 
 test('incomplete demo preparation fails closed with a retry option',()=>{
   assert.match(page,/class="sf-demo-boot-retry"/);
-  assert.match(mode,/READY_TIMEOUT_MS=12000/);
+  assert.match(mode,/READY_TIMEOUT_MS=30000/);
   assert.match(mode,/function failGate\(\)/);
   assert.match(mode,/nicht vollständig vorbereitet werden/);
 });

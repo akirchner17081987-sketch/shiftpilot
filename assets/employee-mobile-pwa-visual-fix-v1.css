@@ -1,43 +1,64 @@
-/* SchichtFunk – Mitarbeiterportal Mobile/PWA visueller Feinschliff V1 */
+/* SchichtFunk – Mitarbeiterportal Mobile/PWA visueller Feinschliff V2 */
 @media (max-width: 430px){
-  /* KPI-Karten vollständig sichtbar statt angeschnittener Horizontal-Karussells. */
-  #sfEmployeePortal .sf-portal-stats{
-    display:grid!important;
-    grid-template-columns:repeat(2,minmax(0,1fr))!important;
-    gap:10px!important;
-    margin:12px 0 18px!important;
-    padding:0!important;
-    overflow:visible!important;
-    scroll-snap-type:none!important;
+  /* Kompakter App-Kopf: Logo, Verbindungsstatus und Abmelden bleiben erreichbar. */
+  #sfEmployeePortal{
+    --sf-employee-head:calc(58px + var(--sf-mobile-safe-top, env(safe-area-inset-top, 0px)))!important;
   }
-  #sfEmployeePortal .sf-portal-stat{
-    width:auto!important;
-    min-width:0!important;
-    max-width:none!important;
-    min-height:92px!important;
-    padding:14px 15px!important;
-    flex:none!important;
-    scroll-snap-align:none!important;
-  }
-  #sfEmployeePortal .sf-portal-stat strong{font-size:22px!important}
+  #sfEmployeePortal .sf-portal-top{gap:6px!important;padding-left:10px!important;padding-right:8px!important}
+  #sfEmployeePortal .sf-portal-logo{width:min(136px,39vw)!important;max-width:39vw!important;height:44px!important}
+  #sfEmployeePortal .sf-company-context{margin-left:0!important;padding-left:4px!important}
+  #sfEmployeePortal .sf-company-context i{width:7px!important;height:7px!important}
+  #sfEmployeePortal #sfEmployeeLogout{width:44px!important;min-width:44px!important;height:44px!important;padding:0!important;overflow:hidden;color:transparent!important;font-size:0!important}
+  #sfEmployeePortal #sfEmployeeLogout::before{content:"↪";color:#ff9aaa;font-size:18px;line-height:1}
 
-  /* Dashboard-Inhalte erhalten sichtbar Luft zur festen Bottom-Navigation. */
-  #sfEmployeePortal .sf-portal-main{
-    padding-bottom:42px!important;
-    scroll-padding-bottom:96px!important;
-  }
-  #sfEmployeePortal .sf-employee-dashboard{padding-bottom:24px!important}
-  #sfEmployeePortal .sf-employee-dashboard>h2{margin-top:18px!important}
+  /* Mehr Inhalt oberhalb der Bottom-Navigation. */
+  #sfEmployeePortal .sf-portal-main{padding:12px 12px 30px!important;scroll-padding-bottom:84px!important}
+  #sfEmployeePortal .sf-portal-welcome{margin-bottom:8px!important}
+  #sfEmployeePortal .sf-portal-welcome h1{font-size:23px!important}
 
-  /* Kartenabstände auf iPhone kompakter, ohne Touch-Ziele zu verkleinern. */
-  #sfEmployeePortal .sf-portal-card{padding:15px!important}
-  #sfEmployeePortal .sf-pwa-install-card{margin-bottom:12px!important}
+  /* KPI-Karten vollständig sichtbar statt als angeschnittenes Karussell. */
+  #sfEmployeePortal .sf-portal-stats{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;margin:8px 0 12px!important;padding:0!important;overflow:visible!important;scroll-snap-type:none!important}
+  #sfEmployeePortal .sf-portal-stat{width:auto!important;min-width:0!important;max-width:none!important;min-height:76px!important;padding:11px 12px!important;flex:none!important;scroll-snap-align:none!important}
+  #sfEmployeePortal .sf-portal-stat strong{font-size:19px!important}
 
-  /* Kopfbereich etwas ruhiger und für schmale Displays ausbalanciert. */
-  #sfEmployeePortal .sf-portal-logo{width:min(154px,42vw)!important;max-width:42vw!important}
-  #sfEmployeePortal .sf-portal-top .ghost{padding-inline:12px!important}
+  /* QR ist die wichtigste Aktion, aber nicht mehr eine halbe Bildschirmseite hoch. */
+  #sfEmployeePortal .sf-emp-qr-card{margin:0 0 10px!important;padding:13px!important;border-radius:14px!important}
+  #sfEmployeePortal .sf-emp-qr-head{margin-bottom:9px!important;align-items:center!important}
+  #sfEmployeePortal .sf-emp-qr-head h3{font-size:15px!important}
+  #sfEmployeePortal .sf-emp-qr-badge{padding:3px 7px!important;font-size:8px!important}
+  #sfEmployeePortal .sf-emp-qr-body{grid-template-columns:36px minmax(0,1fr)!important;gap:9px!important}
+  #sfEmployeePortal .sf-emp-qr-icon{width:36px!important;height:36px!important;border-radius:9px!important;font-size:17px!important}
+  #sfEmployeePortal .sf-emp-qr-main b{font-size:11.5px!important}
+  #sfEmployeePortal .sf-emp-qr-main small{font-size:9.5px!important;line-height:1.42!important}
+  #sfEmployeePortal .sf-emp-qr-hint{display:none!important}
+  #sfEmployeePortal .sf-qr-scan-actions{margin-top:10px!important}
+  #sfEmployeePortal .sf-qr-scan-actions .sf-qr-scan-btn{width:100%!important;min-height:44px!important;padding:8px 12px!important;font-size:11px!important}
+
+  /* Push-Hinweis kompakt, lesbar und weiterhin mit vollwertigem Touch-Ziel. */
+  #sfEmployeePortal .sf-push-card{margin:0 0 14px!important;padding:11px!important;gap:9px!important;border-radius:13px!important}
+  #sfEmployeePortal .sf-push-icon{width:36px!important;height:36px!important;border-radius:10px!important;font-size:16px!important}
+  #sfEmployeePortal .sf-push-copy b{font-size:11px!important}
+  #sfEmployeePortal .sf-push-copy small{font-size:9.5px!important;line-height:1.4!important}
+  #sfEmployeePortal .sf-push-actions,#sfEmployeePortal .sf-push-card>.sf-push-action{margin-top:0!important}
+
+  /* Zwei gut lesbare Funktionskacheln pro Zeile. */
+  #sfEmployeePortal .sf-employee-dashboard{padding-bottom:18px!important}
+  #sfEmployeePortal .sf-employee-dashboard>h2{margin:14px 0 4px!important;font-size:17px!important}
+  #sfEmployeePortal .sf-employee-dashboard>p{margin-bottom:10px!important;font-size:9.5px!important}
+  #sfEmployeePortal .sf-employee-tiles{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+  #sfEmployeePortal .sf-employee-tile{min-height:100px!important;padding:12px!important;border-radius:12px!important}
+  #sfEmployeePortal .sf-employee-tile-icon{width:32px!important;height:32px!important}
+  #sfEmployeePortal .sf-employee-tile b{margin-top:9px!important;font-size:11px!important}
+  #sfEmployeePortal .sf-employee-tile small{font-size:8.5px!important;line-height:1.3!important}
+
+  /* Ruhigere App-Navigation; alle Touchflächen bleiben mindestens 44 px groß. */
+  #sfEmployeePortal .sf-emp-mobile-dock{height:calc(62px + var(--sf-mobile-safe-bottom, env(safe-area-inset-bottom, 0px)))!important;padding:4px 4px var(--sf-mobile-safe-bottom, env(safe-area-inset-bottom, 0px))!important}
+  #sfEmployeePortal .sf-emp-dock-btn{min-height:52px!important;border-radius:10px!important}
+  #sfEmployeePortal .sf-emp-dock-btn i{font-size:17px!important}
+  #sfEmployeePortal .sf-emp-dock-btn span{font-size:8px!important}
 }
 
 @media (max-width: 350px){
   #sfEmployeePortal .sf-portal-stats{grid-template-columns:1fr!important}
+  #sfEmployeePortal .sf-employee-tiles{grid-template-columns:1fr!important}
 }
