@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import vm from 'node:vm';
 
 const management=fs.readFileSync(new URL('../assets/employee-management-v2.js',import.meta.url),'utf8');
 const rhythm=fs.readFileSync(new URL('../assets/employee-rhythm-v1.js',import.meta.url),'utf8');
@@ -33,4 +34,25 @@ test('required rhythms continue to enforce shift and free-day rules',()=>{
   assert.match(rhythm,/expected==='FREI'/);
   assert.match(management,/rhythm\?\.mode==='required'&&!rhythm\.allowed/);
   assert.match(management,/Abweichung von fester Schichtregel/);
+});
+
+test('configurable day cycle repeats across week boundaries and handles dates before its start',()=>{
+  const context={window:{}};
+  vm.runInNewContext(rhythm,context);
+  const employee={rhythmMode:'required',rhythmStart:'2026-09-29',rhythmPattern:[...Array(4).fill('ALLE'),...Array(3).fill('FREI'),...Array(3).fill('ALLE'),...Array(2).fill('FREI')].join(', ')};
+  const check=(date)=>context.window.SFRhythm.check(employee,'O1',date);
+  assert.equal(check('2026-09-29').allowed,true);
+  assert.equal(check('2026-10-03').allowed,false);
+  assert.equal(check('2026-10-06').allowed,true);
+  assert.equal(check('2026-10-09').allowed,false);
+  assert.equal(check('2026-10-11').allowed,true);
+  assert.equal(check('2026-09-28').allowed,false);
+});
+
+test('employee form offers editable working and free blocks with a separate cycle start',()=>{
+  assert.match(management,/id="spRhythmKind"/);
+  assert.match(management,/Tagesrhythmus \(Arbeiten \/ Frei\)/);
+  assert.match(management,/id="spCycleAdd"/);
+  assert.match(management,/rhythmKind=/);
+  assert.match(management,/kind==='week'&&!legacyUnedited&&startDay!==1/);
 });
