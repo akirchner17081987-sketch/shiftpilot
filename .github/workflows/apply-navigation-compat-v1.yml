@@ -16,11 +16,12 @@ jobs:
       - name: Link navigation compatibility asset
         shell: python
         run: |
+          import re
           from pathlib import Path
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
           js='<script src="assets/navigation-compat-v1.js"></script>'
-          if js not in s:
+          if not re.search(r'<script\b[^>]*\bsrc=["\x27]assets/navigation-compat-v1\.js(?:\?[^"\x27]*)?["\x27]',s):
               s=s.replace('</body>',js+'\n</body>')
               p.write_text(s,encoding='utf-8')
       - name: Basic checks
