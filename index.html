@@ -133,7 +133,7 @@ button,input,select,textarea{font:inherit} button{cursor:pointer}
 <div class="app" id="appShell" style="display:none">
   <aside class="sidebar">
     <div class="brand app-brand"><img src="assets/schichtfunk-logo.svg" alt="SchichtFunk – Klar geplant. Stark besetzt." class="app-brand-img" draggable="false"></div>
-    <div class="company-card"><div class="company-icon">N</div><div><b>Nordstern Security GmbH</b><small id="sfCompanyDateTime">Datum · Uhrzeit</small></div><span>⌄</span></div>
+    <button type="button" class="company-card" aria-label="Unternehmen wechseln" aria-haspopup="dialog" aria-expanded="false" disabled><span class="company-icon" aria-hidden="true">S</span><span><b>Nordstern Security GmbH</b><small id="sfCompanyDateTime">Datum · Uhrzeit</small></span><span aria-hidden="true">⌄</span></button>
     <nav class="nav" id="nav">
       <button data-view="overview"><span>⌂</span><span>Übersicht</span></button>
       <div class="nav-group-label" data-nav-group="planning">Planung</div>
@@ -892,13 +892,13 @@ table th,table td{font-size:13px;line-height:1.35}
 <script src="assets/navigation-compat-v1.js?v=20260930-tenbreaks1"></script>
 <script src="assets/schichtfunk-schedule-core-v1.js"></script>
 <script src="assets/assignment-quick-delete-v1.js"></script>
-<script src="assets/conflict-plausibility-v1.js?v=20260930-timeonly3"></script>
+<script src="assets/conflict-plausibility-v1.js?v=20260930-timeonly3&company=1"></script>
 <script src="assets/employee-core-v1.js"></script>
 <script src="assets/employee-rhythm-v1.js?v=20260902-1"></script>
 <script src="assets/employee-management-v2.js?v=20260929-day-cycle2"></script>
 <script src="assets/team-admin-v1.js?v=20260930-timeonly3"></script>
 <script src="assets/audit-logs-v1.js?v=20260902-audit6"></script>
-<script src="assets/settings-management-v2.js?v=20260831-account2"></script>
+<script src="assets/settings-management-v2.js?v=20260930-company1"></script>
 <script src="assets/company-datetime-v1.js?v=20260902-datetime1"></script>
 <script src="assets/schedule-final-v1.js?v=20260831-complete1"></script>
 <script src="assets/absence-management-v3.js?v=20260831-complete1"></script>

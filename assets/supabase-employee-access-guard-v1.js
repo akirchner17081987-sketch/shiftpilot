@@ -5,9 +5,9 @@
   if(typeof base!=='function')return;
   B.ensureCompany=async function(){
     if(!B.client||!B.user)return base.apply(this,arguments);
-    const m=await B.client.from('company_members').select('company_id,role,status').eq('user_id',B.user.id).eq('status','ACTIVE').limit(1);
+    const m=await B.client.from('company_members').select('company_id,role,status,created_at').eq('user_id',B.user.id).eq('status','ACTIVE');
     if(m.error)throw m.error;
-    if(m.data?.length){B.companyId=m.data[0].company_id;B.role=m.data[0].role;B.employeeDbId=null;return}
+    if(m.data?.length){const member=B.pickCompanyMembership?.(m.data)||m.data[0];B.companyId=member.company_id;B.role=member.role;B.employeeDbId=null;return}
     const e=await B.client.from('employees').select('id,company_id,first_name,last_name,email,status,access_status').eq('auth_user_id',B.user.id).maybeSingle();
     if(e.error)throw e.error;
     if(e.data){
