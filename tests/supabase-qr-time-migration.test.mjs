@@ -63,11 +63,11 @@ test('mobile QR page does not accept employee id or timestamp from the browser',
   assert.match(html,/Pause beenden/);
 });
 
-function qrLoginHarness(){
+function qrLoginHarness(status={state:'READY',name:'Fiktiver Mitarbeiter',breaks:[]}){
   const elements=new Map();const get=id=>{if(!elements.has(id))elements.set(id,{value:'',hidden:false,textContent:'',addEventListener(event,handler){this[event]=handler},replaceChildren(){},append(){}});return elements.get(id)};
   const requests=[];
   const script=html.match(/<script type="module">([\s\S]*?)<\/script>/)[1];
-  vm.runInNewContext(script,{document:{getElementById:get,querySelectorAll:()=>[],createElement:()=>({append(){}})},location:{search:'?t='+'0'.repeat(64)},URLSearchParams,Intl,Date,Number,fetch:async(_url,options)=>{const body=JSON.parse(options.body);requests.push(body);return{ok:true,json:async()=>body.action==='LOGIN'?{ok:true,sessionToken:'test-session'}:{ok:true,state:'READY',name:'Fiktiver Mitarbeiter',breaks:[]}}}});
+  vm.runInNewContext(script,{document:{getElementById:get,querySelectorAll:()=>[],createElement:()=>({append(){}})},location:{search:'?t='+'0'.repeat(64)},URLSearchParams,Intl,Date,Number,fetch:async(_url,options)=>{const body=JSON.parse(options.body);requests.push(body);return{ok:true,json:async()=>body.action==='LOGIN'?{ok:true,sessionToken:'test-session'}:{ok:true,...status}}}});
   return{get,requests,submit:()=>get('login').submit({preventDefault(){}})};
 }
 test('QR login accepts the eight-digit joining date and sends its original ISO date',async()=>{
@@ -81,4 +81,27 @@ test('QR login validates calendar dates without any requests for invalid entries
     const h=qrLoginHarness();h.get('startDate').value=entered;await h.submit();assert.equal(h.requests.length,0,entered);assert.ok(h.get('message').textContent);
   }
   const h=qrLoginHarness();h.get('startDate').value='29022024';await h.submit();assert.equal(h.requests[0].startDate,'2024-02-29');
+});
+
+test('QR pause controls allow pauses six through ten and stop after ten',async()=>{
+  for(const count of [5,6,9,10]){
+    const status={state:'RUNNING',name:'Fixture',breaks:Array.from({length:count},(_,i)=>({number:i+1}))};
+    const h=qrLoginHarness(status);h.get('startDate').value='16102024';await h.submit();
+    assert.equal(h.get('pauseStart').hidden,count===10);assert.equal(h.get('end').hidden,false);
+  }
+  const h=qrLoginHarness({state:'BREAK',breaks:Array.from({length:10},(_,i)=>({number:i+1}))});
+  h.get('startDate').value='16102024';await h.submit();assert.equal(h.get('pauseEnd').hidden,false);assert.equal(h.get('end').hidden,true);
+});
+
+test('time-only QR report renders all ten pause pairs',async()=>{
+  const fields=new Map(),field=id=>{if(!fields.has(id))fields.set(id,{});return fields.get(id)};
+  const card={querySelector:field},view={classList:{contains:()=>false}};
+  const rows=[{id:'fixture',employee_name:'Fixture',personnel_no:'TEST',started_at:'2026-09-29T18:00:00Z',ended_at:'2026-09-30T04:00:00Z',paid_minutes:600,pause_minutes:60,
+    breaks:Array.from({length:10},(_,i)=>({number:i+1,started_at:'2026-09-29T20:00:00Z',ended_at:'2026-09-29T20:06:00Z'}))}];
+  const B={role:'TIME_TRACKING',companyId:'fixture-company',client:{rpc:async()=>({data:rows})}};
+  vm.runInNewContext(fs.readFileSync(new URL('../assets/qr-independent-report-v1.js',import.meta.url),'utf8'),{window:{SFBackend:B},document:{getElementById:id=>id==='view-time'?view:card,addEventListener(){}},setTimeout(){},Intl,Date,Number,console});
+  await B.qrIndependentReport.refresh();
+  const output=field('#sfQrReportRows').innerHTML;
+  for(let i=1;i<=10;i++)assert.ok(output.includes('<td>Pause '+i+'</td>'));
+  assert.match(output,/10 Std\./);assert.match(output,/10 Pausen/);
 });
