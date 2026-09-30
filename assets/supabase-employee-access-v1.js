@@ -90,7 +90,7 @@
   const baseRenderEmployees=window.renderEmployees;if(typeof baseRenderEmployees==='function')window.renderEmployees=function(){const r=baseRenderEmployees.apply(this,arguments);if(window.selectedEmployeeId){const e=(window.employees||[]).find(x=>String(x.id)===String(window.selectedEmployeeId));if(e)setTimeout(()=>renderAccessControl(e),0)}return r};
 
   const baseEnsure=B.ensureCompany;if(typeof baseEnsure==='function')B.ensureCompany=async function(){
-    const m=await B.client.from('company_members').select('company_id,role,status').eq('user_id',B.user.id).eq('status','ACTIVE').limit(1);if(m.error)throw m.error;if(m.data?.length){B.companyId=m.data[0].company_id;B.role=m.data[0].role;B.employeeDbId=null;return}
+    const m=await B.client.from('company_members').select('company_id,role,status,created_at').eq('user_id',B.user.id).eq('status','ACTIVE');if(m.error)throw m.error;if(m.data?.length){const member=B.pickCompanyMembership?.(m.data)||m.data[0];B.companyId=member.company_id;B.role=member.role;B.employeeDbId=null;return}
     const e=await B.client.from('employees').select('id,company_id,first_name,last_name,email,access_status').eq('auth_user_id',B.user.id).eq('status','active').maybeSingle();if(e.error)throw e.error;if(e.data){B.companyId=e.data.company_id;B.role='EMPLOYEE';B.employeeDbId=e.data.id;B.employeeRecord=e.data;return}return baseEnsure.apply(this,arguments);
   };
 
