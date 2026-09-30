@@ -6,7 +6,7 @@ const settingsSource=fs.readFileSync(path.join(__dirname,'../../assets/settings-
 async function fixture(page){
   await page.route('https://schichtfunk.de/__shift-model-fixture',route=>route.fulfill({contentType:'text/html',body:'<!doctype html><html><head></head><body></body></html>'}));
   await page.goto('https://schichtfunk.de/__shift-model-fixture');
-  await page.setContent(`<style>:root{--bg:#06101b;--panel:#0d1928;--text:#edf6ff;--muted:#9bb0c6;--line:#29455e}body{background:var(--bg);color:var(--text);font:14px Arial;margin:16px}button{padding:10px 14px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--text);cursor:pointer}input{box-sizing:border-box;width:100%}</style><div id="view-settings"><div class="page-head"></div></div>`);
+  await page.setContent(`<meta name="viewport" content="width=device-width,initial-scale=1"><style>:root{--bg:#06101b;--panel:#0d1928;--text:#edf6ff;--muted:#9bb0c6;--line:#29455e}body{background:var(--bg);color:var(--text);font:14px Arial;margin:16px}button{padding:10px 14px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--text);cursor:pointer}input{box-sizing:border-box;width:100%}</style><div id="view-settings"><div class="page-head"></div></div>`);
   await page.addScriptTag({content:`
     window.TYPES=[];window.selectedType=null;window.globalSoll={};window.dailySoll={};window.DAYS=['Mo','Di','Mi','Do','Fr','Sa','So'];window.weekStart=new Date('2026-09-28T12:00:00');window.iso=d=>d.toISOString().slice(0,10);window.addDays=(d,n)=>new Date(+d+n*86400000);window.store={get:()=>null,set(){}};window.saveAll=()=>{};window.showSaveToast=()=>{};window.renderCalendar=()=>{};window.renderLibrary=()=>{};
     const data={a:[{code:'F8',name:'Frühdienst',active:true,default_start:'06:00:00',default_end:'14:00:00',css_class:'teal'}],b:[{code:'B8',name:'Modell Unternehmen 2',active:true,default_start:'08:00:00',default_end:'16:00:00',css_class:'blue'}]};
@@ -19,6 +19,7 @@ async function fixture(page){
 test('add overnight model, isolate companies, then delete unused model',async({page})=>{
   await fixture(page);await page.getByRole('button',{name:'＋ Schichtmodell hinzufügen',exact:true}).click();
   await page.getByLabel('Kürzel',{exact:true}).fill('N8');await page.getByLabel('Name',{exact:true}).fill('Nachtdienst');await page.getByRole('dialog').getByLabel('Beginn',{exact:true}).fill('22:00');await page.getByRole('dialog').getByLabel('Ende',{exact:true}).fill('06:00');
+  const dialogBounds=await page.getByRole('dialog').boundingBox();expect(dialogBounds.x).toBeGreaterThanOrEqual(0);expect(dialogBounds.x+dialogBounds.width).toBeLessThanOrEqual(page.viewportSize().width);
   await page.screenshot({path:test.info().outputPath('shift-model-dialog.png')});
   await page.getByRole('button',{name:'Schichtmodell hinzufügen',exact:true}).click();await expect(page.getByRole('dialog')).toHaveCount(0);await expect(page.getByRole('button',{name:'N8 löschen',exact:true})).toBeVisible();
   await page.evaluate(()=>selectFixtureCompany('b'));await expect(page.getByRole('button',{name:'N8 löschen',exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:'B8 löschen',exact:true})).toBeVisible();
