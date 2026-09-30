@@ -6,10 +6,11 @@
   if(localStorage.getItem(K)===null&&localStorage.getItem(LEGACY_K)!==null)localStorage.setItem(K,localStorage.getItem(LEGACY_K));
   if(localStorage.getItem(PK)===null&&localStorage.getItem(LEGACY_PK)!==null)localStorage.setItem(PK,localStorage.getItem(LEGACY_PK));
   let mode='shift',editId=null,standardEditId=null;
-  const read=()=>{try{return JSON.parse(localStorage.getItem(K)||'[]')}catch{return[]}};
-  const write=v=>localStorage.setItem(K,JSON.stringify(v));
-  const readPrefs=()=>{try{return JSON.parse(localStorage.getItem(PK)||'{}')}catch{return{}}};
-  const writePrefs=v=>localStorage.setItem(PK,JSON.stringify(v));
+  const scoped=key=>window.SFShiftModels?.isCompanyLoaded()?`${key}:company:${window.SFBackend.companyId}`:key;
+  const read=()=>{try{return JSON.parse(localStorage.getItem(scoped(K))||'[]')}catch{return[]}};
+  const write=v=>localStorage.setItem(scoped(K),JSON.stringify(v));
+  const readPrefs=()=>{try{return JSON.parse(localStorage.getItem(scoped(PK))||'{}')}catch{return{}}};
+  const writePrefs=v=>localStorage.setItem(scoped(PK),JSON.stringify(v));
   const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const types=()=>typeof TYPES!=='undefined'?TYPES:[];
   const soll=()=>typeof globalSoll!=='undefined'?globalSoll:{};
@@ -55,10 +56,20 @@
   function standardList(){
     standardEditId=null;editId=null;
     const p=readPrefs(),g=soll();
+    if(window.SFShiftModels?.isCompanyLoaded()){cloudStandardList();return;}
     document.getElementById('tplContent').innerHTML=tabs('standard')+`<div class="tpl-list-head"><div><h3>Standard-Schichtvorlagen</h3><p>Die Kürzel bleiben fest, damit bestehende Dienstpläne und Mitarbeiterfreigaben gültig bleiben.</p></div><button class="primary" onclick="tplEditor()">＋ Eigene Vorlage</button></div><div class="tpl-standard-list">${types().map(t=>{const pref=p[t.id]||{},active=pref.active!==false;return `<div class="tpl-standard-row ${active?'':'inactive'}"><div class="tpl-standard-main"><span class="tpl-color-dot ${esc(t.cls||'teal')}"></span><div><b>${esc(t.id)}</b><small>${esc(t.start)}–${esc(t.end)} · SOLL ${Number(g[t.id]??0)} · ${active?'Aktiv':'Deaktiviert'}</small></div></div><div class="tpl-row-actions"><button class="ghost" onclick="tplEditStandard('${esc(t.id)}')">Bearbeiten</button><button class="ghost" onclick="tplToggleStandard('${esc(t.id)}')">${active?'Deaktivieren':'Aktivieren'}</button></div></div>`}).join('')}</div>`;
     setFoot(false);
   }
+  function cloudStandardList(){
+    const M=window.SFShiftModels,can=M.canManage();
+    document.getElementById('tplContent').innerHTML=tabs('standard')+`<div class="tpl-list-head"><div><h3>Schichtmodelle</h3><p>Modelle des aktuell ausgewählten Unternehmens. Bestehende Dienste bleiben beim Entfernen erhalten.</p></div>${can?'<button type="button" class="primary" id="tplAddModel">＋ Schichtmodell hinzufügen</button>':''}</div><div class="tpl-standard-list">${types().map(t=>`<div class="tpl-standard-row"><div class="tpl-standard-main"><span class="tpl-color-dot ${esc(t.cls)}"></span><div><b>${esc(t.id)} · ${esc(t.name)}</b><small>${esc(t.start)}–${esc(t.end)} · SOLL ${Number(soll()[t.id]||0)}</small></div></div>${can?`<div class="tpl-row-actions"><button type="button" class="ghost" data-model-edit="${esc(t.id)}">Bearbeiten</button><button type="button" class="danger" data-model-remove="${esc(t.id)}">Löschen</button></div>`:''}</div>`).join('')||'<div class="tpl-empty">Noch keine aktiven Schichtmodelle vorhanden.</div>'}</div>`;
+    document.getElementById('tplAddModel')?.addEventListener('click',()=>M.openEditor());
+    document.querySelectorAll('#tplContent [data-model-edit]').forEach(b=>b.onclick=()=>M.openEditor(b.dataset.modelEdit));
+    document.querySelectorAll('#tplContent [data-model-remove]').forEach(b=>b.onclick=()=>M.remove(b.dataset.modelRemove));
+    setFoot(false);
+  }
   function editStandard(id){
+    if(window.SFShiftModels?.isCompanyLoaded()){window.SFShiftModels.openEditor(id);return;}
     const t=types().find(x=>x.id===id);if(!t)return;standardEditId=id;editId=null;
     const p=readPrefs()[id]||{},g=soll();
     document.getElementById('tplContent').innerHTML=tabs('standard')+`<button class="tpl-backlink" onclick="tplStandardList()">← Zurück zu Standardvorlagen</button><div class="tpl-editor-title"><h3>${esc(id)} bearbeiten</h3><p>Zeit, SOLL-Stärke, Farbe und Sichtbarkeit dieser Standard-Schicht festlegen.</p></div><div class="tpl-form"><label>Kürzel (fest)<input value="${esc(id)}" disabled></label><label>Status<select id="tplStdActive"><option value="1" ${p.active!==false?'selected':''}>Aktiv</option><option value="0" ${p.active===false?'selected':''}>Deaktiviert</option></select></label><label>Beginn<input id="tplStdStart" type="time" value="${esc(t.start)}"></label><label>Ende<input id="tplStdEnd" type="time" value="${esc(t.end)}"></label><label>SOLL-Stärke<input id="tplStdSoll" type="number" min="0" value="${Number(g[id]??0)}"></label><label>Farbe<select id="tplStdColor"><option value="blue">Blau</option><option value="amber">Amber</option><option value="pink">Pink</option><option value="teal">Türkis</option><option value="cyan">Cyan</option><option value="violet">Violett</option></select></label></div><div class="tpl-inline-note">Deaktivieren blendet die Vorlage aus der Schichtbibliothek aus. Bestehende Zuweisungen bleiben erhalten.</div><div class="tpl-editor-actions"><button class="ghost" onclick="tplStandardList()">Abbrechen</button><button class="primary" onclick="tplSaveStandard()">Änderungen speichern</button></div>`;
@@ -70,6 +81,7 @@
     try{typeof showSaveToast==='function'&&showSaveToast('Schichtvorlage gespeichert',`${standardEditId} wurde aktualisiert.`)}catch{}
   }
   function toggleStandard(id){
+    if(window.SFShiftModels?.isCompanyLoaded()){window.SFShiftModels.remove(id);return;}
     const p=readPrefs(),g=soll(),t=types().find(x=>x.id===id);if(!t)return;
     const cur=p[id]||{},next=cur.active===false;
     if(next){const restore=Number(cur.lastSoll??g[id]??1);g[id]=restore>0?restore:1}else{p[id]={...cur,lastSoll:Number(g[id]??0)};g[id]=0}

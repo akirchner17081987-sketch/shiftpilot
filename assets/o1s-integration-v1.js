@@ -6,6 +6,7 @@
   let demoRpcPatched=false,lastRender=0;
 
   function ensureType(){
+    if(window.SFShiftModels?.isCompanyLoaded())return true;
     try{
       if(typeof TYPES==='undefined'||!Array.isArray(TYPES))return false;
       let t=TYPES.find(x=>x?.id==='O1S');
@@ -57,6 +58,7 @@
   }
 
   function enhanceEmployeeManagement(){
+    if(window.SFShiftModels?.isCompanyLoaded()&&!window.SFShiftModels.find('O1S')?.active)return;
     protectAllEmployees();
     const root=document.getElementById('spEmployeeV2');
     if(root){

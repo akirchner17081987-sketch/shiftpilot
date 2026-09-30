@@ -365,7 +365,8 @@ test('employee portal RLS requires an active employee and matching ownership cha
 });
 
 test('Teamleiter permission survives normalization and qualification saving', () => {
-  assert.match(employeeManagement, /e\.shifts=Array\.from\(new Set\(\[\.\.\.\(e\.shifts\|\|\[\]\)\.filter\(x=>Q\.includes\(x\)\),\.\.\.\(e\.role==='Teamleiter'\?\['Teamleiter'\]:\[\]\)\]\)\)/);
+  assert.match(employeeManagement, /filter\(x=>knownShiftCodes\(\)\.includes\(x\)\)/);
+  assert.match(employeeManagement, /e\.role==='Teamleiter'&&knownShiftCodes\(\)\.includes\('Teamleiter'\)/);
   assert.match(employeeManagement, /e\.shifts=nextShifts/);
   assert.doesNotMatch(employeeManagement, /e\.shifts=e\.qualifications\.filter\(x=>x!=='Teamleiter'\)/);
   assert.match(supabaseData, /shift_permissions:e\.shifts\|\|\[\]/);
