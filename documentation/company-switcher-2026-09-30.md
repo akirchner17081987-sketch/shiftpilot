@@ -1,6 +1,6 @@
 # Unternehmensauswahl und autorisierte Unternehmenskopie
 
-Stand: 30.09.2026. Unternehmenskopie ausgeführt; Veröffentlichung der Auswahl über main/IONOS.
+Stand: 30.09.2026. Unternehmenskopie ausgeführt; Auswahl auf main für die Rückfallseite und auf codex/ionos-migration für IONOS veröffentlicht.
 
 Der Pfeil neben dem Unternehmensnamen öffnet die aktiven Teamzugehörigkeiten des angemeldeten Kontos. Die Auswahl zeigt Name, Rolle und das aktuell geöffnete Unternehmen. Ohne ausdrückliche Auswahl wird die älteste aktive Zugehörigkeit geöffnet. Die Auswahl wird pro Benutzer und Browser-Tab gespeichert und bei jedem Wechsel gegen die Datenbank geprüft.
 
@@ -27,3 +27,5 @@ Unternehmensname und Zeitzone können unter Einstellungen → Unternehmen geänd
 - Lokaler Browser-Praxistest blockiert: Browserprozesse dürfen in der Ausführungsumgebung keine erforderlichen Sockets öffnen. Ein vollständiger angemeldeter Browserwechsel wurde deshalb nicht bestätigt.
 
 Das beigefügte SQL dokumentiert die einmalige Kopieroperation und ist standardmäßig ein Probelauf mit ROLLBACK. Vor erneuter Nutzung müssen Quell- und Inhaber-UUID eingesetzt und der gesamte aktuelle Datenumfang erneut geprüft werden. Es ist keine automatisch ausführbare Datenbankmigration.
+
+Der IONOS-Produktionszweig ist codex/ionos-migration; main ist bei IONOS bewusst nicht für Deployments aktiviert. Die vorhandenen unterschiedlichen Zeitraum-Auswahlen in index.html wurden beim Übertragen erhalten. Der alte Einbindungsworkflow erkennt jetzt auch versionierte Script-URLs und prüft die Syntax des aktuellen Modul-Loaders anstelle entfernter historischer Bezeichner.
