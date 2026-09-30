@@ -10,4 +10,4 @@ Der Katalog kommt aus der Datenbank des ausgewählten Unternehmens; gelöschte S
 
 ## Prüfung
 
-307 Node-Regressionstests und fünf IONOS-Buildprüfungen bestanden. Transaktionale Datenbankprüfungen unter der authentifizierten Inhaberrolle bestätigen Anlegen, Bearbeiten, Löschen, Archivieren, Wiederherstellen, Schutz vorhandener Dienste, doppelte Kürzel und Unternehmensisolation. Alle Teständerungen wurden zurückgerollt. Browserprüfungen verwenden synthetische Daten und die tatsächlichen Verwaltungsmodule auf Desktop und Mobilgeräten; sie verändern keine Betriebsdaten.
+308 Node-Regressionstests und fünf IONOS-Buildprüfungen bestanden. Transaktionale Datenbankprüfungen unter der authentifizierten Inhaberrolle bestätigen Anlegen, Bearbeiten, Löschen, Archivieren, Wiederherstellen, Schutz vorhandener Dienste einschließlich späterer Cloud-Speicherung, Überschneidungsprüfung, doppelte Kürzel und Unternehmensisolation. Alle Teständerungen wurden zurückgerollt. Browserprüfungen verwenden synthetische Daten und die tatsächlichen Verwaltungsmodule auf Desktop und Mobilgeräten; sie verändern keine Betriebsdaten.

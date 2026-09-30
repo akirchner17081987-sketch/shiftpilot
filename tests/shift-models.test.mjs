@@ -30,3 +30,10 @@ test('roles, pending switches and failed saves cannot mutate models',async()=>{
 test('database removal stays committed when refreshing fails and tells user to reload',async()=>{
   const {B,M}=harness();B.client.from=()=>({select(){return this},eq(){return this},order(){return this},then(resolve){resolve({error:Error('offline')})}});await assert.rejects(M.perform('REMOVE',{code:'F8'}),/wurde gespeichert.*neu/);assert.equal(M.busy,false);
 });
+test('employee permissions and filters follow active models while keeping historical qualifications',()=>{
+  const {c,M}=harness();M.apply([row('N8'),row('OLD',false),row('Teamleiter')],'a');c.document.readyState='loading';c.document.addEventListener=()=>{};
+  const employeeSource=fs.readFileSync(new URL('../assets/employee-management-v2.js',import.meta.url),'utf8').replace(/\}\)\(\);\s*$/, 'window.modelTest={normalizeEmployee,qualifications,syncQualificationFilter};})();');
+  vm.runInNewContext(employeeSource,c);const api=c.window.modelTest,e={shifts:['N8','OLD','unknown'],role:'Teamleiter'};api.normalizeEmployee(e);assert.deepEqual(Array.from(e.shifts),['N8','OLD','Teamleiter']);assert.deepEqual(Array.from(api.qualifications(e)),['N8','Teamleiter']);
+  const box={dataset:{},innerHTML:'',querySelector:()=>({dataset:{q:'OLD'}}),querySelectorAll:()=>[]};api.syncQualificationFilter({querySelector:()=>box});assert.match(box.innerHTML,/data-q="N8"/);assert.doesNotMatch(box.innerHTML,/data-q="OLD"/);
+  M.apply([row('N8')],'a');api.normalizeEmployee(e);assert.deepEqual(Array.from(e.shifts),['N8']);
+});
