@@ -20,8 +20,8 @@ function show(status){
   breaks.forEach(b=>{const li=document.createElement('li'),label=document.createElement('b'),span=document.createElement('span');label.textContent='Pause '+b.number;span.textContent=time(b.started_at)+' – '+time(b.ended_at);li.append(label,span);$('breaks').append(li)});
   const state=status.state;$('state').textContent=state==='BREAK'?'Pause läuft':state==='RUNNING'?'Arbeitszeit läuft':'Bereit für den Arbeitsbeginn';
   $('stateDetail').textContent=state==='BREAK'?'Nach der Pause auf „Pause beenden“ tippen.':state==='RUNNING'?'Pause oder Dienstende mit einem Tipp buchen.':'Es ist keine Arbeitszeit offen.';
-  $('start').hidden=state!=='READY';$('pauseStart').hidden=state!=='RUNNING'||breaks.length>=5;$('pauseEnd').hidden=state!=='BREAK';$('end').hidden=state!=='RUNNING';
-  if(state==='RUNNING'&&breaks.length>=5)$('stateDetail').textContent='Fünf Pausen erfasst. Arbeitszeit kann beendet werden.';
+  $('start').hidden=state!=='READY';$('pauseStart').hidden=state!=='RUNNING'||breaks.length>=10;$('pauseEnd').hidden=state!=='BREAK';$('end').hidden=state!=='RUNNING';
+  if(state==='RUNNING'&&breaks.length>=10)$('stateDetail').textContent='Zehn Pausen erfasst. Arbeitszeit kann beendet werden.';
 }
 async function action(value){if(busy)return;busy=true;document.querySelectorAll('button').forEach(b=>b.disabled=true);msg('');try{const data=await call(value);show(data);msg(({CLOCK_IN:'Beginn',BREAK_START:'Pausenbeginn',BREAK_END:'Pausenende',CLOCK_OUT:'Ende'})[value]+' um '+time(data.punched_at)+' Uhr gespeichert.','ok')}catch(error){msg(error.message,'error');if(/Anmeldung abgelaufen/.test(error.message))logout()}finally{busy=false;document.querySelectorAll('button').forEach(b=>b.disabled=false)}}
 function logout(){sessionToken='';$('clock').hidden=true;$('login').hidden=false;$('startDate').value=''}
