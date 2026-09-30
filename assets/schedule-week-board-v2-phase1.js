@@ -85,7 +85,8 @@
   function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
   function initials(emp){return `${emp?.first?.[0]||''}${emp?.last?.[0]||''}`.toUpperCase()||'–'}
   function shiftOrder(){
-    const ids=TYPES.map(t=>t.id);
+    const visibleDates=currentWeekDates().map(iso);
+    const ids=[...new Set([...TYPES.map(t=>t.id),...assignments.filter(a=>visibleDates.includes(a.date)).map(a=>a.type)])];
     return [...ORDER.filter(id=>ids.includes(id)),...ids.filter(id=>!ORDER.includes(id))];
   }
   function statusFor(soll,ist){if(soll<=0&&ist>0)return'over';if(ist===0&&soll>0)return'empty';if(ist<soll)return'under';if(ist===soll)return'complete';return'over'}

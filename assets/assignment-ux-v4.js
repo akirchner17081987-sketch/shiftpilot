@@ -27,6 +27,7 @@
   function conflictFor(emp,type,date,start,end,ignoreId=null){
     const t=typeById(type);if(!emp||!t)return {hard:['Ungültige Schicht oder Mitarbeiter.'],soft:[]};
     const hard=[],soft=[];
+    if(t.active===false&&!assignments.some(a=>a.id===ignoreId&&a.type===type))hard.push('Dieses Schichtmodell wurde aus der Planung entfernt.');
     if(emp.status!=='active')hard.push('Mitarbeiter ist inaktiv.');
     if(!(emp.shifts||[]).includes(type))hard.push(`Keine Freigabe für ${type}.`);
     const [ns,ne]=shiftInterval(date,start||t.start,end||t.end);
@@ -115,7 +116,7 @@
 
   window.editAssignment=function(id){
     const a=assignments.find(x=>x.id===id);if(!a)return;const t=typeById(a.type),emp=employees.find(e=>e.id===a.employeeId);if(!t||!emp)return;closeModal();
-    const types=TYPES.map(x=>`<option value="${esc(x.id)}" ${x.id===a.type?'selected':''}>${esc(x.id)}</option>`).join('');
+    const types=(TYPES.some(x=>x.id===a.type)?TYPES:[...TYPES,typeById(a.type)]).filter(Boolean).map(x=>`<option value="${esc(x.id)}" ${x.id===a.type?'selected':''}>${esc(x.id)}</option>`).join('');
     const emps=employees.filter(e=>e.status==='active'||e.id===emp.id).map(e=>`<option value="${esc(e.id)}" ${e.id===emp.id?'selected':''}>${esc(e.first+' '+e.last+(e.personnelNo?' · '+e.personnelNo:''))}</option>`).join('');
     const m=document.createElement('div');m.id='spAssignModal';m.className='sp-assign-backdrop';
     m.innerHTML=`<div class="sp-assign-modal sp-assign-edit" role="dialog" aria-modal="true" aria-labelledby="spEditTitle"><div class="sp-assign-head"><div><div class="eyebrow">SCHICHT BEARBEITEN</div><h2 id="spEditTitle">${esc(a.type)} · ${esc(emp.first+' '+emp.last)}</h2><p>Zeit, Mitarbeiter oder Schicht anpassen oder die Zuweisung löschen.</p></div><button type="button" class="sp-assign-close" onclick="spCloseAssignModal()">✕</button></div><div class="sp-assign-body"><div class="sp-edit-grid"><label>Mitarbeiter<select id="spEditEmp">${emps}</select></label><label>Schicht<select id="spEditType">${types}</select></label><label>Datum<input id="spEditDate" type="date" value="${esc(a.date)}"></label><label>Beginn<input id="spEditStart" type="time" value="${esc(a.start||t.start)}"></label><label>Ende<input id="spEditEnd" type="time" value="${esc(a.end||t.end)}"></label><label>Pause (Min.)<input id="spEditPause" type="number" min="0" step="5" value="${Number(a.pause||0)}"></label></div><label class="sp-edit-note">Bemerkung<textarea id="spEditNote" rows="3" placeholder="Optionaler Hinweis zur Schicht ...">${esc(a.note||'')}</textarea></label><div id="spEditCheck" class="sp-edit-check"></div></div><div class="sp-assign-foot"><button type="button" class="danger sp-delete-assignment" id="spDeleteAssign">🗑 Schicht löschen</button><span></span><button type="button" class="ghost" onclick="spCloseAssignModal()">Abbrechen</button><button type="button" class="primary" id="spSaveAssign">Änderungen speichern</button></div></div>`;

@@ -230,13 +230,13 @@ let selectedEmployeeId=employees[0]?.id||null;
 let selectedPlanEmployeeId=null;
 function saveAll(){store.set('employees',employees);store.set('assignments',assignments);store.set('absences',absences);store.set('globalSoll',globalSoll);store.set('dailySoll',dailySoll)}
 function addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x}function iso(d){const x=d instanceof Date?d:new Date(d);return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`}function fmt(d){return d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'})}function currentWeekDates(){return Array.from({length:7},(_,i)=>addDays(weekStart,i))}
-function typeById(id){return TYPES.find(t=>t.id===id)}
+function typeById(id){return TYPES.find(t=>t.id===id)||window.SFShiftModels?.find(id)}
 function getSoll(date,type){return dailySoll[date]?.[type]??globalSoll[type]??0}
 function assignmentsFor(date,type){return assignments.filter(a=>a.date===date&&a.type===type)}
 function absent(employeeId,date){return absences.some(a=>a.employeeId===employeeId&&a.date===date)}
 function isEligible(emp,type,date){if(emp.status!=='active'||!emp.shifts.includes(type)||absent(emp.id,date))return false;return !assignments.some(a=>a.date===date&&a.employeeId===emp.id)}
 function renderLibrary(){document.getElementById('shiftLibrary').innerHTML=TYPES.map(t=>`<button class="shift-chip ${t.cls} ${selectedType===t.id?'selected':''}" aria-pressed="${selectedType===t.id}" onclick="chooseType('${t.id}')"><span class="dots">⋮</span><b>${t.id}</b><small>${t.start} – ${t.end}</small><small>SOLL ${globalSoll[t.id]}</small></button>`).join('')}
-function chooseType(t){selectedType=t;renderLibrary();showSaveToast('Schichtvorlage ausgewählt',`${t} ist für die nächste Besetzung aktiv.`)}
+function chooseType(t){if(window.SFShiftModels?.isCompanyLoaded()&&!TYPES.some(x=>x.id===t))return;selectedType=t;renderLibrary();showSaveToast('Schichtvorlage ausgewählt',`${t} ist für die nächste Besetzung aktiv.`)}
 function renderPlanEmployeePool(){const el=document.getElementById('planEmployeePool');if(!el)return;const q=(document.getElementById('planEmployeeSearch')?.value||'').toLowerCase();const weekDates=currentWeekDates().map(iso);const list=employees.filter(e=>e.status==='active'&&(`${e.first} ${e.last} ${e.personnelNo||''} ${e.role||''} ${(e.shifts||[]).join(' ')}`).toLowerCase().includes(q));el.innerHTML=list.map(e=>{const weekAbsences=absences.filter(a=>a.employeeId===e.id&&weekDates.includes(a.date)).sort((a,b)=>a.date.localeCompare(b.date));const absenceHtml=weekAbsences.length?`<div class="pool-absence has-absence"><strong>Abwesend:</strong> ${weekAbsences.map(a=>`${a.type} · ${new Date(a.date+'T00:00:00').toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit'})}`).join(' · ')}</div>`:`<div class="pool-absence">✓ Keine Abwesenheit in dieser Woche</div>`;const shifts=(e.shifts||[]).length?(e.shifts||[]).map(sh=>`<span class="pool-shift-tag">${sh}</span>`).join(''):'<span class="pool-shift-tag">Keine Freigabe</span>';return `<div class="employee-drag ${selectedPlanEmployeeId===e.id?'selected':''}" draggable="true" data-employee-id="${e.id}" aria-pressed="${selectedPlanEmployeeId===e.id}"><div class="avatar">${(e.first?.[0]||'')+(e.last?.[0]||'')}</div><div class="employee-pool-info"><b>${e.first} ${e.last}</b><small>${e.personnelNo||''} · ${e.role||e.employment||''}</small><span class="pool-detail-label">Mögliche Schichten</span><div class="pool-shifts">${shifts}</div>${absenceHtml}</div></div>`}).join('')||'<div class="empty" style="padding:8px">Keine aktiven Mitarbeiter gefunden.</div>';document.querySelectorAll('.employee-drag').forEach(card=>{card.addEventListener('click',()=>{selectedPlanEmployeeId=card.dataset.employeeId;renderPlanEmployeePool();const emp=employees.find(e=>e.id===selectedPlanEmployeeId);if(emp)showSaveToast('Mitarbeiter ausgewählt',`${emp.first} ${emp.last} ist aktuell ausgewählt.`)});card.addEventListener('dragstart',e=>{selectedPlanEmployeeId=card.dataset.employeeId;card.classList.add('dragging');e.dataTransfer.setData('text/plain','employee:'+card.dataset.employeeId)});card.addEventListener('dragend',()=>{card.classList.remove('dragging');renderPlanEmployeePool()})})}
 function renderCalendar(){const ds=currentWeekDates(),todayIso=iso(new Date());document.getElementById('weekLabel').textContent=`${fmt(ds[0])} – ${fmt(ds[6])}`;let h='<div class="time-col"><div class="time-head"></div>';for(let hr=6;hr<24;hr+=3)h+=`<div class="time-slot">${String(hr).padStart(2,'0')}:00</div>`;h+='</div>';for(const [i,d] of ds.entries()){const date=iso(d),today=date===todayIso;h+=`<div class="day-col ${today?'today':''}"><div class="day-head ${today?'today':''}">${DAYS[i]} <b>${d.getDate()}</b></div><div class="day-body" onclick="dayClick(event,'${date}')">${Array.from({length:6},()=>'<div class="day-slot"></div>').join('')}${renderAssignments(date)}</div></div>`}document.getElementById('calendarGrid').innerHTML=h;renderSoll(ds);updateStats()}
 function timeTop(t){const [hh,mm]=t.split(':').map(Number);let mins=(hh*60+mm)-360;if(mins<0)mins+=1440;return mins/(3*60)*86}function timeHeight(s,e){const [sh,sm]=s.split(':').map(Number),[eh,em]=e.split(':').map(Number);let mins=(eh*60+em)-(sh*60+sm);if(mins<0)mins+=1440;return mins/(3*60)*86}
@@ -687,7 +687,7 @@ const _saveAbsenceDialogDynamicBase=saveAbsenceDialog;
 saveAbsenceDialog=function(){if(!document.getElementById('absEmp')?.value){alert('Bitte zuerst einen Mitarbeiter über die Suche auswählen.');document.getElementById('absEmpSearch')?.focus();return}_saveAbsenceDialogDynamicBase()}
 </script>
 
-<script src="assets/template-manager.js"></script>
+<script src="assets/template-manager.js?v=20261001-models1"></script>
 <!-- SCHICHTFUNK_QUALITY_PASS_V1 -->
 <style id="schichtfunk-quality-pass-v1">
 /* ===== SchichtFunk Quality Pass: Lesbarkeit, Fokus, Responsive, Konsistenz ===== */
@@ -883,22 +883,22 @@ table th,table td{font-size:13px;line-height:1.35}
 <!-- /SCHICHTFUNK_SCHEDULE_UX_V2 -->
 
 <script src="assets/schedule-ux-v3.js"></script>
-<script src="assets/assignment-ux-v4.js?v=20260903-monthly-hours1"></script>
+<script src="assets/assignment-ux-v4.js?v=20261001-models1"></script>
 <script src="assets/soll-summary-v5.js"></script>
 <script src="assets/ot-weekend-holiday-policy.js"></script>
 <script src="assets/dynamic-employee-pool-v1.js"></script>
 <script src="assets/schichtfunk-rebrand.js"></script>
 <script src="assets/schichtfunk-brand-cleanup-v2.js?v=20260929-customday1"></script>
-<script src="assets/navigation-compat-v1.js?v=20260930-tenbreaks1"></script>
+<script src="assets/navigation-compat-v1.js?v=20260930-tenbreaks1&models=1"></script>
 <script src="assets/schichtfunk-schedule-core-v1.js"></script>
 <script src="assets/assignment-quick-delete-v1.js"></script>
-<script src="assets/conflict-plausibility-v1.js?v=20260930-timeonly3&company=1"></script>
+<script src="assets/conflict-plausibility-v1.js?v=20260930-timeonly3&company=1&models=1"></script>
 <script src="assets/employee-core-v1.js"></script>
 <script src="assets/employee-rhythm-v1.js?v=20260902-1"></script>
-<script src="assets/employee-management-v2.js?v=20260929-day-cycle2"></script>
+<script src="assets/employee-management-v2.js?v=20261001-models1"></script>
 <script src="assets/team-admin-v1.js?v=20260930-timeonly3"></script>
 <script src="assets/audit-logs-v1.js?v=20260902-audit6"></script>
-<script src="assets/settings-management-v2.js?v=20260930-company1"></script>
+<script src="assets/settings-management-v2.js?v=20261001-models1"></script>
 <script src="assets/company-datetime-v1.js?v=20260902-datetime1"></script>
 <script src="assets/schedule-final-v1.js?v=20260831-complete1"></script>
 <script src="assets/absence-management-v3.js?v=20260831-complete1"></script>
@@ -1028,7 +1028,7 @@ table th,table td{font-size:13px;line-height:1.35}
 <script src="assets/supabase-shift-marketplace-v1.js?v=20260906-employee1"></script>
 <script src="assets/readiness-traffic-light-v1.js?v=20260907-demo1"></script>
 <script src="assets/disruption-autopilot-v1.js?v=20260906-disruptions2"></script>
-<script src="assets/assignment-ux-v4.js"></script>
+<script src="assets/assignment-ux-v4.js?v=20261001-models1"></script>
 <script src="assets/mobile-manager-navigation-v1.js?v=20260907-1"></script>
 <script src="assets/manager-theme-v1.js?v=20260929-1"></script>
 <!-- SCHICHTFUNK_HELP_CENTER_V2 -->

@@ -6,6 +6,7 @@
   let lastRender=0;
 
   function ensureType(){
+    if(window.SFShiftModels?.isCompanyLoaded())return true;
     try{
       if(typeof TYPES==='undefined'||!Array.isArray(TYPES))return false;
       let t=TYPES.find(x=>x?.id==='QA');
@@ -52,6 +53,7 @@
   function selectedEmployee(){try{return typeof selectedEmployeeId!=='undefined'&&Array.isArray(employees)?employees.find(e=>String(e.id)===String(selectedEmployeeId)):null}catch{return null}}
 
   function enhanceEmployeeManagement(){
+    if(window.SFShiftModels?.isCompanyLoaded()&&!window.SFShiftModels.find('QA')?.active)return;
     protectAllEmployees();
     const root=document.getElementById('spEmployeeV2');
     if(root){

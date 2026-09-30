@@ -18,6 +18,7 @@ jobs:
         shell: python
         run: |
           from pathlib import Path
+          import re
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
           css='<link rel="stylesheet" href="assets/assignment-ux-v4.css">'
@@ -26,7 +27,7 @@ jobs:
           if css not in s:
               s=s.replace('</head>', css+'\n</head>')
               changed=True
-          if js not in s:
+          if not re.search(r'<script[^>]+src=[\"\']assets/assignment-ux-v4\.js(?:\?[^\"\']*)?[\"\']', s):
               s=s.replace('</body>', js+'\n</body>')
               changed=True
           if changed:
@@ -35,7 +36,7 @@ jobs:
         run: |
           grep -q 'assets/assignment-ux-v4.css' index.html
           grep -q 'assets/assignment-ux-v4.js' index.html
-          grep -q 'spAssignmentConflict' assets/assignment-ux-v4.js
+          node --check assets/assignment-ux-v4.js
       - name: Commit changes
         run: |
           if git diff --quiet; then
