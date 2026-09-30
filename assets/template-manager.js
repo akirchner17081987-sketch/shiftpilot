@@ -1,4 +1,5 @@
 (()=>{
+  if(window.__sfTemplateManager)return;window.__sfTemplateManager=true;
   const K='schichtfunk_templates_v1';
   const PK='schichtfunk_shift_template_prefs_v2';
   const LEGACY_K='shiftpilot_templates_v1';

@@ -18,7 +18,8 @@ async function fixture(page){
 }
 test('add overnight model, isolate companies, then delete unused model',async({page})=>{
   await fixture(page);await page.getByRole('button',{name:'＋ Schichtmodell hinzufügen',exact:true}).click();
-  await page.getByLabel('Kürzel',{exact:true}).fill('N8');await page.getByLabel('Name',{exact:true}).fill('Nachtdienst');await page.getByLabel('Beginn',{exact:true}).fill('22:00');await page.getByLabel('Ende',{exact:true}).fill('06:00');
+  await page.getByLabel('Kürzel',{exact:true}).fill('N8');await page.getByLabel('Name',{exact:true}).fill('Nachtdienst');await page.getByRole('dialog').getByLabel('Beginn',{exact:true}).fill('22:00');await page.getByRole('dialog').getByLabel('Ende',{exact:true}).fill('06:00');
+  await page.screenshot({path:test.info().outputPath('shift-model-dialog.png')});
   await page.getByRole('button',{name:'Schichtmodell hinzufügen',exact:true}).click();await expect(page.getByRole('dialog')).toHaveCount(0);await expect(page.getByRole('button',{name:'N8 löschen',exact:true})).toBeVisible();
   await page.evaluate(()=>selectFixtureCompany('b'));await expect(page.getByRole('button',{name:'N8 löschen',exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:'B8 löschen',exact:true})).toBeVisible();
   await page.evaluate(()=>selectFixtureCompany('a'));await page.getByRole('button',{name:'N8 löschen',exact:true}).click();await page.getByRole('button',{name:'Schichtmodell löschen',exact:true}).click();await expect(page.getByRole('button',{name:'N8 löschen',exact:true})).toHaveCount(0);
