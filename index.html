@@ -103,6 +103,55 @@ button,input,select,textarea{font:inherit} button{cursor:pointer}
 <link rel="stylesheet" href="assets/manager-theme-v1.css?v=20260929-2">
 <link rel="stylesheet" href="assets/schichtfunk-rebrand.css">
 <link rel="stylesheet" href="assets/planning-assistant-v1.css?v=20261001-5">
+<style id="sf-employee-scrollbars-v1">
+/* SchichtFunk: einheitliche Scrollleisten im Mitarbeiterportal */
+#sfEmployeePortal{
+  --sf-scroll-thumb:#388f89;
+  --sf-scroll-hover:#27d6b4;
+  --sf-scroll-active:#64ead3;
+}
+html[data-sf-theme="light"] #sfEmployeePortal{
+  --sf-scroll-thumb:#397d75;
+  --sf-scroll-hover:#0d8a74;
+  --sf-scroll-active:#066957;
+}
+#sfEmployeePortal,
+#sfEmployeePortal *{
+  scrollbar-width:thin;
+  scrollbar-color:var(--sf-scroll-thumb) transparent;
+}
+@supports selector(::-webkit-scrollbar){
+  #sfEmployeePortal,
+  #sfEmployeePortal *{
+    scrollbar-width:auto;
+    scrollbar-color:auto;
+  }
+  #sfEmployeePortal::-webkit-scrollbar,
+  #sfEmployeePortal *::-webkit-scrollbar{width:10px;height:10px}
+  #sfEmployeePortal::-webkit-scrollbar-track,
+  #sfEmployeePortal *::-webkit-scrollbar-track{background:transparent}
+  #sfEmployeePortal::-webkit-scrollbar-thumb,
+  #sfEmployeePortal *::-webkit-scrollbar-thumb{
+    background-color:var(--sf-scroll-thumb);
+    background-clip:padding-box;
+    border:2px solid transparent;
+    border-radius:999px;
+    min-height:36px;
+  }
+  #sfEmployeePortal::-webkit-scrollbar-thumb:hover,
+  #sfEmployeePortal *::-webkit-scrollbar-thumb:hover{background-color:var(--sf-scroll-hover)}
+  #sfEmployeePortal::-webkit-scrollbar-thumb:active,
+  #sfEmployeePortal *::-webkit-scrollbar-thumb:active{background-color:var(--sf-scroll-active)}
+  #sfEmployeePortal::-webkit-scrollbar-corner,
+  #sfEmployeePortal *::-webkit-scrollbar-corner{background:transparent}
+}
+@media(forced-colors:active){
+  #sfEmployeePortal,
+  #sfEmployeePortal *{scrollbar-color:auto;scrollbar-width:auto}
+  #sfEmployeePortal::-webkit-scrollbar-thumb,
+  #sfEmployeePortal *::-webkit-scrollbar-thumb{background-color:ButtonText}
+}
+</style>
 </head>
 <body>
 
