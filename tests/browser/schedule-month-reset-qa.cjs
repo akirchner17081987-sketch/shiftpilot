@@ -3,11 +3,12 @@ const {chromium}=require(process.env.SF_PLAYWRIGHT_PATH||(process.platform==='wi
 const root=path.resolve(__dirname,'../..'),read=p=>fs.readFileSync(path.join(root,p),'utf8');
 const fixture=`
 window.__errors=[];addEventListener('error',e=>__errors.push(e.message));addEventListener('unhandledrejection',e=>__errors.push(String(e.reason)));
-let assignments=[{id:'nov',date:'2026-11-30'},{id:'dec',date:'2026-12-01'},{id:'jan',date:'2027-01-01'}];let autoPlanPreview=[{date:'2026-12-15'}],autoPlanAnalyzed=true,autoPlanApplied=4;
+let assignments=[{id:'nov',_dbId:'nov-db',date:'2026-11-30'},{id:'dec',_dbId:'dec-db',date:'2026-12-01'},{id:'jan',_dbId:'jan-db',date:'2027-01-01',note:'Ungespeicherte Anpassung'}];let autoPlanPreview=[{date:'2026-12-15'}],autoPlanAnalyzed=true,autoPlanApplied=4;
 window.__period={mode:'week',start:'2026-11-30',end:'2026-12-06'};window.SchichtFunkCalendarView={getPeriod:()=>__period};
 window.__calls=[];window.__deleted=[];window.__preview={monthStart:'2026-12-01',monthEnd:'2026-12-31',total:3,draft:1,published:2,canDelete:true};window.__fail=false;window.__hold=false;
 window.showSaveToast=(...args)=>window.__toast=args;window.renderCalendar=window.renderPlanEmployeePool=window.renderOverview=window.updateStats=()=>{};
-window.SFBackend={ready:true,role:'OWNER',companyId:'company-a',companyName:'Fiktives Testunternehmen',sync:async()=>{},hydrate:async()=>{},client:{rpc:async(name,args)=>{
+window.__syncCalls=0;
+window.SFBackend={ready:true,role:'OWNER',companyId:'company-a',companyName:'Fiktives Testunternehmen',lastSyncError:{message:'Der Monat ist abgeschlossen (August)'},assignmentIsDirty:a=>a.note==='Ungespeicherte Anpassung',sync:async()=>{__syncCalls++;throw Error('Der Monat ist abgeschlossen (August)')},hydrate:async()=>{assignments=[{id:'nov',_dbId:'nov-db',date:'2026-11-30'},{id:'jan',_dbId:'jan-db',date:'2027-01-01',note:''}]},client:{rpc:async(name,args)=>{
  __calls.push({name,args});if(name==='preview_schedule_month_reset')return {data:{...__preview}};
  if(name==='reset_company_schedule_month'){if(__fail)return {error:{message:'Monat wurde inzwischen abgeschlossen'}};if(__hold)await new Promise(r=>window.__release=r);__deleted.push(args);return {data:{deletedAssignments:3}};}
  throw Error('Unexpected RPC: '+name);
@@ -23,6 +24,7 @@ async function run(){
   await page.evaluate(()=>{__period={mode:'month',start:'2026-12-01',end:'2026-12-31'};document.dispatchEvent(new Event('sf:schedule-period-changed'))});
   await button.click();const dialog=page.getByRole('dialog');await dialog.waitFor();assert.match(await dialog.textContent(),/Dezember 2026 löschen/);
   assert.equal(await page.evaluate(()=>__deleted.length),0,'Opening preview must not delete');await page.locator('#sfResetConfirm').fill('LÖSCHEN');assert.equal(await page.locator('#sfResetSubmit').isDisabled(),true,'Generic confirmation denied');
+  assert.equal(await page.evaluate(()=>__syncCalls),0,'Closed August must not be rewritten before previewing open December');
   await page.locator('#sfResetConfirm').fill('LÖSCHEN 2026-11');assert.equal(await page.locator('#sfResetSubmit').isDisabled(),true,'Wrong month denied');
   await page.locator('#sfResetConfirm').fill('LÖSCHEN 2026-12');assert.equal(await page.locator('#sfResetSubmit').isEnabled(),true);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'No horizontal overflow');
@@ -35,6 +37,11 @@ async function run(){
   await page.keyboard.press('Escape');assert.equal(await dialog.count(),1,'Saving dialog cannot be escaped');assert.equal(await page.locator('#sfResetCancel').isDisabled(),true);assert.equal(await page.evaluate(()=>SFBackend.scheduleResetting),true);
   await page.evaluate(()=>__release());await dialog.waitFor({state:'detached'});const deleted=await page.evaluate(()=>__deleted);assert.deepEqual(deleted,[{p_company_id:'company-a',p_month:'2026-12-01',p_confirmation:'LÖSCHEN 2026-12'}]);
   assert.deepEqual(await page.evaluate(()=>assignments.map(a=>a.id)),['nov','jan'],'Other months stay locally intact');assert.equal(await page.evaluate(()=>autoPlanPreview.length),0,'Invalid preview removed');
+  assert.equal(await page.evaluate(()=>assignments.find(a=>a.id==='jan').note),'Ungespeicherte Anpassung','Pending changes outside December survive the cloud refresh');
+  assert.equal(await page.evaluate(()=>__syncCalls),0,'Confirmed month deletion never synchronizes a closed unrelated month');
+  await page.evaluate(()=>{assignments.push({id:'unsaved-dec',date:'2026-12-15'});__preview.total=0;__preview.canDelete=false});await button.click();await dialog.waitFor();assert.match(await dialog.textContent(),/1 ungespeicherte Schichten werden verworfen/);assert.equal(await page.locator('#sfResetConfirm').count(),1,'Local unsaved month can still be cleared after explicit confirmation');await page.locator('#sfResetCancel').click();
+  assert.equal(await page.evaluate(()=>assignments.some(a=>a.id==='unsaved-dec')),true,'Cancelling keeps unsaved month duties');
+  await page.evaluate(()=>{__preview.total=3;__preview.canDelete=true});
   await page.evaluate(()=>{__preview.closed=true;__preview.canDelete=false});await button.click();await dialog.waitFor();assert.match(await dialog.textContent(),/abgeschlossen/);assert.equal(await page.locator('#sfResetConfirm').count(),0);assert.equal(await page.locator('#sfResetSubmit').isDisabled(),true);await page.locator('#sfResetCancel').click();
   await page.evaluate(()=>{__preview.closed=false;__preview.recordedTimeEntries=1});await button.click();await dialog.waitFor();assert.match(await dialog.textContent(),/erfasste Arbeitszeiten/);await page.locator('#sfResetCancel').click();
   await page.evaluate(()=>{__preview.recordedTimeEntries=0;__preview.canDelete=true;__hold=false});await button.click();await page.locator('#sfResetConfirm').fill('LÖSCHEN 2026-12');await page.evaluate(()=>SFBackend.companyId='company-b');await page.locator('#sfResetSubmit').click();await page.locator('#sfResetMsg.show').waitFor();assert.equal(await page.evaluate(()=>__deleted.length),1,'Changed company cannot delete stale selection');

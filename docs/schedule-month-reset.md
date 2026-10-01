@@ -9,3 +9,5 @@ Marktplatzangebote des gelöschten Monats werden zurückgezogen. Änderungs- und
 Die Oberfläche nutzt preview_schedule_month_reset und reset_company_schedule_month anstelle des bisherigen unternehmensweiten Komplett-Resets. Die Bestätigung bindet sich an den geprüften Monat und das Unternehmen. Ein Wechsel des Unternehmens wird während der Löschung verhindert.
 
 Prüfungen: npm test; node tests/browser/schedule-month-reset-qa.cjs; tests/schedule-month-reset.integration.sql als vollständige BEGIN/ROLLBACK-Transaktion. Die Datenbankprüfung verwendet ausschließlich fiktive Mandanten und entfernt keine produktiven Schichten.
+
+Die Monatsvorschau und Monatslöschung führen keine unternehmensweite Synchronisierung aus. Geschlossene andere Monate werden dadurch nicht erneut geschrieben. Ungespeicherte Schichten im gewählten Monat werden erst nach Bestätigung verworfen; noch nicht gespeicherte Anpassungen an Schichten außerhalb des Monats bleiben nach dem Neuladen erhalten. Ein früherer globaler Synchronisierungsfehler sperrt die Monatsvorschau nicht.
