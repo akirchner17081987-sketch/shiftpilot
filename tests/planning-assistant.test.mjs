@@ -1,0 +1,44 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+import {createRequire} from 'node:module';
+const require=createRequire(import.meta.url),Core=require('../assets/planning-assistant-core-v1.js');
+const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
+function fixture(){
+ const employees=[{id:'e1',first:'Anna',last:'Plan',status:'active',planningTeam:'A',shifts:['FD','SD','ND'],weeklyHours:40},{id:'e2',first:'Ben',last:'Frei',status:'active',shifts:['FD'],weeklyHours:40},{id:'e3',first:'Alt',last:'Profil',status:'inactive',shifts:['FD']},{id:'e4',first:'Deleted',last:'Person',status:'active',deletedAt:'2026-01-01',shifts:['FD']}];
+ return{authorized:true,today:'2026-10-01',defaultDates:['2026-12-01'],employees,assignments:[{id:'a1',date:'2026-12-01',type:'FD',employeeId:'e1',start:'06:00',end:'14:00'}],absences:[],shifts:[{id:'FD',name:'Frühdienst',start:'06:00',end:'14:00'},{id:'SD',name:'Spätdienst',start:'14:00',end:'22:00'},{id:'ND',name:'Nachtdienst',start:'22:00',end:'06:00'}],getSoll:()=>2,monthTarget:()=>173.92,candidates:()=>({candidates:[],reasons:[{label:'Verbindlicher Rhythmus passt nicht',count:2}]}),teamRules:[]};
+}
+test('December coverage counts required positions without subtracting overstaffing elsewhere',()=>{
+ const s=fixture();s.assignments.push(...Array.from({length:4},(_,i)=>({id:'extra'+i,date:'2026-12-01',type:'SD',employeeId:'x'+i})));
+ const r=Core.answer('Welche Dienste sind im Dezember noch offen?',s);assert.match(r.title,/Dezember 2026/);assert.match(r.text,/183 offene Positionen/);assert.match(r.text,/Zusätzlich 2/);assert.equal(r.rows.length,92);
+});
+test('explicit date and month inputs reject invalid days and handle leap years',()=>{
+ const s=fixture();assert.match(Core.answer('Offene Dienste am 31.02.2026',s).text,/ungültig/);assert.match(Core.answer('Offene Dienste am 2026-02-30',s).text,/ungültig/);assert.equal(Core.parsePeriod('februar 2028',s).dates.length,29);assert.equal(Core.parsePeriod('2026-12',s).dates.length,31);assert.equal(Core.parsePeriod('1. dezember 2026',s).dates[0],'2026-12-01');
+});
+test('relative months use current date and cross year boundaries',()=>{const s={...fixture(),today:'2026-12-31'};assert.equal(Core.parsePeriod('naechsten monat',s).dates[0],'2027-01-01');assert.equal(Core.parsePeriod('morgen',s).dates[0],'2027-01-01');});
+test('replacement asks for missing date and shift, then accepts follow-up',()=>{
+ const s=fixture();s.defaultDates=Core.parsePeriod('dezember 2026',s).dates;
+ const ask=Core.answer('Welche Mitarbeiter kommen als Ersatz infrage?',s);assert.equal(ask.context.pending,true);assert.match(ask.text,/konkreten Tag und die Schichtart/);
+ const r=Core.answer('Am 02.12.2026 im Frühdienst',s,ask.context);assert.equal(r.context.intent,'replacement');assert.equal(r.context.type,'FD');assert.equal(r.context.dates[0],'2026-12-02');assert.match(r.text,/kein Mitarbeiter/);
+});
+test('natural text asking who can take over is not treated as a write command',()=>{const r=Core.answer('Wer kann am 01.12.2026 den FD übernehmen?',fixture());assert.equal(r.context.intent,'replacement');});
+test('no team includes only active nondeleted staff and explains intentional unassigned employees',()=>{const r=Core.answer('Bei welchen Mitarbeitern fehlt eine Teamzuordnung?',fixture());assert.equal(r.rows.length,1);assert.equal(r.rows[0][0],'Ben Frei');assert.match(r.text,/beabsichtigt/);});
+test('team help gives the actual central settings location',()=>{const r=Core.answer('Wie stelle ich den Rhythmus von Team E ein?',fixture());assert.match(r.title,/Team E/);assert.match(r.text,/Einstellungen/);assert.equal(r.actions[0].view,'settings');});
+test('diagnostic describes current evidence instead of claiming to know historical auto-plan decisions',()=>{const r=Core.answer('Warum konnte die Auto-Planung den ND am 01.12.2026 nicht besetzen?',fixture());assert.match(r.text,/früheren Auto-Planung/);assert.match(r.rows[0][3],/Rhythmus/);});
+test('follow-up month retains the previous topic but an unrelated question starts a new topic',()=>{const s=fixture(),a=Core.answer('Welche Dienste sind im Dezember offen?',s),b=Core.answer('Und im Januar 2027?',s,a.context);assert.match(b.title,/Januar 2027/);const c=Core.answer('Wie stelle ich den Rhythmus von Team E ein?',s,b.context);assert.equal(c.context.intent,'rhythmHelp');});
+test('work hours include the full eight-hour overnight shift without break deduction',()=>{const s=fixture();s.assignments.push({date:'2026-12-02',type:'ND',employeeId:'e1',pause:30});const r=Core.answer('Wie viele Stunden sind im Dezember für Anna Plan geplant?',s);assert.equal(r.rows.length,1);assert.equal(r.rows[0][1],'16 Std.');});
+test('zero staffing requirement is not presented as a completed plan',()=>{const s=fixture();s.getSoll=()=>0;assert.match(Core.answer('Prüfe die Besetzung im Dezember',s).text,/kein SOLL-Bedarf/);});
+test('unknown questions are explicit and never fabricate data',()=>{const r=Core.answer('Wie ist das Wetter?',fixture());assert.match(r.text,/noch keine zuverlässige/);assert.equal(r.rows.length,0);});
+test('additional product questions reuse the current help-center articles',()=>{const s=fixture();s.helpArticles={settings:[['Wie ändere ich Schichtzeiten?','Öffne die Einstellungen und bearbeite das Schichtmodell.']]};const r=Core.answer('Wie ändere ich Schichtzeiten?',s);assert.match(r.text,/Schichtmodell/);assert.equal(r.actions[0].help,true);});
+test('requests to mutate do not change source data',()=>{const s=fixture(),before=JSON.stringify(s);const r=Core.answer('Bitte lösche alle Dienste',s);assert.equal(r.context.intent,'write');assert.equal(JSON.stringify(s),before);});
+test('unauthorized, loading and failed contexts do not touch personnel data',()=>{for(const partial of [{authorized:false},{authorized:true,loading:true},{authorized:true,error:true}]){const s={...partial};Object.defineProperty(s,'employees',{get(){throw Error('Personnel data must not be read');}});assert.equal(Core.answer('Wer hat kein Team?',s).rows.length,0);}});
+test('integration uses final app candidate ranking and filters missing rhythm, absence, hours and role',()=>{
+ const fields={autoRespectHours:{checked:true}},employees=[{id:'good',first:'Geeignet',status:'active',shifts:['FD']},{id:'absent',status:'active',shifts:['FD']},{id:'rhythm',status:'active',shifts:['FD']},{id:'hours',status:'active',shifts:['FD']},{id:'noPermission',status:'active',shifts:['ND']}];
+ const findings={absent:{hard:['Abwesenheit (Krank) überschneidet sich mit der Schicht.'],soft:[]},rhythm:{hard:['Verbindliche Schichtregel: Frei.'],soft:[]},hours:{hard:[],soft:['Wochen-SOLL würde steigen.']}};
+ const ctx={window:{SFPlanningAssistantCore:Core,SFBackend:{ready:true,role:'PLANNER',user:{id:'u'},companyId:'co'},SFCompliance:{check:e=>findings[e.id]||{hard:[],soft:[]}},SFAutoPlanGuard:{passesTimeRules:()=>true}},sessionStorage:{getItem:()=>null},document:{readyState:'loading',body:{},addEventListener(){},getElementById:id=>fields[id]||null,querySelector:()=>null},MutationObserver:class{observe(){}},setInterval(){},queueMicrotask(){},employees,assignments:[],absences:[],TYPES:[{id:'FD',start:'06:00',end:'14:00'}],currentWeekDates:()=>[new Date('2026-12-01T12:00:00')],iso:()=> '2026-12-01',getSoll:()=>2,employeeMonthlyTarget:()=>160,autoEligibleEmployees:()=>[{e:employees[0],h:8,target:40,monthHours:8,monthTarget:160},{e:employees[1],h:0,target:40}]};
+ vm.runInNewContext(read('assets/planning-assistant-v1.js'),ctx);
+ const r=ctx.window.SFPlanningAssistant.ask('Wer kann am 01.12.2026 den FD übernehmen?');assert.equal(r.rows.length,1);assert.equal(r.rows[0][0],'Geeignet');
+ ctx.window.SFBackend.role='EMPLOYEE';assert.equal(ctx.window.SFPlanningAssistant.ask('Wer kann einspringen?').rows.length,0);
+ ctx.window.SFBackend.role='TIME_TRACKING';assert.match(ctx.window.SFPlanningAssistant.ask('Wer hat kein Team?').title,/Anmeldung/);
+});
