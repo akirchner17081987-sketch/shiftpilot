@@ -1,0 +1,42 @@
+name: Gesamtdienstplan Excel und PDF
+on:
+  push:
+    branches: [main, codex/ionos-migration, codex/gesamtdienstplan-export-20261001]
+    paths:
+      - assets/schedule-export-*.js
+      - assets/schedule-export-v1.css
+      - assets/navigation-compat-v1.js
+      - tests/schedule-export.test.mjs
+      - tests/e2e/schedule-export.spec.cjs
+      - .github/workflows/schedule-export-checks.yml
+  pull_request:
+    paths:
+      - assets/schedule-export-*.js
+      - assets/schedule-export-v1.css
+      - assets/navigation-compat-v1.js
+      - tests/schedule-export.test.mjs
+      - tests/e2e/schedule-export.spec.cjs
+permissions:
+  contents: read
+jobs:
+  exports:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm install --no-save --package-lock=false xlsx@0.18.5 jspdf@2.5.2 jspdf-autotable@3.8.4
+      - run: npx playwright install --with-deps chromium
+      - run: node --test tests/schedule-export.test.mjs
+      - run: npx playwright test tests/e2e/schedule-export.spec.cjs --workers=1
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gesamtdienstplan-export-pruefung
+          path: test-results/
+          retention-days: 7
