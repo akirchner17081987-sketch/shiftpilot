@@ -83,8 +83,8 @@
 
   loadIntegration('/assets/o1s-integration-v1.js?v=20261001-models1?v=20260912-marketplace1','data-sf-o1s-integration');
   loadIntegration('/assets/qa-integration-v1.js?v=20261001-models1?v=20260912-marketplace1','data-sf-qa-integration');
-  loadIntegration('/assets/calendar-view-switch-v1.js?v=20260904-1','data-sf-calendar-view');
-  loadIntegration('/assets/publish-dialog-design-v1.js?v=20260904-1','data-sf-publish-dialog-design');
+  loadIntegration('/assets/calendar-view-switch-v1.js?v=20261001-period1','data-sf-calendar-view');
+  loadIntegration('/assets/publish-dialog-design-v1.js?v=20261001-period1','data-sf-publish-dialog-design');
   loadIntegration('/assets/demo-reset-v1.js?v=20260906-absences1','data-sf-demo-reset');
   loadIntegration('/assets/demo-august-2026-v1.js?v=20260907-startgate2','data-sf-demo-august-2026');
   loadIntegration('/assets/demo-datev-snapshot-fix-v1.js?v=20260904-2','data-sf-demo-datev-snapshot-fix');

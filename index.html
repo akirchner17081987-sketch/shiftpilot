@@ -387,7 +387,7 @@ function generateAutoPlanPreview(){
 }
 function removeAutoSuggestion(i){autoPlanPreview.splice(i,1);renderAutoPlanning()}
 function clearAutoPlanPreview(){autoPlanPreview=[];autoPlanUnresolved=[];autoPlanAnalyzed=false;renderAutoPlanning()}
-function applyAutoPlanPreview(){if(!autoPlanPreview.length)return;if(!confirm(`${autoPlanPreview.length} vorgeschlagene Besetzungen in den Dienstplan übernehmen?`))return;autoPlanPreview.forEach(x=>assignments.push({id:'as'+Date.now()+Math.random(),date:x.date,type:x.type,employeeId:x.employeeId,start:x.start,end:x.end}));const n=autoPlanPreview.length;autoPlanPreview=[];autoPlanUnresolved=[];autoPlanAnalyzed=true;saveAll();renderCalendar();renderAutoPlanning();showSaveToast('Auto-Planung übernommen',`${n} Besetzungen wurden in den Dienstplan eingetragen.`)}
+function applyAutoPlanPreview(){if(!autoPlanPreview.length)return;if(!confirm(`${autoPlanPreview.length} vorgeschlagene Besetzungen in den Dienstplan übernehmen?`))return;autoPlanPreview.forEach(x=>assignments.push({id:'as'+Date.now()+Math.random(),date:x.date,type:x.type,employeeId:x.employeeId,start:x.start,end:x.end}));const n=autoPlanPreview.length,plannedDates=autoPlanningDates(),plannedMode=document.getElementById('autoPlanPeriod')?.value||'week';if(plannedDates.length){if(plannedMode==='month')window.SchichtFunkCalendarView?.setMonth?.(plannedDates[0].slice(0,7));else{weekStart=autoMonday(plannedDates[0]);window.SchichtFunkCalendarView?.setMode?.('week')}}autoPlanPreview=[];autoPlanUnresolved=[];autoPlanAnalyzed=true;saveAll();renderCalendar();renderAutoPlanning();showSaveToast('Auto-Planung übernommen',`${n} Besetzungen wurden in den Dienstplan eingetragen.`)}
 function runAutoPlan(){generateAutoPlanPreview();if(document.getElementById('view-auto')&&!document.getElementById('view-auto').classList.contains('active'))switchView('auto')}
 
 function renderOverviewStats(){renderOverview()}
@@ -889,10 +889,10 @@ table th,table td{font-size:13px;line-height:1.35}
 <script src="assets/dynamic-employee-pool-v1.js"></script>
 <script src="assets/schichtfunk-rebrand.js"></script>
 <script src="assets/schichtfunk-brand-cleanup-v2.js?v=20260929-customday1"></script>
-<script src="assets/navigation-compat-v1.js?v=20260930-tenbreaks1&models=1"></script>
+<script src="assets/navigation-compat-v1.js?v=20260930-tenbreaks1&period=20261001-1&models=1"></script>
 <script src="assets/schichtfunk-schedule-core-v1.js"></script>
 <script src="assets/assignment-quick-delete-v1.js"></script>
-<script src="assets/conflict-plausibility-v1.js?v=20260930-timeonly3&company=1&models=1&removal=1&status=1&dialog=1"></script>
+<script src="assets/conflict-plausibility-v1.js?v=20260930-timeonly3&period=20261001-1&company=1&models=1&removal=1&status=1&dialog=1"></script>
 <script src="assets/employee-core-v1.js?v=20261001-removal1"></script>
 <script src="assets/employee-rhythm-v1.js?v=20260902-1"></script>
 <script src="assets/employee-management-v2.js?v=20261001-statusdialog1"></script>

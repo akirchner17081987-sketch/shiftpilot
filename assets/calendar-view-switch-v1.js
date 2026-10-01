@@ -119,6 +119,7 @@
   }
 
   function bind(){
+    if(window.SchichtFunkCalendarView?.ownsVisibleCalendar)return true;
     if(bound)return true;
     const buttons=toolbarButtons(),prev=document.getElementById('prevWeek'),next=document.getElementById('nextWeek'),today=document.getElementById('todayBtn');if(!buttons||buttons.length<2||!prev||!next||!today||typeof window.renderCalendar!=='function')return false;
     baseRenderCalendar=window.renderCalendar;window.renderCalendar=renderCurrent;
@@ -132,5 +133,5 @@
 
   function boot(){ensureCss();if(!bind())setTimeout(boot,120)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
-  window.SchichtFunkCalendarView={getMode:()=>mode,setMode,setMonth};
+  if(!window.SchichtFunkCalendarView?.ownsVisibleCalendar)window.SchichtFunkCalendarView={getMode:()=>mode,setMode,setMonth};
 })();

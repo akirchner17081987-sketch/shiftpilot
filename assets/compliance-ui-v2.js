@@ -67,7 +67,7 @@
 
   C.updateScheduleControls=()=>{
     injectStyles();const tb=document.querySelector('#view-schedule .cal-toolbar');if(!tb)return;let box=document.getElementById('sfComplianceToolbar');if(!box){box=document.createElement('span');box.id='sfComplianceToolbar';box.style.cssText='display:inline-flex;gap:7px;align-items:center;margin-left:7px';tb.appendChild(box)}
-    const key=C.weekKey(C.iso(weekStart)),pub=C.publications[key],open=C.requests.filter(r=>!terminal.has(r.status)).length;
+    const key=C.weekKey(C.iso(weekStart)),period=window.SchichtFunkCalendarView?.getPeriod?.(),visible=period?assignments.filter(a=>a.date>=period.start&&a.date<=period.end):[],pub=period?(visible.length&&visible.every(a=>C.isPublished(a))?{publishedAt:visible.find(a=>a.publishedAt)?.publishedAt||C.publications[key]?.publishedAt||new Date().toISOString()}:null):C.publications[key],open=C.requests.filter(r=>!terminal.has(r.status)).length;
     box.innerHTML=`${pub?`<button class="ghost sf-published" title="Veröffentlicht am ${C.esc(new Date(pub.publishedAt).toLocaleString('de-DE'))}">✓ Veröffentlicht</button>`:`<button class="ghost" onclick="spPublishCurrentWeek()">◉ Dienstplan veröffentlichen</button>`}<button class="ghost sf-compliance-btn" onclick="spOpenComplianceCenter()">🛡 Compliance <span class="sf-open-count">${open}</span></button>`;
   };
   C.decorateAssignments=()=>{
