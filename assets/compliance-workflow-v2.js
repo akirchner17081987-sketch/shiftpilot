@@ -186,7 +186,7 @@
 
   if(typeof window.applyAutoPlanPreview==='function'){
     const baseAuto=window.applyAutoPlanPreview;
-    window.applyAutoPlanPreview=function(){if(C.isWeekPublished(C.iso(weekStart))){alert('Der Dienstplan dieser Woche ist bereits veröffentlicht. Auto-Planung darf veröffentlichte Pläne nicht direkt überschreiben. Bitte Änderungen einzeln prüfen.');return}return baseAuto.apply(this,arguments)};
+    window.applyAutoPlanPreview=function(){if((typeof autoPlanPreview!=='undefined'?autoPlanPreview:[]).some(a=>C.isWeekPublished(a.date))){C.toast?.('Bereits veröffentlichter Zeitraum','Änderungen an freigegebenen Wochen bitte einzeln im Dienstplan prüfen.');return}return baseAuto.apply(this,arguments)};
   }
 })();
 

@@ -1,0 +1,36 @@
+name: Auto-Planung Ablauf und Designprüfung
+on:
+  push:
+    branches: [main, codex/ionos-migration]
+    paths:
+      - assets/date-month-format-v1.js
+      - assets/compliance-workflow-v2.js
+      - assets/auto-plan-workspace-v1.js
+      - assets/auto-plan-period-v1.css
+      - tests/auto-plan-workspace.test.mjs
+      - tests/e2e/auto-plan-workspace.spec.cjs
+      - .github/workflows/auto-plan-workspace-checks.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: node --test tests/auto-plan-workspace.test.mjs tests/schedule-publication-period.test.mjs
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test tests/e2e/auto-plan-workspace.spec.cjs tests/e2e/schedule-publication-period.spec.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: auto-plan-workspace-results
+          path: |
+            playwright-report/
+            test-results/
