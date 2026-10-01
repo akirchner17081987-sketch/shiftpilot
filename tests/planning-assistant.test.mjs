@@ -5,6 +5,39 @@ import vm from 'node:vm';
 import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url),Core=require('../assets/planning-assistant-core-v1.js');
 const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
+test('monthly check prioritizes shortages and exempts intentional FD-only staff without a team',()=>{
+ const s=fixture(),before=JSON.stringify(s);s.teamRulesReady=true;
+ const r=Core.answer('Was fehlt noch für Dezember?',s);assert.equal(r.context.intent,'planningCheck');assert.equal(r.context.dates.length,31);assert.match(r.title,/Dezember 2026/);
+ assert.equal(r.rows[0][1],'Offene Dienste');assert.match(r.rows[0][2],/185 Positionen/);
+ assert.ok(r.rows.some(row=>row[1]==='FD ohne Planungsteam'));assert.ok(!r.rows.some(row=>row[1]==='Teamzuordnung prüfen'));
+ assert.ok(r.rowActions.some(a=>a.team==='A'));delete s.teamRulesReady;assert.equal(JSON.stringify(s),before);
+});
+test('monthly check warns about demand, permissions, malformed team rules and unassessable targets',()=>{
+ const s=fixture();s.getSoll=()=>0;s.monthTarget=()=>0;s.employees[1].shifts=['OLD'];s.teamRules=[{team:'A',start:'invalid',pattern:['FD'],offset:8}];
+ const r=Core.answer('Planungscheck Dezember',s);assert.ok(r.rows.some(row=>row[1]==='SOLL-Bedarf'));assert.ok(r.rows.some(row=>row[1]==='Schichtfreigaben'));assert.ok(r.rows.some(row=>row[1]==='Stundenvorgaben'));assert.ok(r.rows.some(row=>row[1]==='Team A'));
+ s.teamRulesReady=false;assert.ok(Core.answer('Monatscheck',s).rows.some(row=>row[1]==='Teamregeln'));
+});
+test('monthly check identifies wrong existing permissions and planned target deviations separately',()=>{
+ const s=fixture();s.employees[1].shifts=['SD'];s.monthTarget=()=>4;s.assignments.push({id:'bad',date:'2026-12-02',type:'FD',employeeId:'e2'});
+ const r=Core.answer('Monatscheck Dezember',s);assert.ok(r.rows.some(row=>row[1]==='Bestehende Zuweisungen'));assert.ok(r.rows.some(row=>row[1]==='Geplantes Monats-SOLL'));assert.match(r.notes.join(' '),/nicht auf bestätigte/);
+});
+test('selected service supplies context and explicit date or shift overrides it',()=>{
+ const s=fixture();s.defaultDates=Core.parsePeriod('dezember',s).dates;s.selectedService={date:'2026-12-03',type:'ND'};
+ const r=Core.answer('Wer kann diesen Dienst übernehmen?',s);assert.deepEqual(r.context.dates,['2026-12-03']);assert.equal(r.context.type,'ND');assert.equal(r.context.pending,false);
+ const d=Core.answer('Warum konnte die Auto-Planung diesen Dienst nicht besetzen?',s);assert.equal(d.rows.length,1);assert.equal(d.context.type,'ND');
+ const explicit=Core.answer('Ersatz für FD am 04.12.2026',s);assert.equal(explicit.context.type,'FD');assert.deepEqual(explicit.context.dates,['2026-12-04']);
+ s.selectedService={date:'2026-02-30',type:'UNKNOWN'};assert.equal(Core.answer('Wer kann diesen Dienst übernehmen?',s).context.pending,true);
+});
+test('replacement explains eight paid hours, projected limits and saved following duty without changing data',()=>{
+ const s=fixture();s.assignments.push({date:'2026-12-04',type:'ND',employeeId:'e2'});s.candidates=()=>({candidates:[{e:s.employees[1],h:38,target:40,monthHours:175,monthTarget:180,fit:['Freigabe FD','Verbindlicher Rhythmus passt']}],reasons:[]});
+ const before=JSON.stringify(s),r=Core.answer('Ersatz FD am 03.12.2026',s);assert.match(r.text,/8 Std/);assert.equal(r.rows[0][2],'46 / 40 Std.');assert.match(r.rows[0][3],/183 \/ 180/);assert.match(r.rows[0][1],/über Wochen-SOLL und über Monats-SOLL/);assert.match(r.rows[0][4],/4\.12\.2026.*ND/);assert.equal(r.rowActions[0].employeeId,'e2');assert.equal(JSON.stringify(s),before);
+});
+test('result links retain the real employee, day, shift and assignment and fallback offers usable topics',()=>{
+ const s=fixture();const roster=Core.answer('Welche Dienste hat Anna Plan im Dezember?',s);assert.equal(roster.rowActions[0].assignmentId,'a1');assert.equal(roster.rowActions[0].type,'FD');
+ const open=Core.answer('Offene Dienste im Dezember',s);assert.equal(open.rowActions.length,open.rows.length);assert.equal(open.rowActions[0].date,'2026-12-01');
+ const hours=Core.answer('Geplante Stunden prüfen',s);assert.equal(hours.rowActions[0].employeeId,'e1');
+ const fallback=Core.answer('Die Planung spinnt',s);assert.ok(fallback.suggestions.includes('Monatscheck starten'));assert.equal(Core.answer(fallback.suggestions[0],s).context.intent,'planningCheck');
+});
 function fixture(){
  const employees=[{id:'e1',first:'Anna',last:'Plan',status:'active',planningTeam:'A',shifts:['FD','SD','ND'],weeklyHours:40},{id:'e2',first:'Ben',last:'Frei',status:'active',shifts:['FD'],weeklyHours:40},{id:'e3',first:'Alt',last:'Profil',status:'inactive',shifts:['FD']},{id:'e4',first:'Deleted',last:'Person',status:'active',deletedAt:'2026-01-01',shifts:['FD']}];
  return{authorized:true,today:'2026-10-01',defaultDates:['2026-12-01'],employees,assignments:[{id:'a1',date:'2026-12-01',type:'FD',employeeId:'e1',start:'06:00',end:'14:00'}],absences:[],shifts:[{id:'FD',name:'Frühdienst',start:'06:00',end:'14:00'},{id:'SD',name:'Spätdienst',start:'14:00',end:'22:00'},{id:'ND',name:'Nachtdienst',start:'22:00',end:'06:00'}],getSoll:()=>2,monthTarget:()=>173.92,candidates:()=>({candidates:[],reasons:[{label:'Verbindlicher Rhythmus passt nicht',count:2}]}),teamRules:[]};
@@ -90,7 +123,7 @@ test('integration uses final app candidate ranking and filters missing rhythm, a
  ctx.window.SFBackend.role='EMPLOYEE';assert.equal(ctx.window.SFPlanningAssistant.ask('Wer kann einspringen?').rows.length,0);
  ctx.window.SFBackend.role='TIME_TRACKING';assert.match(ctx.window.SFPlanningAssistant.ask('Wer hat kein Team?').title,/Anmeldung/);
 });
-+
+
 test('knowledge distinguishes actual time exports and employee scope resets when another team is requested',()=>{
  const scope={window:{}};vm.runInNewContext(read('assets/help-center-content-v3.js'),scope);
  const s=fixture();s.helpArticles=scope.window.SFHelpContent.articles;s.employees[1].planningTeam='E';
