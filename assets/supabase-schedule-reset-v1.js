@@ -60,14 +60,15 @@
     try{
       if(saving())throw Error('Planungsdaten werden gerade gespeichert. Bitte versuche es gleich erneut.');
       B.showLoading?.('Ausgewählter Monat wird geprüft …');
-      clearTimeout(B.syncTimer);B.syncTimer=null;await B.sync?.();if(B.lastSyncError)throw B.lastSyncError;
+      // Preview reads only this month; a company-wide sync would rewrite closed months.
       c=await rpc('preview_schedule_month_reset',{p_company_id:company,p_month:month+'-01'});
       if(B.companyId!==company||selectedMonth()!==month)throw Error('Die Auswahl wurde geändert. Bitte den Monat erneut prüfen.');
     }catch(e){C.toast?.('Monat konnte nicht geprüft werden',e?.message||String(e));return}finally{B.hideLoading?.();preparing=false;syncButton();}
     const label=monthLabel(month),word='LÖSCHEN '+month;
-    const blocked=c.closed?'Dieser Monat ist abgeschlossen. Eine Löschung ist gesperrt.':c.recordedTimeEntries||c.qrAssignments?'Dieser Monat enthält erfasste Arbeitszeiten oder QR-Nachweise. Diese werden nicht durch eine Dienstplanlöschung entfernt.':!c.canDelete||(!c.total&&!c.marketOffers)?'Dieser Monat enthält keine Schichten oder Marktplatzangebote.':'';
+    const unsaved=typeof assignments==='undefined'?0:assignments.filter(a=>String(a.date||'').startsWith(month+'-')&&!a._dbId&&!B.asgDb?.has(String(a.id))).length;
+    const blocked=c.closed?'Dieser Monat ist abgeschlossen. Eine Löschung ist gesperrt.':c.recordedTimeEntries||c.qrAssignments?'Dieser Monat enthält erfasste Arbeitszeiten oder QR-Nachweise. Diese werden nicht durch eine Dienstplanlöschung entfernt.':(!c.canDelete&&!unsaved)||(!c.total&&!c.marketOffers&&!unsaved)?'Dieser Monat enthält keine Schichten oder Marktplatzangebote.':'';
     const m=document.createElement('div');m.id='sfScheduleResetBackdrop';m.className='sf-reset-backdrop';
-    m.innerHTML=`<div class="sf-reset-card" role="dialog" aria-modal="true" aria-labelledby="sfResetTitle"><div class="sf-reset-head"><div class="sf-reset-icon">!</div><div><div class="eyebrow">DIENSTPLAN · AUSGEWÄHLTER MONAT</div><h2 id="sfResetTitle">${esc(label)} löschen?</h2><p>${esc(c.monthStart)} bis ${esc(c.monthEnd)} · ${esc(B.companyName||'Ausgewähltes Unternehmen')}</p></div></div><div class="sf-reset-body"><div class="sf-reset-warning">${blocked?`<b>${esc(blocked)}</b>`:`<b>Die Schichten dieses Monats werden unwiderruflich entfernt.</b><br>Andere Monate, Mitarbeiter, Abwesenheiten und SOLL-Vorgaben bleiben erhalten. Marktplatzangebote für ${esc(label)} werden zurückgezogen. Audit- und Änderungsnachweise bleiben erhalten.`}</div><div class="sf-reset-counts"><div class="sf-reset-count"><small>SCHICHTEN IM MONAT</small><strong>${Number(c.total)||0}</strong></div><div class="sf-reset-count"><small>ENTWÜRFE</small><strong>${Number(c.draft)||0}</strong></div><div class="sf-reset-count"><small>VERÖFFENTLICHT</small><strong>${Number(c.published)||0}</strong></div></div>${blocked?'':`<div class="sf-reset-field"><label for="sfResetConfirm">Zur Bestätigung exakt ${esc(word)} eingeben</label><input id="sfResetConfirm" autocomplete="off" spellcheck="false" placeholder="${esc(word)}"></div><div class="sf-reset-hint">Die Löschung betrifft Schichten mit Beginn im ausgewählten Monat. Eine Nachtschicht am Monatsende gehört zu ihrem Starttag.</div>`}<div id="sfResetMsg" class="sf-reset-msg" role="alert"></div></div><div class="sf-reset-foot"><button type="button" class="sf-reset-close" id="sfResetCancel">Abbrechen</button><button type="button" class="sf-reset-danger" id="sfResetSubmit" disabled>${esc(label)} löschen</button></div></div>`;
+    m.innerHTML=`<div class="sf-reset-card" role="dialog" aria-modal="true" aria-labelledby="sfResetTitle"><div class="sf-reset-head"><div class="sf-reset-icon">!</div><div><div class="eyebrow">DIENSTPLAN · AUSGEWÄHLTER MONAT</div><h2 id="sfResetTitle">${esc(label)} löschen?</h2><p>${esc(c.monthStart)} bis ${esc(c.monthEnd)} · ${esc(B.companyName||'Ausgewähltes Unternehmen')}</p></div></div><div class="sf-reset-body"><div class="sf-reset-warning">${blocked?`<b>${esc(blocked)}</b>`:`<b>Die Schichten dieses Monats werden unwiderruflich entfernt.</b><br>Andere Monate, Mitarbeiter, Abwesenheiten und SOLL-Vorgaben bleiben erhalten. Marktplatzangebote für ${esc(label)} werden zurückgezogen. Audit- und Änderungsnachweise bleiben erhalten.`}</div><div class="sf-reset-counts"><div class="sf-reset-count"><small>GESPEICHERTE SCHICHTEN</small><strong>${Number(c.total)||0}</strong>${unsaved?`<small>+ ${unsaved} ungespeicherte Schichten werden verworfen</small>`:""}</div><div class="sf-reset-count"><small>ENTWÜRFE</small><strong>${Number(c.draft)||0}</strong></div><div class="sf-reset-count"><small>VERÖFFENTLICHT</small><strong>${Number(c.published)||0}</strong></div></div>${blocked?'':`<div class="sf-reset-field"><label for="sfResetConfirm">Zur Bestätigung exakt ${esc(word)} eingeben</label><input id="sfResetConfirm" autocomplete="off" spellcheck="false" placeholder="${esc(word)}"></div><div class="sf-reset-hint">Die Löschung betrifft Schichten mit Beginn im ausgewählten Monat. Eine Nachtschicht am Monatsende gehört zu ihrem Starttag.</div>`}<div id="sfResetMsg" class="sf-reset-msg" role="alert"></div></div><div class="sf-reset-foot"><button type="button" class="sf-reset-close" id="sfResetCancel">Abbrechen</button><button type="button" class="sf-reset-danger" id="sfResetSubmit" disabled>${esc(label)} löschen</button></div></div>`;
     document.body.appendChild(m);
     const input=m.querySelector('#sfResetConfirm'),submit=m.querySelector('#sfResetSubmit'),msg=m.querySelector('#sfResetMsg');
     m.addEventListener('keydown',e=>{if(busy&&e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();}},true);
@@ -83,7 +84,9 @@
         if(B.companyId!==company||selectedMonth()!==month)throw Error('Die Auswahl wurde geändert. Bitte den Monat erneut prüfen.');
         if(saving())throw Error('Planungsdaten werden gerade gespeichert. Bitte versuche es gleich erneut.');
         B.showLoading?.(`${label} wird gelöscht …`);
-        clearTimeout(B.syncTimer);B.syncTimer=null;await B.sync?.();if(B.lastSyncError)throw B.lastSyncError;
+        // Deleting a month must never save unrelated duties, absences or time entries.
+        clearTimeout(B.syncTimer);B.syncTimer=null;
+        const pendingOutside=typeof assignments==='undefined'?[]:assignments.filter(a=>!String(a.date||'').startsWith(month+'-')&&(B.assignmentIsDirty?B.assignmentIsDirty(a):!a._dbId)).map(a=>({...a}));
         const data=await rpc('reset_company_schedule_month',{p_company_id:company,p_month:month+'-01',p_confirmation:word});
         // Do not allow an unsuccessful refresh to sync deleted drafts back into the cloud.
         if(typeof assignments!=='undefined')assignments=assignments.filter(a=>!String(a.date||'').startsWith(month+'-'));
@@ -91,6 +94,7 @@
         if(typeof autoPlanAnalyzed!=='undefined')autoPlanAnalyzed=false;
         if(typeof autoPlanApplied!=='undefined')autoPlanApplied=0;
         await B.hydrate();
+        if(typeof assignments!=='undefined')for(const a of pendingOutside){const i=assignments.findIndex(x=>String(x.id)===String(a.id));if(i<0)assignments.push(a);else assignments[i]=a;}
         closeAccessible();
         C.updateScheduleControls?.();
         if(typeof renderCalendar==='function')renderCalendar();
