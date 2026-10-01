@@ -169,7 +169,7 @@
         #sfEmployeePortal .sf-employee-nav-group>span{display:none}
         #sfEmployeePortal .sf-employee-nav-btn{min-height:56px;grid-template-columns:22px minmax(0,1fr);gap:6px;padding:5px 7px}
         #sfEmployeePortal .sf-employee-nav-icon{width:22px;height:22px;font-size:12px;border-radius:6px}
-        #sfEmployeePortal .sf-employee-nav-copy b{white-space:normal;font-size:10px;line-height:1.35}
+        #sfEmployeePortal .sf-employee-nav-copy b{white-space:normal;overflow-wrap:anywhere;text-overflow:clip;font-size:10px;line-height:1.35}
         #sfEmployeePortal .sf-employee-nav-count{display:none}
       }
       @media(min-width:821px) and (max-height:440px){
