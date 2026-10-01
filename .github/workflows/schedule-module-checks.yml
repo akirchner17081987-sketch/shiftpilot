@@ -1,8 +1,10 @@
 name: Dienstplan Modulprüfung
 on:
   push:
-    branches: [main]
+    branches: [main, codex/ionos-migration]
     paths:
+      - index.html
+      - tests/e2e/employee-pool-models.spec.cjs
       - assets/compliance-core-v2.js
       - assets/compliance-workflow-v2.js
       - assets/schedule-month-view-v1.js
@@ -26,7 +28,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npx playwright test tests/e2e/schedule-module-regressions.spec.cjs tests/e2e/schedule-publication-period.spec.cjs tests/e2e/employee-planning-teams.spec.cjs tests/e2e/auto-plan-workspace.spec.cjs tests/e2e/shift-models.spec.cjs
+      - run: npx playwright test tests/e2e/employee-pool-models.spec.cjs tests/e2e/schedule-module-regressions.spec.cjs tests/e2e/schedule-publication-period.spec.cjs tests/e2e/employee-planning-teams.spec.cjs tests/e2e/auto-plan-workspace.spec.cjs tests/e2e/shift-models.spec.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
