@@ -35,7 +35,7 @@
       const member=rows.find(x=>x.company_id===id);
       if(!member)throw new Error('Für dieses Unternehmen besteht kein aktiver Zugang.');
       if(id===B.companyId){close();return false;}
-      if(B.syncing||B.shiftModelSaving||B.employeeRemovalBusy||B.employeeStatusSaving||B.employeeStatusConfirming||B.bootPromise||B.employeeBootPromise)throw new Error('Daten werden noch gespeichert oder geladen. Bitte versuche es gleich erneut.');
+      if(B.syncing||B.schedulePublishing||B.shiftModelSaving||B.employeeRemovalBusy||B.employeeStatusSaving||B.employeeStatusConfirming||B.bootPromise||B.employeeBootPromise)throw new Error('Daten werden noch gespeichert oder geladen. Bitte versuche es gleich erneut.');
       B.showLoading?.('Unternehmen wird gewechselt …');
       if(B.syncTimer){clearTimeout(B.syncTimer);B.syncTimer=null;await B.sync?.();if(B.lastSyncError)throw B.lastSyncError;}
       remember(id);

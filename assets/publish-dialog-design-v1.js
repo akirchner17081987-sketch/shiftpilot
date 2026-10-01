@@ -28,15 +28,17 @@
     try{if(typeof weekStart!=='undefined'&&weekStart)return C.weekKey(C.iso(weekStart instanceof Date?weekStart:new Date(weekStart)))}catch{}
     const d=new Date(),day=d.getDay()||7;d.setDate(d.getDate()-day+1);return C.iso(d);
   }
+  function selectedPeriod(C){return window.SchichtFunkCalendarView?.getPeriod?.()||{mode:'week',start:weekKey(C),end:weekDates(C,weekKey(C))[6]}}
+  function selectedDates(C,p){const list=[],end=new Date(p.end+'T12:00:00');for(const d=new Date(p.start+'T12:00:00');d<=end;d.setDate(d.getDate()+1))list.push(C.iso(d));return list}
   function weekDates(C,key){const start=new Date(key+'T12:00:00');return Array.from({length:7},(_,i)=>{const d=new Date(start);d.setDate(start.getDate()+i);return C.iso(d)})}
 
-  function openDialog(C,key){
+  function openDialog(C,period){
     css();document.getElementById('sfPublishDesignDialog')?.remove();
-    const dates=weekDates(C,key),weekAssignments=(typeof assignments!=='undefined'?assignments:[]).filter(a=>dates.includes(a.date));
+    const dates=selectedDates(C,period),weekAssignments=(typeof assignments!=='undefined'?assignments:[]).filter(a=>dates.includes(a.date));
     const affected=new Set(weekAssignments.map(a=>String(a.employeeId))).size;
     return new Promise(resolve=>{
       const back=document.createElement('div');back.id='sfPublishDesignDialog';back.className='sf-publish-design-backdrop';
-      back.innerHTML=`<section class="sf-publish-design-modal" role="alertdialog" aria-modal="true" aria-labelledby="sfPublishDesignTitle"><header class="sf-publish-design-head"><div class="sf-publish-design-icon">✓</div><div class="sf-publish-design-headcopy"><div class="sf-publish-design-eyebrow">Dienstplan · Veröffentlichung</div><h2 id="sfPublishDesignTitle">Dienstplan veröffentlichen?</h2><p>${fmtDate(C,key)} bis ${fmtDate(C,dates[6])}</p></div><button type="button" class="sf-publish-design-x" aria-label="Schließen">✕</button></header><div class="sf-publish-design-body"><div class="sf-publish-design-summary"><div class="sf-publish-design-stat"><small>Zeitraum</small><b>1 Woche</b></div><div class="sf-publish-design-stat"><small>Schichten</small><b>${weekAssignments.length}</b></div><div class="sf-publish-design-stat"><small>Mitarbeiter</small><b>${affected}</b></div></div><div class="sf-publish-design-info"><i>!</i><div><strong>Was passiert nach der Veröffentlichung?</strong>Ab diesem Zeitpunkt werden spätere Änderungen über die Compliance-Prüfung verarbeitet und nachvollziehbar protokolliert.</div></div><p class="sf-publish-design-note">Veröffentlichte Schichten werden für die Mitarbeitenden sichtbar. Die bestehende Planungs- und Compliance-Logik bleibt unverändert.</p></div><footer class="sf-publish-design-foot"><button type="button" class="sf-publish-design-cancel">Abbrechen</button><button type="button" class="sf-publish-design-confirm">Jetzt veröffentlichen</button></footer></section>`;
+      back.innerHTML=`<section class="sf-publish-design-modal" role="alertdialog" aria-modal="true" aria-labelledby="sfPublishDesignTitle"><header class="sf-publish-design-head"><div class="sf-publish-design-icon">✓</div><div class="sf-publish-design-headcopy"><div class="sf-publish-design-eyebrow">Dienstplan · Veröffentlichung</div><h2 id="sfPublishDesignTitle">Dienstplan veröffentlichen?</h2><p>${fmtDate(C,period.start)} bis ${fmtDate(C,period.end)}</p></div><button type="button" class="sf-publish-design-x" aria-label="Schließen">✕</button></header><div class="sf-publish-design-body"><div class="sf-publish-design-summary"><div class="sf-publish-design-stat"><small>Zeitraum</small><b>${period.mode==='month'?'1 Monat':'1 Woche'}</b></div><div class="sf-publish-design-stat"><small>Schichten</small><b>${weekAssignments.length}</b></div><div class="sf-publish-design-stat"><small>Mitarbeiter</small><b>${affected}</b></div></div><div class="sf-publish-design-info"><i>!</i><div><strong>Was passiert nach der Veröffentlichung?</strong>Ab diesem Zeitpunkt werden spätere Änderungen über die Compliance-Prüfung verarbeitet und nachvollziehbar protokolliert.</div></div><p class="sf-publish-design-note">Veröffentlichte Schichten werden für die Mitarbeitenden sichtbar. Die bestehende Planungs- und Compliance-Logik bleibt unverändert.</p></div><footer class="sf-publish-design-foot"><button type="button" class="sf-publish-design-cancel">Abbrechen</button><button type="button" class="sf-publish-design-confirm">Jetzt veröffentlichen</button></footer></section>`;
       document.body.appendChild(back);
       const done=value=>{back.remove();resolve(value)};
       back.querySelector('.sf-publish-design-x').onclick=()=>done(false);
@@ -48,9 +50,9 @@
     });
   }
 
-  function localPublish(C,key){
-    const now=new Date().toISOString(),dates=weekDates(C,key);
-    C.publications=C.publications||{};C.publications[key]={publishedAt:now,publishedBy:'Administrator'};
+  function localPublish(C,period){
+    const now=new Date().toISOString(),dates=selectedDates(C,period),key=period.start;
+    C.publications=C.publications||{};if(period.mode==='week')C.publications[key]={publishedAt:now,publishedBy:'Administrator'};
     if(typeof assignments!=='undefined')assignments.filter(a=>dates.includes(a.date)).forEach(a=>{a.publishedAt=a.publishedAt||now;a.version=a.version||1});
     C.audit?.('PLAN_PUBLISHED',key,{dates});C.refresh?.();C.updateScheduleControls?.();C.toast?.('Dienstplan veröffentlicht','Spätere Änderungen werden ab jetzt als Änderungsvorgang dokumentiert.');
   }
@@ -61,14 +63,14 @@
     if(!C||typeof C.publishCurrentWeek!=='function')return false;
     const source=String(C.publishCurrentWeek);
     // Wait until the cloud publication wrapper has been loaded, so this patch is last.
-    if(!source.includes('publish_schedule_week'))return false;
+    if(!source.includes('publish_schedule_week')&&!source.includes('publish_schedule_period'))return false;
     const cloudPublish=C.publishCurrentWeek.bind(C);
     const redesigned=async function(){
       if(B.ready&&B.client)return cloudPublish();
-      const key=weekKey(C);
-      if(C.publications?.[key]?.publishedAt){C.toast?.('Dienstplan bereits veröffentlicht',new Date(C.publications[key].publishedAt).toLocaleString('de-DE'));return}
-      if(!await openDialog(C,key))return;
-      localPublish(C,key);
+      const period=selectedPeriod(C),key=period.start;
+      if(period.mode==='week'&&C.publications?.[key]?.publishedAt){C.toast?.('Dienstplan bereits veröffentlicht',new Date(C.publications[key].publishedAt).toLocaleString('de-DE'));return}
+      if(!await openDialog(C,period))return;
+      localPublish(C,period);
     };
     redesigned.__sfPublishDialogDesignV1=true;
     C.publishCurrentWeek=redesigned;window.spPublishCurrentWeek=redesigned;patched=true;return true;

@@ -1,0 +1,11 @@
+# Veröffentlichungsprüfung im ausgewählten Zeitraum
+
+Die sichtbare Monatsansicht hatte einen eigenen `monthCursor`; ihre Navigation änderte den für die Veröffentlichung verwendeten `weekStart` nicht. Außerdem übernahm die Auto-Planung einen gewählten Monat ohne den Dienstplan auf diesen Zeitraum umzustellen. Dadurch erschien bei der Dezemberplanung die vorher ausgewählte Septemberwoche.
+
+Die sichtbare Kalenderansicht stellt nun `SchichtFunkCalendarView.getPeriod()` bereit. Monatsnavigation und übernommene Auto-Vorschläge synchronisieren den Kalender. Die ältere Kalenderintegration kann einen bereits geladenen neueren Kalender nicht mehr überschreiben. Prüfung, Entwurfshinweis und Freigabe verwenden denselben Zeitraum. Demo-Veröffentlichungen zeigen ebenfalls den gewählten Monat.
+
+`publish_schedule_period(company_id,start_date,end_date)` veröffentlicht in einer Transaktion ausschließlich Entwürfe des autorisierten Unternehmens innerhalb der angegebenen lokalen Tagesgrenzen (maximal 31 Tage). Der private Helfer erhält die bestehende eng begrenzte Definer-Struktur für den unveränderlichen Audit-Eintrag. Vollständig abgedeckte Wochen erhalten ihre bisherigen Publikationsdatensätze; Randwochen werden ausschließlich über die individuellen Schichtfreigaben geschützt. Dadurch werden keine Nachbartage als bereits veröffentlicht behandelt. Die bisherige Wochen-RPC bleibt für ältere Clients erhalten.
+
+Vor der Freigabe werden ausstehende Änderungen gespeichert. Ein Unternehmenswechsel ist während Bestätigung und Veröffentlichung gesperrt. Die Bestätigung selbst veröffentlicht weiterhin nichts ohne die bewusste Nutzeraktion.
+
+Validierung: 324 Node-Tests, statischer Build und fünf IONOS-Artefaktprüfungen erfolgreich. Datenbanktest mit zwei fiktiven Unternehmen: Dezembergrenzen, keine Änderungen im anderen Unternehmen, keine Publikationsmarkierung der Randwochen, wiederholter Aufruf und Ablehnung unberechtigter oder zu langer Zeiträume. Alle Testdaten wurden zurückgerollt. Sicherheitsprüfung meldet keine neue Warnung für diese Funktionen. Browserprüfung verwendet echte Kalender- und Veröffentlichungsmodule mit fiktiven Daten und einer aufgezeichneten RPC; sie versendet keine Produktivbenachrichtigungen.
