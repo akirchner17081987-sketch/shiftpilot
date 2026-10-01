@@ -5,6 +5,7 @@
   let rows = [],
     employeeBusy = false,
     managerBusy = false,
+    withdrawingAll = false,
     managerError = "",
     marketFilter = "active",
     marketSearch = "";
@@ -45,6 +46,8 @@
     s.textContent = `
   #sfEmployeeSwapCard,.sf-swap-mini{display:none!important}.sf-market{border:1px solid #25435b;border-radius:13px;background:linear-gradient(180deg,#102033,#0b1827);padding:15px;margin:14px 0}.sf-market-head{display:flex;align-items:center;gap:9px;margin-bottom:11px}.sf-market-head h3{margin:0}.sf-market-head p{margin:2px 0 0;color:#8299ae;font-size:10px}.sf-market-count,.sf-market-state{border:1px solid #2b675a;border-radius:999px;background:#0e2b25;color:#7ce5cf;padding:4px 8px;font-size:9px;font-weight:900}.sf-market-count{margin-left:auto}.sf-market-list{display:grid;gap:8px}.sf-market-row{display:grid;grid-template-columns:minmax(210px,1fr) auto auto;align-items:center;gap:14px;border:1px solid #233e54;border-radius:10px;background:#091725;padding:11px}.sf-market-row>div:nth-child(2){display:flex;flex-direction:column;align-items:flex-end;justify-self:end}.sf-market-row b,.sf-market-row small{display:block}.sf-market-row small{color:#8198ac;font-size:9px;line-height:1.5;margin-top:3px}.sf-market-actions{display:flex;gap:6px;justify-self:end}.sf-market-actions:empty{display:none}.sf-market-actions button,.sf-market-offer{border-radius:8px;padding:7px 9px;font-size:9px;font-weight:900}.sf-market-take,.sf-market-approve,.sf-market-offer{border:1px solid #28d7b5;background:#28d7b5;color:#05251f}.sf-market-reject{border:1px solid #693642;background:#2d1921;color:#ffa0ad}.sf-market-cancel{border:1px solid #38536a;background:#0b1926;color:#b2c3d1}.sf-market-empty{padding:18px;text-align:center;border:1px dashed #2a445a;border-radius:9px;color:#8299ac}.sf-market-block{color:#d7a95d!important}.sf-market-modal{position:fixed;inset:0;z-index:38000;background:rgba(2,7,13,.9);display:grid;place-items:center;padding:18px}.sf-market-dialog{width:min(540px,96vw);background:#0d1b2a;border:1px solid #2b4961;border-radius:16px;overflow:hidden}.sf-market-dialog header,.sf-market-dialog main,.sf-market-dialog footer{padding:16px 19px}.sf-market-dialog header{border-bottom:1px solid #22394d}.sf-market-dialog h2{margin:4px 0}.sf-market-dialog p{color:#8ea4b8;font-size:11px}.sf-market-dialog textarea{width:100%;min-height:85px;box-sizing:border-box;background:#081522;color:#eef6ff;border:1px solid #29445b;border-radius:9px;padding:10px}.sf-market-dialog footer{display:flex;justify-content:flex-end;gap:8px;border-top:1px solid #22394d}.sf-market-dialog footer button{padding:9px 12px;border-radius:8px}.sf-market-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}.sf-market-tabs{display:flex;gap:7px;flex-wrap:wrap;margin:14px 0 10px}.sf-market-tabs button{border:1px solid #29465d;background:#0a1826;color:#9eb2c5;border-radius:8px;padding:8px 11px}.sf-market-tabs button.active{border-color:#28d7b5;background:#10342d;color:#8aecd7}.sf-market-toolbar{display:flex;gap:10px;align-items:center}.sf-market-toolbar input{flex:1;min-width:180px;background:#081522;border:1px solid #29445b;color:#eef6ff;border-radius:9px;padding:10px 11px}.sf-market-open-dashboard{margin-left:auto}.sf-market-view .sf-market{margin-top:0}.sf-market-section-title{display:flex;align-items:center;justify-content:space-between;margin:14px 0 7px}.sf-market-section-title b{font-size:11px}.sf-market-note{border:1px solid #275146;background:#0d2924;color:#8bdfce;border-radius:8px;padding:9px 10px;font-size:9px;line-height:1.5;margin-bottom:11px}@media(max-width:900px){.sf-market-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:720px){.sf-market-row{grid-template-columns:1fr}.sf-market-row>div:nth-child(2){align-items:flex-start;justify-self:start}.sf-market-actions{justify-content:flex-start;justify-self:start}.sf-market-head{align-items:flex-start;flex-wrap:wrap}.sf-market-count{margin-left:0}.sf-market-toolbar{align-items:stretch;flex-direction:column}.sf-market-kpis{grid-template-columns:1fr}}
   `;
+    s.textContent += `.sf-market-footer{display:flex;justify-content:flex-end;margin-top:18px;padding-top:14px;border-top:1px solid #29445b}.sf-market-withdraw-all{min-height:44px;border:1px solid #ad4559!important;background:#351923!important;color:#ffb4c2!important;border-radius:9px;padding:10px 16px;font-size:13px;font-weight:800}.sf-market-withdraw-all:disabled{opacity:.45;cursor:not-allowed}html[data-sf-theme="light"] .sf-market-withdraw-all{background:#fff1f2!important;color:#8d2440!important;border-color:#d88496!important}@media(max-width:720px){.sf-market-footer button{width:100%}}`;
+    s.textContent += `.sf-market-bulk .sf-market-dialog{width:min(540px,100%);box-sizing:border-box;max-height:90vh;overflow:auto;color:#edf5fc}.sf-market-bulk h2{color:inherit}.sf-market-bulk p,.sf-market-bulk label,.sf-market-bulk textarea{font-size:13px;line-height:1.5}.sf-market-bulk footer button{min-height:44px}html[data-sf-theme="light"] .sf-market-bulk .sf-market-dialog{background:#f8fafc;color:#182a3d;border-color:#becbd9}html[data-sf-theme="light"] .sf-market-bulk p{color:#435b73}html[data-sf-theme="light"] .sf-market-bulk textarea{background:#fff;color:#182a3d;border-color:#becbd9}html[data-sf-theme="light"] .sf-market-bulk [data-close]{background:#e8eef5;color:#26394d;border:1px solid #becbd9}`;
     document.head.appendChild(s);
   }
   function modal(title, text, action, run, rhythmWarning = "") {
@@ -69,6 +72,7 @@
       if (e.target === m && !saving) close();
     };
     m.querySelector("[data-submit]").onclick = async (e) => {
+      if(saving)return;
       const b = e.currentTarget;
       saving = true;
       m.querySelector('[data-close]').disabled = true;
@@ -326,6 +330,22 @@
     managerLoad();
     window.scrollTo({ top: 0, behavior: "instant" });
   }
+  function withdrawAll(){
+    if(withdrawingAll||managerBusy||managerError||!MANAGER.has(B.role)||!B.companyId)return;
+    const company=B.companyId;
+    modal('Alle Angebote zurückziehen?',`Alle noch offenen Angebote und ausstehenden Übernahmeanfragen von ${B.companyName||'diesem Unternehmen'} werden zurückgezogen. Dies gilt für alle Filter und Zeiträume. Bereits freigegebene Schichten und der Verlauf bleiben erhalten.`, 'Alle Angebote zurückziehen',async note=>{
+      if(B.companyId!==company)throw Error('Das Unternehmen wurde gewechselt. Bitte erneut auswählen.');
+      if(B.openMarketPublishing||B.scheduleResetting||B.companySwitching)throw Error('Ein anderer Vorgang wird gerade gespeichert. Bitte gleich erneut versuchen.');
+      withdrawingAll=true;B.openMarketPublishing=true;
+      try{
+        const result=await rpc('manager_withdraw_all_market_offers',{p_company_id:company,p_confirm:true,p_note:note});
+        await managerLoad();
+        showSaveToast?.('Angebote zurückgezogen',`${Number(result?.withdrawnOffers)||0} Angebote wurden zurückgezogen. Bereits freigegebene Schichten bleiben erhalten.`);
+      }finally{withdrawingAll=false;B.openMarketPublishing=false;renderDashboard();}
+    });
+    const submit=document.querySelector('#sfMarketModal [data-submit]');submit?.classList.remove('sf-market-approve');submit?.classList.add('sf-market-withdraw-all');
+    document.getElementById('sfMarketModal')?.classList.add('sf-market-bulk');
+  }
   function ensureDashboard() {
     if (!MANAGER.has(B.role)) return;
     css();
@@ -348,6 +368,8 @@
       v.innerHTML =
         '<div class="page-head"><div><div class="eyebrow">ZUSAMMENARBEIT</div><h1>Schicht-Marktplatz</h1><p>Angebote, Übernahmewünsche und Planerfreigaben zentral verwalten.</p></div><button class="ghost" id="sfMarketRefresh">↻ Aktualisieren</button></div><div class="stats sf-market-kpis" id="sfMarketKpis"></div><div class="sf-market-tabs" id="sfMarketTabs"><button data-filter="active">Aktuell</button><button data-filter="available">Verfügbar</button><button data-filter="review">Zu prüfen</button><button data-filter="history">Verlauf</button></div><section class="sf-market"><div class="sf-market-toolbar"><input id="sfMarketSearch" type="search" placeholder="Mitarbeiter, Schicht oder Status suchen …"><span class="sf-market-count" id="sfMarketResultCount">0 Einträge</span></div><div class="sf-market-list" id="sfMarketDashboardList" style="margin-top:11px"></div></section>';
       content.appendChild(v);
+      const footer=document.createElement('footer');footer.className='sf-market-footer';footer.innerHTML='<button type="button" class="sf-market-withdraw-all" id="sfMarketWithdrawAll">Alle Angebote zurückziehen</button>';v.querySelector('section.sf-market').appendChild(footer);
+      footer.querySelector('button').onclick=withdrawAll;
       v.querySelector("#sfMarketRefresh").onclick = managerLoad;
       v.querySelector("#sfMarketSearch").oninput = (e) => {
         marketSearch = e.target.value.trim().toLowerCase();
@@ -395,6 +417,7 @@
         b.classList.toggle("active", b.dataset.filter === marketFilter),
       );
     const data = filteredRows();
+    view.querySelector('#sfMarketWithdrawAll').disabled=withdrawingAll||!!managerError||!rows.some(x=>['MARKET_OPEN','PENDING_MANAGER'].includes(x.status));
     view.querySelector("#sfMarketResultCount").textContent = managerError
       ? "Fehler"
       : `${data.length} ${data.length === 1 ? "Eintrag" : "Einträge"}`;
@@ -495,4 +518,3 @@
     if (event.detail?.perspective === "employee") setTimeout(employeeLoad, 0);
   });
 })();
-
