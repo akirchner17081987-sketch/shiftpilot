@@ -50,6 +50,7 @@
     s.textContent += `.sf-market-bulk .sf-market-dialog{width:min(540px,100%);box-sizing:border-box;max-height:90vh;overflow:auto;color:#edf5fc}.sf-market-bulk h2{color:inherit}.sf-market-bulk p,.sf-market-bulk label,.sf-market-bulk textarea{font-size:13px;line-height:1.5}.sf-market-bulk footer button{min-height:44px}html[data-sf-theme="light"] .sf-market-bulk .sf-market-dialog{background:#f8fafc;color:#182a3d;border-color:#becbd9}html[data-sf-theme="light"] .sf-market-bulk p{color:#435b73}html[data-sf-theme="light"] .sf-market-bulk textarea{background:#fff;color:#182a3d;border-color:#becbd9}html[data-sf-theme="light"] .sf-market-bulk [data-close]{background:#e8eef5;color:#26394d;border:1px solid #becbd9}`;
     document.head.appendChild(s);
   }
+  const extraWarning = x => x.additional_warning || x.rhythm_warning || '';
   function modal(title, text, action, run, rhythmWarning = "") {
     css();
     document.getElementById("sfMarketModal")?.remove();
@@ -61,7 +62,7 @@
     if (rhythmWarning) {
       const label = document.createElement('label');
       label.className = 'sf-market-rhythm-confirm';
-      label.innerHTML = `<input type="checkbox" data-accept-rhythm><span>${esc(rhythmWarning)}. Ich bestätige diese Abweichung vom Rhythmus ausdrücklich.</span>`;
+      label.innerHTML = `<input type="checkbox" data-accept-rhythm><span>${esc(rhythmWarning)}. Ich bestätige diesen freiwilligen Zusatzdienst und die angezeigten Abweichungen ausdrücklich.</span>`;
       m.querySelector('main').prepend(label);
     }
     const close = B.bindAccessibleModal?.(m, { initialFocus: "textarea" }) || (() => m.remove());
@@ -80,7 +81,7 @@
       b.textContent = "Wird gespeichert …";
       try {
         const acceptRhythm = !!m.querySelector('[data-accept-rhythm]')?.checked;
-        if (rhythmWarning && !acceptRhythm) throw Error('Bitte die Rhythmusabweichung ausdrücklich bestätigen.');
+        if (rhythmWarning && !acceptRhythm) throw Error('Bitte den Zusatzdienst ausdrücklich bestätigen.');
         await run(m.querySelector("textarea").value.trim(), acceptRhythm);
         close();
       } catch (x) {
@@ -200,8 +201,8 @@
         (x) => x.is_own || (!x.is_own && x.status !== "MARKET_OPEN"),
       );
     const line = (x) =>
-      `<article class="sf-market-row" data-id="${x.id}"><div><b>${esc(x.shift_code)} · ${esc(dt(x.starts_at))}${x.ends_at ? '–' + esc(dt(x.ends_at)) : ''}</b><small>${x.kind === 'OPEN_POSITION' ? `${x.is_claim ? 'Meine Übernahmeanfrage' : `Offener Bedarf · ${x.remaining_count} Plätze`} · ${esc(x.company_name || 'Planung')}` : x.is_own ? "Eigenes Angebot" : "Angeboten von " + esc(x.offered_by)}${x.reason ? " · " + esc(x.reason) : ""}</small>${x.rhythm_warning ? `<small class="sf-market-block">${esc(x.rhythm_warning)} · Planerfreigabe erforderlich</small>` : ''}</div><div><span class="sf-market-state">${esc(status(x.status))}</span>${x.block_reason ? `<small class="sf-market-block">${esc(x.block_reason)}</small>` : ""}</div><div class="sf-market-actions">${x.status === "MARKET_OPEN" && !x.is_own && x.can_take ? '<button class="sf-market-take" data-take>Schicht übernehmen</button>' : ""}${(x.is_own && ["MARKET_OPEN", "PENDING_MANAGER"].includes(x.status)) || (x.kind === 'OPEN_POSITION' && x.is_claim && x.status === 'PENDING_MANAGER') ? '<button class="sf-market-cancel" data-cancel>Zurückziehen</button>' : ""}</div></article>`;
-    card.innerHTML = `<div class="sf-market-head"><div><h3>Schicht-Marktplatz</h3><p>Eigene Schichten anbieten und offene Dienste übernehmen</p></div><span class="sf-market-count">${available.filter((x) => x.can_take).length} passend</span></div><div class="sf-market-note">Eine Übernahme ändert den Dienstplan noch nicht. Sie wird zuerst der Disposition beziehungsweise einer berechtigten Fachkraft zur Prüfung vorgelegt.</div><div class="sf-market-section-title"><b>Verfügbare Schichten</b><span class="sf-market-count">${available.length}</span></div><div class="sf-market-list">${available.length ? available.map(line).join("") : '<div class="sf-market-empty">Aktuell werden keine Schichten angeboten.</div>'}</div><div class="sf-market-section-title"><b>Meine Angebote und Übernahmen</b><span class="sf-market-count">${mine.length}</span></div><div class="sf-market-list">${mine.length ? mine.map(line).join("") : '<div class="sf-market-empty">Noch keine eigenen Marktplatzvorgänge.</div>'}</div>`;
+      `<article class="sf-market-row" data-id="${x.id}"><div><b>${esc(x.shift_code)} · ${esc(dt(x.starts_at))}${x.ends_at ? '–' + esc(dt(x.ends_at)) : ''}</b><small>${x.kind === 'OPEN_POSITION' ? `${x.is_claim ? 'Meine Übernahmeanfrage' : `Offener Bedarf · ${x.remaining_count} Plätze`} · ${esc(x.company_name || 'Planung')}` : x.is_own ? "Eigenes Angebot" : "Angeboten von " + esc(x.offered_by)}${x.reason ? " · " + esc(x.reason) : ""}</small>${extraWarning(x) ? `<small class="sf-market-block">${esc(extraWarning(x))} · Planerfreigabe erforderlich</small>` : ''}</div><div><span class="sf-market-state">${esc(status(x.status))}</span>${x.block_reason ? `<small class="sf-market-block">${esc(x.block_reason)}</small>` : ""}</div><div class="sf-market-actions">${x.status === "MARKET_OPEN" && !x.is_own && x.can_take ? `<button class="sf-market-take" data-take>${extraWarning(x) ? 'Zusatzdienst anfragen' : 'Schicht anfragen'}</button>` : ""}${(x.is_own && ["MARKET_OPEN", "PENDING_MANAGER"].includes(x.status)) || (x.kind === 'OPEN_POSITION' && x.is_claim && x.status === 'PENDING_MANAGER') ? '<button class="sf-market-cancel" data-cancel>Zurückziehen</button>' : ""}</div></article>`;
+    card.innerHTML = `<div class="sf-market-head"><div><h3>Schicht-Marktplatz</h3><p>Eigene Schichten anbieten und offene Dienste übernehmen</p></div><span class="sf-market-count">${available.filter((x) => x.can_take).length} passend</span></div><div class="sf-market-note">Zusatzdienste sind auch an freien Rhythmustagen möglich. Abweichungen vom Rhythmus oder den vertraglichen Sollstunden benötigen eine ausdrückliche Planerfreigabe. Erst die Freigabe trägt den Dienst verbindlich ein.</div><div class="sf-market-section-title"><b>Verfügbare Schichten</b><span class="sf-market-count">${available.length}</span></div><div class="sf-market-list">${available.length ? available.map(line).join("") : '<div class="sf-market-empty">Aktuell werden keine Schichten angeboten.</div>'}</div><div class="sf-market-section-title"><b>Meine Angebote und Übernahmen</b><span class="sf-market-count">${mine.length}</span></div><div class="sf-market-list">${mine.length ? mine.map(line).join("") : '<div class="sf-market-empty">Noch keine eigenen Marktplatzvorgänge.</div>'}</div>`;
     host.insertBefore(card, host.firstChild);
     card.querySelectorAll("[data-take]").forEach(
       (b) =>
@@ -210,8 +211,8 @@
             (r) => r.id === b.closest("[data-id]").dataset.id,
           );
           modal(
-            "Schicht übernehmen",
-            `${x.shift_code} · ${dt(x.starts_at)} · von ${x.offered_by}`,
+            extraWarning(x) ? 'Zusatzdienst anfragen' : 'Schicht anfragen',
+            `${x.shift_code} · ${dt(x.starts_at)}${extraWarning(x) ? ' · ' + extraWarning(x) : ''}. Die Anfrage ist freiwillig; verbindlich wird sie erst nach Planerfreigabe.`,
             "Zur Prüfung einreichen",
             async (note) => {
               try {
@@ -317,7 +318,7 @@
               result?.message || "Der Dienstplan wurde entsprechend aktualisiert.",
             );
           },
-          b.dataset.review === 'APPROVE' ? x.rhythm_warning || '' : '',
+          b.dataset.review === 'APPROVE' ? extraWarning(x) : '',
         );
     });
   }
@@ -427,7 +428,7 @@
         ? data
             .map(
               (x) =>
-                `<article class="sf-market-row" data-id="${x.id}"><div><b>${esc(x.shift_code)} · ${esc(dt(x.starts_at))}${x.ends_at ? '–' + esc(dt(x.ends_at)) : ''}</b><small>${esc(x.offered_by)}${x.claimed_by ? " → " + esc(x.claimed_by) : x.kind === 'OPEN_POSITION' ? ` · ${x.remaining_count} Plätze offen` : " · noch nicht übernommen"}${x.reason ? " · " + esc(x.reason) : ""}</small>${x.rhythm_warning ? `<small class="sf-market-block">${esc(x.rhythm_warning)}</small>` : ''}</div><div><span class="sf-market-state">${esc(status(x.status))}</span>${x.colleague_comment ? `<small>${esc(x.colleague_comment)}</small>` : ""}</div><div class="sf-market-actions">${reviewButton(x)}</div></article>`,
+                `<article class="sf-market-row" data-id="${x.id}"><div><b>${esc(x.shift_code)} · ${esc(dt(x.starts_at))}${x.ends_at ? '–' + esc(dt(x.ends_at)) : ''}</b><small>${esc(x.offered_by)}${x.claimed_by ? " → " + esc(x.claimed_by) : x.kind === 'OPEN_POSITION' ? ` · ${x.remaining_count} Plätze offen` : " · noch nicht übernommen"}${x.reason ? " · " + esc(x.reason) : ""}</small>${extraWarning(x) ? `<small class="sf-market-block">${esc(extraWarning(x))}</small>` : ''}</div><div><span class="sf-market-state">${esc(status(x.status))}</span>${x.colleague_comment ? `<small>${esc(x.colleague_comment)}</small>` : ""}</div><div class="sf-market-actions">${reviewButton(x)}</div></article>`,
             )
             .join("")
         : '<div class="sf-market-empty">Für diesen Filter sind keine Einträge vorhanden.</div>';
