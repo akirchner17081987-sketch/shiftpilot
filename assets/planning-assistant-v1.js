@@ -137,7 +137,7 @@
       document.body.appendChild(dialog);
       el('sfPlanningChatClose').onclick=()=>close();
       dialog.addEventListener('cancel',event=>{event.preventDefault();close();});
-      dialog.addEventListener('close',()=>el('sfPlanningAssistantButton')?.setAttribute('aria-expanded','false'));
+      dialog.addEventListener('close',()=>{if(!dialog.open)el('sfPlanningAssistantButton')?.setAttribute('aria-expanded','false');});
       document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!event.defaultPrevented&&dialog.open&&!document.querySelector('dialog:modal')){event.preventDefault();close();}});
 
       el('sfPlanningChatForm').onsubmit=event=>{event.preventDefault();submit();};
