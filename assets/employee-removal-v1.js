@@ -6,7 +6,7 @@
   const demo=()=>sessionStorage.getItem('sf_demo_session_v1')==='active';
   D.canManage=()=>demo()||!!(B.ready&&B.client&&B.companyId&&['OWNER','ADMIN','PLANNER','DISPATCHER'].includes(B.role));
   D.validConfirmation=(snapshot,name,acknowledged)=>acknowledged===true&&String(name||'').trim()===snapshot.employee_name;
-  async function flush(){if(B.syncing||B.bootPromise||B.companySwitching||B.shiftModelSaving)throw Error('Daten werden noch gespeichert oder geladen. Bitte versuche es gleich erneut.');if(B.syncTimer){clearTimeout(B.syncTimer);B.syncTimer=null;await B.sync();if(B.lastSyncError)throw B.lastSyncError;}}
+  async function flush(){if(B.syncing||B.bootPromise||B.companySwitching||B.shiftModelSaving||B.employeeStatusSaving)throw Error('Daten werden noch gespeichert oder geladen. Bitte versuche es gleich erneut.');if(B.syncTimer){clearTimeout(B.syncTimer);B.syncTimer=null;await B.sync();if(B.lastSyncError)throw B.lastSyncError;}}
   D.preview=async employee=>{
     if(!D.canManage())throw Error('Für dieses Unternehmen fehlen aktive Verwaltungsrechte.');
     const companyId=B.companyId;

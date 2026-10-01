@@ -1,0 +1,7 @@
+# Mitarbeiter aktivieren und deaktivieren
+
+Im Mitarbeiterprofil unter Übersicht wechselt der bisher einseitige Deaktivieren-Knopf entsprechend dem aktuellen Status zwischen **Aktivieren** und **Deaktivieren**. Der Statuswechsel erfordert kein erneutes Speichern anderer Profilfelder oder der Schichtregel. Beim Aktivieren wird eine rote Verfügbarkeit wieder auf Grün gesetzt; eine eingeschränkte gelbe Verfügbarkeit bleibt erhalten. Deaktivieren bewahrt die hinterlegte Verfügbarkeit, da inaktive Profile bereits durch ihren Status nicht einplanbar sind. Die Statusauswahl in Übersicht und Einstellungen stellt die Verfügbarkeit beim Reaktivieren ebenfalls um.
+
+Die Speicherung aktualisiert nur Status und Qualifikationen mit den bestehenden Planungsmetadaten des ausgewählten Mitarbeiterprofils im ausgewählten Unternehmen. Gelöschte Profile sind ausgeschlossen. Berechtigungen, Unternehmensfilter und die bestehende Datenbanksperre für gelöschte Profile bleiben erhalten. Ein fehlgeschlagener Statuswechsel ändert den lokalen Mitarbeiter nicht. Der Unternehmenswechsel und die vollständige Hintergrundsynchronisierung warten während des Speicherns.
+
+Prüfung: 321 Node-Prüfungen, statischer Produktionsbuild; Statuswechsel inactive → active → inactive mit fiktiven Profilen unter authenticated OWNER in beiden Unternehmen, vollständig zurückgerollt. Browserprüfungen der tatsächlichen Profilknöpfe, Bestätigung, Abbrechen, Planungspool, Unternehmensfilter und Speicherfehler sind in `.github/workflows/employee-removal-checks.yml` für Desktop und Mobilgeräte enthalten.
