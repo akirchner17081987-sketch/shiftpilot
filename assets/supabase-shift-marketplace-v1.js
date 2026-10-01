@@ -137,7 +137,9 @@
     const shifts = upcoming(),
       items = root.querySelectorAll(".sf-shift-item");
     items.forEach((el, i) => {
-      const sh = shifts[i];
+      const sh = el.dataset.assignmentId
+        ? (B.employeePortalData?.shifts || []).find(s => String(s.id) === el.dataset.assignmentId && s.published_at && new Date(s.starts_at) > new Date())
+        : shifts[i];
       if (!sh) return;
       const active = rows.some(
         (x) =>
@@ -498,7 +500,7 @@
       }, 15000);
     }
   }, 250);
-  window.SFShiftMarketplace = {refreshManager:managerLoad, refreshEmployee:employeeLoad, openDashboard};
+  window.SFShiftMarketplace = {refreshManager:managerLoad, refreshEmployee:employeeLoad, refreshOfferButtons:addOfferButtons, openDashboard};
   document.addEventListener(
     "click",
     (e) => {
