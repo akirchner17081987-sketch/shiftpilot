@@ -1,0 +1,9 @@
+# Zentrale Teamrhythmen A–E
+
+Unter Einstellungen → Planung stehen fünf Teamkarten mit aktiver Mitarbeiterzahl, Startdatum und Einstiegsposition. Je Team werden Startdatum, Tagesfolge (1–365 Tage) und Einstieg am Startdatum gespeichert. Die 10-Tage-Vorgabe FD, FD, SD, SD, Frei, ND, ND, Frei, Frei, Frei ist als Vorlage verfügbar; A–E beginnen dabei an Tag 1, 3, 5, 7, 9.
+
+Die Tabelle company_planning_teams ist nach Unternehmen und Team eindeutig. Bestehende Teamregeln wurden aus den Mitarbeiter-Metadaten übernommen, ohne Mitarbeiter oder Dienste zu ändern. Mitarbeiterprofile zeigen die zentrale Vorgabe schreibgeschützt; Personal → Mitarbeiter bleibt die Stelle für Teamzuordnungen. Mitarbeiter ohne Team behalten ihre individuelle Schichtregel. SFRhythm löst die zentrale Regel für manuelle Planung, Konfliktanzeigen und Auto-Planung auf. Ein Speichervorgang verwirft alte Auto-Planungs-Vorschauen, verschiebt aber keine bestehenden Dienste.
+
+RLS erlaubt Lesen nur aktiven Unternehmensmitgliedern außerhalb TIME_TRACKING und Schreiben nur OWNER, ADMIN, PLANNER, DISPATCHER. Der SECURITY INVOKER RPC manager_save_planning_team verwendet die gleichen Berechtigungen. Ein Trigger prüft aktive Schichtmodelle und Freigaben aller zugeordneten, nicht gelöschten Mitarbeiter auch bei direkten Tabellenänderungen. Änderungen werden im bestehenden Audit protokolliert. Unternehmenswechsel und allgemeine Synchronisierung sind während der Speicherung gesperrt.
+
+Validierung: 349 Node-Tests, statischer Build und 5 IONOS-Prüfungen erfolgreich. Der SQL-Test tests/planning-team-rules-rollback.sql prüft Speichern unabhängiger Teams, Mandantentrennung, Leserrechte, Eingabevalidierung, Audit und unveränderte Personaldaten/Dienste ausschließlich mit fiktiven Datensätzen und ROLLBACK. Playwright prüft den tatsächlichen Editor und die übernommene Planung in heller/dunkler Ansicht sowie Desktop/Mobil mit simuliertem Backend.

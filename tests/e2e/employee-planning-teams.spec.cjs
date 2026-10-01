@@ -43,3 +43,38 @@ test('new FD-only employee can configure the fixed week, see validation and disc
  await page.locator('#addEmployeeBtn').click();await page.locator('#spFirst').fill('Nicht speichern');await page.locator('#spCancelNew').click();await expect(page.locator('#spEmployeeProfile')).toContainText('Noch kein Mitarbeiter gewählt');await page.locator('#addEmployeeBtn').click();await expect(page.locator('#spFirst')).toHaveValue('');
  await page.locator('#spFirst').fill('Firma A Entwurf');await page.evaluate(()=>{SFBackend.companyId='company-other';employees=[makeEmployee('OTHER')];selectedEmployeeId=null;renderEmployees()});await expect(page.locator('#spEmployeeProfile')).toContainText('Noch kein Mitarbeiter gewählt');await page.locator('#addEmployeeBtn').click();await expect(page.locator('#spFirst')).toHaveValue('');
 });
+
+async function centralFixture(page,theme){
+ await fixture(page,theme);
+ await page.addScriptTag({content:read('assets/planning-teams-v1.js')});
+ await page.addScriptTag({content:read('assets/settings-management-v2.js').replace(/\}\)\(\);\s*$/,'window.centralSettingsFixture={planning,css};})();')});
+ await page.evaluate(()=>{
+  window.DAYS=['Mo','Di','Mi','Do','Fr','Sa','So'];window.globalSoll={FD:4,SD:4,ND:4};window.dailySoll={};window.centralRows=[];window.previewClears=0;
+  window.clearAutoPlanPreview=()=>previewClears++;SFShiftModels.enhance=()=>{};
+  SFBackend.client.rpc=async(name,args)=>{calls.push({name,args});if(failSave)return{error:{message:'Teamregel offline'}};const row={team_code:args.p_team_code,start_date:args.p_start_date,pattern:args.p_pattern,start_offset:args.p_start_offset};centralRows=centralRows.filter(r=>r.team_code!==row.team_code).concat(row);return{data:row};};
+  centralRows=['A','B','C','D','E'].map((team,i)=>({team_code:team,start_date:'2026-12-01',pattern:['FD','FD','SD','SD','FREI','ND','ND','FREI','FREI','FREI'],start_offset:i*2}));
+  SFPlanningTeams.apply(centralRows,SFBackend.companyId);
+  const host=document.createElement('section');host.id='view-settings';host.className='view active';host.innerHTML='<div id="sfSettingBody"></div>';document.querySelector('.content').appendChild(host);centralSettingsFixture.css();centralSettingsFixture.planning(document.querySelector('#sfSettingBody'));
+ });
+}
+for(const theme of ['dark','light'])test(`central team editor persists independent rhythms and inherited staff rules in ${theme}`,async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));await centralFixture(page,theme);
+ await expect(page.locator('#sfPlanningTeams [data-edit-team]')).toHaveCount(5);await page.locator('[data-edit-team="A"]').click();await page.locator('#sfTeamStart').fill('2026-12-01');
+ await page.locator('[data-preset]').click();for(let i=9;i>=3;i--)await page.locator(`[data-remove-day="${i}"]`).click();
+ await page.locator('[data-day="0"]').selectOption('ND');await page.locator('[data-day="1"]').selectOption('FREI');await page.locator('[data-day="2"]').selectOption('SD');await page.locator('#sfTeamOffset').selectOption('1');
+ await expect(page.locator('.sf-team-preview')).toContainText('1.12.2026: Frei');await expect(page.locator('.sf-team-preview')).toContainText('2.12.2026: SD');
+ await page.evaluate(()=>document.querySelector('#view-employees').classList.remove('active'));expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);await page.screenshot({path:test.info().outputPath(`central-team-${theme}.png`),fullPage:true});
+ const before=await page.evaluate(()=>JSON.stringify(employees));await page.getByRole('button',{name:'Team A speichern',exact:true}).click();await expect(page.locator('#toast')).toContainText('Team A gespeichert');
+ expect(await page.evaluate(()=>JSON.stringify(employees))).toBe(before);expect(await page.evaluate(()=>previewClears)).toBe(1);expect(await page.evaluate(()=>calls.at(-1).args.p_company_id)).toBe(theme==='dark'?'company-a':'company-b');
+ expect(await page.evaluate(()=>SFRhythm.check(employees[1],'ND','2026-12-03').allowed)).toBe(true);expect(await page.evaluate(()=>SFRhythm.check(employees[0],'FD','2026-12-01').allowed)).toBe(true);expect(await page.evaluate(()=>SFPlanningTeams.get('B').offset)).toBe(2);
+ await page.evaluate(()=>{document.querySelector('#view-employees').classList.add('active');document.querySelector('#view-settings').classList.remove('active');selectedEmployeeId='A';renderEmployees()});await expect(page.locator('#spRhythmStart')).toBeDisabled();await expect(page.locator('#spPlanningTeamSummary')).toContainText('Einstieg an Tag 2');await expect(page.locator('#spPlanningTeamSummary')).toContainText('Frei');
+ await page.locator('#spSave').click();await expect(page.locator('#toast')).toContainText('Mitarbeiter gespeichert');expect(await page.evaluate(()=>calls.at(-1).payload.qualifications)).toContain('__sp:rhythmPattern=ND, FREI, SD');
+ await page.evaluate(()=>{assignEmployeeByDrop('A','FD','2026-12-03');assignEmployeeByDrop('A','ND','2026-12-03')});expect(await page.evaluate(()=>manualCalls.map(x=>x.type))).toEqual(['ND']);expect(await page.evaluate(()=>autoEligibleEmployees('ND','2026-12-03').map(x=>x.e.id))).toEqual(['A']);
+ await page.locator('#spPlanningTeam').selectOption('');await expect(page.locator('#spRhythmStart')).toBeEnabled();await expect(page.locator('#spRhythmMode')).toBeEnabled();
+ await page.evaluate(()=>{document.querySelector('#view-settings').classList.add('active');document.querySelector('#view-employees').classList.remove('active')});await page.locator('[data-edit-team="B"]').click();await page.locator('[data-day="0"]').selectOption('ND');await page.evaluate(()=>failSave=true);await page.getByRole('button',{name:'Team B speichern',exact:true}).click();await expect(page.locator('.sf-team-message')).toContainText('Teamregel offline');await expect(page.getByRole('button',{name:'Team B speichern',exact:true})).toBeEnabled();expect(await page.evaluate(()=>SFPlanningTeams.get('B').pattern[0])).toBe('FD');
+ await page.evaluate(()=>{SFPlanningTeams.apply(centralRows,SFBackend.companyId);SFBackend.companyId='different-company'});expect(await page.evaluate(()=>SFPlanningTeams.get('A'))).toBeNull();expect(errors).toEqual([]);
+});
+test('central editor supports adding/removing days and refuses unavailable permissions without a cloud call',async({page})=>{
+ await centralFixture(page,'dark');await page.locator('[data-edit-team="A"]').click();await page.locator('[data-add-day]').click();await expect(page.locator('[data-day]')).toHaveCount(11);await page.locator('[data-remove-day="10"]').click();await expect(page.locator('[data-day]')).toHaveCount(10);
+ await page.evaluate(()=>employees[1].shifts=['FD']);await page.getByRole('button',{name:'Team A speichern',exact:true}).click();await expect(page.locator('.sf-team-message')).toContainText('Schichtfreigaben');expect(await page.evaluate(()=>calls.length)).toBe(0);await page.locator('[data-cancel]').click();await expect(page.locator('.sf-team-editor')).toBeHidden();
+});
