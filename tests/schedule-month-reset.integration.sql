@@ -23,6 +23,7 @@ BEGIN
   ('2027-01-01 06:00+01'::timestamptz,'2027-01-01 14:00+01'::timestamptz,'PUBLISHED')) v(s,e,status);
  SELECT array_agg(id ORDER BY starts_at) INTO ids FROM public.shift_assignments WHERE company_id=co;
  INSERT INTO public.time_month_closures(company_id,month_start,status,report_snapshot,closed_at,closed_by) VALUES(co,'2026-08-01','CLOSED','{"test":"preserve"}',now(),owner_user),(co,'2026-11-01','CLOSED','{"test":"boundary"}',now(),owner_user);
+ INSERT INTO public.time_entries(company_id,assignment_id,status) VALUES(co,ids[3],'open') ON CONFLICT(assignment_id) DO NOTHING;
  INSERT INTO public.plan_publications(company_id,week_start,published_at,published_by) VALUES(co,'2026-08-31',now(),owner_user),(co,'2026-11-30',now(),owner_user),(co,'2026-12-14',now(),owner_user),(co,'2026-12-28',now(),owner_user);
  INSERT INTO public.open_shift_market_offers(company_id,work_date,shift_code,starts_at,ends_at,remaining_count,created_by) VALUES(co,'2026-12-15','TEST','2026-12-15 22:00+01','2026-12-16 06:00+01',1,owner_user) RETURNING id INTO offer;
  INSERT INTO public.open_shift_market_claims(company_id,offer_id,employee_id,requested_by,status,assignment_id) VALUES(co,offer,emp,planner_user,'APPLIED',ids[4]) RETURNING id INTO claim;
