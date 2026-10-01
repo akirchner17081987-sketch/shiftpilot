@@ -1,0 +1,26 @@
+(async function(){
+ await new Promise(r=>setTimeout(r,80));const results=[],check=(label,condition)=>{results.push({label,pass:!!condition});};
+ const button=document.getElementById('sfPlanningAssistantButton');check('Manager sees launcher',button&&!button.hidden);button.click();
+ const input=document.getElementById('sfPlanningChatInput'),log=document.getElementById('sfPlanningChatLog'),dialog=document.getElementById('sfPlanningChat');
+ check('Dialog opens and focuses input',dialog.open&&document.activeElement===input);
+ const ask=q=>{input.value=q;document.getElementById('sfPlanningChatForm').dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));};
+ const before=JSON.stringify({employees,assignments,absences});
+ ask('Welche Dienste sind im Dezember noch offen?');check('December result and actual coverage',log.textContent.includes('Dezember 2026')&&log.textContent.includes('123 offene Positionen'));
+ const more=log.querySelector('.sf-chat-more');more.click();check('More table rows load',log.querySelectorAll('tbody tr').length===24);
+ document.getElementById('sfPlanningChatReset').click();ask('Welche Mitarbeiter kommen als Ersatz infrage?');check('Missing date and shift asked',log.textContent.includes('konkreten Tag und die Schichtart'));
+ ask('Am 02.12.2026 im FD');check('Follow-up produces ranked candidates',log.textContent.includes('Ersatz für FD')&&log.textContent.includes('Ben Beispiel'));
+ ask('Bei welchen Mitarbeitern fehlt eine Teamzuordnung?');check('Unassigned employee is identified',log.querySelector('.is-answer:last-child').textContent.includes('Ben Beispiel'));
+ ask('Wie stelle ich den Rhythmus von Team E ein?');check('Central rhythm instructions',log.textContent.includes('Teamrhythmen A–E'));
+ ask('Wie ist das Wetter?');check('Unknown questions are explicit',log.lastChild.textContent.includes('noch keine zuverlässige'));
+ ask('<img src=x onerror=alert(1)>');check('User input is rendered safely',!log.querySelector('img'));
+ check('No planning writes',JSON.stringify({employees,assignments,absences})===before);
+ window.SFBackend.companyId='another-company';await new Promise(r=>setTimeout(r,550));check('Company switch closes and clears chat',!dialog.open&&log.textContent==='');
+ window.SFBackend.role='EMPLOYEE';await new Promise(r=>setTimeout(r,550));check('Employee cannot see or query manager assistant',button.hidden&&window.SFPlanningAssistant.ask('Wer hat kein Team?').rows.length===0);
+ window.SFBackend.role='TIME_TRACKING';await new Promise(r=>setTimeout(r,550));check('Time-only account cannot query personnel',button.hidden&&window.SFPlanningAssistant.ask('Wer kann einspringen?').rows.length===0);
+ window.SFBackend.role='PLANNER';await new Promise(r=>setTimeout(r,550));button.click();
+ const r=dialog.getBoundingClientRect();check('Dialog fits viewport',r.left>=-1&&r.top>=-1&&r.right<=innerWidth+1&&r.bottom<=innerHeight+1);
+ const light=new URLSearchParams(location.search).get('theme')==='light';if(light)document.documentElement.dataset.sfTheme='light';
+ check('No browser errors',window.__errors.length===0);
+ const report=document.createElement('script');report.id='qa-result';report.type='application/json';report.textContent=JSON.stringify({results,errors:window.__errors,width:innerWidth,height:innerHeight});document.body.appendChild(report);
+ window.__qaResults=results;
+})();
