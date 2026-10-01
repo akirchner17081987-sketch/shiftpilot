@@ -7,6 +7,7 @@
     INSERT:'Angelegt',UPDATE:'Geändert',DELETE:'Gelöscht',
     SHIFT_CREATED_DRAFT:'Schicht als Entwurf angelegt',
     FULL_SCHEDULE_RESET:'Gesamten Dienstplan gelöscht',
+    MONTH_SCHEDULE_RESET:'Dienstplanmonat gelöscht',
     SHIFT_DELETED_DRAFT:'Schichtentwurf gelöscht',
     SHIFT_CHANGE_APPLIED:'Schichtänderung übernommen',
     PLAN_PUBLISHED:'Dienstplan veröffentlicht',
