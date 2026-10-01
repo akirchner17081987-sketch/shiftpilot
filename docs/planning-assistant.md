@@ -11,3 +11,11 @@ Zugang: OWNER, ADMIN, PLANNER und DISPATCHER; im lokalen Demo-Modus entsprechend
 Einbindung: zwei JavaScript-Dateien und eine CSS-Datei unter `assets/`, Referenzen in `index.html`. Der bestehende statische IONOS-Build übernimmt diese Dateien. Keine Datenbankmigration, zusätzliche Serverinstallation oder API-Schlüssel erforderlich. Entwicklung und Wartung sowie bestehende Hostingkosten bleiben bestehen.
 
 Prüfung: `node --test tests/planning-assistant.test.mjs` und `node scripts/build-static.mjs`. Die CI-Datei `.github/workflows/planning-assistant-checks.yml` führt beide Prüfungen aus.
++
+## Erweiterte Planung und Wissensdatenbank
+
+Der Assistent zeigt Dienste einzelner Mitarbeiter und Planungsteams, Überbesetzung, fehlende Freigaben für aktive Schichtarten und Abweichungen geplanter Stunden vom Monats-SOLL. Für die Monatsabweichung ist ein vollständiger Kalendermonat erforderlich; Mitarbeiter ohne positives Monats-SOLL werden dabei nicht bewertet. Die Werte sind keine bestätigten Überstunden.
+
+Die persönliche Besetzungsprüfung verwendet die vorhandenen Kandidatenprüfungen und nennt den ersten aktuellen Ausschlussgrund, ohne Krankheitskategorien oder private Notizen offenzulegen. Für Namen mit mehreren Treffern fragt der Chat nach vollständigem Namen oder Personalnummer. Mitarbeiter- und Teambezüge werden bei Rückfragen weitergeführt; ein neues Team löst den bisherigen Mitarbeiterfilter ab.
+
+Eine Teamvorgabe für einen Tag wird aus der geladenen zentralen Tagesfolge, Startdatum und tatsächlicher Einstiegsposition ermittelt. Sie ist keine Aussage über die tatsächliche Besetzung. Die Wissensdatenbank nutzt sämtliche 13 Hilfekategorien und zwölf zusätzliche Anleitungen zu Teams, Auto-Planung, Export und Stunden. Themenzuordnungen unterscheiden unter anderem DATEV, tatsächliche Zeitberichte und Gesamtdienstplan. Die Antwort nennt das Hilfe-Center als Quelle und kann die passende Suche dort öffnen. Alle Artikel stehen auch im vorhandenen Hilfe-Center.

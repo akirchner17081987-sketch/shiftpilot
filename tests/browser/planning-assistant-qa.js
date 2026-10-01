@@ -22,6 +22,12 @@
  ask('Am 02.12.2026 im FD');check('Follow-up produces ranked candidates',log.textContent.includes('Ersatz für FD')&&log.textContent.includes('Ben Beispiel'));
  ask('Bei welchen Mitarbeitern fehlt eine Teamzuordnung?');check('Unassigned employee is identified',log.querySelector('.is-answer:last-child').textContent.includes('Ben Beispiel'));
  ask('Wie stelle ich den Rhythmus von Team E ein?');check('Central rhythm instructions',log.textContent.includes('Teamrhythmen A–E'));
+ ask('Welche Dienste hat Anna Beispiel im Dezember?');check('Employee roster shows actual assignment',log.lastChild.textContent.includes('Anna Beispiel')&&log.lastChild.querySelectorAll('tbody tr').length===1);
+ ask('Welche Mitarbeiter haben im Dezember zu viele Stunden?');check('Planned overtime comparison is explicit',log.lastChild.textContent.includes('kein bestätigtes Überstundenkonto'));
+ ask('Bei wem fehlt die Schichtfreigabe für FD?');check('Missing permissions use actual staff profiles',log.lastChild.textContent.includes('Clara Beispiel'));
+ ask('Warum kann Ben Beispiel am 02.12.2026 den FD nicht übernehmen?');check('Named employee diagnosis uses candidate assessment',log.lastChild.textContent.includes('erfüllt aktuell die Auto-Planungsregeln'));
+ ask('Wie exportiere ich DATEV?');check('Knowledge routes DATEV to payroll help',log.lastChild.textContent.includes('LODAS-Bewegungsdaten'));
+ ask('Welche Hilfethemen kennst du?');check('Knowledge catalog covers all help categories',log.lastChild.textContent.includes('Wissensdatenbank')&&log.lastChild.querySelectorAll('tbody tr').length===12);
  ask('Wie ist das Wetter?');check('Unknown questions are explicit',log.lastChild.textContent.includes('noch keine zuverlässige'));
  ask('<img src=x onerror=alert(1)>');check('User input is rendered safely',!log.querySelector('img'));
  check('No planning writes',JSON.stringify({employees,assignments,absences})===before);
