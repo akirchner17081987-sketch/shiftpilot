@@ -8,6 +8,7 @@ const fixtures=`
 document.documentElement.dataset.sfTheme=new URLSearchParams(location.search).get('theme')||'dark';
 let selectedEmployeeId='a';window.__writes=0;window.saveAll=()=>__writes++;window.renderEmployees=()=>{};window.renderPlanEmployeePool=()=>{};window.renderCalendar=()=>{};window.updateStats=()=>{};window.showSaveToast=()=>{};
 window.__errors=[];window.addEventListener('error',e=>window.__errors.push(e.message));
+window.addEventListener('unhandledrejection',e=>window.__errors.push(e.reason?.stack||String(e.reason)));
 const TYPES=[{id:'FD',name:'Frühdienst',start:'06:00',end:'14:00'},{id:'SD',name:'Spätdienst',start:'14:00',end:'22:00'},{id:'ND',name:'Nachtdienst',start:'22:00',end:'06:00'}];
 let employees=[{id:'a',first:'Anna',last:'Beispiel',status:'active',planningTeam:'A',shifts:['FD','SD','ND'],weeklyHours:40,monthlyHours:180},{id:'b',first:'Ben',last:'Beispiel',status:'active',shifts:['FD','SD','ND'],weeklyHours:40,monthlyHours:180},{id:'c',first:'Clara',last:'Beispiel',status:'active',planningTeam:'C',shifts:['ND'],weeklyHours:40,monthlyHours:180}];
 let assignments=[{id:'a1',date:'2026-12-01',type:'FD',employeeId:'a',start:'06:00',end:'14:00'}],absences=[],globalSoll={FD:2,SD:1,ND:1},dailySoll={},weekStart=new Date('2026-11-30T12:00:00');

@@ -171,7 +171,7 @@
     }
     const procedural=/^(?:bitte\s+)?(?:wie(?! viele| viel| lange)|wo\b|was bedeutet|was ist|was zeigt|warum (?:funktioniert|geht|wird|muss|kann ich mich|weichen)|ich kann mich|eine aenderung)/.test(q);
     const help=(!intent||procedural&&!['replacement','employeeDiagnosis','teamDay','employeePlan','overstaffed','missingPermissions','write'].includes(intent))?findHelp(q,s.helpArticles):null;
-    if(help)return response(help.title,help.text,{notes:['Quelle: SchichtFunk Hilfe-Center.'],actions:[{help:true,query:help.title,label:'Anleitung im Hilfe-Center öffnen'}],context:{}});
+    if(help)return response(help.title,help.text,{notes:['Quelle: SchichtFunk Hilfe-Center.'],actions:[...(intent==='rhythmHelp'?[{view:'settings',team:requestedTeam,label:requestedTeam?'Team '+requestedTeam+' bearbeiten':'Teamrhythmen öffnen'}]:[]),{help:true,query:help.title,label:'Anleitung im Hilfe-Center öffnen'}],context:{}});
 
     const matched=employeeMatches(q,staff),inherited=followup&&!/\bteam\s+[a-e]\b/.test(q)&&previous.employeeIds?staff.filter(e=>previous.employeeIds.includes(String(e.id))):[];
     let pool=matched.length?matched:inherited.length?inherited:staff;
