@@ -1,11 +1,22 @@
 (async function(){
  await new Promise(r=>setTimeout(r,80));const results=[],check=(label,condition)=>{results.push({label,pass:!!condition});};
  const button=document.getElementById('sfPlanningAssistantButton');check('Manager sees launcher',button&&!button.hidden);button.click();
+ check('Launcher lives outside scrolling header',button.parentElement===document.body&&getComputedStyle(button).position==='fixed');
+ check('Launcher exposes expanded state',button.getAttribute('aria-expanded')==='true'&&button.getAttribute('aria-controls')==='sfPlanningChat');
  const input=document.getElementById('sfPlanningChatInput'),log=document.getElementById('sfPlanningChatLog'),dialog=document.getElementById('sfPlanningChat');
  check('Dialog opens and focuses input',dialog.open&&document.activeElement===input);
+ check('Planning remains interactive while chat is open',!dialog.matches(':modal'));
+ const originalButtonRect=button.getBoundingClientRect(),originalChatRect=dialog.getBoundingClientRect();
+ document.body.style.minHeight='220vh';window.scrollTo(0,300);await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+ const scrolledButtonRect=button.getBoundingClientRect(),scrolledChatRect=dialog.getBoundingClientRect();
+ check('Page actually scrolls with chat open',window.scrollY>0);
+ check('Launcher stays at bottom right while scrolling',Math.abs(originalButtonRect.bottom-scrolledButtonRect.bottom)<1&&Math.abs(originalButtonRect.right-scrolledButtonRect.right)<1&&innerWidth-scrolledButtonRect.right<=24&&innerHeight-scrolledButtonRect.bottom<=24);
+ check('Open chat stays anchored above launcher while scrolling',Math.abs(originalChatRect.bottom-scrolledChatRect.bottom)<1&&scrolledChatRect.bottom<=scrolledButtonRect.top);
+ window.scrollTo(0,0);
  const ask=q=>{input.value=q;document.getElementById('sfPlanningChatForm').dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));};
  const before=JSON.stringify({employees,assignments,absences});
  ask('Welche Dienste sind im Dezember noch offen?');check('December result and actual coverage',log.textContent.includes('Dezember 2026')&&log.textContent.includes('123 offene Positionen'));
+ const conversation=log.textContent;button.click();check('Launcher collapses chat',!dialog.open&&button.getAttribute('aria-expanded')==='false');button.click();check('Reopening preserves conversation',dialog.open&&log.textContent===conversation);
  const more=log.querySelector('.sf-chat-more');more.click();check('More table rows load',log.querySelectorAll('tbody tr').length===24);
  document.getElementById('sfPlanningChatReset').click();ask('Welche Mitarbeiter kommen als Ersatz infrage?');check('Missing date and shift asked',log.textContent.includes('konkreten Tag und die Schichtart'));
  ask('Am 02.12.2026 im FD');check('Follow-up produces ranked candidates',log.textContent.includes('Ersatz für FD')&&log.textContent.includes('Ben Beispiel'));

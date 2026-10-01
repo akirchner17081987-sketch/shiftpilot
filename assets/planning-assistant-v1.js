@@ -12,7 +12,7 @@
   const busy=()=>!!(B().companySwitching||B().bootPromise||B().suppressSync);
   const el=id=>document.getElementById(id);
   function reset(){context={};messages=[];selectedMonth='';el('sfPlanningChatLog')?.replaceChildren();}
-  function close(restore=true){const dialog=el('sfPlanningChat');if(dialog?.open)dialog.close();if(restore&&previousFocus?.isConnected)previousFocus.focus();}
+  function close(restore=true){const dialog=el('sfPlanningChat');if(dialog?.open)dialog.close();el('sfPlanningAssistantButton')?.setAttribute('aria-expanded','false');if(restore&&previousFocus?.isConnected)previousFocus.focus({preventScroll:true});}
   function syncScope(){
     const next=identity();if(scope!==next||busy()){close(false);reset();scope=next;}
     const button=el('sfPlanningAssistantButton');if(button){button.hidden=!authorized();button.disabled=busy();}
@@ -129,6 +129,7 @@
   }
   function open(){
     syncScope();if(!authorized()||busy())return;
+    if(el('sfPlanningChat')?.open)return;
     previousFocus=document.activeElement;
     let dialog=el('sfPlanningChat');if(!dialog){
       dialog=node('dialog',undefined,'sf-planning-chat');dialog.id='sfPlanningChat';dialog.setAttribute('aria-labelledby','sfPlanningChatTitle');
@@ -136,7 +137,9 @@
       document.body.appendChild(dialog);
       el('sfPlanningChatClose').onclick=()=>close();
       dialog.addEventListener('cancel',event=>{event.preventDefault();close();});
-      dialog.addEventListener('click',event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)close();}});
+      dialog.addEventListener('close',()=>{if(!dialog.open)el('sfPlanningAssistantButton')?.setAttribute('aria-expanded','false');});
+      document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!event.defaultPrevented&&dialog.open&&!document.querySelector('dialog:modal')){event.preventDefault();close();}});
+
       el('sfPlanningChatForm').onsubmit=event=>{event.preventDefault();submit();};
       el('sfPlanningChatInput').onkeydown=event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();submit();}};
       el('sfPlanningChatReset').onclick=()=>{reset();el('sfPlanningChatMonth').value='';welcome();updatePeriod();el('sfPlanningChatInput').focus();};
@@ -144,11 +147,11 @@
       el('sfPlanningChatCurrent').onclick=()=>{selectedMonth='';context={};el('sfPlanningChatMonth').value='';updatePeriod();};
     }
     if(!messages.length)welcome();else{el('sfPlanningChatLog').replaceChildren();messages.forEach(renderMessage);}
-    el('sfPlanningChatMonth').value=selectedMonth;updatePeriod();dialog.showModal();el('sfPlanningChatInput').focus();
+    el('sfPlanningChatMonth').value=selectedMonth;updatePeriod();dialog.show();el('sfPlanningAssistantButton')?.setAttribute('aria-expanded','true');el('sfPlanningChatInput').focus({preventScroll:true});
   }
   function mount(){
-    const host=document.querySelector('.top-actions');if(!host)return;
-    if(!el('sfPlanningAssistantButton')){const button=node('button','✦ Planungsassistent','ghost sf-chat-launcher');button.id='sfPlanningAssistantButton';button.type='button';button.title='Fragen zur Planung stellen';button.onclick=open;host.prepend(button);}
+    const host=document.body;if(!host)return;
+    if(!el('sfPlanningAssistantButton')){const button=node('button','✦ Planungsassistent','ghost sf-chat-launcher');button.id='sfPlanningAssistantButton';button.type='button';button.title='Fragen zur Planung stellen';button.setAttribute('aria-controls','sfPlanningChat');button.setAttribute('aria-expanded','false');button.setAttribute('aria-haspopup','dialog');button.onclick=()=>el('sfPlanningChat')?.open?close():open();host.appendChild(button);}
     syncScope();
     // Clear conversations before hydration, logout or switching the company.
     for(const key of ['hydrate','finishSignOut','switchCompany']){
