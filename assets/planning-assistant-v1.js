@@ -132,13 +132,14 @@
     strip.hidden=!selectedService;strip.replaceChildren();
     if(selectedService){strip.appendChild(node('span','Ausgewählter Dienst: '+selectedService.type+' · '+Core.periodLabel([selectedService.date])));const clear=node('button','Auswahl lösen');clear.type='button';clear.onclick=()=>{selectedService=null;context={};updateService();};strip.appendChild(clear);}
   }
+  const chatIcon='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H5l-3 3V11.5A7.5 7.5 0 0 1 9.5 4h3a7.5 7.5 0 0 1 7.5 7.5Z"/><path d="M7 10h8M7 14h5"/></svg>';
   function bindServiceContext(){
     document.querySelectorAll('#view-schedule .sf-week-shift[data-date][data-type],#view-schedule .pill.drop-target[data-date][data-type]').forEach(host=>{
       if(host.querySelector('.sf-chat-service-open')||host.matches('button')||host.closest('button'))return;
-      const button=node('button','Assistent','sf-chat-service-open');button.type='button';
+      const button=node('button',undefined,'sf-chat-service-open');button.type='button';button.innerHTML=chatIcon;button.title='Diesen Dienst im Assistenten prüfen';
       button.setAttribute('aria-label',host.dataset.type+' am '+host.dataset.date+' im Assistenten prüfen');
       button.onclick=event=>{event.preventDefault();event.stopPropagation();if(setService(host.dataset.date,host.dataset.type)){open();submit('Wer kann diesen Dienst übernehmen?');}};
-      button.hidden=!authorized();host.appendChild(button);
+      button.hidden=!authorized();(host.querySelector('.sf-week-shift-head')||host).appendChild(button);
     });
     document.querySelectorAll('.sf-chat-service-open').forEach(b=>{b.hidden=!authorized();b.disabled=busy();});
   }
@@ -146,20 +147,39 @@
   function renderMessage(message){
     const log=el('sfPlanningChatLog');if(!log)return;
     const article=node('article',undefined,'sf-chat-message '+(message.user?'is-user':'is-answer'));
-    article.appendChild(node('small',message.user?'DU':'SCHICHTFUNK PLANUNGSASSISTENT','sf-chat-author'));
+    article.appendChild(node('small',message.user?'Du':'Planungsassistent','sf-chat-author'));
     if(message.user)article.appendChild(node('p',message.text));
     else{
       const a=message.answer;article.appendChild(node('h3',a.title));article.appendChild(node('p',a.text));
       if(a.rows?.length){
-        const wrap=node('div',undefined,'sf-chat-table-scroll');wrap.tabIndex=0;wrap.setAttribute('aria-label',a.title+' – Tabelle');
-        const table=node('table'),caption=node('caption',`${a.rows.length} Einträge`);table.appendChild(caption);
-        const head=node('thead'),tr=node('tr');[...a.columns,...(a.rowActions?.length?['Öffnen']:[])].forEach(c=>{const th=node('th',c);th.scope='col';tr.appendChild(th)});head.appendChild(tr);table.appendChild(head);
-        const body=node('tbody');table.appendChild(body);let shown=0;
-        const more=node('button',undefined,'sf-chat-more');more.type='button';
-        const append=()=>{const end=Math.min(shown+12,a.rows.length);for(let i=shown;i<end;i++){const row=node('tr');a.rows[i].forEach(value=>row.appendChild(node('td',value)));if(a.rowActions?.length){const td=node('td'),action=a.rowActions[i];if(action){const button=node('button',action.label,'sf-chat-row-action');button.type='button';button.onclick=()=>openAction(action);td.appendChild(button);}row.appendChild(td);}body.appendChild(row);}shown=end;caption.textContent=`${shown} von ${a.rows.length} Einträgen`;more.hidden=shown>=a.rows.length;more.textContent=`Weitere Einträge anzeigen (${a.rows.length-shown})`;};
-        more.onclick=append;append();wrap.appendChild(table);article.appendChild(wrap);article.appendChild(more);
+        const results=node('div',undefined,'sf-chat-results');results.setAttribute('aria-label',a.title+' – Ergebnisse');
+        const count=node('p',undefined,'sf-chat-result-count'),list=node('div',undefined,'sf-chat-result-list');
+        const more=node('button',undefined,'sf-chat-more');more.type='button';let shown=0;
+        const append=()=>{
+          const end=Math.min(shown+12,a.rows.length);
+          for(let i=shown;i<end;i++){
+            const values=a.rows[i],card=node('section',undefined,'sf-chat-result');card.dataset.sfChatResult='';
+            const priority=a.columns[0]==='Priorität';
+            if(priority)card.appendChild(node('span',values[0],'sf-chat-priority'));
+            else card.appendChild(node('small',a.columns[0],'sf-chat-result-label'));
+            card.appendChild(node('h4',values[priority?1:0]));
+            const fields=node('dl');
+            for(let j=priority?2:1;j<values.length;j++){
+              const field=node('div',undefined,'sf-chat-field');field.appendChild(node('dt',a.columns[j]));field.appendChild(node('dd',values[j]));fields.appendChild(field);
+            }
+            card.appendChild(fields);
+            const action=a.rowActions?.[i];
+            if(action){const button=node('button',action.label,'sf-chat-row-action');button.type='button';button.onclick=()=>openAction(action);card.appendChild(button);}
+            list.appendChild(card);
+          }
+          shown=end;count.textContent=`${shown} von ${a.rows.length} Einträgen`;more.hidden=shown>=a.rows.length;more.textContent=`Weitere Einträge anzeigen (${a.rows.length-shown})`;
+        };
+        more.onclick=append;append();results.append(count,list,more);article.appendChild(results);
       }
-      if(a.notes?.length){const list=node('ul');a.notes.forEach(x=>list.appendChild(node('li',x)));article.appendChild(list);}
+      if(a.notes?.length){
+        const details=node('details',undefined,'sf-chat-details'),list=node('ul');
+        details.appendChild(node('summary','Hinweise zur Auswertung'));a.notes.forEach(x=>list.appendChild(node('li',x)));details.appendChild(list);article.appendChild(details);
+      }
       if(a.actions?.length){const actions=node('div',undefined,'sf-chat-actions');a.actions.forEach(action=>{const button=node('button',action.label);button.type='button';button.onclick=()=>openAction(action);actions.appendChild(button);});article.appendChild(actions);}
       if(a.suggestions?.length){const examples=node('div',undefined,'sf-chat-examples');quickButtons(examples,a.suggestions);article.appendChild(examples);}
       article.appendChild(node('small',`Geprüft um ${new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})} · Aktuell geladene Planungsdaten`,'sf-chat-source'));
@@ -175,7 +195,7 @@
     context=answer.context||{};if(input)input.value='';
     messages.push({user:true,text},{answer});if(messages.length>40)messages=messages.slice(-40);
     el('sfPlanningChatWelcome')?.remove();el('sfPlanningChatLog')?.replaceChildren();messages.forEach(renderMessage);
-    const log=el('sfPlanningChatLog');if(log)log.scrollTop=log.scrollHeight;
+    const log=el('sfPlanningChatLog'),question=log?.querySelector('.is-user:nth-last-child(2)');if(log&&question)log.scrollTop=question.offsetTop;
     el('sfPlanningChatStatus').textContent=answer.title;input?.focus();
     updatePeriod();
   }
@@ -183,11 +203,24 @@
   function welcome(){
     const log=el('sfPlanningChatLog');if(!log)return;log.replaceChildren();
     const welcome=node('section',undefined,'sf-chat-welcome');welcome.id='sfPlanningChatWelcome';
-    welcome.appendChild(node('div','PLANUNG EINFACH ERKLÄRT','sf-chat-kicker'));
-    welcome.appendChild(node('h3','Wobei brauchst du Unterstützung?'));
-    welcome.appendChild(node('p','Frage nach offenen Diensten, Ersatzbesetzung oder Planungseinstellungen. Nenne bei einzelnen Diensten bitte Tag und Schicht.'));
-    const examples=node('div',undefined,'sf-chat-examples');quickButtons(examples,['Welche Dienste sind im Dezember noch offen?','Warum konnte die Auto-Planung diesen Dienst nicht besetzen?','Welche Mitarbeiter kommen als Ersatz infrage?','Bei welchen Mitarbeitern fehlt eine Teamzuordnung?','Wie stelle ich den Rhythmus von Team E ein?','Wie viele Stunden sind im Dezember geplant?','Welche Dienste hat Team E im Dezember?','Welche Hilfethemen kennst du?']);welcome.appendChild(examples);log.appendChild(welcome);
-    const check=node('button','Monatscheck starten','sf-chat-example');check.type='button';check.onclick=()=>submit('Monatscheck starten');examples.prepend(check);
+    welcome.appendChild(node('h3','Was möchtest du prüfen?'));
+    welcome.appendChild(node('p','Stelle deine Frage oder wähle einen Einstieg.'));
+    const examples=node('div',undefined,'sf-chat-examples sf-chat-start');
+    for(const [label,question] of [
+      ['Monatscheck','Monatscheck starten'],
+      ['Offene Dienste','Welche Dienste sind im gewählten Zeitraum noch offen?'],
+      ['Ersatz finden','Welche Mitarbeiter kommen als Ersatz infrage?'],
+      ['Planungshilfe','Welche Hilfethemen kennst du?']
+    ]){const button=node('button',label,'sf-chat-example');button.type='button';button.onclick=()=>submit(question);examples.appendChild(button);}
+    welcome.appendChild(examples);
+    const details=node('details',undefined,'sf-chat-details');details.appendChild(node('summary','Weitere Beispielfragen'));
+    const additional=node('div',undefined,'sf-chat-examples');quickButtons(additional,[
+      'Warum konnte die Auto-Planung diesen Dienst nicht besetzen?',
+      'Bei welchen Mitarbeitern fehlt eine Teamzuordnung?',
+      'Wie stelle ich den Rhythmus von Team E ein?',
+      'Wie viele Stunden sind im gewählten Zeitraum geplant?',
+      'Welche Dienste hat Team E im gewählten Zeitraum?'
+    ]);details.appendChild(additional);welcome.appendChild(details);log.appendChild(welcome);
   }
   function open(){
     syncScope();if(!authorized()||busy())return;
@@ -195,7 +228,7 @@
     previousFocus=document.activeElement;
     let dialog=el('sfPlanningChat');if(!dialog){
       dialog=node('dialog',undefined,'sf-planning-chat');dialog.id='sfPlanningChat';dialog.setAttribute('aria-labelledby','sfPlanningChatTitle');
-      dialog.innerHTML='<div class="sf-chat-frame"><header class="sf-chat-header"><div class="sf-chat-mark" aria-hidden="true">✦</div><div><small>SCHICHTFUNK</small><h2 id="sfPlanningChatTitle">Planungsassistent</h2></div><button type="button" id="sfPlanningChatClose" aria-label="Planungsassistent schließen">×</button></header><div class="sf-chat-context"><span>Zeitraum: <b id="sfPlanningChatPeriod"></b></span><button type="button" id="sfPlanningChatReset">Neuer Chat</button></div><div class="sf-chat-month"><label for="sfPlanningChatMonth">Anderen Monat prüfen</label><input type="month" id="sfPlanningChatMonth"><button type="button" id="sfPlanningChatCurrent">Aktueller Plan</button></div><div id="sfPlanningChatLog" class="sf-chat-log" role="log" aria-label="Fragen und Antworten"></div><div id="sfPlanningChatStatus" class="sf-chat-sr" role="status" aria-live="polite"></div><form id="sfPlanningChatForm" class="sf-chat-form"><label for="sfPlanningChatInput">Deine Frage zur Planung</label><div class="sf-chat-compose"><textarea id="sfPlanningChatInput" rows="2" maxlength="1200" placeholder="Zum Beispiel: Wer kann am 01.12.2026 den FD übernehmen?" required></textarea><button type="submit" aria-label="Frage senden">Senden <span aria-hidden="true">↗</span></button></div><small>Antworten aus Planungsregeln und geladenen Daten. Änderungen führst du im jeweiligen Bereich aus.</small></form></div>';
+      dialog.innerHTML='<div class="sf-chat-frame"><header class="sf-chat-header"><div class="sf-chat-mark" aria-hidden="true">'+chatIcon+'</div><div><small>SCHICHTFUNK</small><h2 id="sfPlanningChatTitle">Planungsassistent</h2></div><button type="button" id="sfPlanningChatClose" aria-label="Planungsassistent schließen">×</button></header><div class="sf-chat-context"><details class="sf-chat-period"><summary><span>Zeitraum</span><b id="sfPlanningChatPeriod"></b></summary><div class="sf-chat-month"><label for="sfPlanningChatMonth">Monat auswählen</label><input type="month" id="sfPlanningChatMonth"><button type="button" id="sfPlanningChatCurrent">Aktueller Plan</button></div></details><button type="button" id="sfPlanningChatReset">Neuer Chat</button></div><div id="sfPlanningChatLog" class="sf-chat-log" role="log" aria-label="Fragen und Antworten"></div><div id="sfPlanningChatStatus" class="sf-chat-sr" role="status" aria-live="polite"></div><form id="sfPlanningChatForm" class="sf-chat-form"><label for="sfPlanningChatInput">Deine Frage</label><div class="sf-chat-compose"><textarea id="sfPlanningChatInput" rows="2" maxlength="1200" placeholder="Wie kann ich dir bei der Planung helfen?" required></textarea><button type="submit" aria-label="Frage senden"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7M12 5v14"/></svg></button></div><small>Aus den geladenen Planungsdaten · Änderungen im jeweiligen Bereich</small></form></div>';
       document.body.appendChild(dialog);
       const service=node('div',undefined,'sf-chat-service');service.id='sfPlanningChatService';service.hidden=true;el('sfPlanningChatLog').before(service);
       el('sfPlanningChatClose').onclick=()=>close();
@@ -206,15 +239,15 @@
       el('sfPlanningChatForm').onsubmit=event=>{event.preventDefault();submit();};
       el('sfPlanningChatInput').onkeydown=event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();submit();}};
       el('sfPlanningChatReset').onclick=()=>{reset();el('sfPlanningChatMonth').value='';welcome();updatePeriod();el('sfPlanningChatInput').focus();};
-      el('sfPlanningChatMonth').onchange=event=>{selectedMonth=event.target.value;selectedService=null;context={};updatePeriod();};
-      el('sfPlanningChatCurrent').onclick=()=>{selectedMonth='';selectedService=null;context={};el('sfPlanningChatMonth').value='';updatePeriod();};
+      el('sfPlanningChatMonth').onchange=event=>{selectedMonth=event.target.value;selectedService=null;context={};updatePeriod();event.target.closest('details').open=false;};
+      el('sfPlanningChatCurrent').onclick=()=>{selectedMonth='';selectedService=null;context={};el('sfPlanningChatMonth').value='';updatePeriod();el('sfPlanningChatMonth').closest('details').open=false;};
     }
     if(!messages.length)welcome();else{el('sfPlanningChatLog').replaceChildren();messages.forEach(renderMessage);}
     el('sfPlanningChatMonth').value=selectedMonth;updatePeriod();dialog.show();el('sfPlanningAssistantButton')?.setAttribute('aria-expanded','true');el('sfPlanningChatInput').focus({preventScroll:true});
   }
   function mount(){
     const host=document.body;if(!host)return;
-    if(!el('sfPlanningAssistantButton')){const button=node('button','✦ Planungsassistent','ghost sf-chat-launcher');button.id='sfPlanningAssistantButton';button.type='button';button.title='Fragen zur Planung stellen';button.setAttribute('aria-controls','sfPlanningChat');button.setAttribute('aria-expanded','false');button.setAttribute('aria-haspopup','dialog');button.onclick=()=>el('sfPlanningChat')?.open?close():open();host.appendChild(button);}
+    if(!el('sfPlanningAssistantButton')){const button=node('button',undefined,'ghost sf-chat-launcher');button.innerHTML=chatIcon+'<span>Planungsassistent</span>';button.id='sfPlanningAssistantButton';button.type='button';button.title='Fragen zur Planung stellen';button.setAttribute('aria-controls','sfPlanningChat');button.setAttribute('aria-expanded','false');button.setAttribute('aria-haspopup','dialog');button.onclick=()=>el('sfPlanningChat')?.open?close():open();host.appendChild(button);}
     syncScope();
     bindServiceContext();
     const edit=window.editAssignment;
