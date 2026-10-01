@@ -71,6 +71,7 @@
     if(!emp||emp.status!=='active'||!(emp.shifts||[]).includes(type))return false;
     const t=typeFor(type);if(!t)return false;
     if(findConflict(emp.id,date,t.start,t.end))return false;
+    if(window.SFCompliance?.check)return !window.SFCompliance.check(emp,type,date,t.start,t.end).hard.length;
     return !listAssignments().some(a=>a.date===date&&String(a.employeeId)===String(emp.id));
   }
   try{isEligible=eligible}catch{}window.isEligible=eligible;

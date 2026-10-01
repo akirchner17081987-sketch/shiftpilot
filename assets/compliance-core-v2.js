@@ -3,9 +3,9 @@
   const C=window.SFCompliance=window.SFCompliance||{}, DAY=86400000, HOUR=3600000;
   C.esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   C.uid=p=>p+Date.now()+Math.random().toString(36).slice(2,7);
-  C.parseDate=v=>{const m=String(v||'').slice(0,10).match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?new Date(+m[1],+m[2]-1,+m[3]):null};
+  C.parseDate=v=>{const m=String(v||'').slice(0,10).match(/^(\d{4})-(\d{2})-(\d{2})$/);if(!m)return null;const d=new Date(+m[1],+m[2]-1,+m[3]);return d.getFullYear()===+m[1]&&d.getMonth()===+m[2]-1&&d.getDate()===+m[3]?d:null};
   C.iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  C.mins=t=>{const m=String(t||'').match(/^(\d{1,2}):(\d{2})$/);return m?+m[1]*60 + +m[2]:null};
+  C.mins=t=>{const m=String(t||'').match(/^(\d{1,2}):(\d{2})$/);return m&&+m[1]<24&&+m[2]<60?+m[1]*60 + +m[2]:null};
   C.interval=(date,start,end)=>{const d=C.parseDate(date),s=C.mins(start),e=C.mins(end);if(!d||s===null||e===null||s===e)return null;return{start:d.getTime()+s*60000,end:d.getTime()+e*60000+(e<=s?DAY:0)}};
   C.shiftInterval=a=>{const t=typeById(a.type);return C.interval(a.date,a.start||t?.start,a.end||t?.end)};
   C.overlap=(a,b)=>!!a&&!!b&&a.start<b.end&&b.start<a.end;
@@ -14,7 +14,7 @@
   C.weekKey=date=>{const d=C.monday(date);return d?C.iso(d):String(date||'')};
 
   C.absenceInterval=a=>{
-    if(!a||a.status==='Abgelehnt')return null;
+    if(!a||a.status==='Abgelehnt'||a.status==='Beantragt')return null;
     const s=C.parseDate(a.startDate||a.date),e=C.parseDate(a.endDate||a.date||a.startDate);if(!s||!e)return null;
     if(a.fullDay!==false)return{start:s.getTime(),end:e.getTime()+DAY};
     const sm=C.mins(a.startTime),em=C.mins(a.endTime);
@@ -38,10 +38,18 @@
     if(!emp||!t)return{hard:['Mitarbeiter oder Schichtvorlage wurde nicht gefunden.'],soft:[]};
     if(!p)return{hard:['Beginn und Ende müssen gültig und unterschiedlich sein.'],soft:[]};
     if(emp.status!=='active')hard.push('Mitarbeiter ist inaktiv.');
+    const meta=key=>String((emp.qualifications||[]).find(q=>String(q).startsWith('__sp:'+key+'='))||'').split('=').slice(1).join('=');
+    if((emp.availabilityStatus||meta('availability'))==='red')hard.push('Mitarbeiter ist aktuell nicht einplanbar.');
+    const existing=ignoreId?assignments.find(a=>a.id===ignoreId):null;
+    if(t.active===false&&existing?.type!==type)hard.push('Dieses Schichtmodell wurde aus der Planung entfernt.');
     if(!(emp.shifts||[]).includes(type))hard.push(`Keine Freigabe für ${type}.`);
+    const rhythm=window.sfRhythmCheck?.(emp,type,date);
+    if(rhythm?.mode==='required'&&!rhythm.allowed)hard.push(`Verbindliche Schichtregel: ${rhythm.reason}.`);
+    else if(rhythm?.mode==='preferred'&&!rhythm.allowed)soft.push(`Bevorzugte Schichtregel: ${rhythm.reason}.`);
     if(!C.roleAllows(emp,type))hard.push('Teamleiter-Schicht erfordert Teamleiter/Schichtleiter.');
     if(String(type).toUpperCase()==='OT'&&!C.otAllowed(date))hard.push('OT ist nach der hinterlegten OT-Regel an diesem Tag nicht zulässig.');
-    const ab=absences.find(a=>a.employeeId===emp.id&&C.overlap(p,C.absenceInterval(a)));if(ab)hard.push(`Abwesenheit (${ab.type||'Abwesend'}) überschneidet sich mit der Schicht.`);
+    const absenceGuard=window.SFBackend?.absencePlanning;
+    const ab=absenceGuard?absenceGuard.findConflict(emp.id,date,start||t.start,end||t.end):absences.find(a=>a.employeeId===emp.id&&C.overlap(p,C.absenceInterval(a)));if(ab)hard.push(`Abwesenheit (${ab.type||'Abwesend'}) überschneidet sich mit der Schicht.`);
     const clash=assignments.find(a=>a.employeeId===emp.id&&a.id!==ignoreId&&C.overlap(p,C.shiftInterval(a)));if(clash){const ct=typeById(clash.type);hard.push(`Zeitüberschneidung mit ${clash.type} am ${C.fmt(clash.date)} (${clash.start||ct?.start}–${clash.end||ct?.end}).`)}
     const rest=C.nearestRest(emp.id,p,ignoreId);
     if(rest.assignment&&rest.hours<11)hard.push(`Standard-Ruhezeit unterschritten: ${rest.hours.toFixed(1)} Std. (Standardprüfung 11 Std.). Ausnahmefälle müssen gesondert geprüft werden.`);
@@ -49,6 +57,9 @@
     if(duration>10)hard.push(`Schichtdauer ${duration.toFixed(1)} Std. überschreitet die Standard-Höchstgrenze 10 Std. Ausnahmefälle müssen gesondert geprüft werden.`);
     const current=C.weekHours(emp.id,date,ignoreId),target=Number(emp.weeklyHours)||0;
     if(target&&current+duration>target+.01)soft.push(`Wochen-SOLL würde auf ${(current+duration).toFixed(1)} / ${target.toFixed(1)} Std. steigen.`);
+    const configured=emp.monthlyHours??meta('monthlyHours'),monthTarget=typeof employeeMonthlyTarget==='function'?employeeMonthlyTarget({...emp,monthlyHours:configured===''?undefined:configured}):Number(configured||0);
+    const monthHours=assignments.filter(a=>a.employeeId===emp.id&&a.id!==ignoreId&&String(a.date).slice(0,7)===String(date).slice(0,7)).reduce((sum,a)=>{const iv=C.shiftInterval(a);return sum+(iv?(iv.end-iv.start)/HOUR:0)},0);
+    if(monthTarget>0&&monthHours+duration>monthTarget+.01)soft.push(`Monats-SOLL würde auf ${(monthHours+duration).toFixed(1)} / ${Number(monthTarget).toFixed(1)} Std. steigen.`);
     const so=Number(getSoll(date,type)||0),ist=assignmentsFor(date,type).filter(a=>a.id!==ignoreId).length;if(so&&ist>=so)soft.push(`SOLL-Stärke ${so} ist bereits erreicht.`);
     return{hard,soft,proposed:p,duration,rest};
   };
