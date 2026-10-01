@@ -564,7 +564,7 @@ test('employee portal falls back safely when compliance policy is not readable',
 });
 
 test('employee shift swaps refresh only on demand', () => {
-  assert.match(shiftSwap, /class="sf-swap-refresh">↻ Aktualisieren<\/button>/);
+  assert.match(shiftSwap, /<button\b[^>]*class="sf-swap-refresh"[^>]*>[^<]*Aktualisieren<\/button>/);
   assert.match(shiftSwap, /sf-swap-refresh'\)\.addEventListener\('click'/);
   assert.doesNotMatch(shiftSwap, /setInterval\(\(\)=>\{if\(B\.role==='EMPLOYEE'/);
   assert.doesNotMatch(shiftSwap, /visibilitychange[\s\S]{0,160}B\.role==='EMPLOYEE'/);
