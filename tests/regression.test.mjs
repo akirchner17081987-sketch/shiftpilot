@@ -215,7 +215,8 @@ test('individual monthly target hours are persisted and enforced during planning
   assert.match(index, /function plannedMonthlyHoursForEmployee\(employeeId,date,simulated=\[\],ignoreId=null\)/);
   assert.match(index, /overMonth=!!\(respectHours&&monthTarget&&monthHours\+dur>monthTarget\+0\.01\)/);
   assert.match(index, /filter\(x=>!respectHours\|\|\(!x\.overWeek&&!x\.overMonth\)\)/);
-  assert.match(index, /Wochen- und Monatsstunden berücksichtigen/);
+  assert.match(index, /Vertragsstunden berücksichtigen/);
+  assert.match(index, /Wochen- und Monats-SOLL bei den Vorschlägen beachten/);
   assert.match(assignmentUx, /Monats-SOLL würde auf/);
 });
 

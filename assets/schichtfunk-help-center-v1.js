@@ -33,9 +33,12 @@
       ['Wann wirkt eine Abwesenheit im Dienstplan?','Planungswirksam sind freigegebene beziehungsweise genehmigte Einträge. Ein Antrag „In Prüfung“ wird zunächst nur im Arbeitsablauf angezeigt.'],
       ['Was passiert bei einer bestehenden Schicht?','SchichtFunk meldet den Konflikt. Prüfe die Schicht und besetze sie gegebenenfalls neu; eine Abwesenheit entfernt eine vorhandene Schicht nicht unbemerkt.']
     ]},
-    {id:'auto',icon:'✦',title:'Auto-Planung',summary:'Vorschläge prüfen und kontrolliert übernehmen',keywords:'automatisch autoplanung vorschlag regel fair verteilen ungeklärt übernehmen',items:[
-      ['Wie arbeitet die Auto-Planung?','Sie berücksichtigt Aktivstatus, Schichtfreigaben, Abwesenheiten und Doppelbelegungen. Optional werden Wochenstunden und eine faire Verteilung einbezogen.'],
-      ['Werden Vorschläge sofort gespeichert?','Nein. Erstelle zuerst die Vorschau, kontrolliere Vorschläge und ungelöste Positionen und wähle erst danach „Vorschläge übernehmen“.']
+    {id:'auto',icon:'✦',title:'Auto-Planung',summary:'In vier Schritten zum geprüften Dienstplan-Entwurf',keywords:'automatisch autoplanung vorschlag regel fair verteilen ungeklärt übernehmen',items:[
+      ['Wie starte ich die Auto-Planung?','Wähle zuerst Woche, Monat oder einen einzelnen Tag. Prüfe den angezeigten Zeitraum und die Regeln. Mit „Vorschläge erstellen“ beginnt die Analyse. Es wird noch keine Schicht gespeichert.'],
+      ['Welche Regeln werden berücksichtigt?','Geprüft werden aktive Mitarbeiter, Schichtfreigaben, Abwesenheiten, verbindliche Rhythmen und bereits belegte Zeiten. Die empfohlenen Optionen berücksichtigen zusätzlich Wochen- und Monatsstunden sowie eine faire Auslastung.'],
+      ['Wie prüfe ich das Ergebnis?','Die Vorschläge sind nach Tagen gruppiert. Mit „Alle Tage öffnen“ kannst du alle Besetzungen ansehen und einzelne Vorschläge entfernen. Unter „Noch zu besetzen“ findest du Gründe für offene Positionen und einen direkten Weg zur passenden Woche im Dienstplan.'],
+      ['Wie übernehme und veröffentliche ich den Plan?','Wähle nach der Prüfung „Vorschläge als Entwurf übernehmen“ und bestätige die Übernahme. Anschließend öffnest du den Dienstplan, prüfst die Schichten und veröffentlichst den gewählten Zeitraum. Erst nach dieser Freigabe sehen die Mitarbeiter ihre Schichten.'],
+      ['Was passiert, wenn ich Zeitraum oder Regeln ändere?','Die bisherige Vorschau wird zurückgesetzt. Erstelle neue Vorschläge für deine geänderte Auswahl. Bereits gespeicherte Schichten bleiben erhalten.']
     ]},
     {id:'reports',icon:'▥',title:'Auswertungen',summary:'Besetzung, Stunden und Auffälligkeiten auswerten',keywords:'auswertung bericht export pdf excel besetzung stunden auffälligkeit',items:[
       ['Welche Daten werden ausgewertet?','Der Bereich bündelt SOLL/IST-Besetzung, Abwesenheiten, Arbeitsstunden, Auslastung, Schichtverteilung und Auffälligkeiten für den gewählten Zeitraum.'],
