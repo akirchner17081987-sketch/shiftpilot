@@ -18,7 +18,7 @@
     if(/^(?:bitte\s+)?(?:loesch|entfern|speicher|uebernehm|uebernimm|trag|buche|weise)\w*/.test(q)&&!/\b(wie|wo|hilfe|anleitung)\b/.test(q))return 'write';
     if(/ueberbesetz|zu viele.*(?:dienst|schicht)|mehr.*soll/.test(q))return 'overstaffed';
     if(/(?:fehl|ohne|kein).*schichtfreigab|schichtfreigab.*(?:fehl|ohne|kein)/.test(q))return 'missingPermissions';
-    if(/(?:warum|weshalb|wieso).*(?:kann|darf|mitarbeiter|geeignet|passt)/.test(q))return 'employeeDiagnosis';
+    if(/(?:warum|weshalb|wieso).*(?:kann|darf|mitarbeiter|geeignet|passt)/.test(q)&&!/anmeld|login|passwort|speicher|qr|pause|urlaub|beantrag|zeiterfass|stundenkonto|mfa|kamera|zugang|export|auto.?plan/.test(q))return 'employeeDiagnosis';
     if(/team\s+[a-e]\b/.test(q)&&/(?:heute|morgen|uebermorgen|am\s+\d|rhythmus.*tag)/.test(q)&&/rhythm|schicht|frei|arbeitet/.test(q))return 'teamDay';
     if(/(?:dienste|schichten).*(?:hat|fuer|von|team\s+[a-e])|(?:wann|wo).*arbeitet|(?:dienstplan|planung)\s+(?:fuer|von)/.test(q))return 'employeePlan';
     if(/\b(export|excel|pdf|ausdruck|drucken)\w*/.test(q))return 'export';

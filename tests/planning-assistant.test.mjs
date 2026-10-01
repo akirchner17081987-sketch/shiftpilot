@@ -55,6 +55,7 @@ test('procedural questions select the correct knowledge topic instead of plannin
  const s=fixture();s.helpArticles=scope.window.SFHelpContent.articles;s.helpCategories=scope.window.SFHelpContent.categories;
  const datev=Core.answer('Wie exportiere ich DATEV?',s);assert.match(datev.title,/DATEV-LODAS/);assert.equal(datev.actions[0].help,true);
  assert.match(Core.answer('Wo finde ich meinen QR-Code?',s).text,/QR anzeigen/);
+ assert.match(Core.answer('Warum kann ich mich nicht anmelden?',s).text,/Passwort/);
  assert.match(Core.answer('Wie stelle ich den Rhythmus von Team E ein?',s).text,/Einstellungen/);
  const catalog=Core.answer('Welche Hilfethemen kennst du?',s);assert.equal(catalog.rows.length,13);
  assert.match(Core.answer('Wie viele Pausen kann ich beim QR Scan machen?',s).text,/zehn/);
