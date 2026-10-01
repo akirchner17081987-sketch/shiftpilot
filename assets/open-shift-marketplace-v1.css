@@ -1,0 +1,21 @@
+.sf-open-market-entry{display:flex;gap:16px;align-items:center;justify-content:space-between;margin-top:12px}
+.sf-open-market-entry button{flex-shrink:0;min-height:44px}
+.sf-open-market-confirm{width:min(760px,calc(100vw - 32px));max-height:90dvh;display:flex;flex-direction:column;overflow:hidden}
+.sf-open-market-confirm header,.sf-open-market-confirm main{padding:18px 22px}
+.sf-open-market-confirm main{overflow-y:auto;min-height:0}
+.sf-open-market-confirm footer{padding:16px 22px;flex-shrink:0;display:flex;gap:12px;justify-content:flex-end}
+.sf-open-market-confirm footer button{min-height:44px}
+.sf-open-market-all,.sf-open-market-option{display:flex;gap:12px;align-items:center;min-height:44px;padding:10px;cursor:pointer}
+.sf-open-market-options{border:1px solid var(--line,#29465d);border-radius:12px;margin:10px 0 16px}
+.sf-open-market-option+.sf-open-market-option{border-top:1px solid var(--line,#29465d)}
+.sf-open-market-option input,.sf-open-market-all input{width:20px;height:20px;flex-shrink:0;accent-color:#23b89b}
+.sf-open-market-option span{display:flex;flex-direction:column;gap:4px}.sf-open-market-option small{color:var(--muted,#a6b9cc)}
+.sf-open-market-option span{flex:1;min-width:0}.sf-open-market-option input[data-count]{width:68px;min-height:44px;box-sizing:border-box;padding:8px;border:1px solid var(--line,#29465d);border-radius:8px;background:var(--surface,#102033);color:var(--text,#eef6ff)}
+.sf-open-market-confirm textarea{box-sizing:border-box;width:100%;min-height:76px;margin-top:8px;padding:10px;border:1px solid var(--line,#29465d);border-radius:8px;background:var(--surface,#102033);color:var(--text,#eef6ff)}
+[data-publish-error]{color:#f87171}.sf-market-rhythm-confirm{display:flex;gap:10px;align-items:flex-start;margin:12px 0;line-height:1.5}
+.sf-market-rhythm-confirm input{width:20px;height:20px;flex-shrink:0}.sf-market-row .sf-market-actions button{min-height:44px;font-size:12px}
+[data-sf-theme="light"] .sf-open-market-confirm{background:#f4f7fa;color:#172b42;border-color:#bac9d8}
+[data-sf-theme="light"] .sf-open-market-confirm textarea{background:#fff;color:#172b42;border-color:#bac9d8}
+[data-sf-theme="light"] .sf-open-market-option input[data-count]{background:#fff;color:#172b42;border-color:#bac9d8}
+@media(max-width:720px){.sf-open-market-entry{align-items:stretch;flex-direction:column}.sf-open-market-confirm header,.sf-open-market-confirm main,.sf-open-market-confirm footer{padding:14px}.sf-open-market-confirm footer{flex-wrap:wrap}.sf-open-market-confirm footer button{flex:1}}
+
