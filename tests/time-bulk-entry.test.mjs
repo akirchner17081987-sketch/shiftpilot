@@ -22,7 +22,7 @@ test('demo supports bulk time entry without external calls',()=>{
   assert.match(demo,/name==='manager_bulk_record_time_entries'/);
   assert.match(demo,/row\.actual_start=row\.starts_at/);
   assert.match(demo,/row\.entry_status=args\.p_confirm\?'confirmed':'recorded'/);
-  assert.match(gate,/demo-marketplace-v1\.js\?v=20260911-bulk2/);
+  assert.match(gate,/demo-marketplace-v1\.js\?v=20261001-withdraw1/);
 });
 
 test('selected month drives the query and stale requests cannot overwrite it',()=>{
