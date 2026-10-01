@@ -19,8 +19,8 @@
     return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
   }
 
-  function labelImage(text,disabled=false){
-    const fill=disabled?'#8fa5ba':'#e5f0fb';
+  function labelImage(text,disabled=false,light=false){
+    const fill=light?(disabled?'#66788b':'#172434'):(disabled?'#8fa5ba':'#e5f0fb');
     const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="124" height="20" viewBox="0 0 124 20"><text x="0" y="14" fill="${fill}" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="12" font-weight="600">${xmlEscape(text)}</text></svg>`;
     return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
   }
@@ -28,11 +28,12 @@
   function sync(input){
     if(!(input instanceof HTMLInputElement)||input.type!=='month')return;
     const text=formatMonthShort(input.value);
-    const signature=`${input.value}|${input.disabled?'1':'0'}`;
+    const light=!!input.closest('#view-auto')&&document.documentElement.dataset.sfTheme==='light';
+    const signature=`${input.value}|${input.disabled?'1':'0'}|${light?'light':'dark'}`;
     if(input.dataset.sfMonthShortSignature===signature)return;
     input.dataset.sfMonthShortSignature=signature;
     input.dataset.sfMonthShort=text;
-    input.style.setProperty('--sf-month-label-image',labelImage(text,input.disabled));
+    input.style.setProperty('--sf-month-label-image',labelImage(text,input.disabled,light));
     input.classList.add('sf-month-shortened');
     if(!input.getAttribute('aria-label')&&!input.getAttribute('title'))input.setAttribute('title',text);
   }

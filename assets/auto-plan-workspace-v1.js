@@ -38,7 +38,7 @@
   }
   function render(){
     if(!el('view-auto'))return;
-    const dates=syncAutoPeriodControls(),slots=autoOpenSlots(),remaining=remainingSlots(slots,autoPlanPreview),analyzed=autoPlanAnalyzed,applied=autoPlanApplied||0,label=autoPeriodLabel(dates),count=autoPlanPreview.length;
+    const dates=syncAutoPeriodControls(),slots=autoOpenSlots(),remaining=remainingSlots(slots,autoPlanPreview),analyzed=autoPlanAnalyzed,applied=autoPlanApplied||0,label=autoPeriodLabel(dates),count=autoPlanPreview.length,published=autoPlanPreview.some(x=>window.SFCompliance?.isWeekPublished?.(x.date));
     const available=employees.filter(e=>e.status==='active'&&!dates.every(d=>absent(e.id,d))).length;
     text('autoPeriodDates',dates.length===1?'1 Planungstag':`${new Date(dates[0]+'T12:00:00').toLocaleDateString('de-DE')} bis ${new Date(dates.at(-1)+'T12:00:00').toLocaleDateString('de-DE')} · ${dates.length} Tage`);
     text('autoStartTitle',label);text('autoStartHint',slots.length?`${slots.length} offene Position${slots.length===1?'':'en'} im gewählten Zeitraum. Bestehende Besetzungen bleiben erhalten.`:'Keine offenen Positionen im gewählten Zeitraum.');
@@ -57,9 +57,9 @@
     el('autoResults').hidden=!analyzed||!!applied;
     text('autoSuggestionCount',count);text('autoUnresolvedCount',remaining.length);
     if(analyzed&&!applied){renderSuggestions();renderUnresolved(remaining);if(!count&&remaining.length)el('autoUnresolvedPanel').open=true}
-    el('applyAutoPlanBtn').disabled=!count||autoPlanApplying;el('applyAutoPlanBtn').textContent=count?`${count} Vorschlag${count===1?'':'e'} als Entwurf übernehmen`:'Vorschläge als Entwurf übernehmen';
+    el('applyAutoPlanBtn').disabled=!count||autoPlanApplying||published;el('applyAutoPlanBtn').textContent=count?`${count} Vorschlag${count===1?'':'e'} als Entwurf übernehmen`:'Vorschläge als Entwurf übernehmen';
     el('clearAutoPlanBtn').disabled=(!count&&!autoPlanUnresolved.length)||autoPlanApplying;
-    text('autoApplyHint',applied?'Dein Entwurf ist im Dienstplan. Dort prüfst und veröffentlichst du die Schichten für deine Mitarbeiter.':'Übernommene Vorschläge werden als Entwurf gespeichert. Im Dienstplan gibst du sie anschließend für die Mitarbeiter frei.');
+    text('autoApplyHint',published?'Ein Vorschlag betrifft eine bereits veröffentlichte Woche. Bitte prüfe solche Änderungen einzeln im Dienstplan.':applied?'Dein Entwurf ist im Dienstplan. Dort prüfst und veröffentlichst du die Schichten für deine Mitarbeiter.':'Übernommene Vorschläge werden als Entwurf gespeichert. Im Dienstplan gibst du sie anschließend für die Mitarbeiter frei.');
     document.querySelectorAll('[data-auto-step]').forEach(node=>{const step=Number(node.dataset.autoStep),current=applied?4:analyzed?3:1;node.classList.toggle('is-current',step===current);if(step===current)node.setAttribute('aria-current','step');else node.removeAttribute('aria-current')});
   }
   function openSchedule(date){

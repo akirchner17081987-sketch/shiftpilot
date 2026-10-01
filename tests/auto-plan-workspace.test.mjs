@@ -38,3 +38,11 @@ test('changed employee availability or company aborts before any assignment is a
 test('period and rule changes invalidate the previous preview',()=>{
  const {c,id}=harness();c.generateAutoPlanPreview();id('autoPlanPeriod').value='month';c.changeAutoPlanPeriod();assert.equal(id('autoSuggestionCount').textContent,0);assert.equal(id('autoResults').hidden,true);assert.equal(id('autoPlanDateField').hidden,true);assert.equal(id('autoPlanMonthField').hidden,false);assert.equal(id('applyAutoPlanBtn').disabled,true);
 });
+test('publication guard checks suggestion dates, allowing December when the old September week was released',async()=>{
+ const guardSource=read('assets/compliance-workflow-v2.js');const tail=guardSource.slice(guardSource.lastIndexOf("  if(typeof window.applyAutoPlanPreview==='function')"));const guard=tail.slice(0,tail.indexOf('})();'));
+ const {c}=harness();c.generateAutoPlanPreview();c.window.SFCompliance={isWeekPublished:date=>date.startsWith('2026-09')};c.window.applyAutoPlanPreview=c.applyAutoPlanPreview;vm.runInNewContext('const C=window.SFCompliance;\n'+guard,c);await c.window.applyAutoPlanPreview();assert.equal(c.assignments.length,1);
+});
+test('already released suggestion dates and publication during confirmation cannot be saved as drafts',async()=>{
+ const {c,api,id}=harness();c.generateAutoPlanPreview();let published=true;c.window.SFCompliance={isWeekPublished:()=>published};c.renderAutoPlanning();assert.equal(id('applyAutoPlanBtn').disabled,true);await c.applyAutoPlanPreview();assert.equal(c.assignments.length,0);
+ published=false;api.confirmApply=async()=>{published=true;return true};await c.applyAutoPlanPreview();assert.equal(c.assignments.length,0);
+});

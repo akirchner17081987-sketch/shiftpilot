@@ -3,6 +3,8 @@ on:
   push:
     branches: [main, codex/ionos-migration]
     paths:
+      - assets/date-month-format-v1.js
+      - assets/compliance-workflow-v2.js
       - assets/auto-plan-workspace-v1.js
       - assets/auto-plan-period-v1.css
       - tests/auto-plan-workspace.test.mjs

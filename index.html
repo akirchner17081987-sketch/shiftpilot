@@ -98,7 +98,7 @@ button,input,select,textarea{font:inherit} button{cursor:pointer}
 <link rel="stylesheet" href="assets/schichtfunk-rebrand.css?v=20260918-static-brand">
 <link rel="stylesheet" href="assets/mobile-responsive-v1.css?v=20260917-compact-manager1">
 <link rel="stylesheet" href="assets/mobile-manager-navigation-v1.css?v=20260918-static-brand">
-<link rel="stylesheet" href="assets/auto-plan-period-v1.css?v=20261001-workflow1">
+<link rel="stylesheet" href="assets/auto-plan-period-v1.css?v=20261001-workflow2">
 <link rel="stylesheet" href="assets/secondary-text-readability-v1.css?v=20260906-1">
 <link rel="stylesheet" href="assets/manager-theme-v1.css?v=20260929-2">
 <link rel="stylesheet" href="assets/schichtfunk-rebrand.css">
@@ -394,10 +394,13 @@ function clearAutoPlanPreview(){if(autoPlanApplying)return;autoPlanApplied=0;aut
 async function applyAutoPlanPreview(){
   if(!autoPlanPreview.length||autoPlanApplying)return;
   const preview=autoPlanPreview.map(x=>({...x})),companyId=window.SFBackend?.companyId;
+  const published=()=>preview.some(x=>window.SFCompliance?.isWeekPublished?.(x.date));
+  if(published()){showSaveToast('Bereits veröffentlichter Zeitraum','Änderungen an freigegebenen Wochen bitte einzeln im Dienstplan prüfen.');return}
   autoPlanApplying=true;if(window.SFBackend)window.SFBackend.autoPlanApplying=true;
   try{
     const accepted=window.SFAutoPlanWorkspace?await window.SFAutoPlanWorkspace.confirmApply(preview.length):confirm(`${preview.length} vorgeschlagene Besetzungen in den Dienstplan übernehmen?`);
     if(!accepted)return;
+    if(published()){showSaveToast('Plan inzwischen veröffentlicht','Bitte prüfe Änderungen einzeln im Dienstplan.');return}
     if(window.SFBackend?.companyId!==companyId||JSON.stringify(preview)!==JSON.stringify(autoPlanPreview)){showSaveToast('Vorschläge erneut prüfen','Die Planungsdaten haben sich geändert. Bitte erstelle die Vorschläge erneut.');return}
     const checked=[];for(const x of preview){if(!autoEligibleEmployees(x.type,x.date,checked).some(c=>String(c.e.id)===String(x.employeeId))){showSaveToast('Vorschläge erneut prüfen','Ein Mitarbeiter ist inzwischen nicht mehr verfügbar. Bitte erstelle die Vorschläge erneut.');return}checked.push(x)}
     preview.forEach(x=>assignments.push({id:'as'+Date.now()+Math.random(),date:x.date,type:x.type,employeeId:x.employeeId,start:x.start,end:x.end}));
@@ -907,13 +910,13 @@ table th,table td{font-size:13px;line-height:1.35}
 <script src="assets/dynamic-employee-pool-v1.js"></script>
 <script src="assets/schichtfunk-rebrand.js"></script>
 <script src="assets/schichtfunk-brand-cleanup-v2.js?v=20260929-customday1"></script>
-<script src="assets/navigation-compat-v1.js?v=20260930-tenbreaks1&period=20261001-1&models=1"></script>
+<script src="assets/navigation-compat-v1.js?v=20260930-tenbreaks1&period=20261001-1&models=1&auto=20261001-workflow2"></script>
 <script src="assets/schichtfunk-schedule-core-v1.js"></script>
 <script src="assets/assignment-quick-delete-v1.js"></script>
-<script src="assets/conflict-plausibility-v1.js?v=20260930-timeonly3&period=20261001-1&auto=20261001-workflow1&company=1&models=1&removal=1&status=1&dialog=1"></script>
+<script src="assets/conflict-plausibility-v1.js?v=20260930-timeonly3&period=20261001-1&auto=20261001-workflow2&company=1&models=1&removal=1&status=1&dialog=1"></script>
 <script src="assets/employee-core-v1.js?v=20261001-removal1"></script>
 <script src="assets/employee-rhythm-v1.js?v=20260902-1"></script>
-<script src="assets/auto-plan-workspace-v1.js?v=20261001-workflow1"></script>
+<script src="assets/auto-plan-workspace-v1.js?v=20261001-workflow2"></script>
 <script src="assets/employee-management-v2.js?v=20261001-statusdialog1"></script>
 <script src="assets/team-admin-v1.js?v=20260930-timeonly3"></script>
 <script src="assets/audit-logs-v1.js?v=20260902-audit6"></script>

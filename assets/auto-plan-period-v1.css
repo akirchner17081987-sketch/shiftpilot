@@ -19,7 +19,7 @@
 
 /* Auto-Planung: ruhige Flächen, klare Reihenfolge und sichtbare Handlungen. */
 #view-auto{--auto-good:#64e1c7;--auto-warning:#ffce85}
-html[data-sf-theme="light"] #view-auto{--auto-good:#087b6d;--auto-warning:#875209}
+html[data-sf-theme="light"] #view-auto{--auto-good:#087b6d;--auto-warning:#875209;--sf-date-control-bg:#f4f6f7;--sf-date-control-border:#aebdc8;--sf-date-control-text:#17232e}
 #view-auto [hidden]{display:none!important}
 #view-auto .sf-auto-head{align-items:center;margin-bottom:22px}
 #view-auto .sf-auto-head p{max-width:780px;line-height:1.6}
