@@ -3,14 +3,16 @@ on:
   pull_request:
     paths:
       - 'assets/*marketplace*'
+      - 'assets/supabase-delta-sync-v1.js'
       - 'assets/auto-plan-workspace-v1.js'
       - 'tests/*marketplace*'
       - 'tests/browser/open-shift-marketplace-qa.cjs'
       - '.github/workflows/open-shift-marketplace-checks.yml'
   push:
-    branches: [main, codex/open-shift-marketplace]
+    branches: [main, codex/ionos-migration, codex/open-shift-marketplace]
     paths:
       - 'assets/*marketplace*'
+      - 'assets/supabase-delta-sync-v1.js'
       - 'tests/*marketplace*'
       - 'tests/browser/open-shift-marketplace-qa.cjs'
       - '.github/workflows/open-shift-marketplace-checks.yml'

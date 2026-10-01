@@ -5,12 +5,14 @@ const appStyle=read('index.html').match(/<style[^>]*>([\s\S]*?)<\/style>/)[1];
 const fixture=`
 window.__errors=[];window.addEventListener('error',e=>__errors.push(e.message));window.addEventListener('unhandledrejection',e=>__errors.push(String(e.reason)));
 let autoPlanPreview=[],autoPlanAnalyzed=true,autoPlanApplied=0,autoPlanApplying=false;
+let assignments=[{id:'aug',_dbId:'db-aug',date:'2026-08-01'}],absences=[],timeEntries={aug:{actualStart:'06:00',actualEnd:'14:00',status:'confirmed'}};
 const TYPES=[{id:'FD',name:'Frühdienst',start:'06:00',end:'14:00'},{id:'ND',name:'Nachtdienst',start:'22:00',end:'06:00'}];
 const typeById=id=>TYPES.find(x=>x.id===id);
 function autoOpenSlots(){return [{date:'2026-12-01',type:'FD'},{date:'2026-12-01',type:'FD'},{date:'2026-12-01',type:'ND'}]}
 window.showSaveToast=(...args)=>window.__toast=args;window.renderCalendar=()=>{};window.switchView=view=>{document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id==='view-'+view))};
 window.__calls=[];window.__open=[];window.__legacy=[];window.__reviews=[];window.__publishError=false;
-window.SFBackend={ready:true,role:'PLANNER',companyId:'company-a',companyTimeZone:'Europe/Berlin',sync:async()=>{},hydrate:async()=>{},client:{rpc:async(name,args)=>{
+window.__timeWrites=0;window.__syncCalls=0;
+window.SFBackend={ready:true,role:'PLANNER',companyId:'company-a',companyTimeZone:'Europe/Berlin',asgDb:new Map([['aug','db-aug']]),lastSyncError:{message:'Der Monat ist abgeschlossen (August)'},sync:async function(){__syncCalls++;this.lastSyncError=null;const q=await this.client.from('time_entries').upsert({assignment_id:'db-aug',actual_start:'2026-08-01T04:00:00Z',actual_end:'2026-08-01T12:00:00Z',status:'confirmed'});if(q.error)this.lastSyncError=q.error},hydrate:async()=>{},client:{from:()=>({upsert:async()=>{__timeWrites++;return {data:null,error:{message:'Der Monat ist abgeschlossen (August)'}}}}),rpc:async(name,args)=>{
 __calls.push({name,args});if(name.includes('list_shift_marketplace'))return {data:__legacy};if(name.includes('list_open_shift_market'))return {data:__open};
 if(name==='manager_publish_open_shifts'){if(__publishError)return {error:{message:'Speicherung fehlgeschlagen'}};__open=args.p_slots.map((s,i)=>({id:'offer-'+i,kind:'OPEN_POSITION',is_claim:false,is_own:false,status:'MARKET_OPEN',shift_code:s.type,starts_at:s.date+'T'+typeById(s.type).start+':00+01:00',ends_at:(s.type==='ND'?'2026-12-02':s.date)+'T'+typeById(s.type).end+':00+01:00',offered_by:'Offener Bedarf · Planung',remaining_count:s.count,can_take:true,company_name:'Testunternehmen'}));return {data:{published_positions:args.p_slots.reduce((n,s)=>n+s.count,0),offer_count:args.p_slots.length}};}
 if(name==='employee_claim_open_shift'){const o=__open.find(x=>x.id===args.p_offer_id);__open=[...__open.filter(x=>x.id!==o.id),{...o,id:'claim-'+o.id,is_claim:true,status:'PENDING_MANAGER',can_take:false,claimed_by:'Test Mitarbeiter',rhythm_warning:'Team E: Rhythmus erwartet einen freien Tag'}];return {data:{status:'PENDING_MANAGER'}};}
@@ -18,7 +20,7 @@ if(name==='manager_review_open_shift_claim'){__reviews.push(args);__open=__open.
 return {data:null};}},bindAccessibleModal(back,{initialFocus}={}){const opener=document.activeElement;const close=()=>{back.remove();opener?.focus()};back.addEventListener('keydown',e=>{if(e.key==='Escape')close()});back.querySelector(initialFocus||'button')?.focus();return close;}};
 window.renderAutoPlanning=()=>SFOpenShiftMarket.renderPublishEntry({analyzed:true,applied:0,count:autoPlanPreview.length,remaining:autoOpenSlots()});
 `;
-const html=`<!doctype html><html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${appStyle}</style><link rel="stylesheet" href="/assets/auto-plan-period-v1.css"><link rel="stylesheet" href="/assets/manager-theme-v1.css"><link rel="stylesheet" href="/assets/open-shift-marketplace-v1.css"></head><body><div id="appShell"><nav id="nav"></nav><main class="content"><section class="view active" id="view-auto"><h1>Auto-Planung</h1><div id="autoAnalysis"></div></section><section id="view-overview" class="view"></section></main></div><div id="sfEmployeePortal"><div class="sf-portal-grid"></div></div><script>${fixture}</script><script src="/assets/open-shift-marketplace-v1.js"></script><script src="/assets/supabase-shift-marketplace-v1.js"></script><script>renderAutoPlanning()</script></body></html>`;
+const html=`<!doctype html><html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${appStyle}</style><link rel="stylesheet" href="/assets/auto-plan-period-v1.css"><link rel="stylesheet" href="/assets/manager-theme-v1.css"><link rel="stylesheet" href="/assets/open-shift-marketplace-v1.css"></head><body><div id="appShell"><nav id="nav"></nav><main class="content"><section class="view active" id="view-auto"><h1>Auto-Planung</h1><div id="autoAnalysis"></div></section><section id="view-overview" class="view"></section></main></div><div id="sfEmployeePortal"><div class="sf-portal-grid"></div></div><script>${fixture}</script><script src="/assets/supabase-delta-sync-v1.js"></script><script src="/assets/open-shift-marketplace-v1.js"></script><script src="/assets/supabase-shift-marketplace-v1.js"></script><script>renderAutoPlanning()</script></body></html>`;
 async function run(){
  const executablePath=process.env.SF_CHROME_PATH||(process.platform==='win32'?'C:/Users/lhz_d/AppData/Local/ms-playwright/chromium-1193/chrome-win/chrome.exe':undefined);
  const browser=await chromium.launch({headless:true,...(executablePath?{executablePath}:{})});
@@ -31,6 +33,7 @@ async function run(){
   await page.evaluate(()=>{autoPlanPreview=[{date:'2026-12-01',type:'FD'}];renderAutoPlanning()});assert.equal(await page.locator('#sfPublishOpenShifts').isDisabled(),true,'Unapplied suggestions block publication');
   await page.evaluate(()=>{autoPlanPreview=[];renderAutoPlanning()});await page.locator('#sfPublishOpenShifts').click();
   await page.locator('#sfOpenMarketPublish').waitFor();assert.equal(await page.evaluate(()=>__calls.filter(x=>x.name==='manager_publish_open_shifts').length),0,'Opening dialog must not publish');
+  assert.equal(await page.evaluate(()=>__timeWrites),0,'Opening December marketplace selection must not rewrite closed August time rows');
   await page.locator('[data-select-all]').uncheck();assert.equal(await page.locator('[data-publish]').isDisabled(),true);
   await page.locator('[data-slot="0"]').check();await page.locator('[data-count="0"]').fill('1');assert.match(await page.locator('[data-publish-summary]').textContent(),/1 Platz in 1 Dienst/);
   await page.locator('#sfOpenMarketPublish [data-cancel]').click();assert.equal(await page.evaluate(()=>__calls.filter(x=>x.name==='manager_publish_open_shifts').length),0,'Cancel must not publish');
@@ -40,6 +43,7 @@ async function run(){
   await page.evaluate(()=>__publishError=true);await page.locator('[data-publish]').click();await page.waitForFunction(()=>document.querySelector('[data-publish-error]').textContent.length);assert.equal(await page.locator('[data-publish]').isEnabled(),true,'Failed publication can be retried');
   await page.evaluate(()=>__publishError=false);await page.locator('[data-publish]').click();await page.locator('#sfOpenMarketPublish').waitFor({state:'detached'});
   const published=await page.evaluate(()=>__calls.filter(x=>x.name==='manager_publish_open_shifts').at(-1).args);assert.deepEqual(published.p_slots,[{date:'2026-12-01',type:'FD',count:1}]);
+  assert.equal(await page.evaluate(()=>__timeWrites),0,'Closed August remains untouched throughout publication');assert.ok(await page.evaluate(()=>__syncCalls)>0,'Drafts are still synchronized before computing actual open demand');
   await page.evaluate(async()=>{SFBackend.role='EMPLOYEE';await SFShiftMarketplace.refreshEmployee()});await page.locator('#sfMarketEmployee [data-take]').click();await page.locator('#sfMarketModal [data-submit]').click();await page.waitForFunction(()=>__open[0]?.status==='PENDING_MANAGER');
   assert.equal(await page.evaluate(()=>__reviews.length),0,'Employee claim cannot approve itself');
   await page.evaluate(async()=>{SFBackend.role='PLANNER';await SFShiftMarketplace.refreshManager();SFShiftMarketplace.openDashboard()});
@@ -52,4 +56,3 @@ async function run(){
  console.log(JSON.stringify({browser_checks:reports}));
 }
 run().catch(e=>{console.error(e);process.exitCode=1});
-
