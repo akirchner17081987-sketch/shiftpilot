@@ -1,9 +1,9 @@
 const {test,expect}=require('@playwright/test');
 const fs=require('node:fs'),path=require('node:path');
 const read=file=>fs.readFileSync(path.join(__dirname,'../../',file),'utf8');
-let deps;
-try{deps={xlsx:require.resolve('xlsx/dist/xlsx.full.min.js'),pdf:require.resolve('jspdf/dist/jspdf.umd.min.js'),table:require.resolve('jspdf-autotable/dist/jspdf.plugin.autotable.js')}}catch{}
-if(process.env.CI&&!deps)throw Error('Real XLSX/PDF test dependencies are required in CI.');
+let deps,dependencyError;
+try{deps={xlsx:path.join(path.dirname(require.resolve('xlsx')),'dist/xlsx.full.min.js'),pdf:path.join(path.dirname(require.resolve('jspdf')),'jspdf.umd.min.js'),table:require.resolve('jspdf-autotable')};if(!Object.values(deps).every(p=>fs.existsSync(p)))throw Error('Browser distributions were not found.')}catch(error){deps=null;dependencyError=error.message}
+if(process.env.SF_EXPORT_REAL_LIBRARIES==='1'&&!deps)throw Error('Real XLSX/PDF test dependencies are required: '+dependencyError);
 async function fixture(page){
   await page.route('https://schichtfunk.de/__schedule-export',route=>route.fulfill({contentType:'text/html',body:'<!doctype html><html lang="de"><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body></body></html>'}));await page.goto('https://schichtfunk.de/__schedule-export');
   await page.setContent('<div class="company-card"><b>Test GmbH</b></div><section id="view-schedule"><div class="page-head"><h1>Monatsplanung</h1><button>Veröffentlichen</button></div><input id="planEmployeeSearch" value="Anna"></section>');
