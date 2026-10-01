@@ -30,8 +30,10 @@ jobs:
       - run: node --test tests/planning-assistant.test.mjs
       - run: node scripts/build-static.mjs
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install ffmpeg
       - run: npx playwright test tests/e2e/planning-assistant.spec.cjs
+        env:
+          SF_ASSISTANT_BROWSER_EXECUTABLE: /usr/bin/google-chrome
       - uses: actions/upload-artifact@v4
         if: always()
         with:
