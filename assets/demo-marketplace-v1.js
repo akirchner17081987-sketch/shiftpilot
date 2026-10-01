@@ -164,6 +164,11 @@
       write(SHIFT_CHANGE_KEY,state);
       return {data:[{status:request.status,message:decision==='APPROVED'?'Schichtänderung wurde in der Demo bestätigt.':'Schichtänderung wurde in der Demo abgelehnt.'}],error:null};
     }
+    if(name==='manager_withdraw_all_market_offers'){
+      if(args.p_confirm!==true)return {data:null,error:{message:'Bitte das Zurückziehen aller Angebote bestätigen.'}};
+      let count=0;for(const row of marketRows)if(['MARKET_OPEN','PENDING_MANAGER'].includes(row.status)){row.status='CANCELLED';row.manager_comment=args.p_note||'';row.updated_at=new Date().toISOString();count++;}saveMarket();
+      return {data:{withdrawnOffers:count,withdrawnLegacyOffers:count,withdrawnOpenOffers:0,endedClaims:0},error:null};
+    }
     if(name==='manager_list_shift_marketplace')return {data:clone(marketRows),error:null};
     if(name==='employee_list_shift_marketplace'){
       const employeeName='Anna Becker';
