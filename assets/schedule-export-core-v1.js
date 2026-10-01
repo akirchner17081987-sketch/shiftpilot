@@ -16,7 +16,7 @@
       const type=String(a.type||a.shift_code||''),template=(source.types||[]).find(t=>t.id===type)||source.typeById?.(type)||{};
       const from=a.start||template.start,to=a.end||template.end,sm=minutes(from),em=minutes(to);if(sm===null||em===null)throw Error('Für '+a.date+' / '+type+' fehlen gültige Schichtzeiten.');
       const duration=em<sm?em+1440-sm:em-sm;
-      return{...a,employeeId,type,start:String(from).slice(0,5),end:String(to).slice(0,5),hours:number(duration/60),overnight:em<sm,adjusted:!!(template.start&&template.end&&(String(from).slice(0,5)!==template.start.slice(0,5)||String(to).slice(0,5)!==template.end.slice(0,5))),published:!!a.publishedAt};
+      return{...a,employeeId,type,start:String(from).slice(0,5),end:String(to).slice(0,5),minutes:duration,hours:duration/60,overnight:em<sm,adjusted:!!(template.start&&template.end&&(String(from).slice(0,5)!==template.start.slice(0,5)||String(to).slice(0,5)!==template.end.slice(0,5))),published:!!a.publishedAt};
     }).sort((a,b)=>a.date.localeCompare(b.date)||a.start.localeCompare(b.start)||a.type.localeCompare(b.type));
     const assignedIds=new Set(shifts.map(a=>a.employeeId)),people=new Map();
     (source.employees||[]).forEach(e=>{
@@ -32,7 +32,7 @@
         const labels=off.map(a=>(absenceCodes[a.type||a.absence_type]||'AB')+(a.fullDay===false?' (teilw.)':''));
         return{date:day.date,shifts:list,absences:off,excel:[...list.map(a=>a.type+' '+a.start+'–'+a.end+(a.overnight?' (+1 Tag)':'')),...labels].join('\n')||'–',pdf:[...list.map(a=>a.type+(a.adjusted?'*':'')),...labels].join('\n')||'–'};
       });
-      return{person,cells,shiftCount:own.length,hours:number(own.reduce((n,a)=>n+a.hours,0))};
+      return{person,cells,shiftCount:own.length,hours:number(own.reduce((n,a)=>n+a.minutes,0)/60)};
     });
     const types=new Map((source.types||[]).filter(t=>t.active!==false).map(t=>[t.id,t]));
     shifts.forEach(a=>{if(!types.has(a.type)){const t=source.typeById?.(a.type)||{};types.set(a.type,{id:a.type,name:t.name||a.type,start:t.start||a.start,end:t.end||a.end})}});
@@ -40,7 +40,7 @@
     rows.forEach(r=>r.cells.forEach(c=>{const labels=c.absences.map(a=>(absenceCodes[a.type||a.absence_type]||'AB')+(a.fullDay===false?' (teilw.)':''));c.pdf=[...c.shifts.map(a=>a.type+(a.adjusted?'*':'')),...labels].join('\n')||'–'}));
     const details=shifts.map(a=>({...a,person:people.get(a.employeeId)}));
     const coverage=days.flatMap(day=>[...types.values()].map(type=>{const required=Number(source.getSoll?.(day.date,type.id)||0),actual=shifts.filter(a=>a.date===day.date&&a.type===type.id).length;return{date:day.date,type:type.id,required,actual,open:Math.max(0,required-actual)}}));
-    return{month,start,end,days,rows,details,types:[...types.values()],coverage,company:source.company||'Unternehmen',createdAt:source.createdAt||new Date().toISOString(),label:new Date(start+'T12:00:00').toLocaleDateString('de-DE',{month:'long',year:'numeric'}),hours:number(shifts.reduce((n,a)=>n+a.hours,0)),shiftCount:shifts.length,status:shifts.length&&shifts.every(a=>a.published)?'Veröffentlicht':shifts.some(a=>a.published)?'Teilweise veröffentlicht':'Entwurf'};
+    return{month,start,end,days,rows,details,types:[...types.values()],coverage,company:source.company||'Unternehmen',createdAt:source.createdAt||new Date().toISOString(),label:new Date(start+'T12:00:00').toLocaleDateString('de-DE',{month:'long',year:'numeric'}),hours:number(shifts.reduce((n,a)=>n+a.minutes,0)/60),shiftCount:shifts.length,status:shifts.length&&shifts.every(a=>a.published)?'Veröffentlicht':shifts.some(a=>a.published)?'Teilweise veröffentlicht':'Entwurf'};
   }
   function workbookRows(plan){
     const head=['Personal-Nr.','Mitarbeiter','Team',...plan.days.map(d=>d.weekday+' '+pad(d.day)), 'Dienste','Planstunden'];

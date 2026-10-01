@@ -24,3 +24,6 @@ test('leap years and unavailable archived employees retain valid rows, while inv
 test('an archived model without a template still shows differing hours in the PDF appendix',()=>{
   const plan=buildPlan({...base,assignments:[{employeeId:'A',date:'2026-12-01',type:'OLD',start:'06:00',end:'14:00'},{employeeId:'A',date:'2026-12-02',type:'OLD',start:'07:00',end:'14:00'}]});assert.equal(plan.details[1].adjusted,true);assert.equal(plan.rows[0].cells[1].pdf,'OLD*');
 });
+test('minute adjustments are summed before rounding the monthly hours',()=>{
+  const plan=buildPlan({...base,assignments:Array.from({length:30},(_,i)=>({employeeId:'A',date:'2026-12-'+String(i+1).padStart(2,'0'),type:'FD',start:'06:00',end:'06:01'}))});assert.equal(plan.hours,0.5);assert.equal(plan.rows[0].hours,0.5);
+});

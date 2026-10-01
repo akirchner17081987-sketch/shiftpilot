@@ -25,7 +25,9 @@
       if(key==='matrix'){
         ws['!cols']=[{wch:14},{wch:28},{wch:8},...plan.days.map(()=>({wch:23})),{wch:9},{wch:13}];ws['!rows']=data.matrix.map((_,i)=>({hpt:i<7?20:48}));
         ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:plan.days.length+4}}];ws['!autofilter']={ref:X.utils.encode_range({s:{r:6,c:0},e:{r:data.matrix.length-1,c:plan.days.length+4}})};
+        for(let row=7;row<data.matrix.length;row++)ws[X.utils.encode_cell({r:row,c:plan.days.length+4})].z='0.00';
       }else ws['!cols']=data[key][0].map((_,i)=>({wch:key==='legend'?i===0?25:85:i===2?28:18}));
+      if(key==='details')for(let row=1;row<data.details.length;row++)ws[X.utils.encode_cell({r:row,c:8})].z='0.00';
       X.utils.book_append_sheet(wb,ws,name);
     }
     wb.Props={Title:'Gesamtdienstplan '+plan.label,Subject:plan.company,Author:'SchichtFunk',CreatedDate:new Date(plan.createdAt)};
