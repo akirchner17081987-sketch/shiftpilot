@@ -1,0 +1,50 @@
+name: Planning assistant release verification
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/planning-assistant-release-check.yml'
+      - 'assets/planning-assistant-*'
+permissions:
+  contents: read
+jobs:
+  verify-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify published assistant files on both platforms
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          import {createHash} from 'node:crypto';
+          import {setTimeout as delay} from 'node:timers/promises';
+          const files=['assets/planning-assistant-core-v1.js','assets/planning-assistant-v1.js','assets/planning-assistant-v1.css'];
+          const hash=data=>createHash('sha256').update(data).digest('hex');
+          const expected=new Map(files.map(file=>[file,hash(readFileSync(file))]));
+          for(const origin of ['https://schichtfunk.de','https://shiftpilot-two.vercel.app']){
+            let passed=false;
+            for(let attempt=1;attempt<=15;attempt++){
+              try{
+                const headers={'Cache-Control':'no-cache'};
+                const check=async path=>{
+                  const r=await fetch(origin+'/'+path+'?assistant_release='+process.env.GITHUB_SHA,{headers,signal:AbortSignal.timeout(15000)});
+                  if(!r.ok)throw Error(path+' HTTP '+r.status);
+                  return Buffer.from(await r.arrayBuffer());
+                };
+                const html=(await check('')).toString('utf8');
+                if(!files.every(file=>html.includes(file)))throw Error('Assistant references missing in application HTML');
+                for(const file of files){if(hash(await check(file))!==expected.get(file))throw Error(file+' content differs from release');}
+                console.log(origin+' verified: application HTML and all 3 assistant assets match release');
+                passed=true;break;
+              }catch(error){
+                console.log(origin+' attempt '+attempt+': '+error.message);
+                if(attempt<15)await delay(15000);
+              }
+            }
+            if(!passed)throw Error(origin+' failed release verification');
+          }
+          NODE
