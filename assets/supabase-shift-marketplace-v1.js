@@ -47,7 +47,7 @@
   `;
     document.head.appendChild(s);
   }
-  function modal(title, text, action, run) {
+  function modal(title, text, action, run, rhythmWarning = "") {
     css();
     document.getElementById("sfMarketModal")?.remove();
     const m = document.createElement("div");
@@ -55,19 +55,33 @@
     m.className = "sf-market-modal";
     m.innerHTML = `<section class="sf-market-dialog" role="dialog" aria-modal="true" aria-labelledby="sfMarketTitle" tabindex="-1"><header><div class="eyebrow">SCHICHT-MARKTPLATZ</div><h2 id="sfMarketTitle">${esc(title)}</h2><p id="sfMarketDescription">${esc(text)}</p></header><main><label for="sfMarketNote">Hinweis (optional)</label><textarea id="sfMarketNote" maxlength="1000" placeholder="Kurze Information …" aria-describedby="sfMarketDescription"></textarea><p class="sf-market-error" role="alert" aria-live="assertive"></p></main><footer><button class="ghost" data-close>Abbrechen</button><button class="sf-market-approve" data-submit>${esc(action)}</button></footer></section>`;
     document.body.appendChild(m);
+    if (rhythmWarning) {
+      const label = document.createElement('label');
+      label.className = 'sf-market-rhythm-confirm';
+      label.innerHTML = `<input type="checkbox" data-accept-rhythm><span>${esc(rhythmWarning)}. Ich bestätige diese Abweichung vom Rhythmus ausdrücklich.</span>`;
+      m.querySelector('main').prepend(label);
+    }
     const close = B.bindAccessibleModal?.(m, { initialFocus: "textarea" }) || (() => m.remove());
-    m.querySelector("[data-close]").onclick = close;
+    let saving = false;
+    m.addEventListener('keydown', e => {if(saving && e.key === 'Escape'){e.preventDefault();e.stopImmediatePropagation();}}, true);
+    m.querySelector("[data-close]").onclick = () => {if(!saving)close();};
     m.onclick = (e) => {
-      if (e.target === m) close();
+      if (e.target === m && !saving) close();
     };
     m.querySelector("[data-submit]").onclick = async (e) => {
       const b = e.currentTarget;
+      saving = true;
+      m.querySelector('[data-close]').disabled = true;
       b.disabled = true;
       b.textContent = "Wird gespeichert …";
       try {
-        await run(m.querySelector("textarea").value.trim());
+        const acceptRhythm = !!m.querySelector('[data-accept-rhythm]')?.checked;
+        if (rhythmWarning && !acceptRhythm) throw Error('Bitte die Rhythmusabweichung ausdrücklich bestätigen.');
+        await run(m.querySelector("textarea").value.trim(), acceptRhythm);
         close();
       } catch (x) {
+        saving = false;
+        m.querySelector('[data-close]').disabled = false;
         if (x?.code === "OFFER_UNAVAILABLE") {
           close();
           showSaveToast?.(
@@ -92,7 +106,8 @@
     if (employeeBusy || B.role !== "EMPLOYEE") return;
     employeeBusy = true;
     try {
-      const next = (await rpc("employee_list_shift_marketplace")) || [];
+      const [legacy, open] = await Promise.all([rpc("employee_list_shift_marketplace"), window.__sfDemoCloudAdapterV2 ? Promise.resolve([]) : rpc("employee_list_open_shift_market")]);
+      const next = [...(legacy || []), ...(open || [])];
       const unchanged = JSON.stringify(next) === JSON.stringify(rows);
       rows = next;
       if (!unchanged || !document.getElementById("sfMarketEmployee"))
@@ -181,8 +196,8 @@
         (x) => x.is_own || (!x.is_own && x.status !== "MARKET_OPEN"),
       );
     const line = (x) =>
-      `<article class="sf-market-row" data-id="${x.id}"><div><b>${esc(x.shift_code)} · ${esc(dt(x.starts_at))}</b><small>${x.is_own ? "Eigenes Angebot" : "Angeboten von " + esc(x.offered_by)}${x.reason ? " · " + esc(x.reason) : ""}</small></div><div><span class="sf-market-state">${esc(status(x.status))}</span>${x.block_reason ? `<small class="sf-market-block">${esc(x.block_reason)}</small>` : ""}</div><div class="sf-market-actions">${x.status === "MARKET_OPEN" && !x.is_own && x.can_take ? '<button class="sf-market-take" data-take>Schicht übernehmen</button>' : ""}${x.is_own && ["MARKET_OPEN", "PENDING_MANAGER"].includes(x.status) ? '<button class="sf-market-cancel" data-cancel>Zurückziehen</button>' : ""}</div></article>`;
-    card.innerHTML = `<div class="sf-market-head"><div><h3>Schicht-Marktplatz</h3><p>Eigene Schichten anbieten und passende Angebote übernehmen</p></div><span class="sf-market-count">${available.filter((x) => x.can_take).length} passend</span></div><div class="sf-market-note">Eine Übernahme ändert den Dienstplan noch nicht. Sie wird zuerst der Disposition beziehungsweise einer berechtigten Fachkraft zur Prüfung vorgelegt.</div><div class="sf-market-section-title"><b>Verfügbare Schichten</b><span class="sf-market-count">${available.length}</span></div><div class="sf-market-list">${available.length ? available.map(line).join("") : '<div class="sf-market-empty">Aktuell werden keine Schichten angeboten.</div>'}</div><div class="sf-market-section-title"><b>Meine Angebote und Übernahmen</b><span class="sf-market-count">${mine.length}</span></div><div class="sf-market-list">${mine.length ? mine.map(line).join("") : '<div class="sf-market-empty">Noch keine eigenen Marktplatzvorgänge.</div>'}</div>`;
+      `<article class="sf-market-row" data-id="${x.id}"><div><b>${esc(x.shift_code)} · ${esc(dt(x.starts_at))}${x.ends_at ? '–' + esc(dt(x.ends_at)) : ''}</b><small>${x.kind === 'OPEN_POSITION' ? `${x.is_claim ? 'Meine Übernahmeanfrage' : `Offener Bedarf · ${x.remaining_count} Plätze`} · ${esc(x.company_name || 'Planung')}` : x.is_own ? "Eigenes Angebot" : "Angeboten von " + esc(x.offered_by)}${x.reason ? " · " + esc(x.reason) : ""}</small>${x.rhythm_warning ? `<small class="sf-market-block">${esc(x.rhythm_warning)} · Planerfreigabe erforderlich</small>` : ''}</div><div><span class="sf-market-state">${esc(status(x.status))}</span>${x.block_reason ? `<small class="sf-market-block">${esc(x.block_reason)}</small>` : ""}</div><div class="sf-market-actions">${x.status === "MARKET_OPEN" && !x.is_own && x.can_take ? '<button class="sf-market-take" data-take>Schicht übernehmen</button>' : ""}${(x.is_own && ["MARKET_OPEN", "PENDING_MANAGER"].includes(x.status)) || (x.kind === 'OPEN_POSITION' && x.is_claim && x.status === 'PENDING_MANAGER') ? '<button class="sf-market-cancel" data-cancel>Zurückziehen</button>' : ""}</div></article>`;
+    card.innerHTML = `<div class="sf-market-head"><div><h3>Schicht-Marktplatz</h3><p>Eigene Schichten anbieten und offene Dienste übernehmen</p></div><span class="sf-market-count">${available.filter((x) => x.can_take).length} passend</span></div><div class="sf-market-note">Eine Übernahme ändert den Dienstplan noch nicht. Sie wird zuerst der Disposition beziehungsweise einer berechtigten Fachkraft zur Prüfung vorgelegt.</div><div class="sf-market-section-title"><b>Verfügbare Schichten</b><span class="sf-market-count">${available.length}</span></div><div class="sf-market-list">${available.length ? available.map(line).join("") : '<div class="sf-market-empty">Aktuell werden keine Schichten angeboten.</div>'}</div><div class="sf-market-section-title"><b>Meine Angebote und Übernahmen</b><span class="sf-market-count">${mine.length}</span></div><div class="sf-market-list">${mine.length ? mine.map(line).join("") : '<div class="sf-market-empty">Noch keine eigenen Marktplatzvorgänge.</div>'}</div>`;
     host.insertBefore(card, host.firstChild);
     card.querySelectorAll("[data-take]").forEach(
       (b) =>
@@ -196,10 +211,7 @@
             "Zur Prüfung einreichen",
             async (note) => {
               try {
-                await rpc("employee_claim_shift_marketplace", {
-                  p_offer_id: x.id,
-                  p_comment: note,
-                });
+                await rpc(x.kind === 'OPEN_POSITION' ? "employee_claim_open_shift" : "employee_claim_shift_marketplace", {p_offer_id: x.id, p_comment: note});
               } catch (error) {
                 if (!/nicht mehr verfügbar|bereits vergeben/i.test(String(error?.message || error)))
                   throw error;
@@ -224,10 +236,12 @@
     card.querySelectorAll("[data-cancel]").forEach(
       (b) =>
         (b.onclick = async () => {
-          await rpc("employee_cancel_shift_swap", {
-            p_swap_id: b.closest("[data-id]").dataset.id,
-          });
-          await employeeLoad();
+          b.disabled = true;
+          try {
+            const x = rows.find(r => r.id === b.closest('[data-id]').dataset.id);
+            await rpc(x.kind === 'OPEN_POSITION' ? 'employee_cancel_open_shift_claim' : 'employee_cancel_shift_swap', x.kind === 'OPEN_POSITION' ? {p_claim_id:x.id} : {p_swap_id:x.id});
+            await employeeLoad();
+          } catch(e) { showSaveToast?.('Anfrage nicht zurückgezogen', e.message || String(e)); b.disabled = false; }
         }),
     );
     addOfferButtons();
@@ -242,7 +256,7 @@
     card.id = "sfMarketEmployee";
     card.className = "sf-portal-card sf-market";
     card.dataset.sfPortalSection = "marketplace";
-    card.innerHTML = `<div class="sf-market-head"><div><h3>Schicht-Marktplatz</h3><p>Eigene Schichten anbieten und passende Angebote übernehmen</p></div></div><div class="sf-market-empty sf-market-block">Der Schicht-Marktplatz konnte nicht geladen werden.<br><button type="button" class="ghost" data-market-retry style="margin-top:12px">Erneut versuchen</button></div>`;
+    card.innerHTML = `<div class="sf-market-head"><div><h3>Schicht-Marktplatz</h3><p>Eigene Schichten anbieten und offene Dienste übernehmen</p></div></div><div class="sf-market-empty sf-market-block">Der Schicht-Marktplatz konnte nicht geladen werden.<br><button type="button" class="ghost" data-market-retry style="margin-top:12px">Erneut versuchen</button></div>`;
     host.insertBefore(card, host.firstChild);
     card.querySelector("[data-market-retry]").onclick = employeeLoad;
     if (error?.message) card.title = String(error.message);
@@ -252,10 +266,10 @@
     managerBusy = true;
     managerError = "";
     try {
-      rows =
-        (await rpc("manager_list_shift_marketplace", {
-          p_company_id: B.companyId,
-        })) || [];
+      const companyId = B.companyId;
+      const [legacy, open] = await Promise.all([rpc("manager_list_shift_marketplace", {p_company_id:companyId}), window.__sfDemoCloudAdapterV2 ? Promise.resolve([]) : rpc("manager_list_open_shift_market", {p_company_id:companyId})]);
+      if (B.companyId !== companyId) return;
+      rows = [...(legacy || []), ...(open || [])];
       renderManager();
     } catch (e) {
       managerError = e?.message || "Daten konnten nicht geladen werden.";
@@ -266,11 +280,20 @@
     }
   }
   function reviewButton(x) {
+    if (x.kind === 'OPEN_POSITION' && !x.is_claim && x.status === 'MARKET_OPEN') return '<button class="sf-market-cancel" data-cancel-open>Angebot zurückziehen</button>';
     return x.status === "PENDING_MANAGER"
       ? '<button class="sf-market-reject" data-review="REJECT">Ablehnen</button><button class="sf-market-approve" data-review="APPROVE">Freigeben</button>'
       : "";
   }
   function bindReviews(host) {
+    host.querySelectorAll('[data-cancel-open]').forEach(b => {
+      const x = rows.find(r => r.id === b.closest('[data-id]').dataset.id);
+      b.onclick = () => modal('Offene Plätze zurückziehen', `${x.shift_code} · ${dt(x.starts_at)}. Ausstehende Übernahmeanfragen für dieses Angebot werden beendet.`, 'Angebot zurückziehen', async note => {
+        await rpc('manager_cancel_open_shift_offer', {p_offer_id:x.id});
+        await managerLoad();
+        showSaveToast?.('Angebot zurückgezogen', 'Die offenen Plätze werden nicht mehr angeboten.');
+      });
+    });
     host.querySelectorAll("[data-review]").forEach((b) => {
       const x = rows.find((r) => r.id === b.closest("[data-id]").dataset.id);
       b.onclick = () =>
@@ -280,20 +303,17 @@
             : "Übernahme ablehnen",
           `${x.offered_by} → ${x.claimed_by} · ${x.shift_code}`,
           b.dataset.review === "APPROVE" ? "Freigeben" : "Ablehnen",
-          async (note) => {
-            await rpc("manager_review_shift_swap", {
-              p_swap_id: x.id,
-              p_decision: b.dataset.review,
-              p_comment: note,
-            });
+          async (note, acceptRhythm) => {
+            const result = await rpc(x.kind === 'OPEN_POSITION' ? 'manager_review_open_shift_claim' : "manager_review_shift_swap", x.kind === 'OPEN_POSITION' ? {p_claim_id:x.id,p_decision:b.dataset.review,p_comment:note,p_accept_rhythm:acceptRhythm} : {p_swap_id:x.id,p_decision:b.dataset.review,p_comment:note});
             await B.hydrate?.();
             renderCalendar?.();
             await managerLoad();
             showSaveToast?.(
-              "Entscheidung gespeichert",
-              "Der Dienstplan wurde entsprechend aktualisiert.",
+              result?.status === 'SUPERSEDED' ? "Übernahme nicht mehr möglich" : "Entscheidung gespeichert",
+              result?.message || "Der Dienstplan wurde entsprechend aktualisiert.",
             );
           },
+          b.dataset.review === 'APPROVE' ? x.rhythm_warning || '' : '',
         );
     });
   }
@@ -384,7 +404,7 @@
         ? data
             .map(
               (x) =>
-                `<article class="sf-market-row" data-id="${x.id}"><div><b>${esc(x.shift_code)} · ${esc(dt(x.starts_at))}</b><small>${esc(x.offered_by)}${x.claimed_by ? " → " + esc(x.claimed_by) : " · noch nicht übernommen"}${x.reason ? " · " + esc(x.reason) : ""}</small></div><div><span class="sf-market-state">${esc(status(x.status))}</span>${x.colleague_comment ? `<small>${esc(x.colleague_comment)}</small>` : ""}</div><div class="sf-market-actions">${reviewButton(x)}</div></article>`,
+                `<article class="sf-market-row" data-id="${x.id}"><div><b>${esc(x.shift_code)} · ${esc(dt(x.starts_at))}${x.ends_at ? '–' + esc(dt(x.ends_at)) : ''}</b><small>${esc(x.offered_by)}${x.claimed_by ? " → " + esc(x.claimed_by) : x.kind === 'OPEN_POSITION' ? ` · ${x.remaining_count} Plätze offen` : " · noch nicht übernommen"}${x.reason ? " · " + esc(x.reason) : ""}</small>${x.rhythm_warning ? `<small class="sf-market-block">${esc(x.rhythm_warning)}</small>` : ''}</div><div><span class="sf-market-state">${esc(status(x.status))}</span>${x.colleague_comment ? `<small>${esc(x.colleague_comment)}</small>` : ""}</div><div class="sf-market-actions">${reviewButton(x)}</div></article>`,
             )
             .join("")
         : '<div class="sf-market-empty">Für diesen Filter sind keine Einträge vorhanden.</div>';
@@ -450,9 +470,11 @@
       refresh();
       setInterval(() => {
         if (MANAGER.has(B.role)) refresh();
+        else if (B.role === 'EMPLOYEE') refresh();
       }, 15000);
     }
   }, 250);
+  window.SFShiftMarketplace = {refreshManager:managerLoad, refreshEmployee:employeeLoad, openDashboard};
   document.addEventListener(
     "click",
     (e) => {
@@ -473,3 +495,4 @@
     if (event.detail?.perspective === "employee") setTimeout(employeeLoad, 0);
   });
 })();
+

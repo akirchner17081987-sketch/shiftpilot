@@ -61,6 +61,7 @@
     el('clearAutoPlanBtn').disabled=(!count&&!autoPlanUnresolved.length)||autoPlanApplying;
     text('autoApplyHint',published?'Ein Vorschlag betrifft eine bereits veröffentlichte Woche. Bitte prüfe solche Änderungen einzeln im Dienstplan.':applied?'Dein Entwurf ist im Dienstplan. Dort prüfst und veröffentlichst du die Schichten für deine Mitarbeiter.':'Übernommene Vorschläge werden als Entwurf gespeichert. Im Dienstplan gibst du sie anschließend für die Mitarbeiter frei.');
     document.querySelectorAll('[data-auto-step]').forEach(node=>{const step=Number(node.dataset.autoStep),current=applied?4:analyzed?3:1;node.classList.toggle('is-current',step===current);if(step===current)node.setAttribute('aria-current','step');else node.removeAttribute('aria-current')});
+    window.SFOpenShiftMarket?.renderPublishEntry?.({analyzed,applied,count,remaining});
   }
   function openSchedule(date){
     if(date){weekStart=autoMonday(date);window.SchichtFunkCalendarView?.setMode?.('week')}
@@ -80,3 +81,4 @@
   window.SFAutoPlanWorkspace={render,explain,remainingSlots,openSchedule,confirmApply,expandDays:open=>document.querySelectorAll('#autoSuggestions details').forEach(x=>x.open=open)};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',render,{once:true});else render();
 })();
+
