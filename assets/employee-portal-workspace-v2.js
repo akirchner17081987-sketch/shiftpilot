@@ -141,6 +141,42 @@
         #sfEmployeePortal .sf-portal-stats{grid-template-columns:1fr 1fr}.sf-employee-tiles{grid-template-columns:1fr 1fr!important}
       }
       @media(max-width:560px){#sfEmployeePortal .sf-portal-top{gap:7px;padding:0 10px}#sfEmployeePortal .sf-portal-logo{width:min(184px,47vw);height:52px}#sfEmployeePortal .sf-company-context{margin-left:0;padding-left:7px}#sfEmployeePortal .sf-portal-top .ghost{min-height:44px;padding:0 9px;font-size:11px}.sf-portal-stats{grid-template-columns:1fr!important}.sf-employee-tiles{grid-template-columns:1fr!important}#sfEmployeePortal .sf-employee-more-grid{grid-template-columns:1fr}}
+
+      /* Fit the left employee navigation to the available desktop height. */
+      @media(min-width:821px){
+        #sfEmployeePortal .sf-employee-side-head,#sfEmployeePortal .sf-employee-side-foot{flex-shrink:0}
+        #sfEmployeePortal .sf-employee-nav-scroll{min-height:0;padding:10px 12px;overscroll-behavior:contain}
+        #sfEmployeePortal .sf-employee-nav-group{margin-bottom:10px}
+        #sfEmployeePortal .sf-employee-nav-group:last-of-type{margin-bottom:0}
+        #sfEmployeePortal .sf-employee-nav-btn{min-height:48px;padding:8px 11px}
+      }
+      @media(min-width:821px) and (max-height:820px){
+        #sfEmployeePortal .sf-employee-side-head{min-height:72px;padding:12px 18px}
+        #sfEmployeePortal .sf-employee-side-foot{padding:8px 16px}
+        #sfEmployeePortal .sf-employee-nav-scroll{padding:8px 12px}
+        #sfEmployeePortal .sf-employee-nav-group{margin-bottom:6px}
+        #sfEmployeePortal .sf-employee-nav-group>span{padding-bottom:4px}
+        #sfEmployeePortal .sf-employee-nav-btn{min-height:44px;padding:5px 11px}
+        #sfEmployeePortal .sf-employee-nav-copy small{display:none}
+        #sfEmployeePortal .sf-employee-nav-icon{width:28px;height:28px}
+      }
+      @media(min-width:821px) and (max-height:740px){
+        #sfEmployeePortal .sf-employee-side-foot{display:none}
+      }
+      @media(min-width:821px) and (max-height:660px){
+        #sfEmployeePortal .sf-employee-nav-scroll{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;align-content:start}
+        #sfEmployeePortal .sf-employee-nav-group{display:contents}
+        #sfEmployeePortal .sf-employee-nav-group>span{display:none}
+        #sfEmployeePortal .sf-employee-nav-btn{min-height:56px;grid-template-columns:22px minmax(0,1fr);gap:6px;padding:5px 7px}
+        #sfEmployeePortal .sf-employee-nav-icon{width:22px;height:22px;font-size:12px;border-radius:6px}
+        #sfEmployeePortal .sf-employee-nav-copy b{white-space:normal;font-size:10px;line-height:1.35}
+        #sfEmployeePortal .sf-employee-nav-count{display:none}
+      }
+      @media(min-width:821px) and (max-height:440px){
+        #sfEmployeePortal .sf-employee-side-head{min-height:56px;padding:6px 14px}
+        #sfEmployeePortal .sf-employee-avatar{width:34px;height:34px}
+        #sfEmployeePortal .sf-employee-nav-btn{min-height:44px}
+      }
     `;document.head.appendChild(s)
   }
   function initials(value){return String(value||'U').split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase()||'U'}
