@@ -106,3 +106,33 @@ window.SFHelpContent = {
     ]
   }
 };
+
+window.SFHelpContent.articles.employees.push(
+  ["Wie ordne ich einen Mitarbeiter einem Planungsteam zu?","Öffne Personal → Mitarbeiter und das Profil. Unter Übersicht wählst du Planungsteam A–E. Die Standort-Zugehörigkeit ist davon getrennt. Speichere die Zuordnung und prüfe anschließend die Auto-Planung. Die zentrale Regel wird im Profil angezeigt; bestehende Dienste werden durch die Teamzuordnung nicht verschoben."],
+  ["Braucht jeder Mitarbeiter ein Planungsteam?","Nein. Mitarbeiter ohne Planungsteam behalten ihre individuelle Schichtregel. Für Mitarbeiter ausschließlich im Frühdienst kann eine Zuordnung ohne Team beabsichtigt sein. Prüfe die Schichtfreigaben und die individuelle Regel im Profil."]
+);
+
+window.SFHelpContent.articles.settings.push(
+  ["Wie stelle ich Teamrhythmen A–E ein?","Öffne Einstellungen → Planung → Teamrhythmen A–E. Wähle beim Team Einrichten oder Bearbeiten, setze Startdatum, Tagesfolge und Einstiegsposition und speichere. Die Vorgabe gilt verbindlich für zugeordnete Mitarbeiter. Die Teamzuordnung pflegst du unter Personal → Mitarbeiter."],
+  ["Was bedeutet die Einstiegsposition im Teamrhythmus?","Die Einstiegsposition legt fest, mit welchem Tag der Tagesfolge das Team am Startdatum beginnt. Die Vorlage FD · FD · SD · SD · Frei · ND · ND · Frei · Frei · Frei hat zehn Tage. Die Vorbelegung verteilt A–E auf Tag 1, 3, 5, 7 und 9. Maßgeblich ist die tatsächlich gespeicherte Einstiegsposition des Teams."],
+  ["Warum beginnt der Teamrhythmus erst am Startdatum?","Vor dem zentralen Startdatum ist die Teambindung noch nicht aktiv. Ab dem Startdatum wird die gespeicherte Tagesfolge mit der Einstiegsposition verwendet. Eine Änderung berechnet keine vorhandenen Dienste rückwirkend neu."]
+);
+
+window.SFHelpContent.articles.auto.push(
+  ["Wie erstelle und übernehme ich Auto-Planungsvorschläge?","Wähle Tag, Woche oder Monat, prüfe die Stunden- und Verteilungsregeln und klicke Vorschläge erstellen. Prüfe Vorschläge und offene Positionen; einzelne Vorschläge lassen sich entfernen. Übernehmen benötigt eine Bestätigung und speichert einen Entwurf. Die Veröffentlichung erfolgt danach gesondert im Dienstplan."],
+  ["Warum muss ich Vorschläge nach Änderungen neu erstellen?","Änderungen an Teamregeln oder Teamzuordnungen verwerfen alte Auto-Planungsvorschauen. Erstelle die Vorschläge unter den neuen Regeln erneut. Vor der Übernahme werden Unternehmen, Datenstand und Verfügbarkeit nochmals geprüft."],
+  ["Warum bleiben trotz verfügbarer Mitarbeiter Dienste offen?","Eine Person muss gleichzeitig Schichtfreigabe, gegebenenfalls verbindlichen Rhythmus, Abwesenheitsprüfung, Zeitregeln und die aktivierten Stundenlimits erfüllen. Eine freie Position und eine freie Person allein garantieren keine passende Besetzung. Prüfe den konkreten Tag und die Schichtart mit dem Planungsassistenten."]
+);
+
+window.SFHelpContent.articles.schedule.push(
+  ["Wie exportiere ich den Gesamtdienstplan eines Monats?","Öffne Planung → Dienstplan, wähle die Monatsansicht und den gewünschten Monat. Über die angebotenen Exportaktionen erhältst du den gesamten Monatsplan als Excel oder PDF. Prüfe Monat, Besetzung und angepasste Schichtzeiten vor der Weitergabe."],
+  ["Was bedeutet Überbesetzung?","Überbesetzung bedeutet, dass für eine Schicht mehr Mitarbeiter eingeplant sind als der gespeicherte SOLL-Bedarf. Sie gleicht offene Positionen anderer Schichten nicht aus. Prüfe Tagesbedarf und Zuordnungen getrennt, bevor du Mitarbeiter entfernst oder umplanst."]
+);
+
+window.SFHelpContent.articles.trouble.push(
+  ["Warum zeigt der Assistent andere Stunden als das Stundenkonto?","Der Planungsassistent zählt geplante Dienste nach ihrem Startdatum und ohne Pausenabzug. Das Stundenkonto nutzt seine eigene Prüfung der erfassten beziehungsweise bestätigten Zeiten. Eine geplante Abweichung vom Monats-SOLL ist kein bestätigtes Überstundenkonto."]
+);
+
+window.SFHelpContent.articles.start.push(
+  ["Welche Fragen versteht der Planungsassistent?","Öffne den Chat unten rechts. Du kannst Besetzung, Ersatzkandidaten, Dienste einzelner Mitarbeiter und Teams, fehlende Schichtfreigaben, Teamrhythmen und geplante Stunden abfragen. Nenne Zeitraum, Person oder Team und bei Ersatzfragen Tag und Schicht. Über Welche Hilfethemen kennst du? erhältst du einen Überblick über die Wissensdatenbank. Der Assistent prüft vorhandene Daten und verändert sie nicht."]
+);

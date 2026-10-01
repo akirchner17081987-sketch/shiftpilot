@@ -28,7 +28,7 @@
   function candidateCheck(type,date){
     // Always use the current, final Auto-Planung implementation, including its guards.
     if(typeof autoEligibleEmployees!=='function'||!window.SFCompliance?.check||!window.SFAutoPlanGuard?.passesTimeRules)throw Error('Die Planungsprüfungen sind noch nicht vollständig geladen. Bitte versuche es gleich erneut.');
-    const candidates=autoEligibleEmployees(type,date,[]),accepted=[],rejected=new Map(),allStaff=employees.filter(e=>!e.deletedAt&&e.status==='active'&&(!(e.companyId||e.company_id)||(e.companyId||e.company_id)===B().companyId));
+    const candidates=autoEligibleEmployees(type,date,[]),accepted=[],assessments=[],rejected=new Map(),allStaff=employees.filter(e=>!e.deletedAt&&e.status==='active'&&(!(e.companyId||e.company_id)||(e.companyId||e.company_id)===B().companyId));
     const reject=(reason)=>rejected.set(reason,(rejected.get(reason)||0)+1);
     for(const e of allStaff){
       const check=window.SFCompliance.check(e,type,date),base=candidates.find(c=>String(c.e.id)===String(e.id));
@@ -47,11 +47,12 @@
         else if(el('autoRespectHours')?.checked!==false&&check.soft.some(x=>/Wochen-SOLL|Monats-SOLL/.test(x)))reason='Wochen- oder Monatsstunden reichen nicht aus';
         else reason='Weitere aktuelle Auto-Planungsregel verhindert die Besetzung';
       }
+      assessments.push({employeeId:e.id,eligible:!reason,reason:reason||'Dieser Mitarbeiter erfüllt aktuell die Auto-Planungsregeln für den Dienst.'});
       if(reason)reject(reason);else accepted.push(base);
     }
     // Preserve the app's ranking, rather than the employee list order.
     accepted.sort((a,b)=>candidates.indexOf(a)-candidates.indexOf(b));
-    return{candidates:accepted,reasons:[...rejected].map(([label,count])=>({label,count}))};
+    return{candidates:accepted,assessments,reasons:[...rejected].map(([label,count])=>({label,count}))};
   }
   function snapshot(){
     const auth=authorized();
@@ -66,14 +67,14 @@
       shifts:typeof TYPES==='undefined'?[]:TYPES.filter(t=>t.active!==false),
       getSoll:(date,type)=>getSoll(date,type),
       monthTarget:e=>typeof employeeMonthlyTarget==='function'?employeeMonthlyTarget(e):0,
-      candidates:candidateCheck,teamRules:window.SFPlanningTeams?.isLoaded?.()?window.SFPlanningTeams.rules:[],helpArticles:window.SFHelpContent?.articles||{}};
+      candidates:candidateCheck,teamRulesReady:window.SFPlanningTeams?.isLoaded?.()??false,helpCategories:window.SFHelpContent?.categories||[],teamRules:window.SFPlanningTeams?.isLoaded?.()?window.SFPlanningTeams.rules:[],helpArticles:window.SFHelpContent?.articles||{}};
   }
   function ask(question){syncScope();return Core.answer(question,snapshot(),context);}
   const node=(tag,text,className)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(className)n.className=className;return n;};
   function openAction(action){
     syncScope();if(!authorized()||busy())return;
     close();
-    if(action.help){el('sfHelpButton')?.click();return;}
+    if(action.help){el('sfHelpButton')?.click();if(action.query){const search=el('sfHelpSearch');if(search){search.value=action.query;search.dispatchEvent(new Event('input',{bubbles:true}));}}return;}
     if(action.view==='schedule'&&action.date){
       if(action.month)window.SchichtFunkCalendarView?.setMonth?.(action.date.slice(0,7));
       else{if(typeof autoMonday==='function')weekStart=autoMonday(action.date);window.SchichtFunkCalendarView?.setMode?.('week');}
@@ -125,7 +126,7 @@
     welcome.appendChild(node('div','PLANUNG EINFACH ERKLÄRT','sf-chat-kicker'));
     welcome.appendChild(node('h3','Wobei brauchst du Unterstützung?'));
     welcome.appendChild(node('p','Frage nach offenen Diensten, Ersatzbesetzung oder Planungseinstellungen. Nenne bei einzelnen Diensten bitte Tag und Schicht.'));
-    const examples=node('div',undefined,'sf-chat-examples');quickButtons(examples,['Welche Dienste sind im Dezember noch offen?','Warum konnte die Auto-Planung diesen Dienst nicht besetzen?','Welche Mitarbeiter kommen als Ersatz infrage?','Bei welchen Mitarbeitern fehlt eine Teamzuordnung?','Wie stelle ich den Rhythmus von Team E ein?','Wie viele Stunden sind im Dezember geplant?']);welcome.appendChild(examples);log.appendChild(welcome);
+    const examples=node('div',undefined,'sf-chat-examples');quickButtons(examples,['Welche Dienste sind im Dezember noch offen?','Warum konnte die Auto-Planung diesen Dienst nicht besetzen?','Welche Mitarbeiter kommen als Ersatz infrage?','Bei welchen Mitarbeitern fehlt eine Teamzuordnung?','Wie stelle ich den Rhythmus von Team E ein?','Wie viele Stunden sind im Dezember geplant?','Welche Dienste hat Team E im Dezember?','Welche Hilfethemen kennst du?']);welcome.appendChild(examples);log.appendChild(welcome);
   }
   function open(){
     syncScope();if(!authorized()||busy())return;

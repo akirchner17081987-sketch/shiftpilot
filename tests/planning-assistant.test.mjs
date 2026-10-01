@@ -13,6 +13,53 @@ test('December coverage counts required positions without subtracting overstaffi
  const s=fixture();s.assignments.push(...Array.from({length:4},(_,i)=>({id:'extra'+i,date:'2026-12-01',type:'SD',employeeId:'x'+i})));
  const r=Core.answer('Welche Dienste sind im Dezember noch offen?',s);assert.match(r.title,/Dezember 2026/);assert.match(r.text,/183 offene Positionen/);assert.match(r.text,/Zusätzlich 2/);assert.equal(r.rows.length,92);
 });
+
+test('employee services can be filtered by team and retain employee scope in follow-up',()=>{
+ const s=fixture();s.employees[0].planningTeam='E';
+ const a=Core.answer('Welche Dienste hat Team E im Dezember?',s);assert.equal(a.rows.length,1);assert.equal(a.rows[0][1],'Anna Plan');assert.equal(a.rows[0][4],'Entwurf');
+ const b=Core.answer('Welche Dienste hat Anna Plan im Dezember?',s),c=Core.answer('Und im Januar 2027?',s,b.context);assert.equal(c.rows.length,0);assert.deepEqual(c.context.employeeIds,['e1']);
+});
+test('ambiguous employee names ask for clarification and accept the full name',()=>{
+ const s=fixture();s.employees.push({id:'e5',first:'Anna',last:'Zwei',status:'active',shifts:['FD']});
+ const a=Core.answer('Wie viele Stunden hat Anna im Dezember?',s);assert.equal(a.context.pending,true);assert.match(a.text,/Mehrere/);
+ const b=Core.answer('Anna Zwei',s,a.context);assert.equal(b.rows.length,1);assert.equal(b.rows[0][0],'Anna Zwei');
+ assert.match(Core.answer('Stunden für Niemand im Dezember',s).title,/nicht gefunden/);
+});
+test('planned hour deviations compare only complete months and do not assert paid overtime',()=>{
+ const s=fixture();s.monthTarget=e=>e.id==='e1'?4:20;
+ const r=Core.answer('Welche Mitarbeiter haben im Dezember zu viele Stunden?',s);assert.equal(r.rows.length,1);assert.equal(r.rows[0][0],'Anna Plan');assert.equal(r.rows[0][3],'+4 Std.');assert.match(r.text,/kein bestätigtes/);
+ assert.match(Core.answer('Welche Mitarbeiter haben heute zu viele Stunden?',s).text,/vollständigen Kalendermonat/);
+ const t=Core.answer('Wer liegt im Dezember unter dem Monats-SOLL?',s);assert.equal(t.rows.length,1);assert.equal(t.rows[0][0],'Ben Frei');
+});
+test('overstaffing lists only shifts above demand and never offsets shortages',()=>{
+ const s=fixture();s.assignments.push(...Array.from({length:3},(_,i)=>({date:'2026-12-02',type:'SD',employeeId:'x'+i})));
+ const r=Core.answer('Welche Dienste sind im Dezember überbesetzt?',s);assert.equal(r.rows.length,1);assert.equal(r.rows[0][4],'1');assert.equal(r.columns[4],'Über SOLL');
+});
+test('missing shift permissions use active shift types and ignore deleted or inactive staff',()=>{
+ const s=fixture();s.employees[1].shifts=['OLD'];
+ const all=Core.answer('Welche Mitarbeiter haben keine Schichtfreigabe?',s);assert.equal(all.rows.length,1);assert.equal(all.rows[0][0],'Ben Frei');
+ const fd=Core.answer('Bei wem fehlt die Schichtfreigabe für FD?',s);assert.equal(fd.rows.length,1);
+});
+test('team day preview uses the stored offset and distinguishes rhythm from real assignments',()=>{
+ const s=fixture();s.teamRulesReady=true;s.teamRules=[{team:'E',start:'2026-12-01',pattern:['FD','SD','FREI'],offset:1}];
+ const r=Core.answer('Welche Schicht hat Team E am 01.12.2026?',s);assert.equal(r.rows[0][1],'SD');assert.match(r.text,/keine Zusage/);
+ const before=Core.answer('Welche Schicht hat Team E am 30.11.2026?',s);assert.match(before.rows[0][1],/Beginnt/);
+ s.teamRulesReady=false;assert.equal(Core.answer('Welche Schicht hat Team E heute?',s).rows.length,0);
+});
+test('personal assignment diagnosis uses sanitized actual candidate assessment',()=>{
+ const s=fixture();s.candidates=()=>({candidates:[],reasons:[],assessments:[{employeeId:'e1',eligible:false,reason:'Verbindlicher Rhythmus passt nicht'}]});
+ const r=Core.answer('Warum kann Anna Plan am 01.12.2026 den FD nicht übernehmen?',s);assert.match(r.text,/Rhythmus/);assert.equal(r.context.intent,'employeeDiagnosis');
+});
+test('procedural questions select the correct knowledge topic instead of planning exports',()=>{
+ const scope={window:{}};vm.runInNewContext(read('assets/help-center-content-v3.js'),scope);
+ const s=fixture();s.helpArticles=scope.window.SFHelpContent.articles;s.helpCategories=scope.window.SFHelpContent.categories;
+ const datev=Core.answer('Wie exportiere ich DATEV?',s);assert.match(datev.title,/DATEV-LODAS/);assert.equal(datev.actions[0].help,true);
+ assert.match(Core.answer('Wo finde ich meinen QR-Code?',s).text,/QR anzeigen/);
+ assert.match(Core.answer('Wie stelle ich den Rhythmus von Team E ein?',s).text,/Einstellungen/);
+ const catalog=Core.answer('Welche Hilfethemen kennst du?',s);assert.equal(catalog.rows.length,13);
+ assert.match(Core.answer('Wie viele Pausen kann ich beim QR Scan machen?',s).text,/zehn/);
+});
+
 test('explicit date and month inputs reject invalid days and handle leap years',()=>{
  const s=fixture();assert.match(Core.answer('Offene Dienste am 31.02.2026',s).text,/ungültig/);assert.match(Core.answer('Offene Dienste am 2026-02-30',s).text,/ungültig/);assert.equal(Core.parsePeriod('februar 2028',s).dates.length,29);assert.equal(Core.parsePeriod('2026-12',s).dates.length,31);assert.equal(Core.parsePeriod('1. dezember 2026',s).dates[0],'2026-12-01');
 });
@@ -41,4 +88,13 @@ test('integration uses final app candidate ranking and filters missing rhythm, a
  const r=ctx.window.SFPlanningAssistant.ask('Wer kann am 01.12.2026 den FD übernehmen?');assert.equal(r.rows.length,1);assert.equal(r.rows[0][0],'Geeignet');
  ctx.window.SFBackend.role='EMPLOYEE';assert.equal(ctx.window.SFPlanningAssistant.ask('Wer kann einspringen?').rows.length,0);
  ctx.window.SFBackend.role='TIME_TRACKING';assert.match(ctx.window.SFPlanningAssistant.ask('Wer hat kein Team?').title,/Anmeldung/);
+});
++
+test('knowledge distinguishes actual time exports and employee scope resets when another team is requested',()=>{
+ const scope={window:{}};vm.runInNewContext(read('assets/help-center-content-v3.js'),scope);
+ const s=fixture();s.helpArticles=scope.window.SFHelpContent.articles;s.employees[1].planningTeam='E';
+ assert.match(Core.answer('Wie exportiere ich Monatsberichte?',s).text,/Zeiterfassung/);
+ assert.match(Core.answer('Was zeigt das Stundenkonto?',s).title,/Stundenkonto/);
+ const first=Core.answer('Welche Dienste hat Anna Plan im Dezember?',s),next=Core.answer('Und Team E?',s,first.context);
+ assert.equal(next.rows.length,0);assert.equal(next.context.employeeIds,undefined);assert.equal(next.context.team,'E');
 });

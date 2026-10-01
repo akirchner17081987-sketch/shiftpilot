@@ -16,13 +16,18 @@
   function duration(a,shifts){const t=shifts.find(t=>t.id===a.type),start=a.start||t?.start,end=a.end||t?.end;const mins=v=>/^\d{2}:\d{2}$/.test(v||'')?Number(v.slice(0,2))*60+Number(v.slice(3)):NaN;let m=mins(end)-mins(start);if(m<0)m+=1440;return Number.isFinite(m)?m/60:0;}
   function intentFor(q){
     if(/^(?:bitte\s+)?(?:loesch|entfern|speicher|uebernehm|uebernimm|trag|buche|weise)\w*/.test(q)&&!/\b(wie|wo|hilfe|anleitung)\b/.test(q))return 'write';
+    if(/ueberbesetz|zu viele.*(?:dienst|schicht)|mehr.*soll/.test(q))return 'overstaffed';
+    if(/(?:fehl|ohne|kein).*schichtfreigab|schichtfreigab.*(?:fehl|ohne|kein)/.test(q))return 'missingPermissions';
+    if(/(?:warum|weshalb|wieso).*(?:kann|darf|mitarbeiter|geeignet|passt)/.test(q))return 'employeeDiagnosis';
+    if(/team\s+[a-e]\b/.test(q)&&/(?:heute|morgen|uebermorgen|am\s+\d|rhythmus.*tag)/.test(q)&&/rhythm|schicht|frei|arbeitet/.test(q))return 'teamDay';
+    if(/(?:dienste|schichten).*(?:hat|fuer|von|team\s+[a-e])|(?:wann|wo).*arbeitet|(?:dienstplan|planung)\s+(?:fuer|von)/.test(q))return 'employeePlan';
     if(/\b(export|excel|pdf|ausdruck|drucken)\w*/.test(q))return 'export';
     if(/veroeffentlich|freigeben|freigabe.*plan/.test(q))return 'publish';
     if(/\b(team|teams)\b/.test(q)&&/rhythm|rhytm|zyklus|tagesfolge|einstieg/.test(q)&&/\b(wie|wo|einstell|aender|einricht|hilfe)\w*/.test(q))return 'rhythmHelp';
     if(/(ohne|fehl\w*|kein\w*|nicht).*team|team.*(fehl\w*|ohne|nicht zugeordnet|keine zuordnung)/.test(q))return 'unassigned';
     if(/ersatz|einspring|uebernehmen|infrage|in frage|wer .*kann|passende.*mitarbeiter|verfuegbar.*mitarbeiter|mitarbeiter.*verfuegbar|wer.*verfuegbar|vertretung|besetz.*vorschlag/.test(q))return 'replacement';
     if(/(?:warum|weshalb|wieso).*(?:plan|dienst|schicht|besetz)|nicht besetz|keine vorschlaege|kein vorschlag|autoplanung.*(fehler|problem)|auto.?planung.*(fehler|problem)/.test(q))return 'diagnosis';
-    if(/stunden|auslastung|ueberlast|unterlast/.test(q))return 'workload';
+    if(/stunden|auslastung|ueberlast|unterlast|ueber.*(?:vertrags|monats).?soll|unter.*(?:vertrags|monats).?soll/.test(q))return 'workload';
     if(/\b(team|teams)\b/.test(q))return 'teams';
     if(/\b(wie|wo|hilfe|erklaer)\w*/.test(q)&&/auto.?planung|autoplanung|automatisch.*plan/.test(q))return 'autoHelp';
     if(/\b(offen|unbesetzt|unterbesetzt|unterbesetzung|fehlende|luecken)\b|noch.*besetz/.test(q))return 'open';
@@ -30,7 +35,7 @@
     if(/rhythm|rhytm|zyklus/.test(q))return 'rhythmHelp';
     if(/abwesen|urlaub|krank|ausfall/.test(q))return 'absence';
     if(/schichtfreigab|qualifikation|berechtigung.*schicht/.test(q))return 'permissionHelp';
-    if(/\b(hilfe|help|unterstuetzung|funktionen)\b|was kannst/.test(q))return 'help';
+    if(/\b(hilfe|help|unterstuetzung|funktionen|hilfethemen|wissensdatenbank|anleitungen)\b|was kannst/.test(q))return 'help';
     return null;
   }
   function parsePeriod(q,s){
@@ -61,14 +66,47 @@
   }
   function periodLabel(dates){if(dates.length===1)return formatDate(dates[0]);if(dates.length>=28&&dates[0].endsWith('-01')&&dates.at(-1).slice(0,7)===dates[0].slice(0,7))return new Date(dates[0]+'T12:00:00Z').toLocaleDateString('de-DE',{month:'long',year:'numeric',timeZone:'UTC'});return `${formatDate(dates[0])} bis ${formatDate(dates.at(-1))}`;}
   function coverage(s,dates,type){const rows=[];for(const date of dates)for(const shift of s.shifts){if(type&&shift.id!==type)continue;const soll=Math.max(0,Number(s.getSoll(date,shift.id))||0),ist=s.assignments.filter(a=>a.date===date&&a.type===shift.id).length;if(soll||ist)rows.push({date,type:shift.id,soll,ist,missing:Math.max(0,soll-ist),extra:Math.max(0,ist-soll)});}return rows;}
+
+  const escapePattern=v=>String(v).replace(/[^a-z0-9]/g,c=>'\\'+c);
+  function employeeMatches(q,staff){
+    const has=value=>{const v=normalize(value).trim();return v&&new RegExp('(?:^|[^a-z0-9])'+escapePattern(v)+'(?:$|[^a-z0-9])').test(q);};
+    const exact=staff.filter(e=>has(name(e))||e.personnelNo&&has(e.personnelNo));
+    return exact.length?exact:staff.filter(e=>[e.first,e.last].some(v=>normalize(v).length>=3&&has(v)));
+  }
+  function plannedHours(s,e,dates){return s.assignments.filter(a=>String(a.employeeId)===String(e.id)&&dates.includes(a.date)).reduce((sum,a)=>sum+duration(a,s.shifts),0);}
+  function fullMonth(dates){return dates.length>=28&&dates[0].endsWith('-01')&&dates[0].slice(0,7)===dates.at(-1).slice(0,7);}
   function response(title,text,more={}){return{title,text,rows:[],columns:[],actions:[],...more};}
   function findHelp(q,articles){
+    const aliases=[
+      [/monatsbericht|zeiterfassung.*(?:excel|pdf|export)|(?:excel|pdf|export).*zeiterfassung/,'reports','Wie exportiere ich Monatsberichte'],
+      [/datev|lodas/,'reports','DATEV-LODAS'],
+      [/qr.*(?:anzeigen|finden|ausdruck|nachdruc|drucken|code.*wo)|(?:wo|wie).*qr.?code/,'trouble','aktuelle QR-Code'],
+      [/(?:zehn|10|viele).*paus|paus.*(?:zehn|10|viele)/,'qr','Wie viele Pausen'],
+      [/qr.*paus.*bezahlt|paus.*(?:abzug|bezahlt)/,'qr','QR-Pausen bezahlt'],
+      [/team.*(?:zuordn|zuweis|hinzufueg)|mitarbeiter.*team.*einstell/,'employees','Planungsteam zu'],
+      [/team.*(?:rhythm|rhytm|zyklus)|rhythm.*team/,'settings','Teamrhythmen A'],
+      [/monat.*(?:excel|pdf|export)|(?:excel|pdf|export).*monat/,'schedule','Gesamtdienstplan'],
+      [/vorschlaege.*(?:alt|verwerf|erneut|nicht aktuell)/,'auto','Warum muss ich Vorschläge'],
+      [/passwort|login|anmeld/,'trouble','nicht anmelden'],
+      [/speicher.*(?:fehler|nicht)|nicht.*speicher/,'trouble','Änderung wird nicht gespeichert'],
+      [/hell|dunkel|darkmode/,'appearance','Hell und Dunkel'],
+      [/pwa|startbildschirm|installier/,'appearance','Startbildschirm'],
+      [/stundenkonto|saldo/,'time','Stundenkonto'],
+      [/nur zeiterfassung|zeiterfassungszugang/,'time','Nur Zeiterfassung'],
+      [/schichttausch|marktplatz/,'portal','Schichttausch'],
+      [/soll.*(?:aender|einstell|staerk)|(?:aender|einstell).*soll/,'settings','SOLL-Stärken']
+    ];
+    for(const [pattern,category,titlePart] of aliases)if(pattern.test(q)){
+      const article=(articles?.[category]||[]).find(([title])=>normalize(title).includes(normalize(titlePart)));
+      if(article)return{title:article[0],text:article[1],category,score:100};
+    }
+
     const stop=new Set(['wie','wo','was','wer','warum','kann','kannst','koennen','ich','mir','man','den','die','das','der','dem','des','ein','eine','einen','einem','und','oder','im','in','am','an','zu','mit','von','fuer','bitte','meine','meinen','mein','sind','ist','werden','wird','habe','haben']);
     const words=[...new Set(q.split(/[^a-z0-9]+/).filter(w=>w.length>=3&&!stop.has(w)))];
     let best=null;
-    for(const items of Object.values(articles||{}))for(const [title,text] of items){
+    for(const [category,items] of Object.entries(articles||{}))for(const [title,text] of items){
       const t=normalize(title),body=normalize(text),hits=words.filter(w=>t.includes(w)||body.includes(w)),score=hits.reduce((n,w)=>n+(t.includes(w)?3:1),0);
-      if((hits.length>=2||hits.length===1&&hits[0].length>=6&&t.includes(hits[0]))&&(!best||score>best.score))best={title,text,score};
+      if((hits.length>=2||hits.length===1&&hits[0].length>=6&&t.includes(hits[0]))&&(!best||score>best.score))best={title,text,score,category};
     }
     return best;
   }
@@ -78,14 +116,52 @@
     if(s.error)return response('Daten derzeit nicht bereit','Die Planungsdaten konnten nicht zuverlässig geladen werden. Bitte prüfe die Cloud-Verbindung und lade das Unternehmen erneut.',{context:{}});
     const q=normalize(question).trim();if(!q)return response('Deine Frage','Schreibe eine Frage zur Planung oder wähle eines der Beispiele.',{context:previous});
     const period=parsePeriod(q,s);if(period.error)return response('Datum prüfen',period.error,{context:previous});
-    const detected=intentFor(q),followup=previous.pending||/^(und|auch|dafuer|dazu|diese|diesen|am|im|fuer|team|fd\b|sd\b|nd\b|\d)/.test(q)||(!detected&&(period.explicit||parseShift(q,s)));
+    const detected=/^(?:(?:und|auch|fuer)\s+)?team\s+[a-e][?.!]*$/.test(q)&&previous.intent?previous.intent:intentFor(q),followup=previous.pending||/^(und|auch|dafuer|dazu|diese|diesen|am|im|fuer|team|fd\b|sd\b|nd\b|\d)/.test(q)||(!detected&&(period.explicit||parseShift(q,s)));
     const intent=detected||(followup?previous.intent:null),dates=period.explicit?period.dates:followup&&previous.dates?previous.dates:period.dates;
     const type=parseShift(q,s)||(followup?previous.type:null),requestedTeam=q.match(/\bteam\s+([a-e])\b/)?.[1]?.toUpperCase()||(followup?previous.team:null);
     const context={intent,dates,type,team:requestedTeam,pending:false},label=periodLabel(dates),shiftLabel=id=>{const t=s.shifts.find(t=>t.id===id);return t?.name&&t.name!==id?`${id} · ${t.name}`:id;};
     const staff=s.employees.filter(e=>!e.deletedAt&&e.status==='active');
     const nav=(view,label)=>({view,label});
-    const help=(!intent||/^(wie|wo)\b/.test(q)&&!['rhythmHelp','autoHelp','export','publish','replacement','permissionHelp','workload'].includes(intent))?findHelp(q,s.helpArticles):null;
-    if(help)return response(help.title,help.text,{actions:[{help:true,label:'Anleitung im Hilfe-Center öffnen'}],context:{}});
+    const procedural=/^(?:bitte\s+)?(?:wie(?! viele| viel| lange)|wo\b|was bedeutet|was ist|was zeigt|warum (?:funktioniert|geht|wird|muss|kann ich mich|weichen)|ich kann mich|eine aenderung)/.test(q);
+    const help=(!intent||procedural&&!['replacement','employeeDiagnosis','teamDay','employeePlan','overstaffed','missingPermissions','write'].includes(intent))?findHelp(q,s.helpArticles):null;
+    if(help)return response(help.title,help.text,{notes:['Quelle: SchichtFunk Hilfe-Center.'],actions:[{help:true,query:help.title,label:'Anleitung im Hilfe-Center öffnen'}],context:{}});
+
+    const matched=employeeMatches(q,staff),inherited=followup&&!/\bteam\s+[a-e]\b/.test(q)&&previous.employeeIds?staff.filter(e=>previous.employeeIds.includes(String(e.id))):[];
+    let pool=matched.length?matched:inherited.length?inherited:staff;
+    if(requestedTeam)pool=pool.filter(e=>team(e)===requestedTeam);
+    if(['workload','employeePlan','employeeDiagnosis','absence'].includes(intent)&&matched.length>1){
+      return response('Welchen Mitarbeiter meinst du?','Mehrere aktive Mitarbeiter passen zu diesem Namen. Bitte nenne den vollständigen Namen oder die Personalnummer.',{suggestions:matched.slice(0,8).map(e=>name(e)),context:{...context,pending:true}});
+    }
+    if(matched.length||inherited.length)context.employeeIds=pool.map(e=>String(e.id));
+    const explicitPerson=/\b(?:fuer|von)\s+(?!team\b|diese|diesen|den|die|alle|jeden)([a-z][a-z -]*?)(?=\s+(?:im|am|in|morgen|heute)\b|$)/.test(q);
+    if(['workload','employeePlan','employeeDiagnosis'].includes(intent)&&!matched.length&&!inherited.length&&!requestedTeam&&explicitPerson){
+      return response('Mitarbeiter nicht gefunden','Bitte nenne den vollständigen Namen oder die Personalnummer eines aktiven Mitarbeiters.',{context:{...context,pending:true}});
+    }
+    if(intent==='employeePlan'){
+      if(!matched.length&&!inherited.length&&!requestedTeam)return response('Für wen möchtest du die Dienste sehen?','Nenne einen Mitarbeiter oder ein Planungsteam, zum Beispiel „Welche Dienste hat Team E im Dezember?“.',{context:{...context,pending:true}});
+      const selected=new Set(pool.map(e=>String(e.id))),rows=s.assignments.filter(a=>selected.has(String(a.employeeId))&&dates.includes(a.date)&&(!type||a.type===type)).sort((a,b)=>a.date.localeCompare(b.date)||a.type.localeCompare(b.type));
+      return response('Geplante Dienste · '+label,rows.length+' gespeicherte Dienste'+(requestedTeam?' für Team '+requestedTeam:'')+'. Der Status zeigt, ob ein Dienst bereits veröffentlicht ist.',{columns:['Tag','Mitarbeiter','Schicht','Zeiten','Status'],rows:rows.map(a=>[formatDate(a.date),name(pool.find(e=>String(e.id)===String(a.employeeId))),shiftLabel(a.type),(a.start||s.shifts.find(t=>t.id===a.type)?.start||'–')+' – '+(a.end||s.shifts.find(t=>t.id===a.type)?.end||'–'),a.published?'Veröffentlicht':'Entwurf']),actions:[{view:'schedule',date:dates[0],month:dates.length>1,label:'Dienstplan öffnen'}],context});
+    }
+    if(intent==='teamDay'){
+      if(dates.length!==1)return response('Für welchen Tag?','Nenne einen konkreten Tag, zum Beispiel „Welche Schicht hat Team E am 01.12.2026?“.',{context:{...context,pending:true}});
+      if(s.teamRulesReady===false)return response('Teamregeln werden geladen','Bitte warte, bis die zentralen Teamregeln geladen sind.',{context});
+      const teams=requestedTeam?[requestedTeam]:['A','B','C','D','E'];
+      return response('Teamrhythmus · '+label,'Diese Vorgabe beschreibt den zentralen Rhythmus. Sie ist keine Zusage über tatsächlich besetzte Dienste.',{columns:['Team','Rhythmusvorgabe','Aktive Mitarbeiter'],rows:teams.map(t=>{
+        const r=s.teamRules?.find(r=>r.team===t);let expected='Keine zentrale Regel';
+        if(r?.start&&r.pattern?.length){if(dates[0]<r.start)expected='Beginnt am '+formatDate(r.start);else{const days=Math.round((Date.parse(dates[0]+'T12:00:00Z')-Date.parse(r.start+'T12:00:00Z'))/86400000),idx=((days+Number(r.offset||0))%r.pattern.length+r.pattern.length)%r.pattern.length;expected=r.pattern[idx];}}
+        return[t,expected,String(staff.filter(e=>team(e)===t).length)];
+      }),actions:[nav('settings','Teamrhythmen öffnen')],context});
+    }
+    if(intent==='missingPermissions'){
+      const rows=pool.filter(e=>type?!(e.shifts||[]).includes(type):!(e.shifts||[]).some(id=>s.shifts.some(t=>t.id===id)));
+      return response('Schichtfreigaben prüfen',rows.length+' aktive Mitarbeiter '+(type?'haben keine Freigabe für '+shiftLabel(type):'haben keine Freigabe für eine aktive Schichtart')+'. Eine Teamzuordnung ersetzt keine Freigabe.',{columns:['Mitarbeiter','Team','Freigegebene Schichten'],rows:rows.map(e=>[name(e),team(e)||'Ohne Team',(e.shifts||[]).join(', ')||'Keine']),actions:[nav('employees','Freigaben bearbeiten')],context});
+    }
+    if(intent==='employeeDiagnosis'){
+      if(pool.length!==1||!matched.length&&!inherited.length||dates.length!==1||!type)return response('Welche Person und welcher Dienst?','Nenne einen Mitarbeiter, einen konkreten Tag und die Schichtart, zum Beispiel „Warum kann Anna Plan am 01.12.2026 den FD nicht übernehmen?“.',{context:{...context,pending:true}});
+      const e=pool[0],result=s.candidates(type,dates[0]),assessment=result.assessments?.find(x=>String(x.employeeId)===String(e.id));
+      const eligible=result.candidates.some(c=>String(c.e.id)===String(e.id));
+      return response('Besetzungsprüfung · '+name(e),assessment?.reason||(eligible?'Dieser Mitarbeiter erfüllt aktuell die Auto-Planungsregeln für den Dienst.':'Für diese Person liegen noch keine vollständigen Prüfergebnisse vor.'),{notes:[shiftLabel(type)+' am '+label,'Aktueller Datenstand; keine Rekonstruktion früherer Auto-Planungen.'],actions:[nav('employees','Mitarbeiter prüfen'),{view:'schedule',date:dates[0],label:'Dienst prüfen'}],context});
+    }
     if(intent==='write')return response('Änderung im passenden Bereich durchführen','Ich kann die Planung prüfen und Vorschläge anzeigen. Zum Speichern, Löschen oder Übernehmen öffne bitte den passenden Bereich und bestätige die Änderung dort.',{actions:[nav('schedule','Dienstplan öffnen')],context});
     if(intent==='rhythmHelp')return response(requestedTeam?`Rhythmus von Team ${requestedTeam} einstellen`:'Teamrhythmus einstellen','1. Einstellungen öffnen und „Teamrhythmen A–E“ auswählen.\n2. Beim gewünschten Team „Einrichten“ oder „Bearbeiten“ wählen.\n3. Startdatum, Tagesfolge und Einstiegsposition festlegen.\n4. Speichern und die Auto-Planung neu prüfen.\nDie Regel gilt verbindlich für die zugeordneten Mitarbeiter. Ordne Mitarbeiter unter Personal → Mitarbeiter dem Planungsteam zu.',{actions:[nav('settings','Teamrhythmen öffnen'),nav('employees','Mitarbeiter öffnen')],context});
     if(intent==='unassigned'){const rows=staff.filter(e=>!['A','B','C','D','E'].includes(team(e)));return response('Mitarbeiter ohne Teamzuordnung',`${rows.length} aktive Mitarbeiter haben kein Planungsteam A–E. Das kann beabsichtigt sein, beispielsweise bei Mitarbeitern ausschließlich für den Frühdienst. Für sie gilt eine vorhandene individuelle Schichtregel.`,{columns:['Mitarbeiter','Schichtfreigaben'],rows:rows.map(e=>[name(e),(e.shifts||[]).join(', ')||'Keine']),actions:[nav('employees','Teamzuordnung prüfen')],context});}
@@ -94,23 +170,33 @@
     if(intent==='publish')return response('Dienstplan veröffentlichen','Öffne den Dienstplan im gewünschten Zeitraum und wähle „Veröffentlichen & Mitarbeiter informieren“. Prüfe die angezeigten offenen Positionen und Konflikte und bestätige anschließend die Veröffentlichung. Entwürfe sind noch nicht für Mitarbeiter freigegeben.',{actions:[nav('schedule','Dienstplan öffnen')],context});
     if(intent==='autoHelp')return response('Auto-Planung verwenden','1. Auto-Planung öffnen und Tag, Woche oder Monat auswählen.\n2. Die Regeln für Vertragsstunden und faire Verteilung prüfen.\n3. „Vorschläge erstellen“ wählen.\n4. Vorschläge und verbleibende offene Positionen prüfen.\n5. Geprüfte Vorschläge als Entwurf übernehmen und den Dienstplan anschließend veröffentlichen.',{actions:[nav('auto','Auto-Planung öffnen')],context});
     if(intent==='permissionHelp')return response('Schichtfreigaben prüfen','Öffne Personal → Mitarbeiter und wähle das Profil. Unter Qualifikationen die freigegebenen Schichtarten prüfen und speichern. Ein Teamrhythmus ersetzt keine Schichtfreigabe.',{actions:[nav('employees','Mitarbeiter öffnen')],context});
-    if(intent==='absence'){const rows=s.absences.filter(a=>a.status!=='Abgelehnt'&&staff.some(e=>e.id===a.employeeId)&&dates.some(d=>d>=(a.startDate||a.date)&&d<=(a.endDate||a.date||a.startDate)));return response(`Abwesenheiten · ${label}`,`${rows.length} Abwesenheitseinträge überschneiden sich mit diesem Zeitraum. Beantragte Einträge sind noch nicht genehmigt.`,{columns:['Mitarbeiter','Von','Bis','Status'],rows:rows.map(a=>[name(staff.find(e=>e.id===a.employeeId)),formatDate(a.startDate||a.date),formatDate(a.endDate||a.date||a.startDate),a.status||'Erfasst']),actions:[nav('absence','Abwesenheiten öffnen')],context});}
-    if(intent==='workload'){const named=staff.filter(e=>q.includes(normalize(name(e)))||e.personnelNo&&new RegExp('\\b'+normalize(e.personnelNo)+'\\b').test(q)),pool=named.length?named:staff;return response(`Geplante Stunden · ${label}`,'Die Werte zählen geplante Dienste nach ihrem Startdatum und ohne Pausenabzug. Ein Monats-SOLL wird nur bei einem vollständigen Kalendermonat gegenübergestellt.',{columns:['Mitarbeiter','Geplant','Monats-SOLL'],rows:pool.map(e=>{const h=s.assignments.filter(a=>a.employeeId===e.id&&dates.includes(a.date)).reduce((sum,a)=>sum+duration(a,s.shifts),0),full=dates.length>=28&&dates[0].endsWith('-01')&&dates[0].slice(0,7)===dates.at(-1).slice(0,7);return[name(e),hours(h)+' Std.',full?hours(s.monthTarget(e))+' Std.':'–'];}),actions:[nav('reports','Auswertungen öffnen')],context});}
+    if(intent==='absence'){const rows=s.absences.filter(a=>a.status!=='Abgelehnt'&&pool.some(e=>e.id===a.employeeId)&&dates.some(d=>d>=(a.startDate||a.date)&&d<=(a.endDate||a.date||a.startDate)));return response(`Abwesenheiten · ${label}`,`${rows.length} Abwesenheitseinträge überschneiden sich mit diesem Zeitraum. Beantragte Einträge sind noch nicht genehmigt.`,{columns:['Mitarbeiter','Von','Bis','Status'],rows:rows.map(a=>[name(staff.find(e=>e.id===a.employeeId)),formatDate(a.startDate||a.date),formatDate(a.endDate||a.date||a.startDate),a.status||'Erfasst']),actions:[nav('absence','Abwesenheiten öffnen')],context});}
+    if(intent==='workload'){
+      const full=fullMonth(dates),above=/ueber|mehr als|zu viel/.test(q),below=/unter|weniger als|zu wenig/.test(q),zero=/ohne.*dienst|noch nicht eingeplant|null stunden/.test(q);
+      if((above||below)&&!full)return response('Vollständigen Monat auswählen','Für einen Vergleich mit dem Monats-SOLL brauche ich einen vollständigen Kalendermonat. Wähle den Monat im Chat oder nenne ihn in deiner Frage.',{context:{...context,pending:true}});
+      let values=pool.map(e=>({e,h:plannedHours(s,e,dates),target:full?Number(s.monthTarget(e)):null}));
+      if(above)values=values.filter(x=>x.target>0&&x.h>x.target+0.05);
+      if(below)values=values.filter(x=>x.target>0&&x.h<x.target-0.05);
+      if(zero)values=values.filter(x=>x.h===0);
+      if(above||below)values.sort((a,b)=>(above?-1:1)*((a.h-a.target)-(b.h-b.target)));
+      return response('Geplante Stunden · '+label,'Geplante Dienste nach Startdatum, ohne Pausenabzug. Die Abweichung beschreibt geplante Stunden und ist kein bestätigtes Überstundenkonto.'+(above||below?' Mitarbeiter ohne positives Monats-SOLL werden nicht bewertet.':''),{columns:['Mitarbeiter','Geplant','Monats-SOLL','Abweichung'],rows:values.map(x=>[name(x.e),hours(x.h)+' Std.',full?hours(x.target)+' Std.':'–',full&&x.target>0?(x.h>=x.target?'+':'')+hours(x.h-x.target)+' Std.':'–']),actions:[nav('reports','Auswertungen öffnen')],context});
+    }
     if(intent==='replacement'){
       if(dates.length!==1||!type)return response('Für welchen Dienst suchst du Ersatz?',`Bitte gib ${dates.length!==1?'einen konkreten Tag':''}${dates.length!==1&&!type?' und ':''}${!type?'die Schichtart':''} an, zum Beispiel „Wer kann am 01.12.2026 den FD übernehmen?“`,{context:{...context,pending:true},suggestions:s.shifts.slice(0,6).map(t=>`Ersatz für ${t.id}${dates.length===1?' am '+formatDate(dates[0]):''}`)});
       const result=s.candidates(type,dates[0]);
       return response(`Ersatz für ${shiftLabel(type)} · ${label}`,result.candidates.length?`${result.candidates.length} Mitarbeiter erfüllen die aktuellen Auto-Planungsregeln. Die Auswahl ist ein Vorschlag; vor der tatsächlichen Zuordnung erneut prüfen.`:'Aktuell erfüllt kein Mitarbeiter alle Auto-Planungsregeln für diesen Dienst.',{columns:['Mitarbeiter','Woche geplant / SOLL','Monat geplant / SOLL'],rows:result.candidates.map(c=>[name(c.e),`${hours(c.h)} / ${hours(c.target)} Std.`,`${hours(c.monthHours)} / ${hours(c.monthTarget)} Std.`]),notes:result.candidates.length?['Die Rangfolge berücksichtigt die aktuell eingestellten Regeln für Stunden und faire Verteilung.']:result.reasons.map(r=>`${r.count} Mitarbeiter: ${r.label}`),actions:[{view:'schedule',date:dates[0],label:'Dienst im Plan prüfen'}],context});
     }
-    if(['open','coverage','diagnosis'].includes(intent)){
+    if(['open','coverage','diagnosis','overstaffed'].includes(intent)){
       const all=coverage(s,dates,type),missing=all.filter(x=>x.missing),required=all.reduce((n,x)=>n+x.soll,0),open=missing.reduce((n,x)=>n+x.missing,0),extra=all.reduce((n,x)=>n+x.extra,0);
       if(intent==='diagnosis'){
         const relevant=dates.length===1&&type?all:missing;
         if(!relevant.length)return response(`Planungsprüfung · ${label}`,'Für den angefragten Zeitraum sind nach den gespeicherten SOLL-Werten keine offenen Positionen vorhanden.',{context,actions:[nav('auto','Auto-Planung öffnen')]});
         return response(`Besetzung prüfen · ${label}`,'Ich prüfe die aktuell gespeicherte Planung. Gründe aus einer früheren Auto-Planung lassen sich nur durch eine erneute Analyse mit denselben Regeln nachvollziehen. Kandidaten je Dienst können nicht gleichzeitig für mehrere Dienste zugesagt werden.',{columns:['Tag','Schicht','Offen','Aktuelle Prüfung'],rows:relevant.map(x=>{const r=s.candidates(x.type,x.date);return[formatDate(x.date),shiftLabel(x.type),String(x.missing),r.candidates.length?`${r.candidates.length} passende Mitarbeiter; Auto-Planung erneut analysieren.`:r.reasons.map(y=>`${y.count}× ${y.label}`).join('; ')||'Kein passender Mitarbeiter unter den aktuellen Regeln.'];}),actions:[nav('auto','Auto-Planung prüfen'),nav('employees','Mitarbeiter prüfen')],context});
       }
-      const rows=intent==='open'?missing:all;
-      return response(`${intent==='open'?'Offene Dienste':'SOLL / IST'} · ${label}`,required?`${open} offene Positionen in ${missing.length} Schichten. ${required-open} von ${required} benötigten Positionen sind besetzt.${extra?` Zusätzlich ${extra} Besetzungen über SOLL.`:''}`:'Für diesen Zeitraum ist kein SOLL-Bedarf hinterlegt. Bitte prüfe die Einstellungen, bevor du den Plan als vollständig bewertest.',{columns:['Tag','Schicht','SOLL','IST','Offen'],rows:rows.map(x=>[formatDate(x.date),shiftLabel(x.type),String(x.soll),String(x.ist),String(x.missing)]),actions:[{view:'schedule',date:dates[0],month:dates.length>1,label:'Zeitraum im Dienstplan öffnen'},nav('auto','Auto-Planung öffnen')],suggestions:['Warum konnte die Auto-Planung die offenen Dienste nicht besetzen?'],context});
+      const rows=intent==='open'?missing:intent==='overstaffed'?all.filter(x=>x.extra):all;
+      return response(`${intent==='open'?'Offene Dienste':intent==='overstaffed'?'Überbesetzte Dienste':'SOLL / IST'} · ${label}`,required?`${open} offene Positionen in ${missing.length} Schichten. ${required-open} von ${required} benötigten Positionen sind besetzt.${extra?` Zusätzlich ${extra} Besetzungen über SOLL.`:''}`:'Für diesen Zeitraum ist kein SOLL-Bedarf hinterlegt. Bitte prüfe die Einstellungen, bevor du den Plan als vollständig bewertest.',{columns:['Tag','Schicht','SOLL','IST',intent==='overstaffed'?'Über SOLL':'Offen'],rows:rows.map(x=>[formatDate(x.date),shiftLabel(x.type),String(x.soll),String(x.ist),String(intent==='overstaffed'?x.extra:x.missing)]),actions:[{view:'schedule',date:dates[0],month:dates.length>1,label:'Zeitraum im Dienstplan öffnen'},nav('auto','Auto-Planung öffnen')],suggestions:['Warum konnte die Auto-Planung die offenen Dienste nicht besetzen?'],context});
     }
+    if(intent==='help')return response('Planungsanalysen und Wissensdatenbank','Ich kann offene und überbesetzte Dienste, Ersatzbesetzung, einzelne Mitarbeiter, Teams, Rhythmusvorgaben, geplante Stunden und Schichtfreigaben prüfen. Die Wissensdatenbank erklärt zusätzlich die Bedienung von SchichtFunk.',{columns:['Hilfebereich','Anleitungen'],rows:Object.entries(s.helpArticles||{}).map(([category,items])=>[s.helpCategories?.find(c=>c[0]===category)?.[1]||category,String(items.length)]),suggestions:['Welche Dienste hat Team E im Dezember?','Welche Mitarbeiter haben im Dezember zu viele Stunden?','Welche Dienste sind im Dezember überbesetzt?','Welche Mitarbeiter haben keine Schichtfreigabe?','Wie funktioniert der DATEV-LODAS-Export?','Wo finde ich meinen QR-Code?'],actions:[{help:true,label:'Wissensdatenbank öffnen'}],context:{}});
     return response(intent==='help'?'Dabei kann ich dich unterstützen':'Bitte konkretisiere deine Frage',intent==='help'?'Ich unterstütze dich bei offenen Diensten, Besetzung, Ersatzsuche, Teamzuordnung, Teamrhythmen, Stunden, Abwesenheiten, Export und Veröffentlichung.':'Für diese Frage habe ich noch keine zuverlässige Auswertung. Nenne bitte das Planungsthema und bei Dienstfragen den Zeitraum oder den konkreten Tag mit Schichtart.',{suggestions:['Welche Dienste sind im Dezember noch offen?','Warum konnte die Auto-Planung diesen Dienst nicht besetzen?','Welche Mitarbeiter kommen als Ersatz infrage?','Bei welchen Mitarbeitern fehlt eine Teamzuordnung?','Wie stelle ich den Rhythmus von Team E ein?','Wie viele Stunden sind im Dezember geplant?'],context:{}});
   }
   const api={answer,normalize,parsePeriod,parseShift,coverage,periodLabel,validDate,team,findHelp};
