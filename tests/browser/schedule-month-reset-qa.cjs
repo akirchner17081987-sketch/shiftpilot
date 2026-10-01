@@ -18,7 +18,7 @@ async function run(){
  try{for(const [name,width,height,theme] of [['desktop-dark',1280,900,'dark'],['desktop-light',1280,900,'light'],['mobile',390,844,'light']]){
   const context=await browser.newContext({viewport:{width,height},locale:'de-DE',timezoneId:'Europe/Berlin'}),page=await context.newPage();
   await page.route('http://sf.test/**',route=>route.fulfill({contentType:'text/html',body:`<!doctype html><html data-sf-theme="${theme}"><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><section id="view-schedule" class="view active"><div class="cal-toolbar"></div></section></body></html>`}));
-  await page.goto('http://sf.test/');await page.addScriptTag({content:fixture});await page.addScriptTag({content:read('assets/supabase-schedule-reset-v1.js')});
+  await page.goto('http://sf.test/');await page.addStyleTag({content:'*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif}'});await page.addScriptTag({content:fixture});await page.addScriptTag({content:read('assets/supabase-schedule-reset-v1.js')});
   const button=page.locator('#sfDeleteScheduleMonthBtn');await button.waitFor();assert.equal(await button.isDisabled(),true,'Week view cannot implicitly select a month');
   await page.evaluate(()=>{__period={mode:'month',start:'2026-12-01',end:'2026-12-31'};document.dispatchEvent(new Event('sf:schedule-period-changed'))});
   await button.click();const dialog=page.getByRole('dialog');await dialog.waitFor();assert.match(await dialog.textContent(),/Dezember 2026 löschen/);
@@ -26,6 +26,8 @@ async function run(){
   await page.locator('#sfResetConfirm').fill('LÖSCHEN 2026-11');assert.equal(await page.locator('#sfResetSubmit').isDisabled(),true,'Wrong month denied');
   await page.locator('#sfResetConfirm').fill('LÖSCHEN 2026-12');assert.equal(await page.locator('#sfResetSubmit').isEnabled(),true);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'No horizontal overflow');
+  const bounds=await dialog.boundingBox();assert.ok(bounds.x>=0&&bounds.x+bounds.width<=width,'Entire dialog fits the viewport');
+  await dialog.evaluate(el=>{el.scrollTop=0});
   fs.mkdirSync(path.join(root,'test-results'),{recursive:true});await page.screenshot({path:path.join(root,'test-results','month-reset-'+name+'.png'),fullPage:true});
   await page.keyboard.press('Escape');await dialog.waitFor({state:'detached'});assert.equal(await page.evaluate(()=>__deleted.length),0,'Escape does not delete');
   await button.click();await page.locator('#sfResetConfirm').fill('LÖSCHEN 2026-12');await page.evaluate(()=>__fail=true);await page.locator('#sfResetSubmit').click();await page.locator('#sfResetMsg.show').waitFor();assert.match(await page.locator('#sfResetMsg').textContent(),/inzwischen abgeschlossen/);assert.equal(await page.evaluate(()=>__deleted.length),0);
