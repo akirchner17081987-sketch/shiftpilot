@@ -1,0 +1,13 @@
+# SchichtFunk Planungsassistent
+
+Der textbasierte Chat öffnet sich über „Planungsassistent“ in der oberen Leiste. Er verwendet die bereits geladenen, für den angemeldeten Benutzer freigegebenen Daten des ausgewählten Unternehmens. Es werden keine kostenpflichtige KI-API und kein Sprachmodell aufgerufen. Der Assistent erkennt unterstützte deutsche Planungsthemen und formuliert Antworten aus vorhandenen Daten und Regeln. Er ist kein allgemeines Sprachmodell.
+
+Unterstützt werden offene Positionen, SOLL/IST, aktuelle Besetzungsdiagnosen, Ersatzkandidaten, Teamzuordnung und Teamübersichten, geplante Stunden ohne Pausenabzug, Abwesenheiten sowie Anleitungen zu Teamrhythmen, Auto-Planung, Schichtfreigaben, Export und Veröffentlichung. Fehlende Angaben zu Ersatzdiensten werden nachgefragt. Monat und Jahr werden im Ergebnis ausdrücklich angezeigt; Fragen können ein Datum oder einen Monat enthalten. Alternativ lässt sich im Chat ein Bezugsmonat auswählen.
+
+Die Ersatzsuche verwendet die endgültige Kandidatenauswahl der vorhandenen Auto-Planung und zusätzlich die zentralen harten Planungsprüfungen. Die Rangfolge berücksichtigt die aktuell eingestellten Stunden- und Verteilungsregeln. Es wird nichts zugewiesen, gelöscht, gespeichert oder veröffentlicht. Vorschläge sind bei der tatsächlichen Änderung erneut zu prüfen. Ergebnisse mehrerer Dienste stellen keine gemeinsame, konfliktfreie Belegungszusage dar. Diagnosen beziehen sich auf die aktuelle gespeicherte Planung und rekonstruieren keine früheren Auto-Planungsdurchläufe.
+
+Zugang: OWNER, ADMIN, PLANNER und DISPATCHER; im lokalen Demo-Modus entsprechend die Managerrolle. Mitarbeiter- und reine Zeiterfassungszugänge erhalten keinen Zugriff. Der Assistent nutzt keine zusätzlichen Datenbankrechte. Der Verlauf bleibt im Arbeitsspeicher, wird nicht extern versendet und beim Abmelden, Unternehmenswechsel oder Neuladen des Datenbestands verworfen. Es werden keine privaten Profilnotizen oder Krankheitsgründe als Diagnosen ausgegeben. Unbekannte Fragen erhalten einen Hinweis und unterstützte Beispiele.
+
+Einbindung: zwei JavaScript-Dateien und eine CSS-Datei unter `assets/`, Referenzen in `index.html`. Der bestehende statische IONOS-Build übernimmt diese Dateien. Keine Datenbankmigration, zusätzliche Serverinstallation oder API-Schlüssel erforderlich. Entwicklung und Wartung sowie bestehende Hostingkosten bleiben bestehen.
+
+Prüfung: `node --test tests/planning-assistant.test.mjs` und `node scripts/build-static.mjs`. Die CI-Datei `.github/workflows/planning-assistant-checks.yml` führt beide Prüfungen aus.
