@@ -22,3 +22,16 @@ test('calendar begins on Monday, covers leap day and month navigation crosses th
  const m=api.model({shifts:[]},'2028-02');assert.equal(new Date(m.cells[0].key+'T12:00:00Z').getUTCDay(),1);assert.equal(m.cells.filter(x=>x.inMonth).length,29);assert(m.cells.some(x=>x.key==='2028-02-29'));
  assert.equal(api.moveMonth('2026-12',1),'2027-01');assert.equal(api.moveMonth('2027-01',-1),'2026-12');assert.equal(api.validMonth('2026-13'),false);
 });
+test('German labels, accessible names and symbols survive source serialization',()=>{
+ const source=fs.readFileSync(__dirname+'/../assets/employee-shifts-month-v1.js','utf8');
+ assert.equal(source.includes('\ufffd'),false,'Source must not contain replacement characters');
+ const card={dataset:{},innerHTML:'',querySelector:selector=>selector==='.sf-my-month-toolbar'?null:{},querySelectorAll:()=>[]};
+ const portal={querySelector:()=>card};
+ const document={documentElement:{},getElementById:()=>portal,querySelectorAll:()=>[]};
+ const window={SFBackend:{user:{id:'encoding-test'},employeePortalData:{company:{id:'company',timezone:'Europe/Berlin'},employee:{id:'employee'},shifts:[],templates:[]}},matchMedia:()=>({matches:false})};
+ vm.runInNewContext(source,{window,document,Intl,Date,sessionStorage:{getItem:()=>null,setItem:()=>{}},MutationObserver:class{observe(){}}});
+ for(const label of ['PERS\u00d6NLICHER DIENSTPLAN','Monat ausw\u00e4hlen','N\u00e4chster Monat','N\u00e4chster Dienst im Monat','Fr\u00fch / Tag','Sp\u00e4t','AUSGEW\u00c4HLTER TAG','W\u00e4hle einen belegten Tag','ausschlie\u00dflich deine ver\u00f6ffentlichten Dienste'])assert.ok(card.innerHTML.includes(label),label);
+ assert.equal(card.innerHTML.includes('\ufffd'),false);
+ assert.ok(card.innerHTML.includes('\u25cf Freigegebene Planung'));
+ assert.ok(card.innerHTML.includes('\u2039</button>'));
+});
