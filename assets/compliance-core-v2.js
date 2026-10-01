@@ -74,7 +74,12 @@
   C.audit=(event,id,details={})=>{C.auditEvents.unshift({id:C.uid('au'),event,entityId:id||null,at:new Date().toISOString(),actor:'Administrator',details});C.auditEvents=C.auditEvents.slice(0,500);C.persist()};
   assignments.forEach(a=>a.version=a.version||1);
   C.publication=date=>C.publications[C.weekKey(date)]||null;
-  C.isWeekPublished=date=>!!C.publication(date)?.publishedAt;
+  C.isWeekPublished=date=>{
+    // The cloud records the publication on each duty. A shared boundary-week marker
+    // must not lock empty dates in a month that was explicitly reset.
+    if(window.SFBackend?.ready&&typeof assignments!=='undefined')return assignments.some(a=>a.date===date&&(a._dbStatus==='PUBLISHED'||!!a.publishedAt));
+    return !!C.publication(date)?.publishedAt;
+  };
   C.isPublished=a=>!!a&&(!!a.publishedAt||C.isWeekPublished(a.date));
 
   C.complianceCheck=({action='UPDATE',assignment=null,employeeId,type,date,start,end})=>{

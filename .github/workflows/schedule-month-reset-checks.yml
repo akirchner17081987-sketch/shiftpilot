@@ -1,0 +1,28 @@
+name: Schedule month reset checks
+on:
+  pull_request:
+    paths: ['assets/supabase-schedule-reset-v1.js', 'assets/compliance-core-v2.js', 'tests/schedule-month-reset*', 'tests/browser/schedule-month-reset-qa.cjs', '.github/workflows/schedule-month-reset-checks.yml']
+  push:
+    branches: [main, codex/ionos-migration, codex/schedule-month-reset]
+    paths: ['assets/supabase-schedule-reset-v1.js', 'assets/compliance-core-v2.js', 'tests/schedule-month-reset*', 'tests/browser/schedule-month-reset-qa.cjs', '.github/workflows/schedule-month-reset-checks.yml']
+permissions:
+  contents: read
+jobs:
+  month-reset:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: node --test tests/schedule-month-reset.test.mjs
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/browser/schedule-month-reset-qa.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: month-reset-results
+          path: test-results/month-reset-*.png
