@@ -2,7 +2,7 @@
 BEGIN;
 DO $$
 DECLARE manager uuid; users uuid[]; co uuid:=gen_random_uuid(); foreign_co uuid:=gen_random_uuid();
- e1 uuid:='00000000-0000-4000-8000-000000000101'; e2 uuid:='00000000-0000-4000-8000-000000000102'; e3 uuid:='00000000-0000-4000-8000-000000000103';
+ e1 uuid:=gen_random_uuid(); e2 uuid:=gen_random_uuid(); e3 uuid:=gen_random_uuid();
  offer uuid; claim1 uuid; claim2 uuid; result jsonb; rows jsonb; blocked boolean; n integer;
 BEGIN
  SELECT user_id INTO manager FROM public.company_members WHERE status='ACTIVE' AND role='OWNER' LIMIT 1;
@@ -42,6 +42,7 @@ BEGIN
  PERFORM set_config('request.jwt.claim.sub',manager::text,true);
  blocked:=false;BEGIN PERFORM public.manager_review_open_shift_claim(claim1,'APPROVE');EXCEPTION WHEN OTHERS THEN blocked:=true;END;
  ASSERT blocked,'Rhythm deviation requires explicit approval';
+ ASSERT private.sf_open_market_extra_warning(offer,e1) LIKE '%freien Tag%','Additional shift on a free rhythm day must be marked';
  result:=public.manager_review_open_shift_claim(claim1,'APPROVE','Rhythmusabweichung geprüft',true);
  ASSERT result->>'status'='APPLIED','Planner approval must succeed';
  ASSERT (SELECT count(*) FROM public.shift_assignments WHERE company_id=co AND employee_id=e1 AND status='PUBLISHED')=1,'Approval must create one published assignment';
@@ -76,12 +77,28 @@ BEGIN
  result:=public.employee_claim_open_shift(offer);claim2:=(result->>'id')::uuid;
  PERFORM set_config('request.jwt.claim.sub',manager::text,true);
  UPDATE public.employees SET weekly_hours=4 WHERE id=e2;
- result:=public.manager_review_open_shift_claim(claim2,'APPROVE');
- ASSERT result->>'status'='SUPERSEDED' AND result->>'message' LIKE '%Wochenstunden%','Changed weekly limit must prevent approval';
- UPDATE public.employees SET weekly_hours=40,qualifications=ARRAY['__sp:monthlyHours=4'] WHERE id=e2;
+ blocked:=false;BEGIN PERFORM public.manager_review_open_shift_claim(claim2,'APPROVE');EXCEPTION WHEN OTHERS THEN blocked:=true;END;
+ ASSERT blocked,'New weekly overtime requires explicit planner confirmation';
+ ASSERT (SELECT status FROM public.open_shift_market_claims WHERE id=claim2)='PENDING_MANAGER','Missing confirmation must retain pending request';
+ ASSERT private.sf_open_market_extra_warning(offer,e2) LIKE '%Wochen-Soll%','Weekly target excess is a warning';
  PERFORM set_config('request.jwt.claim.sub',users[2]::text,true);
- blocked:=false;BEGIN PERFORM public.employee_claim_open_shift(offer);EXCEPTION WHEN OTHERS THEN blocked:=true;END;
- ASSERT blocked,'Monthly limit must prevent claim';
+ PERFORM public.employee_cancel_open_shift_claim(claim2);
+ UPDATE public.employees SET weekly_hours=40,qualifications=ARRAY['__sp:monthlyHours=4'] WHERE id=e2;
+ rows:=public.employee_list_open_shift_market();
+ ASSERT EXISTS(SELECT 1 FROM jsonb_array_elements(rows) x WHERE x->>'id'=offer::text AND (x->>'can_take')::boolean AND x->>'additional_warning' LIKE '%Monats-Soll%'),'Monthly overtime must remain requestable with warning';
+ result:=public.employee_claim_open_shift(offer,'Freiwilliger Zusatzdienst');claim2:=(result->>'id')::uuid;
+ ASSERT result->>'status'='PENDING_MANAGER','Monthly overtime claim must await planner';
+ PERFORM set_config('request.jwt.claim.sub',manager::text,true);
+ blocked:=false;BEGIN PERFORM public.manager_review_open_shift_claim(claim2,'APPROVE');EXCEPTION WHEN OTHERS THEN blocked:=true;END;
+ ASSERT blocked,'Monthly overtime approval needs explicit confirmation';
+ BEGIN
+  result:=public.manager_review_open_shift_claim(claim2,'APPROVE','Mehrstunden ausdrücklich freigegeben',true);
+  ASSERT result->>'status'='APPLIED','Confirmed monthly overtime must be assigned';
+  ASSERT (SELECT note FROM public.shift_assignments WHERE id=(result->>'assignment_id')::uuid) LIKE '%Zusatzdienst%','Additional assignment must be identified';
+  RAISE EXCEPTION USING ERRCODE='Z0001',MESSAGE='Rollback confirmed additional-shift fixture';
+ EXCEPTION WHEN SQLSTATE 'Z0001' THEN NULL; END;
+ PERFORM set_config('request.jwt.claim.sub',users[2]::text,true);
+ PERFORM public.employee_cancel_open_shift_claim(claim2);
  PERFORM set_config('request.jwt.claim.sub',manager::text,true);
  UPDATE public.employees SET qualifications=ARRAY[]::text[] WHERE id=e2;
  INSERT INTO public.absences(company_id,employee_id,start_date,end_date,absence_type,status) VALUES(co,e2,'2026-12-05','2026-12-05','Urlaub','Genehmigt');
