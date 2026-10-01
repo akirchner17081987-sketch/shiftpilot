@@ -34,6 +34,12 @@
 .sf-chat-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
 .sf-chat-actions button,.sf-chat-more{min-height:44px;border:1px solid #36cbb746;background:#36cbb714;color:var(--text);border-radius:9px;padding:10px 12px;font-size:12px;cursor:pointer}
 .sf-chat-more[hidden]{display:none}
+.sf-chat-row-action,.sf-chat-service button{min-height:44px;padding:8px 10px;border:1px solid #36cbb746;border-radius:8px;background:#36cbb714;color:var(--text);font:inherit;font-size:12px;cursor:pointer;white-space:nowrap}
+.sf-chat-service{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 16px;border-bottom:1px solid var(--line);background:#36cbb70d;color:var(--text);font-size:12px;flex:none}
+.sf-chat-service[hidden],.sf-chat-service-open[hidden]{display:none!important}
+.sf-chat-service-open{display:block;min-height:44px;margin:6px 0 0;padding:8px 10px;border:1px solid var(--line,#2a4055);border-radius:8px;background:var(--panel,#0e1c2b);color:var(--text,#e8f2fb);font-size:11px;cursor:pointer}
+.sf-chat-service-open:hover{border-color:#36cbb7}
+.sf-assistant-target{outline:3px solid #36cbb7!important;outline-offset:3px;scroll-margin-block:90px}
 .sf-chat-form{flex:none;border-top:1px solid var(--line);padding:16px 22px 18px;background:var(--panel)}
 .sf-chat-form label{display:block;font-size:12px;font-weight:700;margin-bottom:8px;color:var(--text)}
 .sf-chat-compose{display:flex;gap:9px;align-items:stretch}

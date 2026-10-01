@@ -16,10 +16,10 @@ for(const theme of ['dark','light'])test('Planning assistant '+theme+' chat, acc
   await route.fulfill({contentType:'text/html',body:html});
  });
  await page.goto('http://sf-assistant.test/?theme='+theme);
- await page.waitForFunction(()=>!!window.__qaResults,null,{timeout:15000});
- const report=await page.evaluate(()=>({results:window.__qaResults,errors:window.__errors}));
+ await page.waitForFunction(()=>!!window.__qaResults||window.__errors?.length>0,null,{timeout:15000});
+ const report=await page.evaluate(()=>({results:window.__qaResults,errors:window.__errors,lastAnswer:document.querySelector('#sfPlanningChatLog .is-answer:last-child')?.textContent}));
  await testInfo.attach('assistant-checks',{body:Buffer.from(JSON.stringify(report,null,2)),contentType:'application/json'});
- expect(report.results.filter(x=>!x.pass)).toEqual([]);expect(report.errors).toEqual([]);expect(external).toEqual([]);
+ expect(report.errors,report.lastAnswer).toEqual([]);expect(report.results.filter(x=>!x.pass)).toEqual([]);expect(external).toEqual([]);
  await testInfo.attach('assistant-'+theme,{body:await page.screenshot(),contentType:'image/png'});
  await page.keyboard.press('Escape');await expect(page.locator('#sfPlanningChat')).not.toBeVisible();
 });

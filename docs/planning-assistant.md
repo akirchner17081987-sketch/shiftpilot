@@ -11,7 +11,15 @@ Zugang: OWNER, ADMIN, PLANNER und DISPATCHER; im lokalen Demo-Modus entsprechend
 Einbindung: zwei JavaScript-Dateien und eine CSS-Datei unter `assets/`, Referenzen in `index.html`. Der bestehende statische IONOS-Build übernimmt diese Dateien. Keine Datenbankmigration, zusätzliche Serverinstallation oder API-Schlüssel erforderlich. Entwicklung und Wartung sowie bestehende Hostingkosten bleiben bestehen.
 
 Prüfung: `node --test tests/planning-assistant.test.mjs` und `node scripts/build-static.mjs`. Die CI-Datei `.github/workflows/planning-assistant-checks.yml` führt beide Prüfungen aus.
-+
+
+## Monatscheck, Dienstbezug und Navigation
+
+„Monatscheck starten“ beziehungsweise „Was fehlt noch für Dezember?“ prüft den vollständigen Kalendermonat. Bei einer angezeigten Woche wird der Monat des mittleren Wochentags verwendet. Ergebnisse werden nach Dringlichkeit dargestellt: Bedarf und offene Positionen, Schichtfreigaben und ungeeignete bestehende Zuweisungen, geladene zentrale Teamregeln, Stundenvorgaben, geplante Abweichungen und Überbesetzung. Ausschließlich für Frühdienst freigegebene Mitarbeiter ohne Team werden von der Teamwarnung ausgenommen. Teamlose Mitarbeiter mit anderen Freigaben erhalten einen Prüfhinweis, keine pauschale Fehlerbewertung. Der Check ergänzt die vollständige Auto-Planungsanalyse und ist keine Freigabezusage.
+
+Eine Schaltfläche „Assistent“ an der Wochenbesetzung oder SOLL/IST-Zelle öffnet die Ersatzsuche mit dem tatsächlichen Datum und der Schichtart. Ausgewählte Zuweisungen mit `data-assignment-id` liefern ebenfalls einen geprüften Dienstbezug. Dieser wird sichtbar im Chat angezeigt; explizite Angaben in der Frage haben Vorrang. Monats-/Zeitraumwechsel, Abmeldung und Unternehmenswechsel lösen den Bezug. Jede Navigation zu einem Mitarbeiter prüft erneut dessen Zugehörigkeit und öffnet die bestehende Profilansicht. Dienste werden im Kalender markiert, Teamlinks öffnen den vorhandenen Editor. Es erfolgt kein automatisches Speichern.
+
+Ersatzvorschläge zeigen Freigabe, geprüfte Eignung und gegebenenfalls verbindlichen Rhythmus und angrenzende Ruhezeit. Stundenwerte enthalten den zusätzlichen Einsatz; hinterlegte Wochen- und Monatsziele und mögliche Überschreitungen bleiben sichtbar. Ein gespeicherter Folgedienst wird genannt. Unbekannte Fragen bieten passende Themen zur Auswahl. Die Fachtests prüfen Kontextvorrang, FD-Ausnahme, Monatsdiagnosen, Direktziele und Stundenwirkung. Vier Browserläufe (Desktop/Mobil × Hell/Dunkel) prüfen die echte Mitarbeiteroberfläche, Navigation, Kontextwechsel, Rollen und ausbleibende Schreibzugriffe.
+
 ## Erweiterte Planung und Wissensdatenbank
 
 Der Assistent zeigt Dienste einzelner Mitarbeiter und Planungsteams, Überbesetzung, fehlende Freigaben für aktive Schichtarten und Abweichungen geplanter Stunden vom Monats-SOLL. Für die Monatsabweichung ist ein vollständiger Kalendermonat erforderlich; Mitarbeiter ohne positives Monats-SOLL werden dabei nicht bewertet. Die Werte sind keine bestätigten Überstunden.
