@@ -28,7 +28,7 @@
   function sync(input){
     if(!(input instanceof HTMLInputElement)||input.type!=='month')return;
     const text=formatMonthShort(input.value);
-    const light=!!input.closest('#view-auto')&&document.documentElement.dataset.sfTheme==='light';
+    const light=document.documentElement.dataset.sfTheme==='light';
     const signature=`${input.value}|${input.disabled?'1':'0'}|${light?'light':'dark'}`;
     if(input.dataset.sfMonthShortSignature===signature)return;
     input.dataset.sfMonthShortSignature=signature;
@@ -45,6 +45,7 @@
 
   function openNativePicker(input){
     if(!isPickerInput(input)||input.disabled||input.readOnly)return false;
+    if(window.SFDatePicker?.open)return window.SFDatePicker.open(input);
     try{
       input.focus({preventScroll:true});
       if(typeof input.showPicker==='function'){

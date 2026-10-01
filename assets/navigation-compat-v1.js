@@ -76,7 +76,9 @@
 
   // Zentrale Style-Quelle für ALLE Datums- und Monatsfelder.
   loadStyle('/assets/date-month-controls-v1.css?v=20260912-focus1','data-sf-date-month-controls');
-  loadIntegration('/assets/date-month-format-v1.js?v=20260904-2&auto=20261001-workflow2','data-sf-date-month-format');
+  loadStyle('/assets/date-picker-v1.css?v=20261001-1','data-sf-date-picker-style');
+  loadIntegration('/assets/date-picker-v1.js?v=20261001-1','data-sf-date-picker');
+  loadIntegration('/assets/date-month-format-v1.js?v=20260904-2&picker=20261001-1','data-sf-date-month-format');
 
   // Einheitliche SchichtFunk-Scrollleisten in Darkmode + Teal statt Browser-Standard.
   loadStyle('/assets/schichtfunk-scrollbars-v1.css?v=20260911-1','data-sf-scrollbars');

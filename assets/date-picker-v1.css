@@ -1,0 +1,38 @@
+/* SchichtFunk Datumsauswahl: gemeinsame Farben für Felder und Kalender. */
+html[data-sf-theme="light"]{
+  --sf-date-control-bg:#f7fafc;--sf-date-control-border:#cbd7e2;
+  --sf-date-control-text:#172434;--sf-date-control-muted:#5b6d80;
+}
+html[data-sf-theme="light"] body input[type="date"],html[data-sf-theme="light"] body input[type="month"]{color-scheme:light!important}
+html body .sf-date-picker{
+  --picker-bg:#0e1d2d;--picker-surface:#142739;--picker-text:#e5f0fb;--picker-muted:#9cb1c5;--picker-line:#2b435a;--picker-accent:#27d6b4;
+  position:fixed;inset:auto;margin:0;width:min(360px,calc(100vw - 16px));max-height:calc(100dvh - 16px);overflow:auto;box-sizing:border-box;
+  padding:16px;border:1px solid var(--picker-line);border-radius:16px;background:var(--picker-bg);color:var(--picker-text);
+  box-shadow:0 18px 56px rgba(0,0,0,.32);font:14px/1.4 Inter,"Segoe UI",Arial,sans-serif;z-index:2147483000;color-scheme:dark;
+}
+html body .sf-date-picker[hidden]{display:none!important}
+html[data-sf-theme="light"] body .sf-date-picker{--picker-bg:#f7fafc;--picker-surface:#e9f0f5;--picker-text:#172434;--picker-muted:#566b7f;--picker-line:#cbd7e2;--picker-accent:#087f6c;color-scheme:light;box-shadow:0 18px 56px rgba(32,54,74,.2)}
+html body .sf-date-picker button{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:0;margin:0;padding:6px;border:1px solid transparent;border-radius:9px;background:transparent;color:var(--picker-text);font:inherit;line-height:1.25;cursor:pointer;box-shadow:none;transform:none}
+html body .sf-date-picker button:not(:disabled):hover{background:var(--picker-surface);border-color:var(--picker-line)}
+html body .sf-date-picker button:focus-visible,html body .sf-date-picker input:focus-visible{outline:2px solid var(--picker-accent);outline-offset:2px}
+html body .sf-date-picker button:disabled{opacity:.35;cursor:default}
+html body .sf-picker-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:4px}
+html body .sf-picker-brand{color:var(--picker-accent);font-size:10px;font-weight:800;letter-spacing:.16em}
+html body .sf-date-picker .sf-picker-close{width:44px;font-size:24px;color:var(--picker-muted)}
+html body .sf-picker-nav{display:grid;grid-template-columns:44px 1fr 44px;gap:4px;align-items:center;margin-bottom:12px}
+html body .sf-picker-nav>button:first-child,html body .sf-picker-nav>button:last-child{font-size:26px;background:var(--picker-surface)}
+html body .sf-date-picker .sf-picker-title{font-size:16px;font-weight:750}
+html body .sf-date-picker .sf-picker-title:disabled{opacity:1}
+html body .sf-picker-weekdays,html body .sf-picker-days>[role="row"]{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;text-align:center}
+html body .sf-picker-weekdays{padding:6px 0 8px;color:var(--picker-muted);font-size:12px;font-weight:650}
+html body .sf-picker-days{display:grid;gap:3px}
+html body .sf-date-picker .sf-picker-days button{width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+html body .sf-date-picker .outside{color:var(--picker-muted)}
+html body .sf-date-picker .today{border-color:var(--picker-accent)}
+html body .sf-date-picker .selected,html body .sf-date-picker .selected:not(:disabled):hover{background:#27d6b4;border-color:#27d6b4;color:#07271f;font-weight:800}
+html body .sf-picker-year-label{display:flex;align-items:center;gap:12px;padding:0 4px 14px;color:var(--picker-muted)}
+html body .sf-picker-year-label input{width:100%;min-height:44px;box-sizing:border-box;border:1px solid var(--picker-line);border-radius:9px;padding:8px 12px;background:var(--picker-surface);color:var(--picker-text);font:inherit}
+html body .sf-picker-months{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+html body .sf-picker-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;border-top:1px solid var(--picker-line);margin-top:14px;padding-top:12px}
+html body .sf-picker-foot button{padding:8px 12px;color:var(--picker-accent);font-weight:650}
+@media(prefers-reduced-motion:reduce){html body input[type="date"],html body input[type="month"]{transition:none}}
