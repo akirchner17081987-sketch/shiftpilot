@@ -1,0 +1,37 @@
+name: Open shift marketplace checks
+on:
+  pull_request:
+    paths:
+      - 'assets/*marketplace*'
+      - 'assets/auto-plan-workspace-v1.js'
+      - 'tests/*marketplace*'
+      - 'tests/browser/open-shift-marketplace-qa.cjs'
+      - '.github/workflows/open-shift-marketplace-checks.yml'
+  push:
+    branches: [main, codex/open-shift-marketplace]
+    paths:
+      - 'assets/*marketplace*'
+      - 'tests/*marketplace*'
+      - 'tests/browser/open-shift-marketplace-qa.cjs'
+      - '.github/workflows/open-shift-marketplace-checks.yml'
+permissions:
+  contents: read
+jobs:
+  marketplace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: node --test tests/auto-plan-workspace.test.mjs tests/open-shift-marketplace.test.mjs
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/browser/open-shift-marketplace-qa.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: marketplace-browser-screenshots
+          path: test-results/marketplace-publish-*.png
+
