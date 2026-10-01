@@ -1,0 +1,78 @@
+#sfEmployeePortal #sfMyShiftsMonth{--my-surface:#091725;--my-line:#264159;--my-muted:#91a9be;--my-ink:#eaf5ff;--my-accent:#27d6b4;color:var(--my-ink);padding:24px!important;min-width:0}
+#sfMyShiftsMonth .sf-my-month-head{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-bottom:22px}
+#sfMyShiftsMonth .sf-my-kicker{color:var(--my-accent);font-size:10px;font-weight:800;letter-spacing:.12em;margin-bottom:7px}
+#sfEmployeePortal #sfMyShiftsMonth h3{font-size:22px;margin:0 0 6px}
+#sfMyShiftsMonth .sf-my-month-head p{color:var(--my-muted);font-size:13px;margin:0;line-height:1.5}
+#sfMyShiftsMonth .sf-my-scope{color:#85e5cd;background:#12332e;border:1px solid #286354;border-radius:99px;padding:8px 11px;white-space:nowrap;font-size:11px}
+#sfMyShiftsMonth .sf-my-month-toolbar{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;padding:16px;border:1px solid var(--my-line);border-radius:13px;background:var(--my-surface)}
+#sfMyShiftsMonth .sf-my-month-picker label{display:block;font-size:12px;font-weight:700;color:var(--my-muted);margin-bottom:7px}
+#sfMyShiftsMonth .sf-my-month-picker>div{display:flex;gap:5px}
+#sfMyShiftsMonth button,#sfMyShiftsMonth input{font:inherit}
+#sfMyShiftsMonth .sf-my-month-picker button,#sfMyShiftsMonth .sf-my-current-month,#sfMyShiftsMonth .sf-my-view-switch button,#sfMyShiftsMonth .sf-my-empty button{min-height:44px;border:1px solid var(--my-line);background:#102335;color:var(--my-ink);border-radius:9px;padding:9px 13px;font-size:12px;font-weight:700;cursor:pointer}
+#sfMyShiftsMonth .sf-my-month-picker button{min-width:44px;font-size:24px;padding:0}
+#sfMyShiftsMonth .sf-my-month-picker input{width:190px;max-width:100%;min-height:44px;border:1px solid #35617a;background:#0c1e2e;color:var(--my-ink);color-scheme:dark;border-radius:9px;padding:8px 10px;font-size:14px;font-weight:700}
+#sfMyShiftsMonth button:focus-visible,#sfMyShiftsMonth input:focus-visible{outline:2px solid var(--my-accent);outline-offset:3px}
+#sfMyShiftsMonth button:hover:not(:disabled){border-color:#2e947f}
+#sfMyShiftsMonth button:disabled{opacity:.45;cursor:default}
+#sfMyShiftsMonth .sf-my-view-switch{margin-left:auto;display:flex;gap:4px}
+#sfMyShiftsMonth .sf-my-view-switch [aria-pressed="true"]{background:#123b33;border-color:#28b99d;color:#9df5df}
+#sfMyShiftsMonth .sf-my-month-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0 24px}
+#sfMyShiftsMonth .sf-my-month-summary>div{min-width:0;background:linear-gradient(140deg,#102538,#0b1b2a);border:1px solid var(--my-line);border-radius:12px;padding:17px}
+#sfMyShiftsMonth .sf-my-month-summary small{display:block;color:var(--my-muted);font-size:12px;line-height:1.5}
+#sfMyShiftsMonth .sf-my-month-summary strong{display:block;font-size:26px;font-weight:800;margin-top:8px}
+#sfMyShiftsMonth .sf-my-month-summary strong span{font-size:13px;font-weight:500;color:var(--my-muted)}
+#sfMyShiftsMonth .sf-my-month-summary .sf-my-next{font-size:20px}
+#sfMyShiftsMonth .sf-my-month-title{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px}
+#sfMyShiftsMonth .sf-my-month-title h2{font-size:20px;margin:0}
+#sfMyShiftsMonth .sf-my-month-title small{font-size:12px;color:var(--my-muted)}
+#sfMyShiftsMonth .sf-my-month-layout{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:20px;align-items:start}
+#sfMyShiftsMonth .sf-my-calendar-panel{min-width:0}
+#sfMyShiftsMonth .sf-my-calendar-scroll{max-width:100%;overflow-x:auto;padding:3px 3px 6px}
+#sfMyShiftsMonth .sf-my-calendar-weekdays,#sfMyShiftsMonth .sf-my-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(44px,1fr));gap:6px}
+#sfMyShiftsMonth .sf-my-calendar-weekdays{padding-bottom:9px;color:var(--my-muted);font-size:12px;text-align:center;font-weight:700}
+#sfMyShiftsMonth .sf-my-calendar-day{min-width:0;min-height:111px;text-align:left;display:flex;flex-direction:column;gap:7px;padding:10px 8px;border:1px solid #223c52;background:#0a1826;border-radius:10px;color:var(--my-ink);cursor:pointer}
+#sfMyShiftsMonth .sf-my-calendar-day.sf-my-weekend{background:#0f1f2e}
+#sfMyShiftsMonth .sf-my-calendar-day.selected{border-color:var(--my-accent);box-shadow:inset 0 0 0 1px var(--my-accent);background:#102d2b}
+#sfMyShiftsMonth .sf-my-day-number{font-size:13px;font-weight:800;display:flex;justify-content:space-between;align-items:center;gap:3px}
+#sfMyShiftsMonth .sf-my-day-number i{font-style:normal;font-size:8px;color:#83e8d2}
+#sfMyShiftsMonth .sf-my-today .sf-my-day-number{color:#74ead1}
+#sfMyShiftsMonth .sf-my-calendar-outside{padding:11px 9px;color:#476177;font-size:12px;min-height:111px;border-radius:9px;background:#09162366}
+#sfMyShiftsMonth .sf-my-calendar-shift{display:block;padding:6px;border-radius:6px;min-width:0}
+#sfMyShiftsMonth .sf-my-calendar-shift b{display:block;font-size:11px;line-height:1.2}
+#sfMyShiftsMonth .sf-my-calendar-shift small{display:block;font-size:9px;line-height:1.5;margin-top:3px;white-space:nowrap}
+#sfMyShiftsMonth .sf-my-no-shift{font-size:9px;color:#658197;margin-top:auto;padding-bottom:3px}
+#sfMyShiftsMonth .sf-my-calendar-more{font-size:9px;color:var(--my-muted)}
+#sfMyShiftsMonth .sf-my-tone-early{background:#3a2e19;color:#f2ce83}
+#sfMyShiftsMonth .sf-my-tone-late{background:#19334a;color:#95ccff}
+#sfMyShiftsMonth .sf-my-tone-night{background:#30264b;color:#cbb2ff}
+#sfMyShiftsMonth .sf-my-calendar-legend{display:flex;flex-wrap:wrap;gap:17px;margin-top:12px;font-size:11px;color:var(--my-muted)}
+#sfMyShiftsMonth .sf-my-calendar-legend span{display:flex;gap:6px;align-items:center}
+#sfMyShiftsMonth .sf-my-calendar-legend i{width:10px;height:10px;border:1px solid currentColor;border-radius:3px}
+#sfMyShiftsMonth .sf-my-day-details{background:var(--my-surface);border:1px solid var(--my-line);border-radius:13px;padding:16px;min-width:0}
+#sfMyShiftsMonth .sf-my-day-heading{padding-bottom:14px;border-bottom:1px solid var(--my-line)}
+#sfMyShiftsMonth .sf-my-day-heading>small{font-size:9px;font-weight:800;letter-spacing:.1em;color:var(--my-accent)}
+#sfMyShiftsMonth .sf-my-day-heading h4{font-size:15px;margin:7px 0 0;line-height:1.5}
+#sfMyShiftsMonth .sf-my-day-empty{color:var(--my-muted);font-size:13px;line-height:1.65;padding:18px 0 4px}
+#sfMyShiftsMonth .sf-my-day-empty small{display:block;font-size:11px;margin-top:10px}
+#sfEmployeePortal #sfMyShiftsMonth .sf-my-shift-row{display:grid;grid-template-columns:54px minmax(0,1fr) auto;gap:12px;padding:17px 0;border-bottom:1px solid var(--my-line);align-items:start}
+#sfMyShiftsMonth .sf-my-shift-code{font-size:13px;font-weight:800;padding:10px 7px;border-radius:9px;text-align:center;overflow-wrap:anywhere}
+#sfEmployeePortal #sfMyShiftsMonth .sf-item-main b{font-size:14px;line-height:1.5}
+#sfEmployeePortal #sfMyShiftsMonth .sf-item-main small{font-size:12px;color:var(--my-muted);margin-top:5px;line-height:1.6}
+#sfMyShiftsMonth .sf-my-published{border-color:#2c6b59;color:#87ddc7;font-size:10px;white-space:nowrap}
+#sfMyShiftsMonth .sf-my-extra{display:inline-block;color:#87ddc7;font-size:10px;font-weight:700}
+#sfMyShiftsMonth .sf-my-shift-note{overflow-wrap:anywhere}
+#sfMyShiftsMonth .sf-my-overnight{color:#cbb2ff}
+#sfMyShiftsMonth .sf-my-day-details .sf-my-shift-row{grid-template-columns:48px minmax(0,1fr)}
+#sfMyShiftsMonth .sf-my-day-details .sf-my-published{grid-column:2;justify-self:start}
+#sfMyShiftsMonth .sf-market-offer{grid-column:2/-1;justify-self:start;min-height:44px;font-size:11px;padding:9px 12px}
+#sfMyShiftsMonth .sf-swap-shift-actions{display:contents}
+#sfMyShiftsMonth .sf-my-month-list .sf-my-shift-row:last-child{border-bottom:0}
+#sfMyShiftsMonth .sf-my-empty{display:flex;gap:16px;align-items:center;padding:19px;margin-bottom:18px;border:1px solid #30546c;border-radius:12px;background:#0c2030}
+#sfMyShiftsMonth .sf-my-empty>span{font-size:36px;color:#5cb5ad;flex-shrink:0}
+#sfMyShiftsMonth .sf-my-empty b{font-size:14px;line-height:1.55}
+#sfMyShiftsMonth .sf-my-empty p{font-size:12px;color:var(--my-muted);line-height:1.5;margin:5px 0}
+#sfMyShiftsMonth .sf-my-empty button{margin-top:10px;color:#90eed8;border-color:#327a6b}
+#sfMyShiftsMonth .sf-my-month-foot{color:#7896ac;font-size:11px;line-height:1.6;margin-top:22px;padding-top:15px;border-top:1px solid var(--my-line)}
+@media(max-width:1380px){#sfMyShiftsMonth .sf-my-month-layout{grid-template-columns:1fr}#sfMyShiftsMonth .sf-my-day-details .sf-my-shift-row{grid-template-columns:54px minmax(0,1fr) auto}#sfMyShiftsMonth .sf-my-day-details .sf-my-published{grid-column:auto}}
+@media(max-width:980px){#sfMyShiftsMonth .sf-my-month-summary{grid-template-columns:repeat(2,minmax(0,1fr))}#sfMyShiftsMonth .sf-my-month-head{align-items:flex-start;flex-wrap:wrap}#sfMyShiftsMonth .sf-my-scope{padding:6px 9px}}
+@media(max-width:620px){#sfEmployeePortal #sfMyShiftsMonth{padding:14px!important}#sfMyShiftsMonth .sf-my-month-toolbar{padding:12px;gap:10px}#sfMyShiftsMonth .sf-my-month-picker{width:100%}#sfMyShiftsMonth .sf-my-month-picker input{flex:1;width:0;min-width:0}#sfMyShiftsMonth .sf-my-view-switch{margin-left:auto}#sfMyShiftsMonth .sf-my-month-summary{gap:8px;margin:14px 0 20px}#sfMyShiftsMonth .sf-my-month-summary>div{padding:12px}#sfMyShiftsMonth .sf-my-month-summary small{font-size:10px}#sfMyShiftsMonth .sf-my-month-summary strong{font-size:23px}#sfMyShiftsMonth .sf-my-month-summary .sf-my-next{font-size:17px}#sfMyShiftsMonth .sf-my-month-title{align-items:flex-start;flex-direction:column;gap:5px}#sfMyShiftsMonth .sf-my-calendar-day,#sfMyShiftsMonth .sf-my-calendar-outside{min-height:78px;padding:7px 4px}#sfMyShiftsMonth .sf-my-calendar-grid,#sfMyShiftsMonth .sf-my-calendar-weekdays{gap:1px}#sfMyShiftsMonth .sf-my-calendar-scroll{padding:3px 0 6px}#sfMyShiftsMonth .sf-my-calendar-shift{padding:5px 3px}#sfMyShiftsMonth .sf-my-calendar-shift small,#sfMyShiftsMonth .sf-my-no-shift,#sfMyShiftsMonth .sf-my-day-number i{display:none}#sfMyShiftsMonth .sf-my-calendar-shift b{font-size:10px}#sfEmployeePortal #sfMyShiftsMonth .sf-my-shift-row,#sfMyShiftsMonth .sf-my-day-details .sf-my-shift-row{grid-template-columns:46px minmax(0,1fr);gap:10px}#sfMyShiftsMonth .sf-my-published,#sfMyShiftsMonth .sf-my-day-details .sf-my-published{grid-column:2;justify-self:start}#sfMyShiftsMonth .sf-my-empty{padding:14px;gap:10px}#sfMyShiftsMonth .sf-my-empty>span{font-size:28px}}
