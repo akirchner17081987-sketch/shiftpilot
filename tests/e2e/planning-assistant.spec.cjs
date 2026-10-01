@@ -1,4 +1,5 @@
 const {test,expect}=require('@playwright/test');
+test.use({launchOptions:process.env.SF_ASSISTANT_BROWSER_EXECUTABLE?{executablePath:process.env.SF_ASSISTANT_BROWSER_EXECUTABLE}:{}});
 const fs=require('fs'),path=require('path');
 const {html,root}=require('../browser/planning-assistant-fixture.cjs');
 for(const theme of ['dark','light'])test('Planning assistant '+theme+' chat, access and responsive layout',async({page},testInfo)=>{
