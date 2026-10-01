@@ -4,6 +4,10 @@ on:
     branches: [main, codex/ionos-migration]
     paths:
       - assets/employee-management-v2.js
+      - assets/planning-teams-v1.js
+      - assets/settings-management-v2.js
+      - assets/supabase-data-v1.js
+      - tests/planning-team-rules.test.mjs
       - assets/employee-rhythm-v1.js
       - tests/employee-planning-teams.test.mjs
       - tests/e2e/employee-planning-teams.spec.cjs
@@ -22,7 +26,7 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - run: node --test tests/employee-planning-teams.test.mjs tests/employee-status.test.mjs tests/employee-fixed-shifts.test.mjs
+      - run: node --test tests/planning-team-rules.test.mjs tests/employee-planning-teams.test.mjs tests/employee-status.test.mjs tests/employee-fixed-shifts.test.mjs
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test tests/e2e/employee-planning-teams.spec.cjs tests/e2e/auto-plan-workspace.spec.cjs
       - uses: actions/upload-artifact@v4

@@ -17,6 +17,8 @@
     const rawMode=employee?.rhythmMode||readMeta(employee,'rhythmMode')||'off';
     const mode=['preferred','required'].includes(rawMode)?rawMode:'off';
     const selected=employee?.planningTeam??readMeta(employee,'planningTeam'),team=teams.includes(selected)?selected:'',pattern=parsePattern(employee?.rhythmPattern||readMeta(employee,'rhythmPattern'));
+    const central=team?window.SFPlanningTeams?.get(team):null;
+    if(central)return{mode:'required',start:central.start,pattern:[...central.pattern],team,offset:central.offset,central:true};
     return {mode:team?'required':mode,start:employee?.rhythmStart||readMeta(employee,'rhythmStart')||'',pattern,team,offset:teamOffset(team,pattern.length)};
   }
   function check(employee,shiftType,date){
