@@ -29,7 +29,7 @@
   function renderEmployeeStats(){
     const stats=ensureStats();if(!stats||!Array.isArray(employees))return;
     const active=employees.filter(e=>e.status==='active').length;
-    const inactive=employees.length-active;
+    const inactive=employees.filter(e=>!e.deletedAt).length-active;
     const planned=new Set((assignments||[]).filter(a=>typeof currentWeekDates==='function'&&currentWeekDates().map(iso).includes(a.date)).map(a=>a.employeeId)).size;
     const absent=employeeWeekAbsenceIds().size;
     stats.innerHTML=`<div class="sp-employee-stat"><i>✓</i><div><small>Aktive Mitarbeiter</small><strong>${active}</strong></div></div><div class="sp-employee-stat"><i>○</i><div><small>Inaktiv</small><strong>${inactive}</strong></div></div><div class="sp-employee-stat"><i>▣</i><div><small>Diese Woche eingeplant</small><strong>${planned}</strong></div></div><div class="sp-employee-stat"><i>△</i><div><small>Diese Woche abwesend</small><strong>${absent}</strong></div></div>`;
