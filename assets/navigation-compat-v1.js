@@ -109,7 +109,7 @@
   // Mobile/PWA: Bottom-Navigation, Installationshilfe und sicherer App-Shell-Service-Worker.
   loadIntegration('/assets/employee-mobile-pwa-v1.js?v=20260910-1','data-sf-employee-mobile-pwa');
   // Feinschliff: Safe Areas, Tastatur, Offline-Status, Fokusführung, Scrollpositionen und breite Inhalte.
-  loadIntegration('/assets/employee-mobile-pwa-polish-v2.js?v=20260911-1','data-sf-employee-mobile-pwa-polish');
+  loadIntegration('/assets/employee-mobile-pwa-polish-v2.js?v=20261002-sheetguard1','data-sf-employee-mobile-pwa-polish');
   // Visueller iPhone-Feinschliff nach Geräteabnahme: vollständige KPI-Karten und mehr Abstand zur Bottom-Navigation.
   loadStyle('/assets/employee-mobile-pwa-visual-fix-v1.css?v=20260917-compact2','data-sf-employee-mobile-visual-fix');
 
