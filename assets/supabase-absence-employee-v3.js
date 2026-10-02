@@ -102,7 +102,7 @@
     const btn=target?.closest('[data-sf-absence-request="1"],#sfEmployeeAbsenceAdd,#sfEmployeeAbsenceAddV2');
     if(!btn||!btn.closest('#sfEmployeePortal')||btn.disabled||B.role!=='EMPLOYEE')return;
     e.preventDefault();e.stopPropagation();
-    open(btn,btn.dataset.absenceCategory||'Urlaub');
+    if(btn.dataset.absenceCategory)open(btn,btn.dataset.absenceCategory);else open(btn);
   },true);
   const old=B.openEmployeePortal;if(typeof old==='function')B.openEmployeePortal=function(){const r=old.apply(this,arguments);setTimeout(()=>render(),0);setTimeout(()=>render(),120);return r};
   let queued=false;const mo=new MutationObserver(()=>{if(queued||B.role!=='EMPLOYEE')return;queued=true;setTimeout(()=>{queued=false;render()},80)});mo.observe(document.documentElement,{childList:true,subtree:true});
