@@ -17,10 +17,19 @@ const output=path.resolve(__dirname,'../../test-results/employee-absences');fs.m
     B.closeAuth?.();B.hideLoading?.();B.openEmployeePortal();B.employeePortalNavigate('absences');
   });
   const area=page.locator('#sfEmployeeAbsenceCard'),modal=page.locator('#sfAbsenceEmployeeV3Modal');await area.waitFor();
+  const sheetGuard=await page.evaluate(()=>[...document.scripts].some(s=>s.src.includes('employee-mobile-pwa-polish-v2.js?v=20261002-sheetguard1')));
+  if(sheetGuard){
+    await page.setViewportSize({width:390,height:844});
+    const more=page.locator('#sfEmployeeMobileDock [data-sf-mobile-more]');await more.click();
+    await page.waitForFunction(()=>document.querySelector('.sf-portal-main').inert);
+    await page.setViewportSize({width:1440,height:1000});
+    await page.waitForFunction(()=>!document.querySelector('.sf-portal-main').inert);
+    assert.equal(await page.locator('#sfEmployeeMobileMore').evaluate(el=>el.classList.contains('open')),false);
+  }
   for(const type of ['Urlaub','Sonderurlaub','Krank','Kind Krank','Home-Office']){
     await area.locator(`[data-absence-category="${type}"] b`).click();await modal.waitFor();assert.equal(await modal.locator('#sfAe3Type').inputValue(),type);assert.equal(await modal.isVisible(),true);await modal.locator('#sfAe3Cancel').click();await modal.waitFor({state:'detached'});
   }
   await area.locator('.sf-ae3-add').click();await modal.waitFor();assert.equal(await modal.isVisible(),true);
   await page.screenshot({path:path.join(output,'live-primary-dialog.png')});
-  console.log(JSON.stringify({url:page.url(),categories:5,requestButton:true,errors}));
+  console.log(JSON.stringify({url:page.url(),categories:5,requestButton:true,sheetGuard,errors}));
 }finally{await browser.close()}})().catch(e=>{console.error(e);process.exitCode=1});
