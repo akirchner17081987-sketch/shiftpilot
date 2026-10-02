@@ -21,6 +21,33 @@ for(const [name,viewport] of [['desktop',{width:1560,height:1050}],['mobile',{wi
 const page=await browser.newPage({viewport,locale:'de-DE'}),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.clock.setFixedTime(new Date('2026-10-01T22:30:00Z'));
 await page.route('**/*',route=>{if(new URL(route.request().url()).hostname!=='sf.test')return route.abort();const pathname=new URL(route.request().url()).pathname;if(pathname==='/')return route.fulfill({contentType:'text/html',body:fullApp?fullHtml:html});const p=path.join(root,pathname);try{return route.fulfill({contentType:p.endsWith('.js')?'application/javascript':p.endsWith('.css')?'text/css':'image/svg+xml',body:fs.readFileSync(p)})}catch{return route.fulfill({status:404,body:''})}});
 await page.goto('http://sf.test/');if(fullApp){await page.waitForFunction(()=>SFBackend.__loaderInitStarted);await page.waitForTimeout(300);await page.evaluate(fixture.replace('window.SFBackend={','Object.assign(window.SFBackend,{').replace(/confirmSignOut:async\(\)=>\{\}\};/,'confirmSignOut:async()=>{}});'));await page.evaluate(()=>{SFBackend.closeAuth?.();SFBackend.hideLoading?.();SFBackend.openEmployeePortal();SFBackend.employeePortalNavigate('absences')});}const area=page.locator('#sfEmployeeAbsenceCard'),modal=page.locator('#sfAbsenceEmployeeV3Modal');await area.waitFor();await page.waitForTimeout(1200);if(fullApp)await page.evaluate(()=>SFBackend.employeePortalNavigate('absences'));await area.waitFor();assert.equal(await area.isVisible(),true);assert.match(await area.locator('.sf-empty').textContent(),/noch leer/);assert.equal(await area.locator('[data-absence-category]').count(),5);
+
+if(fullApp){
+  // Echte Menübedienung statt direktem Navigate-Aufruf: Overlay und inert prüfen.
+  const original=page.viewportSize();
+  await page.setViewportSize({width:390,height:844});
+  const more=page.locator('#sfEmployeeMobileDock [data-sf-mobile-more]'),sheet=page.locator('#sfEmployeeMobileMore');
+  await more.click();await sheet.waitFor();await page.waitForFunction(()=>document.querySelector('.sf-portal-main').inert);
+  await sheet.locator('[data-sf-employee-view="absences"]').click();
+  await page.waitForFunction(()=>!document.querySelector('.sf-portal-main').inert);await area.waitFor();
+  await more.click();await page.waitForFunction(()=>document.querySelector('.sf-portal-main').inert);
+  await page.setViewportSize({width:1440,height:1000});
+  await page.waitForFunction(()=>!document.querySelector('.sf-portal-main').inert);
+  assert.equal(await sheet.evaluate(el=>el.classList.contains('open')),false,'Hidden mobile menu must release its background lock');
+  assert.equal(await sheet.getAttribute('aria-hidden'),'true');
+  for(const type of ['Urlaub','Sonderurlaub','Krank','Kind Krank','Home-Office']){
+    await area.locator('[data-absence-category="'+type+'"] b').click();await modal.waitFor();
+    assert.equal(await modal.locator('#sfAe3Type').inputValue(),type);await modal.locator('#sfAe3Cancel').click();
+  }
+  await area.locator('.sf-ae3-add').click();await modal.waitFor();await modal.locator('#sfAe3Cancel').click();
+  await page.setViewportSize({width:390,height:844});await more.click();
+  await page.waitForFunction(()=>document.querySelector('.sf-portal-main').inert);
+  await sheet.evaluate(el=>el.remove());
+  await page.waitForFunction(()=>!document.querySelector('.sf-portal-main').inert);
+  assert.equal(await page.locator('#sfEmployeePortal').evaluate(el=>el.classList.contains('sf-mobile-sheet-open')),false,'Removing a menu must release its background lock');
+  await page.setViewportSize(original);
+}
+
 await area.locator('.sf-ae3-add').click();await modal.waitFor();assert.deepEqual(await modal.locator('#sfAe3Type option').allTextContents(),['Urlaub','Sonderurlaub','Krank','Kind Krank','Home-Office']);assert.equal(await modal.locator('#sfAe3From').inputValue(),'2026-10-02','Company timezone default date');assert.equal(await modal.locator('#sfAe3To').inputValue(),'2026-10-02');await page.waitForFunction(()=>document.activeElement?.id==='sfAe3Type');await page.keyboard.press('Escape');assert.equal(await modal.count(),0);assert.equal(await page.evaluate(()=>__calls.length),0);
 await page.evaluate(()=>SFBackend.openEmployeePortal());await page.waitForTimeout(750);await area.locator('[data-absence-category="Home-Office"] b').click();assert.equal(await modal.locator('#sfAe3Type').inputValue(),'Home-Office','Child element click opens prefilled request');await modal.locator('#sfAe3Cancel').click();assert.equal(await page.evaluate(()=>__calls.length),0);
 await page.evaluate(async()=>{__rows=testAbsences();await SFBackend.refreshEmployeeAbsences()});assert.equal(await area.locator('[data-absence-count="pending"]').textContent(),'7');assert.equal(await area.locator('[data-absence-count="confirmed"]').textContent(),'5');assert.equal(await area.locator('[data-absence-count="all"]').textContent(),'16');assert.equal(await area.locator('.sf-ae3-row').count(),10);await area.locator('[data-absence-more]').click();assert.equal(await area.locator('.sf-ae3-row').count(),16);assert.equal(await area.locator('[data-absence-id="foreign"]').count(),0);assert.equal(await page.evaluate(()=>__xss),false);assert.equal(await area.locator('.sf-ae3-note img').count(),0);assert.equal(await page.locator('[data-count-for="absences"]').first().textContent(),'16');
