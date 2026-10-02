@@ -82,3 +82,11 @@ test('another company with the same legacy employee ID cannot use the previous c
 test('rule changes invalidate a prepared draft and stale optional responsibility cannot be applied',async()=>{
  const {c,run,M}=optionalHarness();c.generateAutoPlanPreview();M.invalidate();assert.equal(run('autoPlanPreview.length'),0);assert.equal(run('autoPlanAnalyzed'),false);c.generateAutoPlanPreview();M.find('QA').responsibleEmployeeId='other-a';await c.applyAutoPlanPreview();assert.equal(c.assignments.length,0);
 });
+test('required shifts limited to Monday–Friday create no weekend demand or marketplace gaps',()=>{
+ const {c,id,run,M}=optionalHarness();id('autoPlanPeriod').value='week';c.globalSoll.QA=0;M.find('QA').optionalStaffing=0;M.find('FD').optionalWeekdays=[1,2,3,4,5];
+ const slots=Array.from(c.autoOpenSlots());assert.equal(slots.length,5);assert.ok(slots.every(x=>(new Date(x.date+'T12:00:00').getDay()||7)<=5));assert.equal(M.requiredSoll('2026-12-05','FD',3),0);assert.equal(M.requiredSoll('2026-12-06','FD',3),0);assert.equal(M.requiredSoll('2026-12-04','FD',3),3);
+ c.generateAutoPlanPreview();assert.ok(Array.from(run('autoPlanPreview')).every(x=>!['2026-12-05','2026-12-06'].includes(x.date)));
+});
+test('a deliberate daily override can create exceptional demand outside regular shift weekdays',()=>{
+ const {c,M}=optionalHarness();M.find('FD').optionalWeekdays=[1,2,3,4,5];c.dailySoll['2026-12-05']={FD:2};assert.equal(M.requiredSoll('2026-12-05','FD',3),2);c.dailySoll['2026-12-04']={FD:0};assert.equal(M.requiredSoll('2026-12-04','FD',3),0);
+});
