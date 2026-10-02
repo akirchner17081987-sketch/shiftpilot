@@ -22,6 +22,26 @@ const page=await browser.newPage({viewport,locale:'de-DE'}),errors=[];page.on('p
 await page.route('**/*',route=>{if(new URL(route.request().url()).hostname!=='sf.test')return route.abort();const pathname=new URL(route.request().url()).pathname;if(pathname==='/')return route.fulfill({contentType:'text/html',body:fullApp?fullHtml:html});const p=path.join(root,pathname);try{return route.fulfill({contentType:p.endsWith('.js')?'application/javascript':p.endsWith('.css')?'text/css':'image/svg+xml',body:fs.readFileSync(p)})}catch{return route.fulfill({status:404,body:''})}});
 await page.goto('http://sf.test/');if(fullApp){await page.waitForFunction(()=>SFBackend.__loaderInitStarted);await page.waitForTimeout(300);await page.evaluate(fixture.replace('window.SFBackend={','Object.assign(window.SFBackend,{').replace(/confirmSignOut:async\(\)=>\{\}\};/,'confirmSignOut:async()=>{}});'));await page.evaluate(()=>{SFBackend.closeAuth?.();SFBackend.hideLoading?.();SFBackend.openEmployeePortal();SFBackend.employeePortalNavigate('absences')});}const area=page.locator('#sfEmployeeAbsenceCard'),modal=page.locator('#sfAbsenceEmployeeV3Modal');await area.waitFor();await page.waitForTimeout(1200);if(fullApp)await page.evaluate(()=>SFBackend.employeePortalNavigate('absences'));await area.waitFor();assert.equal(await area.isVisible(),true);assert.match(await area.locator('.sf-empty').textContent(),/noch leer/);assert.equal(await area.locator('[data-absence-category]').count(),5);
 
+// A background refresh must not remove a pressed request button before mouseup.
+await area.locator('[data-absence-category="Urlaub"] b').scrollIntoViewIfNeeded();
+const pressedRequest=await area.locator('[data-absence-category="Urlaub"] b').boundingBox();
+await page.mouse.move(pressedRequest.x+pressedRequest.width/2,pressedRequest.y+pressedRequest.height/2);
+await page.mouse.down();
+await page.evaluate(()=>SFBackend.refreshEmployeeAbsences());
+await page.mouse.up();
+await modal.waitFor({timeout:1500});
+assert.equal(await modal.locator('#sfAe3Type').inputValue(),'Urlaub','Refresh during a mouse press must keep the request clickable');
+await modal.locator('#sfAe3Cancel').click();
+
+// Closing one dialog must not redirect focus after a new dialog has opened.
+await area.locator('[data-absence-category="Urlaub"]').click();await modal.waitFor();
+await modal.locator('#sfAe3Cancel').click();
+await area.locator('[data-absence-category="Krank"]').click();await modal.waitFor();
+await page.waitForFunction(()=>document.activeElement?.id==='sfAe3Type');
+await page.waitForTimeout(120);
+assert.equal(await page.evaluate(()=>document.activeElement?.id),'sfAe3Type','Previous dialog callbacks must leave focus inside the new form');
+await modal.locator('#sfAe3Cancel').click();
+
 if(fullApp){
   // Echte Menübedienung statt direktem Navigate-Aufruf: Overlay und inert prüfen.
   const original=page.viewportSize();
@@ -38,8 +58,7 @@ if(fullApp){
   for(const type of ['Urlaub','Sonderurlaub','Krank','Kind Krank','Home-Office']){
     await area.locator('[data-absence-category="'+type+'"] b').click();await modal.waitFor();
     assert.equal(await modal.locator('#sfAe3Type').inputValue(),type);await modal.locator('#sfAe3Cancel').click();
-    // The shared dialog restores its opener again after 80 ms; let that finish before reopening.
-    await page.waitForTimeout(100);
+    // Reopen immediately; a closing dialog must not steal the new dialog's focus.
   }
   await area.locator('.sf-ae3-add').click();await modal.waitFor();await modal.locator('#sfAe3Cancel').click();await page.waitForTimeout(100);
   await page.setViewportSize({width:390,height:844});await more.click();

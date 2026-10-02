@@ -14,14 +14,14 @@
     'Stundenkonto':'account','Lohnvorschau':'wage','Mein Profil':'profile'
   };
   const MOBILE_MAIN=new Set(['dashboard','shifts','time']);
-  let active='dashboard',queued=false,arranging=false;
+  let active='dashboard',queued=false,arranging=false,modalFocusSequence=0;
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const setHtmlIfChanged=(node,html)=>{if(node&&node.innerHTML!==html)node.innerHTML=html};
   B.bindAccessibleModal=function(backdrop,{dialogSelector='[role="dialog"],[role="alertdialog"]',initialFocus,returnFocus,returnFocusSelector}={}){
-    const opener=returnFocus||document.activeElement,dialog=backdrop.querySelector(dialogSelector);
+    const sequence=++modalFocusSequence,opener=returnFocus||document.activeElement,dialog=backdrop.querySelector(dialogSelector);
     if(!dialog)return()=>backdrop.remove();
     const focusable=()=>[...dialog.querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),a[href],[tabindex]:not([tabindex="-1"])')].filter(node=>node.offsetParent!==null);
-    const restoreOpener=()=>{const target=opener?.isConnected?opener:(returnFocusSelector?document.querySelector(returnFocusSelector):null);target?.focus({preventScroll:true})};
+    const restoreOpener=()=>{if(sequence!==modalFocusSequence)return;const target=opener?.isConnected?opener:(returnFocusSelector?document.querySelector(returnFocusSelector):null);target?.focus({preventScroll:true})};
     const close=()=>{backdrop.remove();requestAnimationFrame(restoreOpener);setTimeout(restoreOpener,80)};
     backdrop.addEventListener('keydown',event=>{
       if(event.key==='Escape'){event.preventDefault();close();return}
@@ -32,7 +32,7 @@
       if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}
       else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}
     });
-    requestAnimationFrame(()=>{const target=initialFocus?dialog.querySelector(initialFocus):focusable()[0];(target||dialog).focus()});
+    requestAnimationFrame(()=>{if(sequence!==modalFocusSequence||!backdrop.isConnected)return;const target=initialFocus?dialog.querySelector(initialFocus):focusable()[0];(target||dialog).focus()});
     return close;
   };
   function css(){
