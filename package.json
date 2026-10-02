@@ -14,7 +14,8 @@
     "test:absences": "node tests/browser/employee-absences-qa.cjs",
     "test:time-account": "node tests/browser/employee-time-account-qa.cjs",
     "test:qr-bookings": "node tests/browser/employee-qr-bookings-qa.cjs",
-    "test:wage-preview": "node --test tests/employee-wage-preview.test.cjs && node tests/browser/employee-wage-preview-qa.cjs"
+    "test:wage-preview": "node --test tests/employee-wage-preview.test.cjs && node tests/browser/employee-wage-preview-qa.cjs",
+    "test:profile": "node tests/browser/employee-profile-qa.cjs"
   },
   "engines": {
     "node": ">=18"
