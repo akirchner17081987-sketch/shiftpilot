@@ -1,0 +1,30 @@
+name: Employee absence browser checks
+on:
+  pull_request:
+    paths:
+      - 'assets/supabase-absence-employee-v3.js'
+      - 'assets/employee-absences-workspace-v1.css'
+      - 'tests/browser/employee-absences-qa.cjs'
+      - '.github/workflows/employee-absence-checks.yml'
+permissions:
+  contents: read
+jobs:
+  absences:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/browser/employee-absences-qa.cjs
+      - name: Veröffentlichte Hauptseite mit lokalen Mitarbeiterdaten prüfen
+        run: node tests/browser/employee-absences-live-smoke.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: employee-absence-browser-screenshots
+          path: test-results/employee-absences/*.png
