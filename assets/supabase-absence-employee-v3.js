@@ -17,7 +17,7 @@
   const ownRows=()=>{const id=B.employeeDbId||B.employeePortalData?.employee?.id;return (B.employeePortalData?.absences||[]).filter(a=>(!a.employee_id||String(a.employee_id)===String(id))&&(!a.company_id||String(a.company_id)===String(B.companyId)))};
   let scope='',signature='',loadSequence=0,loading=false,loadError='',notice='',pendingSubmission='';
   const view={filter:'all',type:'all',limit:10};
-  function css(){if(document.getElementById('sfAbsEmpV3Css'))return;const link=document.createElement('link');link.id='sfAbsEmpV3Css';link.rel='stylesheet';link.href='assets/employee-absences-workspace-v1.css?v=20261002-absences1';document.head.appendChild(link)}
+  function css(){if(document.getElementById('sfAbsEmpV3Css'))return;const link=document.createElement('link');link.id='sfAbsEmpV3Css';link.rel='stylesheet';link.href='assets/employee-absences-workspace-v1.css?v=20261002-absence-clicks1';document.head.appendChild(link)}
   function section(){
     const p=document.getElementById('sfEmployeePortal');if(!p)return null;
     let sec=p.querySelector('[data-sf-portal-section="absences"]')||[...p.querySelectorAll('.sf-portal-card')].find(x=>x.querySelector('h3')?.textContent.trim()==='Abwesenheiten');
@@ -95,8 +95,15 @@
     };
   }
   B.openEmployeeAbsenceRequestV3=open;B.openEmployeeAbsenceRequest=open;B.renderEmployeeAbsencesV3=()=>render();B.refreshEmployeeAbsences=refresh;
-  // Capture bleibt auch bei Portal-Neuaufbau und Klick auf ein Button-Kindelement aktiv.
-  document.addEventListener('click',e=>{const btn=e.target.closest?.('[data-sf-absence-request="1"],#sfEmployeeAbsenceAdd,#sfEmployeeAbsenceAddV2');if(!btn||B.role!=='EMPLOYEE')return;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();if(btn.dataset.absenceCategory)open(btn,btn.dataset.absenceCategory);else open(btn)},true);
+  // Vor dokumentweiten Portal-Handlern ausführen, auch nach Portal-Neuaufbau.
+  // Nur eigene Antragsaktionen übernehmen; alle anderen Klicks unverändert weitergeben.
+  window.addEventListener('click',e=>{
+    const target=e.target instanceof Element?e.target:e.target?.parentElement;
+    const btn=target?.closest('[data-sf-absence-request="1"],#sfEmployeeAbsenceAdd,#sfEmployeeAbsenceAddV2');
+    if(!btn||!btn.closest('#sfEmployeePortal')||btn.disabled||B.role!=='EMPLOYEE')return;
+    e.preventDefault();e.stopPropagation();
+    open(btn,btn.dataset.absenceCategory||'Urlaub');
+  },true);
   const old=B.openEmployeePortal;if(typeof old==='function')B.openEmployeePortal=function(){const r=old.apply(this,arguments);setTimeout(()=>render(),0);setTimeout(()=>render(),120);return r};
   let queued=false;const mo=new MutationObserver(()=>{if(queued||B.role!=='EMPLOYEE')return;queued=true;setTimeout(()=>{queued=false;render()},80)});mo.observe(document.documentElement,{childList:true,subtree:true});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&B.role==='EMPLOYEE'&&document.getElementById('sfEmployeePortal')?.dataset.sfPortalActive==='absences')refresh()});
