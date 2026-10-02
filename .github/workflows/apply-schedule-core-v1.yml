@@ -20,7 +20,7 @@ jobs:
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
           js='<script src="assets/schichtfunk-schedule-core-v1.js"></script>'
-          if js not in s:
+          if 'src="assets/schichtfunk-schedule-core-v1.js' not in s:
               s=s.replace('</body>',js+'\n</body>')
               p.write_text(s,encoding='utf-8')
       - name: Core checks
