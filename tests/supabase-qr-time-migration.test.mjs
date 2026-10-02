@@ -90,7 +90,7 @@ test('QR pause controls allow pauses six through ten and stop after ten',async()
     assert.equal(h.get('pauseStart').hidden,count===10);assert.equal(h.get('end').hidden,false);
   }
   const h=qrLoginHarness({state:'BREAK',breaks:Array.from({length:10},(_,i)=>({number:i+1}))});
-  h.get('startDate').value='16102024';await h.submit();assert.equal(h.get('pauseEnd').hidden,false);assert.equal(h.get('end').hidden,true);
+  h.get('startDate').value='16102024';await h.submit();assert.equal(h.get('pauseEnd').hidden,false);assert.equal(h.get('end').hidden,false);
 });
 
 test('time-only QR report renders all ten pause pairs',async()=>{
