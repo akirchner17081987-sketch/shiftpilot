@@ -25,6 +25,7 @@
 
   // Mitarbeiter: Antrag stellen
   function openEmployeeRequest(){
+    if(typeof B.openEmployeeAbsenceRequestV3==='function')return B.openEmployeeAbsenceRequestV3(document.activeElement);
     css();closeModal();const today=new Date().toISOString().slice(0,10),m=document.createElement('div');m.id='sfAbsenceWorkflowModal';m.className='sf-abs-modal';
     m.innerHTML=`<div class="sf-abs-modal-card" role="dialog" aria-modal="true"><div class="sf-abs-modal-head"><div><div class="eyebrow">ABWESENHEITSANTRAG</div><h2>Abwesenheit melden</h2><p>Der Antrag wird an die Dienstplanung übermittelt und ist erst nach Freigabe planungswirksam.</p></div><button class="sf-abs-x">✕</button></div><div class="sf-abs-modal-body"><div class="sf-abs-field"><label>Art</label><select id="sfAbsType">${TYPES.map(x=>`<option>${esc(x)}</option>`).join('')}</select></div><div class="sf-abs-grid"><div class="sf-abs-field"><label>Von</label><input id="sfAbsFrom" type="date" value="${today}"></div><div class="sf-abs-field"><label>Bis</label><input id="sfAbsTo" type="date" value="${today}"></div></div><div class="sf-abs-field"><label>Umfang</label><select id="sfAbsFull"><option value="1">Ganztägig</option><option value="0">Teil des Tages</option></select></div><div id="sfAbsTimes" class="sf-abs-grid" style="display:none"><div class="sf-abs-field"><label>Beginn</label><input id="sfAbsStartTime" type="time"></div><div class="sf-abs-field"><label>Ende</label><input id="sfAbsEndTime" type="time"></div></div><div class="sf-abs-field"><label>Bemerkung (optional)</label><textarea id="sfAbsNote" rows="3" maxlength="2000" placeholder="Kurzer Hinweis für die Dienstplanung …"></textarea></div><div class="sf-abs-help">Krankmeldungen werden nach Prüfung als „Erfasst“ geführt. Urlaub und andere Abwesenheiten werden nach Freigabe als „Genehmigt“ geführt.</div><div id="sfAbsMsg" class="sf-abs-msg"></div></div><div class="sf-abs-modal-foot"><button class="ghost" id="sfAbsCancel">Abbrechen</button><button class="primary" id="sfAbsSubmit">Antrag senden</button></div></div>`;
     document.body.appendChild(m);const msg=m.querySelector('#sfAbsMsg'),say=(t,bad=true)=>{msg.textContent=t;msg.className='sf-abs-msg show '+(bad?'bad':'good')};
@@ -35,6 +36,7 @@
   B.openEmployeeAbsenceRequest=openEmployeeRequest;
 
   function enhanceEmployeePortal(){
+    if(typeof B.renderEmployeeAbsencesV3==='function')return B.renderEmployeeAbsencesV3();
     css();if(B.role!=='EMPLOYEE')return;const d=B.employeePortalData,p=document.getElementById('sfEmployeePortal');if(!d||!p)return;const section=[...p.querySelectorAll('.sf-portal-card')].find(x=>x.querySelector('h3')?.textContent.trim()==='Abwesenheiten');if(!section)return;
     const rows=(d.absences||[]).slice().sort((a,b)=>String(b.requested_at||b.created_at||b.start_date).localeCompare(String(a.requested_at||a.created_at||a.start_date)));
     const html=rows.length?`<div class="sf-abs-list">${rows.slice(0,12).map(a=>{const [label,cls]=statusInfo(a.status);const partial=!a.full_day&&(a.start_time||a.end_time);return `<div class="sf-abs-row"><div class="sf-abs-row-top"><div class="sf-abs-kind">${a.absence_type==='Krank'?'✚':'☼'}</div><div class="sf-abs-row-main"><b>${esc(a.absence_type)}</b><small>${esc(dateText(a.start_date))}${a.end_date!==a.start_date?' – '+esc(dateText(a.end_date)):''}${partial?` · ${esc(String(a.start_time||'').slice(0,5))}–${esc(String(a.end_time||'').slice(0,5))}`:''}</small>${a.requested_at?`<small>Beantragt: ${esc(dtText(a.requested_at))}</small>`:''}</div><span class="sf-abs-state ${cls}">${esc(label)}</span></div>${a.note?`<div class="sf-abs-note">Hinweis: ${esc(a.note)}</div>`:''}${a.review_note?`<div class="sf-abs-note">Rückmeldung: ${esc(a.review_note)}</div>`:''}</div>`}).join('')}</div>`:'<div class="sf-empty">Noch keine Abwesenheiten oder Anträge vorhanden.</div>';
@@ -74,4 +76,5 @@
   B.renderAbsenceRequests=renderManagerRequests;
   css();setTimeout(()=>{enhanceEmployeePortal();renderManagerRequests()},0);
 })();
+
 
