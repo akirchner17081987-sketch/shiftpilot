@@ -46,3 +46,39 @@ test('already released suggestion dates and publication during confirmation cann
  const {c,api,id}=harness();c.generateAutoPlanPreview();let published=true;c.window.SFCompliance={isWeekPublished:()=>published};c.renderAutoPlanning();assert.equal(id('applyAutoPlanBtn').disabled,true);await c.applyAutoPlanPreview();assert.equal(c.assignments.length,0);
  published=false;api.confirmApply=async()=>{published=true;return true};await c.applyAutoPlanPreview();assert.equal(c.assignments.length,0);
 });
+
+function optionalHarness(){
+ const h=harness(),{c}=h;c.sessionStorage={getItem:()=>null};c.globalSoll={FD:1,QA:1};c.dailySoll={};
+ c.employees=[{id:'f',_dbId:'florian-a',first:'Florian',last:'Weiß',status:'active',shifts:['FD','QA'],weeklyHours:40},{id:'b',_dbId:'other-a',first:'Andere',last:'Person',status:'active',shifts:['FD','QA'],weeklyHours:40}];
+ vm.runInNewContext(read('assets/shift-models-v1.js'),c);h.M=c.window.SFShiftModels;
+ h.M.apply([{code:'FD',name:'Frühdienst',default_start:'06:00',default_end:'14:00',active:true},{code:'QA',name:'QA',default_start:'20:00',default_end:'06:00',active:true,planning_mode:'optional',optional_staffing:1,responsible_only:true,responsible_employee_id:'florian-a'}],'a');
+ c.getSoll=(date,type)=>c.dailySoll[date]?.[type]??c.globalSoll[type]??0;
+ c.plannedMonthlyHoursForEmployee=(id,date,sim=[])=>[...c.assignments,...sim].filter(x=>x.employeeId===id).length*8;
+ c.window.autoEligibleEmployees=c.autoEligibleEmployees;c.window.applyAutoPlanPreview=c.applyAutoPlanPreview;
+ vm.runInNewContext(read('assets/supabase-auto-plan-guard-v1.js'),c);c.autoEligibleEmployees=c.window.autoEligibleEmployees;
+ return h;
+}
+test('optional QA reserves Florian when another eligible person covers the required shift',()=>{
+ const {c,run}=optionalHarness();c.generateAutoPlanPreview();const preview=run('autoPlanPreview');assert.equal(c.autoOpenSlots().length,1);assert.equal(preview.length,2);assert.equal(preview[0].type,'FD');assert.equal(preview[0].employeeId,'b');assert.equal(preview[1].type,'QA');assert.equal(preview[1].employeeId,'f');assert.equal(preview[1].optional,true);assert.equal(run('autoPlanUnresolved.length'),0);
+});
+test('mandatory shortage uses Florian and optional QA is informational rather than a gap',()=>{
+ const {c,run,id}=optionalHarness();c.employees[1].status='inactive';c.generateAutoPlanPreview();assert.equal(run('autoPlanPreview.length'),1);assert.equal(run('autoPlanPreview[0].employeeId'),'f');assert.equal(run('autoPlanUnresolved.length'),0);assert.equal(run('autoPlanOptionalSkipped.length'),1);assert.equal(id('autoUnresolvedCount').textContent,0);assert.match(id('autoSuggestions').innerHTML,/Keine Pflichtlücke/);assert.doesNotMatch(id('autoAnalysis').innerHTML,/is-warning/);
+});
+test('daily QA required is scheduled before another mandatory shift; daily off excludes optional QA',()=>{
+ const {c,run}=optionalHarness();c.dailySoll['2026-12-01']={QA:1};c.generateAutoPlanPreview();assert.equal(run('autoPlanPreview[0].type'),'QA');assert.equal(run('autoPlanPreview[0].employeeId'),'f');assert.equal(run('autoPlanPreview[0].optional'),false);assert.equal(c.autoOptionalSlots().length,0);assert.equal(run('autoPlanPreview[1].employeeId'),'b');c.dailySoll['2026-12-01'].QA=0;c.generateAutoPlanPreview();assert.equal(run('autoPlanPreview.length'),1);assert.equal(c.autoOptionalSlots().length,0);
+});
+test('optional-only periods can be analyzed and removed optional suggestions never become mandatory gaps',()=>{
+ const {c,run,id}=optionalHarness();c.globalSoll.FD=0;c.renderAutoPlanning();assert.equal(id('generateAutoPlanBtn').disabled,false);c.generateAutoPlanPreview();assert.equal(run('autoPlanPreview.length'),1);c.removeAutoSuggestion(0);assert.equal(run('autoPlanUnresolved.length'),0);assert.equal(run('autoPlanOptionalSkipped.length'),1);assert.equal(id('autoUnresolvedCount').textContent,0);assert.doesNotMatch(id('autoAnalysis').innerHTML,/is-warning/);
+});
+test('optional staffing respects hours, absence, responsible identity, weekdays and binding rhythm',()=>{
+ const {c,run,M}=optionalHarness();c.globalSoll.FD=0;c.employees[0].weeklyHours=8;c.generateAutoPlanPreview();assert.equal(run('autoPlanPreview.length'),0);c.employees[0].weeklyHours=40;c.absent=id=>id==='f';c.generateAutoPlanPreview();assert.equal(run('autoPlanPreview.length'),0);c.absent=()=>false;c.window.sfRhythmCheck=()=>({mode:'required',allowed:false});c.generateAutoPlanPreview();assert.equal(run('autoPlanPreview.length'),0);delete c.window.sfRhythmCheck;M.find('QA').optionalWeekdays=[1];assert.equal(c.autoOptionalSlots().length,0);M.find('QA').optionalWeekdays=[2];assert.equal(c.autoOptionalSlots().length,1);M.find('QA').responsibleEmployeeId=null;c.generateAutoPlanPreview();assert.equal(run('autoPlanPreview.length'),0);
+});
+test('all mandatory days are planned before optional nights so QA cannot obstruct next-day rest',()=>{
+ const {c,run,id}=optionalHarness();id('autoPlanPeriod').value='week';c.employees[1].status='inactive';c.employees[0].weeklyHours=200;c.generateAutoPlanPreview();const preview=Array.from(run('autoPlanPreview'));assert.equal(preview.filter(x=>x.type==='FD').length,7);assert.equal(preview.filter(x=>x.type==='QA').length,0);
+});
+test('another company with the same legacy employee ID cannot use the previous company responsibility',()=>{
+ const {c,M}=optionalHarness();c.window.SFBackend.companyId='b';c.employees[0]._dbId='florian-b';M.apply([{code:'QA',active:true,planning_mode:'optional',optional_staffing:1,responsible_only:true,responsible_employee_id:'florian-b'}],'b');assert.equal(M.allowsEmployee('QA',c.employees[0]),true);assert.equal(M.allowsEmployee('QA',{id:'f',_dbId:'florian-a'}),false);assert.equal(M.requiredSoll('2026-12-01','QA',1),0);
+});
+test('rule changes invalidate a prepared draft and stale optional responsibility cannot be applied',async()=>{
+ const {c,run,M}=optionalHarness();c.generateAutoPlanPreview();M.invalidate();assert.equal(run('autoPlanPreview.length'),0);assert.equal(run('autoPlanAnalyzed'),false);c.generateAutoPlanPreview();M.find('QA').responsibleEmployeeId='other-a';await c.applyAutoPlanPreview();assert.equal(c.assignments.length,0);
+});

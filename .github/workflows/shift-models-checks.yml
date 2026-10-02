@@ -5,6 +5,8 @@ on:
     paths:
       - assets/shift-models-v1.js
       - assets/settings-management-v2.js
+      - assets/auto-plan-workspace-v1.js
+      - tests/auto-plan-workspace.test.mjs
       - tests/e2e/shift-models.spec.cjs
       - .github/workflows/shift-models-checks.yml
   workflow_dispatch:
@@ -21,6 +23,7 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
+      - run: npm test
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test tests/e2e/shift-models.spec.cjs
       - uses: actions/upload-artifact@v4
