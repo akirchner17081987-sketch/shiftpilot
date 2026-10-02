@@ -14,13 +14,24 @@
   M.apply=(rows,companyId)=>{
     if(demo())return;
     M.companyId=companyId;
-    M.models=(rows||[]).map(x=>({id:x.code,name:x.name||x.code,start:x.default_start?.slice(0,5)||'06:00',end:x.default_end?.slice(0,5)||'14:00',cls:palette[x.css_class]?x.css_class:'teal',active:x.active!==false,_dbId:x.id,sortOrder:x.sort_order||0,planningMode:x.planning_mode||'required',optionalStaffing:Number(x.optional_staffing)||0,responsibleEmployeeId:x.responsible_employee_id||null,responsibleOnly:x.responsible_only===true,optionalWeekdays:x.optional_weekdays||[1,2,3,4,5,6,7]}));
+    M.models=(rows||[]).map(x=>({id:x.code,name:x.name||x.code,start:x.default_start?.slice(0,5)||'06:00',end:x.default_end?.slice(0,5)||'14:00',cls:palette[x.css_class]?x.css_class:'teal',active:x.active!==false,_dbId:x.id,sortOrder:x.sort_order||0,planningMode:x.planning_mode||'required',optionalStaffing:Number(x.optional_staffing)||0,responsibleEmployeeId:x.responsible_employee_id||null,responsibleOnly:x.responsible_only===true,optionalWeekdays:x.optional_weekdays||[1,2,3,4,5,6,7],coverageGroup:x.coverage_group||null,coverageRequired:Number(x.coverage_required)||0}));
     if(typeof TYPES!=='undefined')TYPES.splice(0,TYPES.length,...M.models.filter(x=>x.active).map(x=>({...x})));
     if(typeof selectedType!=='undefined'&&!M.activeCodes().includes(selectedType))selectedType=M.activeCodes()[0]||null;
   };
   const staff=()=>typeof employees==='undefined'?[]:employees;
   M.allowsEmployee=(code,employee)=>{const t=M.find(code);return !t?.responsibleOnly||!!t.responsibleEmployeeId&&String(employee?._dbId||employee?.id)===String(t.responsibleEmployeeId)};
-  M.requiredSoll=(date,code,fallback)=>{const t=M.find(code),override=typeof dailySoll==='undefined'?null:dailySoll[date]?.[code];if(override!=null)return Number(override);return t&&(t.planningMode==='optional'||!t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7))?0:fallback};
+  M.coverageGroup=code=>{const t=M.find(code);if(!t?.coverageGroup)return null;const members=M.models.map(x=>M.find(x.id)).filter(x=>x.coverageGroup===t.coverageGroup),active=members.filter(x=>x.active).sort((a,b)=>a.sortOrder-b.sortOrder||a.id.localeCompare(b.id));return {key:t.coverageGroup,label:t.coverageGroup,members,active,representative:active[0]?.id,required:t.coverageRequired,start:t.start,end:t.end}};
+  M.coverageTarget=(date,code)=>{const g=M.coverageGroup(code);if(!g)return null;const values=g.active.map(t=>typeof dailySoll==='undefined'?null:dailySoll[date]?.[t.id]).filter(x=>x!=null);return values.length?Math.max(...values.map(Number)):g.active.some(t=>t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7))?g.required:0};
+  const minutes=value=>{const [h,m]=value.split(':').map(Number);return h*60+m};
+  M.coverageInfo=(date,code,simulated=[])=>{
+    const g=M.coverageGroup(code);if(!g)return null;
+    const start=minutes(g.start),end=minutes(g.end)+(g.end<=g.start?1440:0),all=[...(typeof assignments==='undefined'?[]:assignments),...simulated];
+    const covered=all.filter(a=>{const t=g.members.find(t=>t.id===a.type);if(!t||a.date!==date||a.status==='CANCELLED')return false;const s=minutes(a.start||t.start),e=minutes(a.end||t.end)+(minutes(a.end||t.end)<=s?1440:0);return s<=start&&e>=end});
+    const filled=new Set(covered.map(a=>String(a.employeeId))).size,target=M.coverageTarget(date,code);
+    return {...g,target,filled,missing:Math.max(0,target-filled),coveredCodes:[...new Set(covered.map(a=>a.type))],alternatives:g.active.filter(t=>t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7)||(typeof dailySoll!=='undefined'&&dailySoll[date]?.[t.id]!=null)).map(t=>t.id)};
+  };
+  // Allocate only the shared deficit to one row. Existing local bookings remain visible.
+  M.requiredSoll=(date,code,fallback)=>{const g=M.coverageInfo(date,code);if(g){const own=typeof assignments==='undefined'?0:assignments.filter(a=>a.date===date&&a.type===code&&a.status!=='CANCELLED').length;return own+(g.representative===code?g.missing:0)}const t=M.find(code),override=typeof dailySoll==='undefined'?null:dailySoll[date]?.[code];if(override!=null)return Number(override);return t&&(t.planningMode==='optional'||!t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7))?0:fallback};
   M.optionalTarget=(date,code)=>{const t=M.find(code);if(!t?.active||t.planningMode!=='optional'||(typeof dailySoll!=='undefined'&&dailySoll[date]?.[code]!=null))return 0;return t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7)?t.optionalStaffing:0};
   M.reservePenalty=(employee,date,type)=>M.models.some(t=>t.active&&t.id!==type&&t.responsibleOnly&&String(t.responsibleEmployeeId)===String(employee._dbId||employee.id)&&M.optionalTarget(date,t.id)>0)?1:0;
   M.invalidate=()=>{if(typeof autoPlanPreview!=='undefined'){autoPlanPreview=[];autoPlanUnresolved=[];autoPlanOptionalSkipped=[];autoPlanAnalyzed=false;autoPlanApplied=0;}window.renderAutoPlanning?.()};
@@ -31,6 +42,7 @@
     if(!Number.isInteger(model.soll)||model.soll<0||model.soll>99)throw Error('Die SOLL-Stärke muss eine ganze Zahl zwischen 0 und 99 sein.');
     if(!palette[model.color])throw Error('Bitte eine gültige Farbe auswählen.');
     const current=M.find(model.code),planningMode=model.planning_mode??current?.planningMode??'required',optionalStaffing=model.optional_staffing??current?.optionalStaffing??0,responsible=model.responsible_employee_id===undefined?(current?.responsibleEmployeeId||null):model.responsible_employee_id,only=model.responsible_only??current?.responsibleOnly??false,days=model.optional_weekdays??current?.optionalWeekdays??[1,2,3,4,5,6,7];
+    if(current?.coverageGroup&&(model.start!==current.start||model.end!==current.end||planningMode!=='required'))throw Error('Die gemeinsame Leitung benötigt identische Zeiten und Pflichtbesetzung für alle verbundenen TL-Modelle.');
     if(!['required','optional'].includes(planningMode)||!Number.isInteger(optionalStaffing)||optionalStaffing<0||optionalStaffing>99||(planningMode==='optional'&&optionalStaffing<1))throw Error('Bitte eine gültige Planungsart und optionale Wunschbesetzung angeben.');
     if(only&&(!responsible||(planningMode==='optional'&&optionalStaffing>1)))throw Error('Bei exklusiver Zuständigkeit ist ein Mitarbeiter und höchstens eine optionale Besetzung erforderlich.');
     if(responsible&&!staff().some(e=>String(e._dbId||e.id)===String(responsible)&&e.status==='active'))throw Error('Bitte einen aktiven Mitarbeiter dieses Unternehmens auswählen.');
@@ -103,8 +115,8 @@
       <form id="sfModelForm"><div class="sf-model-fields">
         <label><span>Kürzel</span><input id="sfModelCode" maxlength="20" required placeholder="z. B. F8" value="${esc(existing?.id||'')}" ${existing?'disabled data-fixed="true"':''}></label>
         <label><span>Name</span><input id="sfModelName" maxlength="80" required placeholder="z. B. Frühdienst 8 Stunden" value="${esc(existing?.name||'')}"></label>
-        <label><span>Beginn</span><input id="sfModelStart" type="time" required value="${esc(existing?.start||'06:00')}"></label>
-        <label><span>Ende</span><input id="sfModelEnd" type="time" required value="${esc(existing?.end||'14:00')}"></label>
+        <label><span>Beginn</span><input id="sfModelStart" type="time" ${existing?.coverageGroup?'readonly':''} required value="${esc(existing?.start||'06:00')}"></label>
+        <label><span>Ende</span><input id="sfModelEnd" type="time" ${existing?.coverageGroup?'readonly':''} required value="${esc(existing?.end||'14:00')}"></label>
         <label><span>SOLL-Stärke</span><input id="sfModelSoll" type="number" min="0" max="99" step="1" required value="${Number(existing&&globalSoll[existing.id]||0)}"></label>
         <label><span>Farbe</span><select id="sfModelColor" aria-label="Farbe">${Object.entries(palette).map(([id,label])=>`<option value="${id}" ${id===(existing?.cls||'teal')?'selected':''}>${label}</option>`).join('')}</select></label>
         <label><span>Planungsart</span><select id="sfModelMode" aria-label="Planungsart"><option value="required">Pflichtbesetzung</option><option value="optional" ${existing?.planningMode==='optional'?'selected':''}>Optional · nach Pflichtdiensten</option></select></label>
@@ -112,7 +124,7 @@
         <label><span>Zuständiger Mitarbeiter</span><select id="sfModelResponsible" aria-label="Zuständiger Mitarbeiter"><option value="">Keine feste Zuständigkeit</option>${staff().filter(e=>e.status==='active').map(e=>`<option value="${esc(e._dbId||e.id)}" ${String(existing?.responsibleEmployeeId)===String(e._dbId||e.id)?'selected':''}>${esc(e.first+' '+e.last)}</option>`).join('')}</select></label>
         <label><span>Zuweisung</span><select id="sfModelOnly" aria-label="Zuweisung"><option value="false">Alle mit Schichtfreigabe</option><option value="true" ${existing?.responsibleOnly?'selected':''}>Nur zuständiger Mitarbeiter</option></select></label>
         <fieldset style="grid-column:1/-1;border:1px solid var(--line);border-radius:8px;padding:10px"><legend>Reguläre Einsatztage</legend><div style="display:flex;gap:12px;flex-wrap:wrap">${['Mo','Di','Mi','Do','Fr','Sa','So'].map((day,i)=>`<label style="display:flex;align-items:center;gap:4px"><input type="checkbox" data-sf-optional-day value="${i+1}" ${(existing?.optionalWeekdays||[1,2,3,4,5,6,7]).includes(i+1)?'checked':''} style="width:18px;min-height:18px">${day}</label>`).join('')}</div></fieldset>
-        <p id="sfModelRuleHelp" style="grid-column:1/-1;margin:0">Die Standardbesetzung gilt an den ausgewählten Einsatztagen. An anderen Tagen entsteht kein regulärer Bedarf. Tageswerte ermöglichen einzelne Ausnahmen. Pflichtdienste haben Vorrang; optionale Schichten dürfen frei bleiben. Freigaben, Rhythmus, Stunden und Ruhezeiten gelten weiterhin.</p>
+        <p id="sfModelRuleHelp" style="grid-column:1/-1;margin:0">${existing?.coverageGroup?`Gemeinsame Mindestbesetzung ${esc(existing.coverageGroup)}: ${existing.coverageRequired} TL insgesamt. Ein TL deckt beide Standorte ab; ein zweiter TL ist möglich. Gemeinsame Tageswerte stehen unter „Abweichende SOLL-Stärken“. `:''}Die Standardbesetzung gilt an den ausgewählten Einsatztagen. An anderen Tagen entsteht kein regulärer Bedarf. Tageswerte ermöglichen einzelne Ausnahmen. Pflichtdienste haben Vorrang; optionale Schichten dürfen frei bleiben. Freigaben, Rhythmus, Stunden und Ruhezeiten gelten weiterhin.</p>
       </div><div class="sf-model-error" role="alert"></div><div class="sf-model-footer"><button type="button" class="ghost" data-cancel>Abbrechen</button><button type="submit" class="primary">${action==='CREATE'?'Schichtmodell hinzufügen':action==='RESTORE'?'Wiederherstellen':'Änderungen speichern'}</button></div></form>`);
     const val=id=>d.shade.querySelector('#'+id).value;
     d.shade.querySelector('form').onsubmit=async e=>{
@@ -122,7 +134,7 @@
         d.setSaving(false);d.close();window.showSaveToast?.('Schichtmodell gespeichert','Das Modell ist im aktuellen Unternehmen verfügbar.');
       }catch(err){d.setSaving(false);syncMode();error.textContent=err.message||'Das Modell konnte nicht gespeichert werden.';}
     };
-    const mode=d.shade.querySelector('#sfModelMode'),syncMode=()=>{const optional=mode.value==='optional';d.shade.querySelector('#sfModelSoll').disabled=optional;if(optional)d.shade.querySelector('#sfModelSoll').value='0';d.shade.querySelector('#sfModelOptional').disabled=!optional;};mode.onchange=syncMode;syncMode();
+    const mode=d.shade.querySelector('#sfModelMode'),syncMode=()=>{const optional=mode.value==='optional',shared=!!existing?.coverageGroup;mode.disabled=shared;d.shade.querySelector('#sfModelSoll').disabled=optional||shared;if(shared)d.shade.querySelector('#sfModelSoll').value=existing.coverageRequired;if(optional)d.shade.querySelector('#sfModelSoll').value='0';d.shade.querySelector('#sfModelOptional').disabled=!optional;};mode.onchange=syncMode;syncMode();
   };
   M.remove=code=>{
     const model=M.find(code);if(!model||!M.canManage()||M.busy)return;
@@ -155,6 +167,7 @@
     host.querySelectorAll('#sfSaveShiftSettings,#sfSaveDailySoll,#sfResetDailySoll,[data-sf-start],[data-sf-end],[data-sf-soll],[data-sf-day]').forEach(el=>el.disabled=!M.canManage()||M.busy);
     for(const row of list.querySelectorAll('.sf-set-shift')){const code=row.querySelector('[data-sf-start]')?.dataset.sfStart,t=M.find(code);if(!t)continue;const e=staff().find(e=>String(e._dbId||e.id)===String(t.responsibleEmployeeId));if(t.planningMode==='optional'){const input=row.querySelector('[data-sf-soll]');input.value='0';input.disabled=true;}if(t.planningMode==='optional'||t.responsibleOnly){const note=document.createElement('small');note.textContent=(t.planningMode==='optional'?`Optional · Wunsch ${t.optionalStaffing}`:'Pflichtbesetzung')+(t.responsibleOnly?` · Nur ${e?e.first+' '+e.last:'Zuständiger fehlt'}`:'');row.firstElementChild.appendChild(note);}}
     for(const row of list.querySelectorAll('.sf-set-shift')){const t=M.find(row.querySelector('[data-sf-start]')?.dataset.sfStart);if(t&&t.optionalWeekdays.length<7){const note=document.createElement('small');note.textContent=t.optionalWeekdays.join(',')==='1,2,3,4,5'?'Einsatztage: Mo–Fr':'Einsatztage: '+t.optionalWeekdays.map(d=>['Mo','Di','Mi','Do','Fr','Sa','So'][d-1]).join(', ');row.firstElementChild.appendChild(note);}}
+    for(const row of list.querySelectorAll('.sf-set-shift')){const t=M.find(row.querySelector('[data-sf-start]')?.dataset.sfStart);if(t?.coverageGroup){const note=document.createElement('small');note.textContent=`Gemeinsame Leitung ${t.coverageGroup} · SOLL ${t.coverageRequired} insgesamt · zweiter TL möglich`;row.firstElementChild.appendChild(note);for(const input of row.querySelectorAll('[data-sf-start],[data-sf-end],[data-sf-soll]'))input.disabled=true;row.querySelector('[data-sf-soll]').value=t.coverageRequired;}}
   };
   const update=B.updateState;B.updateState=function(){const r=update?.apply(this,arguments);if(B.ready)window.SFSettingsV2?.refreshPlanning();return r;};
 })();

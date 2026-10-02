@@ -203,7 +203,7 @@
         (x) => x.is_own || (!x.is_own && x.status !== "MARKET_OPEN"),
       );
     const line = (x) =>
-      `<article class="sf-market-row" data-id="${x.id}"><div><b>${esc(x.shift_code)} · ${esc(dt(x.starts_at))}${x.ends_at ? '–' + esc(dt(x.ends_at)) : ''}</b><small>${x.kind === 'OPEN_POSITION' ? `${x.is_claim ? 'Meine Übernahmeanfrage' : `Offener Bedarf · ${x.remaining_count} Plätze`} · ${esc(x.company_name || 'Planung')}` : x.is_own ? "Eigenes Angebot" : "Angeboten von " + esc(x.offered_by)}${x.reason ? " · " + esc(x.reason) : ""}</small>${extraWarning(x) ? `<small class="sf-market-block">${esc(extraWarning(x))} · Planerfreigabe erforderlich</small>` : ''}</div><div><span class="sf-market-state">${esc(status(x.status))}</span>${x.block_reason ? `<small class="sf-market-block">${esc(x.block_reason)}</small>` : ""}</div><div class="sf-market-actions">${x.status === "MARKET_OPEN" && !x.is_own && x.can_take ? `<button class="sf-market-take" data-take>${extraWarning(x) ? 'Zusatzdienst anfragen' : 'Schicht anfragen'}</button>` : ""}${(x.is_own && ["MARKET_OPEN", "PENDING_MANAGER"].includes(x.status)) || (x.kind === 'OPEN_POSITION' && x.is_claim && x.status === 'PENDING_MANAGER') ? '<button class="sf-market-cancel" data-cancel>Zurückziehen</button>' : ""}</div></article>`;
+      `<article class="sf-market-row" data-id="${x.id}"><div><b>${esc(x.shift_label || x.shift_code)} · ${esc(dt(x.starts_at))}${x.ends_at ? '–' + esc(dt(x.ends_at)) : ''}</b><small>${x.kind === 'OPEN_POSITION' ? `${x.is_claim ? 'Meine Übernahmeanfrage' : `Offener Bedarf · ${x.remaining_count} Plätze`} · ${esc(x.company_name || 'Planung')}` : x.is_own ? "Eigenes Angebot" : "Angeboten von " + esc(x.offered_by)}${x.reason ? " · " + esc(x.reason) : ""}</small>${extraWarning(x) ? `<small class="sf-market-block">${esc(extraWarning(x))} · Planerfreigabe erforderlich</small>` : ''}</div><div><span class="sf-market-state">${esc(status(x.status))}</span>${x.block_reason ? `<small class="sf-market-block">${esc(x.block_reason)}</small>` : ""}</div><div class="sf-market-actions">${x.status === "MARKET_OPEN" && !x.is_own && x.can_take ? `<button class="sf-market-take" data-take>${extraWarning(x) ? 'Zusatzdienst anfragen' : 'Schicht anfragen'}</button>` : ""}${(x.is_own && ["MARKET_OPEN", "PENDING_MANAGER"].includes(x.status)) || (x.kind === 'OPEN_POSITION' && x.is_claim && x.status === 'PENDING_MANAGER') ? '<button class="sf-market-cancel" data-cancel>Zurückziehen</button>' : ""}</div></article>`;
     card.innerHTML = `<div class="sf-market-head"><div><h3>Schicht-Marktplatz</h3><p>Eigene Schichten anbieten und offene Dienste übernehmen</p></div><span class="sf-market-count">${available.filter((x) => x.can_take).length} passend</span></div><div class="sf-market-note">Zusatzdienste sind auch an freien Rhythmustagen möglich. Abweichungen vom Rhythmus oder den vertraglichen Sollstunden benötigen eine ausdrückliche Planerfreigabe. Erst die Freigabe trägt den Dienst verbindlich ein.</div><div class="sf-market-section-title"><b>Verfügbare Schichten</b><span class="sf-market-count">${available.length}</span></div><div class="sf-market-list">${available.length ? available.map(line).join("") : '<div class="sf-market-empty">Aktuell werden keine Schichten angeboten.</div>'}</div><div class="sf-market-section-title"><b>Meine Angebote und Übernahmen</b><span class="sf-market-count">${mine.length}</span></div><div class="sf-market-list">${mine.length ? mine.map(line).join("") : '<div class="sf-market-empty">Noch keine eigenen Marktplatzvorgänge.</div>'}</div>`;
     host.insertBefore(card, host.firstChild);
     card.querySelectorAll("[data-take]").forEach(
@@ -214,7 +214,7 @@
           );
           modal(
             extraWarning(x) ? 'Zusatzdienst anfragen' : 'Schicht anfragen',
-            `${x.shift_code} · ${dt(x.starts_at)}${extraWarning(x) ? ' · ' + extraWarning(x) : ''}. Die Anfrage ist freiwillig; verbindlich wird sie erst nach Planerfreigabe.`,
+            `${x.shift_label || x.shift_code} · ${dt(x.starts_at)}${extraWarning(x) ? ' · ' + extraWarning(x) : ''}. Die Anfrage ist freiwillig; verbindlich wird sie erst nach Planerfreigabe.`,
             "Zur Prüfung einreichen",
             async (note) => {
               try {
@@ -295,7 +295,7 @@
   function bindReviews(host) {
     host.querySelectorAll('[data-cancel-open]').forEach(b => {
       const x = rows.find(r => r.id === b.closest('[data-id]').dataset.id);
-      b.onclick = () => modal('Offene Plätze zurückziehen', `${x.shift_code} · ${dt(x.starts_at)}. Ausstehende Übernahmeanfragen für dieses Angebot werden beendet.`, 'Angebot zurückziehen', async note => {
+      b.onclick = () => modal('Offene Plätze zurückziehen', `${x.shift_label || x.shift_code} · ${dt(x.starts_at)}. Ausstehende Übernahmeanfragen für dieses Angebot werden beendet.`, 'Angebot zurückziehen', async note => {
         await rpc('manager_cancel_open_shift_offer', {p_offer_id:x.id});
         await managerLoad();
         showSaveToast?.('Angebot zurückgezogen', 'Die offenen Plätze werden nicht mehr angeboten.');
@@ -430,7 +430,7 @@
         ? data
             .map(
               (x) =>
-                `<article class="sf-market-row" data-id="${x.id}"><div><b>${esc(x.shift_code)} · ${esc(dt(x.starts_at))}${x.ends_at ? '–' + esc(dt(x.ends_at)) : ''}</b><small>${esc(x.offered_by)}${x.claimed_by ? " → " + esc(x.claimed_by) : x.kind === 'OPEN_POSITION' ? ` · ${x.remaining_count} Plätze offen` : " · noch nicht übernommen"}${x.reason ? " · " + esc(x.reason) : ""}</small>${extraWarning(x) ? `<small class="sf-market-block">${esc(extraWarning(x))}</small>` : ''}</div><div><span class="sf-market-state">${esc(status(x.status))}</span>${x.colleague_comment ? `<small>${esc(x.colleague_comment)}</small>` : ""}</div><div class="sf-market-actions">${reviewButton(x)}</div></article>`,
+                `<article class="sf-market-row" data-id="${x.id}"><div><b>${esc(x.shift_label || x.shift_code)} · ${esc(dt(x.starts_at))}${x.ends_at ? '–' + esc(dt(x.ends_at)) : ''}</b><small>${esc(x.offered_by)}${x.claimed_by ? " → " + esc(x.claimed_by) : x.kind === 'OPEN_POSITION' ? ` · ${x.remaining_count} Plätze offen` : " · noch nicht übernommen"}${x.reason ? " · " + esc(x.reason) : ""}</small>${extraWarning(x) ? `<small class="sf-market-block">${esc(extraWarning(x))}</small>` : ''}</div><div><span class="sf-market-state">${esc(status(x.status))}</span>${x.colleague_comment ? `<small>${esc(x.colleague_comment)}</small>` : ""}</div><div class="sf-market-actions">${reviewButton(x)}</div></article>`,
             )
             .join("")
         : '<div class="sf-market-empty">Für diesen Filter sind keine Einträge vorhanden.</div>';
@@ -456,7 +456,7 @@
             .slice(0, 4)
             .map(
               (x) =>
-                `<article class="sf-market-row" data-id="${x.id}"><div><b>${esc(x.shift_code)} · ${esc(dt(x.starts_at))}</b><small>${esc(x.offered_by)}${x.claimed_by ? " → " + esc(x.claimed_by) : " · noch nicht übernommen"}</small></div><span class="sf-market-state">${esc(status(x.status))}</span><div class="sf-market-actions">${reviewButton(x)}</div></article>`,
+                `<article class="sf-market-row" data-id="${x.id}"><div><b>${esc(x.shift_label || x.shift_code)} · ${esc(dt(x.starts_at))}</b><small>${esc(x.offered_by)}${x.claimed_by ? " → " + esc(x.claimed_by) : " · noch nicht übernommen"}</small></div><span class="sf-market-state">${esc(status(x.status))}</span><div class="sf-market-actions">${reviewButton(x)}</div></article>`,
             )
             .join("")
         : '<div class="sf-market-empty">Keine offenen Angebote oder Freigaben.</div>'

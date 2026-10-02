@@ -6,12 +6,14 @@
   const dateLabel=date=>new Date(date+'T12:00:00').toLocaleDateString('de-DE',{weekday:'long',day:'2-digit',month:'2-digit'});
   const shiftLabel=code=>{const t=typeById(code);return t?.name&&t.name!==code?`${code} · ${t.name}`:code};
   function remainingSlots(slots,preview){
-    const counts=new Map();preview.forEach(x=>{const key=x.date+'|'+x.type;counts.set(key,(counts.get(key)||0)+1)});
-    const known=new Map();autoPlanUnresolved.forEach(x=>{const key=x.date+'|'+x.type;if(!known.has(key))known.set(key,x.reason)});
-    return slots.filter(x=>{const key=x.date+'|'+x.type,n=counts.get(key)||0;if(n){counts.set(key,n-1);return false}return true}).map(x=>({...x,reason:known.get(x.date+'|'+x.type)||'Für diese Position liegt kein Vorschlag vor. Bitte prüfe die Besetzung im Dienstplan.'}));
+    const keyOf=x=>x.date+'|'+(x.coverageGroup||x.type);
+    const counts=new Map();preview.forEach(x=>{const key=keyOf(x);counts.set(key,(counts.get(key)||0)+1)});
+    const known=new Map();autoPlanUnresolved.forEach(x=>{const key=keyOf(x);if(!known.has(key))known.set(key,x.reason)});
+    return slots.filter(x=>{const key=keyOf(x),n=counts.get(key)||0;if(n){counts.set(key,n-1);return false}return true}).map(x=>({...x,reason:known.get(keyOf(x))||'Für diese Position liegt kein Vorschlag vor. Bitte prüfe die Besetzung im Dienstplan.'}));
   }
   function explain(slot,simulated=[]){
     const {type,date}=slot;
+    if(slot.coverageGroup){const alternatives=slot.alternatives||[type];return `Gemeinsame Leitung ${slot.coverageLabel}: kein verfügbarer TL unter den aktuellen Regeln. `+alternatives.map(code=>`${code}: ${explain({type:code,date},simulated)}`).join(' ')}
     let pool=employees.filter(e=>e.status==='active');
     if(!pool.length)return'Keine aktiven Mitarbeiter vorhanden. Prüfe die Mitarbeiterprofile.';
     pool=pool.filter(e=>(e.shifts||[]).includes(type));
@@ -36,7 +38,7 @@
   }
   function renderUnresolved(remaining){
     const grouped=new Map();remaining.forEach(x=>{const key=x.date+'|'+x.type+'|'+x.reason;if(!grouped.has(key))grouped.set(key,{...x,count:0});grouped.get(key).count++});
-    el('autoUnresolved').innerHTML=grouped.size?[...grouped.values()].sort((a,b)=>a.date.localeCompare(b.date)||a.type.localeCompare(b.type)).map(x=>`<div class="sf-auto-unresolved-row"><div><b>${esc(dateLabel(x.date))} · ${esc(shiftLabel(x.type))}</b><span class="sf-auto-needed">${x.count} Position${x.count===1?'':'en'} offen</span><p>${esc(x.reason)}</p></div><button type="button" class="ghost" data-auto-date="${esc(x.date)}" onclick="SFAutoPlanWorkspace.openSchedule(this.dataset.autoDate)">Im Dienstplan prüfen</button></div>`).join(''):'<div class="sf-auto-empty is-good"><b>Alle offenen Positionen haben einen Vorschlag.</b><p>Prüfe die Besetzungen und übernimm sie anschließend als Entwurf.</p></div>';
+    el('autoUnresolved').innerHTML=grouped.size?[...grouped.values()].sort((a,b)=>a.date.localeCompare(b.date)||a.type.localeCompare(b.type)).map(x=>`<div class="sf-auto-unresolved-row"><div><b>${esc(dateLabel(x.date))} · ${esc(x.coverageLabel||shiftLabel(x.type))}</b><span class="sf-auto-needed">${x.count} Position${x.count===1?'':'en'} offen</span><p>${esc(x.reason)}</p></div><button type="button" class="ghost" data-auto-date="${esc(x.date)}" onclick="SFAutoPlanWorkspace.openSchedule(this.dataset.autoDate)">Im Dienstplan prüfen</button></div>`).join(''):'<div class="sf-auto-empty is-good"><b>Alle offenen Positionen haben einen Vorschlag.</b><p>Prüfe die Besetzungen und übernimm sie anschließend als Entwurf.</p></div>';
   }
   function render(){
     if(!el('view-auto'))return;
@@ -85,4 +87,3 @@
   window.SFAutoPlanWorkspace={render,explain,remainingSlots,openSchedule,confirmApply,expandDays:open=>document.querySelectorAll('#autoSuggestions details').forEach(x=>x.open=open)};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',render,{once:true});else render();
 })();
-

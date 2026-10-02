@@ -107,12 +107,13 @@
   function shiftBlock(date,id){
     const t=typeById(id);if(!t)return'';
     const list=assignmentsFor(date,id);
-    const soll=Number(getSoll(date,id)||0),ist=list.length;
-    if(!soll&&!ist)return `<section class="sf-week-shift is-inactive" data-date="${esc(date)}" data-type="${esc(id)}" aria-label="${esc(id)}: keine Besetzung"><span class="sf-week-shift-empty">—</span></section>`;
+    const soll=Number(getSoll(date,id)||0),ist=list.length,shared=window.SFShiftModels?.coverageInfo?.(date,id);
+    if(!soll&&!ist&&!shared)return `<section class="sf-week-shift is-inactive" data-date="${esc(date)}" data-type="${esc(id)}" aria-label="${esc(id)}: keine Besetzung"><span class="sf-week-shift-empty">—</span></section>`;
     const st=statusFor(soll,ist),open=Math.max(0,soll-ist),over=Math.max(0,ist-soll);
     const color=accent[t.cls]||'#62a0ff';
     const rows=list.map(a=>employeeRow(a,t)).join('');
-    return `<section class="sf-week-shift ${st}" data-date="${esc(date)}" data-type="${esc(id)}" style="--sf-shift-accent:${color}"><header class="sf-week-shift-head"><div class="sf-week-shift-main"><strong>${esc(id)}</strong><small>${esc(t.start)} – ${esc(t.end)}</small></div><div class="sf-week-shift-count"><b title="IST / SOLL">${ist} / ${soll}</b></div></header><div class="sf-week-employees">${rows}</div>${open?`<button type="button" class="sf-week-open" data-open-assign>＋ ${open} Position${open===1?'':'en'} offen</button>`:''}${over?`<div class="sf-week-over">＋ ${over} über SOLL</div>`:''}</section>`;
+    const sharedNote=shared?`<div class="sf-week-shared" style="padding:6px 10px;font-size:11px;line-height:1.4;color:var(--muted)">${esc(shared.label)}: ${shared.filled}/${shared.target} TL insgesamt · ${shared.target===0?'kein Pflichtbedarf':shared.missing?`gemeinsam ${shared.missing} offen`:shared.coveredCodes.includes(id)?'deckt beide Standorte ab':`mit abgedeckt durch ${esc(shared.coveredCodes.join(', '))}`}</div>`:'';
+    return `<section class="sf-week-shift ${st}" data-date="${esc(date)}" data-type="${esc(id)}" style="--sf-shift-accent:${color}"><header class="sf-week-shift-head"><div class="sf-week-shift-main"><strong>${esc(id)}</strong><small>${esc(t.start)} – ${esc(t.end)}</small></div><div class="sf-week-shift-count"><b title="IST / SOLL">${shared?`${ist} TL vor Ort`:`${ist} / ${soll}`}</b></div></header><div class="sf-week-employees">${rows}</div>${sharedNote}${open?`<button type="button" class="sf-week-open" data-open-assign>＋ ${open} Position${open===1?'':'en'} offen</button>`:''}${over&&!shared?`<div class="sf-week-over">＋ ${over} über SOLL</div>`:''}</section>`;
   }
   function dayHeader(d,index){
     const date=iso(d),today=date===iso(new Date()),weekend=index>4;
@@ -202,7 +203,7 @@
     const ds=currentWeekDates(),ids=shiftOrder();
     if(mode==='compact'){
       const days=ds.map((d,i)=>{
-        const active=ids.filter(id=>getSoll(iso(d),id)>0||assignmentsFor(iso(d),id).length>0);
+        const active=ids.filter(id=>getSoll(iso(d),id)>0||assignmentsFor(iso(d),id).length>0||window.SFShiftModels?.coverageGroup?.(id));
         return `<div class="sf-week-compact-day ${iso(d)===iso(new Date())?'is-today':''} ${i>4?'is-weekend':''}">${dayHeader(d,i)}${active.length?active.map(id=>shiftCell(d,i,id,0,1)).join(''):'<div class="sf-week-compact-empty">Keine Schichten geplant</div>'}</div>`;
       }).join('');
       wrap.innerHTML=`<div class="sf-week-board is-compact">${days}</div>`;

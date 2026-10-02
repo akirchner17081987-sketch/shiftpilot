@@ -433,13 +433,14 @@ function autoEligibleEmployees(type,date,simulated=[]){
     return {e,h,target,monthHours,monthTarget,overWeek,overMonth,reserve:window.SFShiftModels?.reservePenalty?.(e,date,type)||0,score:rolePenalty+rhythmPenalty+(fair?load*20:h*.1)}
   }).filter(x=>!respectHours||(!x.overWeek&&!x.overMonth)).sort((a,b)=>a.reserve-b.reserve||a.score-b.score||a.monthHours-b.monthHours||a.h-b.h)
 }
-function autoOpenSlots(){const dates=autoPlanningDates(),slots=[];dates.forEach(d=>TYPES.forEach(t=>{const raw=getSoll(d,t.id),soll=window.SFShiftModels?.requiredSoll?.(d,t.id,raw)??raw,missing=Math.max(0,soll-assignmentsFor(d,t.id).length),day=new Date(d+'T00:00:00').toLocaleDateString('de-DE',{weekday:'short'}).replace('.','');for(let i=0;i<missing;i++)slots.push({date:d,day,type:t.id})}));return slots.sort((a,b)=>a.date.localeCompare(b.date)||Number(!!window.SFShiftModels?.find?.(b.type)?.responsibleOnly)-Number(!!window.SFShiftModels?.find?.(a.type)?.responsibleOnly))}
+function autoOpenSlots(){const dates=autoPlanningDates(),slots=[];dates.forEach(d=>TYPES.forEach(t=>{const g=window.SFShiftModels?.coverageInfo?.(d,t.id);if(g&&g.representative!==t.id)return;const raw=getSoll(d,t.id),soll=window.SFShiftModels?.requiredSoll?.(d,t.id,raw)??raw,missing=g?g.missing:Math.max(0,soll-assignmentsFor(d,t.id).length),day=new Date(d+'T00:00:00').toLocaleDateString('de-DE',{weekday:'short'}).replace('.','');for(let i=0;i<missing;i++)slots.push({date:d,day,type:t.id,...(g?{coverageGroup:g.key,coverageLabel:g.label,alternatives:g.alternatives}:{})})}));return slots.sort((a,b)=>a.date.localeCompare(b.date)||Number(!!window.SFShiftModels?.find?.(b.type)?.responsibleOnly)-Number(!!window.SFShiftModels?.find?.(a.type)?.responsibleOnly))}
+function autoSlotCandidates(slot,simulated=[]){const candidates=(slot.alternatives||[slot.type]).flatMap(type=>autoEligibleEmployees(type,slot.date,simulated).map(c=>({...c,type}))).sort((a,b)=>a.reserve-b.reserve||a.score-b.score||a.monthHours-b.monthHours||a.h-b.h);const seen=new Set();return candidates.filter(c=>{if(seen.has(c.e.id))return false;seen.add(c.e.id);return true})}
 function autoOptionalSlots(){const slots=[];autoPlanningDates().forEach(date=>TYPES.forEach(t=>{const missing=Math.max(0,(window.SFShiftModels?.optionalTarget?.(date,t.id)||0)-assignmentsFor(date,t.id).length),day=new Date(date+'T00:00:00').toLocaleDateString('de-DE',{weekday:'short'}).replace('.','');for(let i=0;i<missing;i++)slots.push({date,day,type:t.id,optional:true})}));return slots}
 function renderAutoPlanning(){if(window.SFAutoPlanWorkspace)window.SFAutoPlanWorkspace.render();else syncAutoPeriodControls()}
 
 function generateAutoPlanPreview(){
   autoPlanPreview=[];autoPlanUnresolved=[];autoPlanOptionalSkipped=[];autoPlanAnalyzed=true;autoPlanApplied=0;const simulated=[];
-  [...autoOpenSlots(),...autoOptionalSlots()].forEach(slot=>{const candidates=autoEligibleEmployees(slot.type,slot.date,simulated);const best=candidates[0];if(!best){(slot.optional?autoPlanOptionalSkipped:autoPlanUnresolved).push({...slot,reason:window.SFAutoPlanWorkspace?.explain(slot,simulated)||'Kein passender Mitarbeiter unter den aktuellen Planungsregeln.'});return}const t=typeById(slot.type);const item={id:'preview-'+Date.now()+'-'+Math.random(),date:slot.date,day:slot.day,type:slot.type,optional:!!slot.optional,employeeId:best.e.id,start:t.start,end:t.end,reason:(slot.optional?'Optional · ':'')+`Woche ${best.h.toFixed(1)} / ${best.target.toFixed(1)} Std. · Monat ${best.monthHours.toFixed(1)} / ${best.monthTarget.toFixed(1)} Std.`};autoPlanPreview.push(item);simulated.push(item)});
+  [...autoOpenSlots(),...autoOptionalSlots()].forEach(slot=>{const candidates=autoSlotCandidates(slot,simulated);const best=candidates[0];if(!best){(slot.optional?autoPlanOptionalSkipped:autoPlanUnresolved).push({...slot,reason:window.SFAutoPlanWorkspace?.explain(slot,simulated)||'Kein passender Mitarbeiter unter den aktuellen Planungsregeln.'});return}const t=typeById(best.type);const item={id:'preview-'+Date.now()+'-'+Math.random(),date:slot.date,day:slot.day,type:best.type,coverageGroup:slot.coverageGroup,coverageLabel:slot.coverageLabel,optional:!!slot.optional,employeeId:best.e.id,start:t.start,end:t.end,reason:(slot.coverageGroup?`Deckt ${slot.coverageLabel} gemeinsam ab · `:slot.optional?'Optional · ':'')+`Woche ${best.h.toFixed(1)} / ${best.target.toFixed(1)} Std. · Monat ${best.monthHours.toFixed(1)} / ${best.monthTarget.toFixed(1)} Std.`};autoPlanPreview.push(item);simulated.push(item)});
   renderAutoPlanning();showSaveToast('Auto-Planung analysiert',`${autoPlanPreview.length} Vorschläge erstellt, ${autoPlanUnresolved.length} Positionen bleiben offen.`)
 }
 function removeAutoSuggestion(i){if(autoPlanApplying)return;const removed=autoPlanPreview.splice(i,1)[0];if(removed)(removed.optional?autoPlanOptionalSkipped:autoPlanUnresolved).push({...removed,reason:'Dieser Vorschlag wurde von dir entfernt.'});renderAutoPlanning()}
@@ -455,7 +456,7 @@ async function applyAutoPlanPreview(){
     if(!accepted)return;
     if(published()){showSaveToast('Plan inzwischen veröffentlicht','Bitte prüfe Änderungen einzeln im Dienstplan.');return}
     if(window.SFBackend?.companyId!==companyId||JSON.stringify(preview)!==JSON.stringify(autoPlanPreview)){showSaveToast('Vorschläge erneut prüfen','Die Planungsdaten haben sich geändert. Bitte erstelle die Vorschläge erneut.');return}
-    const checked=[];for(const x of preview){if(x.optional&&!(window.SFShiftModels?.optionalTarget?.(x.date,x.type)>0)){showSaveToast('Vorschläge erneut prüfen','Die optionale Planungsregel wurde inzwischen geändert. Bitte erstelle die Vorschläge erneut.');return}if(!autoEligibleEmployees(x.type,x.date,checked).some(c=>String(c.e.id)===String(x.employeeId))){showSaveToast('Vorschläge erneut prüfen','Ein Mitarbeiter ist inzwischen nicht mehr verfügbar. Bitte erstelle die Vorschläge erneut.');return}checked.push(x)}
+    const checked=[];for(const x of preview){const g=window.SFShiftModels?.coverageInfo?.(x.date,x.type,checked);if(x.coverageGroup&&(!g||g.key!==x.coverageGroup||!g.missing||!g.alternatives.includes(x.type))){showSaveToast('Vorschläge erneut prüfen','Die gemeinsame TL-Besetzung ist inzwischen abgedeckt oder wurde geändert. Bitte erstelle die Vorschläge erneut.');return}if(x.optional&&!(window.SFShiftModels?.optionalTarget?.(x.date,x.type)>0)){showSaveToast('Vorschläge erneut prüfen','Die optionale Planungsregel wurde inzwischen geändert. Bitte erstelle die Vorschläge erneut.');return}if(!autoEligibleEmployees(x.type,x.date,checked).some(c=>String(c.e.id)===String(x.employeeId))){showSaveToast('Vorschläge erneut prüfen','Ein Mitarbeiter ist inzwischen nicht mehr verfügbar. Bitte erstelle die Vorschläge erneut.');return}checked.push(x)}
     preview.forEach(x=>assignments.push({id:'as'+Date.now()+Math.random(),date:x.date,type:x.type,employeeId:x.employeeId,start:x.start,end:x.end}));
     const n=preview.length,plannedDates=autoPlanningDates(),plannedMode=document.getElementById('autoPlanPeriod')?.value||'week';
     if(plannedDates.length){if(plannedMode==='month')window.SchichtFunkCalendarView?.setMonth?.(plannedDates[0].slice(0,7));else{weekStart=autoMonday(plannedDates[0]);window.SchichtFunkCalendarView?.setMode?.('week')}}
@@ -966,19 +967,19 @@ table th,table td{font-size:13px;line-height:1.35}
 <script src="assets/navigation-compat-v1.js?v=20260930-tenbreaks1&period=20261001-1&models=1&auto=20261001-workflow2&mobile=20261002-sheetguard1"></script>
 <script src="assets/schichtfunk-schedule-core-v1.js?v=20261002-weekdays1"></script>
 <script src="assets/assignment-quick-delete-v1.js"></script>
-<script src="assets/conflict-plausibility-v1.js?v=20261002-weekdays1"></script>
+<script src="assets/conflict-plausibility-v1.js?v=20261002-sharedtl1"></script>
 <script src="assets/employee-core-v1.js?v=20261001-removal1"></script>
 <script src="assets/employee-rhythm-v1.js?v=20261001-centralteams1"></script>
 <script src="assets/planning-teams-v1.js?v=20261001-centralteams1"></script>
 <link rel="stylesheet" href="assets/open-shift-marketplace-v1.css?v=20261001-market1">
-<script src="assets/open-shift-marketplace-v1.js?v=20261001-market1"></script>
-<script src="assets/auto-plan-workspace-v1.js?v=20261002-weekdays1"></script>
+<script src="assets/open-shift-marketplace-v1.js?v=20261002-sharedtl1"></script>
+<script src="assets/auto-plan-workspace-v1.js?v=20261002-sharedtl1"></script>
 <script src="assets/planning-assistant-core-v1.js?v=20261001-4"></script>
 <script src="assets/planning-assistant-v1.js?v=20261001-5"></script>
 <script src="assets/employee-management-v2.js?v=20261002-profile1"></script>
 <script src="assets/team-admin-v1.js?v=20260930-timeonly3"></script>
 <script src="assets/audit-logs-v1.js?v=20260902-audit6"></script>
-<script src="assets/settings-management-v2.js?v=20261002-weekdays1"></script>
+<script src="assets/settings-management-v2.js?v=20261002-sharedtl1"></script>
 <script src="assets/company-datetime-v1.js?v=20260902-datetime1"></script>
 <script src="assets/schedule-final-v1.js?v=20260831-complete1"></script>
 <script src="assets/absence-management-v3.js?v=20260831-complete1"></script>
@@ -1105,7 +1106,7 @@ table th,table td{font-size:13px;line-height:1.35}
 })();
 </script>
 <!-- /SHIFTPILOT_QUALITY_PASS_V1 -->
-<script src="assets/supabase-shift-marketplace-v1.js?v=20261002-month1"></script>
+<script src="assets/supabase-shift-marketplace-v1.js?v=20261002-sharedtl1"></script>
 <script src="assets/readiness-traffic-light-v1.js?v=20260907-demo1"></script>
 <script src="assets/disruption-autopilot-v1.js?v=20260906-disruptions2"></script>
 <script src="assets/assignment-ux-v4.js?v=20261002-weekdays1"></script>
