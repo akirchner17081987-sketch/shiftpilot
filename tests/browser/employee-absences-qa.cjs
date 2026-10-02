@@ -38,14 +38,17 @@ if(fullApp){
   for(const type of ['Urlaub','Sonderurlaub','Krank','Kind Krank','Home-Office']){
     await area.locator('[data-absence-category="'+type+'"] b').click();await modal.waitFor();
     assert.equal(await modal.locator('#sfAe3Type').inputValue(),type);await modal.locator('#sfAe3Cancel').click();
+    // The shared dialog restores its opener again after 80 ms; let that finish before reopening.
+    await page.waitForTimeout(100);
   }
-  await area.locator('.sf-ae3-add').click();await modal.waitFor();await modal.locator('#sfAe3Cancel').click();
+  await area.locator('.sf-ae3-add').click();await modal.waitFor();await modal.locator('#sfAe3Cancel').click();await page.waitForTimeout(100);
   await page.setViewportSize({width:390,height:844});await more.click();
   await page.waitForFunction(()=>document.querySelector('.sf-portal-main').inert);
   await sheet.evaluate(el=>el.remove());
   await page.waitForFunction(()=>!document.querySelector('.sf-portal-main').inert);
   assert.equal(await page.locator('#sfEmployeePortal').evaluate(el=>el.classList.contains('sf-mobile-sheet-open')),false,'Removing a menu must release its background lock');
   await page.setViewportSize(original);
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
 }
 
 await area.locator('.sf-ae3-add').click();await modal.waitFor();assert.deepEqual(await modal.locator('#sfAe3Type option').allTextContents(),['Urlaub','Sonderurlaub','Krank','Kind Krank','Home-Office']);assert.equal(await modal.locator('#sfAe3From').inputValue(),'2026-10-02','Company timezone default date');assert.equal(await modal.locator('#sfAe3To').inputValue(),'2026-10-02');await page.waitForFunction(()=>document.activeElement?.id==='sfAe3Type');await page.keyboard.press('Escape');assert.equal(await modal.count(),0);assert.equal(await page.evaluate(()=>__calls.length),0);
