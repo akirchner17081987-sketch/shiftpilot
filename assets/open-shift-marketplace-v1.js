@@ -4,7 +4,7 @@
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   let publishing=false;
   function groups(slots){
-    const map=new Map();for(const s of slots){const key=s.date+'|'+s.type;if(!map.has(key))map.set(key,{date:s.date,type:s.type,coverageLabel:s.coverageLabel,count:0});map.get(key).count++;}
+    const map=new Map();for(const s of slots){const key=s.date+'|'+s.type;if(!map.has(key))map.set(key,{date:s.date,type:s.type,...(s.coverageLabel?{coverageLabel:s.coverageLabel}:{}),count:0});map.get(key).count++;}
     return [...map.values()].sort((a,b)=>a.date.localeCompare(b.date)||a.type.localeCompare(b.type));
   }
   function renderPublishEntry(state){
