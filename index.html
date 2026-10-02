@@ -293,7 +293,7 @@ let selectedEmployeeId=employees[0]?.id||null;
 let selectedPlanEmployeeId=null;
 function saveAll(){store.set('employees',employees);store.set('assignments',assignments);store.set('absences',absences);store.set('globalSoll',globalSoll);store.set('dailySoll',dailySoll)}
 function addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x}function iso(d){const x=d instanceof Date?d:new Date(d);return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`}function fmt(d){return d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'})}function currentWeekDates(){return Array.from({length:7},(_,i)=>addDays(weekStart,i))}
-function typeById(id){return TYPES.find(t=>t.id===id)||window.SFShiftModels?.find(id)}
+function typeById(id){return TYPES.find(t=>t.id===id)||window.SFShiftModels?.find?.(id)}
 function getSoll(date,type){return dailySoll[date]?.[type]??globalSoll[type]??0}
 function assignmentsFor(date,type){return assignments.filter(a=>a.date===date&&a.type===type)}
 function absent(employeeId,date){return absences.some(a=>a.employeeId===employeeId&&a.date===date)}
@@ -423,18 +423,18 @@ function autoEligibleEmployees(type,date,simulated=[]){
   const respectHours=document.getElementById('autoRespectHours')?.checked!==false;
   const fair=document.getElementById('autoFairDistribution')?.checked!==false;
   const all=[...assignments,...simulated];
-  return employees.filter(e=>e.status==='active'&&(e.shifts||[]).includes(type)&&(!window.SFShiftModels||window.SFShiftModels.allowsEmployee(type,e))&&!absent(e.id,date)&&!all.some(a=>a.date===date&&a.employeeId===e.id)&&(!window.sfRhythmCheck||window.sfRhythmCheck(e,type,date).mode!=='required'||window.sfRhythmCheck(e,type,date).allowed)).map(e=>{
+  return employees.filter(e=>e.status==='active'&&(e.shifts||[]).includes(type)&&(window.SFShiftModels?.allowsEmployee?.(type,e)!==false)&&!absent(e.id,date)&&!all.some(a=>a.date===date&&a.employeeId===e.id)&&(!window.sfRhythmCheck||window.sfRhythmCheck(e,type,date).mode!=='required'||window.sfRhythmCheck(e,type,date).allowed)).map(e=>{
     const h=autoPlannedHours(e.id,simulated,date),target=Number(e.weeklyHours)||0,monthHours=plannedMonthlyHoursForEmployee(e.id,date,simulated),monthTarget=employeeMonthlyTarget(e);
     const t=typeById(type); let dur=0;if(t){const a=t.start.split(':').map(Number),b=t.end.split(':').map(Number);let m=b[0]*60+b[1]-(a[0]*60+a[1]);if(m<0)m+=1440;dur=m/60}
     const overWeek=!!(respectHours&&target&&h+dur>target+0.01),overMonth=!!(respectHours&&monthTarget&&monthHours+dur>monthTarget+0.01);
     const rolePenalty=type==='Teamleiter'&&e.role!=='Teamleiter'?100:0;
     const weeklyLoad=target?h/target:h/40,monthlyLoad=monthTarget?monthHours/monthTarget:weeklyLoad,load=Math.max(weeklyLoad,monthlyLoad);
     const rhythm=window.sfRhythmCheck?.(e,type,date),rhythmPenalty=rhythm&&!rhythm.allowed&&rhythm.mode==='preferred'?40:0;
-    return {e,h,target,monthHours,monthTarget,overWeek,overMonth,reserve:window.SFShiftModels?.reservePenalty(e,date,type)||0,score:rolePenalty+rhythmPenalty+(fair?load*20:h*.1)}
+    return {e,h,target,monthHours,monthTarget,overWeek,overMonth,reserve:window.SFShiftModels?.reservePenalty?.(e,date,type)||0,score:rolePenalty+rhythmPenalty+(fair?load*20:h*.1)}
   }).filter(x=>!respectHours||(!x.overWeek&&!x.overMonth)).sort((a,b)=>a.reserve-b.reserve||a.score-b.score||a.monthHours-b.monthHours||a.h-b.h)
 }
-function autoOpenSlots(){const dates=autoPlanningDates(),slots=[];dates.forEach(d=>TYPES.forEach(t=>{const raw=getSoll(d,t.id),soll=window.SFShiftModels?.requiredSoll(d,t.id,raw)??raw,missing=Math.max(0,soll-assignmentsFor(d,t.id).length),day=new Date(d+'T00:00:00').toLocaleDateString('de-DE',{weekday:'short'}).replace('.','');for(let i=0;i<missing;i++)slots.push({date:d,day,type:t.id})}));return slots.sort((a,b)=>a.date.localeCompare(b.date)||Number(!!window.SFShiftModels?.find(b.type)?.responsibleOnly)-Number(!!window.SFShiftModels?.find(a.type)?.responsibleOnly))}
-function autoOptionalSlots(){const slots=[];autoPlanningDates().forEach(date=>TYPES.forEach(t=>{const missing=Math.max(0,(window.SFShiftModels?.optionalTarget(date,t.id)||0)-assignmentsFor(date,t.id).length),day=new Date(date+'T00:00:00').toLocaleDateString('de-DE',{weekday:'short'}).replace('.','');for(let i=0;i<missing;i++)slots.push({date,day,type:t.id,optional:true})}));return slots}
+function autoOpenSlots(){const dates=autoPlanningDates(),slots=[];dates.forEach(d=>TYPES.forEach(t=>{const raw=getSoll(d,t.id),soll=window.SFShiftModels?.requiredSoll?.(d,t.id,raw)??raw,missing=Math.max(0,soll-assignmentsFor(d,t.id).length),day=new Date(d+'T00:00:00').toLocaleDateString('de-DE',{weekday:'short'}).replace('.','');for(let i=0;i<missing;i++)slots.push({date:d,day,type:t.id})}));return slots.sort((a,b)=>a.date.localeCompare(b.date)||Number(!!window.SFShiftModels?.find?.(b.type)?.responsibleOnly)-Number(!!window.SFShiftModels?.find?.(a.type)?.responsibleOnly))}
+function autoOptionalSlots(){const slots=[];autoPlanningDates().forEach(date=>TYPES.forEach(t=>{const missing=Math.max(0,(window.SFShiftModels?.optionalTarget?.(date,t.id)||0)-assignmentsFor(date,t.id).length),day=new Date(date+'T00:00:00').toLocaleDateString('de-DE',{weekday:'short'}).replace('.','');for(let i=0;i<missing;i++)slots.push({date,day,type:t.id,optional:true})}));return slots}
 function renderAutoPlanning(){if(window.SFAutoPlanWorkspace)window.SFAutoPlanWorkspace.render();else syncAutoPeriodControls()}
 
 function generateAutoPlanPreview(){
@@ -455,7 +455,7 @@ async function applyAutoPlanPreview(){
     if(!accepted)return;
     if(published()){showSaveToast('Plan inzwischen veröffentlicht','Bitte prüfe Änderungen einzeln im Dienstplan.');return}
     if(window.SFBackend?.companyId!==companyId||JSON.stringify(preview)!==JSON.stringify(autoPlanPreview)){showSaveToast('Vorschläge erneut prüfen','Die Planungsdaten haben sich geändert. Bitte erstelle die Vorschläge erneut.');return}
-    const checked=[];for(const x of preview){if(x.optional&&!(window.SFShiftModels?.optionalTarget(x.date,x.type)>0)){showSaveToast('Vorschläge erneut prüfen','Die optionale Planungsregel wurde inzwischen geändert. Bitte erstelle die Vorschläge erneut.');return}if(!autoEligibleEmployees(x.type,x.date,checked).some(c=>String(c.e.id)===String(x.employeeId))){showSaveToast('Vorschläge erneut prüfen','Ein Mitarbeiter ist inzwischen nicht mehr verfügbar. Bitte erstelle die Vorschläge erneut.');return}checked.push(x)}
+    const checked=[];for(const x of preview){if(x.optional&&!(window.SFShiftModels?.optionalTarget?.(x.date,x.type)>0)){showSaveToast('Vorschläge erneut prüfen','Die optionale Planungsregel wurde inzwischen geändert. Bitte erstelle die Vorschläge erneut.');return}if(!autoEligibleEmployees(x.type,x.date,checked).some(c=>String(c.e.id)===String(x.employeeId))){showSaveToast('Vorschläge erneut prüfen','Ein Mitarbeiter ist inzwischen nicht mehr verfügbar. Bitte erstelle die Vorschläge erneut.');return}checked.push(x)}
     preview.forEach(x=>assignments.push({id:'as'+Date.now()+Math.random(),date:x.date,type:x.type,employeeId:x.employeeId,start:x.start,end:x.end}));
     const n=preview.length,plannedDates=autoPlanningDates(),plannedMode=document.getElementById('autoPlanPeriod')?.value||'week';
     if(plannedDates.length){if(plannedMode==='month')window.SchichtFunkCalendarView?.setMonth?.(plannedDates[0].slice(0,7));else{weekStart=autoMonday(plannedDates[0]);window.SchichtFunkCalendarView?.setMode?.('week')}}
@@ -957,28 +957,28 @@ table th,table td{font-size:13px;line-height:1.35}
 <!-- /SCHICHTFUNK_SCHEDULE_UX_V2 -->
 
 <script src="assets/schedule-ux-v3.js"></script>
-<script src="assets/assignment-ux-v4.js?v=20261002-optional1"></script>
+<script src="assets/assignment-ux-v4.js?v=20261002-optional2"></script>
 <script src="assets/soll-summary-v5.js"></script>
 <script src="assets/ot-weekend-holiday-policy.js"></script>
 <script src="assets/dynamic-employee-pool-v1.js"></script>
 <script src="assets/schichtfunk-rebrand.js"></script>
 <script src="assets/schichtfunk-brand-cleanup-v2.js?v=20260929-customday1"></script>
 <script src="assets/navigation-compat-v1.js?v=20260930-tenbreaks1&period=20261001-1&models=1&auto=20261001-workflow2&mobile=20261002-sheetguard1"></script>
-<script src="assets/schichtfunk-schedule-core-v1.js?v=20261002-optional1"></script>
+<script src="assets/schichtfunk-schedule-core-v1.js?v=20261002-optional2"></script>
 <script src="assets/assignment-quick-delete-v1.js"></script>
-<script src="assets/conflict-plausibility-v1.js?v=20261002-optional1"></script>
+<script src="assets/conflict-plausibility-v1.js?v=20261002-optional2"></script>
 <script src="assets/employee-core-v1.js?v=20261001-removal1"></script>
 <script src="assets/employee-rhythm-v1.js?v=20261001-centralteams1"></script>
 <script src="assets/planning-teams-v1.js?v=20261001-centralteams1"></script>
 <link rel="stylesheet" href="assets/open-shift-marketplace-v1.css?v=20261001-market1">
 <script src="assets/open-shift-marketplace-v1.js?v=20261001-market1"></script>
-<script src="assets/auto-plan-workspace-v1.js?v=20261002-optional1"></script>
+<script src="assets/auto-plan-workspace-v1.js?v=20261002-optional2"></script>
 <script src="assets/planning-assistant-core-v1.js?v=20261001-4"></script>
 <script src="assets/planning-assistant-v1.js?v=20261001-5"></script>
 <script src="assets/employee-management-v2.js?v=20261002-profile1"></script>
 <script src="assets/team-admin-v1.js?v=20260930-timeonly3"></script>
 <script src="assets/audit-logs-v1.js?v=20260902-audit6"></script>
-<script src="assets/settings-management-v2.js?v=20261002-optional1"></script>
+<script src="assets/settings-management-v2.js?v=20261002-optional2"></script>
 <script src="assets/company-datetime-v1.js?v=20260902-datetime1"></script>
 <script src="assets/schedule-final-v1.js?v=20260831-complete1"></script>
 <script src="assets/absence-management-v3.js?v=20260831-complete1"></script>
@@ -1108,7 +1108,7 @@ table th,table td{font-size:13px;line-height:1.35}
 <script src="assets/supabase-shift-marketplace-v1.js?v=20261002-month1"></script>
 <script src="assets/readiness-traffic-light-v1.js?v=20260907-demo1"></script>
 <script src="assets/disruption-autopilot-v1.js?v=20260906-disruptions2"></script>
-<script src="assets/assignment-ux-v4.js?v=20261002-optional1"></script>
+<script src="assets/assignment-ux-v4.js?v=20261002-optional2"></script>
 <script src="assets/mobile-manager-navigation-v1.js?v=20260907-1"></script>
 <script src="assets/manager-theme-v1.js?v=20260929-1"></script>
 <!-- SCHICHTFUNK_HELP_CENTER_V2 -->

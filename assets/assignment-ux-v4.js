@@ -30,7 +30,7 @@
     if(t.active===false&&!assignments.some(a=>a.id===ignoreId&&a.type===type))hard.push('Dieses Schichtmodell wurde aus der Planung entfernt.');
     if(emp.status!=='active')hard.push('Mitarbeiter ist inaktiv.');
     if(!(emp.shifts||[]).includes(type))hard.push(`Keine Freigabe für ${type}.`);
-    if(window.SFShiftModels&&!window.SFShiftModels.allowsEmployee(type,emp)&&!assignments.some(a=>a.id===ignoreId&&a.type===type&&a.employeeId===emp.id))hard.push('Diese Schicht ist ausschließlich dem zuständigen Mitarbeiter zugeordnet.');
+    if(window.SFShiftModels?.allowsEmployee?.(type,emp)===false&&!assignments.some(a=>a.id===ignoreId&&a.type===type&&a.employeeId===emp.id))hard.push('Diese Schicht ist ausschließlich dem zuständigen Mitarbeiter zugeordnet.');
     const [ns,ne]=shiftInterval(date,start||t.start,end||t.end);
     const abs=(absences||[]).find(a=>a.employeeId===emp.id&&absenceConflicts(a,ns,ne));
     if(abs)hard.push(`Abwesenheit: ${abs.type||'Abwesend'}.`);
