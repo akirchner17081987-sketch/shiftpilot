@@ -90,3 +90,28 @@ test('required shifts limited to Monday–Friday create no weekend demand or mar
 test('a deliberate daily override can create exceptional demand outside regular shift weekdays',()=>{
  const {c,M}=optionalHarness();M.find('FD').optionalWeekdays=[1,2,3,4,5];c.dailySoll['2026-12-05']={FD:2};assert.equal(M.requiredSoll('2026-12-05','FD',3),2);c.dailySoll['2026-12-04']={FD:0};assert.equal(M.requiredSoll('2026-12-04','FD',3),0);
 });
+
+function sharedHarness(){
+ const h=optionalHarness(),{c,M}=h;
+ M.apply(['TL-LE','TL-RE','Teamleiter'].map((code,i)=>({code,name:code,active:i<2,default_start:'20:00',default_end:'06:00',coverage_group:'TL LE/RE',coverage_required:1,sort_order:i})),'a');
+ c.globalSoll={'TL-LE':1,'TL-RE':1};c.employees=[{id:'le',first:'TL',last:'Leipzig',status:'active',shifts:['TL-LE'],weeklyHours:40},{id:'re',first:'TL',last:'Recklinghausen',status:'active',shifts:['TL-RE'],weeklyHours:40}];
+ c.plannedAssignmentHours=()=>10;return h;
+}
+test('one shared TL deficit chooses either location and is counted once in the preview',async()=>{
+ for(const available of ['le','re']){const {c,run,id}=sharedHarness();c.absent=e=>e!==available;assert.equal(c.autoOpenSlots().length,1);c.generateAutoPlanPreview();assert.equal(run('autoPlanPreview.length'),1);assert.equal(run('autoPlanPreview[0].type'),available==='le'?'TL-LE':'TL-RE');assert.equal(id('autoUnresolvedCount').textContent,0);assert.match(run('autoPlanPreview[0].reason'),/Deckt TL LE\/RE gemeinsam ab/);await c.applyAutoPlanPreview();assert.equal(c.assignments.length,1);assert.equal(c.autoOpenSlots().length,0);}
+});
+test('LE, RE, two local TLs and legacy TL assignments all cover the shared night without a second mandatory slot',()=>{
+ for(const types of [['TL-LE'],['TL-RE'],['TL-LE','TL-RE'],['Teamleiter']]){const {c,M}=sharedHarness();c.assignments=types.map((type,i)=>({date:'2026-12-01',type,employeeId:'tl'+i,start:'20:00',end:'06:00'}));assert.equal(c.autoOpenSlots().length,0);assert.equal(M.requiredSoll('2026-12-01','TL-LE',1)-c.assignmentsFor('2026-12-01','TL-LE').length,0);assert.equal(M.requiredSoll('2026-12-01','TL-RE',1)-c.assignmentsFor('2026-12-01','TL-RE').length,0);assert.equal(M.coverageInfo('2026-12-01','TL-LE').target,1);}
+});
+test('partial TL nights and another date cannot cover the full shared window',()=>{
+ const {c,M}=sharedHarness();c.assignments=[{date:'2026-12-01',type:'TL-RE',employeeId:'re',start:'22:00',end:'06:00'},{date:'2026-12-02',type:'TL-LE',employeeId:'le',start:'20:00',end:'06:00'}];assert.equal(c.autoOpenSlots().length,1);assert.equal(M.coverageInfo('2026-12-01','TL-RE').filled,0);c.assignments[0].start='20:00';c.assignments[0].end='02:00';assert.equal(c.autoOpenSlots().length,1);
+});
+test('fair shared selection considers both sites and removed RE proposals reopen one shared position',()=>{
+ const {c,run,id}=sharedHarness();c.plannedMonthlyHoursForEmployee=e=>e==='le'?100:0;c.generateAutoPlanPreview();assert.equal(run('autoPlanPreview[0].type'),'TL-RE');assert.equal(id('autoUnresolvedCount').textContent,0);c.removeAutoSuggestion(0);assert.equal(id('autoUnresolvedCount').textContent,1);assert.match(id('autoUnresolved').innerHTML,/von dir entfernt/);
+});
+test('new TL coverage during confirmation prevents a stale shared preview from adding a second TL',async()=>{
+ const {c,api}=sharedHarness();c.generateAutoPlanPreview();api.confirmApply=async()=>{c.assignments.push({date:'2026-12-01',type:'TL-RE',employeeId:'re',start:'20:00',end:'06:00'});return true};await c.applyAutoPlanPreview();assert.equal(c.assignments.length,1);assert.equal(c.saved,undefined);
+});
+test('shared daily targets, regular days and company isolation remain authoritative',()=>{
+ const {c,M}=sharedHarness();c.dailySoll['2026-12-01']={'TL-LE':2};assert.equal(c.autoOpenSlots().length,2);c.dailySoll['2026-12-01']={'TL-LE':0};assert.equal(c.autoOpenSlots().length,0);delete c.dailySoll['2026-12-01'];for(const t of c.TYPES)t.optionalWeekdays=[1];assert.equal(c.autoOpenSlots().length,0);c.dailySoll['2026-12-01']={'TL-RE':1};assert.equal(c.autoOpenSlots().length,1);assert.deepEqual(Array.from(c.autoOpenSlots()[0].alternatives),['TL-RE']);c.window.SFBackend.companyId='b';assert.equal(M.coverageInfo('2026-12-01','TL-LE'),null);
+});
