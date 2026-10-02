@@ -257,10 +257,12 @@ test('long auto-planning result lists scroll inside their cards', () => {
   assert.match(autoPlanPeriodCss, /scrollbar-gutter:stable/);
 });
 
-test('private hourly wage recalculates while the value is entered', () => {
-  assert.match(employeeWagePreview, /rateInput\.oninput=.*setTimeout\(saveRate,250\)/);
-  assert.match(employeeWagePreview, /rateInput\.onchange=saveRate/);
+test('private wage uses monthly local storage and sends only the selected month', () => {
+  assert.match(employeeWagePreview, /sf_private_wage_month_v2_/);
+  assert.match(employeeWagePreview, /localStorage\.setItem\(key\(owner,draftMonth\)/);
+  assert.match(employeeWagePreview, /rpc\('employee_my_wage_month',\{p_month:month\+'-01'\}\)/);
 });
+
 const employeeAccess = read('assets/supabase-employee-access-v1.js');
 const shiftSwap = read('assets/supabase-shift-swap-v1.js');
 const timeTracking = read('assets/supabase-time-tracking-v1.js');
