@@ -81,6 +81,10 @@
     if(logo&&!logo.querySelector('img'))logo.innerHTML='<img src="assets/schichtfunk-logo.svg" alt="SchichtFunk">';
     const logout=portal.querySelector('#sfEmployeeLogout');
     if(logout&&!logout.dataset.sfSafeLogout){logout.dataset.sfSafeLogout='1';logout.onclick=e=>B.confirmSignOut(e.currentTarget)}
+    // The workspace owns card placement. Moving its cards into legacy columns
+    // makes both MutationObservers move them back and forth every frame,
+    // detaching focused/pressed controls and cancelling native clicks.
+    if(B.__employeePortalWorkspaceV2)return true;
     const grid=portal.querySelector('.sf-portal-grid');if(!grid)return false;
     const source=[...grid.children].find(x=>x.matches('div[style*="display:grid"]'));
     source?.classList.add('sf-portal-layout-source');
