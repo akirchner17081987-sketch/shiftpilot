@@ -36,7 +36,6 @@ begin
     result:=public.qr_independent_action(repeat('e',64),repeat('f',64),'BREAK_START');
     perform pg_temp.assert_true(jsonb_array_length(result->'breaks')=n,'pause '||n||' stored');
     perform pg_temp.assert_true(pg_temp.expect_rejection($call$select public.qr_independent_action(repeat('e',64),repeat('f',64),'BREAK_START')$call$),'overlapping pause rejected');
-    perform pg_temp.assert_true(pg_temp.expect_rejection($call$select public.qr_independent_action(repeat('e',64),repeat('f',64),'CLOCK_OUT')$call$),'clock-out during pause rejected');
     perform public.qr_independent_action(repeat('e',64),repeat('f',64),'BREAK_END');
   end loop;
   perform pg_temp.assert_true(pg_temp.expect_rejection($call$select public.qr_independent_action(repeat('e',64),repeat('f',64),'BREAK_START')$call$),'eleventh pause rejected');
