@@ -22,6 +22,18 @@ const page=await browser.newPage({viewport,locale:'de-DE'}),errors=[];page.on('p
 await page.route('**/*',route=>{if(new URL(route.request().url()).hostname!=='sf.test')return route.abort();const pathname=new URL(route.request().url()).pathname;if(pathname==='/')return route.fulfill({contentType:'text/html',body:fullApp?fullHtml:html});const p=path.join(root,pathname);try{return route.fulfill({contentType:p.endsWith('.js')?'application/javascript':p.endsWith('.css')?'text/css':'image/svg+xml',body:fs.readFileSync(p)})}catch{return route.fulfill({status:404,body:''})}});
 await page.goto('http://sf.test/');if(fullApp){await page.waitForFunction(()=>SFBackend.__loaderInitStarted);await page.waitForTimeout(300);await page.evaluate(fixture.replace('window.SFBackend={','Object.assign(window.SFBackend,{').replace(/confirmSignOut:async\(\)=>\{\}\};/,'confirmSignOut:async()=>{}});'));await page.evaluate(()=>{SFBackend.closeAuth?.();SFBackend.hideLoading?.();SFBackend.openEmployeePortal();SFBackend.employeePortalNavigate('absences')});}const area=page.locator('#sfEmployeeAbsenceCard'),modal=page.locator('#sfAbsenceEmployeeV3Modal');await area.waitFor();await page.waitForTimeout(1200);if(fullApp)await page.evaluate(()=>SFBackend.employeePortalNavigate('absences'));await area.waitFor();assert.equal(await area.isVisible(),true);assert.match(await area.locator('.sf-empty').textContent(),/noch leer/);assert.equal(await area.locator('[data-absence-category]').count(),5);
 
+// A settled workspace must keep cards attached: competing legacy layout
+// observers used to move every card out and back on every animation frame.
+const cardMoves=await page.evaluate(()=>new Promise(resolve=>{
+  const card=document.getElementById('sfEmployeeAbsenceCard');let removals=0;
+  const observer=new MutationObserver(records=>records.forEach(record=>{
+    if([...record.removedNodes].includes(card))removals++;
+  }));
+  observer.observe(document.getElementById('sfEmployeePortal'),{childList:true,subtree:true});
+  setTimeout(()=>{observer.disconnect();resolve(removals)},250);
+}));
+assert.equal(cardMoves,0,'Settled portal cards must not be detached by competing layouts');
+
 // A background refresh must not remove a pressed request button before mouseup.
 await area.locator('[data-absence-category="Urlaub"] b').scrollIntoViewIfNeeded();
 const pressedRequest=await area.locator('[data-absence-category="Urlaub"] b').boundingBox();
