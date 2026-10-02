@@ -16,6 +16,8 @@
     if(!pool.length)return'Keine aktiven Mitarbeiter vorhanden. Prüfe die Mitarbeiterprofile.';
     pool=pool.filter(e=>(e.shifts||[]).includes(type));
     if(!pool.length)return`Kein aktiver Mitarbeiter hat eine Freigabe für ${type}. Prüfe die Schichtfreigaben.`;
+    pool=pool.filter(e=>!window.SFShiftModels||window.SFShiftModels.allowsEmployee(type,e));
+    if(!pool.length)return'Für diese Schicht fehlt ein aktiver zuständiger Mitarbeiter mit Schichtfreigabe.';
     pool=pool.filter(e=>!absent(e.id,date));
     if(!pool.length)return'Alle passenden Mitarbeiter sind an diesem Tag abwesend.';
     const all=[...assignments,...simulated];pool=pool.filter(e=>!all.some(a=>String(a.employeeId)===String(e.id)&&a.date===date));
@@ -42,13 +44,15 @@
     const available=employees.filter(e=>e.status==='active'&&!dates.every(d=>absent(e.id,d))).length;
     text('autoPeriodDates',dates.length===1?'1 Planungstag':`${new Date(dates[0]+'T12:00:00').toLocaleDateString('de-DE')} bis ${new Date(dates.at(-1)+'T12:00:00').toLocaleDateString('de-DE')} · ${dates.length} Tage`);
     text('autoStartTitle',label);text('autoStartHint',slots.length?`${slots.length} offene Position${slots.length===1?'':'en'} im gewählten Zeitraum. Bestehende Besetzungen bleiben erhalten.`:'Keine offenen Positionen im gewählten Zeitraum.');
-    el('generateAutoPlanBtn').disabled=!slots.length||autoPlanApplying;
+    const optionalSlots=typeof autoOptionalSlots==='function'?autoOptionalSlots():[];
+    if(optionalSlots.length)text('autoStartHint',`${slots.length} offene Pflichtpositionen · ${optionalSlots.length} optionale Besetzungen. Pflichtdienste haben Vorrang.`);
+    el('generateAutoPlanBtn').disabled=(!slots.length&&!optionalSlots.length)||autoPlanApplying;
     el('generateAutoPlanBtn').textContent=analyzed?'↻ Vorschläge neu erstellen':'✦ Vorschläge erstellen';
     const stats=[['Offene Positionen',slots.length,'im gewählten Zeitraum'],['Vorschläge',analyzed?count:'–',analyzed?'zur Prüfung bereit':'Analyse noch nicht gestartet'],['Noch zu besetzen',analyzed?remaining.length:'–',analyzed?'nach diesen Vorschlägen':'wird bei der Analyse geprüft'],['Verfügbare Profile',available,'aktive Mitarbeiter ohne durchgehende Abwesenheit']];
     el('autoStats').innerHTML=stats.map(([title,value,note])=>`<div class="stat"><small>${esc(title)}</small><strong>${esc(value)}</strong><em>${esc(note)}</em></div>`).join('');
     let title,copy,tone='';
     if(applied){title=`${applied} Besetzung${applied===1?'':'en'} als Entwurf übernommen`;copy=remaining.length?`${remaining.length} Positionen sind noch offen. Prüfe sie im Dienstplan oder erstelle weitere Vorschläge.`:'Der Zeitraum ist vollständig besetzt. Prüfe den Dienstplan und veröffentliche ihn, wenn alles passt.';tone='is-good'}
-    else if(!slots.length){title='Keine offenen Positionen';copy='Für den ausgewählten Zeitraum ist aktuell keine zusätzliche Besetzung erforderlich.';tone='is-good'}
+    else if(!slots.length){title=analyzed&&count?`${count} optionale Besetzung${count===1?'':'en'} vorgeschlagen`:optionalSlots.length?'Optionale Besetzung möglich':'Keine offenen Positionen';copy=analyzed?'Alle Pflichtpositionen sind abgedeckt. Nicht vorgeschlagene optionale Schichten dürfen frei bleiben.':'Für diesen Zeitraum ist keine zusätzliche Pflichtbesetzung erforderlich. Optionale Schichten werden bei freien Kapazitäten vorgeschlagen.';tone='is-good'}
     else if(!analyzed){title='Bereit für deinen Planungsvorschlag';copy='Starte „Vorschläge erstellen“. Anschließend siehst du passende Besetzungen und die Gründe für offene Positionen.'}
     else if(count){title=`${count} Besetzung${count===1?'':'en'} vorgeschlagen`;copy=remaining.length?`${remaining.length} Positionen benötigen noch deine Prüfung. Die Vorschläge kannst du einzeln entfernen oder als Entwurf übernehmen.`:'Für alle offenen Positionen gibt es einen Vorschlag. Prüfe die Mitarbeiterzuordnung und übernimm die Besetzungen als Entwurf.';tone=remaining.length?'is-warning':'is-good'}
     else{title='Für die offenen Positionen wurde kein passender Mitarbeiter gefunden';copy='Unter „Noch zu besetzen“ siehst du die Gründe. Prüfe dort die Profile, den Rhythmus oder bereits geplante Dienste.';tone='is-warning'}
@@ -56,9 +60,9 @@
     text('autoReviewHint',analyzed?`${label} · Ergebnis der aktuellen Planung`:'Die Zahlen für Vorschläge und verbleibende Positionen erscheinen nach der Analyse.');
     el('autoResults').hidden=!analyzed||!!applied;
     text('autoSuggestionCount',count);text('autoUnresolvedCount',remaining.length);
-    if(analyzed&&!applied){renderSuggestions();renderUnresolved(remaining);if(!count&&remaining.length)el('autoUnresolvedPanel').open=true}
+    if(analyzed&&!applied){renderSuggestions();renderUnresolved(remaining);const skipped=typeof autoPlanOptionalSkipped==='undefined'?[]:autoPlanOptionalSkipped;if(skipped.length)el('autoSuggestions').innerHTML+=`<details class="sf-auto-day"><summary><b>Optional frei geblieben (${skipped.length})</b></summary>${skipped.map(x=>`<div class="sf-auto-unresolved-row"><div><b>${esc(dateLabel(x.date))} · ${esc(shiftLabel(x.type))} · Optional</b><p>${esc(x.reason)} Keine Pflichtlücke.</p></div></div>`).join('')}</details>`;if(!count&&remaining.length)el('autoUnresolvedPanel').open=true}
     el('applyAutoPlanBtn').disabled=!count||autoPlanApplying||published;el('applyAutoPlanBtn').textContent=count?`${count} Vorschlag${count===1?'':'e'} als Entwurf übernehmen`:'Vorschläge als Entwurf übernehmen';
-    el('clearAutoPlanBtn').disabled=(!count&&!autoPlanUnresolved.length)||autoPlanApplying;
+    el('clearAutoPlanBtn').disabled=(!count&&!autoPlanUnresolved.length&&!(typeof autoPlanOptionalSkipped!=='undefined'&&autoPlanOptionalSkipped.length))||autoPlanApplying;
     text('autoApplyHint',published?'Ein Vorschlag betrifft eine bereits veröffentlichte Woche. Bitte prüfe solche Änderungen einzeln im Dienstplan.':applied?'Dein Entwurf ist im Dienstplan. Dort prüfst und veröffentlichst du die Schichten für deine Mitarbeiter.':'Übernommene Vorschläge werden als Entwurf gespeichert. Im Dienstplan gibst du sie anschließend für die Mitarbeiter frei.');
     document.querySelectorAll('[data-auto-step]').forEach(node=>{const step=Number(node.dataset.autoStep),current=applied?4:analyzed?3:1;node.classList.toggle('is-current',step===current);if(step===current)node.setAttribute('aria-current','step');else node.removeAttribute('aria-current')});
     window.SFOpenShiftMarket?.renderPublishEntry?.({analyzed,applied,count,remaining});
