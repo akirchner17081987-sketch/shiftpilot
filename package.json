@@ -11,7 +11,8 @@
     "test:e2e:mobile": "playwright test --project=mobile-chromium",
     "test:all": "npm test && npm run test:e2e",
     "test:marketplace": "node --test tests/open-shift-marketplace.test.mjs && node tests/browser/open-shift-marketplace-qa.cjs",
-    "test:absences": "node tests/browser/employee-absences-qa.cjs"
+    "test:absences": "node tests/browser/employee-absences-qa.cjs",
+    "test:time-account": "node tests/browser/employee-time-account-qa.cjs"
   },
   "engines": {
     "node": ">=18"
