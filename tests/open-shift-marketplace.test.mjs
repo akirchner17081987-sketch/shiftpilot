@@ -11,6 +11,10 @@ test('open demand is grouped by both date and shift, retaining each missing plac
 test('grouping neither changes input nor invents positions for fully staffed dates',()=>{
  const data=[{date:'2026-12-01',type:'FD',reason:'Kein Vorschlag'}],before=JSON.stringify(data);module().groups(data);assert.equal(JSON.stringify(data),before);assert.equal(module().groups([]).length,0);
 });
+test('shared labels survive grouping while ordinary slot payloads keep their existing fields',()=>{
+ const api=module(),plain=api.groups([{date:'2026-12-01',type:'FD'}])[0];assert.deepEqual(Object.keys(plain).sort(),['count','date','type']);
+ const shared=api.groups([{date:'2026-12-01',type:'TL-LE',coverageLabel:'TL LE/RE'}])[0];assert.equal(shared.coverageLabel,'TL LE/RE');assert.equal(shared.count,1);
+});
 
 // Real sync implementation: immutable August history plus a new December draft.
 function syncFixture(){
