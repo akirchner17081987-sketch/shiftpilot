@@ -86,3 +86,13 @@ test('three actual O3 from the previous night transfer OT1 to OT2 and removing o
  await page.evaluate(()=>{autoPlanPreview=[{id:'ot',employeeId:'day',date:'2026-12-01',type:'OT1',start:'06:00',end:'16:00'}];SFShiftModels.normalizeMorningOt(autoPlanPreview,assignments)});expect(await page.evaluate(()=>autoPlanPreview[0].type)).toBe('OT2');expect(await page.evaluate(()=>autoPlanPreview[0].start)).toBe('08:00');
  await page.evaluate(()=>{assignments.pop();SFShiftModels.normalizeMorningOt(autoPlanPreview,assignments)});expect(await page.evaluate(()=>autoPlanPreview[0].type)).toBe('OT1');expect(await page.evaluate(()=>autoPlanPreview[0].start)).toBe('06:00');
 });
+
+for(const theme of ['dark','light'])test(`draft counts and personal hour balances remain readable while scrolling in ${theme}`,async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));await fixture(page,theme);
+ await page.evaluate(()=>{getSoll=()=>0;employees=[{id:'one',personnelNo:'26',first:'Test',last:'Person',status:'active',weeklyHours:40,monthlyHours:16},{id:'two',first:'Ohne',last:'Dienst',status:'active',weeklyHours:40,monthlyHours:24}];employeeMonthlyTarget=e=>e.monthlyHours;assignments=[{employeeId:'one',date:'2026-12-01',type:'FD'}];autoPlanPreview=[{employeeId:'one',date:'2026-12-02',type:'FD'}];autoPlanAnalyzed=true;renderAutoPlanning()});
+ await expect(page.locator('.sf-auto-draft-summary')).toContainText('1 / 2');await expect(page.locator('.sf-auto-draft-summary')).toContainText('2 Dienste');await expect(page.locator('.sf-auto-draft-summary')).toContainText('16 h');
+ const person=page.locator('.sf-auto-stair-table tbody tr').first();await expect(person).toContainText('Plan-IST 16 h');await expect(person).toContainText('SOLL 16 h');await expect(person).toContainText('Differenz 0 h');await expect(page.locator('.sf-auto-stair-table tbody tr').nth(1)).toContainText('Differenz -24 h');
+ await person.locator('.sf-auto-draft-metrics').scrollIntoViewIfNeeded();await page.locator('.sf-auto-stair-scroll').evaluate(e=>e.scrollLeft=e.scrollWidth);await expect(person.locator('.sf-auto-draft-metrics')).toBeInViewport();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ await page.locator('.sf-auto-staircase').screenshot({path:test.info().outputPath(`draft-hours-${theme}.png`)});
+ await page.evaluate(()=>removeAutoSuggestion(0));await expect(person).toContainText('Plan-IST 8 h');await expect(person).toContainText('Differenz -8 h');await expect(page.locator('.sf-auto-draft-summary')).toContainText('1 Dienst');expect(errors).toEqual([]);
+});
