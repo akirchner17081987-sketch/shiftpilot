@@ -98,7 +98,7 @@ button,input,select,textarea{font:inherit} button{cursor:pointer}
 <link rel="stylesheet" href="assets/schichtfunk-rebrand.css?v=20260918-static-brand">
 <link rel="stylesheet" href="assets/mobile-responsive-v1.css?v=20260917-compact-manager1">
 <link rel="stylesheet" href="assets/mobile-manager-navigation-v1.css?v=20260918-static-brand">
-<link rel="stylesheet" href="assets/auto-plan-period-v1.css?v=20261003-blocks2">
+<link rel="stylesheet" href="assets/auto-plan-period-v1.css?v=20261003-monthopt1">
 <link rel="stylesheet" href="assets/secondary-text-readability-v1.css?v=20260906-1">
 <link rel="stylesheet" href="assets/manager-theme-v1.css?v=20260929-2">
 <link rel="stylesheet" href="assets/schichtfunk-rebrand.css">
@@ -252,7 +252,7 @@ html[data-sf-theme="light"] #sfEmployeePortal{
       <section class="card auto-period-card sf-auto-panel" aria-labelledby="autoPeriodHeading"><div class="sf-auto-section-title"><span class="sf-auto-number">1</span><div><h2 id="autoPeriodHeading">Wann möchtest du planen?</h2><p id="autoPeriodSummary">Datum wählen – geplant wird Montag bis Sonntag</p></div></div><div class="auto-period-grid"><label><span>Planungszeitraum</span><select id="autoPlanPeriod" onchange="changeAutoPlanPeriod()"><option value="week">Wöchentliche Planung</option><option value="month">Monatliche Planung</option><option value="date">Genaues Datum der Planung</option></select></label><label id="autoPlanWeekField"><span>Datum in der gewünschten Woche</span><input id="autoPlanWeekDate" type="date" onchange="changeAutoPlanPeriod()"></label><label id="autoPlanMonthField" hidden><span>Gewünschter Monat</span><input id="autoPlanMonth" type="month" onchange="changeAutoPlanPeriod()"></label><label id="autoPlanDateField" hidden><span>Gewünschter Tag</span><input id="autoPlanDate" type="date" onchange="changeAutoPlanPeriod()"></label></div><div class="auto-period-result"><small>Für diesen Zeitraum werden Vorschläge erstellt</small><strong id="autoPeriodRange">–</strong><span id="autoPeriodDates"></span></div></section>
       <section class="card sf-auto-panel sf-auto-rules" aria-labelledby="autoRulesHeading"><div class="sf-auto-section-title"><span class="sf-auto-number">2</span><div><h2 id="autoRulesHeading">Wie soll geplant werden?</h2><p>Die empfohlenen Regeln sind bereits aktiviert.</p></div></div><label class="sf-auto-rule"><input type="checkbox" id="autoRespectHours" checked onchange="changeAutoPlanPeriod()"><span><b>Wochenmaximum berücksichtigen</b><small>Das separate Wochenmaximum beachten. Die Monatsgrenzen und festen Schichtvorgaben gelten immer.</small></span></label><label class="sf-auto-rule"><input type="checkbox" id="autoFairDistribution" checked onchange="changeAutoPlanPeriod()"><span><b>Schichten fair verteilen</b><small>Nach Monats-SOLL 180 / 162 / 144 verteilen. Mitarbeiter unter ihrem Ziel zuerst berücksichtigen.</small></span></label><p class="sf-auto-protection">Feste Schichtvorgaben zuerst. Danach knappe Schichtfreigaben berücksichtigen und vollständige Arbeitsblöcke im Treppenmuster reservieren. Möglichst dieselbe Schicht; O3 darf am Folgetag nicht auf O1, O2 oder TL wechseln. Monats-SOLL und Stundenlimits bleiben maßgeblich. Vollzeit: Ziel 180, maximal 220 Stunden pro Kalendermonat. Teilzeit: höchstens das Monats-SOLL, z. B. 162 oder 144 Stunden. Immer geprüft: aktive Mitarbeiter, Schichtfreigaben, Abwesenheiten, verbindlicher Rhythmus und belegte Zeiten. Freiwillige Zusatzdienste im Schicht-Marktplatz bleiben mit Planerfreigabe möglich.</p></section>
     </div>
-    <div class="sf-auto-start"><div><b id="autoStartTitle">Dein Zeitraum ist bereit</b><p id="autoStartHint">Lass passende Besetzungen für die offenen Schichten vorschlagen.</p></div><button type="button" class="primary" id="generateAutoPlanBtn" onclick="generateAutoPlanPreview()">✦ Vorschläge erstellen</button></div>
+    <div class="sf-auto-start"><div><b id="autoStartTitle">Dein Zeitraum ist bereit</b><p id="autoStartHint">Lass passende Besetzungen für die offenen Schichten vorschlagen.</p></div><button type="button" class="ghost" id="optimizeAutoMonthBtn" hidden onclick="SFMonthOptimizer.optimize()">Monat optimieren</button><button type="button" class="primary" id="generateAutoPlanBtn" onclick="generateAutoPlanPreview()">✦ Vorschläge erstellen</button></div>
     <section class="sf-auto-review" aria-labelledby="autoReviewHeading"><div class="sf-auto-section-title"><span class="sf-auto-number">3</span><div><h2 id="autoReviewHeading">Dein Planungsergebnis</h2><p id="autoReviewHint">Nach der Analyse siehst du hier die vorgeschlagenen Besetzungen.</p></div></div><div class="stats" id="autoStats"></div><div id="autoAnalysis" role="status" aria-live="polite" aria-atomic="true"></div>
     <div id="autoResults" hidden><details class="card sf-auto-panel sf-auto-staircase" open><summary><b>Treppenmuster prüfen</b></summary><div id="autoStaircase"></div></details><section class="card sf-auto-panel sf-auto-suggestions"><div class="sf-auto-results-head"><div><h3>Vorgeschlagene Besetzungen <span class="sf-auto-count" id="autoSuggestionCount">0</span></h3><p>Nach Tagen sortiert. Einzelne Vorschläge kannst du entfernen.</p></div><div class="sf-auto-list-tools"><button type="button" class="ghost" onclick="SFAutoPlanWorkspace.expandDays(true)">Alle Tage öffnen</button><button type="button" class="ghost" onclick="SFAutoPlanWorkspace.expandDays(false)">Alle schließen</button></div></div><div id="autoSuggestions"></div></section>
     <details class="card sf-auto-panel sf-auto-unresolved" id="autoUnresolvedPanel"><summary><span>Noch zu besetzen <span class="sf-auto-count" id="autoUnresolvedCount">0</span></span><small>Gründe ansehen und im Dienstplan prüfen</small></summary><div id="autoUnresolved"></div></details></div></section>
@@ -421,7 +421,7 @@ function autoPlannedHours(employeeId, simulated=[], referenceDate=null){
 }
 function autoHourLimits(employee,respectHours=document.getElementById('autoRespectHours')?.checked!==false){
   const target=Number(employee.weeklyHours)||0,configuredWeek=employee.maxWeeklyHours,weeklyLimit=configuredWeek!==''&&configuredWeek!=null&&Number.isFinite(Number(configuredWeek))?Math.max(0,Number(configuredWeek)):target,monthTarget=employeeMonthlyTarget(employee);
-  const fullTime=/^Vollzeit(?:\s+180)?$/i.test(String(employee.employment||'').trim()),monthLimit=fullTime?220:Math.min(180,monthTarget>0?monthTarget:180);
+  const fullTime=/^Vollzeit(?:\s+180)?$/i.test(String(employee.employment||'').trim())&&monthTarget>=180,monthLimit=fullTime?220:Math.min(180,monthTarget>0?monthTarget:180);
   return {target,weeklyLimit,monthTarget,monthLimit};
 }
 function autoWorkBlock(employee,type,date,all=[]){
@@ -1029,13 +1029,15 @@ table th,table td{font-size:13px;line-height:1.35}
 <script src="assets/navigation-compat-v1.js?v=20260930-tenbreaks1&period=20261001-1&models=1&auto=20261001-workflow2&mobile=20261002-sheetguard1&export=20261003-personorder1"></script>
 <script src="assets/schichtfunk-schedule-core-v1.js?v=20261002-weekdays1"></script>
 <script src="assets/assignment-quick-delete-v1.js"></script>
-<script src="assets/conflict-plausibility-v1.js?v=20261003-personorder1"></script>
+<script src="assets/conflict-plausibility-v1.js?v=20261003-monthopt1"></script>
 <script src="assets/employee-core-v1.js?v=20261001-removal1"></script>
 <script src="assets/employee-rhythm-v1.js?v=20261003-workrest1"></script>
 <script src="assets/planning-teams-v1.js?v=20261001-centralteams1"></script>
 <link rel="stylesheet" href="assets/open-shift-marketplace-v1.css?v=20261001-market1">
 <script src="assets/open-shift-marketplace-v1.js?v=20261002-sharedtl2"></script>
-<script src="assets/auto-plan-workspace-v1.js?v=20261003-personorder1"></script>
+<script src="assets/month-optimizer-core-v1.js?v=20261003-monthopt1"></script>
+<script src="assets/auto-plan-workspace-v1.js?v=20261003-monthopt1"></script>
+<script src="assets/month-optimizer-v1.js?v=20261003-monthopt1"></script>
 <script src="assets/planning-assistant-core-v1.js?v=20261001-4"></script>
 <script src="assets/planning-assistant-v1.js?v=20261001-5"></script>
 <script src="assets/employee-management-v2.js?v=20261003-workrest1"></script>

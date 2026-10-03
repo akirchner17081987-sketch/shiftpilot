@@ -63,6 +63,7 @@
   const baseApply=window.applyAutoPlanPreview;
   if(typeof baseApply==='function'){
     window.applyAutoPlanPreview=function(){
+      if(window.SFMonthOptimizer?.getResult?.())return baseApply.apply(this,arguments);
       if(typeof autoPlanPreview==='undefined'||!Array.isArray(autoPlanPreview))return baseApply.apply(this,arguments);
       const accepted=[],rejected=[];
       for(const x of autoPlanPreview){

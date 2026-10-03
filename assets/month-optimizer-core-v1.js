@@ -1,0 +1,65 @@
+// Monatsoptimierung: ganze Arbeitsblöcke, echte Besetzungsbedarfe und persönliche Stundenziele.
+(function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.SFMonthOptimizerCore=api})(typeof window!=='undefined'?window:globalThis,function(){
+  const hour=3600000;
+  const next=date=>{const d=new Date(date+'T12:00:00');d.setDate(d.getDate()+1);return iso(d)};
+  const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const week=date=>{const d=new Date(date+'T12:00:00');d.setDate(d.getDate()-(d.getDay()+6)%7);return iso(d)};
+  const transition=(a,b)=>!(a==='O3'&&['O1','O2','TL','TL-LE','TL-RE','TEAMLEITER'].includes(String(b).toUpperCase()));
+  function duty(a){const start=new Date(a.date+'T'+a.start.slice(0,5)+':00'),end=new Date(a.date+'T'+a.end.slice(0,5)+':00');if(end<=start)end.setDate(end.getDate()+1);return{...a,startMs:+start,endMs:+end,hours:(end-start)/hour,day:Math.floor(Date.parse(a.date+'T12:00:00Z')/86400000),week:week(a.date)}}
+  function prepare(input){
+    const people=new Map(input.employees.map(e=>[String(e.id),e])),base=input.base.map(duty),capacity=new Map(input.capacities),groups=input.groups.map(g=>({...g,employee:people.get(String(g.employee.id)),options:g.options.map(o=>{const a=o.map(duty);a.hours=a.reduce((n,x)=>n+x.hours,0);a.weeks=new Map();for(const x of a)a.weeks.set(x.week,(a.weeks.get(x.week)||0)+x.hours);return a})})),potential=new Map();
+    for(const g of groups)for(const o of g.options)for(const a of o){if(!potential.has(a.resource))potential.set(a.resource,new Set());potential.get(a.resource).add(String(g.employee.id))}
+    return{...input,people,base,capacity,groups,potential};
+  }
+  function state(p,records=[]){
+    const s={remaining:new Map(p.capacity),people:new Map(),used:new Set(),records:[]};
+    for(const e of p.people.values())s.people.set(String(e.id),{hours:0,weeks:new Map(),duties:[],days:new Set(),byDay:new Map()});
+    for(const a of p.base)addDuty(s,a,p.month);
+    for(const r of records)commit(s,r,p.month);return s;
+  }
+  function addDuty(s,a,month){const e=s.people.get(String(a.employeeId));if(!e)return;e.duties.push(a);e.days.add(a.day);e.byDay.set(a.day,a);if(a.date.startsWith(month))e.hours+=a.hours;e.weeks.set(a.week,(e.weeks.get(a.week)||0)+a.hours)}
+  function commit(s,r,month){s.used.add(r.group.id);s.records.push(r);for(const a of r.option){s.remaining.set(a.resource,s.remaining.get(a.resource)-1);addDuty(s,a,month)}}
+  function feasible(p,s,g,option){
+    const e=g.employee,x=s.people.get(String(e.id));if(!x)return false;
+    if(x.hours+option.hours>e.monthLimit+.000001)return false;
+    if(p.respectHours&&e.weeklyLimit>0)for(const [w,h]of option.weeks)if((x.weeks.get(w)||0)+h>e.weeklyLimit+.000001)return false;
+    const addedDays=new Set(),addedByDay=new Map(option.map(a=>[a.day,a]));
+    for(const a of option){if((s.remaining.get(a.resource)||0)<1||x.days.has(a.day)||addedDays.has(a.day)||a.hours>10+.000001)return false;addedDays.add(a.day);
+      for(const day of [a.day-1,a.day+1]){const b=x.byDay.get(day)||addedByDay.get(day);if(!b)continue;
+        if(a.day+1===b.day&&!transition(a.type,b.type)||b.day+1===a.day&&!transition(b.type,a.type))return false;
+        if(a.startMs<b.endMs&&a.endMs>b.startMs)return false;
+        const rest=a.startMs>=b.endMs?(a.startMs-b.endMs)/hour:(b.startMs-a.endMs)/hour;if(rest<11-.000001)return false;
+      }
+    }
+    if(e.maxConsecutive>0)for(const day of addedDays){let count=1;for(const direction of [-1,1])for(let d=day+direction;x.days.has(d)||addedDays.has(d);d+=direction){if(++count>e.maxConsecutive)return false}}
+    return true;
+  }
+  function quality(p,s){let deficit=0,squared=0,extra=0;for(const e of p.people.values()){const h=s.people.get(String(e.id)).hours,d=Math.max(0,e.target-h);deficit+=d;squared+=d*d/Math.max(1,e.target);extra+=Math.max(0,h-e.target)}return{open:[...s.remaining.values()].reduce((n,x)=>n+x,0),deficit,squared,extra}}
+  const better=(a,b)=>!b||a.open<b.open||a.open===b.open&&(a.deficit<b.deficit-.000001||Math.abs(a.deficit-b.deficit)<.000001&&a.squared<b.squared-.000001);
+  function random(seed){let n=seed||1;return()=>{n=(Math.imul(1664525,n)+1013904223)>>>0;return n/4294967296}}
+  function fill(p,retained,seed,variant){
+    const s=state(p,retained),rng=random(seed),bias=new Map(p.groups.map(g=>[g.id,.8+rng()*.4]));
+    const weights=[[32,1],[70,.35],[12,2],[45,1.4]][variant%4];
+    while(true){let chosen=null,best=-Infinity;
+      for(const g of p.groups){if(s.used.has(g.id))continue;const current=s.people.get(String(g.employee.id)),target=Math.max(1,g.employee.target),deficit=Math.max(0,target-current.hours),urgency=deficit/target;
+        for(const option of g.options){if(!feasible(p,s,g,option))continue;const hours=option.hours,scarcity=option.reduce((n,a)=>n+1/Math.max(1,p.potential.get(a.resource)?.size||1),0),same=option.every(a=>a.type===option[0].type),permissions=Math.max(1,g.employee.permissions||1);
+          const score=(scarcity*weights[0]+Math.min(deficit,hours)*urgency*weights[1]+option.length*.8+(same?.6:0)+hours*.05/permissions-(hours>deficit?(hours-deficit)*2:0))*bias.get(g.id);
+          if(score>best){best=score;chosen={group:g,option}}
+        }
+      }
+      if(!chosen)break;commit(s,chosen,p.month);
+    }
+    return s;
+  }
+  async function optimize(input,{iterations=36,yieldStep=()=>Promise.resolve(),progress=()=>{}}={}){
+    const p=prepare(input);let best=null,q=null;const rng=random(20261201);
+    for(let i=0;i<iterations;i++){
+      let retained=[];
+      if(i>=8&&best){const drop=.12+(i%5)*.08;retained=best.records.filter(()=>rng()>drop)}
+      const s=fill(p,retained,101+i*7919,i),v=quality(p,s);if(better(v,q)){best=s;q=v}progress({iteration:i+1,iterations,...q});await yieldStep();
+    }
+    const rows=[...p.people.values()].map(e=>{const planned=best.people.get(String(e.id)).hours;return{employeeId:e.id,target:e.target,planned,missing:Math.max(0,e.target-planned),extra:Math.max(0,planned-e.target)}});
+    return{records:best.records,preview:best.records.flatMap(r=>r.option.map(a=>({...a,blockId:r.group.block?r.group.id:undefined}))),remaining:[...best.remaining],quality:q,rows};
+  }
+  return{optimize,prepare,feasible,state,quality,duty,week};
+});
