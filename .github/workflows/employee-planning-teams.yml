@@ -11,6 +11,7 @@ on:
       - assets/employee-rhythm-v1.js
       - tests/employee-planning-teams.test.mjs
       - tests/e2e/employee-planning-teams.spec.cjs
+      - tests/e2e/auto-plan-workspace.spec.cjs
       - .github/workflows/employee-planning-teams.yml
   workflow_dispatch:
 permissions:
