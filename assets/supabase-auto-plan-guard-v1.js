@@ -3,6 +3,13 @@
   const HOUR=60*60*1000;
   const MIN_REST_HOURS=11;
   const MAX_SHIFT_HOURS=10;
+  const nextDay=date=>{const d=new Date(date+'T12:00:00');d.setDate(d.getDate()+1);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+  const earlyNight=type=>['O1','O2','TL','TL-LE','TL-RE','TEAMLEITER'].includes(String(type).toUpperCase());
+  const allowsTransition=(from,to)=>!(String(from).toUpperCase()==='O3'&&earlyNight(to));
+  function passesShiftTransitions(employeeId,type,date,simulated=[]){
+    const all=[...(typeof assignments==='undefined'?[]:assignments),...simulated].filter(a=>String(a.employeeId)===String(employeeId));
+    return all.every(a=>!(nextDay(a.date)===date&&!allowsTransition(a.type,type)||nextDay(date)===a.date&&!allowsTransition(type,a.type)));
+  }
 
   const interval=(date,start,end)=>{
     const s=new Date(`${date}T${start}:00`),e=new Date(`${date}T${end}:00`);
@@ -32,6 +39,7 @@
     }
 
     for(const a of existing){
+      if(nextDay(a.date)===date&&!allowsTransition(a.type,type)||nextDay(date)===a.date&&!allowsTransition(type,a.type))return false;
       const other=intervalForAssignment(a);
       if(target.start<other.end && target.end>other.start)return false;
       if(target.start>=other.end){
@@ -61,17 +69,18 @@
         if(passesTimeRules(x.employeeId,x.type,x.date,accepted))accepted.push(x);else rejected.push(x);
       }
       if(rejected.length){
-        autoPlanPreview=accepted;
+        const blocked=new Set(rejected.map(x=>x.blockId).filter(Boolean));
+        autoPlanPreview=accepted.filter(x=>!x.blockId||!blocked.has(x.blockId));
         if(typeof renderAutoPlanning==='function')renderAutoPlanning();
         if(typeof showSaveToast==='function')showSaveToast(
           'Auto-Planung angepasst',
           `${rejected.length} Vorschlag${rejected.length===1?' wurde':'e wurden'} wegen Überschneidung, Ruhezeit oder Schichtdauer nicht übernommen.`
         );
-        if(!accepted.length)return;
+        if(!autoPlanPreview.length)return;
       }
       return baseApply.apply(this,arguments);
     };
   }
 
-  window.SFAutoPlanGuard={passesTimeRules};
+  window.SFAutoPlanGuard={passesTimeRules,allowsTransition,passesShiftTransitions};
 })();
