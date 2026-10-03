@@ -23,6 +23,14 @@
     const existing=[...(typeof assignments!=='undefined'&&Array.isArray(assignments)?assignments:[]),...(Array.isArray(simulated)?simulated:[])]
       .filter(a=>String(a.employeeId)===String(employeeId));
 
+    const employee=typeof employees==='undefined'?null:employees.find(e=>String(e.id)===String(employeeId));
+    const stored=employee?.qualifications?.find(q=>String(q).startsWith('__sp:maxConsecutive=')),maximum=Number(employee?.maxConsecutiveShifts??stored?.split('=')[1]);
+    if(Number.isFinite(maximum)&&maximum>0){
+      const days=new Set(existing.map(a=>a.date));let count=1;
+      for(const direction of [-1,1]){const cursor=new Date(date+'T12:00:00');for(let i=0;i<days.size;i++){cursor.setDate(cursor.getDate()+direction);const key=`${cursor.getFullYear()}-${String(cursor.getMonth()+1).padStart(2,'0')}-${String(cursor.getDate()).padStart(2,'0')}`;if(!days.has(key))break;count++}}
+      if(count>maximum)return false;
+    }
+
     for(const a of existing){
       const other=intervalForAssignment(a);
       if(target.start<other.end && target.end>other.start)return false;
