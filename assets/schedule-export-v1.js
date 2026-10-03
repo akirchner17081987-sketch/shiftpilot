@@ -17,7 +17,7 @@
       const timer=setTimeout(onError,20000);node.addEventListener('load',onLoad,{once:true});node.addEventListener('error',onError,{once:true});if(owned)document.head.append(node);
     }).catch(error=>{loading.delete(src);throw error});loading.set(src,promise);return promise;
   }
-  function fileName(plan,extension){return 'SchichtFunk_Gesamtdienstplan_'+plan.month+'.'+extension}
+  function fileName(plan,extension){return extension==='pdf'&&plan.pdfScope&&plan.pdfScope!=='Gesamt'?'SchichtFunk_Dienstplan_'+plan.pdfScope+'_'+plan.month+'.pdf':'SchichtFunk_Gesamtdienstplan_'+plan.month+'.'+extension}
   function excel(plan){
     const X=window.XLSX,wb=X.utils.book_new(),data=window.SFScheduleExportCore.workbookRows(plan);
     for(const [key,name] of [['matrix','Monatsplan'],['details','Schichtdetails'],['coverage','Besetzung'],['legend','Hinweise']]){
@@ -35,7 +35,7 @@
   }
   function pdf(plan){
     const doc=new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a3'}),width=doc.internal.pageSize.getWidth();
-    function header(){doc.setFillColor(8,24,38);doc.roundedRect(10,9,width-20,29,2,2,'F');doc.setFont('helvetica','bold');doc.setTextColor(39,214,180);doc.setFontSize(16);doc.text('SchichtFunk',16,20);doc.setFontSize(8);doc.setTextColor(220,236,246);doc.text('Klar geplant. Stark besetzt.',16,29);doc.setFontSize(15);doc.setTextColor(255,255,255);doc.text('Gesamtdienstplan · '+plan.label,width-16,20,{align:'right'});doc.setFontSize(8);doc.text(plan.company+' · '+plan.status,width-16,29,{align:'right',maxWidth:width-125});doc.setTextColor(70,85,99);doc.setFont('helvetica','normal');doc.setFontSize(7);doc.text('Nachtdienste stehen am Starttag. Planstunden ohne Pausenabzug. – = kein Dienst eingetragen.',10,44)}
+    function header(){doc.setFillColor(8,24,38);doc.roundedRect(10,9,width-20,29,2,2,'F');doc.setFont('helvetica','bold');doc.setTextColor(39,214,180);doc.setFontSize(16);doc.text('SchichtFunk',16,20);doc.setFontSize(8);doc.setTextColor(220,236,246);doc.text('Klar geplant. Stark besetzt.',16,29);doc.setFontSize(15);doc.setTextColor(255,255,255);doc.text((plan.pdfScope&&plan.pdfScope!=='Gesamt'?'Dienstplan '+plan.pdfScope:'Gesamtdienstplan')+' · '+plan.label,width-16,20,{align:'right'});doc.setFontSize(8);doc.text(plan.company+' · '+plan.status,width-16,29,{align:'right',maxWidth:width-125});doc.setTextColor(70,85,99);doc.setFont('helvetica','normal');doc.setFontSize(7);doc.text('Nachtdienste stehen am Starttag. Planstunden ohne Pausenabzug. – = kein Dienst eingetragen.',10,44)}
     const nameWidth=55,teamWidth=12,totalWidth=16,dayWidth=(width-20-nameWidth-teamWidth-totalWidth)/plan.days.length;
     const styles={0:{cellWidth:nameWidth,halign:'left'},1:{cellWidth:teamWidth},[plan.days.length+2]:{cellWidth:totalWidth}};
     plan.days.forEach((_,i)=>styles[i+2]={cellWidth:dayWidth});
@@ -49,22 +49,30 @@
   }
   async function download(format){
     if(busy)return;const status=dialog.querySelector('.sf-plan-export-status');status.classList.remove('error');
-    busy=true;dialog.querySelectorAll('button,input').forEach(n=>n.disabled=true);status.textContent='Datei wird erstellt …';
+    busy=true;dialog.querySelectorAll('button,input,select').forEach(n=>n.disabled=true);status.textContent='Datei wird erstellt …';
     try{
-      const companyId=access().companyId,plan=snapshot(dialog.querySelector('input').value);
+      const companyId=access().companyId,fullPlan=snapshot(dialog.querySelector('input').value),plan=format==='pdf'?window.SFScheduleExportCore.selectPDFPlan(fullPlan,dialog.querySelector('#sfPlanExportScope').value):fullPlan;
+      if(format==='pdf'&&!plan.rows.length)throw Error('Für '+plan.pdfScope+' sind im gewählten Monat keine Mitarbeiter vorhanden.');
       if(format==='xlsx')await load('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',()=>!!window.XLSX);
       else{await load('https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js',()=>!!window.jspdf?.jsPDF);await load('https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js',()=>!!window.jspdf?.jsPDF?.API?.autoTable)}
       if(access().companyId!==companyId)throw Error('Das Unternehmen wurde gewechselt. Bitte den Export neu öffnen.');
       if(!dialog.open)throw Error('Export abgebrochen.');
       if(format==='xlsx')excel(plan);else pdf(plan);status.textContent=fileName(plan,format)+' wurde erstellt.';
     }catch(error){status.classList.add('error');status.textContent=error.message||'Der Export konnte nicht erstellt werden.'}
-    finally{busy=false;dialog.querySelectorAll('button,input').forEach(n=>n.disabled=false)}
+    finally{busy=false;dialog.querySelectorAll('button,input,select').forEach(n=>n.disabled=false);updateSummary()}
   }
-  function updateSummary(){const box=dialog.querySelector('.sf-plan-export-summary');try{const p=snapshot(dialog.querySelector('input').value);box.textContent=p.label+' · '+p.days.length+' Tage · '+p.rows.length+' Mitarbeiter · '+p.shiftCount+' Dienste · '+p.hours.toLocaleString('de-DE')+' Planstunden';dialog.querySelectorAll('[data-format]').forEach(b=>b.disabled=false)}catch(error){box.textContent=error.message;dialog.querySelectorAll('[data-format]').forEach(b=>b.disabled=true)}}
+  function updateSummary(){
+    const box=dialog.querySelector('.sf-plan-export-summary');
+    try{
+      const full=snapshot(dialog.querySelector('input').value),p=window.SFScheduleExportCore.selectPDFPlan(full,dialog.querySelector('#sfPlanExportScope').value);
+      box.textContent='PDF · '+p.pdfScope+' · '+p.label+' · '+p.days.length+' Tage · '+p.rows.length+' Mitarbeiter · '+p.shiftCount+' Dienste · '+p.hours.toLocaleString('de-DE')+' Planstunden'+(!p.rows.length?' · Keine Mitarbeiter für diese Auswahl.':'');
+      dialog.querySelector('[data-format="xlsx"]').disabled=false;dialog.querySelector('[data-format="pdf"]').disabled=!p.rows.length;
+    }catch(error){box.textContent=error.message;dialog.querySelectorAll('[data-format]').forEach(b=>b.disabled=true)}
+  }
   function open(){
     try{access()}catch(error){window.showSaveToast?.('Export nicht verfügbar',error.message);return}
-    if(!dialog){dialog=document.createElement('dialog');dialog.className='sf-plan-export-dialog';dialog.id='sfPlanExportDialog';dialog.setAttribute('aria-labelledby','sfPlanExportTitle');dialog.innerHTML='<h2 id="sfPlanExportTitle">Gesamtdienstplan exportieren</h2><p>Alle Mitarbeiter und Tage des gewählten Monats. Excel enthält zusätzlich Schichtdetails und SOLL/IST. Das PDF zeigt den Monatsplan im SchichtFunk-Design (DIN A3 quer).</p><label>Monat<input id="sfPlanExportMonth" type="month" required></label><div class="sf-plan-export-summary"></div><div class="sf-plan-export-actions"><button type="button" class="ghost" data-close>Schließen</button><button type="button" class="ghost" data-format="xlsx">Excel herunterladen</button><button type="button" class="primary" data-format="pdf">PDF herunterladen</button></div><span class="sf-plan-export-status" role="status"></span>';document.body.append(dialog);dialog.querySelector('input').addEventListener('change',updateSummary);dialog.querySelector('[data-close]').onclick=()=>dialog.close();dialog.querySelectorAll('[data-format]').forEach(b=>b.onclick=()=>download(b.dataset.format));dialog.addEventListener('cancel',event=>{if(busy)event.preventDefault()})}
-    dialog.querySelector('input').value=currentMonth();dialog.querySelector('.sf-plan-export-status').textContent='';updateSummary();if(!dialog.open)dialog.showModal();window.SFDateMonthFormat?.refresh(dialog);
+    if(!dialog){dialog=document.createElement('dialog');dialog.className='sf-plan-export-dialog';dialog.id='sfPlanExportDialog';dialog.setAttribute('aria-labelledby','sfPlanExportTitle');dialog.innerHTML='<h2 id="sfPlanExportTitle">Gesamtdienstplan exportieren</h2><p>Wähle für das PDF Leipzig, Recklinghausen oder Gesamt. Alle Dienste der Mitarbeiter des gewählten Standorts werden aufgenommen, auch standortübergreifende Einsätze. Excel enthält den Gesamtdienstplan mit Schichtdetails und SOLL/IST.</p><label>Monat<input id="sfPlanExportMonth" type="month" required></label><label>PDF-Auswahl<select id="sfPlanExportScope" aria-describedby="sfPlanExportScopeHint"><option>Leipzig</option><option>Recklinghausen</option><option selected>Gesamt</option></select></label><p id="sfPlanExportScopeHint" class="sf-plan-export-hint">Die Zuordnung erfolgt über „Standort / Zugehörigkeit“ im Mitarbeiterprofil. Gesamt enthält auch Mitarbeiter ohne Standortzuordnung. PDF im Format DIN A3 quer.</p><div class="sf-plan-export-summary" role="status"></div><div class="sf-plan-export-actions"><button type="button" class="ghost" data-close>Schließen</button><button type="button" class="ghost" data-format="xlsx">Excel herunterladen</button><button type="button" class="primary" data-format="pdf">PDF herunterladen</button></div><span class="sf-plan-export-status" role="status"></span>';document.body.append(dialog);dialog.querySelector('input').addEventListener('change',updateSummary);dialog.querySelector('#sfPlanExportScope').addEventListener('change',updateSummary);dialog.querySelector('[data-close]').onclick=()=>dialog.close();dialog.querySelectorAll('[data-format]').forEach(b=>b.onclick=()=>download(b.dataset.format));dialog.addEventListener('cancel',event=>{if(busy)event.preventDefault()})}
+    dialog.querySelector('input').value=currentMonth();dialog.querySelector('#sfPlanExportScope').value='Gesamt';dialog.querySelector('.sf-plan-export-status').textContent='';updateSummary();if(!dialog.open)dialog.showModal();window.SFDateMonthFormat?.refresh(dialog);
   }
   function mount(){const head=document.querySelector('#view-schedule .page-head');if(!head||head.querySelector('.sf-schedule-export'))return;const actions=document.createElement('div');actions.className='sf-schedule-export-head-actions';[...head.children].filter(n=>n.tagName==='BUTTON').forEach(n=>actions.append(n));const button=document.createElement('button');button.type='button';button.className='ghost sf-schedule-export';button.textContent='Excel / PDF';button.setAttribute('aria-label','Gesamtdienstplan als Excel oder PDF exportieren');button.onclick=open;actions.append(button);head.append(actions)}
   window.SFScheduleExport={open,snapshot};
