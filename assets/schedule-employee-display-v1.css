@@ -10,6 +10,17 @@
 #view-schedule .sf-week-employee[style*="--sf-person-bg"] .sf-week-employee-info b,
 #view-schedule .sf-week-employee[style*="--sf-person-bg"] .sf-week-employee-info small {color:var(--sf-person-text)!important}
 #view-schedule .employee-drag[style*="--sf-person-bg"] .avatar,
-#view-schedule .sf-week-employee[style*="--sf-person-bg"] .sf-week-avatar {background:rgba(255,255,255,.55);color:var(--sf-person-text)}
+#view-schedule .sf-week-employee[style*="--sf-person-bg"] .sf-week-avatar {background:rgba(255,255,255,.08);color:var(--sf-person-text)}
 #view-schedule .employee-drag.selected[style*="--sf-person-bg"] {outline:2px solid var(--teal);outline-offset:2px}
 #view-schedule .employee-drag.selected[style*="--sf-person-bg"]:after {color:var(--sf-person-text)}
+
+/* Heller Modus: passende helle Gruppenflächen statt dunkler Karten. */
+html[data-sf-theme="light"] #view-schedule .employee-drag[style*="--sf-person-bg"],
+html[data-sf-theme="light"] #view-schedule .sf-week-employee[style*="--sf-person-bg"],
+html[data-sf-theme="light"] .sf-auto-stair-table tbody th[style*="--sf-person-bg"] {
+  --sf-person-bg:var(--sf-person-light-bg)!important;
+  --sf-person-text:var(--sf-person-light-text)!important;
+  --sf-person-border:var(--sf-person-light-border)!important;
+}
+html[data-sf-theme="light"] #view-schedule .employee-drag[style*="--sf-person-bg"] .avatar,
+html[data-sf-theme="light"] #view-schedule .sf-week-employee[style*="--sf-person-bg"] .sf-week-avatar {background:rgba(255,255,255,.55)}
