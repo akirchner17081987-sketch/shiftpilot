@@ -13,7 +13,7 @@
   const toast=(t,m)=>{if(typeof showSaveToast==='function')showSaveToast(t,m)};
 
   function css(){if(document.getElementById('sfPersonnelFileCss'))return;const s=document.createElement('style');s.id='sfPersonnelFileCss';s.textContent=`
-    .sf-pf-launch{display:flex;justify-content:flex-end;margin:-2px 0 0}.sf-pf-open{border:1px solid #2b6659;background:#113128;color:#8fe8ce;border-radius:9px;padding:9px 12px;font-weight:900;font-size:12px}.sf-pf-open:hover{background:#173e33}.sf-pf-open[disabled]{opacity:.42;cursor:not-allowed}
+    .sf-pf-launch{display:flex;justify-content:flex-end;margin:-2px 0 0}.sf-pf-open{border:1px solid #2b6659;background:#113128;color:#8fe8ce;border-radius:9px;padding:9px 12px;font-weight:900;font-size:12px}#spEmployeeProfile .sf-pf-launch{margin:0;padding:10px 18px;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--border,#20364a)}.sf-pf-open:hover{background:#173e33}.sf-pf-open[disabled]{opacity:.42;cursor:not-allowed}
     .sf-pf-back{position:fixed;inset:0;z-index:43000;background:rgba(2,7,13,.94);backdrop-filter:blur(9px);display:grid;place-items:center;padding:18px}.sf-pf-modal{width:min(1180px,98vw);height:min(850px,95vh);display:flex;flex-direction:column;overflow:hidden;background:linear-gradient(180deg,#101e2d,#08131f);border:1px solid #31506a;border-radius:18px;box-shadow:0 35px 120px rgba(0,0,0,.68)}
     .sf-pf-head{display:flex;align-items:center;gap:14px;padding:17px 20px;border-bottom:1px solid #20364a;background:linear-gradient(90deg,#0d1f2e,#0a1825)}.sf-pf-avatar{width:48px;height:48px;border-radius:13px;display:grid;place-items:center;background:#154c43;color:#79f0d1;font-weight:900;font-size:15px}.sf-pf-head-copy{min-width:0}.sf-pf-head-copy h2{margin:2px 0 3px;font-size:20px}.sf-pf-head-copy p{margin:0;color:#87a0b5;font-size:11px}.sf-pf-head-spacer{flex:1}.sf-pf-head-status{padding:5px 9px;border-radius:999px;border:1px solid #356851;background:#123127;color:#83e7c8;font-size:9px;font-weight:900}.sf-pf-x{width:38px;height:38px;border:1px solid #30485d;background:#0d1a27;color:#a9bdcf;border-radius:9px;font-size:16px}
     .sf-pf-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:11px 20px;border-bottom:1px solid #20364a;background:#0a1724}.sf-pf-stat{padding:9px 11px;border:1px solid #243c50;background:#0c1b29;border-radius:9px}.sf-pf-stat small{display:block;color:#7891a6;font-size:8px;text-transform:uppercase;letter-spacing:.05em}.sf-pf-stat b{display:block;margin-top:4px;font-size:15px}.sf-pf-stat.warn b{color:#ffd08a}.sf-pf-stat.bad b{color:#ff8495}.sf-pf-stat.good b{color:#7ee4c7}
@@ -29,10 +29,20 @@
   `;document.head.appendChild(s)}
 
   function ensureLaunch(){
-    if(!ADMIN.has(B.role))return;
-    css();const summary=document.getElementById('employeeSummary');if(!summary)return;
-    let bar=document.getElementById('sfPersonnelLaunch');if(!bar){bar=document.createElement('div');bar.id='sfPersonnelLaunch';bar.className='sf-pf-launch';bar.innerHTML='<button type="button" class="sf-pf-open" id="sfPersonnelOpen">📁 Personalakte öffnen</button>';summary.insertAdjacentElement('afterend',bar);bar.querySelector('button').onclick=openPersonnelFile}
-    const e=empLocal();const b=bar.querySelector('button');b.disabled=!e;b.textContent=e?`📁 Personalakte · ${e.first} ${e.last}`:'📁 Personalakte öffnen';
+    const profile=document.getElementById('spEmployeeProfile');
+    let bar=document.getElementById('sfPersonnelLaunch');
+    if(!ADMIN.has(B.role)){bar?.remove();return}
+    const e=empLocal();
+    if(profile&&(!e||profile.dataset.new==='1')){bar?.remove();return}
+    const summary=profile?profile.querySelector('.sp-profile-head'):document.getElementById('employeeSummary');
+    if(!summary)return;
+    css();
+    if(!bar){bar=document.createElement('div');bar.id='sfPersonnelLaunch';bar.className='sf-pf-launch';bar.innerHTML='<button type="button" class="sf-pf-open" id="sfPersonnelOpen">📁 Personalakte öffnen</button>';bar.querySelector('#sfPersonnelOpen').onclick=openPersonnelFile}
+    if(bar.previousElementSibling!==summary)summary.insertAdjacentElement('afterend',bar);
+    const button=bar.querySelector('#sfPersonnelOpen'),label=e?`📁 Personalakte · ${e.first} ${e.last}`:'📁 Personalakte öffnen';
+    button.disabled=!e;
+    if(button.textContent!==label)button.textContent=label;
+    button.title='Zertifikate, Lehrgänge und Dokumente mit Ablaufdatum verwalten';
   }
 
   async function loadBundle(){const id=empDbId();if(!id)throw new Error('Mitarbeiter ist noch nicht mit der Cloud verknüpft');const q=await B.client.rpc('manager_personnel_file_bundle',{p_employee_id:id});if(q.error)throw q.error;bundle=typeof q.data==='string'?JSON.parse(q.data):q.data;return bundle}
@@ -80,6 +90,6 @@
   if(typeof window.selectEmployee==='function'&&!window.selectEmployee.__pfWrapped){const base=window.selectEmployee;const wrapped=function(){const r=base.apply(this,arguments);setTimeout(ensureLaunch,0);document.getElementById('sfPersonnelFile')?.remove();return r};wrapped.__pfWrapped=true;window.selectEmployee=wrapped}
   document.addEventListener('click',e=>{if(e.target.closest('[data-view="employees"]'))setTimeout(ensureLaunch,350)},true);
   const mo=new MutationObserver(()=>{if(document.getElementById('view-employees')?.classList.contains('active'))ensureLaunch()});mo.observe(document.documentElement,{subtree:true,childList:true});
-  B.personnelFile={open:openPersonnelFile,refresh:refreshBundle};
+  B.personnelFile={open:openPersonnelFile,refresh:refreshBundle,ensureLaunch};
   setTimeout(ensureLaunch,1700);
 })();
