@@ -28,8 +28,7 @@
     if(!pool.length)return'Der verbindliche Rhythmus der verfügbaren Mitarbeiter passt an diesem Tag nicht zu dieser Schicht.';
     const timePool=pool.filter(e=>!window.SFAutoPlanGuard||window.SFAutoPlanGuard.passesTimeRules(e.id,type,date,simulated));
     if(!timePool.length)return'Schichtdauer, Ruhezeit oder Überschneidung verhindern die Besetzung. Prüfe die Schichtzeiten und benachbarte Dienste.';
-    if(el('autoRespectHours')?.checked!==false)return'Für die übrigen passenden Mitarbeiter reichen die freien Wochen- oder Monatsstunden nicht aus. Prüfe Vertragsstunden und Auslastung.';
-    return'Unter den aktuellen Regeln ist kein passender Mitarbeiter verfügbar. Prüfe Profile und vorhandene Schichten.';
+    return'Für die übrigen passenden Mitarbeiter reichen die freien Wochen- oder Monatsstunden nicht aus. Die Auto-Planung überschreitet nie 180 Monatsstunden. Prüfe das separate Wochenmaximum und niedrigere individuelle Monatswerte. Mehrstunden sind durch freiwillige Übernahme im Schicht-Marktplatz mit Planerfreigabe möglich.';
   }
   function renderSuggestions(){
     const groups=new Map();autoPlanPreview.forEach((x,i)=>{if(!groups.has(x.date))groups.set(x.date,[]);groups.get(x.date).push({...x,index:i})});
