@@ -16,7 +16,7 @@ test('modified hours receive an appendix marker and detail exports preserve exac
   const plan=buildPlan(base),row=plan.rows.find(r=>r.person.id==='C');assert.equal(row.cells[2].pdf,'FD*');assert.equal(row.hours,7);const detail=workbookRows(plan).details.find(r=>r[2]==='Chris Archiv');assert.deepEqual(detail.slice(5,9),['07:00','14:00','Nein',7]);
 });
 test('SOLL/IST covers every day and shift, publication states and personnel numbers survive export',()=>{
-  const plan=buildPlan(base),book=workbookRows(plan);assert.equal(plan.coverage.length,62);assert.equal(plan.coverage[0].required,2);assert.equal(plan.coverage[0].actual,1);assert.equal(book.matrix[7][0],'001');assert.equal(book.matrix[6].length,36);assert.equal(plan.status,'Entwurf');assert.equal(buildPlan({...base,assignments:base.assignments.map(a=>({...a,publishedAt:'2026-10-01'}))}).status,'Veröffentlicht');
+  const plan=buildPlan(base),book=workbookRows(plan);assert.equal(plan.coverage.length,62);assert.equal(plan.coverage[0].required,2);assert.equal(plan.coverage[0].actual,1);assert.equal(book.matrix[7][0],'001');assert.equal(book.matrix[6].length,38);assert.equal(plan.status,'Entwurf');assert.equal(buildPlan({...base,assignments:base.assignments.map(a=>({...a,publishedAt:'2026-10-01'}))}).status,'Veröffentlicht');
 });
 test('leap years and unavailable archived employees retain valid rows, while invalid shift times fail clearly',()=>{
   assert.equal(buildPlan({...base,month:'2028-02',assignments:[]}).days.length,29);const unknown=buildPlan({...base,assignments:[{employeeId:'removed',date:'2026-12-01',type:'FD'}]});assert.equal(unknown.rows.find(r=>r.person.id==='removed').person.name,'Ehemaliger Mitarbeiter');assert.throws(()=>buildPlan({...base,assignments:[{employeeId:'A',date:'2026-12-01',type:'unknown'}]}),/Schichtzeiten/);
@@ -53,4 +53,20 @@ test('a Leipzig employee covering TL-RE remains in Leipzig PDF, and filtered sta
 });
 test('empty locations are explicit and unsupported scopes are rejected',()=>{
  const plan=buildPlan({...base,employees:[],assignments:[]});assert.equal(selectPDFPlan(plan,'Leipzig').rows.length,0);assert.equal(selectPDFPlan(plan,'Recklinghausen').hours,0);assert.throws(()=>selectPDFPlan(plan,'Berlin'),/Leipzig, Recklinghausen oder Gesamt/);
+});
+
+test('monthly personal targets, zero hours and missing targets remain distinct in export',()=>{
+ const employees=base.employees.map(e=>({...e,monthlyHours:e.id==='A'?180:e.id==='B'?162:0}));
+ const plan=buildPlan({...base,employees}),anna=plan.rows.find(r=>r.person.id==='A'),berta=plan.rows.find(r=>r.person.id==='B');
+ assert.equal(anna.targetHours,180);assert.equal(anna.difference,-164);assert.equal(berta.hours,0);assert.equal(berta.targetHours,162);assert.equal(berta.difference,-162);
+ assert.equal(plan.employeeCount,3);assert.equal(plan.assignedEmployeeCount,2);assert.equal(plan.targetHours,342);assert.equal(plan.difference,-319);
+ const matrix=workbookRows(plan).matrix;assert.deepEqual(matrix[6].slice(-4),['Dienste','Plan-IST (h)','Monats-SOLL (h)','Differenz (h)']);assert.deepEqual(matrix[7].slice(-4),[2,16,180,-164]);
+ const le=selectPDFPlan(plan,'Leipzig');assert.equal(le.targetHours,180);assert.equal(le.difference,-164);assert.equal(le.assignedEmployeeCount,1);
+ const missing=buildPlan({...base,employees:[{id:'A',first:'Unknown',status:'active'}],assignments:[base.assignments[0]]});assert.equal(missing.rows[0].targetHours,null);assert.equal(missing.difference,null);
+});
+test('export uses persisted monthly targets, weekly fallback and the shared Secontec employee order',()=>{
+ const people=['37','26','2001','2048','119','2015','2059','109'].map(personnelNo=>({id:personnelNo,first:'Test',last:personnelNo,status:'active',personnelNo,weeklyHours:40,qualifications:['__sp:monthlyHours=144']}));
+ const plan=buildPlan({...base,companyId:'1f23f5a3-1cbb-430f-af90-36ed34004440',employees:people,assignments:[],employeeMonthlyTarget:()=>173.92});
+ assert.deepEqual(plan.rows.map(r=>r.person.personnelNo),['2001','26','2048','2059','37','119','2015','109']);assert.ok(plan.rows.every(r=>r.targetHours===144));
+ assert.equal(buildPlan({...base,employees:[{id:'A',status:'active',weeklyHours:40}],assignments:[]}).rows[0].targetHours,173.92);
 });
