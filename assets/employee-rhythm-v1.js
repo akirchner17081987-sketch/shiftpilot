@@ -2,6 +2,7 @@
 (function(){
   if(window.SFRhythm)return;
   const DAY=86400000;
+  const EXEMPT_OT=['OT1','OT2','OT3'];
   const teams=['A','B','C','D','E'];
   const readMeta=(employee,key)=>String((employee?.qualifications||[]).find(value=>String(value).startsWith(`__sp:${key}=`))||'').split('=').slice(1).join('=');
   const normalizeToken=value=>{
@@ -19,10 +20,11 @@
     const selected=employee?.planningTeam??readMeta(employee,'planningTeam'),team=teams.includes(selected)?selected:'',pattern=parsePattern(employee?.rhythmPattern||readMeta(employee,'rhythmPattern'));
     const central=team?window.SFPlanningTeams?.get(team):null;
     if(central)return{mode:'required',start:central.start,pattern:[...central.pattern],team,offset:central.offset,central:true};
-    return {mode:team?'required':mode,start:employee?.rhythmStart||readMeta(employee,'rhythmStart')||'',pattern,team,offset:teamOffset(team,pattern.length)};
+    return {mode:team?'required':mode,exemptOt:!team&&(employee?.rhythmExemptOt??(readMeta(employee,'rhythmExemptOt')==='true'))===true,start:employee?.rhythmStart||readMeta(employee,'rhythmStart')||'',pattern,team,offset:teamOffset(team,pattern.length)};
   }
   function check(employee,shiftType,date){
     const rhythm=config(employee),target=utcDay(date),start=utcDay(rhythm.start);
+    if(rhythm.exemptOt&&EXEMPT_OT.includes(normalizeToken(shiftType)))return{mode:'off',allowed:true,exempt:true,reason:'OT1 / OT2 / OT3 sind von dieser Schichtregel ausgenommen'};
     if(rhythm.mode==='off')return{mode:'off',allowed:true,reason:'Keine Rhythmusbindung'};
     if(!rhythm.pattern.length||!Number.isFinite(start)||!Number.isFinite(target))return{...rhythm,allowed:!rhythm.team,reason:rhythm.team?'Teamrhythmus ist noch unvollständig':'Rhythmus ist noch unvollständig'};
     if(rhythm.team&&target<start)return{...rhythm,mode:'off',allowed:true,reason:`Teamrhythmus beginnt am ${rhythm.start}`};

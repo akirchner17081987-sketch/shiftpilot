@@ -58,3 +58,18 @@ test('employee form offers editable working and free blocks with a separate cycl
   assert.match(management,/rhythmKind=/);
   assert.match(management,/kind==='week'&&!legacyUnedited&&startDay!==1/);
 });
+
+test('4/3/3/2 repeats twice while only explicitly exempt OT1/2/3 bypass free days',()=>{
+  const context={window:{}};vm.runInNewContext(rhythm,context);
+  const pattern=['ALLE','ALLE','ALLE','ALLE','FREI','FREI','FREI','ALLE','ALLE','ALLE','FREI','FREI'];
+  const e={rhythmMode:'required',rhythmStart:'2026-12-01',rhythmPattern:pattern.join(', '),qualifications:['__sp:rhythmExemptOt=true']};
+  for(let day=0;day<24;day++){
+    const date=`2026-12-${String(day+1).padStart(2,'0')}`,work=pattern[day%12]==='ALLE';
+    for(const code of ['O1','O2','O3','OT','QA','TL-LE','TL-RE'])assert.equal(context.window.SFRhythm.check(e,code,date).allowed,work,`${code} ${date}`);
+    for(const code of ['OT1','OT2','OT3'])assert.equal(context.window.SFRhythm.check(e,code,date).allowed,true);
+  }
+  assert.equal(context.window.SFRhythm.check({...e,rhythmExemptOt:false},'OT2','2026-12-07').allowed,false);
+  assert.equal(context.window.SFRhythm.check({...e,qualifications:[]},'OT2','2026-12-07').allowed,false);
+  context.window.SFPlanningTeams={get:()=>({start:'2026-12-01',pattern:['FREI'],offset:0})};
+  assert.equal(context.window.SFRhythm.check({...e,planningTeam:'A'},'OT2','2026-12-07').allowed,false);
+});

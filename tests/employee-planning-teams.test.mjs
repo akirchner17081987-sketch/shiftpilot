@@ -67,3 +67,12 @@ test('model selection and customized monthly hours survive a new employee tab sw
  const h=harness(),e=h.api.newEmployeeDefaults();form(h);h.fields.spEmployment.value='Teilzeit 162';h.fields.spMonthlyHours={value:'160'};h.api.captureNewEmployee(e);
  assert.equal(e.employment,'Teilzeit');assert.equal(e.monthlyHours,160);assert.match(h.api.employmentOptions(e),/Bisher: Teilzeit · 160 h\/Monat/);
 });
+
+test('OT exception survives persistence and hydration and can be removed independently',()=>{
+ const {api,check}=harness(),e={...employee(),rhythmExemptOt:true};api.persistMeta(e);
+ const hydrated={qualifications:[...e.qualifications],shifts:[...e.shifts],status:'active'};api.normalizeEmployee(hydrated);
+ assert.equal(hydrated.rhythmExemptOt,true);assert.equal(check(hydrated,'OT1','2026-12-05').allowed,true);assert.equal(check(hydrated,'FD','2026-12-05').allowed,false);
+ api.persistMeta(hydrated);assert.equal(hydrated.qualifications.filter(q=>q==='__sp:rhythmExemptOt=true').length,1);
+ hydrated.rhythmExemptOt=false;api.persistMeta(hydrated);delete hydrated.rhythmExemptOt;api.normalizeEmployee(hydrated);
+ assert.equal(hydrated.rhythmExemptOt,false);assert.equal(check(hydrated,'OT1','2026-12-05').allowed,false);
+});

@@ -57,6 +57,18 @@ async function centralFixture(page,theme){
   const host=document.createElement('section');host.id='view-settings';host.className='view active';host.innerHTML='<div id="sfSettingBody"></div>';document.querySelector('.content').appendChild(host);centralSettingsFixture.css();centralSettingsFixture.planning(document.querySelector('#sfSettingBody'));
  });
 }
+for(const theme of ['dark','light'])test(`4/3/3/2 workrest cycle persists editable OT exceptions in ${theme}`,async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));await fixture(page,theme);
+ await page.evaluate(()=>{for(const id of ['OT1','OT2','OT3'])TYPES.push({id,name:id,start:'08:00',end:'16:00'});const e=employees[0];Object.assign(e,{rhythmPattern:'ALLE, ALLE, ALLE, ALLE, FREI, FREI, FREI, ALLE, ALLE, ALLE, FREI, FREI',rhythmExemptOt:true,maxWeeklyHours:50,monthlyHours:180,shifts:TYPES.map(t=>t.id)});renderEmployees()});
+ await expect(page.locator('#spRhythmExemptOt')).toBeChecked();await expect(page.locator('#spMaxWeekly')).toHaveValue('50');
+ await page.locator('#spSave').click();await expect(page.locator('#toast')).toContainText('Mitarbeiter gespeichert');expect(await page.evaluate(()=>calls.at(-1).payload.qualifications)).toContain('__sp:rhythmExemptOt=true');
+ await page.evaluate(()=>{const q=calls.at(-1).payload.qualifications;employees[0]={...makeEmployee('S'),rhythmMode:undefined,rhythmKind:undefined,rhythmStart:undefined,rhythmPattern:undefined,qualifications:q,shifts:TYPES.map(t=>t.id)};renderEmployees()});
+ await expect(page.locator('#spRhythmExemptOt')).toBeChecked();await expect(page.locator('#spRhythmKind')).toHaveValue('cycle');await expect(page.locator('#spMaxWeekly')).toHaveValue('50');
+ await page.evaluate(()=>{assignEmployeeByDrop('S','FD','2026-12-07');assignEmployeeByDrop('S','OT1','2026-12-07')});expect(await page.evaluate(()=>manualCalls.map(x=>x.type))).toEqual(['OT1']);
+ expect(await page.evaluate(()=>autoEligibleEmployees('FD','2026-12-07').some(x=>x.e.id==='S'))).toBe(false);expect(await page.evaluate(()=>autoEligibleEmployees('OT2','2026-12-07').some(x=>x.e.id==='S'))).toBe(true);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);await page.screenshot({path:test.info().outputPath(`workrest-${theme}.png`),fullPage:true});
+ await page.locator('#spRhythmExemptOt').uncheck();await page.locator('#spSave').click();await expect(page.locator('#toast')).toContainText('Mitarbeiter gespeichert');expect(await page.evaluate(()=>calls.at(-1).payload.qualifications)).not.toContain('__sp:rhythmExemptOt=true');expect(await page.evaluate(()=>autoEligibleEmployees('OT2','2026-12-07').some(x=>x.e.id==='S'))).toBe(false);expect(errors).toEqual([]);
+});
 for(const theme of ['dark','light'])test(`central team editor persists independent rhythms and inherited staff rules in ${theme}`,async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));await centralFixture(page,theme);
  await expect(page.locator('#sfPlanningTeams [data-edit-team]')).toHaveCount(5);await page.locator('[data-edit-team="A"]').click();await page.locator('#sfTeamStart').fill('2026-12-01');
