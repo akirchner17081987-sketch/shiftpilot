@@ -1,5 +1,5 @@
 // Gesamtdienstplan: reine Datenaufbereitung für Excel und PDF.
-(function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.SFScheduleExportCore=api})(typeof window!=='undefined'?window:globalThis,function(){
+(function(root,factory){const api=factory(typeof module==='object'&&module.exports?require('./schedule-employee-display-v1.js'):root.SFScheduleEmployeeDisplay);if(typeof module==='object'&&module.exports)module.exports=api;else root.SFScheduleExportCore=api})(typeof window!=='undefined'?window:globalThis,function(display){
   const pad=n=>String(n).padStart(2,'0');
   const localISO=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
   const number=n=>Math.round(n*100)/100;
@@ -30,14 +30,14 @@
     });
     assignedIds.forEach(id=>{if(!people.has(id))people.set(id,{id,name:'Ehemaliger Mitarbeiter',team:'',site:'',personnelNo:''})});
     const absences=(source.absences||[]).filter(a=>effective(a)&&String(a.startDate||a.start_date||a.date)<=end&&String(a.endDate||a.end_date||a.date||a.startDate)>=start);
-    const rows=[...people.values()].sort((a,b)=>String(a.team||'ZZ').localeCompare(String(b.team||'ZZ'))||a.name.localeCompare(b.name,'de')).map(person=>{
+    const rows=[...people.values()].sort((a,b)=>display?.enabled(source.companyId)?display.compare(a,b,source.companyId):String(a.team||'ZZ').localeCompare(String(b.team||'ZZ'))||a.name.localeCompare(b.name,'de')).map(person=>{
       const own=shifts.filter(a=>a.employeeId===person.id),ownAbs=absences.filter(a=>String(a.employeeId??a.employee_id)===person.id);
       const cells=days.map(day=>{
         const list=own.filter(a=>a.date===day.date),off=ownAbs.filter(a=>day.date>=String(a.startDate||a.start_date||a.date)&&day.date<=String(a.endDate||a.end_date||a.date||a.startDate));
         const labels=off.map(a=>(absenceCodes[a.type||a.absence_type]||'AB')+(a.fullDay===false?' (teilw.)':''));
         return{date:day.date,shifts:list,absences:off,excel:[...list.map(a=>a.type+' '+a.start+'–'+a.end+(a.overnight?' (+1 Tag)':'')),...labels].join('\n')||'–',pdf:[...list.map(a=>a.type+(a.adjusted?'*':'')),...labels].join('\n')||'–'};
       });
-      return{person,cells,shiftCount:own.length,hours:number(own.reduce((n,a)=>n+a.minutes,0)/60)};
+      return{person,color:display?.color(person,source.companyId)||null,cells,shiftCount:own.length,hours:number(own.reduce((n,a)=>n+a.minutes,0)/60)};
     });
     const types=new Map((source.types||[]).filter(t=>t.active!==false).map(t=>[t.id,t]));
     shifts.forEach(a=>{if(!types.has(a.type)){const t=source.typeById?.(a.type)||{};types.set(a.type,{id:a.type,name:t.name||a.type,start:t.start||a.start,end:t.end||a.end})}});
