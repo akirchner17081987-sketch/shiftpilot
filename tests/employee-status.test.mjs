@@ -26,6 +26,12 @@ test('failed persistence does not make an inactive employee appear active locall
 test('background full sync waits while a status change is in flight',async()=>{
   const {B,calls}=harness();B.employeeStatusSaving=true;await B.sync();assert.deepEqual(calls,[['timer']]);assert.equal(B.syncing,false);
 });
+test('saving a schedule does not upsert unchanged employee rules from an older session',async()=>{
+ const {B,c,calls,e}=harness();B.rememberEmployees();c.assignments=[];c.absences=[];c.globalSoll={};c.dailySoll={};c.timeEntries={};B.persistAbsences=async()=>{};
+ B.client.from=table=>{calls.push(['table',table]);return{upsert(payload){calls.push(['upsert',payload]);return this},select(){return this},eq(){return this},then(resolve){resolve({data:[],error:null})}}};
+ await B.sync();assert.equal(calls.some(x=>x[1]==='employees'),false);assert.equal(B.employeeSyncState.size,1);
+ e.qualifications.push('__sp:maxWeekly=50');await B.sync();assert.equal(calls.filter(x=>x[0]==='upsert').length,1);assert.equal(calls.find(x=>x[0]==='upsert')[1][0].legacy_id,'local');await B.sync();assert.equal(calls.filter(x=>x[0]==='upsert').length,1);
+});
 test('overview button matches current status and status selectors release legacy inactive blocking',()=>{
   const {api,e,fields}=harness();assert.match(api.overviewTab(e,false),/>Aktivieren<\/button>/);e.status='active';assert.match(api.overviewTab(e,false),/>Deaktivieren<\/button>/);e.status='inactive';let listener;fields.spStatus={value:'active',addEventListener(t,fn){listener=fn}};fields.spAvailabilityStatus={value:'red'};api.bindStatusAvailability(e,'spStatus','spAvailabilityStatus');listener();assert.equal(fields.spAvailabilityStatus.value,'green');
 });
