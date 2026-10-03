@@ -8,7 +8,7 @@ const planning=index.slice(index.indexOf('let autoPlanPreview=[];'),index.indexO
 function harness(){
  const fields=new Map(),id=name=>{if(!fields.has(name))fields.set(name,{value:'',checked:true,disabled:false,hidden:false,textContent:'',innerHTML:'',classList:{toggle(){}}});return fields.get(name)};
  id('autoPlanPeriod').value='date';id('autoPlanDate').value='2026-12-01';id('autoPlanMonth').value='2026-12';id('autoPlanWeekDate').value='2026-11-30';
- const c={window:{SFBackend:{companyId:'a'},SchichtFunkCalendarView:{setMonth(){},setMode(){}}},document:{readyState:'loading',addEventListener(){},getElementById:id,querySelectorAll:()=>[]},Date,Map,setTimeout,console,employees:[{id:'e',first:'Fiktive',last:'Person',status:'active',shifts:['FD'],weeklyHours:40}],assignments:[],TYPES:[{id:'FD',name:'Frühdienst',start:'06:00',end:'14:00'}],weekStart:new Date(2026,8,28),iso:d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,addDays:(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x},typeById:t=>c.TYPES.find(x=>x.id===t),getSoll:()=>1,assignmentsFor:(d,t)=>c.assignments.filter(a=>a.date===d&&a.type===t),absent:()=>false,plannedAssignmentHours:()=>8,employeeMonthlyTarget:()=>180,plannedMonthlyHoursForEmployee:id=>c.assignments.filter(a=>a.employeeId===id).length*8,showSaveToast(){},saveAll(){c.saved=(c.saved||0)+1},renderCalendar(){}};
+ const c={window:{SFBackend:{companyId:'a'},SchichtFunkCalendarView:{setMonth(){},setMode(){}}},document:{readyState:'loading',addEventListener(){},getElementById:id,querySelectorAll:()=>[]},Date,Map,setTimeout,console,employees:[{id:'e',first:'Fiktive',last:'Person',status:'active',employment:'Vollzeit',shifts:['FD'],weeklyHours:40}],assignments:[],TYPES:[{id:'FD',name:'Frühdienst',start:'06:00',end:'14:00'}],weekStart:new Date(2026,8,28),iso:d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,addDays:(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x},typeById:t=>c.TYPES.find(x=>x.id===t),getSoll:()=>1,assignmentsFor:(d,t)=>c.assignments.filter(a=>a.date===d&&a.type===t),absent:()=>false,plannedAssignmentHours:()=>8,employeeMonthlyTarget:()=>180,plannedMonthlyHoursForEmployee:id=>c.assignments.filter(a=>a.employeeId===id).length*8,showSaveToast(){},saveAll(){c.saved=(c.saved||0)+1},renderCalendar(){}};
  vm.runInNewContext(planning,c);vm.runInNewContext(read('assets/auto-plan-workspace-v1.js'),c);c.window.SFAutoPlanWorkspace.confirmApply=async()=>true;
  return{c,id,api:c.window.SFAutoPlanWorkspace,run:code=>vm.runInNewContext(code,c)};
 }
@@ -34,24 +34,24 @@ test('contractual 40 hours are a distribution target; a separate 50-hour week al
  const candidate=c.autoEligibleEmployees('FD','2026-12-06')[0];assert.equal(candidate.h,40);assert.equal(candidate.target,40);assert.equal(candidate.weeklyLimit,50);
  c.employees[0].maxWeeklyHours=40;assert.equal(c.autoEligibleEmployees('FD','2026-12-06').length,0);
 });
-test('180 monthly hours is an unconditional ceiling even with individual limits off or a higher monthly target',()=>{
+test('220 monthly hours is the full-time ceiling even with weekly limits off or a higher monthly target',()=>{
  const {c,id}=harness();c.TYPES[0].start='20:00';c.TYPES[0].end='06:00';c.employeeMonthlyTarget=()=>400;id('autoRespectHours').checked=false;
- c.plannedMonthlyHoursForEmployee=()=>170;assert.equal(c.autoEligibleEmployees('FD','2026-12-01').length,1);assert.equal(c.autoEligibleEmployees('FD','2026-12-01')[0].monthLimit,180);
- for(const hours of [170.01,180,190]){c.plannedMonthlyHoursForEmployee=()=>hours;assert.equal(c.autoEligibleEmployees('FD','2026-12-01').length,0)}
+ c.plannedMonthlyHoursForEmployee=()=>210;assert.equal(c.autoEligibleEmployees('FD','2026-12-01').length,1);assert.equal(c.autoEligibleEmployees('FD','2026-12-01')[0].monthLimit,220);
+ for(const hours of [210.01,220,230]){c.plannedMonthlyHoursForEmployee=()=>hours;assert.equal(c.autoEligibleEmployees('FD','2026-12-01').length,0)}
 });
-test('lower individual monthly budgets remain effective when enabled; disabling them still keeps the 180-hour ceiling',()=>{
- const {c,id}=harness();c.employeeMonthlyTarget=()=>162;c.plannedMonthlyHoursForEmployee=()=>160;assert.equal(c.autoEligibleEmployees('FD','2026-12-01').length,0);
- id('autoRespectHours').checked=false;assert.equal(c.autoEligibleEmployees('FD','2026-12-01').length,1);c.plannedMonthlyHoursForEmployee=()=>180;assert.equal(c.autoEligibleEmployees('FD','2026-12-01').length,0);
+test('part-time models remain capped at their monthly target even with weekly limits disabled',()=>{
+ const {c,id}=harness();c.employees[0].employment='Teilzeit';c.employeeMonthlyTarget=()=>162;c.plannedMonthlyHoursForEmployee=()=>160;assert.equal(c.autoEligibleEmployees('FD','2026-12-01').length,0);
+ id('autoRespectHours').checked=false;assert.equal(c.autoEligibleEmployees('FD','2026-12-01').length,0);c.plannedMonthlyHoursForEmployee=()=>154;assert.equal(c.autoEligibleEmployees('FD','2026-12-01').length,1);c.plannedMonthlyHoursForEmployee=()=>162;assert.equal(c.autoEligibleEmployees('FD','2026-12-01').length,0);
 });
-test('a full month preview stops at eighteen ten-hour shifts and existing voluntary overtime remains untouched',()=>{
+test('a full-time month preview stops at twenty-two ten-hour shifts and existing voluntary overtime remains untouched',()=>{
  const {c,id,run}=harness();id('autoPlanPeriod').value='month';id('autoRespectHours').checked=false;c.TYPES[0].start='20:00';c.TYPES[0].end='06:00';c.plannedAssignmentHours=()=>10;
  c.plannedMonthlyHoursForEmployee=(employeeId,date,sim=[])=>[...c.assignments,...sim].filter(a=>a.employeeId===employeeId&&a.date.startsWith(date.slice(0,7))).length*10;
- c.generateAutoPlanPreview();assert.equal(run('autoPlanPreview.length'),18);assert.equal(run('autoPlanUnresolved.length'),13);
- c.assignments=Array.from({length:19},(_,i)=>({date:`2026-12-${String(i+1).padStart(2,'0')}`,type:'FD',employeeId:'e',start:'20:00',end:'06:00',note:'Freiwilliger Zusatzdienst'}));const before=JSON.stringify(c.assignments);c.generateAutoPlanPreview();assert.equal(run('autoPlanPreview.length'),0);assert.equal(JSON.stringify(c.assignments),before);
+ c.generateAutoPlanPreview();assert.equal(run('autoPlanPreview.length'),22);assert.equal(run('autoPlanUnresolved.length'),9);
+ c.assignments=Array.from({length:23},(_,i)=>({date:`2026-12-${String(i+1).padStart(2,'0')}`,type:'FD',employeeId:'e',start:'20:00',end:'06:00',note:'Freiwilliger Zusatzdienst'}));const before=JSON.stringify(c.assignments);c.generateAutoPlanPreview();assert.equal(run('autoPlanPreview.length'),0);assert.equal(JSON.stringify(c.assignments),before);
 });
-test('an additional voluntary booking during confirmation invalidates a preview that would exceed 180 hours',async()=>{
- const {c,id,api}=harness();id('autoRespectHours').checked=false;let monthly=170;c.TYPES[0].start='20:00';c.TYPES[0].end='06:00';c.plannedMonthlyHoursForEmployee=()=>monthly;c.generateAutoPlanPreview();
- api.confirmApply=async()=>{monthly=180;return true};await c.applyAutoPlanPreview();assert.equal(c.assignments.length,0);assert.equal(c.saved,undefined);
+test('an additional voluntary booking during confirmation invalidates a preview that would exceed 220 hours',async()=>{
+ const {c,id,api}=harness();id('autoRespectHours').checked=false;let monthly=210;c.TYPES[0].start='20:00';c.TYPES[0].end='06:00';c.plannedMonthlyHoursForEmployee=()=>monthly;c.generateAutoPlanPreview();
+ api.confirmApply=async()=>{monthly=220;return true};await c.applyAutoPlanPreview();assert.equal(c.assignments.length,0);assert.equal(c.saved,undefined);
 });
 test('cancel, confirmation and repeat click preserve the draft boundary',async()=>{
  const {c,api,id}=harness();c.generateAutoPlanPreview();api.confirmApply=async()=>false;await c.applyAutoPlanPreview();assert.equal(c.assignments.length,0);assert.equal(c.saved,undefined);
@@ -139,4 +139,32 @@ test('new TL coverage during confirmation prevents a stale shared preview from a
 });
 test('shared daily targets, regular days and company isolation remain authoritative',()=>{
  const {c,M}=sharedHarness();c.dailySoll['2026-12-01']={'TL-LE':2};assert.equal(c.autoOpenSlots().length,2);c.dailySoll['2026-12-01']={'TL-LE':0};assert.equal(c.autoOpenSlots().length,0);delete c.dailySoll['2026-12-01'];for(const t of c.TYPES)t.optionalWeekdays=[1];assert.equal(c.autoOpenSlots().length,0);c.dailySoll['2026-12-01']={'TL-RE':1};assert.equal(c.autoOpenSlots().length,1);assert.deepEqual(Array.from(c.autoOpenSlots()[0].alternatives),['TL-RE']);c.window.SFBackend.companyId='b';assert.equal(M.coverageInfo('2026-12-01','TL-LE'),null);
+});
+
+function fixedHarness(){
+ const h=harness(),{c,id}=h;vm.runInNewContext(read('assets/employee-rhythm-v1.js'),c);c.window.SFAutoPlanGuard=undefined;
+ c.sfRhythmCheck=c.window.sfRhythmCheck;id('autoPlanPeriod').value='month';c.TYPES=[{id:'O3',name:'O3',start:'22:00',end:'08:00'}];c.plannedAssignmentHours=()=>10;
+ c.employeeMonthlyTarget=e=>e.monthlyHours??180;c.plannedMonthlyHoursForEmployee=(employeeId,date,sim=[])=>[...c.assignments,...sim].filter(a=>a.employeeId===employeeId&&a.date.startsWith(date.slice(0,7))).length*10;
+ c.employees=[{id:'flex',first:'Flexible',last:'Person',status:'active',employment:'Vollzeit',shifts:['O3'],weeklyHours:40,monthlyHours:180,maxWeeklyHours:40},{id:'115',first:'Feste',last:'O3',status:'active',employment:'Vollzeit',shifts:['O3'],weeklyHours:40,monthlyHours:180,maxWeeklyHours:40,rhythmMode:'required',rhythmStart:'2026-08-31',rhythmPattern:'O3, O3, O3, O3, FREI, FREI, FREI'}];
+ return h;
+}
+test('fixed Monday to Thursday O3 is reserved throughout December before flexible staff and saves 19 shifts / 190 hours',async()=>{
+ const {c,run}=fixedHarness();const before=JSON.stringify(c.assignments);c.generateAutoPlanPreview();const preview=Array.from(run('autoPlanPreview')),fixed=preview.filter(a=>a.employeeId==='115');
+ assert.equal(fixed.length,19);assert.ok(fixed.every(a=>[1,2,3,4].includes(new Date(a.date+'T12:00:00').getDay())));assert.ok(fixed.every(a=>a.type==='O3'));assert.equal(JSON.stringify(c.assignments),before);
+ assert.match(fixed.find(a=>a.date==='2026-12-31').reason,/Feste Schichtvorgabe/);assert.match(fixed[0].reason,/Monats-SOLL 180/);await c.applyAutoPlanPreview();assert.equal(c.assignments.filter(a=>a.employeeId==='115').length,19);assert.equal(c.saved,1);
+});
+test('fixed reservations honor absence, existing services, monthly maximum and required staffing',()=>{
+ const {c,run}=fixedHarness();c.assignments=[{date:'2026-12-01',employeeId:'flex',type:'O3'}];c.absent=(id,date)=>id==='115'&&date==='2026-12-03';const before=JSON.stringify(c.assignments);c.generateAutoPlanPreview();const fixed=Array.from(run('autoPlanPreview')).filter(a=>a.employeeId==='115');assert.ok(!fixed.some(a=>['2026-12-01','2026-12-03'].includes(a.date)));assert.equal(JSON.stringify(c.assignments),before);
+ c.employeeMonthlyTarget=()=>144;c.employees[1].employment='Teilzeit';c.assignments=[];c.absent=()=>false;c.generateAutoPlanPreview();assert.equal(Array.from(run('autoPlanPreview')).filter(a=>a.employeeId==='115').length,14);
+ c.getSoll=()=>0;c.generateAutoPlanPreview();assert.equal(run('autoPlanPreview.length'),0);
+});
+test('fair distribution uses 180 / 162 / 144 targets and prefers staff below SOLL over full-time overtime',()=>{
+ const {c,id}=harness();id('autoRespectHours').checked=false;c.employeeMonthlyTarget=e=>e.monthlyHours;c.employees=[{id:'full',status:'active',employment:'Vollzeit',shifts:['FD'],weeklyHours:40,monthlyHours:180},{id:'part',status:'active',employment:'Teilzeit',shifts:['FD'],weeklyHours:40,monthlyHours:144}];
+ c.plannedMonthlyHoursForEmployee=id=>id==='full'?170:142;assert.deepEqual(Array.from(c.autoEligibleEmployees('FD','2026-12-01')).map(x=>x.e.id),['full']);
+ c.plannedMonthlyHoursForEmployee=id=>id==='full'?180:120;assert.equal(c.autoEligibleEmployees('FD','2026-12-01')[0].e.id,'part');
+ c.plannedMonthlyHoursForEmployee=id=>id==='full'?90:72;assert.equal(c.autoEligibleEmployees('FD','2026-12-01')[0].e.id,'full');
+ c.employees[1].monthlyHours=162;c.plannedMonthlyHoursForEmployee=id=>id==='full'?180:150;assert.equal(c.autoEligibleEmployees('FD','2026-12-01')[0].e.id,'part');
+});
+test('fixed future shifts reserve rest windows before flexible earlier shifts',()=>{
+ const h=fixedHarness(),{c,id,run}=h;id('autoPlanPeriod').value='week';id('autoPlanWeekDate').value='2026-12-01';c.TYPES=[{id:'FD',name:'FD',start:'06:00',end:'14:00'},{id:'ND',name:'ND',start:'22:00',end:'06:00'}];c.employees=[{id:'fixed',status:'active',employment:'Vollzeit',shifts:['FD','ND'],weeklyHours:40,maxWeeklyHours:40,rhythmMode:'required',rhythmStart:'2026-11-30',rhythmPattern:'ALLE, FD, FREI, FREI, FREI, FREI, FREI'}];c.getSoll=(date,type)=>Number(date==='2026-11-30'&&type==='ND'||date==='2026-12-01'&&type==='FD');c.window.autoEligibleEmployees=c.autoEligibleEmployees;vm.runInNewContext(read('assets/supabase-auto-plan-guard-v1.js'),c);c.autoEligibleEmployees=c.window.autoEligibleEmployees;c.generateAutoPlanPreview();assert.deepEqual(Array.from(run('autoPlanPreview')).map(a=>a.date),['2026-12-01']);
 });

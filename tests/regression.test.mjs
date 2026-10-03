@@ -213,9 +213,9 @@ test('individual monthly target hours are persisted and enforced during planning
   assert.match(employeeManagement, /employeeMonthlyTarget==='function'\?employeeMonthlyTarget\(e\)/);
   assert.match(index, /function employeeMonthlyTarget\(employee\)/);
   assert.match(index, /function plannedMonthlyHoursForEmployee\(employeeId,date,simulated=\[\],ignoreId=null\)/);
-  assert.match(index, /Individuelle Stundenlimits berücksichtigen/);
-  assert.match(index, /Maximale Wochenstunden und niedrigere Monats-SOLL-Werte beachten/);
-  assert.match(index, /maximal 180 Stunden pro Mitarbeiter und Kalendermonat/);
+  assert.match(index, /Wochenmaximum berücksichtigen/);
+  assert.match(index, /Das separate Wochenmaximum beachten/);
+  assert.match(index, /maximal 220 Stunden pro Kalendermonat/);
   assert.match(assignmentUx, /Monats-SOLL würde auf/);
 });
 
