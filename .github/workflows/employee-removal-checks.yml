@@ -4,6 +4,7 @@ on:
     branches: [main, codex/ionos-migration]
     paths:
       - assets/employee-removal-v1.js
+      - assets/supabase-personnel-file-v1.js
       - assets/employee-management-v2.js
       - assets/supabase-data-v1.js
       - tests/employee-status.test.mjs
