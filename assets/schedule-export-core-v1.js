@@ -6,6 +6,11 @@
   const absenceCodes={Urlaub:'U',Krank:'K',Frei:'F',Fortbildung:'FB',Sperrzeit:'SP',Sonderurlaub:'SU',Sonstiges:'AB'};
   function minutes(value){const match=String(value||'').match(/^([01]\d|2[0-3]):([0-5]\d)(?::\d{2})?$/);return match?Number(match[1])*60+Number(match[2]):null}
   function effective(a){return ['Genehmigt','Erfasst','approved','recorded'].includes(a.status)}
+  function employeeSite(employee){
+    const stored=(employee.qualifications||[]).find(q=>String(q).startsWith('__sp:team='));
+    const site=String(employee.team??(stored?stored.slice(10):'')).trim().toLocaleLowerCase('de-DE');
+    return site==='leipzig'?'Leipzig':site==='recklinghausen'?'Recklinghausen':'';
+  }
   function buildPlan(source){
     const month=String(source.month||'');if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)||Number(month.slice(0,4))<100)throw Error('Bitte einen gültigen Monat ab dem Jahr 0100 wählen.');
     const [year,m]=month.split('-').map(Number),count=new Date(year,m,0).getDate();
@@ -21,9 +26,9 @@
     const assignedIds=new Set(shifts.map(a=>a.employeeId)),people=new Map();
     (source.employees||[]).forEach(e=>{
       const id=String(e.id),active=e.status==='active'&&(!e.startDate||e.startDate<=end)&&(!e.contractEnd||e.contractEnd>=start);
-      if(active||assignedIds.has(id))people.set(id,{...e,id,name:[e.first,e.last].filter(Boolean).join(' ')||'Mitarbeiter ohne Namen',team:e.planningTeam||''});
+      if(active||assignedIds.has(id))people.set(id,{...e,id,name:[e.first,e.last].filter(Boolean).join(' ')||'Mitarbeiter ohne Namen',site:employeeSite(e),team:e.planningTeam||''});
     });
-    assignedIds.forEach(id=>{if(!people.has(id))people.set(id,{id,name:'Ehemaliger Mitarbeiter',team:'',personnelNo:''})});
+    assignedIds.forEach(id=>{if(!people.has(id))people.set(id,{id,name:'Ehemaliger Mitarbeiter',team:'',site:'',personnelNo:''})});
     const absences=(source.absences||[]).filter(a=>effective(a)&&String(a.startDate||a.start_date||a.date)<=end&&String(a.endDate||a.end_date||a.date||a.startDate)>=start);
     const rows=[...people.values()].sort((a,b)=>String(a.team||'ZZ').localeCompare(String(b.team||'ZZ'))||a.name.localeCompare(b.name,'de')).map(person=>{
       const own=shifts.filter(a=>a.employeeId===person.id),ownAbs=absences.filter(a=>String(a.employeeId??a.employee_id)===person.id);
@@ -42,6 +47,13 @@
     const coverage=days.flatMap(day=>[...types.values()].map(type=>{const required=Number(source.getSoll?.(day.date,type.id)||0),actual=shifts.filter(a=>a.date===day.date&&a.type===type.id).length;return{date:day.date,type:type.id,required,actual,open:Math.max(0,required-actual)}}));
     return{month,start,end,days,rows,details,types:[...types.values()],coverage,company:source.company||'Unternehmen',createdAt:source.createdAt||new Date().toISOString(),label:new Date(start+'T12:00:00').toLocaleDateString('de-DE',{month:'long',year:'numeric'}),hours:number(shifts.reduce((n,a)=>n+a.minutes,0)/60),shiftCount:shifts.length,status:shifts.length&&shifts.every(a=>a.published)?'Veröffentlicht':shifts.some(a=>a.published)?'Teilweise veröffentlicht':'Entwurf'};
   }
+  function selectPDFPlan(plan,scope='Gesamt'){
+    if(!['Leipzig','Recklinghausen','Gesamt'].includes(scope))throw Error('Bitte Leipzig, Recklinghausen oder Gesamt für das PDF wählen.');
+    if(scope==='Gesamt')return {...plan,pdfScope:scope};
+    const rows=plan.rows.filter(row=>row.person.site===scope),ids=new Set(rows.map(row=>row.person.id)),details=plan.details.filter(shift=>ids.has(shift.employeeId));
+    const codes=new Set(details.map(shift=>shift.type));
+    return {...plan,pdfScope:scope,rows,details,types:plan.types.filter(type=>codes.has(type.id)),coverage:[],hours:number(details.reduce((sum,shift)=>sum+shift.minutes,0)/60),shiftCount:details.length,status:details.length&&details.every(shift=>shift.published)?'Veröffentlicht':details.some(shift=>shift.published)?'Teilweise veröffentlicht':'Entwurf'};
+  }
   function workbookRows(plan){
     const head=['Personal-Nr.','Mitarbeiter','Team',...plan.days.map(d=>d.weekday+' '+pad(d.day)), 'Dienste','Planstunden'];
     const matrix=[['SchichtFunk – Gesamtdienstplan'],[plan.company,plan.label],['Planstand',plan.status],['Erstellt am',plan.createdAt],['Hinweis','Nachtdienste stehen am Starttag. Planstunden ohne Pausenabzug.'],[],head,...plan.rows.map(r=>[r.person.personnelNo||'',r.person.name,r.person.team,...r.cells.map(c=>c.excel),r.shiftCount,r.hours])];
@@ -50,5 +62,5 @@
     const legend=[['SchichtFunk – Hinweise'],['Unternehmen',plan.company],['Monat',plan.label],['Planstand',plan.status],['Mitarbeiter',plan.rows.length],['Dienste',plan.shiftCount],['Planstunden gesamt',plan.hours],[],['Schicht','Bezeichnung','Beginn','Ende'],...plan.types.map(t=>[t.id,t.name||t.id,t.start||'',t.end||'']),[],['Abwesenheiten','U = Urlaub, K = Krank, F = Frei, FB = Fortbildung, SP = Sperrzeit, SU = Sonderurlaub, AB = Sonstiges'],['Leere Felder','– = kein Dienst eingetragen; bedeutet nicht automatisch Frei'],['Stunden','Geplante Schichtdauer ohne Pausenabzug. Keine IST-Zeiterfassung.']];
     return{matrix,details,coverage,legend};
   }
-  return{buildPlan,workbookRows};
+  return{buildPlan,workbookRows,selectPDFPlan};
 });
