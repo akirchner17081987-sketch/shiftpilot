@@ -1,0 +1,15 @@
+/* Personalgruppen bleiben in beiden Designs erkennbar. */
+#view-schedule .employee-drag[style*="--sf-person-bg"],
+#view-schedule .sf-week-employee[style*="--sf-person-bg"],
+.sf-auto-stair-table tbody th[style*="--sf-person-bg"] {
+  background:var(--sf-person-bg)!important;color:var(--sf-person-text)!important;
+  border-color:var(--sf-person-border)!important;
+}
+#view-schedule .employee-drag[style*="--sf-person-bg"] .employee-pool-info>small,
+#view-schedule .employee-drag[style*="--sf-person-bg"] .pool-detail-label,
+#view-schedule .sf-week-employee[style*="--sf-person-bg"] .sf-week-employee-info b,
+#view-schedule .sf-week-employee[style*="--sf-person-bg"] .sf-week-employee-info small {color:var(--sf-person-text)!important}
+#view-schedule .employee-drag[style*="--sf-person-bg"] .avatar,
+#view-schedule .sf-week-employee[style*="--sf-person-bg"] .sf-week-avatar {background:rgba(255,255,255,.55);color:var(--sf-person-text)}
+#view-schedule .employee-drag.selected[style*="--sf-person-bg"] {outline:2px solid var(--teal);outline-offset:2px}
+#view-schedule .employee-drag.selected[style*="--sf-person-bg"]:after {color:var(--sf-person-text)}

@@ -102,11 +102,11 @@
     const emp=employees.find(e=>e.id===a.employeeId);
     if(!emp)return'';
     const start=a.start||t.start,end=a.end||t.end;
-    return `<button type="button" class="sf-week-employee" draggable="true" data-assignment-id="${esc(a.id)}" title="${esc(emp.first+' '+emp.last)} verschieben oder bearbeiten"><span class="sf-week-avatar">${esc(initials(emp))}</span><span class="sf-week-employee-info"><b>${esc(emp.first)} ${esc(emp.last)}</b><small>${esc(start)} – ${esc(end)}</small></span></button>`;
+    return `<button type="button" class="sf-week-employee" style="${window.SFScheduleEmployeeDisplay?.style(emp)||''}" draggable="true" data-assignment-id="${esc(a.id)}" title="${esc(emp.first+' '+emp.last)} verschieben oder bearbeiten"><span class="sf-week-avatar">${esc(initials(emp))}</span><span class="sf-week-employee-info"><b>${esc(emp.first)} ${esc(emp.last)}</b><small>${esc(start)} – ${esc(end)}</small></span></button>`;
   }
   function shiftBlock(date,id){
     const t=typeById(id);if(!t)return'';
-    const list=assignmentsFor(date,id);
+    const list=assignmentsFor(date,id).slice().sort((a,b)=>window.SFScheduleEmployeeDisplay?.compare(employees.find(e=>e.id===a.employeeId),employees.find(e=>e.id===b.employeeId))||0);
     const soll=Number(getSoll(date,id)||0),ist=list.length,shared=window.SFShiftModels?.coverageInfo?.(date,id);
     if(!soll&&!ist&&!shared)return `<section class="sf-week-shift is-inactive" data-date="${esc(date)}" data-type="${esc(id)}" aria-label="${esc(id)}: keine Besetzung"><span class="sf-week-shift-empty">—</span></section>`;
     const st=statusFor(soll,ist),open=Math.max(0,soll-ist),over=Math.max(0,ist-soll);
