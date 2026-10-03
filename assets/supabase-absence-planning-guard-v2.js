@@ -108,6 +108,7 @@
   const oldApply=window.applyAutoPlanPreview;
   if(typeof oldApply==='function'&&!oldApply.__sfAbsenceGuardV2){
     const wrapped=function(){
+      if(window.SFMonthOptimizer?.getResult?.())return oldApply.apply(this,arguments);
       try{
         if(typeof autoPlanPreview!=='undefined'&&Array.isArray(autoPlanPreview)){
           const before=autoPlanPreview.length;
