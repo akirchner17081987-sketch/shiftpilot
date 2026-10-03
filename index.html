@@ -98,7 +98,7 @@ button,input,select,textarea{font:inherit} button{cursor:pointer}
 <link rel="stylesheet" href="assets/schichtfunk-rebrand.css?v=20260918-static-brand">
 <link rel="stylesheet" href="assets/mobile-responsive-v1.css?v=20260917-compact-manager1">
 <link rel="stylesheet" href="assets/mobile-manager-navigation-v1.css?v=20260918-static-brand">
-<link rel="stylesheet" href="assets/auto-plan-period-v1.css?v=20261003-staircase2">
+<link rel="stylesheet" href="assets/auto-plan-period-v1.css?v=20261003-blocks2">
 <link rel="stylesheet" href="assets/secondary-text-readability-v1.css?v=20260906-1">
 <link rel="stylesheet" href="assets/manager-theme-v1.css?v=20260929-2">
 <link rel="stylesheet" href="assets/schichtfunk-rebrand.css">
@@ -250,7 +250,7 @@ html[data-sf-theme="light"] #sfEmployeePortal{
     <ol class="sf-auto-steps" aria-label="Ablauf der Auto-Planung"><li data-auto-step="1"><span>1</span><div><b>Zeitraum wählen</b><small>Woche, Monat oder Tag</small></div></li><li data-auto-step="2"><span>2</span><div><b>Vorschläge erstellen</b><small>Regeln berücksichtigen</small></div></li><li data-auto-step="3"><span>3</span><div><b>Ergebnis prüfen</b><small>Besetzung und offene Schichten</small></div></li><li data-auto-step="4"><span>4</span><div><b>In den Plan übernehmen</b><small>Als Entwurf speichern</small></div></li></ol>
     <div class="sf-auto-setup">
       <section class="card auto-period-card sf-auto-panel" aria-labelledby="autoPeriodHeading"><div class="sf-auto-section-title"><span class="sf-auto-number">1</span><div><h2 id="autoPeriodHeading">Wann möchtest du planen?</h2><p id="autoPeriodSummary">Datum wählen – geplant wird Montag bis Sonntag</p></div></div><div class="auto-period-grid"><label><span>Planungszeitraum</span><select id="autoPlanPeriod" onchange="changeAutoPlanPeriod()"><option value="week">Wöchentliche Planung</option><option value="month">Monatliche Planung</option><option value="date">Genaues Datum der Planung</option></select></label><label id="autoPlanWeekField"><span>Datum in der gewünschten Woche</span><input id="autoPlanWeekDate" type="date" onchange="changeAutoPlanPeriod()"></label><label id="autoPlanMonthField" hidden><span>Gewünschter Monat</span><input id="autoPlanMonth" type="month" onchange="changeAutoPlanPeriod()"></label><label id="autoPlanDateField" hidden><span>Gewünschter Tag</span><input id="autoPlanDate" type="date" onchange="changeAutoPlanPeriod()"></label></div><div class="auto-period-result"><small>Für diesen Zeitraum werden Vorschläge erstellt</small><strong id="autoPeriodRange">–</strong><span id="autoPeriodDates"></span></div></section>
-      <section class="card sf-auto-panel sf-auto-rules" aria-labelledby="autoRulesHeading"><div class="sf-auto-section-title"><span class="sf-auto-number">2</span><div><h2 id="autoRulesHeading">Wie soll geplant werden?</h2><p>Die empfohlenen Regeln sind bereits aktiviert.</p></div></div><label class="sf-auto-rule"><input type="checkbox" id="autoRespectHours" checked onchange="changeAutoPlanPeriod()"><span><b>Wochenmaximum berücksichtigen</b><small>Das separate Wochenmaximum beachten. Die Monatsgrenzen und festen Schichtvorgaben gelten immer.</small></span></label><label class="sf-auto-rule"><input type="checkbox" id="autoFairDistribution" checked onchange="changeAutoPlanPeriod()"><span><b>Schichten fair verteilen</b><small>Nach Monats-SOLL 180 / 162 / 144 verteilen. Mitarbeiter unter ihrem Ziel zuerst berücksichtigen.</small></span></label><p class="sf-auto-protection">Feste Schichtvorgaben zuerst. Danach knappe Schichtfreigaben berücksichtigen und begonnene Arbeitsblöcke im Treppenmuster möglichst mit derselben Schicht fortführen. Monats-SOLL und Stundenlimits bleiben maßgeblich. Vollzeit: Ziel 180, maximal 220 Stunden pro Kalendermonat. Teilzeit: höchstens das Monats-SOLL, z. B. 162 oder 144 Stunden. Immer geprüft: aktive Mitarbeiter, Schichtfreigaben, Abwesenheiten, verbindlicher Rhythmus und belegte Zeiten. Freiwillige Zusatzdienste im Schicht-Marktplatz bleiben mit Planerfreigabe möglich.</p></section>
+      <section class="card sf-auto-panel sf-auto-rules" aria-labelledby="autoRulesHeading"><div class="sf-auto-section-title"><span class="sf-auto-number">2</span><div><h2 id="autoRulesHeading">Wie soll geplant werden?</h2><p>Die empfohlenen Regeln sind bereits aktiviert.</p></div></div><label class="sf-auto-rule"><input type="checkbox" id="autoRespectHours" checked onchange="changeAutoPlanPeriod()"><span><b>Wochenmaximum berücksichtigen</b><small>Das separate Wochenmaximum beachten. Die Monatsgrenzen und festen Schichtvorgaben gelten immer.</small></span></label><label class="sf-auto-rule"><input type="checkbox" id="autoFairDistribution" checked onchange="changeAutoPlanPeriod()"><span><b>Schichten fair verteilen</b><small>Nach Monats-SOLL 180 / 162 / 144 verteilen. Mitarbeiter unter ihrem Ziel zuerst berücksichtigen.</small></span></label><p class="sf-auto-protection">Feste Schichtvorgaben zuerst. Danach knappe Schichtfreigaben berücksichtigen und vollständige Arbeitsblöcke im Treppenmuster reservieren. Möglichst dieselbe Schicht; O3 darf am Folgetag nicht auf O1, O2 oder TL wechseln. Monats-SOLL und Stundenlimits bleiben maßgeblich. Vollzeit: Ziel 180, maximal 220 Stunden pro Kalendermonat. Teilzeit: höchstens das Monats-SOLL, z. B. 162 oder 144 Stunden. Immer geprüft: aktive Mitarbeiter, Schichtfreigaben, Abwesenheiten, verbindlicher Rhythmus und belegte Zeiten. Freiwillige Zusatzdienste im Schicht-Marktplatz bleiben mit Planerfreigabe möglich.</p></section>
     </div>
     <div class="sf-auto-start"><div><b id="autoStartTitle">Dein Zeitraum ist bereit</b><p id="autoStartHint">Lass passende Besetzungen für die offenen Schichten vorschlagen.</p></div><button type="button" class="primary" id="generateAutoPlanBtn" onclick="generateAutoPlanPreview()">✦ Vorschläge erstellen</button></div>
     <section class="sf-auto-review" aria-labelledby="autoReviewHeading"><div class="sf-auto-section-title"><span class="sf-auto-number">3</span><div><h2 id="autoReviewHeading">Dein Planungsergebnis</h2><p id="autoReviewHint">Nach der Analyse siehst du hier die vorgeschlagenen Besetzungen.</p></div></div><div class="stats" id="autoStats"></div><div id="autoAnalysis" role="status" aria-live="polite" aria-atomic="true"></div>
@@ -445,8 +445,8 @@ function autoEligibleEmployees(type,date,simulated=[]){
     const rolePenalty=type==='Teamleiter'&&e.role!=='Teamleiter'?100:0;
     const weeklyLoad=target?(h+dur)/target:(h+dur)/40,monthlyLoad=(monthHours+dur)/(monthTarget>0?monthTarget:180),load=monthlyLoad+weeklyLoad*.15,overTarget=monthTarget>0&&monthHours+dur>monthTarget+1e-8;
     const rhythm=window.sfRhythmCheck?.(e,type,date),rhythmPenalty=rhythm&&!rhythm.allowed&&rhythm.mode==='preferred'?40:0,fixed=!!(rhythm?.mode==='required'&&rhythm.allowed&&rhythm.expected&&rhythm.expected!=='ALLE'&&rhythm.expected!=='FREI');
-    const block=autoWorkBlock(e,type,date,all),blockBonus=block?(block.continuing?(block.sameShift?40:24):monthHours+dur*block.remaining<=monthLimit+.01?6:0):0;
-    return {e,h,target,weeklyLimit,monthHours,monthTarget,monthLimit,fixed,block,overTarget,weeklyEnforced:respectHours&&weeklyLimit>0,overWeek,overMonth,reserve:window.SFShiftModels?.reservePenalty?.(e,date,type)||0,score:rolePenalty+rhythmPenalty+(fair?load*20+(overTarget?1000:0):h*.1)-blockBonus}
+    const block=autoWorkBlock(e,type,date,all);
+    return {e,h,target,weeklyLimit,monthHours,monthTarget,monthLimit,fixed,block,overTarget,weeklyEnforced:respectHours&&weeklyLimit>0,overWeek,overMonth,reserve:window.SFShiftModels?.reservePenalty?.(e,date,type)||0,score:rolePenalty+rhythmPenalty+(fair?load*20+(overTarget?1000:0):h*.1)}
   }).filter(x=>!x.overWeek&&!x.overMonth).sort((a,b)=>a.reserve-b.reserve||a.score-b.score||a.monthHours-b.monthHours||a.h-b.h)
 }
 function autoOpenSlots(){const dates=autoPlanningDates(),slots=[];dates.forEach(d=>TYPES.forEach(t=>{const g=window.SFShiftModels?.coverageInfo?.(d,t.id);if(g&&g.representative!==t.id)return;const raw=getSoll(d,t.id),soll=window.SFShiftModels?.requiredSoll?.(d,t.id,raw)??raw,missing=g?g.missing:Math.max(0,soll-assignmentsFor(d,t.id).length),day=new Date(d+'T00:00:00').toLocaleDateString('de-DE',{weekday:'short'}).replace('.','');for(let i=0;i<missing;i++)slots.push({date:d,day,type:t.id,...(g?{coverageGroup:g.key,coverageLabel:g.label,alternatives:g.alternatives}:{})})}));return slots.sort((a,b)=>a.date.localeCompare(b.date)||Number(!!window.SFShiftModels?.find?.(b.type)?.responsibleOnly)-Number(!!window.SFShiftModels?.find?.(a.type)?.responsibleOnly))}
@@ -454,22 +454,56 @@ function autoSlotCandidates(slot,simulated=[]){const candidates=(slot.alternativ
 function autoOptionalSlots(){const slots=[];autoPlanningDates().forEach(date=>TYPES.forEach(t=>{const missing=Math.max(0,(window.SFShiftModels?.optionalTarget?.(date,t.id)||0)-assignmentsFor(date,t.id).length),day=new Date(date+'T00:00:00').toLocaleDateString('de-DE',{weekday:'short'}).replace('.','');for(let i=0;i<missing;i++)slots.push({date,day,type:t.id,optional:true})}));return slots}
 function renderAutoPlanning(){if(window.SFAutoPlanWorkspace)window.SFAutoPlanWorkspace.render();else syncAutoPeriodControls()}
 
+function autoBlockBundle(slot,candidate,pending,simulated){
+  if(!candidate.block)return[{slot,candidate}];
+  const e=candidate.e,start=addDays(new Date(slot.date+'T12:00:00'),1-candidate.block.position),period=new Set(autoPlanningDates()),all=[...assignments,...simulated];
+  const dates=Array.from({length:candidate.block.length},(_,i)=>iso(addDays(start,i))).filter(date=>period.has(date)&&!absent(e.id,date)&&!all.some(a=>String(a.employeeId)===String(e.id)&&a.date===date));
+  const blockId=String(e.id)+'|'+iso(start);let visits=0;
+  const search=(index,bundle,sameOnly)=>{
+    if(index===dates.length)return bundle;
+    if(++visits>300)return null;
+    const date=dates[index],used=new Set(bundle.map(x=>x.slot)),trial=[...simulated,...bundle.map(x=>({employeeId:e.id,date:x.slot.date,type:x.candidate.type,start:typeById(x.candidate.type).start,end:typeById(x.candidate.type).end}))];
+    const choices=[];
+    for(const x of pending.filter(x=>x.date===date&&!used.has(x))){
+      for(const type of x.alternatives||[x.type]){
+        if(['OT1','OT2','OT3'].includes(type)||sameOnly&&type!==candidate.type||date===slot.date&&x!==slot)continue;
+        for(const c of autoEligibleEmployees(type,date,trial))if(String(c.e.id)===String(e.id))choices.push({slot:x,candidate:{...c,type},blockId});
+      }
+    }
+    const seenTypes=new Set();for(let i=0;i<choices.length;){if(seenTypes.has(choices[i].candidate.type))choices.splice(i,1);else{seenTypes.add(choices[i].candidate.type);i++}}
+    const previous=bundle.at(-1)?.candidate.type||candidate.type;
+    choices.sort((a,b)=>Number(b.candidate.type===previous)-Number(a.candidate.type===previous)||a.candidate.score-b.candidate.score);
+    for(const choice of choices){const result=search(index+1,[...bundle,choice],sameOnly);if(result)return result}return null;
+  };
+  const same=search(0,[],true);if(same?.length)return same;visits=0;return search(0,[],false);
+}
 function generateAutoPlanPreview(){
   autoPlanPreview=[];autoPlanUnresolved=[];autoPlanOptionalSkipped=[];autoPlanAnalyzed=true;autoPlanApplied=0;const simulated=[],slots=autoOpenSlots(),reserved=new Set();
-  const assign=(slot,fixedOnly=false)=>{
-    const candidates=autoSlotCandidates(slot,simulated),best=fixedOnly?candidates.find(c=>c.fixed):candidates[0];if(!best)return false;
-    const t=typeById(best.type),item={id:'preview-'+Date.now()+'-'+Math.random(),date:slot.date,day:slot.day,type:best.type,coverageGroup:slot.coverageGroup,coverageLabel:slot.coverageLabel,optional:!!slot.optional,employeeId:best.e.id,start:t.start,end:t.end,reason:(best.fixed?'Feste Schichtvorgabe · ':'')+(best.block?`Arbeitsblock ${best.block.position}/${best.block.length}${best.block.continuing?' fortgeführt':''} · `:'')+(slot.coverageGroup?`Deckt ${slot.coverageLabel} gemeinsam ab · `:slot.optional?'Optional · ':'')+`Woche ${best.h.toFixed(1)} Std.${best.weeklyEnforced?` / ${best.weeklyLimit.toFixed(1)} Std. Maximum`:' · ohne Wochenlimit'} · Monat ${best.monthHours.toFixed(1)} / ${best.monthLimit.toFixed(1)} Std. Maximum · Monats-SOLL ${best.monthTarget.toFixed(1)} Std.`};autoPlanPreview.push(item);simulated.push(item);return true;
+  const append=({slot,candidate:best,blockId})=>{
+    const t=typeById(best.type),item={id:'preview-'+Date.now()+'-'+Math.random(),blockId,date:slot.date,day:slot.day,type:best.type,coverageGroup:slot.coverageGroup,coverageLabel:slot.coverageLabel,optional:!!slot.optional,employeeId:best.e.id,start:t.start,end:t.end,reason:(best.fixed?'Feste Schichtvorgabe · ':'')+(best.block?`Arbeitsblock ${best.block.position}/${best.block.length} zusammenhängend reserviert · `:'')+(slot.coverageGroup?`Deckt ${slot.coverageLabel} gemeinsam ab · `:slot.optional?'Optional · ':'')+`Woche ${best.h.toFixed(1)} Std.${best.weeklyEnforced?` / ${best.weeklyLimit.toFixed(1)} Std. Maximum`:' · ohne Wochenlimit'} · Monat ${best.monthHours.toFixed(1)} / ${best.monthLimit.toFixed(1)} Std. Maximum · Monats-SOLL ${best.monthTarget.toFixed(1)} Std.`};autoPlanPreview.push(item);simulated.push(item);
   };
-  // Verbindliche konkrete Dienste für den ganzen Zeitraum reservieren, bevor flexible Besetzungen folgen.
-  slots.forEach((slot,index)=>{if(assign(slot,true))reserved.add(index)});
-  const pending=slots.filter((_,index)=>!reserved.has(index));
-  // Je Tag zuerst die Position mit den wenigsten passenden Mitarbeitern besetzen.
-  while(pending.length){const date=pending[0].date;let chosen=0,count=Infinity;for(let i=0;i<pending.length&&pending[i].date===date;i++){const n=autoSlotCandidates(pending[i],simulated).length;if(n<count){count=n;chosen=i}}const slot=pending.splice(chosen,1)[0];if(!assign(slot))autoPlanUnresolved.push({...slot,reason:window.SFAutoPlanWorkspace?.explain(slot,simulated)||'Kein passender Mitarbeiter unter den aktuellen Planungsregeln.'})}
-  autoOptionalSlots().forEach(slot=>{if(!assign(slot))autoPlanOptionalSkipped.push({...slot,reason:window.SFAutoPlanWorkspace?.explain(slot,simulated)||'Kein passender Mitarbeiter unter den aktuellen Planungsregeln.'})});
+  slots.forEach((slot,index)=>{const best=autoSlotCandidates(slot,simulated).find(c=>c.fixed);if(best){append({slot,candidate:best});reserved.add(index)}});
+  const plan=pending=>{
+    while(pending.length){
+      const date=pending[0].date,options=new Map();let chosen=0,count=Infinity;
+      for(let i=0;i<pending.length&&pending[i].date===date;i++){
+        const slot=pending[i],key=slot.coverageGroup||slot.type;if(options.has(key))continue;
+        const feasible=autoSlotCandidates(slot,simulated).map(candidate=>({candidate,bundle:autoBlockBundle(slot,candidate,pending,simulated)})).filter(x=>x.bundle?.length);
+        options.set(key,feasible);if(feasible.length<count){count=feasible.length;chosen=i}
+      }
+      const slot=pending[chosen],feasible=options.get(slot.coverageGroup||slot.type)||[];
+      feasible.sort((a,b)=>a.candidate.reserve-b.candidate.reserve||a.candidate.score-b.candidate.score+.75*(a.candidate.e.shifts.filter(t=>getSoll(slot.date,t)>0&&!['OT1','OT2','OT3'].includes(t)).length-b.candidate.e.shifts.filter(t=>getSoll(slot.date,t)>0&&!['OT1','OT2','OT3'].includes(t)).length));
+      const bundle=feasible[0]?.bundle;
+      if(bundle?.length){for(const item of bundle){append(item);pending.splice(pending.indexOf(item.slot),1)}}
+      else{pending.splice(chosen,1);const reason=window.SFAutoPlanWorkspace?.explain(slot,simulated)||'Kein passender Mitarbeiter unter den aktuellen Planungsregeln.';(slot.optional?autoPlanOptionalSkipped:autoPlanUnresolved).push({...slot,reason:autoSlotCandidates(slot,simulated).some(c=>c.block)?'Kein vollständiger Arbeitsblock unter den aktuellen SOLL-Zahlen, Schichtwechseln und Stundenlimits möglich. Einzelne Resttage werden nicht eingestreut.':reason})}
+    }
+  };
+  plan(slots.filter((_,index)=>!reserved.has(index)));plan(autoOptionalSlots());
   autoPlanPreview.sort((a,b)=>a.date.localeCompare(b.date));
   renderAutoPlanning();showSaveToast('Auto-Planung analysiert',`${autoPlanPreview.length} Vorschläge erstellt, ${autoPlanUnresolved.length} Positionen bleiben offen.`)
 }
-function removeAutoSuggestion(i){if(autoPlanApplying)return;const removed=autoPlanPreview.splice(i,1)[0];if(removed)(removed.optional?autoPlanOptionalSkipped:autoPlanUnresolved).push({...removed,reason:'Dieser Vorschlag wurde von dir entfernt.'});renderAutoPlanning()}
+function removeAutoSuggestion(i){if(autoPlanApplying)return;const target=autoPlanPreview[i];if(!target)return;const removed=autoPlanPreview.filter((x,index)=>target.blockId?x.blockId===target.blockId:index===i);autoPlanPreview=autoPlanPreview.filter(x=>!removed.includes(x));for(const x of removed)(x.optional?autoPlanOptionalSkipped:autoPlanUnresolved).push({...x,reason:target.blockId?'Der gesamte Arbeitsblock wurde von dir entfernt.':'Dieser Vorschlag wurde von dir entfernt.'});renderAutoPlanning()}
+
 function clearAutoPlanPreview(){if(autoPlanApplying)return;autoPlanApplied=0;autoPlanPreview=[];autoPlanUnresolved=[];autoPlanOptionalSkipped=[];autoPlanAnalyzed=false;renderAutoPlanning()}
 async function applyAutoPlanPreview(){
   if(!autoPlanPreview.length||autoPlanApplying)return;
@@ -993,13 +1027,13 @@ table th,table td{font-size:13px;line-height:1.35}
 <script src="assets/navigation-compat-v1.js?v=20260930-tenbreaks1&period=20261001-1&models=1&auto=20261001-workflow2&mobile=20261002-sheetguard1&export=20261003-sites1"></script>
 <script src="assets/schichtfunk-schedule-core-v1.js?v=20261002-weekdays1"></script>
 <script src="assets/assignment-quick-delete-v1.js"></script>
-<script src="assets/conflict-plausibility-v1.js?v=20261003-staircase1"></script>
+<script src="assets/conflict-plausibility-v1.js?v=20261003-blocks2"></script>
 <script src="assets/employee-core-v1.js?v=20261001-removal1"></script>
 <script src="assets/employee-rhythm-v1.js?v=20261003-workrest1"></script>
 <script src="assets/planning-teams-v1.js?v=20261001-centralteams1"></script>
 <link rel="stylesheet" href="assets/open-shift-marketplace-v1.css?v=20261001-market1">
 <script src="assets/open-shift-marketplace-v1.js?v=20261002-sharedtl2"></script>
-<script src="assets/auto-plan-workspace-v1.js?v=20261003-staircase1"></script>
+<script src="assets/auto-plan-workspace-v1.js?v=20261003-blocks2"></script>
 <script src="assets/planning-assistant-core-v1.js?v=20261001-4"></script>
 <script src="assets/planning-assistant-v1.js?v=20261001-5"></script>
 <script src="assets/employee-management-v2.js?v=20261003-workrest1"></script>

@@ -173,14 +173,29 @@ test('scarce permissions are scheduled before flexible workers can consume their
  const {c,run}=harness();c.TYPES.push({id:'SD',start:'14:00',end:'22:00'});c.employees=[{id:'flex',status:'active',employment:'Vollzeit',shifts:['FD','SD'],weeklyHours:40},{id:'only',status:'active',employment:'Vollzeit',shifts:['FD'],weeklyHours:40}];
  c.generateAutoPlanPreview();const preview=Array.from(run('autoPlanPreview'));assert.equal(run('autoPlanUnresolved.length'),0);assert.equal(preview.find(a=>a.type==='SD').employeeId,'flex');assert.equal(preview.find(a=>a.type==='FD').employeeId,'only');
 });
-test('workrest blocks continue with the same shift but hours, absences and required free days always win',()=>{
+test('workrest information tracks the block while hours, absences and required free days always win',()=>{
  const {c,id}=harness();vm.runInNewContext(read('assets/employee-rhythm-v1.js'),c);
  const rhythm={rhythmMode:'required',rhythmStart:'2026-12-01',rhythmPattern:'ALLE, ALLE, ALLE, ALLE, FREI, FREI, FREI, ALLE, ALLE, ALLE, FREI, FREI'};
  c.employees=[{...c.employees[0],...rhythm,id:'block',maxWeeklyHours:50},{...c.employees[0],...rhythm,id:'new',maxWeeklyHours:50}];c.assignments=[{employeeId:'block',type:'FD',date:'2026-12-01'}];
- const best=c.autoEligibleEmployees('FD','2026-12-02')[0];assert.equal(best.e.id,'block');assert.equal(best.block.sameShift,true);assert.equal(best.block.position,2);assert.equal(best.block.length,4);
+ const best=c.autoEligibleEmployees('FD','2026-12-02').find(x=>x.e.id==='block');assert.equal(best.block.sameShift,true);assert.equal(best.block.position,2);assert.equal(best.block.length,4);
  c.employees[0].maxWeeklyHours=8;assert.equal(c.autoEligibleEmployees('FD','2026-12-02')[0].e.id,'new');c.employees[0].maxWeeklyHours=50;c.absent=e=>e==='block';assert.equal(c.autoEligibleEmployees('FD','2026-12-02')[0].e.id,'new');c.absent=()=>false;
  assert.equal(c.autoEligibleEmployees('FD','2026-12-05').length,0);assert.equal(c.autoWorkBlock(c.employees[0],'OT1','2026-12-02',c.assignments),null);
  c.plannedMonthlyHoursForEmployee=e=>e==='block'?180:80;assert.equal(c.autoEligibleEmployees('FD','2026-12-02')[0].e.id,'new');
+});
+test('complete workrest blocks are reserved together and a missing middle-day demand prevents isolated shifts',()=>{
+ const {c,id,run}=harness();vm.runInNewContext(read('assets/employee-rhythm-v1.js'),c);id('autoPlanPeriod').value='month';c.employees[0]={...c.employees[0],maxWeeklyHours:50,rhythmMode:'required',rhythmStart:'2026-12-01',rhythmPattern:'ALLE, ALLE, ALLE, ALLE, FREI, FREI, FREI, ALLE, ALLE, ALLE, FREI, FREI'};
+ c.plannedMonthlyHoursForEmployee=(id,date,sim=[])=>[...c.assignments,...sim].filter(a=>a.employeeId===id&&a.date.startsWith(date.slice(0,7))).length*8;
+ c.getSoll=date=>Number(date>='2026-12-01'&&date<='2026-12-04');c.generateAutoPlanPreview();assert.equal(run('autoPlanPreview.length'),4);assert.equal(new Set(Array.from(run('autoPlanPreview')).map(x=>x.blockId)).size,1);
+ c.removeAutoSuggestion(1);assert.equal(run('autoPlanPreview.length'),0);assert.equal(run('autoPlanUnresolved.length'),4);
+ c.getSoll=date=>Number(['2026-12-01','2026-12-03','2026-12-04'].includes(date));c.generateAutoPlanPreview();assert.equal(run('autoPlanPreview.length'),0);assert.equal(run('autoPlanUnresolved.length'),3);
+ c.getSoll=date=>Number(date>='2026-12-01'&&date<='2026-12-04');c.employees[0].employment='Teilzeit';c.employeeMonthlyTarget=()=>24;c.generateAutoPlanPreview();assert.equal(run('autoPlanPreview.length'),0);
+});
+test('O3 cannot go back to O1/O2/TL on the following day, even when twelve hours rest would suffice',()=>{
+ const {c}=harness();c.TYPES=['O1','O2','O3','TL-LE','TL-RE'].map(id=>({id,start:id==='O1'?'18:00':id==='O3'?'22:00':'20:00',end:id==='O1'?'04:00':id==='O3'?'08:00':'06:00'}));vm.runInNewContext(read('assets/supabase-auto-plan-guard-v1.js'),c);const guard=c.window.SFAutoPlanGuard;
+ c.assignments=[{employeeId:'e',type:'O3',date:'2026-12-01'}];for(const type of ['O1','O2','TL-LE','TL-RE'])assert.equal(guard.passesTimeRules('e',type,'2026-12-02'),false);assert.equal(guard.passesTimeRules('e','O2','2026-12-03'),true);assert.equal(guard.passesTimeRules('e','O3','2026-12-02'),true);
+ for(const type of ['O2','TL-LE','TL-RE']){c.assignments=[{employeeId:'e',type,date:'2026-12-01'}];assert.equal(guard.passesTimeRules('e','O3','2026-12-02'),true)}
+ c.assignments=[{employeeId:'e',type:'O2',date:'2026-12-02'}];assert.equal(guard.passesTimeRules('e','O3','2026-12-01'),false);
+ c.assignments=[{employeeId:'e',type:'O1',date:'2026-12-01'}];for(const type of ['O2','TL-LE','TL-RE'])assert.equal(guard.passesTimeRules('e',type,'2026-12-02'),true);
 });
 test('the consecutive-shift maximum counts existing days on both sides including month boundaries',()=>{
  const {c}=harness();c.employees[0].qualifications=['__sp:maxConsecutive=4'];vm.runInNewContext(read('assets/supabase-auto-plan-guard-v1.js'),c);

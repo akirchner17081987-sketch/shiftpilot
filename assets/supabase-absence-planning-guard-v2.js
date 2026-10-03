@@ -69,6 +69,7 @@
 
   function eligible(emp,type,date){
     if(!emp||emp.status!=='active'||!(emp.shifts||[]).includes(type))return false;
+    if(window.SFAutoPlanGuard?.passesShiftTransitions?.(emp.id,type,date)===false)return false;
     const t=typeFor(type);if(!t)return false;
     if(findConflict(emp.id,date,t.start,t.end))return false;
     if(window.SFCompliance?.check)return !window.SFCompliance.check(emp,type,date,t.start,t.end).hard.length;
@@ -81,6 +82,7 @@
     const wrapped=function(employeeId,type,date){
       const t=typeFor(type),emp=listEmployees().find(e=>String(e.id)===String(employeeId));
       if(t&&emp){
+        if(window.SFAutoPlanGuard?.passesShiftTransitions?.(employeeId,type,date)===false){if(typeof showSaveToast==='function')showSaveToast('Schichtwechsel gesperrt','Nach O3 ist O1, O2 oder TL am Folgetag nicht zulässig.');return false;}
         const c=findConflict(employeeId,date,t.start,t.end);
         if(c){
           const from=c.startDate||c.start_date||c.date,to=c.endDate||c.end_date||c.date||from;
