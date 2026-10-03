@@ -166,7 +166,7 @@
   function enhanceMonthlyHours(body,e){
     const planning=document.getElementById('spMaxWeekly')?.closest('.sp-profile-grid');if(!planning||body.querySelector('#spMonthlyHours'))return;
     const target=typeof employeeMonthlyTarget==='function'?employeeMonthlyTarget(e):Math.round(Number(e.weeklyHours||0)*4.348*100)/100;
-    planning.insertAdjacentHTML('beforeend',`<label><span>Monatliche Sollstunden</span><input id="spMonthlyHours" type="number" min="0" max="400" step="0.01" value="${Number(target).toFixed(2)}"><small>Die Beschäftigungsart übernimmt 180, 162 oder 144 Stunden pro Monat. Individuell anpassbar; die Autoplanung plant höchstens 180 Stunden.</small></label>`);
+    planning.insertAdjacentHTML('beforeend',`<label><span>Monatliche Sollstunden</span><input id="spMonthlyHours" type="number" min="0" max="400" step="0.01" value="${Number(target).toFixed(2)}"><small>Die Beschäftigungsart übernimmt 180, 162 oder 144 Stunden pro Monat. Individuell anpassbar. Autoplanung: Vollzeit bis 220 Stunden, Teilzeit bis zum Monats-SOLL; die faire Verteilung richtet sich nach dem SOLL.</small></label>`);
     const monthly=document.getElementById('spMonthlyHours');
     document.getElementById('spEmployment')?.addEventListener('change',event=>{
       const preset=employmentPreset(event.target.value);if(!preset||!monthly)return;
