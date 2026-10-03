@@ -3,7 +3,7 @@ const root=path.resolve(__dirname,'../..');
 const index=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const style=index.match(/<style[^>]*>([\s\S]*?)<\/style>/)[1];
 function fn(name){const start=index.indexOf('function '+name+'(');if(start<0)throw Error(name);let p=index.indexOf('{',start),n=1;while(n&&++p<index.length){if(index[p]==='{')n++;if(index[p]==='}')n--;}return index.slice(start,p+1);}
-const appFunctions=['employeeMonthlyTarget','plannedAssignmentHours','plannedMonthlyHoursForEmployee','autoPlannedHours','autoHourLimits','autoEligibleEmployees'].map(fn).join('\n');
+const appFunctions=['employeeMonthlyTarget','plannedAssignmentHours','plannedMonthlyHoursForEmployee','autoPlannedHours','autoHourLimits','autoWorkBlock','autoEligibleEmployees'].map(fn).join('\n');
 const fixtures=`
 document.documentElement.dataset.sfTheme=new URLSearchParams(location.search).get('theme')||'dark';
 let selectedEmployeeId='a';window.__writes=0;window.saveAll=()=>__writes++;window.renderEmployees=()=>{};window.renderPlanEmployeePool=()=>{};window.renderCalendar=()=>{};window.updateStats=()=>{};window.showSaveToast=()=>{};
