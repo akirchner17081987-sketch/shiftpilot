@@ -9,7 +9,7 @@ const employee=team=>({id:team||'single',first:'Fiktive',last:'Person',personnel
 function harness(){
  const fields={},calls=[],c={window:{SFBackend:{ready:true,companyId:'a',async persistEmployee(draft){calls.push(structuredClone(draft))}}},employees:[],assignments:[],absences:[],document:{readyState:'loading',addEventListener(){},getElementById:id=>fields[id]||null,querySelectorAll:()=>[],querySelector:()=>null},selectedEmployeeId:null,renderPlanEmployeePool(){},updateStats(){},showSaveToast(...args){calls.push(args)},sessionStorage:{getItem:()=>null},saveAll(){calls.push('saveAll')}};
  vm.runInNewContext(rhythm,c);
- const source=read('assets/employee-management-v2.js').replace(/\}\)\(\);\s*$/,"renderList=()=>{};renderProfile=()=>{};window.teamTest={persistMeta,normalizeEmployee,validatePlanningTeam,saveOverview,planningTeamSection};})();");vm.runInNewContext(source,c);
+ const source=read('assets/employee-management-v2.js').replace(/\}\)\(\);\s*$/,"renderList=()=>{};renderProfile=()=>{};window.teamTest={persistMeta,normalizeEmployee,validatePlanningTeam,saveOverview,planningTeamSection,employmentOptions,newEmployeeDefaults,captureNewEmployee};})();");vm.runInNewContext(source,c);
  return{c,fields,calls,api:c.window.teamTest,check:c.window.SFRhythm.check};
 }
 test('five staggered teams cover all three shifts with four employees every December day',()=>{
@@ -38,4 +38,32 @@ test('failed profile persistence cannot change a team locally or invalidate a va
 });
 test('successful profile persistence saves the team with company scoped employee data and clears obsolete previews',async()=>{
  const h=harness(),e=employee();h.c.employees=[e];form(h);h.c.window.clearAutoPlanPreview=()=>h.calls.push('clearPreview');await h.api.saveOverview(e,false,{planningTeam:'B'});assert.equal(e.planningTeam,'B');assert.ok(h.calls[0].qualifications.includes('__sp:planningTeam=B'));assert.ok(h.calls.includes('clearPreview'));assert.equal(e.team,'Objekt Nord');
+});
+
+for(const [label,kind,hours] of [['Vollzeit 180','Vollzeit',180],['Teilzeit 162','Teilzeit',162],['Teilzeit 144','Teilzeit',144]])test(`employment model ${label} saves its monthly hours and restores the same selection`,async()=>{
+ const h=harness(),e={...employee(),employment:'Vollzeit',monthlyHours:180};h.c.employees=[e];form(h);h.fields.spEmployment.value=label;h.fields.spMonthlyHours={value:String(hours)};
+ await h.api.saveOverview(e,false);
+ assert.equal(e.employment,kind);assert.equal(e.monthlyHours,hours);assert.equal(e.weeklyHours,40);assert.equal(e.maxWeeklyHours,48);
+ assert.ok(h.calls[0].qualifications.includes(`__sp:monthlyHours=${hours}`));
+ const hydrated={...e,monthlyHours:undefined,maxWeeklyHours:undefined};h.api.normalizeEmployee(hydrated);
+ assert.equal(hydrated.monthlyHours,hours);assert.match(h.api.employmentOptions(hydrated),new RegExp(`value="${label}" selected`));
+});
+test('a new employee starts with Vollzeit 180 and only the three requested models',()=>{
+ const h=harness(),draft=h.api.newEmployeeDefaults(),options=h.api.employmentOptions(draft);
+ assert.equal(draft.monthlyHours,180);assert.equal((options.match(/<option/g)||[]).length,3);assert.match(options,/value="Vollzeit 180" selected/);assert.doesNotMatch(options,/Minijob|Aushilfe|__existing__/);
+});
+test('legacy employment hours survive unrelated profile saves without silently switching contracts',async()=>{
+ const h=harness(),e={...employee(),employment:'Teilzeit',monthlyHours:160};h.c.employees=[e];form(h);h.fields.spEmployment.value='__existing__';h.fields.spMonthlyHours={value:'160'};
+ assert.match(h.api.employmentOptions(e),/Bisher: Teilzeit · 160 h\/Monat/);
+ await h.api.saveOverview(e,false);assert.equal(e.employment,'Teilzeit');assert.equal(e.monthlyHours,160);
+ const oldFulltime={...e,employment:'Vollzeit',monthlyHours:162};assert.match(h.api.employmentOptions(oldFulltime),/Bisher: Vollzeit · 162 h\/Monat/);
+});
+test('failed employment persistence does not change a saved employee or its hour metadata',async()=>{
+ const h=harness(),e={...employee(),employment:'Vollzeit',monthlyHours:180};h.c.employees=[e];form(h);h.fields.spEmployment.value='Teilzeit 144';h.fields.spMonthlyHours={value:'144'};
+ h.c.window.SFBackend.persistEmployee=async()=>{throw Error('offline')};const before=structuredClone(e);await h.api.saveOverview(e,false);
+ assert.deepEqual(e,before);assert.equal(h.fields.spSave.disabled,false);
+});
+test('model selection and customized monthly hours survive a new employee tab switch',()=>{
+ const h=harness(),e=h.api.newEmployeeDefaults();form(h);h.fields.spEmployment.value='Teilzeit 162';h.fields.spMonthlyHours={value:'160'};h.api.captureNewEmployee(e);
+ assert.equal(e.employment,'Teilzeit');assert.equal(e.monthlyHours,160);assert.match(h.api.employmentOptions(e),/Bisher: Teilzeit · 160 h\/Monat/);
 });
