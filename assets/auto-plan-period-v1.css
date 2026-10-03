@@ -96,3 +96,16 @@ html[data-sf-theme="light"] #appShell #view-auto input[type="month"].sf-month-sh
 .sf-auto-hours{margin:16px 0;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}.sf-auto-hours h3{margin:0 0 10px}.sf-auto-hours p{color:var(--muted);line-height:1.6}.sf-auto-hours-scroll{overflow:auto;max-height:430px}.sf-auto-hours table{border-collapse:collapse;width:100%;white-space:nowrap}.sf-auto-hours th,.sf-auto-hours td{text-align:right;padding:10px;border-bottom:1px solid var(--line)}.sf-auto-hours th:first-child{text-align:left}.sf-auto-hours tbody th[style*="--sf-person-bg"]{background:var(--sf-person-bg);color:var(--sf-person-text)}.sf-auto-hours .is-short{color:var(--amber);font-weight:700}.sf-auto-hours .is-good{color:var(--teal)}.sf-auto-start{flex-wrap:wrap}
 
 html[data-sf-theme="light"] .sf-auto-hours tbody th[style*="--sf-person-bg"]{--sf-person-bg:var(--sf-person-light-bg)!important;--sf-person-text:var(--sf-person-light-text)!important;--sf-person-border:var(--sf-person-light-border)!important}
+
+/* Stundenvergleich bleibt mit dem Mitarbeiter beim horizontalen Scrollen sichtbar. */
+.sf-auto-draft-summary{display:flex;flex-wrap:wrap;gap:10px 24px;margin-top:12px;padding:12px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;font-size:.875rem;color:var(--muted)}
+.sf-auto-draft-summary b{color:var(--text)}
+.sf-auto-draft-note{margin:10px 0 0;color:var(--muted);font-size:.875rem;line-height:1.5}
+.sf-auto-stair-table th:first-child{width:320px;min-width:320px;max-width:320px;white-space:normal;background:var(--panel2);z-index:2}
+.sf-auto-draft-person{display:block;font-size:.875rem;line-height:1.4}
+.sf-auto-draft-metrics{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin-top:6px;font-size:.875rem;font-weight:400;line-height:1.4}
+.sf-auto-draft-metrics>span{white-space:nowrap}
+.sf-auto-draft-balance.is-short{color:var(--amber)}
+.sf-auto-draft-balance.is-extra{color:var(--cyan,var(--text))}
+.sf-auto-draft-balance.is-balanced{color:var(--green)}
+@media(max-width:600px){.sf-auto-stair-table th:first-child{width:230px;min-width:230px;max-width:230px}.sf-auto-draft-metrics{gap:4px 8px}.sf-auto-draft-summary{gap:8px 16px}}

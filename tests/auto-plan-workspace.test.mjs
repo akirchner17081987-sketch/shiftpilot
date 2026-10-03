@@ -203,3 +203,23 @@ test('the consecutive-shift maximum counts existing days on both sides including
  assert.equal(guard.passesTimeRules('e','FD','2026-12-02'),false);assert.equal(guard.passesTimeRules('e','FD','2026-12-03'),true);
  c.assignments=['2026-12-01','2026-12-03','2026-12-04','2026-12-05'].map(date=>({employeeId:'e',type:'FD',date}));assert.equal(guard.passesTimeRules('e','FD','2026-12-02'),false);
 });
+
+test('draft hours include existing services, overnight hours and every active employee, and update when removing a proposal',()=>{
+ const {c,id,run}=harness();id('autoPlanPeriod').value='month';
+ c.employees.push({id:'zero',first:'Ohne',last:'Dienst',status:'active',weeklyHours:40},{id:'old',first:'Alt',last:'Profil',status:'inactive',weeklyHours:40});
+ c.employeeMonthlyTarget=e=>e.id==='e'?24:16;
+ c.plannedAssignmentHours=a=>a.type==='ND'?8:7.5;
+ c.assignments=[{employeeId:'e',date:'2026-12-01',type:'ND',start:'22:00',end:'06:00'},{employeeId:'e',date:'2026-11-30',type:'ND'}];
+ run("autoPlanPreview=[{employeeId:'e',date:'2026-12-02',type:'FD'}];autoPlanAnalyzed=true;renderAutoPlanning()");
+ assert.match(id('autoStaircase').innerHTML,/<b>1 \/ 2<\/b> Mitarbeiter eingeplant/);
+ assert.match(id('autoStaircase').innerHTML,/2 Dienste/);assert.match(id('autoStaircase').innerHTML,/Plan-IST <b>15,5 h<\/b>/);
+ assert.match(id('autoStaircase').innerHTML,/SOLL <b>24 h<\/b>/);assert.match(id('autoStaircase').innerHTML,/-8,5 h/);
+ assert.match(id('autoStaircase').innerHTML,/Ohne Dienst/);assert.doesNotMatch(id('autoStaircase').innerHTML,/Alt Profil/);
+ c.removeAutoSuggestion(0);assert.match(id('autoStaircase').innerHTML,/Plan-IST <b>8 h<\/b>/);assert.match(id('autoStaircase').innerHTML,/-16 h/);
+});
+test('weekly draft comparison uses weekly SOLL and differentiates surplus from deficit',()=>{
+ const {c,id,run}=harness();id('autoPlanPeriod').value='week';
+ c.assignments=Array.from({length:6},(_,i)=>({employeeId:'e',date:'2026-12-'+String(i+1).padStart(2,'0'),type:'FD'}));
+ run('autoPlanAnalyzed=true;renderAutoPlanning()');
+ assert.match(id('autoStaircase').innerHTML,/Zeitraum-SOLL/);assert.match(id('autoStaircase').innerHTML,/SOLL <b>40 h<\/b>/);assert.match(id('autoStaircase').innerHTML,/is-extra/);assert.match(id('autoStaircase').innerHTML,/\+8 h/);
+});
