@@ -25,8 +25,33 @@ test('no matching shift permission gives an actionable reason and no misleading 
 test('required rhythm and time rules are reported distinctly',()=>{
  const {api,c}=harness();c.window.sfRhythmCheck=()=>({mode:'required',allowed:false});assert.match(api.explain({type:'FD',date:'2026-12-01'}),/verbindliche Rhythmus/);c.window.sfRhythmCheck=()=>({mode:'required',allowed:true});c.window.SFAutoPlanGuard={passesTimeRules:()=>false};assert.match(api.explain({type:'FD',date:'2026-12-01'}),/Ruhezeit/);
 });
-test('contract-hour limit remains enforced and changing that optional rule resets the preview',()=>{
+test('weekly limit remains enforced and changing that optional rule resets the preview',()=>{
  const {c,id}=harness();c.employees[0].weeklyHours=4;c.generateAutoPlanPreview();assert.equal(id('autoSuggestionCount').textContent,0);assert.match(id('autoUnresolved').innerHTML,/Wochen- oder Monatsstunden/);id('autoRespectHours').checked=false;c.changeAutoPlanPeriod();assert.equal(id('autoResults').hidden,true);c.generateAutoPlanPreview();assert.equal(id('autoSuggestionCount').textContent,1);
+});
+test('contractual 40 hours are a distribution target; a separate 50-hour week allows the fifth ten-hour shift',()=>{
+ const {c,id}=harness();id('autoPlanDate').value='2026-12-06';c.TYPES[0].start='20:00';c.TYPES[0].end='06:00';c.employees[0].maxWeeklyHours=50;c.plannedAssignmentHours=()=>10;
+ c.assignments=['2026-11-30','2026-12-01','2026-12-02','2026-12-03'].map(date=>({date,type:'FD',employeeId:'e',start:'20:00',end:'06:00'}));
+ const candidate=c.autoEligibleEmployees('FD','2026-12-06')[0];assert.equal(candidate.h,40);assert.equal(candidate.target,40);assert.equal(candidate.weeklyLimit,50);
+ c.employees[0].maxWeeklyHours=40;assert.equal(c.autoEligibleEmployees('FD','2026-12-06').length,0);
+});
+test('180 monthly hours is an unconditional ceiling even with individual limits off or a higher monthly target',()=>{
+ const {c,id}=harness();c.TYPES[0].start='20:00';c.TYPES[0].end='06:00';c.employeeMonthlyTarget=()=>400;id('autoRespectHours').checked=false;
+ c.plannedMonthlyHoursForEmployee=()=>170;assert.equal(c.autoEligibleEmployees('FD','2026-12-01').length,1);assert.equal(c.autoEligibleEmployees('FD','2026-12-01')[0].monthLimit,180);
+ for(const hours of [170.01,180,190]){c.plannedMonthlyHoursForEmployee=()=>hours;assert.equal(c.autoEligibleEmployees('FD','2026-12-01').length,0)}
+});
+test('lower individual monthly budgets remain effective when enabled; disabling them still keeps the 180-hour ceiling',()=>{
+ const {c,id}=harness();c.employeeMonthlyTarget=()=>162;c.plannedMonthlyHoursForEmployee=()=>160;assert.equal(c.autoEligibleEmployees('FD','2026-12-01').length,0);
+ id('autoRespectHours').checked=false;assert.equal(c.autoEligibleEmployees('FD','2026-12-01').length,1);c.plannedMonthlyHoursForEmployee=()=>180;assert.equal(c.autoEligibleEmployees('FD','2026-12-01').length,0);
+});
+test('a full month preview stops at eighteen ten-hour shifts and existing voluntary overtime remains untouched',()=>{
+ const {c,id,run}=harness();id('autoPlanPeriod').value='month';id('autoRespectHours').checked=false;c.TYPES[0].start='20:00';c.TYPES[0].end='06:00';c.plannedAssignmentHours=()=>10;
+ c.plannedMonthlyHoursForEmployee=(employeeId,date,sim=[])=>[...c.assignments,...sim].filter(a=>a.employeeId===employeeId&&a.date.startsWith(date.slice(0,7))).length*10;
+ c.generateAutoPlanPreview();assert.equal(run('autoPlanPreview.length'),18);assert.equal(run('autoPlanUnresolved.length'),13);
+ c.assignments=Array.from({length:19},(_,i)=>({date:`2026-12-${String(i+1).padStart(2,'0')}`,type:'FD',employeeId:'e',start:'20:00',end:'06:00',note:'Freiwilliger Zusatzdienst'}));const before=JSON.stringify(c.assignments);c.generateAutoPlanPreview();assert.equal(run('autoPlanPreview.length'),0);assert.equal(JSON.stringify(c.assignments),before);
+});
+test('an additional voluntary booking during confirmation invalidates a preview that would exceed 180 hours',async()=>{
+ const {c,id,api}=harness();id('autoRespectHours').checked=false;let monthly=170;c.TYPES[0].start='20:00';c.TYPES[0].end='06:00';c.plannedMonthlyHoursForEmployee=()=>monthly;c.generateAutoPlanPreview();
+ api.confirmApply=async()=>{monthly=180;return true};await c.applyAutoPlanPreview();assert.equal(c.assignments.length,0);assert.equal(c.saved,undefined);
 });
 test('cancel, confirmation and repeat click preserve the draft boundary',async()=>{
  const {c,api,id}=harness();c.generateAutoPlanPreview();api.confirmApply=async()=>false;await c.applyAutoPlanPreview();assert.equal(c.assignments.length,0);assert.equal(c.saved,undefined);
