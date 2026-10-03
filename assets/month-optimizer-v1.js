@@ -72,6 +72,7 @@
       if(found.quality.open>beforeOpen)throw Error('Die geprüfte Neuverteilung würde mehr Pflichtlücken erzeugen. Der bestehende Dienstplan bleibt erhalten.');
       const proposed=[...input.reserved,...found.preview],allBase=input.base.filter(a=>!input.reserved.includes(a));
       const optionalSkipped=completeOptional(allBase,proposed);
+      withBase(allBase,()=>window.SFShiftModels?.normalizeMorningOt?.(proposed,allBase));
       withBase(allBase,()=>{const checked=[];for(const a of proposed){if(!autoEligibleEmployees(a.type,a.date,checked).some(c=>String(c.e.id)===String(a.employeeId)))throw Error('Ein Vorschlag verletzt eine Planungsregel. Der Dienstplan wurde nicht geändert.');checked.push(a)}});
       const unresolved=withBase([...allBase,...proposed],()=>autoOpenSlots().map(slot=>({...slot,reason:'In der geprüften Monatsverteilung bleibt diese Pflichtposition offen. Ganze Arbeitsblöcke, Freigaben und persönliche Stundenlimits begrenzen die verfügbaren Besetzungen.'})));
       result={month,company,base:allBase,movable,localSignature,fingerprint:snapshot.fingerprint,beforeHours:new Map(employees.map(e=>[String(e.id),original.filter(a=>String(a.employeeId)===String(e.id)&&a.date.startsWith(month)).reduce((n,a)=>n+plannedAssignmentHours(a),0)])),demandHours:withBase([],()=>autoOpenSlots().reduce((n,s)=>{const t=typeById(s.type);return n+plannedAssignmentHours({date:s.date,type:s.type,start:t.start,end:t.end})},0))};
