@@ -14,7 +14,7 @@
   M.apply=(rows,companyId)=>{
     if(demo())return;
     M.companyId=companyId;
-    M.models=(rows||[]).map(x=>({id:x.code,name:x.name||x.code,start:x.default_start?.slice(0,5)||'06:00',end:x.default_end?.slice(0,5)||'14:00',cls:palette[x.css_class]?x.css_class:'teal',active:x.active!==false,_dbId:x.id,sortOrder:x.sort_order||0,planningMode:x.planning_mode||'required',optionalStaffing:Number(x.optional_staffing)||0,responsibleEmployeeId:x.responsible_employee_id||null,responsibleOnly:x.responsible_only===true,optionalWeekdays:x.optional_weekdays||[1,2,3,4,5,6,7],coverageGroup:x.coverage_group||null,coverageRequired:Number(x.coverage_required)||0}));
+    M.models=(rows||[]).map(x=>({id:x.code,name:x.name||x.code,start:x.default_start?.slice(0,5)||'06:00',end:x.default_end?.slice(0,5)||'14:00',cls:palette[x.css_class]?x.css_class:'teal',active:x.active!==false,_dbId:x.id,sortOrder:x.sort_order||0,planningMode:x.planning_mode||'required',optionalStaffing:Number(x.optional_staffing)||0,responsibleEmployeeId:x.responsible_employee_id||null,responsibleOnly:x.responsible_only===true,optionalWeekdays:x.optional_weekdays||[1,2,3,4,5,6,7],coverageGroup:x.coverage_group||null,coverageRequired:Number(x.coverage_required)||0,morningOtMinimum:Number(x.morning_ot_switch_min)||0}));
     if(typeof TYPES!=='undefined')TYPES.splice(0,TYPES.length,...M.models.filter(x=>x.active).map(x=>({...x})));
     if(typeof selectedType!=='undefined'&&!M.activeCodes().includes(selectedType))selectedType=M.activeCodes()[0]||null;
   };
@@ -31,7 +31,30 @@
     return {...g,target,filled,missing:Math.max(0,target-filled),coveredCodes:[...new Set(covered.map(a=>a.type))],alternatives:g.active.filter(t=>t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7)||(typeof dailySoll!=='undefined'&&dailySoll[date]?.[t.id]!=null)).map(t=>t.id)};
   };
   // Allocate only the shared deficit to one row. Existing local bookings remain visible.
-  M.requiredSoll=(date,code,fallback)=>{const g=M.coverageInfo(date,code);if(g){const own=typeof assignments==='undefined'?0:assignments.filter(a=>a.date===date&&a.type===code&&a.status!=='CANCELLED').length;return own+(g.representative===code?g.missing:0)}const t=M.find(code),override=typeof dailySoll==='undefined'?null:dailySoll[date]?.[code];if(override!=null)return Number(override);return t&&(t.planningMode==='optional'||!t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7))?0:fallback};
+  M.morningOtSwitch=(date,all=typeof assignments==='undefined'?[]:assignments)=>{
+    const minimum=M.find('OT2')?.morningOtMinimum;if(!minimum||typeof dailySoll!=='undefined'&&(dailySoll[date]?.OT1!=null||dailySoll[date]?.OT2!=null))return false;
+    const previous=new Date(date+'T12:00:00');previous.setDate(previous.getDate()-1);const day=`${previous.getFullYear()}-${String(previous.getMonth()+1).padStart(2,'0')}-${String(previous.getDate()).padStart(2,'0')}`;
+    const start=new Date(date+'T06:00:00'),end=new Date(date+'T08:00:00'),seen=new Set();
+    for(const a of all){if(a.type!=='O3'||a.date!==day||a.status==='CANCELLED')continue;const t=M.find(a.type),s=new Date(a.date+'T'+(a.start||t?.start||'22:00')+':00'),e=new Date(a.date+'T'+(a.end||t?.end||'08:00')+':00');if(e<=s)e.setDate(e.getDate()+1);if(s<=start&&e>=end)seen.add(String(a.employeeId))}
+    return seen.size>=minimum;
+  };
+  M.rawRequired=(date,code,fallback)=>{const override=typeof dailySoll==='undefined'?null:dailySoll[date]?.[code],t=M.find(code);return override!=null?Number(override):t&&(t.planningMode==='optional'||!t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7))?0:fallback};
+  M.requiredSoll=(date,code,fallback)=>{const g=M.coverageInfo(date,code);if(g){const own=typeof assignments==='undefined'?0:assignments.filter(a=>a.date===date&&a.type===code&&a.status!=='CANCELLED').length;return own+(g.representative===code?g.missing:0)}
+    const raw=M.rawRequired(date,code,fallback);
+    if(['OT1','OT2'].includes(code)&&M.morningOtSwitch(date)){
+      const own=typeof assignments==='undefined'?0:assignments.filter(a=>a.date===date&&a.type==='OT1'&&a.status!=='CANCELLED').length;
+      if(code==='OT1')return Math.min(raw,own);
+      return raw+Math.max(0,M.rawRequired(date,'OT1',typeof globalSoll==='undefined'?0:globalSoll.OT1||0)-own);
+    }return raw;
+  };
+  M.normalizeMorningOt=(proposed,base=typeof assignments==='undefined'?[]:assignments)=>{
+    for(const a of proposed){if(a.type!=='OT1'&&!a._morningOt1)continue;const type=M.morningOtSwitch(a.date,[...base,...proposed])?'OT2':'OT1';if(a.type===type)continue;
+      const employee=staff().find(e=>String(e.id)===String(a.employeeId)),t=M.find(type);if(!t||!(employee?.shifts||[]).includes(type))throw Error('Der OT-Wechsel benötigt die passende Schichtfreigabe. Bitte prüfe den Mitarbeiter.');
+      if(window.SFAutoPlanGuard?.passesTimeRules?.(a.employeeId,type,a.date,proposed.filter(x=>x!==a))===false)throw Error('Der OT-Wechsel verletzt eine Ruhezeit. Bitte erstelle die Vorschau erneut.');
+      a._morningOt1=true;a.type=type;a.start=t.start;a.end=t.end;a.reason='OT1/OT2-Regel: mindestens drei O3 bis 08:00 Uhr → 2× OT2; sonst OT1 und OT2.';
+    }return proposed;
+  };
+
   M.optionalTarget=(date,code)=>{const t=M.find(code);if(!t?.active||t.planningMode!=='optional'||(typeof dailySoll!=='undefined'&&dailySoll[date]?.[code]!=null))return 0;return t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7)?t.optionalStaffing:0};
   M.reservePenalty=(employee,date,type)=>M.models.some(t=>t.active&&t.id!==type&&t.responsibleOnly&&String(t.responsibleEmployeeId)===String(employee._dbId||employee.id)&&M.optionalTarget(date,t.id)>0)?1:0;
   M.invalidate=()=>{if(typeof autoPlanPreview!=='undefined'){autoPlanPreview=[];autoPlanUnresolved=[];autoPlanOptionalSkipped=[];autoPlanAnalyzed=false;autoPlanApplied=0;}window.renderAutoPlanning?.()};
@@ -165,7 +188,7 @@
       details.querySelectorAll('[data-restore]').forEach(b=>b.onclick=()=>M.openEditor(b.dataset.restore));list.after(details);
     }
     host.querySelectorAll('#sfSaveShiftSettings,#sfSaveDailySoll,#sfResetDailySoll,[data-sf-start],[data-sf-end],[data-sf-soll],[data-sf-day]').forEach(el=>el.disabled=!M.canManage()||M.busy);
-    for(const row of list.querySelectorAll('.sf-set-shift')){const code=row.querySelector('[data-sf-start]')?.dataset.sfStart,t=M.find(code);if(!t)continue;const e=staff().find(e=>String(e._dbId||e.id)===String(t.responsibleEmployeeId));if(t.planningMode==='optional'){const input=row.querySelector('[data-sf-soll]');input.value='0';input.disabled=true;}if(t.planningMode==='optional'||t.responsibleOnly){const note=document.createElement('small');note.textContent=(t.planningMode==='optional'?`Optional · Wunsch ${t.optionalStaffing}`:'Pflichtbesetzung')+(t.responsibleOnly?` · Nur ${e?e.first+' '+e.last:'Zuständiger fehlt'}`:'');row.firstElementChild.appendChild(note);}}
+    for(const row of list.querySelectorAll('.sf-set-shift')){const code=row.querySelector('[data-sf-start]')?.dataset.sfStart,t=M.find(code);if(!t)continue;const e=staff().find(e=>String(e._dbId||e.id)===String(t.responsibleEmployeeId));if(t.planningMode==='optional'){const input=row.querySelector('[data-sf-soll]');input.value='0';input.disabled=true;}if(['OT1','OT2'].includes(t.id)&&M.find('OT2')?.morningOtMinimum){const note=document.createElement('small');note.textContent='Ab 3 O3 am vorherigen Abend bis 08:00 Uhr: statt OT1 + OT2 werden 2× OT2 geplant.';row.firstElementChild.appendChild(note);}if(t.planningMode==='optional'||t.responsibleOnly){const note=document.createElement('small');note.textContent=(t.planningMode==='optional'?`Optional · Wunsch ${t.optionalStaffing}`:'Pflichtbesetzung')+(t.responsibleOnly?` · Nur ${e?e.first+' '+e.last:'Zuständiger fehlt'}`:'');row.firstElementChild.appendChild(note);}}
     for(const row of list.querySelectorAll('.sf-set-shift')){const t=M.find(row.querySelector('[data-sf-start]')?.dataset.sfStart);if(t&&t.optionalWeekdays.length<7){const note=document.createElement('small');note.textContent=t.optionalWeekdays.join(',')==='1,2,3,4,5'?'Einsatztage: Mo–Fr':'Einsatztage: '+t.optionalWeekdays.map(d=>['Mo','Di','Mi','Do','Fr','Sa','So'][d-1]).join(', ');row.firstElementChild.appendChild(note);}}
     for(const row of list.querySelectorAll('.sf-set-shift')){const t=M.find(row.querySelector('[data-sf-start]')?.dataset.sfStart);if(t?.coverageGroup){const note=document.createElement('small');note.textContent=`Gemeinsame Leitung ${t.coverageGroup} · SOLL ${t.coverageRequired} insgesamt · zweiter TL möglich`;row.firstElementChild.appendChild(note);for(const input of row.querySelectorAll('[data-sf-start],[data-sf-end],[data-sf-soll]'))input.disabled=true;row.querySelector('[data-sf-soll]').value=t.coverageRequired;}}
   };

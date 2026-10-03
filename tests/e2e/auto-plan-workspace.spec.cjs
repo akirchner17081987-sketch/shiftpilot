@@ -78,3 +78,11 @@ for(const theme of ['dark','light'])test(`monthly optimization redistributes unf
  await page.locator('#applyAutoPlanBtn').click();await expect(page.getByRole('dialog')).toContainText('4 bisherige flexible Entwürfe');await expect(page.getByRole('dialog')).toContainText('ersetzen');await page.getByRole('dialog').getByRole('button',{name:'Abbrechen',exact:true}).click();expect(await page.evaluate(()=>JSON.stringify(assignments))).toBe(original);
  await page.locator('#applyAutoPlanBtn').click();await page.getByRole('dialog').getByRole('button',{name:'Als Entwurf übernehmen',exact:true}).click();expect(await page.evaluate(()=>employees.map(e=>assignments.filter(a=>a.employeeId===e.id).length))).toEqual([2,2]);expect(await page.evaluate(()=>saveCalls)).toBe(1);expect(errors).toEqual([]);
 });
+
+test('three actual O3 from the previous night transfer OT1 to OT2 and removing one restores OT1',async({page})=>{
+ await fixture(page);await page.addScriptTag({content:read('assets/shift-models-v1.js')});
+ await page.evaluate(()=>{SFShiftModels.apply([{code:'O3',active:true,default_start:'22:00',default_end:'08:00'}, {code:'OT1',active:true,default_start:'06:00',default_end:'16:00'}, {code:'OT2',active:true,default_start:'08:00',default_end:'18:00',morning_ot_switch_min:3}],'a');globalSoll={O3:3,OT1:1,OT2:1};dailySoll={};employees=[{id:'day',first:'Tag',last:'Test',status:'active',employment:'Vollzeit',shifts:['OT1','OT2'],weeklyHours:40}];assignments=[1,2,3].map(employeeId=>({employeeId,type:'O3',date:'2026-11-30',start:'22:00',end:'08:00'}));});
+ expect(await page.evaluate(()=>SFShiftModels.requiredSoll('2026-12-01','OT1',1))).toBe(0);expect(await page.evaluate(()=>SFShiftModels.requiredSoll('2026-12-01','OT2',1))).toBe(2);
+ await page.evaluate(()=>{autoPlanPreview=[{id:'ot',employeeId:'day',date:'2026-12-01',type:'OT1',start:'06:00',end:'16:00'}];SFShiftModels.normalizeMorningOt(autoPlanPreview,assignments)});expect(await page.evaluate(()=>autoPlanPreview[0].type)).toBe('OT2');expect(await page.evaluate(()=>autoPlanPreview[0].start)).toBe('08:00');
+ await page.evaluate(()=>{assignments.pop();SFShiftModels.normalizeMorningOt(autoPlanPreview,assignments)});expect(await page.evaluate(()=>autoPlanPreview[0].type)).toBe('OT1');expect(await page.evaluate(()=>autoPlanPreview[0].start)).toBe('06:00');
+});

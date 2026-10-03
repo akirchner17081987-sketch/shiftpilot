@@ -37,3 +37,17 @@ test('employee permissions and filters follow active models while keeping histor
   const box={dataset:{},innerHTML:'',querySelector:()=>({dataset:{q:'OLD'}}),querySelectorAll:()=>[]};api.syncQualificationFilter({querySelector:()=>box});assert.match(box.innerHTML,/data-q="N8"/);assert.doesNotMatch(box.innerHTML,/data-q="OLD"/);
   M.apply([row('N8')],'a');api.normalizeEmployee(e);assert.deepEqual(Array.from(e.shifts),['N8']);
 });
+
+test('morning OT switch counts three distinct O3 workers from the previous night through 08:00',()=>{
+ const {c,M}=harness();M.apply([{...row('O3'),default_start:'22:00',default_end:'08:00'}, {...row('OT1'),default_start:'06:00',default_end:'16:00'}, {...row('OT2'),default_start:'08:00',default_end:'18:00',morning_ot_switch_min:3}],'a');
+ c.globalSoll={OT1:1,OT2:1};c.assignments=[1,2,3].map(employeeId=>({employeeId,type:'O3',date:'2026-11-30',start:'22:00',end:'08:00'}));
+ assert.equal(M.morningOtSwitch('2026-12-01'),true);assert.equal(M.requiredSoll('2026-12-01','OT1',1),0);assert.equal(M.requiredSoll('2026-12-01','OT2',1),2);
+ assert.equal(M.morningOtSwitch('2026-11-30'),false);c.assignments[2].end='07:00';assert.equal(M.morningOtSwitch('2026-12-01'),false);c.assignments[2].end='08:00';c.assignments[2].employeeId=2;assert.equal(M.morningOtSwitch('2026-12-01'),false);
+});
+test('morning OT proposals change times and revert when a supporting O3 is removed; protected OT1 is counted',()=>{
+ const {c,M}=harness();M.apply([{...row('O3'),default_start:'22:00',default_end:'08:00'}, {...row('OT1'),default_start:'06:00',default_end:'16:00'}, {...row('OT2'),default_start:'08:00',default_end:'18:00',morning_ot_switch_min:3}],'a');
+ c.employees=[{id:'day',shifts:['OT1','OT2']}];c.globalSoll={OT1:1,OT2:1};c.assignments=[];const night=[1,2,3].map(employeeId=>({employeeId,type:'O3',date:'2026-12-01'})),a={employeeId:'day',date:'2026-12-02',type:'OT1',start:'06:00',end:'16:00'};
+ M.normalizeMorningOt([...night,a],[]);assert.equal(a.type,'OT2');assert.equal(a.start,'08:00');assert.equal(a.end,'18:00');M.normalizeMorningOt([night[0],night[1],a],[]);assert.equal(a.type,'OT1');assert.equal(a.start,'06:00');
+ c.assignments=[...night,{...a,date:'2026-12-02'}];assert.equal(M.requiredSoll('2026-12-02','OT2',1),1);assert.equal(M.requiredSoll('2026-12-02','OT1',1),1);
+ c.window.SFBackend.companyId='b';assert.equal(M.morningOtSwitch('2026-12-02'),false);
+});
