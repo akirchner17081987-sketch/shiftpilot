@@ -11,6 +11,17 @@
     const site=String(employee.team??(stored?stored.slice(10):'')).trim().toLocaleLowerCase('de-DE');
     return site==='leipzig'?'Leipzig':site==='recklinghausen'?'Recklinghausen':'';
   }
+  function monthlyTarget(e,source){
+    if(e.monthlyHours==null&&e.weeklyHours==null&&e.weekly_hours==null&&!(e.qualifications||[]).some(q=>String(q).startsWith('__sp:monthlyHours=')))return null;
+    const value=e.monthlyHours??(e.qualifications||[]).find(q=>String(q).startsWith('__sp:monthlyHours='))?.split('=')[1]??source.employeeMonthlyTarget?.(e);
+    if(value!==''&&value!=null&&Number.isFinite(Number(value)))return number(Math.max(0,Number(value)));
+    const weekly=e.weeklyHours??e.weekly_hours;
+    return weekly!==''&&weekly!=null&&Number.isFinite(Number(weekly))?number(Math.max(0,Number(weekly))*4.348):null;
+  }
+  function summarize(rows){
+    const missingTargets=rows.filter(r=>r.targetHours===null).length,targetHours=number(rows.reduce((n,r)=>n+(r.targetHours??0),0));
+    return{employeeCount:rows.length,assignedEmployeeCount:rows.filter(r=>r.shiftCount>0).length,targetHours,missingTargets,difference:missingTargets?null:number(rows.reduce((n,r)=>n+r.hours,0)-targetHours)};
+  }
   function buildPlan(source){
     const month=String(source.month||'');if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)||Number(month.slice(0,4))<100)throw Error('Bitte einen gültigen Monat ab dem Jahr 0100 wählen.');
     const [year,m]=month.split('-').map(Number),count=new Date(year,m,0).getDate();
@@ -30,14 +41,15 @@
     });
     assignedIds.forEach(id=>{if(!people.has(id))people.set(id,{id,name:'Ehemaliger Mitarbeiter',team:'',site:'',personnelNo:''})});
     const absences=(source.absences||[]).filter(a=>effective(a)&&String(a.startDate||a.start_date||a.date)<=end&&String(a.endDate||a.end_date||a.date||a.startDate)>=start);
-    const rows=[...people.values()].sort((a,b)=>display?.enabled(source.companyId)?display.compare(a,b,source.companyId):String(a.team||'ZZ').localeCompare(String(b.team||'ZZ'))||a.name.localeCompare(b.name,'de')).map(person=>{
+    const rows=[...people.values()].sort((a,b)=>(display?.orderEnabled?.(source.companyId)??display?.enabled(source.companyId))?display.compare(a,b,source.companyId):String(a.team||'ZZ').localeCompare(String(b.team||'ZZ'))||a.name.localeCompare(b.name,'de')).map(person=>{
       const own=shifts.filter(a=>a.employeeId===person.id),ownAbs=absences.filter(a=>String(a.employeeId??a.employee_id)===person.id);
       const cells=days.map(day=>{
         const list=own.filter(a=>a.date===day.date),off=ownAbs.filter(a=>day.date>=String(a.startDate||a.start_date||a.date)&&day.date<=String(a.endDate||a.end_date||a.date||a.startDate));
         const labels=off.map(a=>(absenceCodes[a.type||a.absence_type]||'AB')+(a.fullDay===false?' (teilw.)':''));
         return{date:day.date,shifts:list,absences:off,excel:[...list.map(a=>a.type+' '+a.start+'–'+a.end+(a.overnight?' (+1 Tag)':'')),...labels].join('\n')||'–',pdf:[...list.map(a=>a.type+(a.adjusted?'*':'')),...labels].join('\n')||'–'};
       });
-      return{person,color:display?.color(person,source.companyId)||null,cells,shiftCount:own.length,hours:number(own.reduce((n,a)=>n+a.minutes,0)/60)};
+      const hours=number(own.reduce((n,a)=>n+a.minutes,0)/60),targetHours=monthlyTarget(person,source);
+      return{person,color:display?.color(person,source.companyId)||null,cells,shiftCount:own.length,hours,targetHours,difference:targetHours===null?null:number(hours-targetHours)};
     });
     const types=new Map((source.types||[]).filter(t=>t.active!==false).map(t=>[t.id,t]));
     shifts.forEach(a=>{if(!types.has(a.type)){const t=source.typeById?.(a.type)||{};types.set(a.type,{id:a.type,name:t.name||a.type,start:t.start||a.start,end:t.end||a.end})}});
@@ -45,21 +57,21 @@
     rows.forEach(r=>r.cells.forEach(c=>{const labels=c.absences.map(a=>(absenceCodes[a.type||a.absence_type]||'AB')+(a.fullDay===false?' (teilw.)':''));c.pdf=[...c.shifts.map(a=>a.type+(a.adjusted?'*':'')),...labels].join('\n')||'–'}));
     const details=shifts.map(a=>({...a,person:people.get(a.employeeId)}));
     const coverage=days.flatMap(day=>[...types.values()].map(type=>{const required=Number(source.getSoll?.(day.date,type.id)||0),actual=shifts.filter(a=>a.date===day.date&&a.type===type.id).length;return{date:day.date,type:type.id,required,actual,open:Math.max(0,required-actual)}}));
-    return{month,start,end,days,rows,details,types:[...types.values()],coverage,company:source.company||'Unternehmen',createdAt:source.createdAt||new Date().toISOString(),label:new Date(start+'T12:00:00').toLocaleDateString('de-DE',{month:'long',year:'numeric'}),hours:number(shifts.reduce((n,a)=>n+a.minutes,0)/60),shiftCount:shifts.length,status:shifts.length&&shifts.every(a=>a.published)?'Veröffentlicht':shifts.some(a=>a.published)?'Teilweise veröffentlicht':'Entwurf'};
+    return{...summarize(rows),month,start,end,days,rows,details,types:[...types.values()],coverage,company:source.company||'Unternehmen',createdAt:source.createdAt||new Date().toISOString(),label:new Date(start+'T12:00:00').toLocaleDateString('de-DE',{month:'long',year:'numeric'}),hours:number(shifts.reduce((n,a)=>n+a.minutes,0)/60),shiftCount:shifts.length,status:shifts.length&&shifts.every(a=>a.published)?'Veröffentlicht':shifts.some(a=>a.published)?'Teilweise veröffentlicht':'Entwurf'};
   }
   function selectPDFPlan(plan,scope='Gesamt'){
     if(!['Leipzig','Recklinghausen','Gesamt'].includes(scope))throw Error('Bitte Leipzig, Recklinghausen oder Gesamt für das PDF wählen.');
     if(scope==='Gesamt')return {...plan,pdfScope:scope};
     const rows=plan.rows.filter(row=>row.person.site===scope),ids=new Set(rows.map(row=>row.person.id)),details=plan.details.filter(shift=>ids.has(shift.employeeId));
     const codes=new Set(details.map(shift=>shift.type));
-    return {...plan,pdfScope:scope,rows,details,types:plan.types.filter(type=>codes.has(type.id)),coverage:[],hours:number(details.reduce((sum,shift)=>sum+shift.minutes,0)/60),shiftCount:details.length,status:details.length&&details.every(shift=>shift.published)?'Veröffentlicht':details.some(shift=>shift.published)?'Teilweise veröffentlicht':'Entwurf'};
+    return {...plan,...summarize(rows),pdfScope:scope,rows,details,types:plan.types.filter(type=>codes.has(type.id)),coverage:[],hours:number(details.reduce((sum,shift)=>sum+shift.minutes,0)/60),shiftCount:details.length,status:details.length&&details.every(shift=>shift.published)?'Veröffentlicht':details.some(shift=>shift.published)?'Teilweise veröffentlicht':'Entwurf'};
   }
   function workbookRows(plan){
-    const head=['Personal-Nr.','Mitarbeiter','Team',...plan.days.map(d=>d.weekday+' '+pad(d.day)), 'Dienste','Planstunden'];
-    const matrix=[['SchichtFunk – Gesamtdienstplan'],[plan.company,plan.label],['Planstand',plan.status],['Erstellt am',plan.createdAt],['Hinweis','Nachtdienste stehen am Starttag. Planstunden ohne Pausenabzug.'],[],head,...plan.rows.map(r=>[r.person.personnelNo||'',r.person.name,r.person.team,...r.cells.map(c=>c.excel),r.shiftCount,r.hours])];
+    const head=['Personal-Nr.','Mitarbeiter','Team',...plan.days.map(d=>d.weekday+' '+pad(d.day)), 'Dienste','Plan-IST (h)','Monats-SOLL (h)','Differenz (h)'];
+    const matrix=[['SchichtFunk – Gesamtdienstplan'],[plan.company,plan.label],['Planstand',plan.status],['Erstellt am',plan.createdAt],['Hinweis: Plan-IST = geplante Stunden ohne Pausenabzug. Differenz = Plan-IST minus Monats-SOLL. Keine erfassten Arbeitszeiten.'],[plan.assignedEmployeeCount+' / '+plan.employeeCount+' Mitarbeiter eingeplant · '+plan.shiftCount+' Dienste · Plan-IST '+plan.hours.toLocaleString('de-DE')+' h · Monats-SOLL '+plan.targetHours.toLocaleString('de-DE')+' h · Differenz '+(plan.difference===null?'–':(plan.difference>0?'+':'')+plan.difference.toLocaleString('de-DE'))+' h'],head,...plan.rows.map(r=>[r.person.personnelNo||'',r.person.name,r.person.team,...r.cells.map(c=>c.excel),r.shiftCount,r.hours,r.targetHours??'–',r.difference??'–'])];
     const details=[['Datum','Personal-Nr.','Mitarbeiter','Team','Schicht','Beginn','Ende','Ende am Folgetag','Planstunden','Planstand'],...plan.details.map(a=>[a.date,a.person.personnelNo||'',a.person.name,a.person.team,a.type,a.start,a.end,a.overnight?'Ja':'Nein',a.hours,a.published?'Veröffentlicht':'Entwurf'])];
     const coverage=[['Datum','Schicht','SOLL','IST','Offen'],...plan.coverage.map(c=>[c.date,c.type,c.required,c.actual,c.open])];
-    const legend=[['SchichtFunk – Hinweise'],['Unternehmen',plan.company],['Monat',plan.label],['Planstand',plan.status],['Mitarbeiter',plan.rows.length],['Dienste',plan.shiftCount],['Planstunden gesamt',plan.hours],[],['Schicht','Bezeichnung','Beginn','Ende'],...plan.types.map(t=>[t.id,t.name||t.id,t.start||'',t.end||'']),[],['Abwesenheiten','U = Urlaub, K = Krank, F = Frei, FB = Fortbildung, SP = Sperrzeit, SU = Sonderurlaub, AB = Sonstiges'],['Leere Felder','– = kein Dienst eingetragen; bedeutet nicht automatisch Frei'],['Stunden','Geplante Schichtdauer ohne Pausenabzug. Keine IST-Zeiterfassung.']];
+    const legend=[['SchichtFunk – Hinweise'],['Unternehmen',plan.company],['Monat',plan.label],['Planstand',plan.status],['Mitarbeiter gesamt',plan.employeeCount],['Mitarbeiter eingeplant',plan.assignedEmployeeCount],['Dienste',plan.shiftCount],['Plan-IST gesamt (h)',plan.hours],['Monats-SOLL gesamt (h)',plan.targetHours],['Differenz gesamt (h)',plan.difference??'–'],['Fehlendes Monats-SOLL',plan.missingTargets],[],['Schicht','Bezeichnung','Beginn','Ende'],...plan.types.map(t=>[t.id,t.name||t.id,t.start||'',t.end||'']),[],['Abwesenheiten','U = Urlaub, K = Krank, F = Frei, FB = Fortbildung, SP = Sperrzeit, SU = Sonderurlaub, AB = Sonstiges'],['Leere Felder','– = kein Dienst eingetragen; bedeutet nicht automatisch Frei'],['Stunden','Plan-IST = geplante Schichtdauer ohne Pausenabzug. Keine IST-Zeiterfassung.'],['Monats-SOLL','Persönliches Monatsziel aus dem Mitarbeiterprofil; andernfalls Wochenstunden × 4,348. – = kein Ziel hinterlegt.'],['Differenz','Plan-IST minus Monats-SOLL. Minus = Stunden fehlen, Plus = über SOLL. Bei fehlenden Zielen keine Gesamtdifferenz.']];
     return{matrix,details,coverage,legend};
   }
   return{buildPlan,workbookRows,selectPDFPlan};
