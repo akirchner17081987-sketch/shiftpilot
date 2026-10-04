@@ -1,5 +1,5 @@
 // Monatsoptimierung: ganze Arbeitsblöcke, echte Besetzungsbedarfe und persönliche Stundenziele.
-(function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.SFMonthOptimizerCore=api})(typeof window!=='undefined'?window:globalThis,function(){
+(function(root,factory){const api=factory(typeof module==='object'&&module.exports?require('./individual-month-planner-v1.js'):root.SFIndividualMonthPlanner);if(typeof module==='object'&&module.exports)module.exports=api;else root.SFMonthOptimizerCore=api})(typeof window!=='undefined'?window:globalThis,function(individual){
   const hour=3600000;
   const next=date=>{const d=new Date(date+'T12:00:00');d.setDate(d.getDate()+1);return iso(d)};
   const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -51,7 +51,7 @@
     }
     return s;
   }
-  async function optimize(input,{iterations=36,yieldStep=()=>Promise.resolve(),progress=()=>{}}={}){
+  async function optimizeLegacy(input,{iterations=36,yieldStep=()=>Promise.resolve(),progress=()=>{}}={}){
     const p=prepare(input);let best=null,q=null;const rng=random(20261201);
     for(let i=0;i<iterations;i++){
       let retained=[];
@@ -60,6 +60,18 @@
     }
     const rows=[...p.people.values()].map(e=>{const planned=best.people.get(String(e.id)).hours;return{employeeId:e.id,target:e.target,planned,missing:Math.max(0,e.target-planned),extra:Math.max(0,planned-e.target)}});
     return{records:best.records,preview:best.records.flatMap(r=>r.option.map(a=>({...a,blockId:r.group.block?r.group.id:undefined}))),remaining:[...best.remaining],quality:q,rows};
+  }
+  async function optimize(input,options={}){
+    const ids=new Set(input.employees.filter(e=>e.individual).map(e=>String(e.id)));
+    if(!ids.size)return optimizeLegacy(input,options);
+    if(!individual)throw Error('Die individuelle Monatsplanung konnte nicht geladen werden. Bitte die Seite neu laden.');
+    const bound=await optimizeLegacy({...input,groups:input.groups.filter(g=>!ids.has(String(g.employee.id)))},{...options,iterations:Math.min(16,options.iterations||16)}),capacity=new Map(input.capacities);
+    for(const a of bound.preview)capacity.set(a.resource,capacity.get(a.resource)-1);
+    const freeInput={...input,employees:input.employees.filter(e=>ids.has(String(e.id))),groups:input.groups.filter(g=>ids.has(String(g.employee.id))),base:[...input.base,...bound.preview],capacities:[...capacity],seed:(input.seed||[]).filter(a=>ids.has(String(a.employeeId)))};
+    const found=await individual.optimize(freeInput,{...options,iterations:options.iterations||128,beamWidth:240}),preview=[...bound.preview,...found.preview];
+    const all=[...input.base,...preview],used=new Map();for(const a of preview)used.set(a.resource,(used.get(a.resource)||0)+1);
+    const open=input.capacities.reduce((n,[key,count])=>n+Math.max(0,count-(used.get(key)||0)),0);
+    return{preview,individualInput:freeInput,quality:{...found.quality,open},rows:input.employees.map(e=>{const hours=all.filter(a=>String(a.employeeId)===String(e.id)&&a.date.startsWith(input.month)).reduce((n,a)=>n+duty(a).hours,0);return{employeeId:e.id,target:e.target,planned:hours,missing:Math.max(0,e.target-hours),extra:Math.max(0,hours-e.target)}})};
   }
   return{optimize,prepare,feasible,state,quality,duty,week};
 });

@@ -9,7 +9,7 @@ async function fixture(page,theme='dark'){
  await page.addStyleTag({content:index.match(/<style>\n([\s\S]*?)<\/style>/)[1]});await page.addStyleTag({content:read('assets/manager-theme-v1.css')});await page.addStyleTag({content:read('assets/date-month-controls-v1.css')});await page.addStyleTag({content:read('assets/auto-plan-period-v1.css')});await page.addStyleTag({content:'.main{padding:20px}body{height:auto}#appShell{min-width:0}button:disabled{cursor:not-allowed}'});await page.evaluate(t=>document.documentElement.dataset.sfTheme=t,theme);
  await page.addScriptTag({content:`window.weekStart=new Date(2026,8,28);window.assignments=[];window.employees=[{id:'test',first:'Fiktive',last:'Person',status:'active',employment:'Vollzeit',shifts:['FD'],weeklyHours:40}];window.TYPES=[{id:'FD',name:'Frühdienst',start:'06:00',end:'14:00'}];window.absences=[];window.globalSoll={};window.dailySoll={};window.iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');window.addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};window.typeById=t=>TYPES.find(x=>x.id===t);window.getSoll=()=>1;window.assignmentsFor=(d,t)=>assignments.filter(a=>a.date===d&&a.type===t);window.absent=()=>false;window.plannedAssignmentHours=()=>8;window.employeeMonthlyTarget=()=>180;window.plannedMonthlyHoursForEmployee=(id,date,simulated=[])=>[...assignments,...simulated].filter(a=>a.employeeId===id&&a.date.startsWith(date.slice(0,7))).length*8;window.showSaveToast=()=>{};window.saveCalls=0;window.saveAll=()=>saveCalls++;window.renderCalendar=()=>{};window.openedView=null;window.showView=v=>openedView=v;window.SFBackend={companyId:${JSON.stringify(theme==='dark'?'a':'b')}};window.selectedMonth=null;window.SchichtFunkCalendarView={setMonth:v=>selectedMonth=v,setMode:()=>{}};`});
  await page.addScriptTag({content:read('assets/date-month-format-v1.js')});await page.addScriptTag({content:planning});await page.addScriptTag({content:read('assets/employee-rhythm-v1.js')});await page.addScriptTag({content:read('assets/supabase-auto-plan-guard-v1.js')});await page.addScriptTag({content:read('assets/auto-plan-workspace-v1.js')});
- await page.addScriptTag({content:read('assets/month-optimizer-core-v1.js')});await page.addScriptTag({content:read('assets/month-optimizer-v1.js')});
+ await page.addScriptTag({content:read('assets/individual-month-planner-v1.js')});await page.addScriptTag({content:read('assets/month-optimizer-core-v1.js')});await page.addScriptTag({content:read('assets/month-optimizer-v1.js')});
  await page.locator('#autoPlanPeriod').selectOption('month');await page.locator('#autoPlanMonth').fill('2026-12');await page.locator('#autoPlanMonth').dispatchEvent('change');
 }
 for(const theme of ['dark','light'])test(`clear month selection, preview review and confirmed draft in ${theme} theme`,async({page})=>{
@@ -123,4 +123,42 @@ test('Secontec January draft restricts weekday FD and weekend FD-WE independentl
  const data=await page.evaluate(()=>({fd:autoPlanPreview.filter(a=>a.type==='FD'),we:autoPlanPreview.filter(a=>a.type==='FD-WE'),free:SFRhythm.check(employees[0],'O1','2027-01-09').expected}));
  expect(data.fd).toHaveLength(63);expect(data.we).toHaveLength(30);expect(data.fd.every(a=>['2048','26','2001'].includes(a.employeeId)&&new Date(a.date+'T12:00:00').getDay()%6!==0)).toBe(true);expect(data.we.every(a=>['A','B','C'].includes(a.employeeId)&&[0,6].includes(new Date(a.date+'T12:00:00').getDay()))).toBe(true);expect(data.free).toBe('FREI');
  await expect(page.locator('#autoUnresolvedCount')).toHaveText('0');await expect(page.locator('#autoStaircase')).toContainText('168 h');await expect(page.locator('#autoStaircase')).toContainText('180 h');
+});
+
+test('individual January auto planning reproduces target blocks, fixed weekday FD and atomic server submission',async({page})=>{
+ test.setTimeout(150000);
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));await fixture(page);
+ await page.addScriptTag({content:read('assets/shift-models-v1.js')});
+ const input=JSON.parse(read('tests/fixtures/individual-january-2027.json'));
+ await page.evaluate(input=>{
+  SFShiftModels.apply([
+   {code:'SD',active:true,default_start:'14:00',default_end:'22:00'},
+   {code:'FD-WE',active:true,default_start:'06:00',default_end:'14:00',strict_weekdays:true,strict_times:true,optional_weekdays:[6,7]},
+   {code:'FD',active:true,default_start:'06:00',default_end:'14:00',strict_weekdays:true,strict_times:true,optional_weekdays:[1,2,3,4,5],allowed_personnel_nos:['2048','26','2001'],exclusive_employees:true},
+   {code:'ND',active:true,default_start:'22:00',default_end:'06:00'}
+  ],'a');
+  employees=input.employees.map(e=>({id:e.id,personnelNo:e.id,first:'Test',last:e.id,status:'active',employment:e.target===180?'Vollzeit':'Teilzeit',monthlyHours:e.target,weeklyHours:40,maxWeeklyHours:e.weeklyLimit,maxConsecutiveShifts:e.maxConsecutive,shifts:e.permissions,rhythmMode:'off'})).concat(['2048','26','2001'].map(id=>({id,personnelNo:id,first:'Tagdienst',last:id,status:'active',employment:'Vollzeit',monthlyHours:180,weeklyHours:40,maxWeeklyHours:40,shifts:['FD'],rhythmMode:'required',rhythmStart:'2026-12-28',rhythmPattern:'FD,FD,FD,FD,FD,FREI,FREI'})));
+  assignments=input.base.map((a,i)=>({...a,id:'boundary-'+i}));globalSoll={FD:3,'FD-WE':4,SD:6,ND:6};dailySoll={};getSoll=(d,t)=>SFShiftModels.requiredSoll(d,t,globalSoll[t]||0);employeeMonthlyTarget=e=>e.monthlyHours;
+  plannedAssignmentHours=a=>{const t=typeById(a.type),s=new Date(a.date+'T'+(a.start||t.start)+':00'),e=new Date(a.date+'T'+(a.end||t.end)+':00');if(e<=s)e.setDate(e.getDate()+1);return(e-s)/3600000};
+  showSaveToast=(title,copy)=>window.lastToast={title,copy};
+ },input);
+ await page.locator('#autoPlanMonth').fill('2027-01');await page.locator('#autoPlanMonth').dispatchEvent('change');
+ await expect(page.locator('#autoIndividualBlocks')).toBeChecked();await expect(page.locator('#autoIndividualBlocks')).toBeEnabled();await expect(page.locator('#generateAutoPlanBtn')).toContainText('Individuellen Monat planen');
+ const before=await page.evaluate(()=>JSON.stringify(assignments));
+ await page.locator('#generateAutoPlanBtn').click();
+ await expect(page.locator('#applyAutoPlanBtn')).toBeEnabled({timeout:100000});
+ expect(await page.evaluate(()=>JSON.stringify(assignments))).toBe(before);
+ const result=await page.evaluate(()=>({toast:window.lastToast,individual:SFMonthOptimizer.getResult()?.individualIds.length,preview:autoPlanPreview.length,open:autoPlanUnresolved.length,fd:autoPlanPreview.filter(a=>a.type==='FD'),we:autoPlanPreview.filter(a=>a.type==='FD-WE')}));
+ expect(result.individual).toBe(17);expect(result.preview).toBe(429);expect(result.open).toBe(46);expect(result.fd).toHaveLength(63);expect(result.we).toHaveLength(40);expect(result.fd.every(a=>['2048','26','2001'].includes(a.employeeId))).toBe(true);
+ await expect(page.locator('#autoMonthHours')).toContainText('3.432 h IST / 3.800 h SOLL');await expect(page.locator('#autoMonthHours')).toContainText('429 / 475 Dienste');await expect(page.locator('#autoMonthHours')).toContainText('46 Dienste / 368 h offen');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);await page.locator('#autoMonthHours').screenshot({path:test.info().outputPath('individual-month-totals.png')});
+ await page.locator('#applyAutoPlanBtn').click();await page.getByRole('dialog').getByRole('button',{name:'Abbrechen',exact:true}).click();expect(await page.evaluate(()=>JSON.stringify(assignments))).toBe(before);
+ // The server stub rejects the RPC; the browser must retain every existing duty and the preview.
+ await page.evaluate(()=>{
+  SFBackend.ready=true;SFBackend.empDb=new Map(employees.map(e=>[e.id,'db-'+e.id]));SFBackend.asgDb=new Map();SFBackend.hydrate=async()=>{};window.rpcCalls=[];SFBackend.client={rpc:async(name,args)=>{rpcCalls.push({name,args});return{error:{message:'Test: Transaktion abgelehnt'}}}};
+ });
+ await page.locator('#applyAutoPlanBtn').click();await page.getByRole('dialog').getByRole('button',{name:'Als Entwurf übernehmen',exact:true}).click();
+ await expect.poll(()=>page.evaluate(()=>rpcCalls.length)).toBe(1);
+ const rpc=await page.evaluate(()=>rpcCalls[0]);expect(rpc.name).toBe('apply_individual_month_optimization');expect(rpc.args.p_individual_employee_ids).toHaveLength(17);expect(rpc.args.p_assignments).toHaveLength(429);expect(rpc.args.p_company_id).toBe('a');expect(rpc.args.p_month).toBe('2027-01-01');expect(rpc.args.p_respect_weekly).toBe(true);
+ expect(await page.evaluate(()=>JSON.stringify(assignments))).toBe(before);expect(await page.evaluate(()=>autoPlanPreview.length)).toBe(429);expect(await page.evaluate(()=>lastToast.copy)).toContain('Transaktion abgelehnt');expect(errors).toEqual([]);
 });
