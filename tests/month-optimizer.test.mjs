@@ -40,6 +40,13 @@ test('replacement preview improves unfair existing drafts without touching them 
 test('employee changes after optimization reject the whole replacement and retain the original drafts',async()=>{
  const {c}=harness();await c.SFMonthOptimizer.optimize();const before=JSON.stringify(c.assignments);c.employees[1].status='inactive';await c.applyAutoPlanPreview();assert.equal(JSON.stringify(c.assignments),before);assert.equal(c.saves,undefined);assert.match(c.toast.copy,/Daten haben sich geändert/);
 });
+test('confirmed January optimization selects January even when the prior calendar shows another month',async()=>{
+ const {c,id}=harness();id('autoPlanMonth').value='2027-01';c.assignments=[];c.getSoll=d=>Number(d>='2027-01-01'&&d<='2027-01-04');
+ let selectedMonth='2026-12';c.SchichtFunkCalendarView={setMonth:m=>{selectedMonth=m}};
+ await c.SFMonthOptimizer.optimize();assert.ok(c.SFMonthOptimizer.getResult());
+ c.SFAutoPlanWorkspace.confirmApply=async()=>false;await c.applyAutoPlanPreview();assert.equal(selectedMonth,'2026-12');
+ c.SFAutoPlanWorkspace.confirmApply=async()=>true;await c.applyAutoPlanPreview();assert.equal(selectedMonth,'2027-01');assert.equal(c.assignments.length,4);
+});
 test('published months cannot start optimization',async()=>{
  const {c}=harness();c.SFCompliance={isWeekPublished:()=>true};const before=JSON.stringify(c.assignments);await c.SFMonthOptimizer.optimize();assert.equal(c.SFMonthOptimizer.getResult(),null);assert.equal(JSON.stringify(c.assignments),before);assert.match(c.toast.copy,/veröffentlicht/);
 });
