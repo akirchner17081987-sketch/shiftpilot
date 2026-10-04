@@ -11,6 +11,34 @@ async function fixture(page){
   await page.addStyleTag({content:read('assets/schedule-export-v1.css')});
   await page.addScriptTag({content:read('assets/schedule-export-core-v1.js')});await page.addScriptTag({content:read('assets/schedule-export-v1.js')});
 }
+async function cloudFixture(page,extra={}){
+ await fixture(page);
+ await page.evaluate(extra=>{
+  window.cloudCalls=[];window.cloudFailure=null;window.cloudCompanySwitch=false;
+  window.cloudTables={companies:[{id:'company-a',name:'Aktuelle Firma',timezone:'Europe/Berlin'}],employees:[{id:'db-a',legacy_id:'A',company_id:'company-a',first_name:'Anna',last_name:'Aktuell',personnel_no:'001',status:'active',weekly_hours:40,qualifications:['__sp:monthlyHours=180','__sp:team=Leipzig','__sp:planningTeam=B']}],shift_assignments:[{id:'d1',company_id:'company-a',employee_id:'db-a',status:'DRAFT',shift_code:'ND',starts_at:'2027-01-31T21:00:00Z',ends_at:'2027-02-01T05:00:00Z'},{id:'d2',company_id:'company-a',employee_id:'db-a',status:'CANCELLED',shift_code:'FD',starts_at:'2027-01-01T05:00:00Z',ends_at:'2027-01-01T13:00:00Z'},{id:'d3',company_id:'company-b',employee_id:'db-a',status:'DRAFT',shift_code:'FD',starts_at:'2027-01-01T05:00:00Z',ends_at:'2027-01-01T13:00:00Z'},{id:'d4',company_id:'company-a',employee_id:'db-a',status:'DRAFT',shift_code:'ND',starts_at:'2026-12-31T21:00:00Z',ends_at:'2027-01-01T05:00:00Z'}],absences:[],shift_templates:[{id:'t1',company_id:'company-a',code:'ND',name:'Nachtdienst',default_start:'22:00:00',default_end:'06:00:00',active:true}],...extra};
+  SFBackend.client={from(table){const filters=[];let size=500,isSingle=false;const q={select(){return q},eq(k,v){filters.push(row=>row[k]===v);return q},neq(k,v){filters.push(row=>row[k]!==v);return q},gte(k,v){filters.push(row=>row[k]>=v);return q},lt(k,v){filters.push(row=>row[k]<v);return q},gt(k,v){filters.push(row=>row[k]>v);return q},order(){return q},limit(n){size=n;return q},single(){isSingle=true;return q},then(resolve,reject){cloudCalls.push(table);if(cloudCompanySwitch)SFBackend.companyId='company-b';const rows=cloudTables[table].filter(row=>filters.every(f=>f(row))).sort((a,b)=>a.id.localeCompare(b.id)).slice(0,size);return Promise.resolve({data:isSingle?rows[0]:rows,error:cloudFailure===table?{message:'Cloud-Lesefehler'}:null}).then(resolve,reject)}};return q}};
+  employees=[];assignments=[];SchichtFunkCalendarView.getPeriod=()=>({mode:'month',start:'2027-01-01',end:'2027-01-31'});
+ },extra);
+}
+test('January export reads current drafts despite an empty calendar cache and preserves local state',async({page})=>{
+ await cloudFixture(page);const result=await page.evaluate(async()=>{const before=SFScheduleExport.snapshot('2027-01'),plan=await SFScheduleExport.freshSnapshot('2027-01');return {before:before.shiftCount,count:plan.shiftCount,hours:plan.hours,status:plan.status,row:plan.rows[0],employees,assignments,calls:cloudCalls}});
+ expect(result.before).toBe(0);expect(result.count).toBe(1);expect(result.hours).toBe(8);expect(result.status).toBe('Entwurf');expect(result.row.person.name).toBe('Anna Aktuell');expect(result.row.person.team).toBe('B');expect(result.row.person.site).toBe('Leipzig');expect(result.row.targetHours).toBe(180);expect(result.row.cells[30].pdf).toBe('ND');expect(result.employees).toEqual([]);expect(result.assignments).toEqual([]);expect(result.calls.sort()).toEqual(['absences','companies','employees','shift_assignments','shift_templates']);
+});
+test('cloud export reads all pages without the 1000-assignment cap',async({page})=>{
+ const shift_assignments=Array.from({length:1001},(_,i)=>({id:String(i).padStart(5,'0'),company_id:'company-a',employee_id:'db-a',status:'DRAFT',shift_code:'ND',starts_at:'2027-01-01T21:00:00Z',ends_at:'2027-01-02T05:00:00Z'}));await cloudFixture(page,{shift_assignments});
+ const result=await page.evaluate(async()=>{const p=await SFScheduleExport.freshSnapshot('2027-01');return {count:p.shiftCount,hours:p.hours,pages:cloudCalls.filter(t=>t==='shift_assignments').length}});expect(result).toEqual({count:1001,hours:8008,pages:3});
+});
+test('read failures, company changes and pending edits block stale downloads and restore controls',async({page})=>{
+ await cloudFixture(page);await page.getByRole('button',{name:'Gesamtdienstplan als Excel oder PDF exportieren'}).click();await expect(page.getByRole('button',{name:'PDF herunterladen'})).toBeEnabled();let downloads=0;page.on('download',()=>downloads++);
+ for(const [state,message] of [['failure','Cloud-Lesefehler'],['pending','noch gespeichert'],['switch','Unternehmen wurde gewechselt']]){
+  await page.evaluate(state=>{SFBackend.companyId='company-a';cloudFailure=state==='failure'?'shift_assignments':null;SFBackend.syncTimer=state==='pending'?1:null;cloudCompanySwitch=state==='switch'},state);
+  await page.getByRole('button',{name:'PDF herunterladen'}).click();await expect(page.locator('.sf-plan-export-status')).toContainText(message);await expect(page.locator('#sfPlanExportMonth')).toBeEnabled();
+ }expect(downloads).toBe(0);
+});
+test('real January PDF includes fresh drafts, employee count and IST/SOLL hours',async({page})=>{
+ test.skip(!deps,'Real export libraries run in CI.');await cloudFixture(page);for(const lib of [deps.pdf,deps.table])await page.addScriptTag({content:fs.readFileSync(lib,'utf8')});await page.getByRole('button',{name:'Gesamtdienstplan als Excel oder PDF exportieren'}).click();
+ const ready=page.waitForEvent('download');await page.getByRole('button',{name:'PDF herunterladen'}).click();const file=await ready;expect(file.suggestedFilename()).toBe('SchichtFunk_Gesamtdienstplan_2027-01.pdf');const raw=fs.readFileSync(await file.path()).toString('latin1');for(const text of ['Anna Aktuell','Januar 2027','Entwurf','1 / 1 Mitarbeiter','8,00 h','180,00 h','ND'])expect(raw).toContain(text);await expect(page.locator('.sf-plan-export-summary')).toContainText('1 Mitarbeiter · 1 Dienste · 8 Planstunden');
+});
 test('one export action selects the complete month and ignores employee search; company boundaries and roles are enforced',async({page})=>{
   await fixture(page);await page.getByRole('button',{name:'Gesamtdienstplan als Excel oder PDF exportieren'}).click();await expect(page.locator('#sfPlanExportMonth')).toHaveValue('2026-12');await expect(page.locator('.sf-plan-export-summary')).toContainText('31 Tage · 2 Mitarbeiter · 3 Dienste · 23 Planstunden');
   const plan=await page.evaluate(()=>SFScheduleExport.snapshot('2026-12'));expect(plan.rows.map(r=>r.person.id)).toEqual(['A','B']);expect(plan.days).toHaveLength(31);

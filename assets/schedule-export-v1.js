@@ -1,12 +1,56 @@
 // Gesamtdienstplan als echte XLSX-Datei oder PDF, ohne Schreibzugriffe auf Plandaten.
 (function(){
   if(window.SFScheduleExport)return;
-  const managers=new Set(['OWNER','ADMIN','PLANNER','DISPATCHER']),loading=new Map();let dialog=null,busy=false;
+  const managers=new Set(['OWNER','ADMIN','PLANNER','DISPATCHER']),loading=new Map();let dialog=null,busy=false,latestPlan=null;
   function access(){const b=window.SFBackend;if(!b?.ready||!b.companyId||!managers.has(b.role))throw Error('Der Gesamtdienstplan kann nur mit aktiven Planungsrechten exportiert werden.');return b}
   function currentMonth(){const p=window.SchichtFunkCalendarView?.getPeriod?.();if(p?.mode==='month')return p.start.slice(0,7);const d=typeof weekStart!=='undefined'?weekStart:new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
-  function snapshot(month){
+  function snapshot(month,source={}){
     const b=access(),belongs=x=>!(x.companyId||x.company_id)||(x.companyId||x.company_id)===b.companyId;
-    return window.SFScheduleExportCore.buildPlan({month,companyId:b.companyId,company:b.company?.name||document.querySelector('.company-card b')?.textContent||'Unternehmen',employees:(typeof employees!=='undefined'?employees:[]).filter(belongs),assignments:(typeof assignments!=='undefined'?assignments:[]).filter(belongs),absences:(typeof absences!=='undefined'?absences:[]).filter(belongs),types:typeof TYPES!=='undefined'?TYPES:[],typeById:typeof typeById==='function'?typeById:null,getSoll:typeof getSoll==='function'?getSoll:null,employeeMonthlyTarget:typeof employeeMonthlyTarget==='function'?employeeMonthlyTarget:null});
+    return window.SFScheduleExportCore.buildPlan({month,companyId:b.companyId,company:b.company?.name||document.querySelector('.company-card b')?.textContent||'Unternehmen',employees:(typeof employees!=='undefined'?employees:[]).filter(belongs),assignments:(typeof assignments!=='undefined'?assignments:[]).filter(belongs),absences:(typeof absences!=='undefined'?absences:[]).filter(belongs),types:typeof TYPES!=='undefined'?TYPES:[],typeById:typeof typeById==='function'?typeById:null,getSoll:typeof getSoll==='function'?getSoll:null,employeeMonthlyTarget:typeof employeeMonthlyTarget==='function'?employeeMonthlyTarget:null,...source});
+  }
+  // Read independently of the calendar cache, without changing or syncing the plan.
+  async function freshSnapshot(month){
+    window.SFScheduleExportCore.buildPlan({month}); // Validate without using the calendar cache.
+    const b=access(),companyId=b.companyId;
+    if(!b.client?.from||sessionStorage.getItem('sf_demo_session_v1')==='active')return snapshot(month);
+    const assertReady=()=>{
+      if(access().companyId!==companyId||b.companySwitching)throw Error('Das Unternehmen wurde gewechselt. Bitte den Export neu öffnen.');
+      if(b.syncTimer||b.syncing||b.suppressSync||b.employeeStatusSaving||b.teamRhythmSaving)throw Error('Änderungen werden noch gespeichert. Bitte anschließend den Export erneut starten.');
+      if(b.lastSyncError)throw Error('Die letzten Änderungen konnten nicht gespeichert werden. Bitte zuerst die Cloud-Synchronisierung prüfen.');
+    };
+    assertReady();
+    const [year,m]=month.split('-').map(Number),offset=14*60*60*1000;
+    // Include all possible company timezones; buildPlan selects exact local dates.
+    const from=new Date(Date.UTC(year,m-1,1)-offset).toISOString(),to=new Date(Date.UTC(year,m,1)+offset).toISOString();
+    async function readRows(table,filter=q=>q){
+      const rows=[];let cursor=null;
+      for(;;){
+        let q=filter(b.client.from(table).select('*').eq('company_id',companyId)).order('id').limit(500);
+        if(cursor)q=q.gt('id',cursor);
+        const result=await q;assertReady();if(result.error)throw result.error;
+        if(!Array.isArray(result.data))throw Error('Die aktuellen Plandaten konnten nicht vollständig geladen werden.');
+        rows.push(...result.data);if(result.data.length<500)return rows;
+        cursor=result.data[result.data.length-1].id;
+      }
+    }
+    const [co,staff,duties,off,templates]=await Promise.all([
+      b.client.from('companies').select('name,timezone').eq('id',companyId).single(),
+      readRows('employees'),readRows('shift_assignments',q=>q.neq('status','CANCELLED').gte('starts_at',from).lt('starts_at',to)),
+      readRows('absences'),readRows('shift_templates')
+    ]);
+    assertReady();if(co.error)throw co.error;if(!co.data)throw Error('Das Unternehmen konnte nicht geladen werden.');
+    const tz=co.data.timezone||'Europe/Berlin',ids=new Map(staff.map(e=>[e.id,String(e.legacy_id||e.id)]));
+    const date=v=>new Intl.DateTimeFormat('sv-SE',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(v));
+    const time=v=>new Intl.DateTimeFormat('de-DE',{timeZone:tz,hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(v)).replace('24:','00:');
+    const plan=snapshot(month,{
+      company:co.data.name,
+      employees:staff.filter(e=>!e.deleted_at||duties.some(a=>a.employee_id===e.id)).map(e=>({id:ids.get(e.id),first:e.first_name,last:e.last_name,personnelNo:e.personnel_no||'',status:e.deleted_at?'inactive':e.status,startDate:e.start_date,contractEnd:e.contract_end,weeklyHours:Number(e.weekly_hours||0),qualifications:e.qualifications||[],planningTeam:(e.qualifications||[]).find(q=>String(q).startsWith('__sp:planningTeam='))?.slice(18)||''})),
+      assignments:duties.map(a=>({id:a.id,employeeId:ids.get(a.employee_id)||a.employee_id,type:a.shift_code,date:date(a.starts_at),start:time(a.starts_at),end:time(a.ends_at),publishedAt:a.published_at})),
+      absences:off.map(a=>({employeeId:ids.get(a.employee_id)||a.employee_id,startDate:a.start_date,endDate:a.end_date,type:a.absence_type,status:a.status,fullDay:a.full_day})),
+      types:templates.sort((a,b)=>a.sort_order-b.sort_order).map(t=>({id:t.code,name:t.name,start:t.default_start?.slice(0,5),end:t.default_end?.slice(0,5),active:t.active})),
+      typeById:null,employeeMonthlyTarget:null
+    });
+    latestPlan={companyId,plan};return plan;
   }
   function load(src,ready){
     if(ready())return Promise.resolve();if(loading.has(src))return loading.get(src);
@@ -56,7 +100,8 @@
     if(busy)return;const status=dialog.querySelector('.sf-plan-export-status');status.classList.remove('error');
     busy=true;dialog.querySelectorAll('button,input,select').forEach(n=>n.disabled=true);status.textContent='Datei wird erstellt …';
     try{
-      const companyId=access().companyId,fullPlan=snapshot(dialog.querySelector('input').value),plan=format==='pdf'?window.SFScheduleExportCore.selectPDFPlan(fullPlan,dialog.querySelector('#sfPlanExportScope').value):fullPlan;
+      const companyId=access().companyId;status.textContent='Aktueller Dienstplan wird geladen …';
+      const fullPlan=await freshSnapshot(dialog.querySelector('input').value),plan=format==='pdf'?window.SFScheduleExportCore.selectPDFPlan(fullPlan,dialog.querySelector('#sfPlanExportScope').value):fullPlan;
       if(format==='pdf'&&!plan.rows.length)throw Error('Für '+plan.pdfScope+' sind im gewählten Monat keine Mitarbeiter vorhanden.');
       if(format==='xlsx')await load('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',()=>!!window.XLSX);
       else{await load('https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js',()=>!!window.jspdf?.jsPDF);await load('https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js',()=>!!window.jspdf?.jsPDF?.API?.autoTable)}
@@ -69,18 +114,18 @@
   function updateSummary(){
     const box=dialog.querySelector('.sf-plan-export-summary');
     try{
-      const full=snapshot(dialog.querySelector('input').value),p=window.SFScheduleExportCore.selectPDFPlan(full,dialog.querySelector('#sfPlanExportScope').value);
+      const month=dialog.querySelector('input').value,full=latestPlan?.companyId===access().companyId&&latestPlan.plan.month===month?latestPlan.plan:snapshot(month),p=window.SFScheduleExportCore.selectPDFPlan(full,dialog.querySelector('#sfPlanExportScope').value);
       box.textContent='PDF · '+p.pdfScope+' · '+p.label+' · '+p.days.length+' Tage · '+p.rows.length+' Mitarbeiter · '+p.shiftCount+' Dienste · '+p.hours.toLocaleString('de-DE')+' Planstunden · Monats-SOLL '+hours(p.targetHours)+' h · Differenz '+balance(p.difference)+' h · '+p.assignedEmployeeCount+' Mitarbeiter eingeplant'+(!p.rows.length?' · Keine Mitarbeiter für diese Auswahl.':'');
-      dialog.querySelector('[data-format="xlsx"]').disabled=false;dialog.querySelector('[data-format="pdf"]').disabled=!p.rows.length;
+      dialog.querySelector('[data-format="xlsx"]').disabled=false;dialog.querySelector('[data-format="pdf"]').disabled=!p.rows.length&&!access().client?.from;
     }catch(error){box.textContent=error.message;dialog.querySelectorAll('[data-format]').forEach(b=>b.disabled=true)}
   }
   function open(){
     try{access()}catch(error){window.showSaveToast?.('Export nicht verfügbar',error.message);return}
     if(!dialog){dialog=document.createElement('dialog');dialog.className='sf-plan-export-dialog';dialog.id='sfPlanExportDialog';dialog.setAttribute('aria-labelledby','sfPlanExportTitle');dialog.innerHTML='<h2 id="sfPlanExportTitle">Gesamtdienstplan exportieren</h2><p>Wähle für das PDF Leipzig, Recklinghausen oder Gesamt. Alle Dienste der Mitarbeiter des gewählten Standorts werden aufgenommen, auch standortübergreifende Einsätze. Excel und PDF zeigen Dienste je Mitarbeiter, Plan-IST, Monats-SOLL und Differenz. Excel enthält zusätzlich Schichtdetails und die Besetzung.</p><label>Monat<input id="sfPlanExportMonth" type="month" required></label><label>PDF-Auswahl<select id="sfPlanExportScope" aria-describedby="sfPlanExportScopeHint"><option>Leipzig</option><option>Recklinghausen</option><option selected>Gesamt</option></select></label><p id="sfPlanExportScopeHint" class="sf-plan-export-hint">Die Zuordnung erfolgt über „Standort / Zugehörigkeit“ im Mitarbeiterprofil. Gesamt enthält auch Mitarbeiter ohne Standortzuordnung. PDF im Format DIN A3 quer.</p><div class="sf-plan-export-summary" role="status"></div><div class="sf-plan-export-actions"><button type="button" class="ghost" data-close>Schließen</button><button type="button" class="ghost" data-format="xlsx">Excel herunterladen</button><button type="button" class="primary" data-format="pdf">PDF herunterladen</button></div><span class="sf-plan-export-status" role="status"></span>';document.body.append(dialog);dialog.querySelector('input').addEventListener('change',updateSummary);dialog.querySelector('#sfPlanExportScope').addEventListener('change',updateSummary);dialog.querySelector('[data-close]').onclick=()=>dialog.close();dialog.querySelectorAll('[data-format]').forEach(b=>b.onclick=()=>download(b.dataset.format));dialog.addEventListener('cancel',event=>{if(busy)event.preventDefault()})}
-    dialog.querySelector('input').value=currentMonth();dialog.querySelector('#sfPlanExportScope').value='Gesamt';dialog.querySelector('.sf-plan-export-status').textContent='';updateSummary();if(!dialog.open)dialog.showModal();window.SFDateMonthFormat?.refresh(dialog);
+    latestPlan=null;dialog.querySelector('input').value=currentMonth();dialog.querySelector('#sfPlanExportScope').value='Gesamt';dialog.querySelector('.sf-plan-export-status').textContent='';updateSummary();if(!dialog.open)dialog.showModal();window.SFDateMonthFormat?.refresh(dialog);
   }
   function mount(){const head=document.querySelector('#view-schedule .page-head');if(!head||head.querySelector('.sf-schedule-export'))return;const actions=document.createElement('div');actions.className='sf-schedule-export-head-actions';[...head.children].filter(n=>n.tagName==='BUTTON').forEach(n=>actions.append(n));const button=document.createElement('button');button.type='button';button.className='ghost sf-schedule-export';button.textContent='Excel / PDF';button.setAttribute('aria-label','Gesamtdienstplan als Excel oder PDF exportieren');button.onclick=open;actions.append(button);head.append(actions)}
-  window.SFScheduleExport={open,snapshot};
+  window.SFScheduleExport={open,snapshot,freshSnapshot};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
   document.addEventListener('sf:schedule-period-changed',mount);
 })();
