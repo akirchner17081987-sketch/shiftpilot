@@ -79,6 +79,21 @@ for(const theme of ['dark','light'])test(`monthly optimization redistributes unf
  await page.locator('#applyAutoPlanBtn').click();await page.getByRole('dialog').getByRole('button',{name:'Als Entwurf übernehmen',exact:true}).click();expect(await page.evaluate(()=>employees.map(e=>assignments.filter(a=>a.employeeId===e.id).length))).toEqual([2,2]);expect(await page.evaluate(()=>saveCalls)).toBe(1);expect(errors).toEqual([]);
 });
 
+test('confirmed January optimization opens the saved January plan with its actual calendar and month totals',async({page})=>{
+ await fixture(page);
+ await page.evaluate(()=>{
+  document.querySelector('.content').insertAdjacentHTML('beforeend','<section id="view-schedule" class="view"><div class="page-head"><h1>Wochenplanung</h1></div><div><b id="statShifts"></b><em></em><b id="statEmployees"></b><b id="statOpen"></b><b id="statCoverage"></b></div><span id="availableTxt"></span><div class="cal-toolbar"><div class="seg"><button>Woche</button><button>Monat</button></div><button id="prevWeek">Zurück</button><button id="nextWeek">Weiter</button><button id="todayBtn">Heute</button><span id="weekLabel"></span></div><div><div id="calendarGrid"></div><div id="sollList"></div></div></section>');
+  showView=v=>{openedView=v;document.querySelectorAll('.view').forEach(el=>el.classList.toggle('active',el.id==='view-'+v))};
+  employees=['a','b'].map(id=>({id,first:'Test',last:id,status:'active',employment:'Teilzeit',shifts:['FD'],weeklyHours:40,monthlyHours:16}));employeeMonthlyTarget=e=>e.monthlyHours;getSoll=date=>Number(date>='2027-01-01'&&date<='2027-01-04');
+  assignments=['01','02','03','04'].map(d=>({id:d,date:'2027-01-'+d,type:'FD',employeeId:'a',start:'06:00',end:'14:00'}));
+ });
+ await page.addScriptTag({content:read('assets/schedule-month-view-v1.js')});await page.evaluate(()=>SchichtFunkCalendarView.setMonth('2026-12'));
+ await page.locator('#autoPlanMonth').fill('2027-01');await page.locator('#autoPlanMonth').dispatchEvent('change');
+ await page.locator('#optimizeAutoMonthBtn').click();await page.locator('#applyAutoPlanBtn').click();await page.getByRole('dialog').getByRole('button',{name:'Als Entwurf übernehmen',exact:true}).click();
+ expect(await page.evaluate(()=>SchichtFunkCalendarView.getPeriod())).toEqual({mode:'month',start:'2027-01-01',end:'2027-01-31'});
+ await page.locator('#autoOpenScheduleBtn').click();await expect(page.locator('#view-schedule')).toBeVisible();await expect(page.locator('#weekLabel')).toHaveText('Januar 2027');
+ await expect(page.locator('#sfMonthView .sf-month-kpi').first()).toContainText('4');await expect(page.locator('[data-month-date="2027-01-01"]')).toContainText('FD · 1');await expect(page.locator('#statEmployees')).toHaveText('2');
+});
 test('three actual O3 from the previous night transfer OT1 to OT2 and removing one restores OT1',async({page})=>{
  await fixture(page);await page.addScriptTag({content:read('assets/shift-models-v1.js')});
  await page.evaluate(()=>{SFShiftModels.apply([{code:'O3',active:true,default_start:'22:00',default_end:'08:00'}, {code:'OT1',active:true,default_start:'06:00',default_end:'16:00'}, {code:'OT2',active:true,default_start:'08:00',default_end:'18:00',morning_ot_switch_min:3}],'a');globalSoll={O3:3,OT1:1,OT2:1};dailySoll={};employees=[{id:'day',first:'Tag',last:'Test',status:'active',employment:'Vollzeit',shifts:['OT1','OT2'],weeklyHours:40}];assignments=[1,2,3].map(employeeId=>({employeeId,type:'O3',date:'2026-11-30',start:'22:00',end:'08:00'}));});

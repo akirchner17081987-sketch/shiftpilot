@@ -20,14 +20,14 @@ test('shared labels survive grouping while ordinary slot payloads keep their exi
 function syncFixture(){
  const writes=[],saved={shift_assignments:[{id:'db-aug',legacy_id:'aug',status:'PUBLISHED'}],absences:[{id:'absence-aug',legacy_id:'absence-aug'}]},fail={time:false};
  const B={ready:true,companyId:'company-a',user:{id:'owner'},client:{from(table){
-  let operation=null,payload=null,id=null,single=false;
-  const query={upsert(value){operation='upsert';payload=value;return query},update(value){operation='update';payload=value;return query},delete(){operation='delete';return query},select(){return query},eq(key,value){if(key==='id')id=value;return query},single(){single=true;return query},then(resolve,reject){return Promise.resolve().then(()=>{
+  let operation=null,payload=null,id=null,single=false,cursor=null,pageSize=null;
+  const query={upsert(value){operation='upsert';payload=value;return query},update(value){operation='update';payload=value;return query},delete(){operation='delete';return query},select(){return query},eq(key,value){if(key==='id')id=value;return query},order(){return query},limit(n){pageSize=n;return query},gt(key,value){if(key==='id')cursor=value;return query},single(){single=true;return query},then(resolve,reject){return Promise.resolve().then(()=>{
    if(operation){writes.push({table,payload,id});const rows=Array.isArray(payload)?payload:[payload];
     if(rows.some(r=>String(r?.start_date||r?.starts_at||'').startsWith('2026-08')||r?.assignment_id==='db-aug'))return {data:null,error:{message:'Der Monat ist abgeschlossen (August)'}};
     if(table==='time_entries'&&fail.time)return {data:null,error:{message:'Verbindung unterbrochen'}};
     if(table==='shift_assignments')for(const r of rows){const record={...r,id:'db-'+r.legacy_id};saved[table]=saved[table].filter(x=>x.legacy_id!==r.legacy_id).concat(record);}
    }
-   let data=saved[table]||[];if(id)data=data.filter(x=>x.id===id);return {data:single?(data[0]||null):data,error:null};
+   let data=saved[table]||[];if(id)data=data.filter(x=>x.id===id);if(cursor)data=data.filter(x=>x.id>cursor);if(pageSize)data=[...data].sort((a,b)=>a.id.localeCompare(b.id)).slice(0,pageSize);return {data:single?(data[0]||null):data,error:null};
   }).then(resolve,reject)}};return query;
  }}},context={window:{SFBackend:B,SFCompliance:{publications:{},policy:null}},localStorage:{getItem(){return null}},assignments:[{id:'aug',_dbId:'db-aug',_dbStatus:'PUBLISHED',employeeId:'emp',type:'FD',date:'2026-08-01',start:'06:00',end:'14:00'},{id:'dec',employeeId:'emp',type:'FD',date:'2026-12-01',start:'06:00',end:'14:00'}],absences:[{id:'absence-aug',_dbId:'absence-aug',employeeId:'emp',startDate:'2026-08-20',endDate:'2026-08-20',type:'Urlaub',status:'Genehmigt',fullDay:true,note:''}],employees:[],globalSoll:{},dailySoll:{},timeEntries:{aug:{actualStart:'06:00',actualEnd:'14:00',breakMin:0,status:'confirmed'}},typeById:()=>({start:'06:00',end:'14:00'}),setTimeout(){},clearTimeout(){},console:{error(){},warn(){}},Date,Map};
  vm.runInNewContext(fs.readFileSync(new URL('../assets/supabase-data-v1.js',import.meta.url),'utf8'),context);
