@@ -111,3 +111,16 @@ for(const theme of ['dark','light'])test(`draft counts and personal hour balance
  await page.locator('.sf-auto-staircase').screenshot({path:test.info().outputPath(`draft-hours-${theme}.png`)});
  await page.evaluate(()=>removeAutoSuggestion(0));await expect(person).toContainText('Plan-IST 8 h');await expect(person).toContainText('Differenz -8 h');await expect(page.locator('.sf-auto-draft-summary')).toContainText('1 Dienst');expect(errors).toEqual([]);
 });
+
+test('Secontec January draft restricts weekday FD and weekend FD-WE independently of broad permissions',async({page})=>{
+ await fixture(page);await page.addScriptTag({content:read('assets/shift-models-v1.js')});
+ await page.evaluate(()=>{
+  SFShiftModels.apply([{code:'FD',active:true,default_start:'06:00',default_end:'14:00',allowed_personnel_nos:['2048','26','2001'],exclusive_employees:true,strict_weekdays:true,strict_times:true,optional_weekdays:[1,2,3,4,5]},{code:'FD-WE',active:true,default_start:'06:00',default_end:'14:00',requires_planning_team:true,strict_weekdays:true,strict_times:true,optional_weekdays:[6,7],rhythm_alias:'FD'}],'a');
+  employees=['2048','26','2001'].map(personnelNo=>({id:personnelNo,personnelNo,first:'Tagdienst',last:personnelNo,status:'active',employment:'Vollzeit',shifts:['FD','FD-WE'],weeklyHours:40,maxWeeklyHours:40,monthlyHours:180,rhythmMode:'required',rhythmStart:'2026-11-30',rhythmPattern:'FD,FD,FD,FD,FD,FREI,FREI'})).concat(['A','B','C'].map(planningTeam=>({id:planningTeam,personnelNo:planningTeam,first:'Team',last:planningTeam,status:'active',employment:'Vollzeit',shifts:['FD','FD-WE'],planningTeam,weeklyHours:40,monthlyHours:180,rhythmStart:'2026-11-30',rhythmPattern:'FD'})));
+  globalSoll={FD:3,'FD-WE':3};getSoll=(date,type)=>SFShiftModels.requiredSoll(date,type,globalSoll[type]||0);employeeMonthlyTarget=e=>e.monthlyHours;
+ });
+ await page.locator('#autoPlanMonth').fill('2027-01');await page.locator('#autoPlanMonth').dispatchEvent('change');await page.locator('#generateAutoPlanBtn').click();
+ const data=await page.evaluate(()=>({fd:autoPlanPreview.filter(a=>a.type==='FD'),we:autoPlanPreview.filter(a=>a.type==='FD-WE'),free:SFRhythm.check(employees[0],'O1','2027-01-09').expected}));
+ expect(data.fd).toHaveLength(63);expect(data.we).toHaveLength(30);expect(data.fd.every(a=>['2048','26','2001'].includes(a.employeeId)&&new Date(a.date+'T12:00:00').getDay()%6!==0)).toBe(true);expect(data.we.every(a=>['A','B','C'].includes(a.employeeId)&&[0,6].includes(new Date(a.date+'T12:00:00').getDay()))).toBe(true);expect(data.free).toBe('FREI');
+ await expect(page.locator('#autoUnresolvedCount')).toHaveText('0');await expect(page.locator('#autoStaircase')).toContainText('168 h');await expect(page.locator('#autoStaircase')).toContainText('180 h');
+});
