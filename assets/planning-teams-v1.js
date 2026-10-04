@@ -11,7 +11,7 @@
   const label=t=>({FREI:'Frei',ALLE:'Arbeiten (alle freigegebenen Schichten)'}[t]||t);
   M.isLoaded=()=>!demo()&&!!B.companyId&&M.companyId===B.companyId;
   M.canManage=()=>M.isLoaded()&&B.ready&&['OWNER','ADMIN','PLANNER','DISPATCHER'].includes(B.role);
-  M.apply=(rows,companyId)=>{if(demo())return;M.companyId=companyId;M.rules=(rows||[]).map(r=>({team:r.team_code,start:r.start_date,pattern:[...r.pattern],offset:Number(r.start_offset)}));};
+  M.apply=(rows,companyId)=>{if(demo())return;M.companyId=companyId;M.rules=(rows||[]).map(r=>({team:r.team_code,start:r.start_date,pattern:r.pattern.map(t=>window.SFShiftModels?.teamRhythmCode(t)||t),offset:Number(r.start_offset)}));};
   M.get=team=>M.isLoaded()?M.rules.find(r=>r.team===team):null;
   M.suggest=team=>{
     const saved=M.get(team);if(saved)return{...saved,pattern:[...saved.pattern]};
@@ -40,7 +40,7 @@
       const q=await B.client.rpc('manager_save_planning_team',{p_company_id:companyId,p_team_code:valid.team,p_start_date:valid.start,p_pattern:valid.pattern,p_start_offset:valid.offset});
       if(q.error)throw q.error;
       if(B.companyId!==companyId)throw Error('Die Teamregel wurde gespeichert. Bitte lade das Unternehmen neu.');
-      const row=q.data;M.rules=M.rules.filter(r=>r.team!==valid.team);M.rules.push(row?{team:row.team_code,start:row.start_date,pattern:[...row.pattern],offset:Number(row.start_offset)}:valid);
+      const row=q.data;M.rules=M.rules.filter(r=>r.team!==valid.team);M.rules.push(row?{team:row.team_code,start:row.start_date,pattern:row.pattern.map(t=>window.SFShiftModels?.teamRhythmCode(t)||t),offset:Number(row.start_offset)}:valid);
       window.clearAutoPlanPreview?.();
       for(const fn of ['renderEmployees','renderPlanEmployeePool','renderCalendar','renderOverview'])window[fn]?.();
       return valid;

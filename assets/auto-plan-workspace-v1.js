@@ -18,7 +18,7 @@
     if(!pool.length)return'Keine aktiven Mitarbeiter vorhanden. Prüfe die Mitarbeiterprofile.';
     pool=pool.filter(e=>(e.shifts||[]).includes(type));
     if(!pool.length)return`Kein aktiver Mitarbeiter hat eine Freigabe für ${type}. Prüfe die Schichtfreigaben.`;
-    pool=pool.filter(e=>window.SFShiftModels?.allowsEmployee?.(type,e)!==false);
+    pool=pool.filter(e=>window.SFShiftModels?.allowsEmployee?.(type,e,date)!==false);
     if(!pool.length)return'Für diese Schicht fehlt ein aktiver zuständiger Mitarbeiter mit Schichtfreigabe.';
     pool=pool.filter(e=>!absent(e.id,date));
     if(!pool.length)return'Alle passenden Mitarbeiter sind an diesem Tag abwesend.';

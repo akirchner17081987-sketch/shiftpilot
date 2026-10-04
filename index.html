@@ -438,7 +438,7 @@ function autoEligibleEmployees(type,date,simulated=[]){
   const respectHours=document.getElementById('autoRespectHours')?.checked!==false;
   const fair=document.getElementById('autoFairDistribution')?.checked!==false;
   const all=[...assignments,...simulated];
-  return employees.filter(e=>e.status==='active'&&(e.shifts||[]).includes(type)&&(window.SFShiftModels?.allowsEmployee?.(type,e)!==false)&&!absent(e.id,date)&&!all.some(a=>a.date===date&&a.employeeId===e.id)&&(!window.sfRhythmCheck||window.sfRhythmCheck(e,type,date).mode!=='required'||window.sfRhythmCheck(e,type,date).allowed)).map(e=>{
+  return employees.filter(e=>e.status==='active'&&(e.shifts||[]).includes(type)&&(window.SFShiftModels?.allowsEmployee?.(type,e,date)!==false)&&!absent(e.id,date)&&!all.some(a=>a.date===date&&a.employeeId===e.id)&&(!window.sfRhythmCheck||window.sfRhythmCheck(e,type,date).mode!=='required'||window.sfRhythmCheck(e,type,date).allowed)).map(e=>{
     const h=autoPlannedHours(e.id,simulated,date),{target,weeklyLimit,monthTarget,monthLimit}=autoHourLimits(e,respectHours),monthHours=plannedMonthlyHoursForEmployee(e.id,date,simulated);
     const t=typeById(type); let dur=0;if(t){const a=t.start.split(':').map(Number),b=t.end.split(':').map(Number);let m=b[0]*60+b[1]-(a[0]*60+a[1]);if(m<0)m+=1440;dur=m/60}
     const overWeek=!!(respectHours&&weeklyLimit&&h+dur>weeklyLimit+0.01),overMonth=monthHours+dur>monthLimit+1e-8;
@@ -1029,16 +1029,16 @@ table th,table td{font-size:13px;line-height:1.35}
 <link rel="stylesheet" href="assets/schedule-employee-display-v1.css?v=20261003-persondark1">
 <script src="assets/schedule-employee-display-v1.js?v=20261004-teamorder1"></script>
 <script src="assets/navigation-compat-v1.js?v=20260930-tenbreaks1&period=20261001-1&models=1&auto=20261001-workflow2&mobile=20261002-sheetguard1&export=20261003-exporthours1"></script>
-<script src="assets/schichtfunk-schedule-core-v1.js?v=20261002-weekdays1"></script>
+<script src="assets/schichtfunk-schedule-core-v1.js?v=20261004-fd-split1"></script>
 <script src="assets/assignment-quick-delete-v1.js"></script>
-<script src="assets/conflict-plausibility-v1.js?v=20261004-all-plan-pages1"></script>
+<script src="assets/conflict-plausibility-v1.js?v=20261004-fd-split1"></script>
 <script src="assets/employee-core-v1.js?v=20261001-removal1"></script>
-<script src="assets/employee-rhythm-v1.js?v=20261003-workrest1"></script>
-<script src="assets/planning-teams-v1.js?v=20261001-centralteams1"></script>
+<script src="assets/employee-rhythm-v1.js?v=20261004-fd-split1"></script>
+<script src="assets/planning-teams-v1.js?v=20261004-fd-split1"></script>
 <link rel="stylesheet" href="assets/open-shift-marketplace-v1.css?v=20261001-market1">
 <script src="assets/open-shift-marketplace-v1.js?v=20261002-sharedtl2"></script>
 <script src="assets/month-optimizer-core-v1.js?v=20261003-monthopt1"></script>
-<script src="assets/auto-plan-workspace-v1.js?v=20261003-secontecorder1"></script>
+<script src="assets/auto-plan-workspace-v1.js?v=20261004-fd-split1"></script>
 <script src="assets/month-optimizer-v1.js?v=20261004-plan-month1"></script>
 <script src="assets/planning-assistant-core-v1.js?v=20261001-4"></script>
 <script src="assets/planning-assistant-v1.js?v=20261001-5"></script>

@@ -14,12 +14,25 @@
   M.apply=(rows,companyId)=>{
     if(demo())return;
     M.companyId=companyId;
-    M.models=(rows||[]).map(x=>({id:x.code,name:x.name||x.code,start:x.default_start?.slice(0,5)||'06:00',end:x.default_end?.slice(0,5)||'14:00',cls:palette[x.css_class]?x.css_class:'teal',active:x.active!==false,_dbId:x.id,sortOrder:x.sort_order||0,planningMode:x.planning_mode||'required',optionalStaffing:Number(x.optional_staffing)||0,responsibleEmployeeId:x.responsible_employee_id||null,responsibleOnly:x.responsible_only===true,optionalWeekdays:x.optional_weekdays||[1,2,3,4,5,6,7],coverageGroup:x.coverage_group||null,coverageRequired:Number(x.coverage_required)||0,morningOtMinimum:Number(x.morning_ot_switch_min)||0}));
+    M.models=(rows||[]).map(x=>({id:x.code,name:x.name||x.code,start:x.default_start?.slice(0,5)||'06:00',end:x.default_end?.slice(0,5)||'14:00',cls:palette[x.css_class]?x.css_class:'teal',active:x.active!==false,_dbId:x.id,sortOrder:x.sort_order||0,planningMode:x.planning_mode||'required',optionalStaffing:Number(x.optional_staffing)||0,responsibleEmployeeId:x.responsible_employee_id||null,responsibleOnly:x.responsible_only===true,optionalWeekdays:x.optional_weekdays||[1,2,3,4,5,6,7],coverageGroup:x.coverage_group||null,coverageRequired:Number(x.coverage_required)||0,morningOtMinimum:Number(x.morning_ot_switch_min)||0,allowedPersonnelNos:x.allowed_personnel_nos||null,exclusiveEmployees:x.exclusive_employees===true,requiresPlanningTeam:x.requires_planning_team===true,strictWeekdays:x.strict_weekdays===true,strictTimes:x.strict_times===true,rhythmAlias:x.rhythm_alias||null}));
     if(typeof TYPES!=='undefined')TYPES.splice(0,TYPES.length,...M.models.filter(x=>x.active).map(x=>({...x})));
     if(typeof selectedType!=='undefined'&&!M.activeCodes().includes(selectedType))selectedType=M.activeCodes()[0]||null;
   };
   const staff=()=>typeof employees==='undefined'?[]:employees;
-  M.allowsEmployee=(code,employee)=>{const t=M.find(code);return !t?.responsibleOnly||!!t.responsibleEmployeeId&&String(employee?._dbId||employee?.id)===String(t.responsibleEmployeeId)};
+  M.planningRestriction=(code,employee,date,start,end)=>{
+    if(!M.isCompanyLoaded()||!employee)return null;
+    const t=M.find(code),no=String(employee.personnelNo??employee.personnel_no??''),exclusive=M.models.find(x=>x.active&&x.exclusiveEmployees&&x.allowedPersonnelNos?.map(String).includes(no));
+    if(exclusive&&exclusive.id!==code)return `Personalnummer ${no} ist ausschließlich für ${exclusive.id} freigegeben.`;
+    if(!t)return null;
+    if(t.allowedPersonnelNos&&!t.allowedPersonnelNos.map(String).includes(no))return `${code} ist nur für Personalnummern ${t.allowedPersonnelNos.join(', ')} freigegeben.`;
+    const team=employee.planningTeam??String((employee.qualifications||[]).find(x=>String(x).startsWith('__sp:planningTeam='))||'').slice(18);
+    if(t.requiresPlanningTeam&&!['A','B','C','D','E'].includes(team))return `${code} ist ausschließlich für Mitarbeiter in Teams A–E freigegeben.`;
+    if(t.strictWeekdays&&date&&!t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7))return `${code} ist an diesem Wochentag nicht zulässig.`;
+    if(t.strictTimes&&((start&&start!==t.start)||(end&&end!==t.end)))return `${code} gilt ausschließlich von ${t.start} bis ${t.end} Uhr.`;
+    return null;
+  };
+  M.allowsEmployee=(code,employee,date)=>{const t=M.find(code);return !M.planningRestriction(code,employee,date)&&(!t?.responsibleOnly||!!t.responsibleEmployeeId&&String(employee?._dbId||employee?.id)===String(t.responsibleEmployeeId))};
+  M.teamRhythmCode=token=>M.isCompanyLoaded()?(M.models.find(t=>t.active&&t.requiresPlanningTeam&&t.rhythmAlias===token)?.id||token):token;
   M.coverageGroup=code=>{const t=M.find(code);if(!t?.coverageGroup)return null;const members=M.models.map(x=>M.find(x.id)).filter(x=>x.coverageGroup===t.coverageGroup),active=members.filter(x=>x.active).sort((a,b)=>a.sortOrder-b.sortOrder||a.id.localeCompare(b.id));return {key:t.coverageGroup,label:t.coverageGroup,members,active,representative:active[0]?.id,required:t.coverageRequired,start:t.start,end:t.end}};
   M.coverageTarget=(date,code)=>{const g=M.coverageGroup(code);if(!g)return null;const values=g.active.map(t=>typeof dailySoll==='undefined'?null:dailySoll[date]?.[t.id]).filter(x=>x!=null);return values.length?Math.max(...values.map(Number)):g.active.some(t=>t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7))?g.required:0};
   const minutes=value=>{const [h,m]=value.split(':').map(Number);return h*60+m};
@@ -38,7 +51,7 @@
     for(const a of all){if(a.type!=='O3'||a.date!==day||a.status==='CANCELLED')continue;const t=M.find(a.type),s=new Date(a.date+'T'+(a.start||t?.start||'22:00')+':00'),e=new Date(a.date+'T'+(a.end||t?.end||'08:00')+':00');if(e<=s)e.setDate(e.getDate()+1);if(s<=start&&e>=end)seen.add(String(a.employeeId))}
     return seen.size>=minimum;
   };
-  M.rawRequired=(date,code,fallback)=>{const override=typeof dailySoll==='undefined'?null:dailySoll[date]?.[code],t=M.find(code);return override!=null?Number(override):t&&(t.planningMode==='optional'||!t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7))?0:fallback};
+  M.rawRequired=(date,code,fallback)=>{const override=typeof dailySoll==='undefined'?null:dailySoll[date]?.[code],t=M.find(code);if(t?.strictWeekdays&&!t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7))return 0;return override!=null?Number(override):t&&(t.planningMode==='optional'||!t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7))?0:fallback};
   M.requiredSoll=(date,code,fallback)=>{const g=M.coverageInfo(date,code);if(g){const own=typeof assignments==='undefined'?0:assignments.filter(a=>a.date===date&&a.type===code&&a.status!=='CANCELLED').length;return own+(g.representative===code?g.missing:0)}
     const raw=M.rawRequired(date,code,fallback);
     if(['OT1','OT2'].includes(code)&&M.morningOtSwitch(date)){

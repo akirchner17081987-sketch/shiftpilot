@@ -43,6 +43,7 @@
     const existing=ignoreId?assignments.find(a=>a.id===ignoreId):null;
     if(t.active===false&&existing?.type!==type)hard.push('Dieses Schichtmodell wurde aus der Planung entfernt.');
     if(!(emp.shifts||[]).includes(type))hard.push(`Keine Freigabe für ${type}.`);
+    const scope=window.SFShiftModels?.planningRestriction(type,emp,date,start||t.start,end||t.end);if(scope)hard.push(scope);
     const rhythm=window.sfRhythmCheck?.(emp,type,date);
     if(rhythm?.mode==='required'&&!rhythm.allowed)hard.push(`Verbindliche Schichtregel: ${rhythm.reason}.`);
     else if(rhythm?.mode==='preferred'&&!rhythm.allowed)soft.push(`Bevorzugte Schichtregel: ${rhythm.reason}.`);

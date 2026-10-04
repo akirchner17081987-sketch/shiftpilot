@@ -51,3 +51,45 @@ test('morning OT proposals change times and revert when a supporting O3 is remov
  c.assignments=[...night,{...a,date:'2026-12-02'}];assert.equal(M.requiredSoll('2026-12-02','OT2',1),1);assert.equal(M.requiredSoll('2026-12-02','OT1',1),1);
  c.window.SFBackend.companyId='b';assert.equal(M.morningOtSwitch('2026-12-02'),false);
 });
+
+test('exclusive weekday FD and team weekend FD-WE reject wrong staff, days and times',()=>{
+ const {M}=harness();M.apply([
+  {...row('FD'),allowed_personnel_nos:['2048','26','2001'],exclusive_employees:true,strict_weekdays:true,strict_times:true,optional_weekdays:[1,2,3,4,5]},
+  {...row('FD-WE'),requires_planning_team:true,strict_weekdays:true,strict_times:true,optional_weekdays:[6,7],rhythm_alias:'FD'},
+  {...row('SD'),default_start:'14:00',default_end:'22:00'}
+ ],'a');
+ const day={personnelNo:'2048'},team={personnelNo:'126',qualifications:['__sp:planningTeam=D']},other={personnelNo:'999'};
+ for(const no of ['2048','26','2001'])assert.equal(M.allowsEmployee('FD',{personnelNo:no},'2027-01-04'),true);
+ assert.equal(M.allowsEmployee('FD',day,'2027-01-02'),false);
+ assert.equal(M.allowsEmployee('FD',team,'2027-01-04'),false);
+ assert.equal(M.allowsEmployee('FD-WE',day,'2027-01-02'),false);
+ assert.equal(M.allowsEmployee('SD',day,'2027-01-04'),false);
+ assert.equal(M.allowsEmployee('FD-WE',team,'2027-01-02'),true);
+ assert.equal(M.allowsEmployee('FD-WE',team,'2027-01-04'),false);
+ assert.equal(M.allowsEmployee('FD-WE',other,'2027-01-02'),false);
+ assert.match(M.planningRestriction('FD',day,'2027-01-04','07:00','15:00'),/06:00 bis 14:00/);
+ assert.equal(M.planningRestriction('FD',day,'2027-01-04','06:00','14:00'),null);
+});
+test('strict weekday demand cannot be reenabled with daily overrides; ordinary models retain overrides',()=>{
+ const {M,c}=harness();M.apply([{...row('FD'),strict_weekdays:true,optional_weekdays:[1,2,3,4,5]}, {...row('FD-WE'),strict_weekdays:true,optional_weekdays:[6,7]}, {...row('OTHER'),optional_weekdays:[6,7]}],'a');
+ c.dailySoll={'2027-01-02':{FD:9},'2027-01-04':{'FD-WE':9,OTHER:2}};
+ assert.equal(M.rawRequired('2027-01-02','FD',3),0);assert.equal(M.rawRequired('2027-01-04','FD-WE',3),0);assert.equal(M.rawRequired('2027-01-04','OTHER',3),2);assert.equal(M.rawRequired('2027-01-02','FD-WE',3),3);
+});
+test('team rhythm resolves FD to FD-WE while personal weekday FD stays unchanged',()=>{
+ const {M,c}=harness();M.apply([{...row('FD'),allowed_personnel_nos:['2048'],exclusive_employees:true,strict_weekdays:true,optional_weekdays:[1,2,3,4,5]}, {...row('FD-WE'),requires_planning_team:true,strict_weekdays:true,optional_weekdays:[6,7],rhythm_alias:'FD'}],'a');
+ vm.runInNewContext(fs.readFileSync(new URL('../assets/employee-rhythm-v1.js',import.meta.url),'utf8'),c);
+ const team={personnelNo:'126',planningTeam:'D',rhythmStart:'2027-01-02',rhythmPattern:'FD,FD'},day={personnelNo:'2048',rhythmMode:'required',rhythmStart:'2027-01-04',rhythmPattern:'FD,FD,FD,FD,FD,FREI,FREI'};
+ assert.equal(c.window.SFRhythm.check(team,'FD-WE','2027-01-02').allowed,true);assert.equal(c.window.SFRhythm.check(team,'FD-WE','2027-01-04').allowed,false);
+ assert.equal(c.window.SFRhythm.check(day,'FD','2027-01-04').allowed,true);
+ assert.equal(c.window.SFRhythm.config(day).pattern[0],'FD');assert.equal(c.window.SFRhythm.check(day,'O1','2027-01-09').expected,'FREI');
+ M.apply([row('FD')],'a');assert.equal(M.teamRhythmCode('FD'),'FD');
+});
+test('manual compliance treats staff and shift time restrictions as hard conflicts',()=>{
+ const {M,c}=harness();M.apply([{...row('FD'),allowed_personnel_nos:['2048'],exclusive_employees:true,strict_weekdays:true,strict_times:true,optional_weekdays:[1,2,3,4,5]},row('SD')],'a');
+ Object.assign(c,{assignments:[],absences:[],store:{get:(_key,fallback)=>fallback,set:()=>{}},typeById:code=>c.TYPES.find(t=>t.id===code),getSoll:()=>3,assignmentsFor:()=>[]});
+ vm.runInNewContext(fs.readFileSync(new URL('../assets/compliance-core-v2.js',import.meta.url),'utf8'),c);
+ const day={id:'d',personnelNo:'2048',status:'active',shifts:['FD','SD']};
+ assert.ok(c.window.SFCompliance.check(day,'FD','2027-01-04','07:00','15:00').hard.some(x=>x.includes('06:00 bis 14:00')));
+ assert.ok(c.window.SFCompliance.check(day,'SD','2027-01-04').hard.some(x=>x.includes('ausschließlich')));
+ assert.equal(c.window.SFCompliance.check(day,'FD','2027-01-04').hard.length,0);
+});
