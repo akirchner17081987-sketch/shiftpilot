@@ -71,3 +71,31 @@ test('export uses persisted monthly targets, weekly fallback and the shared Seco
  assert.deepEqual(plan.rows.map(r=>r.person.personnelNo),['2001','26','2048','109','2059','37','119','2015','126','999']);assert.ok(plan.rows.every(r=>r.targetHours===144));
  assert.equal(buildPlan({...base,employees:[{id:'A',status:'active',weeklyHours:40}],assignments:[]}).rows[0].targetHours,173.92);
 });
+
+test('object totals distinguish personal targets, daily open hours and excess coverage',()=>{
+ const plan=buildPlan({...base,employees:[{id:'A',status:'active',monthlyHours:180}],assignments:[{employeeId:'A',date:'2026-12-01',type:'FD',start:'06:00',end:'13:00'},{employeeId:'A',date:'2026-12-01',type:'FD'}],getSoll:(date)=>date==='2026-12-01'?1:0});
+ assert.equal(plan.targetHours,180);assert.equal(plan.hours,15);
+ assert.deepEqual(plan.objectTotals,{requiredDuties:2,openDuties:1,requiredHours:16,openHours:8,overstaffedDuties:1});
+ assert.equal(plan.coverage.find(c=>c.date==='2026-12-01'&&c.type==='FD').actualHours,15);
+ assert.equal(selectPDFPlan(plan,'Leipzig').objectTotals,null);
+ assert.ok(workbookRows(plan).legend.some(row=>row[0]==='Offene Stunden'&&row[1]===8));
+});
+test('fresh staffing rules respect FD weekdays, weekend shifts and explicit zero overrides',()=>{
+ const {staffingResolver}=createRequire(import.meta.url)('../assets/schedule-export-core-v1.js');
+ const types=[{id:'FD',start:'06:00',end:'14:00',optionalWeekdays:[1,2,3,4,5],strictWeekdays:true},{id:'FD-WE',start:'06:00',end:'14:00',optionalWeekdays:[6,7],strictWeekdays:true},{id:'ND',start:'22:00',end:'06:00'}];
+ const getSoll=staffingResolver(types,[{shift_code:'FD',required_count:3},{shift_code:'FD-WE',required_count:4},{shift_code:'ND',required_count:6}],[{work_date:'2027-01-01',shift_code:'ND',required_count:0},{work_date:'2027-01-02',shift_code:'FD',required_count:3}],[]);
+ const plan=buildPlan({month:'2027-01',types,getSoll});
+ assert.equal(getSoll('2027-01-02','FD'),0);assert.equal(getSoll('2027-01-01','FD-WE'),0);assert.equal(getSoll('2027-01-02','FD-WE'),4);assert.equal(getSoll('2027-01-01','ND'),0);
+ assert.equal(plan.objectTotals.requiredDuties,63+40+180);assert.equal(plan.objectTotals.requiredHours,(63+40+180)*8);
+ assert.throws(()=>buildPlan({month:'2027-01',types:[{id:'BAD'}],getSoll:()=>1}),/SOLL-Stunden/);
+});
+
+test('shared staffing and OT substitution retain the planning coverage rules',()=>{
+ const {staffingResolver}=createRequire(import.meta.url)('../assets/schedule-export-core-v1.js');
+ const types=[{id:'TL-A',start:'18:00',end:'06:00',coverageGroup:'TL',coverageRequired:2},{id:'TL-B',start:'18:00',end:'06:00',coverageGroup:'TL',coverageRequired:2},{id:'OT1',start:'06:00',end:'18:00'},{id:'OT2',start:'06:00',end:'18:00',morningOtMinimum:3},{id:'O3',start:'22:00',end:'08:00'}];
+ const assignments=[{employeeId:'A',type:'TL-B',date:'2027-01-01'},...['A','B','C'].map(employeeId=>({employeeId,type:'O3',date:'2026-12-31'}))];
+ const resolve=staffingResolver(types,[{shift_code:'OT1',required_count:1},{shift_code:'OT2',required_count:1}],[],assignments);
+ assert.equal(resolve('2027-01-01','TL-A'),1);assert.equal(resolve('2027-01-01','TL-B'),1);assert.equal(resolve('2027-01-01','OT1'),0);assert.equal(resolve('2027-01-01','OT2'),2);
+ const override=staffingResolver(types,[],[{work_date:'2027-01-01',shift_code:'OT1',required_count:1}],assignments);
+ assert.equal(override('2027-01-01','OT1'),1);
+});
