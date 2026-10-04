@@ -65,8 +65,9 @@ test('monthly personal targets, zero hours and missing targets remain distinct i
  const missing=buildPlan({...base,employees:[{id:'A',first:'Unknown',status:'active'}],assignments:[base.assignments[0]]});assert.equal(missing.rows[0].targetHours,null);assert.equal(missing.difference,null);
 });
 test('export uses persisted monthly targets, weekly fallback and the shared Secontec employee order',()=>{
- const people=['37','26','2001','2048','119','2015','2059','109'].map(personnelNo=>({id:personnelNo,first:'Test',last:personnelNo,status:'active',personnelNo,weeklyHours:40,qualifications:['__sp:monthlyHours=144']}));
+ const teams={'37':'B','119':'C','2015':'D','2059':'A','109':'A','126':'E'};
+ const people=['37','26','2001','2048','119','2015','2059','109','126','999'].map(personnelNo=>({id:personnelNo,first:'Test',last:personnelNo,status:'active',personnelNo,weeklyHours:40,qualifications:['__sp:monthlyHours=144',...(teams[personnelNo]?['__sp:planningTeam='+teams[personnelNo]]:[])]}));
  const plan=buildPlan({...base,companyId:'1f23f5a3-1cbb-430f-af90-36ed34004440',employees:people,assignments:[],employeeMonthlyTarget:()=>173.92});
- assert.deepEqual(plan.rows.map(r=>r.person.personnelNo),['2001','26','2048','2059','37','119','2015','109']);assert.ok(plan.rows.every(r=>r.targetHours===144));
+ assert.deepEqual(plan.rows.map(r=>r.person.personnelNo),['2001','26','2048','109','2059','37','119','2015','126','999']);assert.ok(plan.rows.every(r=>r.targetHours===144));
  assert.equal(buildPlan({...base,employees:[{id:'A',status:'active',weeklyHours:40}],assignments:[]}).rows[0].targetHours,173.92);
 });
