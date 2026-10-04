@@ -3,7 +3,7 @@
   const B=window.SFBackend=window.SFBackend||{},C=window.SFCompliance=window.SFCompliance||{};
   const MANAGER=new Set(['OWNER','ADMIN','DISPATCHER','PLANNER']);
   const LEVEL={green:0,amber:1,red:2};
-  let confirmations=new Map(),changeRequestsByAssignment=new Map(),lastModel=null,loading=false;
+  let confirmations=new Map(),changeRequestsByAssignment=new Map(),loadVersion=0,confirmationScope='';
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const key=(assignmentId,employeeId)=>`${assignmentId}|${employeeId}`;
   const fmtDate=v=>new Intl.DateTimeFormat('de-DE',{weekday:'short',day:'2-digit',month:'2-digit'}).format(new Date(`${v}T12:00:00`));
@@ -13,6 +13,17 @@
   const allAssignments=()=>typeof assignments==='undefined'?[]:assignments;
   const allEmployees=()=>typeof employees==='undefined'?[]:employees;
   const allTypes=()=>typeof TYPES==='undefined'?[]:TYPES;
+  function selectedPeriod(){
+    const selected=window.SchichtFunkCalendarView?.getPeriod?.();
+    if(selected?.start&&selected?.end){
+      const dates=[],end=new Date(`${selected.end}T12:00:00`);
+      for(let day=new Date(`${selected.start}T12:00:00`);day<=end;day.setDate(day.getDate()+1))dates.push(`${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`);
+      const label=selected.mode==='month'?new Date(`${selected.start}T12:00:00`).toLocaleDateString('de-DE',{month:'long',year:'numeric'}):`${fmtDate(selected.start)} – ${fmtDate(selected.end)}`;
+      return{dates,label,scope:`${B.companyId}|${selected.start}|${selected.end}`};
+    }
+    const dates=typeof currentWeekDates==='function'?currentWeekDates().map(iso):[];
+    return{dates,label:dates.length?`${fmtDate(dates[0])} – ${fmtDate(dates.at(-1))}`:'Ausgewählter Zeitraum',scope:`${B.companyId}|${dates.join(',')}`};
+  }
   const confirmationReason=(a,requests=C.requests||[],threshold=Number(C.policy?.employeeConfirmationUnderHours||24))=>{
     const date=a.date||String(a.starts_at||'').slice(0,10),time=a.start||String(a.starts_at||'').slice(11,16)||'00:00';
     const start=new Date(`${date}T${time}:00`).getTime(),published=new Date(a.publishedAt||a.published_at||0).getTime();
@@ -36,21 +47,27 @@
   }
 
   async function loadManagerConfirmations(){
-    if(!B.client||!B.companyId||!MANAGER.has(B.role)||loading)return confirmations;
-    loading=true;
+    const version=++loadVersion,{dates,scope}=selectedPeriod(),companyId=B.companyId;
+    if(scope!==confirmationScope){confirmations=new Map();changeRequestsByAssignment=new Map();confirmationScope=scope}
+    if(!B.client||!companyId||!MANAGER.has(B.role))return confirmations;
     try{
-      const weekDates=typeof currentWeekDates==='function'?currentWeekDates().map(iso):[];
-      const ids=allAssignments().filter(a=>weekDates.includes(a.date)).map(dbAssignment).filter(Boolean);
+      const ids=[...new Set(allAssignments().filter(a=>dates.includes(a.date)).map(dbAssignment).filter(Boolean))];
       if(!ids.length){confirmations=new Map();changeRequestsByAssignment=new Map();return confirmations}
-      const [q,changes]=await Promise.all([B.client.from('shift_assignment_confirmations').select('assignment_id,employee_id,status,note,responded_at').eq('company_id',B.companyId).in('assignment_id',ids),B.client.from('shift_assignments').select('id,last_change_request_id').eq('company_id',B.companyId).in('id',ids)]);
-      if(q.error)throw q.error;if(changes.error)throw changes.error;
-      confirmations=new Map((q.data||[]).map(x=>[key(x.assignment_id,x.employee_id),x]));changeRequestsByAssignment=new Map((changes.data||[]).filter(x=>x.last_change_request_id).map(x=>[String(x.id),x.last_change_request_id]));
-    }catch(e){console.warn('Einsatzbereitschaft: Bestätigungen konnten nicht geladen werden',e)}finally{loading=false}
+      const responses=[],changesRows=[];
+      for(let offset=0;offset<ids.length;offset+=200){
+        const batch=ids.slice(offset,offset+200);
+        const [q,changes]=await Promise.all([B.client.from('shift_assignment_confirmations').select('assignment_id,employee_id,status,note,responded_at').eq('company_id',companyId).in('assignment_id',batch),B.client.from('shift_assignments').select('id,last_change_request_id').eq('company_id',companyId).in('id',batch)]);
+        if(version!==loadVersion||scope!==selectedPeriod().scope||!MANAGER.has(B.role))return confirmations;
+        if(q.error)throw q.error;if(changes.error)throw changes.error;
+        responses.push(...q.data||[]);changesRows.push(...changes.data||[]);
+      }
+      confirmations=new Map(responses.map(x=>[key(x.assignment_id,x.employee_id),x]));changeRequestsByAssignment=new Map(changesRows.filter(x=>x.last_change_request_id).map(x=>[String(x.id),x.last_change_request_id]));
+    }catch(e){console.warn('Einsatzbereitschaft: Bestätigungen konnten nicht geladen werden',e)}
     return confirmations;
   }
 
   function evaluate(){
-    const dates=typeof currentWeekDates==='function'?currentWeekDates().map(iso):[],slots=new Map();
+    const {dates,label}=selectedPeriod(),slots=new Map();
     for(const date of dates)for(const t of allTypes()){const required=Number(getSoll(date,t.id)||0);if(required>0)slots.set(`${date}|${t.id}`,{date,type:t.id,required,assignments:[]})}
     for(const a of allAssignments()){if(!dates.includes(a.date))continue;const k=`${a.date}|${a.type}`;if(!slots.has(k))slots.set(k,{date:a.date,type:a.type,required:Number(getSoll(a.date,a.type)||0),assignments:[]});slots.get(k).assignments.push(a)}
     const rows=[...slots.values()].map(slot=>{
@@ -83,20 +100,20 @@
       const level=maxLevel(uniqueFindings);return{...slot,actual,findings:uniqueFindings,level};
     }).sort((a,b)=>LEVEL[b.level]-LEVEL[a.level]||a.date.localeCompare(b.date)||a.type.localeCompare(b.type));
     const count=l=>rows.filter(x=>x.level===l).length,overall=rows.some(x=>x.level==='red')?'red':rows.some(x=>x.level==='amber')?'amber':'green';
-    return{rows,overall,green:count('green'),amber:count('amber'),red:count('red'),week:dates.length?`${fmtDate(dates[0])} – ${fmtDate(dates.at(-1))}`:'Aktuelle Woche'};
+    return{rows,overall,green:count('green'),amber:count('amber'),red:count('red'),periodLabel:label};
   }
 
   function render(){
     if(!MANAGER.has(B.role))return;
-    const page=document.getElementById('view-schedule');if(!page)return;css();lastModel=evaluate();
+    const page=document.getElementById('view-schedule');if(!page)return;css();
     let panel=document.getElementById('sfReadinessPanel');if(!panel){panel=document.createElement('section');panel.id='sfReadinessPanel';const anchor=page.querySelector('.library')||page.querySelector('.calendar');anchor?.insertAdjacentElement('beforebegin',panel)}
-    const m=lastModel,label=m.overall==='red'?'Einsatz gefährdet':m.overall==='amber'?'Prüfung erforderlich':'Einsatzbereit',symbol=m.overall==='green'?'✓':m.overall==='amber'?'!':'×',top=m.rows.filter(x=>x.level!=='green').slice(0,4);
-    panel.className=`sf-ready ${m.overall}`;panel.innerHTML=`<div class="sf-ready-head"><div class="sf-ready-light" aria-label="${esc(label)}">${symbol}</div><div class="sf-ready-title"><b>Einsatzbereitschaft · ${esc(label)}</b><small>${esc(m.week)} · Besetzung, Freigaben, Ruhezeiten, Veröffentlichung und Bestätigungen</small></div><div class="sf-ready-counts"><span class="sf-ready-count green">${m.green} bereit</span><span class="sf-ready-count amber">${m.amber} prüfen</span><span class="sf-ready-count red">${m.red} kritisch</span></div></div>${top.length?`<div class="sf-ready-summary">${top.map(x=>`<div class="sf-ready-issue"><span class="sf-ready-dot ${x.level}"></span><div><b>${esc(fmtDate(x.date))} · ${esc(x.type)}</b><small>${esc(x.findings.find(f=>f.level===x.level)?.text||'Prüfung erforderlich')}</small></div><span class="sf-ready-row-state ${x.level}">${x.level==='red'?'Kritisch':'Prüfen'}</span></div>`).join('')}</div>`:`<div class="sf-ready-summary"><div class="sf-ready-issue"><span class="sf-ready-dot green"></span><div><b>Alle vorgesehenen Schichten sind einsatzbereit</b><small>Aktuell bestehen keine offenen kritischen Prüfungen.</small></div></div></div>`}<div class="sf-ready-action"><small>Entscheidungshilfe auf Basis der hinterlegten Daten · keine automatische Rechtsfreigabe</small><button class="ghost" id="sfReadinessDetails" type="button">Alle Schichten prüfen</button></div>`;
+    const m=evaluate(),label=m.overall==='red'?'Einsatz gefährdet':m.overall==='amber'?'Prüfung erforderlich':'Einsatzbereit',symbol=m.overall==='green'?'✓':m.overall==='amber'?'!':'×',top=m.rows.filter(x=>x.level!=='green').slice(0,4);
+    panel.className=`sf-ready ${m.overall}`;panel.innerHTML=`<div class="sf-ready-head"><div class="sf-ready-light" aria-label="${esc(label)}">${symbol}</div><div class="sf-ready-title"><b>Einsatzbereitschaft · ${esc(label)}</b><small>${esc(m.periodLabel)} · Besetzung, Freigaben, Ruhezeiten, Veröffentlichung und Bestätigungen</small></div><div class="sf-ready-counts"><span class="sf-ready-count green">${m.green} bereit</span><span class="sf-ready-count amber">${m.amber} prüfen</span><span class="sf-ready-count red">${m.red} kritisch</span></div></div>${top.length?`<div class="sf-ready-summary">${top.map(x=>`<div class="sf-ready-issue"><span class="sf-ready-dot ${x.level}"></span><div><b>${esc(fmtDate(x.date))} · ${esc(x.type)}</b><small>${esc(x.findings.find(f=>f.level===x.level)?.text||'Prüfung erforderlich')}</small></div><span class="sf-ready-row-state ${x.level}">${x.level==='red'?'Kritisch':'Prüfen'}</span></div>`).join('')}</div>`:`<div class="sf-ready-summary"><div class="sf-ready-issue"><span class="sf-ready-dot green"></span><div><b>Alle vorgesehenen Schichten sind einsatzbereit</b><small>Aktuell bestehen keine offenen kritischen Prüfungen.</small></div></div></div>`}<div class="sf-ready-action"><small>Entscheidungshilfe auf Basis der hinterlegten Daten · keine automatische Rechtsfreigabe</small><button class="ghost" id="sfReadinessDetails" type="button">Alle Schichten prüfen</button></div>`;
     panel.querySelector('#sfReadinessDetails').onclick=openDetails;
   }
 
   function openDetails(){
-    const m=lastModel||evaluate();document.getElementById('sfReadinessModal')?.remove();const modal=document.createElement('div');modal.id='sfReadinessModal';modal.className='sf-ready-modal';modal.innerHTML=`<div class="sf-ready-card"><div class="sf-ready-card-head"><div><div class="eyebrow">EINSATZBEREITSCHAFT</div><h2>Prüfung je Schicht</h2><p>${esc(m.week)} · Kritische Punkte stehen zuerst.</p></div><button class="ghost" data-close type="button">Schließen</button></div><div class="sf-ready-list">${m.rows.length?m.rows.map(x=>`<article class="sf-ready-row"><div><b>${esc(fmtDate(x.date))}</b><small style="display:block;color:#8299ae;margin-top:3px">${esc(x.type)} · ${x.actual}/${x.required} besetzt</small></div><span class="sf-ready-row-state ${x.level}">${x.level==='green'?'Bereit':x.level==='amber'?'Prüfen':'Kritisch'}</span><div class="sf-ready-findings">${x.findings.map(f=>`<span class="sf-ready-finding ${f.level}">${esc(f.text)}</span>`).join('')}</div></article>`).join(''):'<div class="sf-empty">Für diese Woche sind keine Schichten vorgesehen.</div>'}</div></div>`;document.body.appendChild(modal);modal.querySelector('[data-close]').onclick=()=>modal.remove();modal.addEventListener('click',e=>{if(e.target===modal)modal.remove()});
+    const m=evaluate();document.getElementById('sfReadinessModal')?.remove();const modal=document.createElement('div');modal.id='sfReadinessModal';modal.className='sf-ready-modal';modal.innerHTML=`<div class="sf-ready-card"><div class="sf-ready-card-head"><div><div class="eyebrow">EINSATZBEREITSCHAFT</div><h2>Prüfung je Schicht</h2><p>${esc(m.periodLabel)} · Kritische Punkte stehen zuerst.</p></div><button class="ghost" data-close type="button">Schließen</button></div><div class="sf-ready-list">${m.rows.length?m.rows.map(x=>`<article class="sf-ready-row"><div><b>${esc(fmtDate(x.date))}</b><small style="display:block;color:#8299ae;margin-top:3px">${esc(x.type)} · ${x.actual}/${x.required} besetzt</small></div><span class="sf-ready-row-state ${x.level}">${x.level==='green'?'Bereit':x.level==='amber'?'Prüfen':'Kritisch'}</span><div class="sf-ready-findings">${x.findings.map(f=>`<span class="sf-ready-finding ${f.level}">${esc(f.text)}</span>`).join('')}</div></article>`).join(''):'<div class="sf-empty">Für diesen Zeitraum sind keine Schichten vorgesehen.</div>'}</div></div>`;document.body.appendChild(modal);modal.querySelector('[data-close]').onclick=()=>modal.remove();modal.addEventListener('click',e=>{if(e.target===modal)modal.remove()});
   }
 
   async function saveResponse(shift,status,note=''){
@@ -122,8 +139,9 @@
     rows.forEach((row,i)=>{const shift=shifts[i];if(!shift||!confirmationReason(shift,d.requests,Number(d.policy?.employee_confirmation_under_hours||24)))return;const old=row.querySelector('.sf-item-state'),response=map.get(shift.id),wrap=document.createElement('div');wrap.className='sf-readiness-response';wrap.innerHTML=`<small>${response?.status==='CONFIRMED'?'✓ Bestätigt':response?.status==='ISSUE_REPORTED'?'⚠ Problem gemeldet':'Rückmeldung offen'}</small><div class="sf-readiness-response-buttons"><button class="ghost confirmed" data-confirm type="button">Bestätigen</button><button class="ghost issue" data-issue type="button">Problem</button></div>`;old?.replaceWith(wrap);wrap.querySelector('[data-confirm]').onclick=()=>saveResponse(shift,'CONFIRMED','');wrap.querySelector('[data-issue]').onclick=()=>issueDialog(shift)});
   }
 
-  function refresh(){if(MANAGER.has(B.role)&&document.getElementById('view-schedule')?.classList.contains('active'))loadManagerConfirmations().then(render);else if(B.role==='EMPLOYEE')augmentEmployee()}
+  function refresh(){if(MANAGER.has(B.role)&&document.getElementById('view-schedule')?.classList.contains('active')){const pending=loadManagerConfirmations();render();return pending.then(render)}else if(B.role==='EMPLOYEE')return augmentEmployee()}
   const boot=setInterval(()=>{if(!B.client||!B.role)return;clearInterval(boot);const oldRender=window.renderCalendar;if(typeof oldRender==='function'&&!oldRender.__readinessWrapped){window.renderCalendar=function(){const r=oldRender.apply(this,arguments);setTimeout(refresh,50);return r};window.renderCalendar.__readinessWrapped=true}const oldPortal=B.openEmployeePortal;if(typeof oldPortal==='function'&&!oldPortal.__readinessWrapped){B.openEmployeePortal=function(){const r=oldPortal.apply(this,arguments);setTimeout(augmentEmployee,80);return r};B.openEmployeePortal.__readinessWrapped=true}refresh();setInterval(refresh,20000)},250);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});
+  document.addEventListener('sf:schedule-period-changed',refresh);
   window.SFReadiness={evaluate,refresh,confirmationReason};
 })();
