@@ -67,3 +67,15 @@ test('individual mode ignores retired permissions and retains team, fixed-rhythm
  assert.deepEqual(Array.from(input.employees,e=>e.individual),[true,false,false,false,true]);assert.equal(input.employees[0].monthLimit,184);assert.equal(input.employees[4].monthLimit,160);
  id('autoIndividualBlocks').checked=false;input=c.SFMonthOptimizer.buildInput([]);assert.equal(input.employees.some(e=>e.individual),false);
 });
+
+test('individual checkbox remains usable in week view and checking it selects month without generating a plan',()=>{
+ const {c,id,run}=harness();c.TYPES=['FD-WE','SD','ND'].map(id=>({id,start:id==='ND'?'22:00':id==='SD'?'14:00':'06:00',end:id==='ND'?'06:00':id==='SD'?'22:00':'14:00'}));
+ id('autoPlanPeriod').value='week';c.SFAutoPlanWorkspace.render();assert.equal(id('autoIndividualBlocks').disabled,false);
+ id('autoIndividualBlocks').checked=false;c.SFMonthOptimizer.changeIndividualBlocks();assert.equal(id('autoPlanPeriod').value,'week');
+ id('autoIndividualBlocks').checked=true;const before=JSON.stringify(c.assignments);c.SFMonthOptimizer.changeIndividualBlocks();assert.equal(id('autoPlanPeriod').value,'month');assert.equal(id('autoPlanMonth').value,'2026-12');assert.equal(JSON.stringify(c.assignments),before);assert.equal(run('autoPlanPreview.length'),0);assert.equal(c.saves,undefined);
+});
+test('unrelated ten-hour models do not disable individual eight-hour planning',()=>{
+ const {c,id}=harness();c.TYPES=[{id:'SD',start:'14:00',end:'22:00'},{id:'ND',start:'22:00',end:'06:00'},{id:'OT',start:'06:00',end:'16:00'}];
+ c.plannedAssignmentHours=a=>a.type==='OT'?10:8;c.SFAutoPlanWorkspace.render();assert.equal(id('autoIndividualBlocks').disabled,false);
+ c.plannedAssignmentHours=a=>a.type==='ND'?10:8;c.SFAutoPlanWorkspace.render();assert.equal(id('autoIndividualBlocks').disabled,true);assert.match(id('autoIndividualBlocksHint').textContent,/8-Stunden-Schichten SD und ND/);
+});

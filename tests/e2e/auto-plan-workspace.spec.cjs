@@ -162,3 +162,14 @@ test('individual January auto planning reproduces target blocks, fixed weekday F
  const rpc=await page.evaluate(()=>rpcCalls[0]);expect(rpc.name).toBe('apply_individual_month_optimization');expect(rpc.args.p_individual_employee_ids).toHaveLength(17);expect(rpc.args.p_assignments).toHaveLength(429);expect(rpc.args.p_company_id).toBe('a');expect(rpc.args.p_month).toBe('2027-01-01');expect(rpc.args.p_respect_weekly).toBe(true);
  expect(await page.evaluate(()=>JSON.stringify(assignments))).toBe(before);expect(await page.evaluate(()=>autoPlanPreview.length)).toBe(429);expect(await page.evaluate(()=>lastToast.copy)).toContain('Transaktion abgelehnt');expect(errors).toEqual([]);
 });
+
+test('individual checkbox clicks and keyboard switches from week to month while retaining the selected month',async({page})=>{
+ await fixture(page);await page.evaluate(()=>{TYPES=[{id:'SD',start:'14:00',end:'22:00'},{id:'ND',start:'22:00',end:'06:00'},{id:'FD-WE',start:'06:00',end:'14:00'},{id:'OT',start:'06:00',end:'16:00'}];plannedAssignmentHours=a=>a.type==='OT'?10:8;employees[0].shifts=['SD','ND','FD-WE'];});
+ await page.locator('#autoPlanMonth').fill('2027-01');await page.locator('#autoPlanPeriod').selectOption('week');
+ await expect(page.locator('#autoIndividualBlocks')).toBeEnabled();await expect(page.locator('#autoIndividualBlocksHint')).toContainText('Aktivieren wechselt');
+ await page.locator('#autoIndividualBlocks').uncheck();await expect(page.locator('#autoPlanPeriod')).toHaveValue('week');
+ await page.getByText('Individuelle Blockplanung im Monat',{exact:true}).click();await expect(page.locator('#autoIndividualBlocks')).toBeChecked();await expect(page.locator('#autoPlanPeriod')).toHaveValue('month');await expect(page.locator('#autoPlanMonthField')).toBeVisible();await expect(page.locator('#autoPlanMonth')).toHaveValue('2027-01');
+ await page.locator('#autoIndividualBlocks').uncheck();await expect(page.locator('#autoIndividualBlocks')).not.toBeChecked();await expect(page.locator('#autoPlanPeriod')).toHaveValue('month');
+ await page.locator('#autoPlanPeriod').selectOption('week');await page.locator('#autoIndividualBlocks').press('Space');await expect(page.locator('#autoPlanPeriod')).toHaveValue('month');await expect(page.locator('#autoIndividualBlocks')).toBeChecked();expect(await page.evaluate(()=>saveCalls)).toBe(0);expect(await page.evaluate(()=>assignments.length)).toBe(0);
+ await page.evaluate(()=>{TYPES.find(t=>t.id==='ND').end='08:00';plannedAssignmentHours=a=>a.type==='ND'?10:8;renderAutoPlanning()});await expect(page.locator('#autoIndividualBlocks')).toBeDisabled();await expect(page.locator('#autoIndividualBlocksHint')).toContainText('8-Stunden-Schichten SD und ND');
+});
