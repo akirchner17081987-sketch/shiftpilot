@@ -52,10 +52,10 @@ for(const theme of ['dark','light'])for(const width of [1920,1440,1366,1180,1024
   await page.setViewportSize({width,height:960});const {requests,errors}=await fixture(page,theme,fontSize);
   const before=await geometry(page);expect(before.issues).toEqual([]);
   await page.locator('.sp-emp-row[data-id="e0"]').click();await expect(page.locator('.sp-profile-head h2')).toHaveText('Alexandra-Maria Elisabeth von Hohenlohe-Waldenburg-Schillingsfürst');
-  await page.getByLabel('Suche',{exact:true}).fill('Hohenlohe');await expect(page.locator('.sp-emp-row')).toHaveCount(1);
+  await page.locator('.sp-emp-tools').getByLabel('Suche',{exact:true}).fill('Hohenlohe');await expect(page.locator('.sp-emp-row')).toHaveCount(1);
   await expect(page.locator('.sp-emp-role')).toContainText('Brandschutzbeauftragte');await expect(page.locator('.sp-qual-set .sp-q')).toHaveCount(14);await expect(page.locator('.sp-emp-meta')).toContainText('27');
-  await page.getByLabel('Status',{exact:true}).selectOption('inactive');await expect(page.locator('.sp-emp-row')).toHaveCount(0);await page.getByLabel('Status',{exact:true}).selectOption('active');
-  await page.getByLabel('Verfügbarkeit',{exact:true}).selectOption('yellow');await expect(page.locator('.sp-emp-row')).toHaveCount(0);await page.getByLabel('Verfügbarkeit',{exact:true}).selectOption('green');
+  await page.locator('.sp-emp-tools').getByLabel('Status',{exact:true}).selectOption('inactive');await expect(page.locator('.sp-emp-row')).toHaveCount(0);await page.locator('.sp-emp-tools').getByLabel('Status',{exact:true}).selectOption('active');
+  await page.locator('.sp-emp-tools').getByLabel('Verfügbarkeit',{exact:true}).selectOption('yellow');await expect(page.locator('.sp-emp-row')).toHaveCount(0);await page.locator('.sp-emp-tools').getByLabel('Verfügbarkeit',{exact:true}).selectOption('green');
   await page.locator('#spEmpTeam').selectOption('__planning_A');await expect(page.locator('.sp-emp-row')).toHaveCount(1);await page.locator('[data-q="QA"]').click();await expect(page.locator('.sp-emp-row')).toHaveCount(1);
   const after=await geometry(page);expect(after.issues).toEqual([]);expect(errors).toEqual([]);expect(requests).toEqual(['http://employee-layout.test/']);expect(await page.evaluate(()=>__writes)).toBe(0);
   await info.attach('layout-measurements',{body:Buffer.from(JSON.stringify({before,after},null,2)),contentType:'application/json'});
