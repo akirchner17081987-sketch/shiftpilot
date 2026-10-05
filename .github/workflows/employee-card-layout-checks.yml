@@ -1,0 +1,39 @@
+name: Mitarbeiterkarten Layoutprüfung
+on:
+  push:
+    branches: [main, codex/ionos-migration, codex/employee-cards-20261006]
+    paths:
+      - assets/employee-management-v2.js
+      - assets/manager-theme-v1.css
+      - tests/e2e/employee-card-layout.spec.cjs
+      - .github/workflows/employee-card-layout-checks.yml
+  pull_request:
+    paths:
+      - assets/employee-management-v2.js
+      - assets/manager-theme-v1.css
+      - tests/e2e/employee-card-layout.spec.cjs
+      - .github/workflows/employee-card-layout-checks.yml
+jobs:
+  layout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright test tests/e2e/employee-card-layout.spec.cjs --project=desktop-chromium
+        env:
+          E2E_BASE_URL: http://employee-layout.test
+          SF_EMPLOYEE_LAYOUT_BROWSER: /usr/bin/google-chrome
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: employee-card-layout-results
+          path: |
+            playwright-report/
+            test-results/
