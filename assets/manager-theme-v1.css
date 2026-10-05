@@ -197,12 +197,51 @@ html[data-sf-theme="light"] #appShell .ass-pink{background:#94506a!important}
 html[data-sf-theme="light"] #appShell .ass-cyan{background:#277785!important}
 html[data-sf-theme="light"] #appShell .ass-red{background:#934556!important}
 
+/* The current week/month renderers inject their own colours after this stylesheet. */
+html[data-sf-theme="light"] #appShell #view-schedule :is(.sf-week-board-wrap,.sf-month-wrap,.sf-month-grid,.sf-month-summary){background:var(--sf-canvas)!important;border-color:var(--sf-border)!important;color:var(--sf-ink)!important}
+html[data-sf-theme="light"] #appShell #view-schedule :is(.sf-week-day,.sf-week-shift-cell,.sf-week-shift,.sf-month-day,.sf-month-kpi){background:var(--sf-surface-raised)!important;border-color:var(--sf-border)!important;color:var(--sf-ink)!important;box-shadow:none}
+html[data-sf-theme="light"] #appShell #view-schedule :is(.sf-week-day-head,.sf-week-compact-day,.sf-month-weekday,.sf-week-shift-count b,.sf-week-avatar,.sf-plan-context,.sf-readability-legend,.sf-readability-key,.cal-toolbar .date-label){background:var(--sf-surface-inset)!important;border-color:var(--sf-border)!important;color:var(--sf-ink)!important}
+html[data-sf-theme="light"] #appShell #view-schedule :is(.sf-week-day.is-weekend,.sf-week-shift-cell.is-weekend,.sf-week-compact-day.is-weekend,.sf-month-day.weekend,.sf-week-shift.is-inactive){background:var(--sf-surface-inset)!important}
+html[data-sf-theme="light"] #appShell #view-schedule :is(.sf-week-day.is-today .sf-week-day-head,.sf-week-shift-cell.is-today,.sf-week-compact-day.is-today,.sf-month-day.today){background:var(--sf-accent-surface)!important;border-color:var(--sf-accent)!important}
+html[data-sf-theme="light"] #appShell #view-schedule :is(.sf-week-compact-day .sf-week-day,.sf-week-compact-day .sf-week-day-head,.sf-week-compact-day .sf-week-shift-cell,.sf-week-shift-head){background:transparent!important}
+html[data-sf-theme="light"] #appShell #view-schedule :is(.sf-week-shift-main strong,.sf-week-day-title strong,.sf-week-day-date b,.sf-month-date b,.sf-month-day-head b,.sf-month-item b,.sf-month-kpi b){color:var(--sf-ink)!important}
+html[data-sf-theme="light"] #appShell #view-schedule :is(.sf-week-day-title>span,.sf-week-day-coverage,.sf-week-shift-main small,.sf-week-shift-empty,.sf-week-compact-empty,.sf-month-weekday,.sf-month-kpi small,.sf-month-date small,.sf-month-day-head small,.sf-month-more,.sf-month-empty){color:var(--sf-ink-muted)!important}
+html[data-sf-theme="light"] #appShell #view-schedule :is(.sf-week-employee,.sf-month-shift,.sf-month-item,.sf-plan-chip,.sf-day-status,.sf-week-mode-seg button){background:var(--sf-surface)!important;border-color:var(--sf-border)!important;color:var(--sf-ink)!important;box-shadow:none}
+html[data-sf-theme="light"] #appShell #view-schedule .sf-week-employee-info b{color:var(--sf-ink)!important}
+html[data-sf-theme="light"] #appShell #view-schedule .sf-week-employee-info small{color:var(--sf-ink-muted)!important}
+html[data-sf-theme="light"] #appShell #view-schedule :is(.sf-week-employee:not([style*="--sf-person-bg"]),.sf-month-item,.sf-month-day,.sf-week-mode-seg button):hover{background:var(--sf-frame)!important;border-color:var(--sf-accent)!important}
+html[data-sf-theme="light"] #appShell #view-schedule :is(.sf-month-day.outside,.sf-month-day.other){opacity:1;background:var(--sf-frame)!important;color:var(--sf-ink-muted)!important}
+html[data-sf-theme="light"] #appShell #view-schedule :is(.sf-week-mode-seg button.active,.sf-day-status.good,.sf-week-shift.complete .sf-week-shift-count b,.sf-plan-chip.good){background:var(--sf-good-surface)!important;border-color:#82ac9d!important;color:var(--sf-good)!important}
+html[data-sf-theme="light"] #appShell #view-schedule :is(.sf-day-status.warn,.sf-week-open,.sf-week-shift.under .sf-week-shift-count b,.sf-week-shift.empty .sf-week-shift-count b,.sf-plan-chip.warn){background:var(--sf-warn-surface)!important;border-color:#baa16e!important;color:var(--sf-warn)!important}
+html[data-sf-theme="light"] #appShell #view-schedule .sf-week-open:is(:hover,:focus-visible){background:#e2cda8!important;border-color:var(--sf-warn)!important}
+html[data-sf-theme="light"] #appShell #view-schedule :is(.sf-week-over,.sf-week-shift.over .sf-week-shift-count b,.sf-month-absence,.sf-plan-chip.readonly){background:#e2ddec!important;border-color:#a496ba!important;color:#61438a!important}
+html[data-sf-theme="light"] #appShell #view-schedule :is(.sf-month-open,.sf-month-kpi.warn b){color:var(--sf-warn)!important}
+html[data-sf-theme="light"] #appShell #view-schedule :is(.sf-month-ok,.sf-month-lock){color:var(--sf-good)!important}
+html[data-sf-theme="light"] #appShell #view-schedule :is(.sf-week-day.is-today .sf-week-day-date b,.sf-month-day.today .sf-month-date b,.sf-month-day.today .sf-month-day-head b){background:var(--sf-accent)!important;color:#fff!important}
+html[data-sf-theme="light"] #appShell #view-schedule :is(.sf-week-shift-cell.is-drop-target,.sf-month-day.drop-ready){background:var(--sf-good-surface)!important;outline-color:var(--sf-good)!important}
+html[data-sf-theme="light"] #appShell #view-schedule .sf-week-shift-cell.is-drop-warning{background:var(--sf-warn-surface)!important;outline-color:var(--sf-warn)!important}
+html[data-sf-theme="light"] #appShell #view-schedule .sf-week-shift-cell.is-drop-blocked{background:var(--sf-bad-surface)!important;outline-color:var(--sf-bad)!important}
+/* Keep shift accents and the configured personnel-group colours visible. */
+html[data-sf-theme="light"] #appShell #view-schedule .sf-week-shift:not(.is-inactive){border-left-color:var(--sf-shift-accent)!important}
+html[data-sf-theme="light"] #appShell #view-schedule .sf-week-employee[style*="--sf-person-bg"]{background:var(--sf-person-light-bg)!important;border-color:var(--sf-person-light-border)!important;color:var(--sf-person-light-text)!important}
+html[data-sf-theme="light"] #appShell #view-schedule .sf-week-employee[style*="--sf-person-bg"] :is(.sf-week-employee-info b,.sf-week-employee-info small,.sf-week-avatar){color:var(--sf-person-light-text)!important}
+html[data-sf-theme="light"] #appShell #view-schedule .sf-week-employee[style*="--sf-person-bg"] .sf-week-avatar{background:rgba(255,255,255,.55)!important}
+html[data-sf-theme="light"] .sf-week-undo{background:var(--sf-surface-raised)!important;border-color:var(--sf-border)!important;color:var(--sf-ink)!important;box-shadow:var(--shadow)}
+html[data-sf-theme="light"] .sf-week-undo button{background:var(--sf-good-surface)!important;border-color:#82ac9d!important;color:var(--sf-good)!important}
+
 /* Tables and list rows */
-html[data-sf-theme="light"] #appShell table{color:#243746!important}
+html[data-sf-theme="light"] #appShell table{background:var(--sf-surface-raised)!important;color:#243746!important}
 html[data-sf-theme="light"] #appShell table th{background:#dfe6ea!important;color:#405464!important}
 html[data-sf-theme="light"] #appShell table :is(tr,td,th){border-color:#c3cdd4!important}
 html[data-sf-theme="light"] #appShell table tbody tr{background:var(--sf-surface-raised)!important}
 html[data-sf-theme="light"] #appShell table tbody tr:nth-child(even){background:var(--sf-surface-inset)!important}
+html[data-sf-theme="light"] #appShell table tbody tr:is(:hover,:focus-within){background:var(--sf-frame)!important}
+/* Row backgrounds alone cannot cover a cell's own dark background or hover rule. */
+html[data-sf-theme="light"] #appShell table tbody td{background:inherit!important}
+html[data-sf-theme="light"] #appShell table tfoot :is(tr,td,th){background:var(--sf-surface-inset)!important;color:var(--sf-ink)!important}
+html[data-sf-theme="light"] #appShell .sf-auto-stair-table td.is-assigned{background:var(--sf-good-surface)!important;color:var(--sf-good)!important}
+html[data-sf-theme="light"] #appShell .sf-auto-stair-table td:is(.is-work,.is-absent){background:var(--sf-warn-surface)!important;color:var(--sf-warn)!important}
+html[data-sf-theme="light"] #appShell :is(.sf-auto-stair-table,.sf-auto-hours) tbody th[style*="--sf-person-bg"]{background:var(--sf-person-light-bg)!important;color:var(--sf-person-light-text)!important;border-color:var(--sf-person-light-border)!important}
 html[data-sf-theme="light"] #appShell :is(.absence-table-head,.absence-row-final){border-color:#c0cbd3!important}
 html[data-sf-theme="light"] #appShell .absence-row-final:nth-child(even){background:var(--sf-surface-inset)!important}
 
@@ -381,6 +420,47 @@ html[data-sf-theme="light"] .sf-chat-compose button{background:var(--sf-accent)!
 html[data-sf-theme="light"] #appShell{scrollbar-color:#879daa var(--sf-canvas)}
 html[data-sf-theme="light"] #appShell ::-webkit-scrollbar-track{background:var(--sf-surface-inset)!important}
 html[data-sf-theme="light"] #appShell ::-webkit-scrollbar-thumb{background:#879daa!important;border-color:var(--sf-surface-inset)!important}
+
+/* Table-like manager lists have fixed colours as well as the HTML tables. */
+html[data-sf-theme="light"] #appShell :is(.sf-market,.sf-swap-manager,.sf-abs-mgr-v2,.sf-manager-abs,.sf-ready,.sf-privacy-retention){background:var(--sf-surface-raised)!important;border-color:var(--sf-border)!important;color:var(--sf-ink)!important}
+html[data-sf-theme="light"] #appShell :is(.sf-market-row,.sf-swap-manager-row,.sf-swap-row,.sf-abs-mgr-v2-row,.sf-manager-request,.sf-abs-row,.sf-audit-row,.sf-user-row,.sf-role-info div,.sf-ready-issue,.sf-pr-row,.sf-pr-state){background:var(--sf-surface-inset)!important;border-color:var(--sf-border)!important;color:var(--sf-ink)!important}
+html[data-sf-theme="light"] #appShell :is(.sf-audit-row,.sf-user-row):hover{background:var(--sf-frame)!important;border-color:var(--sf-accent)!important}
+html[data-sf-theme="light"] #appShell :is(.sf-market-head p,.sf-market-row small,.sf-market-empty,.sf-swap-manager-note,.sf-swap-manager-row small,.sf-abs-mgr-v2-note,.sf-abs-mgr-v2-row small,.sf-abs-mgr-v2-empty,.sf-audit-row small,.sf-audit-entity,.sf-audit-empty,.sf-user-id small,.sf-users-empty,.sf-role-info small,.sf-ready-title small,.sf-ready-issue small,.sf-ready-action small,.sf-privacy-retention>p,.sf-pr-row span){color:var(--sf-ink-muted)!important}
+html[data-sf-theme="light"] #appShell :is(.sf-market-tabs button,.sf-swap-refresh,.sf-swap-cancel,.sf-market-cancel,.sf-legacy-target,.sf-time-status,.sf-ready-count,.sf-user-avatar){background:var(--sf-surface)!important;border-color:var(--sf-border)!important;color:var(--sf-ink)!important}
+html[data-sf-theme="light"] #appShell :is(.sf-market-count,.sf-market-state,.sf-market-note,.sf-market-tabs button.active,.sf-swap-count,.sf-time-status.confirmed,.sf-user-state,.sf-ready-count.green,.sf-pr-state.ok,.sf-abs-mgr-v2.clear,.sf-abs-mgr-v2.clear .sf-abs-mgr-v2-empty,.sf-time-deviation-clear,.sf-time-deviation-clear #timeDeviationCount,.sf-time-deviation-clear #timeDeviations .notice,.sf-legacy-clear){background:var(--sf-good-surface)!important;border-color:#82ac9d!important;color:var(--sf-good)!important}
+html[data-sf-theme="light"] #appShell :is(.sf-abs-mgr-v2-count,.sf-abs-mgr-v2-status,.sf-time-status.recorded,.sf-user-state.invited,.sf-ready-count.amber,.sf-pr-state.wait,.sf-legacy-row,.sp-plan-row.absence,.sf-draft-notice){background:var(--sf-warn-surface)!important;border-color:#baa16e!important;color:var(--sf-warn)!important}
+html[data-sf-theme="light"] #appShell .sf-abs-mgr-v2.clear .sf-abs-mgr-v2-count{background:var(--sf-good-surface)!important;color:var(--sf-good)!important}
+html[data-sf-theme="light"] #appShell :is(.sf-market-reject,.sf-swap-reject,.sf-abs-mgr-v2-reject,.sf-time-status.correction_requested,.sf-user-state.disabled,.sf-user-state.expired,.sf-ready-count.red,.sf-pr-state.bad,.sp-plan-row.rule-conflict){background:var(--sf-bad-surface)!important;border-color:#bc8492!important;color:var(--sf-bad)!important}
+html[data-sf-theme="light"] #appShell :is(.sf-market-block,.sf-legacy-reason,.sf-legacy-target b,.sf-legacy-target small,.sf-legacy-muted,.sf-draft-notice-text,.sf-time-diff.pos){color:var(--sf-warn)!important}
+html[data-sf-theme="light"] #appShell .sf-time-diff.neg{color:var(--sf-bad)!important}
+html[data-sf-theme="light"] #appShell :is(.sf-time-diff.ok,.sf-legacy-resolve){color:var(--sf-good)!important}
+html[data-sf-theme="light"] #appShell :is(.sf-swap-main small,.sf-swap-empty,.sf-manager-request small,.sf-manager-empty,.sf-abs-row-main small,.sf-abs-note){color:var(--sf-ink-muted)!important}
+html[data-sf-theme="light"] #appShell :is(.sf-swap-state,.sf-abs-state){background:var(--sf-surface)!important;border-color:var(--sf-border)!important;color:var(--sf-ink-muted)!important}
+html[data-sf-theme="light"] #appShell :is(.sf-swap-row.pending .sf-swap-state,.sf-abs-state.pending,.sf-manager-abs-count){background:var(--sf-warn-surface)!important;border-color:#baa16e!important;color:var(--sf-warn)!important}
+html[data-sf-theme="light"] #appShell :is(.sf-swap-row.applied .sf-swap-state,.sf-abs-state.good,.sf-abs-kind,.sf-swap-code){background:var(--sf-good-surface)!important;border-color:#82ac9d!important;color:var(--sf-good)!important}
+html[data-sf-theme="light"] #appShell :is(.sf-abs-state.bad,.sf-reject-absence){background:var(--sf-bad-surface)!important;border-color:#bc8492!important;color:var(--sf-bad)!important}
+html[data-sf-theme="light"] #appShell .sp-soll-line.good{background:var(--sf-good-surface)!important;border-color:#82ac9d!important;color:var(--sf-good)!important}
+
+/* These manager list/detail dialogs are appended to body, outside #appShell. */
+html[data-sf-theme="light"] :is(.sf-pm-dialog,.sf-pf-modal,.sf-pf-submodal,.sf-pfd-modal,.sf-audit-detail,.sf-ready-card,.sf-readiness-note-card,.sf-pub-modal,.sf-mc-modal,.sf-hist-modal,.sf-abs-mgr-v2-modal,.sf-user-card){background:var(--sf-surface-raised)!important;border-color:var(--sf-border)!important;color:var(--sf-ink)!important;box-shadow:0 24px 70px rgba(35,55,75,.24)!important}
+html[data-sf-theme="light"] :is(.sf-pm-back,.sf-pf-back,.sf-pf-subback,.sf-pfd-back,.sf-audit-modal,.sf-ready-modal,.sf-readiness-note,.sf-pub-back,.sf-mc-back,.sf-hist-back,.sf-abs-mgr-v2-back,.sf-user-modal){background:rgba(40,54,65,.48)!important}
+html[data-sf-theme="light"] :is(.sf-pm-dialog,.sf-pf-modal,.sf-pf-submodal,.sf-pfd-modal,.sf-audit-detail,.sf-ready-card,.sf-readiness-note-card,.sf-pub-modal,.sf-mc-modal,.sf-hist-modal,.sf-abs-mgr-v2-modal,.sf-user-card) :is(h2,h3,h4,b,strong){color:var(--sf-ink)!important}
+html[data-sf-theme="light"] :is(.sf-pm-dialog,.sf-pf-modal,.sf-pf-submodal,.sf-pfd-modal,.sf-audit-detail,.sf-ready-card,.sf-readiness-note-card,.sf-pub-modal,.sf-mc-modal,.sf-hist-modal,.sf-abs-mgr-v2-modal,.sf-user-card) :is(p,small,label,summary,code,pre){color:var(--sf-ink-muted)!important}
+html[data-sf-theme="light"] :is(.sf-pm-dialog,.sf-pf-modal,.sf-pf-submodal,.sf-pfd-modal,.sf-audit-detail,.sf-ready-card,.sf-readiness-note-card,.sf-pub-modal,.sf-mc-modal,.sf-hist-modal,.sf-abs-mgr-v2-modal,.sf-user-card) :is(button,input,select,textarea){background:var(--sf-field)!important;border-color:var(--sf-border)!important;color:var(--sf-ink)!important;color-scheme:light}
+html[data-sf-theme="light"] :is(.sf-pm-row,.sf-pm-reply,.sf-pf-head,.sf-pf-stats,.sf-pf-stat,.sf-pf-tabs,.sf-pf-card,.sf-pf-row,.sf-pf-note,.sf-pf-empty,.sf-pf-file,.sf-pfx-box,.sf-pfd-head,.sf-pfd-stats,.sf-pfd-stat,.sf-pfd-tools,.sf-pfd-summary,.sf-pfd-row,.sf-pfd-empty,.sf-audit-meta div,.sf-audit-change-row,.sf-audit-tech-meta,.sf-audit-technical pre,.sf-ready-row,.sf-ready-finding,.sf-pub-stat,.sf-pub-row,.sf-mc-bar,.sf-mc-row){background:var(--sf-surface-inset)!important;border-color:var(--sf-border)!important;color:var(--sf-ink)!important}
+html[data-sf-theme="light"] :is(.sf-pfd-row:hover,.sf-pfd-stat:hover,.sf-pfd-stat.active){background:var(--sf-accent-surface)!important;border-color:var(--sf-accent)!important}
+html[data-sf-theme="light"] :is(.sf-pm-message,.sf-pm-reply p,.sf-pfx-box b,.sf-pf-kv b,.sf-audit-change-value){color:var(--sf-ink)!important}
+html[data-sf-theme="light"] :is(.sf-pfd-table-head,.sf-pfd-name span,.sf-pfd-item span,.sf-pfd-loading,.sf-pf-kv span,.sf-pfx-box span,.sf-audit-change-head,.sf-audit-tech-meta span,.sf-hist-time,.sf-hist-empty,.sf-mc-copy small){color:var(--sf-ink-muted)!important}
+html[data-sf-theme="light"] :is(.sf-pm-status,.sf-pf-chip,.sf-pf-state,.sf-pfx-deadline,.sf-pfd-type,.sf-pfd-status,.sf-pfd-deadline,.sf-hist-chip,.sf-mc-badge,.sf-mc-chip){background:var(--sf-surface)!important;border-color:var(--sf-border)!important;color:var(--sf-ink-muted)!important}
+html[data-sf-theme="light"] :is(.sf-pm-status.completed,.sf-pm-primary,.sf-pf-head-status,.sf-pf-state.valid,.sf-pf-save,.sf-pf-tab.active,.sf-pfx-private,.sf-pfd-type.q,.sf-ready-finding.green,.sf-pub-info,.sf-pub-person,.sf-pub-confirm,.sf-mc-badge.closed,.sf-mc-ok,.sf-mc-btn.closemonth,.sf-hist-filter.active,.sf-hist-icon){background:var(--sf-good-surface)!important;border-color:#82ac9d!important;color:var(--sf-good)!important}
+html[data-sf-theme="light"] :is(.sf-pm-status:not(.completed):not(.rejected),.sf-pf-state.expiring,.sf-pfx-deadline.warn,.sf-pfd-deadline.d30,.sf-pfd-deadline.d60,.sf-pfd-deadline.d90,.sf-ready-finding.amber,.sf-pub-stat.bad,.sf-pub-row.warn,.sf-pub-info.warn,.sf-mc-warning,.sf-mc-chip.warn,.sf-mc-btn.reopen,.sf-hist-row.pending .sf-hist-icon,.sf-abs-mgr-v2-warning){background:var(--sf-warn-surface)!important;border-color:#baa16e!important;color:var(--sf-warn)!important}
+html[data-sf-theme="light"] :is(.sf-pm-status.rejected,.sf-pf-state.expired,.sf-pf-danger,.sf-pfx-deadline.bad,.sf-pfx-row-critical,.sf-pfd-deadline.expired,.sf-ready-finding.red,.sf-pub-stat.danger,.sf-pub-row.danger,.sf-mc-error,.sf-hist-row.bad .sf-hist-icon,.sf-abs-mgr-v2-error){background:var(--sf-bad-surface)!important;border-color:#bc8492!important;color:var(--sf-bad)!important}
+html[data-sf-theme="light"] :is(.sf-pf-stat.good b,.sf-pfx-box.good b,.sf-ready-row-state.green,.sf-mc-row strong.good){color:var(--sf-good)!important}
+html[data-sf-theme="light"] :is(.sf-pm-feedback,.sf-pm-result,.sf-pf-stat.warn b,.sf-pfx-box.warn b,.sf-pfd-stat.d30 b,.sf-pfd-stat.d60 b,.sf-pfd-stat.d90 b,.sf-pfd-days.warn,.sf-ready-row-state.amber,.sf-pub-stat.bad b){color:var(--sf-warn)!important}
+html[data-sf-theme="light"] :is(.sf-pf-stat.bad b,.sf-pfx-box.bad b,.sf-pfd-stat.expired b,.sf-pfd-days.bad,.sf-ready-row-state.red,.sf-pub-stat.danger b,.sf-mc-row strong.bad){color:var(--sf-bad)!important}
+html[data-sf-theme="light"] :is(.sf-pfd-stat.none b,.sf-pfd-deadline.none){color:var(--sf-ink-muted)!important}
+html[data-sf-theme="light"] .sf-audit-change-arrow{color:var(--sf-accent)!important}
+html[data-sf-theme="light"] :is(.sf-pf-avatar,.sf-pfd-head-icon){background:var(--sf-accent-surface)!important;color:var(--sf-accent)!important}
 
 /* Mobile keeps the same contrast hierarchy and full-size touch targets. */
 @media(max-width:760px){

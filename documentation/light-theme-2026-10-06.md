@@ -25,3 +25,17 @@ Die Kaskadenprüfung nutzt eine lokale, anmeldefreie Vorschau mit erfundenen Tes
 ## IONOS-Produktionszweig
 
 IONOS veröffentlicht aus `codex/ionos-migration`. Die Theme-Korrektur wird dort auf den aktuellen Stand `7a66ed5` übernommen; die neueren periodengebundenen Bereitschaftsprüfungen bleiben dabei enthalten. Zusätzliche Prüfung dieses Produktionsstands: 481 Regressionstests bestanden, 0 fehlgeschlagen; statischer Build erfolgreich. Die Änderung auf `main` dient zugleich dem verbundenen Vercel-Rückfallstand.
+
+## Nachkorrektur: dunkle Tabellen und Kalenderflächen
+
+Die Rückmeldung zu weiterhin dunklen Tabellen bestätigte eine Lücke: Die erste Prüfung erfasste die aktuellen Wochen- und Monatsraster sowie mehrere Verwaltungslisten nicht. Außerdem färbten die bisherigen Regeln Tabellenzeilen, während eigene Zellfarben und die Hover-Regel der Stundenkontotabelle weiterhin dunkle Flächen zeichneten.
+
+- Tabellenzellen übernehmen nun die helle Zeilenfläche; Hover, Tastaturfokus und Fußzeilen erhalten passende Flächen.
+- Übersicht/Besetzung im Wochenplan, Monatsraster, Wochenenden, aktueller Tag und Drag-and-drop-Zustände verwenden die gemeinsame gedämpfte Palette.
+- Die Auto-Planung behält unterscheidbare Zustände für zugewiesene Dienste und Abwesenheiten. Hinterlegte Personalgruppenfarben und Schichtakzente bleiben erkennbar.
+- Ergänzte Verwaltungslisten: Schichtbörse/Tausch, Abwesenheitsfreigaben, Nutzerverwaltung, Protokoll, Einsatzbereitschaft und Datenschutz. Ergänzte Listendialoge: Personalakten/-anfragen, Fristen, Freigaben, Monatsabschluss und Historie.
+- CSS-Versionsparameter auf `20261006-2` angehoben. JavaScript bleibt bei `20261006-1`.
+
+Prüfung des IONOS-Stands: 481 Regressionstests und 5 IONOS-Tests bestanden; statischer Build erfolgreich (2,77 MiB); `git diff --check` ohne Fehler. Ergänzende statische Kaskadenprüfung mit 85 nachgelagerten Style-Blöcken aus den Anwendungsmodulen: jeweils 597 Textbeispiele und 268 Flächen bei 1440, 760 und 390 CSS-Pixel Breite, keine dunklen Testflächen und keine Textkontraste unter 4,5:1. Tabellenzellen, Personalgruppenfarben und Drag-and-drop-Zustände werden dabei ausdrücklich geprüft. Die geprüfte dunkle Kaskade und geteilte Mitarbeiterportal-Komponenten ergeben gegenüber dem vorherigen Stand keine Änderungen.
+
+Diese Prüfung modelliert CSS-Regeln mit erfundenen Inhalten und ersetzt keine visuelle Live-Abnahme. Der verfügbare Browserzugriff war weiterhin gesperrt; Layout, tatsächliche Interaktion und das Mitarbeiterportal wurden für diese Nachkorrektur nicht live abgenommen.
