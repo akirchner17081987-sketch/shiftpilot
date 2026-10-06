@@ -35,12 +35,13 @@ async function geometry(page){
   for(const el of document.querySelectorAll('.sp-emp-tools input,.sp-emp-tools select,.sp-emp-tools label,.sp-emp-qual-filter'))if(!inside(box(el),list))issues.push('filter exceeds list card: '+(el.id||el.className));
   const rows=[...document.querySelectorAll('.sp-emp-row')];
   for(const row of rows){
-   const r=box(row);if(row.scrollWidth>row.clientWidth+1||row.scrollHeight>row.clientHeight+1)issues.push('card clips content: '+row.dataset.id);
+   const r=box(row);if(r.width<300&&box(row.querySelector('.sp-emp-identity')).width<r.width*.6)issues.push('narrow card squeezes name beside avatar');if(row.scrollWidth>row.clientWidth+1||row.scrollHeight>row.clientHeight+1)issues.push('card clips content: '+row.dataset.id);
    for(const el of row.querySelectorAll('.sp-emp-name,.sp-emp-role,.sp-emp-meta>span,.sp-q,.sp-emp-arrow')){
     if(getComputedStyle(el).display==='none')issues.push('card detail hidden: '+el.className);
     const range=document.createRange();range.selectNodeContents(el);for(const rect of range.getClientRects())if(!inside(rect,r))issues.push('text outside card: '+row.dataset.id+' '+el.className);
    }
   }
+  const scrollList=document.querySelector('.sp-emp-list');if(rows.length===1&&scrollList.scrollHeight>scrollList.clientHeight+1)issues.push('single filtered card is cut by list viewport');
   const header=document.querySelector('.sp-profile-head');if(header){const h=box(header);for(const el of header.querySelectorAll('h2,p,.sp-availability')){const range=document.createRange();range.selectNodeContents(el);for(const r of range.getClientRects())if(!inside(r,h))issues.push('profile header clips text');}}
   const main=document.querySelector('.main');if(main.scrollWidth>main.clientWidth+1)issues.push('workspace has horizontal overflow');
   return{issues,rows:rows.length,listWidth:Math.round(list.width),cardHeights:rows.map(r=>Math.round(box(r).height))};

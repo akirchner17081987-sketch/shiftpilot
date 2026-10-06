@@ -105,6 +105,8 @@
   #view-employees .sp-profile-head-main{min-width:0;flex:1 1 12rem;overflow-wrap:anywhere}
   #view-employees .sp-emp-row small{font-size:.8125rem;line-height:1.5}
   #view-employees .sp-q{font-size:.75rem}
+  .sp-emp-list:has(>.sp-emp-row:only-child){max-height:none}
+  @container sfEmployeeList (max-width:24rem){.sp-emp-row{grid-template-columns:minmax(0,1fr) 1rem;grid-template-areas:"avatar arrow" "identity identity" "meta meta" "qualifications qualifications"}}
   @container sfEmployeeList (min-width:28rem){.sp-emp-tools{grid-template-columns:repeat(2,minmax(0,1fr))}.sp-emp-search-field,.sp-emp-team-field{grid-column:1/-1}}
   @container sfEmployeeWorkspace (max-width:64rem){.sp-emp-shell{grid-template-columns:minmax(0,1fr)}}
   .sp-emp-profile{min-width:0;overflow:hidden}
