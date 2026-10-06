@@ -55,6 +55,7 @@ begin
   s:=p_value#>>'{}';
   foreach token in array coalesce(p_ids,'{}')||coalesce(names,'{}') loop
    if token='' then continue; end if;
+   if strpos(lower(s),lower(token))=0 then continue; end if;
    if lower(s)=lower(token) then return null; end if;
    escaped:=regexp_replace(token,'([\\.\^$|?*+(){}\[\]])','\\\1','g');
    s:=regexp_replace(s,'\m'||escaped||'\M','[entfernt]','gi');
