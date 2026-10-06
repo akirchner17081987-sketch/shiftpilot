@@ -19,8 +19,15 @@
     return new Date(candidates[0]).toISOString();
   }
   async function rpc(name,args){
-    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
-    try{const result=await B.client.rpc(name,args).abortSignal(controller.signal);if(result.error)throw result.error;return typeof result.data==='string'?JSON.parse(result.data):result.data}
+    const controller=new AbortController();let timer;
+    try{
+      // MFA and demo wrappers return Promises rather than PostgREST builders.
+      let request=B.client.rpc(name,args);
+      if(typeof request?.abortSignal==='function')request=request.abortSignal(controller.signal);
+      const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>{controller.abort();reject(new Error('Die Anfrage konnte nach 20 Sekunden nicht bestätigt werden. Bitte den Buchungsstatus erneut prüfen.'))},20000)});
+      const result=await Promise.race([request,timeout]);
+      if(result.error)throw result.error;return typeof result.data==='string'?JSON.parse(result.data):result.data;
+    }
     finally{clearTimeout(timer)}
   }
   function styles(){
