@@ -62,8 +62,11 @@ async function manager(page,{width=390,theme='light',lost=false,stale=false,role
         output=lost?Promise.resolve({error:{message:'Fiktive Antwort verloren'}}):Promise.resolve({data:structuredClone(record)});
       }
       output.abortSignal=()=>output;return output;
-    }}};window.renderTimeTracking=async()=>{};
+    }},boot:async()=>{}};window.renderTimeTracking=async()=>{};
   },{lost,stale,role});
+  // Exercise the real signed-in RPC wrapper, whose return value is a Promise.
+  await page.addScriptTag({content:fs.readFileSync(path.join(root,'assets/supabase-mfa-v1.js'),'utf8')});
+  await page.evaluate(()=>window.SFBackend.installMfaRpcRetry());
   await page.addScriptTag({content:fs.readFileSync(path.join(root,'assets/qr-manager-correction-v1.js'),'utf8')});
   await page.evaluate(()=>window.SFBackend.qrCorrection.open('fictitious-shift'));
   return{errors};
