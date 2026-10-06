@@ -19,13 +19,15 @@ async function rpc(name:string,body:Record<string,unknown>){
   const url=Deno.env.get('SUPABASE_URL')||'';
   const key=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||'';
   if(!url||!key)throw new Error('service_not_configured');
-  const response=await fetch(`${url}/rest/v1/rpc/${name}`,{
+  let response:Response;
+  try{response=await fetch(`${url}/rest/v1/rpc/${name}`,{
     method:'POST',headers:{'apikey':key,'Authorization':`Bearer ${key}`,
       'Content-Type':'application/json','Accept':'application/json'},
     body:JSON.stringify(body)
-  });
-  const result=await response.json();
-  if(!response.ok)throw new Error(String(result?.message||'Buchung nicht möglich').slice(0,220));
+  })}catch{throw Object.assign(new Error('Verbindung zum Buchungsdienst unterbrochen'),{retryable:true})}
+  let result;
+  try{result=await response.json()}catch{throw Object.assign(new Error('Antwort des Buchungsdienstes unvollständig'),{retryable:true})}
+  if(!response.ok)throw Object.assign(new Error(String(result?.message||'Buchung nicht möglich').slice(0,220)),{retryable:response.status>=500});
   return result;
 }
 
@@ -63,12 +65,16 @@ Deno.serve(async(req:Request)=>{
       return reply({ok:false,error:'Ungültige Aktion'},400,origin);
     const sessionToken=String(input.sessionToken||'');
     if(!tokenPattern.test(sessionToken))return reply({ok:false,error:'Bitte erneut anmelden'},401,origin);
+    const requestId=input.requestId==null?null:String(input.requestId).toLowerCase();
+    if(requestId!==null&&!tokenPattern.test(requestId))return reply({ok:false,error:'Ungültige Anfragekennung'},400,origin);
     const result=await rpc('qr_independent_action',{
-      p_terminal_token:qrToken,p_session_token:sessionToken,p_action:action
+      p_terminal_token:qrToken,p_session_token:sessionToken,p_action:action,p_request_id:requestId
     });
     return reply(result,200,origin);
   }catch(error){
     const message=error instanceof Error?error.message:'Buchung nicht möglich';
+    if(error&&typeof error==='object'&&'retryable' in error&&error.retryable)
+      return reply({ok:false,error:'Verbindung zum Buchungsdienst unterbrochen. Bitte den Buchungsstatus prüfen.',retryable:true},503,origin);
     const expired=/Anmeldung abgelaufen/.test(message);
     return reply({ok:false,error:message==='service_not_configured'?'Dienst derzeit nicht verfügbar':message},
       expired?401:400,origin);

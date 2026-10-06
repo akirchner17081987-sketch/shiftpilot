@@ -1,0 +1,53 @@
+name: QR Korrekturen und Verbindungsschutz
+on:
+  push:
+    branches: [main, codex/ionos-migration, codex/qr-reliable-20261006]
+    paths: ['qr-time.html', 'assets/**', 'tests/**', 'supabase/**', 'package.json', '.github/workflows/qr-reliable-checks.yml']
+  workflow_dispatch:
+jobs:
+  reliable-qr:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: fictitious-ci-password
+          POSTGRES_DB: qr_reliable_test
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Fictitious database - permissions, audit, paid time and safe retries
+        run: |
+          psql -v ON_ERROR_STOP=1 -f tests/sql/qr-reliable-bootstrap.sql
+          node -e "const fs=require('fs');const s=fs.readFileSync('supabase/migrations/20260929191508_qr_independent_paid_breaks.sql','utf8');process.stdout.write(s.slice(s.indexOf('create function public.qr_independent_login('),s.indexOf('create function public.qr_independent_action(')))" | psql -v ON_ERROR_STOP=1
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261006032450_qr_central_time_integration.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261006051020_qr_manager_correction_and_reliable_requests.sql
+          psql -v ON_ERROR_STOP=1 -f tests/sql/qr-reliable-integration.sql
+        env:
+          PGHOST: localhost
+          PGPORT: '5432'
+          PGUSER: postgres
+          PGPASSWORD: fictitious-ci-password
+          PGDATABASE: qr_reliable_test
+      - name: Chromium with entirely fictitious intercepted bookings
+        run: npx playwright test tests/e2e/qr-pause-total.spec.cjs tests/e2e/qr-reliable.spec.cjs --retries=0 --max-failures=2
+        env:
+          E2E_BASE_URL: http://qr-pause.test
+          SF_QR_BROWSER_EXECUTABLE: /usr/bin/google-chrome
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qr-reliable-results
+          path: |
+            playwright-report/
+            test-results/

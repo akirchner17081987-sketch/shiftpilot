@@ -68,7 +68,7 @@ function qrLoginHarness(status={state:'READY',name:'Fiktiver Mitarbeiter',breaks
   const requests=[];
   const helper=fs.readFileSync(new URL('../assets/qr-pause-total-v1.js',import.meta.url),'utf8').replace(/^export /gm,'');
   const script=html.match(/<script type="module">([\s\S]*?)<\/script>/)[1].replace(/^import .*;$/gm,'');
-  vm.runInNewContext(helper+'\n'+script,{document:{getElementById:get,querySelectorAll:()=>[],createElement:()=>({append(){}}),addEventListener(){}},performance:{now:()=>0},setInterval:()=>0,clearInterval(){},location:{search:'?t='+'0'.repeat(64)},URLSearchParams,Intl,Date,Number,fetch:async(_url,options)=>{const body=JSON.parse(options.body);requests.push(body);return{ok:true,json:async()=>body.action==='LOGIN'?{ok:true,sessionToken:'test-session'}:{ok:true,...status}}}});
+  vm.runInNewContext(helper+'\n'+script,{document:{getElementById:get,querySelectorAll:()=>[],createElement:()=>({append(){}}),addEventListener(){}},performance:{now:()=>0},AbortController,setTimeout,clearTimeout,setInterval:()=>0,clearInterval(){},location:{search:'?t='+'0'.repeat(64)},URLSearchParams,Intl,Date,Number,fetch:async(_url,options)=>{const body=JSON.parse(options.body);requests.push(body);return{ok:true,json:async()=>body.action==='LOGIN'?{ok:true,sessionToken:'test-session'}:{ok:true,...status}}}});
   return{get,requests,submit:()=>get('login').submit({preventDefault(){}})};
 }
 test('QR login accepts the eight-digit joining date and sends its original ISO date',async()=>{

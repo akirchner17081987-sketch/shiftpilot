@@ -42,7 +42,7 @@ self.addEventListener('fetch',event=>{
 
   // Kritische Laufzeit-Integrationen immer zuerst aus dem Netz holen. So kann ein
   // installierter PWA-Cache keine Sicherheits-, Push- oder Mobile-Korrektur verdecken.
-  const networkFirst=/\/(supabase-[^/]+|conflict-plausibility-v1|time-only-access-v1|team-admin-v1|time-workspace-v2|navigation-compat-v1|employee-mobile-pwa-v1|push-notifications-v1|employee-wage-preview-v1)\.js$/.test(url.pathname);
+  const networkFirst=/\/(supabase-[^/]+|conflict-plausibility-v1|time-only-access-v1|team-admin-v1|time-workspace-v2|qr-manager-correction-v1|qr-independent-report-v1|navigation-compat-v1|employee-mobile-pwa-v1|push-notifications-v1|employee-wage-preview-v1)\.js$/.test(url.pathname);
   if(networkFirst){
     event.respondWith(caches.open(CACHE).then(async cache=>{
       try{
