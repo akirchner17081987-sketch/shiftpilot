@@ -36,6 +36,7 @@ jobs:
       psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261006164346_employee_erasure_bulk_json_performance.sql
       psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261006164615_employee_erasure_fast_preview.sql
       psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261006165313_employee_erasure_audit_ownership_and_freshness.sql
+      psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261006172757_employee_erasure_auth_audit_json_compatibility.sql
       psql -v ON_ERROR_STOP=1 -f tests/sql/employee-erasure-integration.sql
      env:
       PGHOST: localhost

@@ -103,6 +103,9 @@ reset role;
 -- A dedicated employee account is revoked at staging and completion waits for Auth API removal.
 insert into auth.users(id,email) values('10000000-0000-0000-0000-000000000003','employee@example.invalid');
 insert into auth.sessions(id,user_id) values('70000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000003');
+insert into auth.audit_log_entries(id,payload) values
+ ('80000000-0000-0000-0000-000000000001','{"actor_id":"10000000-0000-0000-0000-000000000003","actor_username":"employee@example.invalid","action":"login"}'),
+ ('80000000-0000-0000-0000-000000000002','{"actor_id":"10000000-0000-0000-0000-000000000001","actor_username":"owner@example.invalid","action":"login"}');
 insert into public.company_members(company_id,user_id,role,status) values('20000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000003','VIEWER','ACTIVE');
 update public.employees set auth_user_id='10000000-0000-0000-0000-000000000003',access_status='ACTIVE',email='employee@example.invalid' where legacy_id='auth-target';
 do $$declare preview jsonb;job jsonb;target uuid;begin
@@ -118,4 +121,6 @@ do $$declare preview jsonb;job jsonb;target uuid;begin
  perform public.assert_erasure((public.server_finish_employee_erasure((job->>'job_id')::uuid,'10000000-0000-0000-0000-000000000001')->>'verified')::boolean,'erasure finishes after Auth API');
 end$$;
 select public.assert_erasure(not exists(select 1 from public.employees where legacy_id='auth-target') and not exists(select 1 from public.company_members where user_id='10000000-0000-0000-0000-000000000003'),'dedicated employee and membership erased');
+select public.assert_erasure(not exists(select 1 from auth.audit_log_entries where id='80000000-0000-0000-0000-000000000001'),'employee Auth JSON audit removed');
+select public.assert_erasure(exists(select 1 from auth.audit_log_entries where id='80000000-0000-0000-0000-000000000002' and payload::jsonb->>'actor_username'='owner@example.invalid'),'other Auth JSON audit preserved');
 select 'EMPLOYEE_ERASURE_INTEGRATION_PASSED' as result;
