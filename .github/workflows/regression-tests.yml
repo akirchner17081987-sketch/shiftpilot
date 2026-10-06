@@ -11,6 +11,11 @@ on:
       - .github/workflows/regression-tests.yml
   pull_request:
   workflow_dispatch:
+    inputs:
+      run_production_browser:
+        description: 'Explicitly run the authenticated production browser suite'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -30,10 +35,10 @@ jobs:
       - name: Statische Regressionstests ausführen
         run: npm test
       - name: Chromium für Produktions-Browsertests installieren
-        if: github.event_name != 'pull_request'
+        if: github.event_name == 'workflow_dispatch' && inputs.run_production_browser
         run: npx playwright install --with-deps chromium
       - name: Browserabläufe gegen Produktion ausführen
-        if: github.event_name != 'pull_request'
+        if: github.event_name == 'workflow_dispatch' && inputs.run_production_browser
         run: npm run test:e2e
         env:
           E2E_BASE_URL: https://shiftpilot-two.vercel.app

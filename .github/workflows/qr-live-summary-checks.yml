@@ -1,0 +1,63 @@
+name: QR Live-Anzeige Prüfung
+on:
+  push:
+    branches: [main, codex/ionos-migration, codex/qr-live-display-20261006]
+    paths:
+      - qr-time.html
+      - assets/qr-pause-total-v1.js
+      - tests/qr-live-summary.test.mjs
+      - tests/e2e/qr-pause-total.spec.cjs
+      - tests/sql/qr-live-*.sql
+      - supabase/migrations/20261006041205_qr_employee_live_summary.sql
+      - .github/workflows/qr-live-summary-checks.yml
+  workflow_dispatch:
+jobs:
+  live-summary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: fictitious-ci-password
+          POSTGRES_DB: qr_live_test
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Validate location, server time and booking guards with fictitious PostgreSQL data
+        run: |
+          psql -v ON_ERROR_STOP=1 -f tests/sql/qr-live-bootstrap.sql
+          sed '/^-- Manager report/,$d' supabase/migrations/20260929191508_qr_independent_paid_breaks.sql | psql -v ON_ERROR_STOP=1
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20260930000537_qr_independent_ten_breaks.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261006041205_qr_employee_live_summary.sql
+          psql -v ON_ERROR_STOP=1 -f tests/sql/qr-live-integration.sql
+        env:
+          PGHOST: localhost
+          PGPORT: '5432'
+          PGUSER: postgres
+          PGPASSWORD: fictitious-ci-password
+          PGDATABASE: qr_live_test
+      - name: Independent Chromium with intercepted fictitious bookings
+        run: npx playwright test tests/e2e/qr-pause-total.spec.cjs --retries=0 --max-failures=2
+        env:
+          E2E_BASE_URL: http://qr-pause.test
+          SF_QR_BROWSER_EXECUTABLE: /usr/bin/google-chrome
+      - run: node tests/browser/qr-forgotten-pause-qa.cjs
+        env:
+          SF_QR_BROWSER_EXECUTABLE: /usr/bin/google-chrome
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qr-live-summary-results
+          path: |
+            playwright-report/
+            test-results/
