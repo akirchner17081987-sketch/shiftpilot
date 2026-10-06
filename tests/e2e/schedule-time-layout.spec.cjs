@@ -2,6 +2,8 @@ const {test,expect}=require('@playwright/test');
 const fs=require('node:fs'),path=require('node:path');
 const read=p=>fs.readFileSync(path.join(__dirname,'../../',p),'utf8');
 const index=read('index.html');
+const layoutScriptTag=index.match(/<script defer src="assets\/manager-schedule-time-layout-v1\.js[^\"]*"><\/script>/)[0];
+const layoutScriptPath=layoutScriptTag.match(/src="([^\"]+)"/)[1];
 const section=id=>index.match(new RegExp('<section id="'+id+'"[\\s\\S]*?<\\/section>'))[0];
 const styles=[...index.matchAll(/<style[^>]*>([\s\S]*?)<\/style>|<link\b[^>]*rel="stylesheet"[^>]*>/g)].map(m=>{
  if(m[1]!==undefined)return '<style>'+m[1]+'</style>';
@@ -36,8 +38,8 @@ const fakeData=`
 const script=s=>'<script>'+s.replace(/<\/script/gi,'<\\/script')+'</script>';
 const body='<div id="appShell" class="app"><aside class="sidebar">SchichtFunk</aside><header class="topbar">Layoutprüfung</header><main class="main"><div class="content">'
  +section('view-schedule')+section('view-time')+'</div></main></div>';
-const html='<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'+styles+'</head><body>'+body+script(fakeData)
- +['assets/schedule-week-board-v2-phase1.js','assets/schedule-readability-v1.js','assets/time-workspace-v2.js','assets/time-month-picker-v1.js'].map(p=>script(read(p))).join('\n')
+const html='<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'+styles+layoutScriptTag+'</head><body>'+body+script(fakeData)
+ +['assets/schedule-week-board-v2-phase1.js','assets/schedule-month-view-v1.js','assets/schedule-toolbar-polish-v1.js','assets/time-workspace-v2.js','assets/time-month-picker-v1.js'].map(p=>script(read(p))).join('\n')
  +script(`document.addEventListener('DOMContentLoaded',()=>{
   const view=document.getElementById('view-time');
   for(const [id,text] of [['sfTimeAccounts','Fiktives Stundenkonto'],['sfQrTerminalAdmin','Fiktive QR-Terminals'],['sfQrIndependentReport','Fiktive QR-Buchungen']]){
@@ -48,7 +50,7 @@ test.use({video:'off',launchOptions:process.env.SF_WORKSPACE_LAYOUT_BROWSER?{exe
 
 async function fixture(page,theme,fontSize,role='PLANNER'){
  const errors=[],requests=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
- await page.route('**/*',async r=>{requests.push(r.request().url());if(r.request().url()==='http://workspace-layout.test/')await r.fulfill({contentType:'text/html',body:html.replace("role:'PLANNER'","role:'"+role+"'")});else await r.abort();});
+ await page.route('**/*',async r=>{requests.push(r.request().url());if(r.request().url()==='http://workspace-layout.test/')await r.fulfill({contentType:'text/html',body:html.replace("role:'PLANNER'","role:'"+role+"'")});else if(r.request().url()==='http://workspace-layout.test/'+layoutScriptPath)await r.fulfill({contentType:'application/javascript',body:read(layoutScriptPath.split('?')[0])});else await r.abort();});
  await page.goto('http://workspace-layout.test/');
  await page.evaluate(({theme,fontSize})=>{document.documentElement.dataset.sfTheme=theme;document.documentElement.style.fontSize=fontSize+'px';document.documentElement.classList.toggle('sf-font-large',fontSize===17);},{theme,fontSize});
  await expect(page.locator('#sfTimeWorkspaceTabs button')).toHaveCount(3);
@@ -129,7 +131,7 @@ for(const theme of ['dark','light'])for(const width of [1920,1366,1363,1024,768,
   await expect(page.locator('#sfQrTerminalAdmin')).toBeVisible();expect((await tabsGeometry(page)).issues).toEqual([]);
   await entries.click();await expect(entries).toHaveAttribute('aria-selected','true');await expect(page.locator('#sfTimePeriodControls')).toBeVisible();
   expect(await page.evaluate(()=>__refreshes)).toEqual(expect.arrayContaining(['account','terminals','qr-report','entries']));
-  expect(errors).toEqual([]);expect(requests).toEqual(['http://workspace-layout.test/']);expect(await page.evaluate(()=>__writes)).toBe(0);
+  expect(errors).toEqual([]);expect(requests).toEqual(['http://workspace-layout.test/','http://workspace-layout.test/'+layoutScriptPath]);expect(await page.evaluate(()=>__writes)).toBe(0);
   await info.attach('workspace-measurements',{body:Buffer.from(JSON.stringify({modes,tabs},null,2)),contentType:'application/json'});
  });
 }
@@ -142,5 +144,5 @@ for(const role of ['OWNER','TIME_TRACKING'])test(`time tabs respect ${role} acce
  }else{await expect(account).toBeEnabled();await expect(qr).toHaveText('QR-Terminals');await qr.focus();}
  await page.keyboard.press('Enter');await expect(qr).toHaveAttribute('aria-selected','true');expect((await tabsGeometry(page)).issues).toEqual([]);
  const calls=await page.evaluate(()=>__refreshes);expect(calls).toContain('qr-report');expect(calls.includes('terminals')).toBe(role!=='TIME_TRACKING');
- expect(errors).toEqual([]);expect(requests).toEqual(['http://workspace-layout.test/']);expect(await page.evaluate(()=>__writes)).toBe(0);
+ expect(errors).toEqual([]);expect(requests).toEqual(['http://workspace-layout.test/','http://workspace-layout.test/'+layoutScriptPath]);expect(await page.evaluate(()=>__writes)).toBe(0);
 });

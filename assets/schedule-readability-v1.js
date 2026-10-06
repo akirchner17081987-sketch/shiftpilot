@@ -78,13 +78,5 @@
     if(pool&&toggle&&pool.classList.contains('sp-pool-compact')){toggle.textContent='Mitarbeiter anzeigen ↓';toggle.setAttribute('aria-label','Mitarbeiter-Pool vollständig anzeigen')}
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(enhance,0),{once:true});else setTimeout(enhance,0);
-  // Keep focused controls fully visible when Chrome leaves a partially visible column in place.
-  document.addEventListener('focusin',e=>{
-    const wrap=e.target.closest?.('#sfWeekBoardV2');if(!wrap)return;
-    const item=e.target.getBoundingClientRect(),box=wrap.getBoundingClientRect(),style=getComputedStyle(wrap);
-    const left=box.left+wrap.clientLeft+parseFloat(style.paddingLeft),right=box.left+wrap.clientLeft+wrap.clientWidth-parseFloat(style.paddingRight);
-    if(item.left<left)wrap.scrollLeft+=item.left-left;
-    else if(item.right>right)wrap.scrollLeft+=item.right-right;
-  });
   document.addEventListener('click',e=>{if(e.target.closest('[data-view="schedule"]'))setTimeout(enhance,80);if(e.target.closest('.sp-pool-toggle'))setTimeout(()=>{const pool=document.querySelector('#view-schedule .employee-pool'),toggle=pool?.querySelector('.sp-pool-toggle');if(!toggle)return;const compact=pool.classList.contains('sp-pool-compact');toggle.textContent=compact?'Mitarbeiter anzeigen ↓':'Mitarbeiter einklappen ↑';toggle.setAttribute('aria-expanded',String(!compact))},0)});
 })();

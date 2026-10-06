@@ -18,7 +18,7 @@ Verwaltungsansichten Dienstplan und Zeiterfassung:
 - Die Dienstplan-Werkzeugleiste und die drei Ansichts-Schaltflächen umbrechen
   kontrolliert. Auf schmalen Fenstern verdecken Standort- und Zeitraumwahl die
   Schaltfläche „Übersicht“ dadurch nicht mehr.
-- `schedule-readability-v1.js` schiebt ein fokussiertes Wochen-Steuerelement
+- `manager-schedule-time-layout-v1.js` schiebt ein fokussiertes Wochen-Steuerelement
   vollständig in den sichtbaren Ausschnitt. Chromium ließ zuvor bei bestimmten
   Breiten trotz Fokus einen Teil des Elements außerhalb des Ausschnitts stehen.
 - Zeiterfassung, Stundenkonto und QR-Terminals bekommen eine eigene volle Zeile.
@@ -29,13 +29,14 @@ Verwaltungsansichten Dienstplan und Zeiterfassung:
   zu übergroßen Leerflächen in der Höhe werden.
 
 Der neue Stylesheet-Link wird nach den bestehenden Theme-, Kennzahlen- und
-Schriftregeln geladen. Fachlogik, gespeicherte Schichten, Zeiten, QR-Konfiguration
+Schriftregeln geladen. Die Fokuskorrektur ist direkt über einen versionierten
+`defer`-Script-Link eingebunden. Fachlogik, gespeicherte Schichten, Zeiten, QR-Konfiguration
 und Rollenrechte bleiben unverändert.
 
 ## Prüfung
 
-Die unabhängige Chromium-Prüfung nutzt die tatsächlichen Styles und Renderer aus
-dem Repository, mit fiktiven Mitarbeitern und Schichten, ohne Anmeldung oder
+Die unabhängige Chromium-Prüfung nutzt die tatsächlichen Styles und geladenen
+Kalender-Module (Wochen- und Monatsansicht sowie Werkzeugleiste), mit fiktiven Mitarbeitern und Schichten, ohne Anmeldung oder
 Backend-Verbindung. Alle anderen Netzwerkanfragen werden blockiert. Die Prüfung
 misst vollständige Namen, Uhrzeiten und Besetzungszahlen in allen 28 Schichtzellen
 je Wochenansicht sowie Textgrenzen und Überschneidungen.
@@ -55,8 +56,8 @@ Portal-Sitzung.
   Rollen- und QR-Prüfungen bestanden.
 - Statische Builds auf beiden Produktionszweigen erfolgreich.
 - Unabhängiger Chromium-Lauf: 44 bestanden, keine Fehler, keine Wiederholungen
-  (GitHub Actions Run 37399537122, getesteter Commit
-  `f8d12cdc507a0f0480e35f6b0a5299b7f1f34889`).
+  (GitHub Actions Run 37400056410, getesteter Commit
+  `0a784f90bba97de876a53da10245893695bb0bad`).
 - Alle 42 Layoutfälle prüfen beide Wochenansichten, alle vier Zeitfilter,
   Tastaturfokus, Tab-Wechsel und sichtbare zugehörige Panels. Zwei weitere Fälle
   prüfen die Rollen OWNER und TIME_TRACKING.
@@ -64,6 +65,8 @@ Portal-Sitzung.
   bleibt innerhalb des Kopfs. Die Dienstplan-Werkzeugleiste und alle Zeit-Tabs haben
   weder horizontale Überläufe noch überlappende Schaltflächen.
 - Keine Browserfehler, keine externen Netzwerkanfragen, keine Speichervorgänge.
+  Die einzige zusätzliche Anfrage lädt die Fokuskorrektur über den direkt aus
+  `index.html` übernommenen Script-Link von der fiktiven Testadresse.
 
 Die Bildkontrolle bestätigt den langen Schichtnamen mit Zeitspanne und Besetzung
 im Hellmodus bei 1363 px und „Größer“, die Übersicht im Dunkelmodus sowie Zeit-Kopf
