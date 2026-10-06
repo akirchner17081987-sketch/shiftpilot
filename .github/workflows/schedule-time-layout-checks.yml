@@ -1,0 +1,45 @@
+name: Dienstplan und Zeiterfassung Layoutprüfung
+on:
+  push:
+    branches: [main, codex/ionos-migration, codex/schedule-time-layout-20261006]
+    paths:
+      - index.html
+      - assets/manager-schedule-time-layout-v1.css
+      - assets/manager-typography-v1.css
+      - assets/schedule-week-board-v2-phase1.js
+      - assets/schedule-readability-v1.js
+      - assets/time-workspace-v2.js
+      - assets/time-month-picker-v1.js
+      - tests/e2e/schedule-time-layout.spec.cjs
+      - .github/workflows/schedule-time-layout-checks.yml
+  pull_request:
+    paths:
+      - index.html
+      - assets/manager-schedule-time-layout-v1.css
+      - assets/time-workspace-v2.js
+      - tests/e2e/schedule-time-layout.spec.cjs
+      - .github/workflows/schedule-time-layout-checks.yml
+jobs:
+  layout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright test tests/e2e/schedule-time-layout.spec.cjs --project=desktop-chromium --retries=0 --max-failures=3
+        env:
+          E2E_BASE_URL: http://workspace-layout.test
+          SF_WORKSPACE_LAYOUT_BROWSER: /usr/bin/google-chrome
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: schedule-time-layout-results
+          path: |
+            playwright-report/
+            test-results/
