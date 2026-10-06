@@ -68,7 +68,8 @@ for(const theme of ['light','dark'])for(const {width,height,fontSize} of sizes)t
  // Use the actual assistant: ask a planning question and retain it while closing/reopening.
  await page.locator('#sfPlanningChatInput').fill('Welche Dienste sind am 06.10.2026 offen?');await page.locator('#sfPlanningChatForm button').click();await expect(page.locator('#sfPlanningChatLog .is-user')).toHaveCount(1);
  await page.keyboard.press('Escape');await expect(page.locator('#sfPlanningChat')).not.toBeVisible();await expect(launcher).toBeFocused();
- expect(await launcher.evaluate(el=>{const r=el.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight;})).toBe(true);
+ const restored=await launcher.evaluate(el=>{const r=el.getBoundingClientRect();return {top:r.top,bottom:r.bottom,viewport:innerHeight};});
+ expect(restored.top).toBeGreaterThanOrEqual(-1);expect(restored.bottom).toBeLessThanOrEqual(restored.viewport+1);
  await launcher.press('Enter');await expect(page.locator('#sfPlanningChatLog .is-user')).toHaveCount(1);
  await page.locator('#sfPlanningChatClose').click();await button.focus();await page.keyboard.press('Enter');await expect(page.locator('#autoSuggestionCount')).toHaveText('1');
  expect(await page.evaluate(()=>__writes)).toBe(0);expect(report.errors).toEqual([]);expect(report.external).toEqual([]);

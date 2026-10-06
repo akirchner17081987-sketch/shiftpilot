@@ -93,7 +93,7 @@
 /* In der Auto-Planung teilen sich Aktionen und Assistent keinen schwebenden Platz. */
 .sf-auto-assistant-dock{display:flex;flex-direction:column;align-items:flex-end;gap:12px;margin:-12px 0 28px;min-width:0}
 .sf-auto-assistant-dock[hidden]{display:none!important}
-.sf-chat-launcher.sf-chat-docked{position:static;inset:auto;max-width:100%;white-space:normal;text-align:left;font-size:.875rem!important;line-height:1.5;flex:none}
+.sf-chat-launcher.sf-chat-docked{position:static;inset:auto;max-width:100%;white-space:normal;text-align:left;font-size:.875rem!important;line-height:1.5;flex:none;scroll-margin-block:12px}
 .sf-chat-launcher.sf-chat-docked svg{flex:none}
 .sf-planning-chat.sf-chat-docked{position:static;inset:auto;width:min(520px,100%);max-width:100%;height:min(720px,80dvh);max-height:none;flex:none}
 @media(max-width:600px){.sf-auto-assistant-dock{margin-top:0}.sf-planning-chat.sf-chat-docked{width:100%;height:min(720px,85dvh)}}
