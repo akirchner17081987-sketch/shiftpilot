@@ -1,0 +1,57 @@
+/* SF-03: Text-only metrics use the full card; dashboard icon cards keep their layout. */
+#view-time{container:sfTimeMetrics / inline-size}
+#view-reports{container:sfReportMetrics / inline-size}
+
+#timeStats,#reportStats{
+  display:grid;
+  gap:12px!important;
+  min-width:0;
+  align-items:stretch;
+}
+#timeStats{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+#reportStats{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+
+#timeStats>.stat,#reportStats>.stat{
+  display:block;
+  min-width:0;
+  height:auto;
+  padding:16px!important;
+}
+#timeStats>.stat>div,#reportStats>.stat>div{
+  width:100%;
+  min-width:0;
+}
+#timeStats .stat small,#timeStats .stat em,
+#reportStats .stat small,#reportStats .stat em{
+  display:block;
+  font-size:.8125rem!important;
+  line-height:1.5;
+  white-space:normal;
+  overflow-wrap:break-word;
+}
+#timeStats .stat strong,#reportStats .stat strong{
+  display:block;
+  font-size:1.5rem!important;
+  font-variant-numeric:tabular-nums;
+  line-height:1.25;
+  margin-top:8px;
+  white-space:normal;
+  overflow-wrap:break-word;
+}
+#timeStats .stat em,#reportStats .stat em{margin-top:8px}
+
+@container sfReportMetrics (min-width:76rem){
+  #reportStats{grid-template-columns:repeat(6,minmax(0,1fr))!important}
+}
+@container sfTimeMetrics (max-width:56rem){
+  #timeStats{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@container sfReportMetrics (max-width:48rem){
+  #reportStats{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@container sfTimeMetrics (max-width:28rem){
+  #timeStats{grid-template-columns:minmax(0,1fr)!important}
+}
+@container sfReportMetrics (max-width:28rem){
+  #reportStats{grid-template-columns:minmax(0,1fr)!important}
+}
