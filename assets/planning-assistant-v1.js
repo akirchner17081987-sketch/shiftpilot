@@ -12,7 +12,15 @@
   const busy=()=>!!(B().companySwitching||B().bootPromise||B().suppressSync);
   const el=id=>document.getElementById(id);
   function reset(){context={};messages=[];selectedMonth='';selectedService=null;el('sfPlanningChatLog')?.replaceChildren();updateService();}
-  function close(restore=true){const dialog=el('sfPlanningChat'),docked=dialog?.classList.contains('sf-chat-docked');if(dialog?.open)dialog.close();el('sfPlanningAssistantButton')?.setAttribute('aria-expanded','false');if(restore&&previousFocus?.isConnected)previousFocus.focus({preventScroll:!docked});}
+  function close(restore=true){
+    const dialog=el('sfPlanningChat'),docked=dialog?.classList.contains('sf-chat-docked');
+    if(dialog?.open)dialog.close();
+    el('sfPlanningAssistantButton')?.setAttribute('aria-expanded','false');
+    if(restore&&previousFocus?.isConnected){
+      previousFocus.focus({preventScroll:true});
+      if(docked)previousFocus.scrollIntoView({block:'nearest'});
+    }
+  }
   function syncScope(){
     const next=identity();if(scope!==next||busy()){close(false);reset();scope=next;}
     if(selectedService&&!contextDates().includes(selectedService.date)){selectedService=null;context={};updatePeriod();}
