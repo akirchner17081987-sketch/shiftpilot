@@ -31,7 +31,7 @@ do $$declare v jsonb;a jsonb;r jsonb;x integer;begin
   if private.sf_confirmed_work_minutes('aaaaaaaa-0000-0000-0000-000000000002','2026-03-28','2026-03-29')<>420 then raise exception 'DST elapsed duration failed';end if;
   v:=public.manager_central_time_entries('11111111-1111-1111-1111-111111111111','2026-09-01','2026-09-30');
   if jsonb_array_length(v->'qr_rows')<>4 or jsonb_array_length(v->'rows')<>2 then raise exception 'Central row scope failed';end if;
-  select x into a from jsonb_array_elements(v->'qr_rows') x where x->>'id'='eeeeeeee-0000-0000-0000-000000000001';
+  select z into a from jsonb_array_elements(v->'qr_rows') z where z->>'id'='eeeeeeee-0000-0000-0000-000000000001';
   if (a->>'pause_minutes')::numeric<>60 or a->>'matched_assignment_id'<>'cccccccc-0000-0000-0000-000000000001' then raise exception 'QR detail/matching failed';end if;
   a:=public.manager_monthly_time_accounts('11111111-1111-1111-1111-111111111111','2026-09-01');
   select (z->>'confirmed_work_minutes')::integer into x from jsonb_array_elements(a->'rows') z where z->>'employee_id'='aaaaaaaa-0000-0000-0000-000000000001';
