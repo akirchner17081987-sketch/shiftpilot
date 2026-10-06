@@ -26,7 +26,7 @@ html #appShell :is(.company-card,.user-row,.nav button) small{
 }
 
 /* Later-loaded module styles must not restore fixed 8–11 px text. */
-html #appShell :is(.td-status,.td-card-head p,.td-kpi em,.td-row small,.td-autopilot p,
+html #appShell .main :is(.td-status,.td-card-head p,.td-kpi em,.td-row small,.td-autopilot p,
   .td-empty,.sf-db-card-head p,.sf-db-list-row small,.sf-db-action small,
   .sf-tw-help,.sf-tw-validation,.sf-time-message,.sf-time-empty,
   .sf-rp-card-head p,.sf-rp-empty,.sf-rp-error,.sf-set-note){
@@ -35,7 +35,7 @@ html #appShell :is(.td-status,.td-card-head p,.td-kpi em,.td-row small,.td-autop
   white-space:normal;
   overflow-wrap:break-word;
 }
-html #appShell :is(.td-row b,.td-row-actions button,.td-pill,.td-cov b,.td-cov span,
+html #appShell .main :is(.td-row b,.td-row-actions button,.td-pill,.td-cov b,.td-cov span,
   .sf-db-status,.sf-db-pill,.sf-db-bar-top,.sf-db-mix-item,
   .sf-time-status,.sf-time-action,.sf-time-card-head span,.sf-time-code,
   .sf-time-main b,.sf-time-item-actions button,.sf-tw-count,

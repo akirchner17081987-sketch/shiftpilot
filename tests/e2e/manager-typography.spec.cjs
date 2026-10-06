@@ -38,7 +38,7 @@ const body='<div id="appShell" class="app"><aside class="sidebar"><div class="na
  +section('view-settings')+section('view-time')+section('view-reports')+section('view-schedule')
  +'</div></main></div><div id="landing-control"><small style="font-size:10px">Öffentliche Seite</small></div><div id="sfEmployeePortal"><em style="font-size:11px">Portal-Kontrolle</em></div>';
 const script=source=>'<script>'+source.replace(/<\/script/gi,'<\\/script')+'</script>';
-const html='<!doctype html><html lang="de"><head><meta name="viewport" content="width=device-width,initial-scale=1">'+styles+'</head><body>'+body
+const html='<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'+styles+'</head><body>'+body
  +script(fakeData)+script(timeModule)+scripts.map(script).join('\n')
  +script(`document.addEventListener('DOMContentLoaded',()=>{
    window.renderTimeTracking=()=>typographyTime.render(__timeRows);renderTimeTracking();
