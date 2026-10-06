@@ -102,6 +102,10 @@ for(const theme of ['dark','light'])for(const width of [1920,1366,1363,1024,768,
    await page.locator('.sf-week-shift[data-type="Objektschutz-Leitstelle Sonderdienst"]').first().screenshot({path:info.outputPath('shift-'+mode+'.png')});
   }
   const last=page.locator('#sfWeekBoardV2 .sf-week-shift').last().locator('button').first();await last.focus();
+  await info.attach('last-column-focus',{body:Buffer.from(JSON.stringify(await last.evaluate(el=>{
+   const a=el.getBoundingClientRect(),wrap=document.getElementById('sfWeekBoardV2'),b=wrap.getBoundingClientRect();
+   return{button:{left:a.left,right:a.right,width:a.width},wrap:{left:b.left,right:b.right,width:b.width,scrollLeft:wrap.scrollLeft,clientWidth:wrap.clientWidth,scrollWidth:wrap.scrollWidth},focused:document.activeElement===el};
+  }),null,2)),contentType:'application/json'});
   expect(await last.evaluate(el=>{const a=el.getBoundingClientRect(),b=document.getElementById('sfWeekBoardV2').getBoundingClientRect();return a.left>=b.left-1&&a.right<=b.right+1;})).toBe(true);
   await show(page,'view-time');
   for(const period of ['day','week','month','custom']){await page.locator('#timePeriod').selectOption(period);expect((await tabsGeometry(page)).issues).toEqual([]);}
