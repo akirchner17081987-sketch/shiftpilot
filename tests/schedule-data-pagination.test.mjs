@@ -10,7 +10,7 @@ function harness({failPage=false}={}){
   const calls=[],deletes=[];
   const c={console,Map,Set,Date,Intl,localStorage:{getItem:()=>null},sessionStorage:{getItem:()=>null},document:{querySelector:()=>null},employees:[],assignments:[{id:'previous'}],absences:[],globalSoll:{},dailySoll:{},timeEntries:{},TYPES:[],setTimeout:()=>0,clearTimeout(){}};
   c.window=c;c.SFBackend={companyId:'target',user:{id:'manager'},ready:true};
-  c.SFBackend.client={from(table){
+  c.SFBackend.client={rpc:async(name,args)=>({data:name==='employee_roster_generation'?0:[],error:null}),from(table){
     const filters=[],orders=[];let count=null,mode='read',payload;
     const q={select(){return q},eq(k,v){filters.push([k,'eq',v]);return q},neq(k,v){filters.push([k,'neq',v]);return q},gt(k,v){filters.push([k,'gt',v]);return q},order(k){orders.push(k);return q},limit(n){count=n;return q},upsert(p){mode='upsert';payload=p;return q},update(){mode='update';return q},delete(){mode='delete';return q},single(){return q},then(resolve,reject){return Promise.resolve().then(()=>{
       calls.push({table,filters:[...filters],orders:[...orders],count,mode});
