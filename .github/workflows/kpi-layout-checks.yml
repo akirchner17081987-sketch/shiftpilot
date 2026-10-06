@@ -3,6 +3,7 @@ on:
   push:
     branches: [main, codex/ionos-migration, codex/kpi-layout-20261006]
     paths:
+      - index.html
       - assets/manager-kpi-layout-v1.css
       - assets/reports-final-v1.js
       - assets/supabase-time-tracking-v1.js
@@ -10,6 +11,7 @@ on:
       - .github/workflows/kpi-layout-checks.yml
   pull_request:
     paths:
+      - index.html
       - assets/manager-kpi-layout-v1.css
       - assets/reports-final-v1.js
       - assets/supabase-time-tracking-v1.js
