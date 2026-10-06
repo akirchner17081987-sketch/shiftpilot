@@ -1,4 +1,8 @@
 /* SF-04: keep shift identity, time range and staffing in distinct rows. */
+html #appShell #view-schedule .sf-week-board{
+  gap:.5rem;
+  min-width:73rem; /* Seven 10rem columns plus six .5rem gaps. */
+}
 html #appShell #view-schedule .sf-week-shift-head{
   display:grid;
   grid-template-columns:minmax(0,1fr);

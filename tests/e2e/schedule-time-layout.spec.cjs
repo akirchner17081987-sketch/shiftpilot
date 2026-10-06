@@ -107,6 +107,8 @@ for(const theme of ['dark','light'])for(const width of [1920,1366,1363,1024,768,
    return{button:{left:a.left,right:a.right,width:a.width},wrap:{left:b.left,right:b.right,width:b.width,scrollLeft:wrap.scrollLeft,clientWidth:wrap.clientWidth,scrollWidth:wrap.scrollWidth},focused:document.activeElement===el};
   }),null,2)),contentType:'application/json'});
   expect(await last.evaluate(el=>{const a=el.getBoundingClientRect(),b=document.getElementById('sfWeekBoardV2').getBoundingClientRect();return a.left>=b.left-1&&a.right<=b.right+1;})).toBe(true);
+  const previous=page.locator('#sfWeekBoardV2 .sf-week-shift').nth(26).locator('button').first();await previous.focus();await page.keyboard.press('Tab');await expect(last).toBeFocused();
+  expect(await last.evaluate(el=>{const a=el.getBoundingClientRect(),b=document.getElementById('sfWeekBoardV2').getBoundingClientRect();return a.left>=b.left-1&&a.right<=b.right+1;})).toBe(true);
   await show(page,'view-time');
   for(const period of ['day','week','month','custom']){await page.locator('#timePeriod').selectOption(period);expect((await tabsGeometry(page)).issues).toEqual([]);}
   const tabs=await tabsGeometry(page);await page.locator('#view-time .page-head').screenshot({path:info.outputPath('time-header.png')});
