@@ -1,0 +1,81 @@
+/* SF-04: keep shift identity, time range and staffing in distinct rows. */
+html #appShell #view-schedule .sf-week-shift-head{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  grid-template-rows:auto auto;
+  gap:8px;
+  align-items:start;
+  justify-items:stretch;
+  padding:12px;
+}
+html #appShell #view-schedule .sf-week-shift-main{min-width:0;width:100%}
+html #appShell #view-schedule .sf-week-shift-main strong{
+  display:block;
+  font-size:.875rem!important;
+  line-height:1.5;
+  white-space:normal;
+  overflow:visible;
+  text-overflow:clip;
+  overflow-wrap:break-word;
+}
+html #appShell #view-schedule .sf-week-shift-main small{
+  display:block;
+  margin-top:4px;
+  white-space:normal;
+  overflow:visible;
+  text-overflow:clip;
+  overflow-wrap:normal;
+  word-break:normal;
+}
+html #appShell #view-schedule .sf-week-shift-count{max-width:100%;justify-self:start}
+html #appShell #view-schedule .sf-week-shift-count b{
+  display:inline-block;
+  max-width:100%;
+  white-space:normal;
+  overflow-wrap:break-word;
+}
+
+/* SF-05: the complete tab list gets its own row, including at desktop widths. */
+html #appShell #view-time .page-head{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:flex-end;
+  gap:14px;
+}
+html #appShell #view-time .page-head>div:first-child{flex:1 1 28rem;min-width:0}
+html #appShell #view-time .sf-time-period-controls{
+  flex:1 1 24rem;
+  min-width:0;
+  max-width:100%;
+  justify-content:flex-start;
+}
+html #appShell #view-time .sf-time-period-field{min-width:0;max-width:100%}
+html #appShell #view-time:is(.sf-tw-account,.sf-tw-qr) .sf-time-period-controls{display:none}
+html #appShell #view-time .sf-time-period-hint{
+  white-space:normal;
+  overflow-wrap:break-word;
+}
+html #appShell #view-time #sfTimeWorkspaceTabs{
+  flex:1 0 100%;
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  width:100%;
+  min-width:0;
+  max-width:100%;
+}
+html #appShell #view-time #sfTimeWorkspaceTabs button{
+  flex:1 1 11rem;
+  min-width:0;
+  max-width:100%;
+  min-height:44px;
+  padding:9px 12px;
+  font-size:.8125rem!important;
+  line-height:1.5;
+  white-space:normal;
+  overflow-wrap:break-word;
+}
+html #appShell #view-time #sfTimeWorkspaceTabs button:focus-visible{
+  outline:2px solid var(--teal,#2ed9b8);
+  outline-offset:2px;
+}
