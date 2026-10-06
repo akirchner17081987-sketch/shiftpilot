@@ -5,6 +5,7 @@ on:
     paths:
       - index.html
       - assets/manager-kpi-layout-v1.css
+      - assets/manager-typography-v1.css
       - assets/reports-final-v1.js
       - assets/supabase-time-tracking-v1.js
       - tests/e2e/kpi-layout.spec.cjs
@@ -13,6 +14,7 @@ on:
     paths:
       - index.html
       - assets/manager-kpi-layout-v1.css
+      - assets/manager-typography-v1.css
       - assets/reports-final-v1.js
       - assets/supabase-time-tracking-v1.js
       - tests/e2e/kpi-layout.spec.cjs

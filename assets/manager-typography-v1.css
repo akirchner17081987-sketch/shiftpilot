@@ -1,0 +1,111 @@
+/* SF-06: rem follows Einstellungen → Darstellung → Schriftgröße: Größer.
+   Keep typography separate from theme colors and scope it to the manager. */
+#appShell{
+  --sf-text-note:.875rem;
+  --sf-text-secondary:.8125rem;
+  --sf-text-compact:.75rem;
+}
+
+html #appShell .main{font-size:var(--sf-text-note)}
+html #appShell .main :is(p,em,[class$="-hint"],[class$="-help"],[class$="-note"],.notice,.empty){
+  font-size:var(--sf-text-note)!important;
+  line-height:1.5!important;
+  overflow-wrap:break-word;
+}
+html #appShell .main :is(small,label,[class$="-sub"],[class$="-meta"]){
+  font-size:var(--sf-text-secondary)!important;
+  line-height:1.5!important;
+}
+html #appShell :is(.nav-group-label,.eyebrow,.kbd){
+  font-size:var(--sf-text-compact)!important;
+  line-height:1.5!important;
+}
+html #appShell :is(.company-card,.user-row,.nav button) small{
+  font-size:var(--sf-text-secondary)!important;
+  line-height:1.5!important;
+}
+
+/* Later-loaded module styles must not restore fixed 8–11 px text. */
+html #appShell :is(.td-status,.td-card-head p,.td-kpi em,.td-row small,.td-autopilot p,
+  .td-empty,.sf-db-card-head p,.sf-db-list-row small,.sf-db-action small,
+  .sf-tw-help,.sf-tw-validation,.sf-time-message,.sf-time-empty,
+  .sf-rp-card-head p,.sf-rp-empty,.sf-rp-error,.sf-set-note){
+  font-size:var(--sf-text-note)!important;
+  line-height:1.5!important;
+  white-space:normal;
+  overflow-wrap:break-word;
+}
+html #appShell :is(.td-row b,.td-row-actions button,.td-pill,.td-cov b,.td-cov span,
+  .sf-db-status,.sf-db-pill,.sf-db-bar-top,.sf-db-mix-item,
+  .sf-time-status,.sf-time-action,.sf-time-card-head span,.sf-time-code,
+  .sf-time-main b,.sf-time-item-actions button,.sf-tw-count,
+  .sf-time-period-field,.sf-rp-range,.sf-rp-state,.sf-rp-row b,.sf-rp-row span,
+  .sf-rp-account,.sf-rp-field label){
+  font-size:var(--sf-text-secondary)!important;
+  line-height:1.5!important;
+}
+html #appShell .td-live{font-size:var(--sf-text-compact)!important}
+html #appShell :is(#timeStats,#reportStats) .stat em{
+  font-size:var(--sf-text-note)!important;
+  line-height:1.5!important;
+}
+
+/* Calendar labels and status details scale along with explanations. */
+html #appShell #view-schedule :is(.time-head,.day-head,.time-slot,.pill,
+  .pool-detail-label,.pool-shift-tag,.pool-absence,.sf-readability-legend,
+  .sf-week-day-title span,.sf-week-day-coverage,.sf-week-shift-main small,
+  .sf-week-shift-count b,.sf-week-employee-info b,.sf-week-employee-info small,
+  .sf-week-open,.sf-week-over,.sf-week-shared,.sf-month-weekday,
+  .sf-month-date b,.sf-month-date small,.sf-month-shift,.sf-month-open,
+  .sf-month-absence,.sf-month-empty,.sf-month-item,.sf-month-more,.sf-month-ok,
+  .sp-soll-toggle,.sp-soll-line,.sp-soll-line b,.sp-soll-ok-summary,.sp-soll-empty){
+  font-size:var(--sf-text-secondary)!important;
+  line-height:1.5!important;
+}
+
+/* Give enlarged notes room instead of reducing their font on narrow screens. */
+html #appShell #view-overview .td-kpis{
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr));
+}
+html #appShell #view-overview :is(.td-row>div:first-child,.td-card-head>div){min-width:0}
+html #appShell #view-overview :is(.td-status,.td-card-head){flex-wrap:wrap}
+html #appShell #view-overview .td-pill{
+  max-width:100%;
+  height:auto;
+  white-space:normal;
+  overflow-wrap:break-word;
+}
+html #appShell #view-overview .td-cov{
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:6px 10px;
+}
+html #appShell #view-overview .td-cov .td-bar{grid-column:1/-1;grid-row:2}
+html #appShell #view-schedule .sf-month-date{flex-wrap:wrap;gap:4px}
+html #appShell #view-schedule :is(.sf-month-date small,.sf-month-shift,
+  .sf-month-open,.sf-month-absence,.sf-month-empty,.sp-soll-line span){
+  white-space:normal;
+  overflow-wrap:break-word;
+}
+html #appShell #view-schedule .sf-month-grid{
+  grid-template-columns:repeat(7,minmax(9rem,1fr));
+}
+html #appShell #view-schedule .sf-week-board{
+  grid-template-columns:repeat(7,minmax(10rem,1fr));
+  min-width:70rem;
+}
+html #appShell #view-schedule .sf-week-board-wrap{overflow-x:auto}
+html #appShell #view-schedule .sf-week-shift-head{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+}
+html #appShell #view-schedule .sf-week-shift-count{justify-self:start}
+html #appShell #view-schedule :is(.sf-week-shift-main strong,.sf-week-shift-main small,
+  .sf-week-employee-info b,.sf-week-employee-info small){
+  white-space:normal;
+  overflow:visible;
+  overflow-wrap:anywhere;
+}
+
+/* Demo-specific color rules remain; its secondary text uses the same scale. */
+html[data-sf-demo="1"] body #appShell .main :is(p,em){font-size:var(--sf-text-note)!important}
+html[data-sf-demo="1"] body #appShell .main :is(small,label){font-size:var(--sf-text-secondary)!important}
