@@ -63,6 +63,7 @@ html #appShell #view-schedule .sf-week-shift-count b{
 /* SF-05: the complete tab list gets its own row, including at desktop widths. */
 html #appShell #view-time .page-head{
   display:flex;
+  flex-direction:row;
   flex-wrap:wrap;
   align-items:flex-end;
   gap:14px;
@@ -103,4 +104,7 @@ html #appShell #view-time #sfTimeWorkspaceTabs button{
 html #appShell #view-time #sfTimeWorkspaceTabs button:focus-visible{
   outline:2px solid var(--teal,#2ed9b8);
   outline-offset:2px;
+}
+@media(max-width:760px){
+  html #appShell #view-time .sf-time-period-field{flex-basis:100%}
 }

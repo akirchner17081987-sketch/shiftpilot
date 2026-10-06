@@ -78,6 +78,9 @@ async function tabsGeometry(page){
  return page.evaluate(()=>{
   const view=document.getElementById('view-time'),head=view.querySelector('.page-head'),tabs=document.getElementById('sfTimeWorkspaceTabs'),r=head.getBoundingClientRect(),t=tabs.getBoundingClientRect(),issues=[];
   if(head.scrollWidth>head.clientWidth+1)issues.push('time header overflows');
+  if(r.height>window.innerHeight)issues.push('time header extends beyond a complete screen');
+  const title=head.querySelector('h1'),titleRange=document.createRange();titleRange.selectNodeContents(title);
+  for(const q of titleRange.getClientRects())if(q.left<r.left-1||q.right>r.right+1||q.top<r.top-1||q.bottom>r.bottom+1)issues.push('time title outside header');
   if(t.left<r.left-1||t.right>r.right+1)issues.push('tabs outside time header');
   for(const other of head.children)if(other!==tabs&&other.getBoundingClientRect().height&&other.getBoundingClientRect().bottom>t.top-1)issues.push('tabs do not have a separate row');
   const buttons=[...tabs.querySelectorAll('button')],measurements=[];
