@@ -78,16 +78,37 @@ for(const width of [320,1280])for(const theme of ['light','dark'])test(`manager 
 });
 test('manager closes an old booking with reason and paid open pause',async({page})=>{
   const h=await manager(page);await page.locator('#sfQrCorrectionSave').click();expect((await page.evaluate(()=>qaCalls.filter(c=>c.name==='manager_correct_qr_independent_shift'))).length).toBe(0);
-  await page.locator('#sfQrCorrectionEnd').fill('2026-10-03T14:00');await page.locator('#sfQrCorrectionReason').fill('Fiktiv: tatsächliches Dienstende bestätigt');await page.locator('#sfQrCorrectionSave').click();await expect(page.locator('#sfQrCorrection')).toHaveCount(0);
+  await page.locator('#sfQrCorrectionEnd').fill('03.10.2026 14:00');await page.locator('#sfQrCorrectionReason').fill('Fiktiv: tatsächliches Dienstende bestätigt');await page.locator('#sfQrCorrectionSave').click();await expect(page.locator('#sfQrCorrection')).toHaveCount(0);
   const calls=await page.evaluate(()=>qaCalls.filter(c=>c.name==='manager_correct_qr_independent_shift'));expect(calls).toHaveLength(1);expect(calls[0].args.p_started_at).toBe('2026-10-03T04:00:00.123456Z');expect(calls[0].args.p_ended_at).toBe('2026-10-03T12:00:00.000Z');expect(calls[0].args.p_breaks[0].ended_at).toBeNull();expect(h.errors).toEqual([]);
 });
 test('lost correction reply is verified through its audit without a second save',async({page})=>{
-  const h=await manager(page,{lost:true});await page.locator('#sfQrCorrectionEnd').fill('2026-10-03T14:00');await page.locator('#sfQrCorrectionReason').fill('Fiktive bestätigte Korrektur');await page.locator('#sfQrCorrectionSave').click();await expect(page.locator('#sfQrCorrection')).toHaveCount(0);
+  const h=await manager(page,{lost:true});await page.locator('#sfQrCorrectionEnd').fill('03.10.2026 14:00');await page.locator('#sfQrCorrectionReason').fill('Fiktive bestätigte Korrektur');await page.locator('#sfQrCorrectionSave').click();await expect(page.locator('#sfQrCorrection')).toHaveCount(0);
   expect(await page.evaluate(()=>qaCalls.filter(c=>c.name==='manager_correct_qr_independent_shift').length)).toBe(1);expect(h.errors).toEqual([]);
 });
 test('concurrent change keeps the dialog open with an understandable message',async({page})=>{
-  await manager(page,{stale:true});await page.locator('#sfQrCorrectionEnd').fill('2026-10-03T14:00');await page.locator('#sfQrCorrectionReason').fill('Fiktive Korrektur');await page.locator('#sfQrCorrectionSave').click();await expect(page.locator('#sfQrCorrectionMessage')).toContainText('inzwischen geändert');await expect(page.locator('#sfQrCorrectionClose')).toBeEnabled();
+  await manager(page,{stale:true});await page.locator('#sfQrCorrectionEnd').fill('03.10.2026 14:00');await page.locator('#sfQrCorrectionReason').fill('Fiktive Korrektur');await page.locator('#sfQrCorrectionSave').click();await expect(page.locator('#sfQrCorrectionMessage')).toContainText('inzwischen geändert');await expect(page.locator('#sfQrCorrectionClose')).toBeEnabled();
 });
 test('employee role cannot open a manager correction',async({page})=>{
   const h=await manager(page,{role:'EMPLOYEE'});await expect(page.locator('#sfQrCorrection')).toHaveCount(0);expect(await page.evaluate(()=>qaCalls.length)).toBe(0);expect(h.errors).toEqual([]);
+});
+
+// An English browser must not turn October 1 into January 10 or show AM/PM.
+test.describe('German manager date and time in an English browser',()=>{
+  test.use({locale:'en-US'});
+  test('fields, validation and saved instants use the German 24-hour format',async({page})=>{
+    const h=await manager(page,{width:1280});
+    await expect(page.locator('#sfQrCorrectionStart')).toHaveValue('03.10.2026 06:00:00');
+    await expect(page.locator('#sfQrCorrectionStart')).toHaveAttribute('type','text');
+    await expect(page.locator('#sfQrCorrectionFormat')).toContainText('24-Stunden-Uhrzeit');
+    await page.locator('#sfQrCorrectionEnd').fill('10/04/2026 06:00 AM');
+    await page.locator('#sfQrCorrectionReason').fill('Fiktive bestätigte Endzeit');
+    await page.locator('#sfQrCorrectionSave').click();
+    await expect(page.locator('#sfQrCorrectionMessage')).toContainText('TT.MM.JJJJ');
+    expect(await page.evaluate(()=>qaCalls.filter(c=>c.name==='manager_correct_qr_independent_shift').length)).toBe(0);
+    await page.locator('#sfQrCorrectionEnd').fill('04.10.2026 06:00');
+    await page.locator('#sfQrCorrectionSave').click();
+    await expect(page.locator('#sfQrCorrection')).toHaveCount(0);
+    const calls=await page.evaluate(()=>qaCalls.filter(c=>c.name==='manager_correct_qr_independent_shift'));
+    expect(calls).toHaveLength(1);expect(calls[0].args.p_started_at).toBe('2026-10-03T04:00:00.123456Z');expect(calls[0].args.p_ended_at).toBe('2026-10-04T04:00:00.000Z');expect(h.errors).toEqual([]);
+  });
 });
