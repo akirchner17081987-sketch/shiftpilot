@@ -224,7 +224,7 @@ test('employee overview is sorted alphabetically by last name and first name', (
   assert.match(employeeManagement, /String\(a\.last\|\|''\)\.localeCompare\(String\(b\.last\|\|''\),'de-DE',options\)/);
   assert.match(employeeManagement, /String\(a\.first\|\|''\)\.localeCompare\(String\(b\.first\|\|''\),'de-DE',options\)/);
   assert.match(employeeManagement, /\.sort\(employeeNameCompare\)/);
-  assert.match(employeeManagement, /<b>\$\{esc\(e\.last\)\}, \$\{esc\(e\.first\)\}<\/b>/);
+  assert.match(employeeManagement, /<b(?: [^>]*)?>\$\{esc\(e\.last\)\}, \$\{esc\(e\.first\)\}<\/b>/);
   assert.match(index, /<b>\$\{e\.last\}, \$\{e\.first\}<\/b>/);
 });
 
