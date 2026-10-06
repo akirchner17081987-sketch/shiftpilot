@@ -10,7 +10,7 @@ const script=s=>'<script>'+s.replace(/<\/script/gi,'<\\/script')+'</script>';
 const assistantTag=index.match(/<script src="assets\/planning-assistant-v1\.js[^\"]*"><\/script>/)[0];
 const modules=['date-month-format-v1.js','employee-rhythm-v1.js','compliance-core-v2.js','supabase-auto-plan-guard-v1.js','auto-plan-workspace-v1.js','help-center-content-v3.js','planning-assistant-core-v1.js'];
 const fake=`
-window.__writes=0;window.saveAll=()=>__writes++;window.showSaveToast=()=>{};window.renderCalendar=()=>{};
+window.__writes=0;window.store={get:(key,fallback)=>fallback,set:()=>__writes++};window.saveAll=()=>__writes++;window.showSaveToast=()=>{};window.renderCalendar=()=>{};
 window.SFBackend={ready:true,role:'PLANNER',user:{id:'fictitious-user'},companyId:'fictitious-company'};
 window.weekStart=new Date('2026-10-05T12:00:00');window.assignments=[];window.absences=[];
 window.employees=[{id:'fake',first:'Fiktive',last:'Testperson',status:'active',employment:'Vollzeit',shifts:['FD'],weeklyHours:40,monthlyHours:180}];
@@ -52,8 +52,9 @@ async function geometry(page){return page.evaluate(()=>{
  if(r.top>=0&&r.bottom<=innerHeight){for(const [x,y] of [[r.left+4,r.top+4],[r.right-4,r.top+4],[r.left+4,r.bottom-4],[r.right-4,r.bottom-4],[(r.left+r.right)/2,(r.top+r.bottom)/2]])if(!b.contains(document.elementFromPoint(x,y)))issues.push('proposal button is covered');}
  return {issues,rects};
 });}
-for(const theme of ['light','dark'])for(const width of [1920,1366,1024,768,600,390,320])for(const fontSize of [16,17,24])test(`auto assistant ${theme} ${width}px font ${fontSize}`,async({page},info)=>{
- await page.setViewportSize({width,height:width<=600?780:768});const report=await fixture(page,theme,fontSize);
+const sizes=[1920,1366,1024,768,600,390,320].flatMap(width=>[16,17,24].map(fontSize=>({width,height:width<=600?780:768,fontSize}))).concat([{width:1366,height:480,fontSize:17},{width:768,height:480,fontSize:32},{width:320,height:780,fontSize:32}]);
+for(const theme of ['light','dark'])for(const {width,height,fontSize} of sizes)test(`auto assistant ${theme} ${width}x${height}px font ${fontSize}`,async({page},info)=>{
+ await page.setViewportSize({width,height});const report=await fixture(page,theme,fontSize);
  const launcher=page.locator('#sfPlanningAssistantButton'),button=page.locator('#generateAutoPlanBtn');
  await expect(launcher).toHaveClass(/sf-chat-docked/);expect(await launcher.evaluate(el=>getComputedStyle(el).position)).toBe('static');
  // Reproduce the scroll position at which the previous fixed launcher covered the CTA.
