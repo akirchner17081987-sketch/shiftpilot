@@ -1,0 +1,20 @@
+\ir qr-central-bootstrap.sql
+create role service_role;
+create schema extensions;
+create extension pgcrypto with schema extensions;
+create table auth.users(id uuid primary key,email text,raw_user_meta_data jsonb default '{}'::jsonb);
+grant usage on schema private,auth to authenticated;
+grant execute on function auth.uid() to authenticated;
+alter table public.time_qr_independent_shifts add primary key(id);
+alter table public.time_qr_independent_breaks add primary key(id);
+alter table public.time_qr_independent_breaks add unique(shift_id,ordinal);
+create unique index qr_test_one_open on public.time_qr_independent_shifts(employee_id) where ended_at is null;
+create unique index qr_test_one_pause on public.time_qr_independent_breaks(shift_id) where ended_at is null;
+create table public.time_qr_independent_events(id uuid primary key default gen_random_uuid(),shift_id uuid,action text,punched_at timestamptz);
+create table public.time_qr_independent_sessions(token_hash bytea primary key,company_id uuid,employee_id uuid,terminal_id uuid,expires_at timestamptz);
+create table public.time_qr_independent_login_limits(key_hash bytea primary key,failed_count integer default 0,reset_at timestamptz);
+alter table public.time_qr_independent_shifts enable row level security;
+alter table public.time_qr_independent_breaks enable row level security;
+alter table public.time_qr_independent_events enable row level security;
+alter table public.time_qr_independent_sessions enable row level security;
+revoke all on public.time_qr_independent_shifts,public.time_qr_independent_breaks,public.time_qr_independent_events,public.time_qr_independent_sessions from anon,authenticated;
