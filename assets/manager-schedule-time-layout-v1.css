@@ -1,4 +1,25 @@
 /* SF-04: keep shift identity, time range and staffing in distinct rows. */
+html #appShell #view-schedule .cal-toolbar{flex-wrap:wrap}
+html #appShell #view-schedule #sfWeekModeSeg{
+  flex:1 1 24rem;
+  flex-wrap:wrap;
+  min-width:0;
+  max-width:100%;
+  margin:0;
+}
+html #appShell #view-schedule #sfWeekModeSeg button{
+  flex:1 1 8rem;
+  min-width:0;
+  max-width:100%;
+  min-height:44px;
+  font-size:.8125rem!important;
+  line-height:1.5;
+  white-space:normal;
+  overflow-wrap:break-word;
+}
+@media(max-width:1180px){
+  html #appShell #view-schedule #sfWeekModeSeg{flex-basis:100%}
+}
 html #appShell #view-schedule .sf-week-board{
   gap:.5rem;
   min-width:73rem; /* Seven 10rem columns plus six .5rem gaps. */

@@ -95,6 +95,13 @@ async function tabsGeometry(page){
 for(const theme of ['dark','light'])for(const width of [1920,1366,1363,1024,768,390,320])for(const fontSize of [16,17,24]){
  test(`schedule and time ${theme} ${width}px text ${fontSize}px`,async({page},info)=>{
   await page.setViewportSize({width,height:960});const {errors,requests}=await fixture(page,theme,fontSize);
+  expect(await page.locator('#view-schedule .cal-toolbar').evaluate(head=>{
+   const r=head.getBoundingClientRect(),buttons=[...head.querySelectorAll('button')],issues=[];
+   if(head.scrollWidth>head.clientWidth+1)issues.push('schedule toolbar overflows');
+   for(const b of buttons){const q=b.getBoundingClientRect();if(q.left<r.left-1||q.right>r.right+1)issues.push('schedule control outside toolbar');}
+   for(let i=0;i<buttons.length;i++)for(let j=i+1;j<buttons.length;j++){const a=buttons[i].getBoundingClientRect(),b=buttons[j].getBoundingClientRect();if(a.left<b.right-1&&a.right>b.left+1&&a.top<b.bottom-1&&a.bottom>b.top+1)issues.push('schedule controls overlap');}
+   return issues;
+  })).toEqual([]);
   const modes=[];
   for(const mode of ['compact','board']){
    await page.locator('[data-sf-week-mode="'+mode+'"]').click();const data=await scheduleGeometry(page);
