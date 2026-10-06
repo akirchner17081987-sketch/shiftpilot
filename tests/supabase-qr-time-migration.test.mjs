@@ -66,8 +66,9 @@ test('mobile QR page does not accept employee id or timestamp from the browser',
 function qrLoginHarness(status={state:'READY',name:'Fiktiver Mitarbeiter',breaks:[]}){
   const elements=new Map();const get=id=>{if(!elements.has(id))elements.set(id,{value:'',hidden:false,textContent:'',addEventListener(event,handler){this[event]=handler},replaceChildren(){},append(){}});return elements.get(id)};
   const requests=[];
-  const script=html.match(/<script type="module">([\s\S]*?)<\/script>/)[1];
-  vm.runInNewContext(script,{document:{getElementById:get,querySelectorAll:()=>[],createElement:()=>({append(){}})},location:{search:'?t='+'0'.repeat(64)},URLSearchParams,Intl,Date,Number,fetch:async(_url,options)=>{const body=JSON.parse(options.body);requests.push(body);return{ok:true,json:async()=>body.action==='LOGIN'?{ok:true,sessionToken:'test-session'}:{ok:true,...status}}}});
+  const helper=fs.readFileSync(new URL('../assets/qr-pause-total-v1.js',import.meta.url),'utf8').replace(/^export /gm,'');
+  const script=html.match(/<script type="module">([\s\S]*?)<\/script>/)[1].replace(/^import .*;$/gm,'');
+  vm.runInNewContext(helper+'\n'+script,{document:{getElementById:get,querySelectorAll:()=>[],createElement:()=>({append(){}}),addEventListener(){}},setInterval:()=>0,clearInterval(){},location:{search:'?t='+'0'.repeat(64)},URLSearchParams,Intl,Date,Number,fetch:async(_url,options)=>{const body=JSON.parse(options.body);requests.push(body);return{ok:true,json:async()=>body.action==='LOGIN'?{ok:true,sessionToken:'test-session'}:{ok:true,...status}}}});
   return{get,requests,submit:()=>get('login').submit({preventDefault(){}})};
 }
 test('QR login accepts the eight-digit joining date and sends its original ISO date',async()=>{
