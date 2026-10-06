@@ -22,7 +22,7 @@ bereits laufende Buchung weiterhin ihren ursprünglichen Standort.
 
 ## Umsetzung und Prüfung
 
-Die Migration `20261006040336_qr_employee_live_summary.sql` ergänzt ausschließlich
+Die Migration `20261006041205_qr_employee_live_summary.sql` ergänzt ausschließlich
 `terminal_name`, `location_note`, `timezone` und `as_of` in der bestehenden
 QR-Antwort. Anmeldung, Unternehmensgrenzen, Sperren, Zehn-Pausen-Grenze und
 automatischer Pausenabschluss bei Dienstende werden unverändert beibehalten.

@@ -8,7 +8,7 @@ on:
       - tests/qr-live-summary.test.mjs
       - tests/e2e/qr-pause-total.spec.cjs
       - tests/sql/qr-live-*.sql
-      - supabase/migrations/20261006040336_qr_employee_live_summary.sql
+      - supabase/migrations/20261006041205_qr_employee_live_summary.sql
       - .github/workflows/qr-live-summary-checks.yml
   workflow_dispatch:
 jobs:
@@ -38,7 +38,7 @@ jobs:
           psql -v ON_ERROR_STOP=1 -f tests/sql/qr-live-bootstrap.sql
           sed '/^-- Manager report/,$d' supabase/migrations/20260929191508_qr_independent_paid_breaks.sql | psql -v ON_ERROR_STOP=1
           psql -v ON_ERROR_STOP=1 -f supabase/migrations/20260930000537_qr_independent_ten_breaks.sql
-          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261006040336_qr_employee_live_summary.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261006041205_qr_employee_live_summary.sql
           psql -v ON_ERROR_STOP=1 -f tests/sql/qr-live-integration.sql
         env:
           PGHOST: localhost
