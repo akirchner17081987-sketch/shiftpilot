@@ -1,0 +1,43 @@
+name: Kennzahlen Layoutprüfung
+on:
+  push:
+    branches: [main, codex/ionos-migration, codex/kpi-layout-20261006]
+    paths:
+      - index.html
+      - assets/manager-kpi-layout-v1.css
+      - assets/reports-final-v1.js
+      - assets/supabase-time-tracking-v1.js
+      - tests/e2e/kpi-layout.spec.cjs
+      - .github/workflows/kpi-layout-checks.yml
+  pull_request:
+    paths:
+      - index.html
+      - assets/manager-kpi-layout-v1.css
+      - assets/reports-final-v1.js
+      - assets/supabase-time-tracking-v1.js
+      - tests/e2e/kpi-layout.spec.cjs
+      - .github/workflows/kpi-layout-checks.yml
+jobs:
+  layout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright test tests/e2e/kpi-layout.spec.cjs --project=desktop-chromium --retries=0 --max-failures=3
+        env:
+          E2E_BASE_URL: http://kpi-layout.test
+          SF_KPI_LAYOUT_BROWSER: /usr/bin/google-chrome
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kpi-layout-results
+          path: |
+            playwright-report/
+            test-results/
