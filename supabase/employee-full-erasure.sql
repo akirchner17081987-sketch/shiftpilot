@@ -47,6 +47,8 @@ begin
  if jsonb_typeof(p_value) in('object','array') and not private.sf_erasure_contains(p_value,p_ids,p_names) then return p_value; end if;
  if jsonb_typeof(p_value)='object' then
   if coalesce(p_value->>'employee_id',p_value->>'employeeId',p_value->>'id','')=any(p_ids) then return null; end if;
+  if coalesce(p_value->>'assignment_id',p_value->>'assignmentId',p_value->>'shift_id',p_value->>'shiftId','')=any(p_ids)
+   and (coalesce(p_value->>'employee_id',p_value->>'employeeId','')='' or coalesce(p_value->>'employee_id',p_value->>'employeeId','')=any(p_ids)) then return null; end if;
   -- Names alone must never remove a different, identified employee with the same name.
   if coalesce(p_value->>'employee_id',p_value->>'employeeId','')<>'' then names:='{}'; end if;
   result:='{}';

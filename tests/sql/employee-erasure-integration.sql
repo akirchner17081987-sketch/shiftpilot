@@ -76,6 +76,7 @@ select public.assert_erasure(not exists(select 1 from public.employees where id=
 select public.assert_erasure(exists(select 1 from public.employees where id='30000000-0000-0000-0000-000000000003'),'same person in other company preserved');
 select public.assert_erasure(exists(select 1 from public.shift_assignments where id='40000000-0000-0000-0000-000000000002'),'colleague duty preserved');
 select public.assert_erasure((select count(*) from public.time_entries)=1,'colleague time entry preserved');
+select public.assert_erasure((select count(*) from public.audit_events where entity_type='time_entries')=1,'employee-only time audits erased entirely; colleague audit preserved');
 select public.assert_erasure((select status='CLOSED' and revision=1 and jsonb_array_length(report_snapshot#>'{accounts,rows}')=1 from public.time_month_closures),'shared closure preserved and scrubbed');
 select public.assert_erasure(not exists(select 1 from public.audit_events where to_jsonb(audit_events)::text like '%30000000-0000-0000-0000-000000000001%' or to_jsonb(audit_events)::text like '%Fixture Employee%'),'personal audit payloads removed');
 select public.assert_erasure(exists(select 1 from public.audit_events where event_type='TIME_MONTH_CLOSED' and new_values::text like '%Fixture Colleague%'),'mixed audit event retains colleague');
