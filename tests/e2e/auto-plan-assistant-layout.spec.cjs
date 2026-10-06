@@ -68,12 +68,13 @@ for(const theme of ['light','dark'])for(const {width,height,fontSize} of sizes)t
  // Use the actual assistant: ask a planning question and retain it while closing/reopening.
  await page.locator('#sfPlanningChatInput').fill('Welche Dienste sind am 06.10.2026 offen?');await page.locator('#sfPlanningChatForm button').click();await expect(page.locator('#sfPlanningChatLog .is-user')).toHaveCount(1);
  await page.keyboard.press('Escape');await expect(page.locator('#sfPlanningChat')).not.toBeVisible();await expect(launcher).toBeFocused();
+ expect(await launcher.evaluate(el=>{const r=el.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight;})).toBe(true);
  await launcher.press('Enter');await expect(page.locator('#sfPlanningChatLog .is-user')).toHaveCount(1);
  await page.locator('#sfPlanningChatClose').click();await button.focus();await page.keyboard.press('Enter');await expect(page.locator('#autoSuggestionCount')).toHaveText('1');
  expect(await page.evaluate(()=>__writes)).toBe(0);expect(report.errors).toEqual([]);expect(report.external).toEqual([]);
  expect(report.requests).toContain('/'+assistantTag.match(/src="([^"]+)"/)[1]);
  await info.attach('layout',{body:Buffer.from(JSON.stringify({open,...await geometry(page)},null,2)),contentType:'application/json'});
- if(fontSize===17){await launcher.click();await page.screenshot({path:info.outputPath('assistant-docked.png'),fullPage:true});}
+ if(fontSize===17){await launcher.click();await page.screenshot({path:info.outputPath('assistant-docked.png')});}
 });
 test('switching views restores floating placement without duplicating assistant or chat',async({page})=>{
  await fixture(page,'light',17);await page.locator('#sfPlanningAssistantButton').click();
@@ -92,6 +93,7 @@ for(const role of ['OWNER','ADMIN','DISPATCHER','EMPLOYEE','TIME_TRACKING'])test
 
 for(const width of [1366,320])test('month actions and assistant '+width,async({page})=>{
  await page.setViewportSize({width,height:780});const report=await fixture(page,'light',17);
+ await page.evaluate(()=>{TYPES.push({id:'SD',start:'14:00',end:'22:00'},{id:'ND',start:'22:00',end:'06:00'});employees[0].shifts=['SD','ND'];});
  await page.locator('#autoPlanPeriod').selectOption('month');await page.locator('#autoPlanMonth').fill('2026-10');await page.locator('#autoPlanMonth').dispatchEvent('change');
  await expect(page.locator('#generateAutoPlanBtn')).toContainText('Individuellen Monat planen');
  await page.locator('#sfPlanningAssistantButton').click();await page.locator('#generateAutoPlanBtn').scrollIntoViewIfNeeded();expect((await geometry(page)).issues).toEqual([]);
