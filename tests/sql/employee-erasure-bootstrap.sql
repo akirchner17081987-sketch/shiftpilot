@@ -1105,7 +1105,7 @@ AS $function$
     where c.company_id=p_company_id and c.status='CLOSED'
       and (c.month_start + interval '1 month - 1 day')::date >= p_effective_date
   );
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.sf_is_manager(p_company_id uuid, p_admin_only boolean DEFAULT false)
  RETURNS boolean
@@ -1124,7 +1124,7 @@ AS $function$
         or (not p_admin_only and cm.role in ('DISPATCHER','PLANNER'))
       )
   );
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.sf_is_time_month_closed(p_company_id uuid, p_day date)
  RETURNS boolean
@@ -1138,7 +1138,7 @@ AS $function$
       and c.month_start=date_trunc('month',p_day)::date
       and c.status='CLOSED'
   );
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.time_month_is_closed(p_company_id uuid, p_work_date date)
  RETURNS boolean
@@ -1152,7 +1152,7 @@ AS $function$
       and c.month_start=date_trunc('month',p_work_date)::date
       and c.status='CLOSED'
   );
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.time_month_overlap_closed(p_company_id uuid, p_start date, p_end date)
  RETURNS boolean
@@ -1166,7 +1166,7 @@ AS $function$
       and c.month_start <= p_end
       and (c.month_start + interval '1 month - 1 day')::date >= p_start
   );
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.sf_guard_absence_write()
  RETURNS trigger
@@ -1186,7 +1186,7 @@ begin
   ) then raise exception 'Eine betroffene Abwesenheit liegt in einem abgeschlossenen Monat'; end if;
   if tg_op='DELETE' then return old; else return new; end if;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.enforce_closed_month_absence()
  RETURNS trigger
@@ -1204,7 +1204,7 @@ begin
   if tg_op='DELETE' then return old; end if;
   return new;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.capture_audit_change()
  RETURNS trigger
@@ -1242,7 +1242,7 @@ begin
 
   return case when tg_op = 'DELETE' then old else new end;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.sf_guard_time_entry_write()
  RETURNS trigger
@@ -1265,7 +1265,7 @@ BEGIN
   END IF;
  END IF;
  IF TG_OP='DELETE' THEN RETURN old; ELSE RETURN new; END IF;
-END $function$
+END $function$;
 
 CREATE OR REPLACE FUNCTION private.enforce_closed_month_time_entry()
  RETURNS trigger
@@ -1286,7 +1286,7 @@ begin
   if tg_op='DELETE' then return old; end if;
   return new;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.enforce_closed_month_time_account_settings()
  RETURNS trigger
@@ -1302,7 +1302,7 @@ begin
   if tg_op='DELETE' then return old; end if;
   return new;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.enforce_closed_month_time_account_opening()
  RETURNS trigger
@@ -1320,7 +1320,7 @@ begin
   if tg_op='DELETE' then return old; end if;
   return new;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.prevent_audit_mutation()
  RETURNS trigger
@@ -1355,7 +1355,7 @@ begin
 
   raise exception 'Audit-Protokolle sind unveraenderbar';
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.sf_guard_shift_write()
  RETURNS trigger
@@ -1376,7 +1376,7 @@ BEGIN
   THEN RAISE EXCEPTION 'Der Monat der Schicht ist abgeschlossen'; END IF;
  END IF;
  IF TG_OP='DELETE' THEN RETURN old; ELSE RETURN new; END IF;
-END $function$
+END $function$;
 
 CREATE OR REPLACE FUNCTION public.protect_published_assignment()
  RETURNS trigger
@@ -1430,7 +1430,7 @@ begin
     end if;
   end if;
   return new;
-end $function$
+end $function$;
 
 CREATE OR REPLACE FUNCTION private.sf_notify_assignment_published()
  RETURNS trigger
@@ -1454,7 +1454,7 @@ begin
   end if;
   return new;
 end
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.enforce_closed_month_assignment()
  RETURNS trigger
@@ -1481,7 +1481,7 @@ begin
   if tg_op='DELETE' then return old; end if;
   return new;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.guard_removed_employee()
  RETURNS trigger
@@ -1496,13 +1496,13 @@ BEGIN
     current_setting('app.schichtfunk_employee_removal',true) IS DISTINCT FROM old.id::text THEN
     RAISE EXCEPTION USING ERRCODE='23514',MESSAGE='Bitte die gesonderte Löschbestätigung verwenden.'; END IF;
   RETURN new;
-END $function$
+END $function$;
 
 CREATE OR REPLACE FUNCTION public.set_updated_at()
  RETURNS trigger
  LANGUAGE plpgsql
  SET search_path TO 'public', 'pg_temp'
-AS $function$ begin new.updated_at=now(); return new; end $function$
+AS $function$ begin new.updated_at=now(); return new; end $function$;
 
 CREATE TRIGGER absences_closed_month_guard BEFORE INSERT OR DELETE OR UPDATE ON public.absences FOR EACH ROW EXECUTE FUNCTION private.sf_guard_absence_write();
 CREATE TRIGGER trg_absences_closed_month BEFORE INSERT OR DELETE OR UPDATE ON public.absences FOR EACH ROW EXECUTE FUNCTION private.enforce_closed_month_absence();

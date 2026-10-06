@@ -22,7 +22,7 @@ begin
   ) then raise exception 'Eine betroffene Abwesenheit liegt in einem abgeschlossenen Monat'; end if;
   if tg_op='DELETE' then return old; else return new; end if;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.enforce_closed_month_absence()
  RETURNS trigger
@@ -44,7 +44,7 @@ begin
   if tg_op='DELETE' then return old; end if;
   return new;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.capture_audit_change()
  RETURNS trigger
@@ -89,7 +89,7 @@ begin
 
   return case when tg_op = 'DELETE' then old else new end;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.sf_guard_time_entry_write()
  RETURNS trigger
@@ -116,7 +116,7 @@ BEGIN
   END IF;
  END IF;
  IF TG_OP='DELETE' THEN RETURN old; ELSE RETURN new; END IF;
-END $function$
+END $function$;
 
 CREATE OR REPLACE FUNCTION private.enforce_closed_month_time_entry()
  RETURNS trigger
@@ -141,7 +141,7 @@ begin
   if tg_op='DELETE' then return old; end if;
   return new;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.enforce_closed_month_time_account_opening()
  RETURNS trigger
@@ -163,7 +163,7 @@ begin
   if tg_op='DELETE' then return old; end if;
   return new;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.sf_guard_shift_write()
  RETURNS trigger
@@ -188,7 +188,7 @@ BEGIN
   THEN RAISE EXCEPTION 'Der Monat der Schicht ist abgeschlossen'; END IF;
  END IF;
  IF TG_OP='DELETE' THEN RETURN old; ELSE RETURN new; END IF;
-END $function$
+END $function$;
 
 CREATE OR REPLACE FUNCTION public.protect_published_assignment()
  RETURNS trigger
@@ -246,7 +246,7 @@ begin
     end if;
   end if;
   return new;
-end $function$
+end $function$;
 
 CREATE OR REPLACE FUNCTION private.enforce_closed_month_assignment()
  RETURNS trigger
@@ -277,7 +277,7 @@ begin
   if tg_op='DELETE' then return old; end if;
   return new;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.prevent_audit_mutation()
  RETURNS trigger
@@ -333,7 +333,7 @@ begin
 
   raise exception 'Audit-Protokolle sind unveraenderbar';
 end;
-$function$
+$function$;
 
 create trigger a00_employee_erasure_freeze before insert or update or delete on "public"."employee_access_invites" for each row execute function private.sf_guard_employee_erasure_pending();
 create trigger a00_employee_erasure_freeze before insert or update or delete on "public"."employee_personnel_details" for each row execute function private.sf_guard_employee_erasure_pending();

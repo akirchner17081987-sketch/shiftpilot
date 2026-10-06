@@ -301,7 +301,7 @@ create policy personnel_erasure_freeze_update on storage.objects as restrictive 
 
 create function private.server_commit_employee_erasure(p_job_id uuid,p_actor uuid) returns jsonb
 language plpgsql security definer set search_path='' as $$
-declare job private.employee_erasure_jobs%rowtype; rel jsonb; refs text[]; names text[]; eids uuid[]; item record; clean jsonb; before_count integer; remaining integer; column_info record; expression text;
+declare job private.employee_erasure_jobs%rowtype; rel jsonb; refs text[]; names text[]; eids uuid[]; item record; column_info record; expression text; has_company boolean;
 begin
  perform private.sf_assert_service_role();
  select * into job from private.employee_erasure_jobs where id=p_job_id for update;
@@ -326,8 +326,9 @@ begin
  update public.time_month_closures c set report_snapshot=private.sf_erasure_scrub(report_snapshot,refs,names)
  where company_id=job.company_id and private.sf_erasure_scrub(report_snapshot,refs,names) is distinct from report_snapshot;
  for rel in select value from jsonb_array_elements(job.plan->'relations') loop
-  execute format('delete from %I.%I where %I::text=any($1)',rel->>'schema',rel->>'table',rel->>'key')
-   using array(select jsonb_array_elements_text(rel->'ids'));
+  select exists(select 1 from information_schema.columns where table_schema=rel->>'schema' and table_name=rel->>'table' and column_name='company_id') into has_company;
+  execute format('delete from %I.%I where %I::text=any($1)%s',rel->>'schema',rel->>'table',rel->>'key',case when has_company then ' and company_id=$2' else '' end)
+   using array(select jsonb_array_elements_text(rel->'ids')),job.company_id;
  end loop;
  -- Remove strings and JSON references in shared notes, settings and company-wide snapshots.
  for column_info in select c.table_schema,c.table_name,c.column_name,c.data_type,c.is_nullable from information_schema.columns c
@@ -343,9 +344,11 @@ begin
   execute format('update %I.%I set %I=%s where company_id=$1 and private.sf_erasure_scrub(to_jsonb(%I),$2,$3) is distinct from to_jsonb(%I)',column_info.table_schema,column_info.table_name,column_info.column_name,expression,column_info.column_name,column_info.column_name)
    using job.company_id,refs,names;
  end loop;
+ if job.plan->>'auth_user_id' is not null then
+  delete from public.company_members where company_id=job.company_id and user_id=(job.plan->>'auth_user_id')::uuid and role='VIEWER';
+ end if;
  if (job.plan->>'delete_auth')::boolean then
   delete from public.push_subscriptions where company_id=job.company_id and user_id=(job.plan->>'auth_user_id')::uuid;
-  delete from public.company_members where company_id=job.company_id and user_id=(job.plan->>'auth_user_id')::uuid and role='VIEWER';
   delete from public.company_member_invites where company_id=job.company_id and (claimed_by=(job.plan->>'auth_user_id')::uuid or lower(email)=any(array(select lower(x) from unnest(names) x)));
  end if;
  -- Audit events owned by the employee are deleted; mixed reports are scrubbed in place.
