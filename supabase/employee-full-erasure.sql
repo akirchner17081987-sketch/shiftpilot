@@ -57,11 +57,10 @@ begin
   end loop;
   return result;
  elsif jsonb_typeof(p_value)='array' then
-  result:='[]';
-  for v in select value from jsonb_array_elements(p_value) loop
-   cleaned:=private.sf_erasure_scrub(v,p_ids,names);
-   if cleaned is not null then result:=result||jsonb_build_array(cleaned); end if;
-  end loop;
+  with scrubbed as materialized (
+   select ord,private.sf_erasure_scrub(value,p_ids,names) as value
+   from jsonb_array_elements(p_value) with ordinality q(value,ord)
+  ) select coalesce(jsonb_agg(value order by ord) filter(where value is not null),'[]'::jsonb) into result from scrubbed;
   return result;
  elsif jsonb_typeof(p_value)='string' then
   s:=p_value#>>'{}';
