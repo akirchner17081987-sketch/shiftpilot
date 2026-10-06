@@ -8,6 +8,7 @@ on:
       - tests/qr-pause-total.test.mjs
       - tests/supabase-qr-time-migration.test.mjs
       - tests/e2e/qr-pause-total.spec.cjs
+      - tests/browser/qr-forgotten-pause-qa.cjs
       - package.json
       - .github/workflows/qr-pause-total-checks.yml
   pull_request:
@@ -17,6 +18,7 @@ on:
       - tests/qr-pause-total.test.mjs
       - tests/supabase-qr-time-migration.test.mjs
       - tests/e2e/qr-pause-total.spec.cjs
+      - tests/browser/qr-forgotten-pause-qa.cjs
 jobs:
   qr-pause:
     runs-on: ubuntu-latest
@@ -34,6 +36,9 @@ jobs:
       - run: npx playwright test tests/e2e/qr-pause-total.spec.cjs --retries=0 --max-failures=2
         env:
           E2E_BASE_URL: http://qr-pause.test
+          SF_QR_BROWSER_EXECUTABLE: /usr/bin/google-chrome
+      - run: node tests/browser/qr-forgotten-pause-qa.cjs
+        env:
           SF_QR_BROWSER_EXECUTABLE: /usr/bin/google-chrome
       - uses: actions/upload-artifact@v4
         if: always()
