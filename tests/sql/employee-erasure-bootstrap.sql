@@ -4,7 +4,8 @@ create schema auth; create schema private; create schema storage; create schema 
 create table auth.users(id uuid primary key,email text,raw_user_meta_data jsonb default '{}');
 create table auth.sessions(id uuid primary key,user_id uuid references auth.users on delete cascade);
 create table auth.mfa_factors(id uuid primary key,user_id uuid references auth.users on delete cascade,status text);
-create table auth.audit_log_entries(id uuid primary key default gen_random_uuid(),payload jsonb);
+-- Match the real Supabase Auth schema: payload is JSON, not JSONB.
+create table auth.audit_log_entries(id uuid primary key default gen_random_uuid(),payload json);
 create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text,name text,owner_id text);
 alter table storage.objects enable row level security;
 create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
