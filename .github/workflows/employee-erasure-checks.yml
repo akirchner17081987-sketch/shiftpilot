@@ -31,10 +31,8 @@ jobs:
    - name: Fictitious employees, closed-month history, mixed audits, permissions and retry safety
      run: |
       psql -v ON_ERROR_STOP=1 -f tests/sql/employee-erasure-bootstrap.sql
-      psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261006163421_owner_employee_full_erasure.sql
-      psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261006163940_employee_erasure_snapshot_performance.sql
-      psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261006164346_employee_erasure_bulk_json_performance.sql
-      psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261006164615_employee_erasure_fast_preview.sql
+      psql -v ON_ERROR_STOP=1 -f supabase/employee-full-erasure.sql
+      psql -v ON_ERROR_STOP=1 -f supabase/employee-full-erasure-guards.sql
       psql -v ON_ERROR_STOP=1 -f tests/sql/employee-erasure-integration.sql
      env:
       PGHOST: localhost
