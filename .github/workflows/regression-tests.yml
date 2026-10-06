@@ -3,6 +3,12 @@ name: Regressionstests
 on:
   push:
     branches: [main]
+    # These isolated fixture edits are covered by schedule-module-checks.yml.
+    # Do not start the production-login suite for a test-environment repair.
+    paths-ignore:
+      - tests/e2e/employee-planning-teams.spec.cjs
+      - .github/workflows/schedule-module-checks.yml
+      - .github/workflows/regression-tests.yml
   pull_request:
   workflow_dispatch:
 
