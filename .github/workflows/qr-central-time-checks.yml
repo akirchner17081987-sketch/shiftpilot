@@ -2,7 +2,7 @@ name: QR zentrale Zeiterfassung
 on:
   push:
     branches: [main, codex/ionos-migration, codex/qr-central-20261006]
-    paths: ['assets/**', 'tests/**', 'supabase/migrations/20261006030128_qr_central_time_integration.sql', 'package.json', '.github/workflows/qr-central-time-checks.yml']
+    paths: ['assets/**', 'tests/**', 'supabase/migrations/20261006032450_qr_central_time_integration.sql', 'package.json', '.github/workflows/qr-central-time-checks.yml']
 jobs:
   central-time:
     runs-on: ubuntu-latest
@@ -28,7 +28,7 @@ jobs:
       - name: Validate migration and company scopes in isolated PostgreSQL
         run: |
           psql -v ON_ERROR_STOP=1 -f tests/sql/qr-central-bootstrap.sql
-          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261006030128_qr_central_time_integration.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261006032450_qr_central_time_integration.sql
           psql -v ON_ERROR_STOP=1 -f tests/sql/qr-central-integration.sql
         env:
           PGHOST: localhost
