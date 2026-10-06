@@ -215,7 +215,7 @@ begin
   'references',to_jsonb(refs),'names',to_jsonb(names),'relations',manifest,'storage_paths',to_jsonb(paths),'auth_user_id',auth_id,'delete_auth',delete_auth,
   'generation',generation,'profile_hash',md5(to_jsonb(e)::text),
   'snapshot_hash',(select md5(coalesce(jsonb_agg(to_jsonb(c) order by month_start)::text,'[]')) from public.time_month_closures c where company_id=p_company),
-  'audit_hash',(select md5(coalesce(jsonb_agg(id order by id)::text,'[]')) from public.audit_events a where company_id=p_company and private.sf_erasure_scrub(to_jsonb(a),refs,names) is distinct from to_jsonb(a)));
+  'audit_hash',(select md5(coalesce(jsonb_agg(id order by id)::text,'[]')) from public.audit_events a where company_id=p_company and private.sf_erasure_contains(to_jsonb(a),refs,names)));
  return result||jsonb_build_object('fingerprint',md5(result::text));
 end $$;
 
