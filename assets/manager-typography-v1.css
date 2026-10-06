@@ -64,9 +64,8 @@ html #appShell #view-schedule :is(.time-head,.day-head,.time-slot,.pill,
 }
 
 /* Give enlarged notes room instead of reducing their font on narrow screens. */
-html #appShell #view-overview .td-kpis{
-  grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr));
-}
+html #appShell #view-overview{container:sfTodayText / inline-size}
+html #appShell #view-overview .td-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
 html #appShell #view-overview :is(.td-row>div:first-child,.td-card-head>div){min-width:0}
 html #appShell #view-overview :is(.td-status,.td-card-head){flex-wrap:wrap}
 html #appShell #view-overview .td-pill{
@@ -97,13 +96,32 @@ html #appShell #view-schedule .sf-week-board-wrap{overflow-x:auto}
 html #appShell #view-schedule .sf-week-shift-head{
   display:grid;
   grid-template-columns:minmax(0,1fr);
+  width:100%;
+  text-align:left;
+  justify-items:stretch;
 }
-html #appShell #view-schedule .sf-week-shift-count{justify-self:start}
+html #appShell #view-schedule .sf-week-shift-main{width:100%}
+html #appShell #view-schedule .sf-week-shift-count{justify-self:start;text-align:left}
+html #appShell #view-schedule .sf-week-open{white-space:normal;word-break:normal;overflow-wrap:normal}
 html #appShell #view-schedule :is(.sf-week-shift-main strong,.sf-week-shift-main small,
   .sf-week-employee-info b,.sf-week-employee-info small){
   white-space:normal;
   overflow:visible;
   overflow-wrap:anywhere;
+}
+@container sfTodayText (min-width:76rem){
+  html #appShell #view-overview .td-kpis{grid-template-columns:repeat(6,minmax(0,1fr))}
+}
+@container sfTodayText (max-width:48rem){
+  html #appShell #view-overview .td-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  html #appShell #view-overview .td-head-actions{
+    display:grid;
+    width:100%;
+    grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr));
+  }
+}
+@container sfTodayText (max-width:28rem){
+  html #appShell #view-overview .td-kpis{grid-template-columns:minmax(0,1fr)}
 }
 
 /* Demo-specific color rules remain; its secondary text uses the same scale. */

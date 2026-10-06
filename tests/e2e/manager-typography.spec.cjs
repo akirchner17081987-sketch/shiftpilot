@@ -18,6 +18,7 @@ const fakeData=`
  window.iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
  window.addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x;};
  window.weekStart=new Date();weekStart.setHours(12,0,0,0);weekStart.setDate(weekStart.getDate()-(weekStart.getDay()+6)%7);
+ window.__fixtureWeekStart=new Date(weekStart);
  window.currentWeekDates=()=>Array.from({length:7},(_,i)=>addDays(weekStart,i));
  window.DAYS=[];window.globalSoll={O1:2,O3:2,Teamleiter:1};window.dailySoll={};
  window.TYPES=[{id:'O1',name:'Objektschutz',start:'06:00',end:'14:00',cls:'blue'},
@@ -100,16 +101,21 @@ for(const theme of ['dark','light'])for(const width of [1920,1366,1180,768,390,3
   const today=await measure(page,'.td-kpi em,.td-card-head p,.td-row small,.td-autopilot p,.td-status',note);
   const kpis=await measure(page,'.td-kpi em',note);
   await measure(page,'.td-pill,.td-cov b,.td-cov span',secondary);
+  await measure(page,'.td-head-actions button',0);
   await page.locator('#view-overview').screenshot({path:info.outputPath('today-text.png')});
+  await page.locator('.td-kpi').last().screenshot({path:info.outputPath('today-last-note.png')});
   await page.evaluate(()=>renderTodayDashboard(false));expect(await measure(page,'.td-kpi em',note)).toEqual(kpis);
   await show(page,'view-time');await measure(page,'#timeStats .stat em',note);await measure(page,'.sf-time-status,.sf-time-action',secondary);
   await show(page,'view-reports');await measure(page,'#reportStats .stat em,.sf-rp-card-head p',note);await measure(page,'.sf-rp-state',secondary);
   await show(page,'view-schedule');await page.evaluate(()=>SchichtFunkCalendarView.setMonth('2026-10'));
   await measure(page,'.sf-month-date small,.sf-month-shift,.sf-month-open,.sf-month-empty',secondary);
   await page.locator('#sfMonthView').screenshot({path:info.outputPath('calendar-text.png')});
-  await page.evaluate(()=>SchichtFunkCalendarView.setMode('week'));
+  await page.evaluate(()=>{weekStart=new Date(__fixtureWeekStart);SchichtFunkCalendarView.setMode('week');});
+  await expect(page.locator('.sf-week-employee-info small')).not.toHaveCount(0);
   await measure(page,'.sf-week-day-coverage,.sf-week-shift-main small,.sf-week-employee-info small',secondary);
+  await measure(page,'.sf-week-open',secondary);
   await page.locator('#sfWeekBoardV2').screenshot({path:info.outputPath('week-text.png')});
+  await page.locator('.sf-week-shift').first().screenshot({path:info.outputPath('week-shift-text.png')});
   await show(page,'view-settings');await page.locator('[data-setting-tab="display"]').click();await measure(page,'.sf-set-note',note);
   expect(await page.locator('#landing-control small').evaluate(el=>getComputedStyle(el).fontSize)).toBe('10px');
   expect(await page.locator('#sfEmployeePortal em').evaluate(el=>getComputedStyle(el).fontSize)).toBe('11px');
