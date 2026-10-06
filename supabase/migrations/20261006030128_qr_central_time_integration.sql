@@ -534,5 +534,11 @@ begin
 end;
 $function$;
 
+-- Retain the existing staged MFA policy of the central time endpoint.
+insert into private.sf_mfa_protected_rpcs(function_name,rollout_stage,control_area,enabled)
+select 'manager_central_time_entries',rollout_stage,control_area,enabled
+from private.sf_mfa_protected_rpcs where function_name='manager_list_time_entries'
+on conflict(function_name) do nothing;
+
 notify pgrst,'reload schema';
 commit;

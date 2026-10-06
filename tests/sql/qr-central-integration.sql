@@ -45,6 +45,7 @@ do $$declare v jsonb;a jsonb;r jsonb;x integer;begin
   if (v->>'open_qr_shifts')::integer<>1 or (v->>'can_close')::boolean then raise exception 'Open QR month guard failed';end if;
   begin perform public.manager_central_time_entries('22222222-2222-2222-2222-222222222222','2026-09-01','2026-09-30');raise exception 'Foreign company was readable';exception when insufficient_privilege then null;end;
   if has_function_privilege('anon','public.manager_central_time_entries(uuid,date,date)','EXECUTE') or has_function_privilege('authenticated','private.sf_paid_time_ranges(uuid,uuid,timestamptz,timestamptz)','EXECUTE') then raise exception 'Function execute grants leak';end if;
+  if not exists(select 1 from private.sf_mfa_protected_rpcs where function_name='manager_central_time_entries' and enabled and rollout_stage=4) then raise exception 'Existing MFA policy not retained';end if;
   raise notice 'PASS: deduplication, paid pauses, unplanned QR, running exclusion, month/DST, accounts/report, bulk and company scopes';
 end$$;
 select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000002',true);

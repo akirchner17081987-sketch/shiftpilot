@@ -526,3 +526,6 @@ begin
 end;
 $function$;
 revoke all on function private.sf_confirmed_work_minutes(uuid,date,date) from public,anon,authenticated;
+
+create table private.sf_mfa_protected_rpcs(function_name text primary key,rollout_stage smallint,control_area text,enabled boolean,updated_at timestamptz default now());
+insert into private.sf_mfa_protected_rpcs values('manager_list_time_entries',4,'DATEV und Berichte',true,now());
