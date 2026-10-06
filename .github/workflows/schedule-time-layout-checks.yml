@@ -5,9 +5,11 @@ on:
     paths:
       - index.html
       - assets/manager-schedule-time-layout-v1.css
+      - assets/manager-schedule-time-layout-v1.js
       - assets/manager-typography-v1.css
       - assets/schedule-week-board-v2-phase1.js
-      - assets/schedule-readability-v1.js
+      - assets/schedule-toolbar-polish-v1.js
+      - assets/schedule-month-view-v1.js
       - assets/time-workspace-v2.js
       - assets/time-month-picker-v1.js
       - tests/e2e/schedule-time-layout.spec.cjs
@@ -16,6 +18,7 @@ on:
     paths:
       - index.html
       - assets/manager-schedule-time-layout-v1.css
+      - assets/manager-schedule-time-layout-v1.js
       - assets/time-workspace-v2.js
       - tests/e2e/schedule-time-layout.spec.cjs
       - .github/workflows/schedule-time-layout-checks.yml
