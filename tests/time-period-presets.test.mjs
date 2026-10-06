@@ -39,10 +39,10 @@ test('month keeps full selected month including leap years',()=>{
   const {api,mode,month}=harness();mode.value='month';month.value='2028-02';const range=api.periodRange();
   assert.equal(range.start,'2028-02-01');assert.equal(range.end,'2028-02-29');
 });
-test('server lookback includes prior night but rows and bulk actions only get overlapping shifts',async()=>{
+test('central date query keeps overnight shifts but excludes non-overlapping shifts',async()=>{
   const {api,B}=harness();B.role='OWNER';B.companyId='fixture';let params;
   B.client={rpc:async(_name,args)=>{params=args;return{data:[row('2026-09-28T06:00:00+02:00','2026-09-28T16:00:00+02:00'),row('2026-09-28T22:00:00+02:00','2026-09-29T08:00:00+02:00'),row('2026-09-29T22:00:00+02:00','2026-09-30T08:00:00+02:00')]}}};
-  await api.loadManager();assert.equal(params.p_start_date,'2026-09-27');assert.equal(params.p_end_date,'2026-09-30');assert.equal(api.rows().length,2);
+  await api.loadManager();assert.equal(params.p_start_date,'2026-09-29');assert.equal(params.p_end_date,'2026-09-29');assert.equal(api.rows().length,2);
 });
 
 test('custom date shows both whole overnight shifts for the chosen historical day',async()=>{
@@ -52,7 +52,7 @@ test('custom date shows both whole overnight shifts for the chosen historical da
   assert.ok(api.rowInPeriod(row('2026-08-15T22:00:00+02:00','2026-08-16T08:00:00+02:00'),range));
   assert.ok(!api.rowInPeriod(row('2026-08-14T06:00:00+02:00','2026-08-14T16:00:00+02:00'),range));
   B.role='OWNER';B.companyId='fixture';let params;B.client={rpc:async(_name,args)=>{params=args;return{data:[]}}};
-  await api.loadManager();assert.equal(params.p_start_date,'2026-08-13');assert.equal(params.p_end_date,'2026-08-16');
-  custom.value='';assert.equal(api.periodRange(),null);await api.loadManager();assert.equal(params.p_start_date,'2026-08-13');
+  await api.loadManager();assert.equal(params.p_start_date,'2026-08-15');assert.equal(params.p_end_date,'2026-08-15');
+  custom.value='';assert.equal(api.periodRange(),null);await api.loadManager();assert.equal(params.p_start_date,'2026-08-15');
   custom.value='2026-02-30';assert.equal(api.periodRange(),null);
 });
