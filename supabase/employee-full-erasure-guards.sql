@@ -295,7 +295,7 @@ begin
       and new.old_values is not distinct from private.sf_erasure_scrub(old.old_values,array(select jsonb_array_elements_text(private.sf_erasure_context_plan(old.company_id)->'references')),array(select jsonb_array_elements_text(private.sf_erasure_context_plan(old.company_id)->'names')))
       and new.new_values is not distinct from private.sf_erasure_scrub(old.new_values,array(select jsonb_array_elements_text(private.sf_erasure_context_plan(old.company_id)->'references')),array(select jsonb_array_elements_text(private.sf_erasure_context_plan(old.company_id)->'names')))
       and new.metadata is not distinct from coalesce(private.sf_erasure_scrub(old.metadata,array(select jsonb_array_elements_text(private.sf_erasure_context_plan(old.company_id)->'references')),array(select jsonb_array_elements_text(private.sf_erasure_context_plan(old.company_id)->'names'))),'{}'::jsonb)
-      and new.actor_id is not distinct from case when old.actor_id::text=any(array(select jsonb_array_elements_text(private.sf_erasure_context_plan(old.company_id)->'references'))) then null else old.actor_id end
+      and new.actor_id is not distinct from (case when old.actor_id::text=any(array(select jsonb_array_elements_text(private.sf_erasure_context_plan(old.company_id)->'references'))) then null else old.actor_id end)
       then return new; end if;
     raise exception 'Die Löschfreigabe umfasst diese Protokolländerung nicht';
   end if;
