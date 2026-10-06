@@ -209,6 +209,7 @@
       if(row.status!=='PENDING_MANAGER')return {data:null,error:{message:'Dieser Demo-Vorgang wurde bereits bearbeitet.'}};
       row.status=args.p_decision==='APPROVE'?'APPLIED':'REJECTED_MANAGER';row.manager_comment=args.p_comment||'';row.reviewed_at=new Date().toISOString();saveMarket();return {data:{id:row.id,status:row.status},error:null};
     }
+    if(name==='manager_central_time_entries'){timeRows=read(TIME_KEY,timeRows);return {data:{as_of:new Date().toISOString(),timezone:'Europe/Berlin',rows:clone(timeRows),qr_rows:[],confirmed_summary:[]},error:null}}
     if(name==='manager_list_time_entries'){timeRows=read(TIME_KEY,timeRows);return {data:clone(timeRows),error:null}}
     if(name==='manager_save_time_entry'){
       timeRows=read(TIME_KEY,timeRows);
