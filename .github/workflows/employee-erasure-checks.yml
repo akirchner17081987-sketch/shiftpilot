@@ -24,6 +24,10 @@ jobs:
      with:
       node-version: '22'
    - run: node --test tests/employee-erasure.test.mjs
+   - run: npm ci
+   - run: npx playwright install --with-deps chromium
+   - name: Desktop and mobile deletion dialog with fictitious responses
+     run: node tests/browser/employee-erasure-qa.cjs
    - name: Fictitious employees, closed-month history, mixed audits, permissions and retry safety
      run: |
       psql -v ON_ERROR_STOP=1 -f tests/sql/employee-erasure-bootstrap.sql

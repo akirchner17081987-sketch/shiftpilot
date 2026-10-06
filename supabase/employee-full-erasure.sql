@@ -168,7 +168,7 @@ begin
  refs:=eids::text[]||aids::text[]||qids::text[]||rids::text[]||iids::text[]||cids::text[];
  select coalesce(array_agg(distinct n),'{}') into names from (
   select btrim(e.first_name||' '||e.last_name) n union all
-  select btrim(v->>'first_name'||' '||v->>'last_name') from public.audit_events a cross join lateral (values(a.old_values),(a.new_values)) j(v)
+  select btrim((v->>'first_name')||' '||(v->>'last_name')) from public.audit_events a cross join lateral (values(a.old_values),(a.new_values)) j(v)
    where a.company_id=p_company and a.entity_type='employees' and a.entity_id=any(eids)
   union all select e.email where coalesce(e.email,'')<>''
  ) x where n<>'' and not exists(select 1 from public.employees other where other.company_id=p_company and other.id<>e.id
