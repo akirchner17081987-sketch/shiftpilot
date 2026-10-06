@@ -411,7 +411,7 @@ create function public.manager_upsert_employees_checked(p_company_id uuid,p_gene
 do $permissions$
 declare f record;
 begin
- for f in select p.oid::regprocedure signature,n.nspname,p.proname from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname in('public','private') and p.proname=any(ARRAY['sf_erasure_owner','sf_erasure_scrub','sf_erasure_has','sf_erasure_context_plan','sf_erasure_row_allowed','sf_erasure_relations','sf_employee_erasure_plan','sf_erasure_public_preview','owner_employee_erasure_list','owner_employee_erasure_preview','server_stage_employee_erasure','sf_guard_employee_erasure_pending','sf_erasure_storage_write_allowed','server_commit_employee_erasure','server_finish_employee_erasure','employee_roster_generation','sf_guard_employee_roster_insert','manager_upsert_employees_checked','sf_erasure_auth_actor_clear','server_validate_employee_erasure_session']) loop
+ for f in select p.oid::regprocedure signature,n.nspname,p.proname from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname in('public','private') and p.proname=any(ARRAY['sf_erasure_contains','sf_erasure_owner','sf_erasure_scrub','sf_erasure_has','sf_erasure_context_plan','sf_erasure_row_allowed','sf_erasure_relations','sf_employee_erasure_plan','sf_erasure_public_preview','owner_employee_erasure_list','owner_employee_erasure_preview','server_stage_employee_erasure','sf_guard_employee_erasure_pending','sf_erasure_storage_write_allowed','server_commit_employee_erasure','server_finish_employee_erasure','employee_roster_generation','sf_guard_employee_roster_insert','manager_upsert_employees_checked','sf_erasure_auth_actor_clear','server_validate_employee_erasure_session']) loop
   execute format('revoke all on function %s from public,anon,authenticated,service_role',f.signature);
   if f.proname in('owner_employee_erasure_list','owner_employee_erasure_preview','employee_roster_generation','manager_upsert_employees_checked','sf_erasure_storage_write_allowed') then execute format('grant execute on function %s to authenticated',f.signature); end if;
   if f.proname in('server_stage_employee_erasure','server_commit_employee_erasure','server_finish_employee_erasure','server_validate_employee_erasure_session') then execute format('grant execute on function %s to service_role',f.signature); end if;
@@ -423,3 +423,5 @@ end $permissions$;
 grant execute on function private.sf_erasure_context_plan(uuid),private.sf_erasure_row_allowed(uuid,jsonb),private.sf_erasure_scrub(jsonb,text[],text[]) to authenticated,service_role,supabase_auth_admin;
 grant usage on schema private to supabase_auth_admin;
 grant execute on function private.sf_erasure_auth_actor_clear(uuid) to supabase_auth_admin;
+
+grant execute on function private.sf_erasure_contains(jsonb,text[],text[]) to authenticated,service_role,supabase_auth_admin;
