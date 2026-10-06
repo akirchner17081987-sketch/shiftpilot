@@ -60,7 +60,7 @@ begin
       select x into v_saved from jsonb_array_elements(coalesce(v_snapshot#>'{accounts,rows}',v_snapshot->'employees','[]'::jsonb)) x where x->>'employee_id'=p_employee_id::text limit 1;
     end if;
     if v_saved is not null then v_seconds:=v_seconds+coalesce((v_saved->>'confirmed_work_minutes')::numeric,0)*60;
-    elsif v_snapshot is not null and jsonb_array_length(coalesce(v_snapshot#>'{report,details}',v_snapshot->'details','[]'::jsonb))>0 then
+    elsif v_snapshot is not null then
       v_seconds:=v_seconds+(select coalesce(sum(coalesce((x->>'confirmed_actual_minutes')::numeric,0)),0)*60
         from jsonb_array_elements(coalesce(v_snapshot#>'{report,details}',v_snapshot->'details','[]'::jsonb)) x
         where x->>'employee_id'=p_employee_id::text and (x->>'work_date')::date between v_from and v_to);
