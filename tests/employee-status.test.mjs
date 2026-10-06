@@ -28,6 +28,7 @@ test('background full sync waits while a status change is in flight',async()=>{
 });
 test('saving a schedule does not upsert unchanged employee rules from an older session',async()=>{
  const {B,c,calls,e}=harness();B.rememberEmployees();c.assignments=[];c.absences=[];c.globalSoll={};c.dailySoll={};c.timeEntries={};B.persistAbsences=async()=>{};
+ B.client.rpc=async(name,args)=>{if(name==='employee_roster_generation')return{data:0,error:null};calls.push(['upsert',args.p_rows]);return{data:[],error:null}};
  B.client.from=table=>{calls.push(['table',table]);return{upsert(payload){calls.push(['upsert',payload]);return this},select(){return this},eq(){return this},then(resolve){resolve({data:[],error:null})}}};
  await B.sync();assert.equal(calls.some(x=>x[1]==='employees'),false);assert.equal(B.employeeSyncState.size,1);
  e.qualifications.push('__sp:maxWeekly=50');await B.sync();assert.equal(calls.filter(x=>x[0]==='upsert').length,1);assert.equal(calls.find(x=>x[0]==='upsert')[1][0].legacy_id,'local');await B.sync();assert.equal(calls.filter(x=>x[0]==='upsert').length,1);
