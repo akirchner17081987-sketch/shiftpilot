@@ -1,7 +1,7 @@
 -- Entirely fictitious companies, staff and bookings.
 create function public.assert_erasure(ok boolean,message text) returns void language plpgsql as $$begin if not coalesce(ok,false) then raise exception 'ASSERTION: %',message;end if;end$$;
 insert into auth.users(id,email) values('10000000-0000-0000-0000-000000000001','owner@example.invalid'),('10000000-0000-0000-0000-000000000002','planner@example.invalid');
-insert into public.companies(id,name) values('20000000-0000-0000-0000-000000000001','Erasure fixture'),('20000000-0000-0000-0000-000000000002','Other fixture');
+insert into public.companies(id,name,created_by) values('20000000-0000-0000-0000-000000000001','Erasure fixture','10000000-0000-0000-0000-000000000001'),('20000000-0000-0000-0000-000000000002','Other fixture','10000000-0000-0000-0000-000000000001');
 insert into public.company_members(company_id,user_id,role,status) values('20000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001','OWNER','ACTIVE'),('20000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000002','PLANNER','ACTIVE');
 insert into public.employees(id,company_id,legacy_id,first_name,last_name,personnel_no) values
  ('30000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','erasure-target','Fixture','Employee','9001'),
@@ -15,13 +15,13 @@ insert into public.absences(company_id,employee_id,start_date,end_date,absence_t
 insert into public.employee_personnel_details(employee_id,company_id,private_note) values('30000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','fictitious private data');
 insert into public.employee_personnel_documents(company_id,employee_id,title,file_name,storage_path) values('20000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001','Fixture','fixture.pdf','20000000-0000-0000-0000-000000000001/30000000-0000-0000-0000-000000000001/fixture.pdf');
 insert into storage.objects(bucket_id,name) values('personnel-documents','20000000-0000-0000-0000-000000000001/30000000-0000-0000-0000-000000000001/fixture.pdf');
-insert into public.time_qr_terminals(id,company_id,name,token_hash,pilot_employee_id) values('60000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','Fixture terminal','\x1234','30000000-0000-0000-0000-000000000001');
+insert into public.time_qr_terminals(id,company_id,name,token_hash,is_active,pilot_employee_id) values('60000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','Fixture terminal','\x1234',true,'30000000-0000-0000-0000-000000000001');
 insert into public.time_qr_independent_shifts(id,company_id,employee_id,terminal_id,started_at) values('61000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001','60000000-0000-0000-0000-000000000001','2026-08-01 06:00+02');
-insert into public.time_qr_independent_events(shift_id,action,punched_at,request_id) values('61000000-0000-0000-0000-000000000001','START','2026-08-01 06:00+02','fictitious-qr-request');
+insert into public.time_qr_independent_events(shift_id,action,punched_at,request_id) values('61000000-0000-0000-0000-000000000001','CLOCK_IN','2026-08-01 06:00+02',repeat('a',64));
 insert into public.time_qr_independent_breaks(shift_id,ordinal,started_at) values('61000000-0000-0000-0000-000000000001',1,'2026-08-01 10:00+02');
 insert into public.time_qr_independent_sessions(token_hash,company_id,employee_id,terminal_id,expires_at) values('\x5678','20000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001','60000000-0000-0000-0000-000000000001',now()+interval '1 hour');
 insert into public.time_qr_pilot_employees(terminal_id,employee_id,company_id) values('60000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001');
-insert into public.time_qr_punches(company_id,terminal_id,assignment_id,employee_id,punch_type) values('20000000-0000-0000-0000-000000000001','60000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001','START');
+insert into public.time_qr_punches(company_id,terminal_id,assignment_id,employee_id,punch_type) values('20000000-0000-0000-0000-000000000001','60000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001','CLOCK_IN');
 insert into public.time_qr_breaks(company_id,terminal_id,assignment_id,employee_id,started_at) values('20000000-0000-0000-0000-000000000001','60000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001','2026-08-01 10:00+02');
 insert into public.notifications(id,company_id,user_id,employee_id,kind,title,entity_type,entity_id) values('62000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001','SCHEDULE_PUBLISHED','Fixture Employee','assignment','40000000-0000-0000-0000-000000000001');
 insert into private.push_dispatches(notification_id) values('62000000-0000-0000-0000-000000000001');
@@ -31,6 +31,7 @@ insert into public.time_month_closures(company_id,month_start,status,revision,cl
  '{"accounts":{"rows":[{"employee_id":"30000000-0000-0000-0000-000000000001","employee_name":"Fixture Employee","minutes":480},{"employee_id":"30000000-0000-0000-0000-000000000002","employee_name":"Fixture Colleague","minutes":480}]},"report":{"employees":[{"employee_id":"30000000-0000-0000-0000-000000000001"},{"employee_id":"30000000-0000-0000-0000-000000000002"}],"details":[{"employee_id":"30000000-0000-0000-0000-000000000001"},{"employee_id":"30000000-0000-0000-0000-000000000002"}]}}');
 insert into public.audit_events(company_id,event_type,entity_type,entity_id,new_values) select company_id,'TIME_MONTH_CLOSED','time_month',company_id,to_jsonb(c) from public.time_month_closures c;
 
+update public.employees set status='inactive',access_status='DISABLED',deleted_at=now() where legacy_id='erasure-target';
 select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',false);
 select set_config('request.jwt.claim.role','authenticated',false);
 select public.assert_erasure(not has_function_privilege('anon','public.owner_employee_erasure_list(uuid)','EXECUTE'),'anon cannot list erasure candidates');
@@ -95,14 +96,14 @@ select public.assert_erasure((select count(*) from private.push_dispatches)=0 an
 -- Authenticated callers can still read the owner preview and insert new colleagues after refreshing.
 set role authenticated;
 select public.assert_erasure(jsonb_array_length(public.owner_employee_erasure_list('20000000-0000-0000-0000-000000000001'))=1,'owner list callable by authenticated role');
-select public.manager_upsert_employees_checked('20000000-0000-0000-0000-000000000001',1,'[{"legacy_id":"auth-target","first_name":"Auth","last_name":"Fixture","personnel_no":"9003"}]');
+select public.manager_upsert_employees_checked('20000000-0000-0000-0000-000000000001',1,'[{"company_id":"20000000-0000-0000-0000-000000000001","legacy_id":"auth-target","first_name":"Auth","last_name":"Fixture","personnel_no":"9003"}]');
 update public.employees set note='ordinary update survives erasure guards' where legacy_id='erasure-colleague';
 reset role;
 -- A dedicated employee account is revoked at staging and completion waits for Auth API removal.
 insert into auth.users(id,email) values('10000000-0000-0000-0000-000000000003','employee@example.invalid');
 insert into auth.sessions(id,user_id) values('70000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000003');
 insert into public.company_members(company_id,user_id,role,status) values('20000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000003','VIEWER','ACTIVE');
-update public.employees set auth_user_id='10000000-0000-0000-0000-000000000003',access_status='LINKED',email='employee@example.invalid',deleted_at=now() where legacy_id='auth-target';
+update public.employees set auth_user_id='10000000-0000-0000-0000-000000000003',access_status='ACTIVE',email='employee@example.invalid' where legacy_id='auth-target';
 do $$declare preview jsonb;job jsonb;target uuid;begin
  select id into target from public.employees where legacy_id='auth-target';
  preview:=public.owner_employee_erasure_preview('20000000-0000-0000-0000-000000000001',target);
@@ -115,5 +116,5 @@ do $$declare preview jsonb;job jsonb;target uuid;begin
  delete from auth.users where id='10000000-0000-0000-0000-000000000003';
  perform public.assert_erasure((public.server_finish_employee_erasure((job->>'job_id')::uuid,'10000000-0000-0000-0000-000000000001')->>'verified')::boolean,'erasure finishes after Auth API');
 end$$;
-select public.assert_erasure(not exists(select 1 from public.employees where legacy_id='auth-target') and not exists(select 1 from public.company_members where user_id='10000000-0000-0000-0000-000000000003'),'archived employee and dedicated membership erased');
+select public.assert_erasure(not exists(select 1 from public.employees where legacy_id='auth-target') and not exists(select 1 from public.company_members where user_id='10000000-0000-0000-0000-000000000003'),'dedicated employee and membership erased');
 select 'EMPLOYEE_ERASURE_INTEGRATION_PASSED' as result;

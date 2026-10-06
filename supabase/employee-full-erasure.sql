@@ -322,7 +322,7 @@ begin
   exclusive_employees=case when allowed_personnel_nos=ARRAY[job.plan->>'personnel_no'] then false else exclusive_employees end,
   allowed_personnel_nos=array_remove(allowed_personnel_nos,job.plan->>'personnel_no')
  where t.company_id=job.company_id and (responsible_employee_id=any(eids) or (job.plan->>'personnel_no')=any(allowed_personnel_nos));
- update public.time_qr_terminals set pilot_employee_id=null where company_id=job.company_id and pilot_employee_id=any(eids);
+ update public.time_qr_terminals set pilot_employee_id=null,is_active=case when pilot_mode then false else is_active end where company_id=job.company_id and pilot_employee_id=any(eids);
  update public.time_month_closures c set report_snapshot=private.sf_erasure_scrub(report_snapshot,refs,names)
  where company_id=job.company_id and private.sf_erasure_scrub(report_snapshot,refs,names) is distinct from report_snapshot;
  for rel in select value from jsonb_array_elements(job.plan->'relations') loop
