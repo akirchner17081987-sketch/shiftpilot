@@ -17,7 +17,24 @@
     const next=identity();if(scope!==next||busy()){close(false);reset();scope=next;}
     if(selectedService&&!contextDates().includes(selectedService.date)){selectedService=null;context={};updatePeriod();}
     const button=el('sfPlanningAssistantButton');if(button){button.hidden=!authorized();button.disabled=busy();}
+    syncPlacement();
     document.querySelectorAll?.('.sf-chat-service-open').forEach(button=>{button.hidden=!authorized();button.disabled=busy();});
+  }
+  function syncPlacement(){
+    const view=el('view-auto'),start=view?.querySelector('.sf-auto-start');
+    const docked=!!(authorized()&&view?.classList.contains('active')&&start);
+    let dock=el('sfAutoPlanningAssistantDock');
+    if(docked&&!dock){
+      dock=node('div',undefined,'sf-auto-assistant-dock');dock.id='sfAutoPlanningAssistantDock';
+      start.after(dock);
+    }
+    if(dock&&dock.hidden===docked)dock.hidden=!docked;
+    for(const target of [el('sfPlanningAssistantButton'),el('sfPlanningChat')]){
+      if(!target)continue;
+      if(target.classList.contains('sf-chat-docked')!==docked)target.classList.toggle('sf-chat-docked',docked);
+      const host=docked?dock:document.body;
+      if(target.parentNode!==host)host.appendChild(target);
+    }
   }
   function contextDates(){
     if(selectedMonth)return Core.parsePeriod(selectedMonth,{today:today(),defaultDates:[today()]}).dates;
@@ -243,7 +260,9 @@
       el('sfPlanningChatCurrent').onclick=()=>{selectedMonth='';selectedService=null;context={};el('sfPlanningChatMonth').value='';updatePeriod();el('sfPlanningChatMonth').closest('details').open=false;};
     }
     if(!messages.length)welcome();else{el('sfPlanningChatLog').replaceChildren();messages.forEach(renderMessage);}
-    el('sfPlanningChatMonth').value=selectedMonth;updatePeriod();dialog.show();el('sfPlanningAssistantButton')?.setAttribute('aria-expanded','true');el('sfPlanningChatInput').focus({preventScroll:true});
+    syncPlacement();el('sfPlanningChatMonth').value=selectedMonth;updatePeriod();dialog.show();
+    if(dialog.classList.contains('sf-chat-docked'))dialog.scrollIntoView({block:'nearest'});
+    el('sfPlanningAssistantButton')?.setAttribute('aria-expanded','true');el('sfPlanningChatInput').focus({preventScroll:true});
   }
   function mount(){
     const host=document.body;if(!host)return;
@@ -265,7 +284,7 @@
     if(a)setService(a.date,a.type,a.id);
   },true);
   document.addEventListener('sf:schedule-period-changed',()=>{selectedService=null;context={};updatePeriod();});
-  let queued=false;new MutationObserver(()=>{if(queued)return;queued=true;queueMicrotask(()=>{queued=false;mount();});}).observe(document.body,{childList:true,subtree:true});
+  let queued=false;new MutationObserver(records=>{if(queued||!records.some(r=>r.type==='childList'||r.target===el('view-auto')))return;queued=true;queueMicrotask(()=>{queued=false;mount();});}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
   // Auth state can change without a DOM mutation (for example an expired session).
   setInterval(syncScope,500);
