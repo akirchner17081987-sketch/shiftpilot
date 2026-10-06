@@ -18,6 +18,7 @@
     ABSENCE_REQUEST_CREATED:'Abwesenheitsantrag erstellt',
     SHIFT_CHANGE_CREATED:'Schichtänderung beantragt',
     TIME_ENTRY_MANAGER_UPDATED:'Zeiteintrag durch Führungskraft geändert',
+    QR_SHIFT_CORRECTED:'QR-Buchung korrigiert',
     SHIFT_MARKET_CLAIMED:'Freie Schicht vorgemerkt',
     SHIFT_MARKET_OFFERED:'Schicht zum Tausch angeboten',
     ABSENCE_REQUEST_APPROVED:'Abwesenheitsantrag genehmigt',
@@ -33,8 +34,8 @@
     PERSONNEL_DOCUMENT_DELETED:'Personaldokument gelöscht',
     PERSONNEL_QUALIFICATION_UPDATED:'Qualifikation aktualisiert'
   };
-  const entityLabels={client_event:'Anwendungsaktion',schedule:'Dienstplan',plan_publication:'Dienstplan-Veröffentlichung',shift_change_request:'Schichtänderung',shift_assignment:'Schichtzuweisung',audit_event:'Audit-Eintrag',shift_swap_request:'Schichttausch',absence:'Abwesenheit',time_entry:'Zeiteintrag',company:'Unternehmen',personnel_document:'Personaldokument',personnel_qualification:'Qualifikation'};
-  const roleLabels={OWNER:'Inhaber',ADMIN:'Administrator',DISPATCHER:'Disponent',PLANNER:'Planer',VIEWER:'Leser',EMPLOYEE:'Mitarbeiter',SYSTEM:'System'};
+  const entityLabels={client_event:'Anwendungsaktion',schedule:'Dienstplan',plan_publication:'Dienstplan-Veröffentlichung',shift_change_request:'Schichtänderung',shift_assignment:'Schichtzuweisung',audit_event:'Audit-Eintrag',shift_swap_request:'Schichttausch',absence:'Abwesenheit',time_entry:'Zeiteintrag',qr_independent_shift:'QR-Buchung',company:'Unternehmen',personnel_document:'Personaldokument',personnel_qualification:'Qualifikation'};
+  const roleLabels={OWNER:'Inhaber',ADMIN:'Administrator',DISPATCHER:'Disponent',PLANNER:'Planer',TIME_TRACKING:'Zeiterfassung',VIEWER:'Leser',EMPLOYEE:'Mitarbeiter',SYSTEM:'System'};
   const fieldLabels={status:'Status',role:'Rolle',first_name:'Vorname',last_name:'Nachname',personnel_no:'Personalnummer',email:'E-Mail',phone:'Telefon',start_date:'Eintrittsdatum',contract_end:'Vertragsende',birth_date:'Geburtsdatum',weekly_hours:'Wochenstunden',shift_code:'Schicht',work_date:'Datum',starts_at:'Beginn',ends_at:'Ende',break_minutes:'Pause',absence_type:'Abwesenheitsart',full_day:'Ganztägig',note:'Notiz',reason_text:'Begründung',reason_code:'Grund',published_at:'Veröffentlicht am',active:'Aktiv',employment:'Beschäftigung',work_time_model:'Arbeitszeitmodell',required_count:'SOLL-Besetzung'};
   const valueLabels={REQUESTED:'Beantragt',PENDING:'Ausstehend',APPROVED:'Genehmigt',REJECTED:'Abgelehnt',CANCELLED:'Storniert',ACTIVE:'Aktiv',INACTIVE:'Inaktiv',DRAFT:'Entwurf',PUBLISHED:'Veröffentlicht',READY_TO_APPLY:'Bereit zur Übernahme',APPLIED:'Übernommen',EMPLOYEE:'Mitarbeiter',OWNER:'Inhaber',ADMIN:'Administrator',DISPATCHER:'Disponent',PLANNER:'Planer',VIEWER:'Leser'};
   const technicalFields=new Set(['id','company_id','legacy_id','created_at','updated_at','created_by','updated_by','version']);

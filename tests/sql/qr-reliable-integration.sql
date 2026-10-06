@@ -76,5 +76,11 @@ begin
   assert not has_function_privilege('anon','public.manager_correct_qr_independent_shift(uuid,uuid,timestamptz,timestamptz,text,text,jsonb)','EXECUTE'),'Anonymous correction exposed';
   assert not has_function_privilege('authenticated','public.qr_independent_action(text,text,text,text)','EXECUTE'),'Employee RPC exposes service-only action';
   assert not has_function_privilege('authenticated','private.sf_qr_independent_snapshot(uuid)','EXECUTE'),'Unscoped snapshot exposed';
+  perform set_config('qa.company_id',company_a::text,true);
+  perform set_config('qa.shift_id',v_shift_id::text,true);
 end;$$;
+-- Exercise the real authenticated role: no direct QR table grant is needed.
+set local role authenticated;
+select public.manager_qr_independent_detail(current_setting('qa.company_id')::uuid,current_setting('qa.shift_id')::uuid)->>'revision' as authenticated_snapshot_revision;
+reset role;
 rollback;

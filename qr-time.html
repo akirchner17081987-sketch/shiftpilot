@@ -96,7 +96,7 @@ async function action(value){
     if(version!==generation)return;
     if(error.expired){logout('Anmeldung abgelaufen. Bitte erneut anmelden und den Buchungsstatus prüfen.');return}
     if(!error.uncertain)pendingBooking=null;
-    unverified();msg(error.uncertain?'Verbindung unterbrochen. Der gespeicherte Buchungsstatus wird geprüft …':error.message,'error');
+    unverified();msg(error.uncertain?'Verbindung unterbrochen. Der gespeicherte Buchungsstatus wird geprüft …':'Buchungsstatus wird geprüft …','error');
     try{await reconcile(version);if(version!==generation)return;if(!error.uncertain)msg(error.message,'error')}
     catch(checkError){if(version!==generation)return;if(checkError.expired)logout('Anmeldung abgelaufen. Bitte erneut anmelden und den Buchungsstatus prüfen.');else msg('Die Buchung konnte noch nicht bestätigt werden. Bitte die Verbindung prüfen und „Buchungsstatus prüfen“ wählen.','error')}
   }finally{if(version===generation){busy=false;controls()}}
