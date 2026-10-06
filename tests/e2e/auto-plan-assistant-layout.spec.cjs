@@ -8,7 +8,7 @@ const planning=index.slice(index.indexOf('let autoPlanPreview=[];'),index.indexO
 const styles=[...index.matchAll(/<style[^>]*>([\s\S]*?)<\/style>|<link\b[^>]*rel="stylesheet"[^>]*>/g)].map(m=>m[1]!==undefined?'<style>'+m[1]+'</style>':m[0]).join('\n');
 const script=s=>'<script>'+s.replace(/<\/script/gi,'<\\/script')+'</script>';
 const assistantTag=index.match(/<script src="assets\/planning-assistant-v1\.js[^\"]*"><\/script>/)[0];
-const modules=['date-month-format-v1.js','employee-rhythm-v1.js','compliance-core-v2.js','supabase-auto-plan-guard-v1.js','auto-plan-workspace-v1.js','help-center-content-v3.js','planning-assistant-core-v1.js'];
+const modules=['date-month-format-v1.js','employee-rhythm-v1.js','compliance-core-v2.js','supabase-auto-plan-guard-v1.js','individual-month-planner-v1.js','month-optimizer-core-v1.js','auto-plan-workspace-v1.js','month-optimizer-v1.js','help-center-content-v3.js','planning-assistant-core-v1.js'];
 const fake=`
 window.__writes=0;window.store={get:(key,fallback)=>fallback,set:()=>__writes++};window.saveAll=()=>__writes++;window.showSaveToast=()=>{};window.renderCalendar=()=>{};
 window.SFBackend={ready:true,role:'PLANNER',user:{id:'fictitious-user'},companyId:'fictitious-company'};
@@ -88,4 +88,14 @@ for(const role of ['OWNER','ADMIN','DISPATCHER','EMPLOYEE','TIME_TRACKING'])test
  const report=await fixture(page,'dark',17,role);const visible=['OWNER','ADMIN','DISPATCHER'].includes(role);
  if(visible)await expect(page.locator('#sfPlanningAssistantButton')).toBeVisible();else await expect(page.locator('#sfPlanningAssistantButton')).toBeHidden();
  expect(report.errors).toEqual([]);expect(report.external).toEqual([]);expect(await page.evaluate(()=>__writes)).toBe(0);
+});
+
+for(const width of [1366,320])test('month actions and assistant '+width,async({page})=>{
+ await page.setViewportSize({width,height:780});const report=await fixture(page,'light',17);
+ await page.locator('#autoPlanPeriod').selectOption('month');await page.locator('#autoPlanMonth').fill('2026-10');await page.locator('#autoPlanMonth').dispatchEvent('change');
+ await expect(page.locator('#generateAutoPlanBtn')).toContainText('Individuellen Monat planen');
+ await page.locator('#sfPlanningAssistantButton').click();await page.locator('#generateAutoPlanBtn').scrollIntoViewIfNeeded();expect((await geometry(page)).issues).toEqual([]);
+ await page.locator('#autoIndividualBlocks').uncheck();await expect(page.locator('#optimizeAutoMonthBtn')).toBeVisible();await page.locator('#optimizeAutoMonthBtn').scrollIntoViewIfNeeded();
+ expect(await page.locator('#optimizeAutoMonthBtn').evaluate(el=>{const r=el.getBoundingClientRect();return el.contains(document.elementFromPoint((r.left+r.right)/2,(r.top+r.bottom)/2));})).toBe(true);
+ expect((await geometry(page)).issues).toEqual([]);expect(report.errors).toEqual([]);expect(report.external).toEqual([]);expect(await page.evaluate(()=>__writes)).toBe(0);
 });
