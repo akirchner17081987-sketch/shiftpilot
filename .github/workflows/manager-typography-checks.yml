@@ -31,10 +31,11 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - run: npx playwright test tests/e2e/manager-typography.spec.cjs --project=desktop-chromium --retries=0 --max-failures=3
+      - run: npx playwright test tests/e2e/manager-typography.spec.cjs tests/e2e/kpi-layout.spec.cjs --project=desktop-chromium --retries=0 --max-failures=3
         env:
           E2E_BASE_URL: http://typography.test
           SF_TYPOGRAPHY_BROWSER: /usr/bin/google-chrome
+          SF_KPI_LAYOUT_BROWSER: /usr/bin/google-chrome
       - uses: actions/upload-artifact@v4
         if: always()
         with:

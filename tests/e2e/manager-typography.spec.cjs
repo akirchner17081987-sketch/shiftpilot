@@ -72,9 +72,12 @@ async function measure(page,selector,minFont,checkGeometry=true){
    if(checkGeometry){
     const range=document.createRange();range.selectNodeContents(el);
     for(const t of range.getClientRects())if(t.left<r.left-1||t.right>r.right+1||t.top<r.top-1||t.bottom>r.bottom+1)issues.push('text outside its box: '+el.textContent);
+    let scrollX=false,scrollY=false;
     for(let p=el.parentElement;p&&p.id!=='appShell';p=p.parentElement){const c=getComputedStyle(p),b=p.getBoundingClientRect();
-     if(['hidden','clip'].includes(c.overflowX)&&(r.left<b.left-1||r.right>b.right+1))issues.push('text clipped horizontally: '+el.textContent);
-     if(['hidden','clip'].includes(c.overflowY)&&(r.top<b.top-1||r.bottom>b.bottom+1))issues.push('text clipped vertically: '+el.textContent);
+     if(['auto','scroll'].includes(c.overflowX)&&p.scrollWidth>p.clientWidth)scrollX=true;
+     if(['auto','scroll'].includes(c.overflowY)&&p.scrollHeight>p.clientHeight)scrollY=true;
+     if(!scrollX&&['hidden','clip'].includes(c.overflowX)&&(r.left<b.left-1||r.right>b.right+1))issues.push('text clipped horizontally: '+el.textContent);
+     if(!scrollY&&['hidden','clip'].includes(c.overflowY)&&(r.top<b.top-1||r.bottom>b.bottom+1))issues.push('text clipped vertically: '+el.textContent);
     }
    }
   }
