@@ -13,15 +13,16 @@
   }
   function state(p,records=[]){
     const s={remaining:new Map(p.capacity),people:new Map(),used:new Set(),records:[]};
-    for(const e of p.people.values())s.people.set(String(e.id),{hours:0,weeks:new Map(),duties:[],days:new Set(),byDay:new Map()});
+    for(const e of p.people.values())s.people.set(String(e.id),{hours:0,monthDuties:0,weeks:new Map(),duties:[],days:new Set(),byDay:new Map()});
     for(const a of p.base)addDuty(s,a,p.month);
     for(const r of records)commit(s,r,p.month);return s;
   }
-  function addDuty(s,a,month){const e=s.people.get(String(a.employeeId));if(!e)return;e.duties.push(a);e.days.add(a.day);e.byDay.set(a.day,a);if(a.date.startsWith(month))e.hours+=a.hours;e.weeks.set(a.week,(e.weeks.get(a.week)||0)+a.hours)}
+  function addDuty(s,a,month){const e=s.people.get(String(a.employeeId));if(!e)return;e.duties.push(a);e.days.add(a.day);e.byDay.set(a.day,a);if(a.date.startsWith(month)){e.hours+=a.hours;e.monthDuties++;}e.weeks.set(a.week,(e.weeks.get(a.week)||0)+a.hours)}
   function commit(s,r,month){s.used.add(r.group.id);s.records.push(r);for(const a of r.option){s.remaining.set(a.resource,s.remaining.get(a.resource)-1);addDuty(s,a,month)}}
   function feasible(p,s,g,option){
     const e=g.employee,x=s.people.get(String(e.id));if(!x)return false;
-    if(x.hours+option.hours>e.monthLimit+.000001)return false;
+    if(x.hours+option.hours>e.monthLimit+.000001||x.monthDuties+option.filter(a=>a.date.startsWith(p.month)).length>(e.maxMonthlyShifts??Infinity))return false;
+    if(Number.isFinite(e.calendarLimit)){const start=+new Date(p.month+'-01T00:00:00'),end=new Date(start);end.setMonth(end.getMonth()+1);const h=[...x.duties,...option].reduce((n,a)=>n+Math.max(0,Math.min(a.endMs,+end)-Math.max(a.startMs,start))/hour,0);if(h>e.calendarLimit+.000001)return false;}
     if(p.respectHours&&e.weeklyLimit>0)for(const [w,h]of option.weeks)if((x.weeks.get(w)||0)+h>e.weeklyLimit+.000001)return false;
     const addedDays=new Set(),addedByDay=new Map(option.map(a=>[a.day,a]));
     for(const a of option){if((s.remaining.get(a.resource)||0)<1||x.days.has(a.day)||addedDays.has(a.day)||a.hours>10+.000001)return false;addedDays.add(a.day);

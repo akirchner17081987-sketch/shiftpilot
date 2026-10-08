@@ -425,8 +425,8 @@ function autoPlannedHours(employeeId, simulated=[], referenceDate=null){
 }
 function autoHourLimits(employee,respectHours=document.getElementById('autoRespectHours')?.checked!==false){
   const target=Number(employee.weeklyHours)||0,configuredWeek=employee.maxWeeklyHours,weeklyLimit=configuredWeek!==''&&configuredWeek!=null&&Number.isFinite(Number(configuredWeek))?Math.max(0,Number(configuredWeek)):target,monthTarget=employeeMonthlyTarget(employee);
-  const fullTime=/^Vollzeit(?:\s+180)?$/i.test(String(employee.employment||'').trim())&&monthTarget>=180,monthLimit=fullTime?220:Math.min(180,monthTarget>0?monthTarget:180);
-  return {target,weeklyLimit,monthTarget,monthLimit};
+  const fullTime=/^Vollzeit(?:\s+180)?$/i.test(String(employee.employment||'').trim())&&monthTarget>=180,companyLimit=window.SFCompliance?.policy?.monthlyPlanningMaxHours,monthLimit=fullTime?Number(companyLimit||220):Math.min(Number(companyLimit||180),monthTarget>0?monthTarget:180);
+  return {target,weeklyLimit,monthTarget,monthLimit,maxMonthlyShifts:Number(window.SFCompliance?.policy?.monthlyPlanningMaxShifts)||Infinity,calendarLimit:Number(window.SFCompliance?.policy?.monthlyPlanningMaxHours)||Infinity};
 }
 function autoWorkBlock(employee,type,date,all=[]){
   const rule=window.SFRhythm?.config(employee);
@@ -443,9 +443,9 @@ function autoEligibleEmployees(type,date,simulated=[]){
   const fair=document.getElementById('autoFairDistribution')?.checked!==false;
   const all=[...assignments,...simulated];
   return employees.filter(e=>e.status==='active'&&(e.shifts||[]).includes(type)&&(window.SFShiftModels?.allowsEmployee?.(type,e,date)!==false)&&!absent(e.id,date)&&!all.some(a=>a.date===date&&a.employeeId===e.id)&&(!window.sfRhythmCheck||window.sfRhythmCheck(e,type,date).mode!=='required'||window.sfRhythmCheck(e,type,date).allowed)).map(e=>{
-    const h=autoPlannedHours(e.id,simulated,date),{target,weeklyLimit,monthTarget,monthLimit}=autoHourLimits(e,respectHours),monthHours=plannedMonthlyHoursForEmployee(e.id,date,simulated);
+    const h=autoPlannedHours(e.id,simulated,date),{target,weeklyLimit,monthTarget,monthLimit,maxMonthlyShifts}=autoHourLimits(e,respectHours),monthHours=plannedMonthlyHoursForEmployee(e.id,date,simulated);
     const t=typeById(type); let dur=0;if(t){const a=t.start.split(':').map(Number),b=t.end.split(':').map(Number);let m=b[0]*60+b[1]-(a[0]*60+a[1]);if(m<0)m+=1440;dur=m/60}
-    const overWeek=!!(respectHours&&weeklyLimit&&h+dur>weeklyLimit+0.01),overMonth=monthHours+dur>monthLimit+1e-8;
+    const overWeek=!!(respectHours&&weeklyLimit&&h+dur>weeklyLimit+0.01),overMonth=monthHours+dur>monthLimit+1e-8||all.filter(a=>String(a.employeeId)===String(e.id)&&a.date.slice(0,7)===date.slice(0,7)).length>=maxMonthlyShifts||!!window.SFCompliance?.monthPlanningCheck?.(e,date,[...all,{employeeId:e.id,date,type,start:t.start,end:t.end}]).length;
     const rolePenalty=type==='Teamleiter'&&e.role!=='Teamleiter'?100:0;
     const weeklyLoad=target?(h+dur)/target:(h+dur)/40,monthlyLoad=(monthHours+dur)/(monthTarget>0?monthTarget:180),load=monthlyLoad+weeklyLoad*.15,overTarget=monthTarget>0&&monthHours+dur>monthTarget+1e-8;
     const rhythm=window.sfRhythmCheck?.(e,type,date),rhythmPenalty=rhythm&&!rhythm.allowed&&rhythm.mode==='preferred'?40:0,fixed=!!(rhythm?.mode==='required'&&rhythm.allowed&&rhythm.expected&&rhythm.expected!=='ALLE'&&rhythm.expected!=='FREI');
@@ -1035,16 +1035,16 @@ table th,table td{font-size:13px;line-height:1.35}
 <script src="assets/navigation-compat-v1.js?v=20260930-tenbreaks1&qr=20261006-deformat3&period=20261001-1&models=1&auto=20261001-workflow2&mobile=20261002-sheetguard1&export=20261004-exporttotals1"></script>
 <script src="assets/schichtfunk-schedule-core-v1.js?v=20261004-fd-split1"></script>
 <script src="assets/assignment-quick-delete-v1.js"></script>
-<script src="assets/conflict-plausibility-v1.js?v=20261008-target1"></script>
+<script src="assets/conflict-plausibility-v1.js?v=20261008-month-190"></script>
 <script src="assets/employee-core-v1.js?v=20261001-removal1"></script>
 <script src="assets/employee-rhythm-v1.js?v=20261004-fd-split1"></script>
 <script src="assets/planning-teams-v1.js?v=20261004-fd-split1"></script>
 <link rel="stylesheet" href="assets/open-shift-marketplace-v1.css?v=20261001-market1">
 <script src="assets/open-shift-marketplace-v1.js?v=20261002-sharedtl2"></script>
-<script src="assets/individual-month-planner-v1.js?v=20261008-nightrest1"></script>
-<script src="assets/month-optimizer-core-v1.js?v=20261004-individual1"></script>
-<script src="assets/auto-plan-workspace-v1.js?v=20261004-fd-split1"></script>
-<script src="assets/month-optimizer-v1.js?v=20261008-nightrest2"></script>
+<script src="assets/individual-month-planner-v1.js?v=20261008-month-190"></script>
+<script src="assets/month-optimizer-core-v1.js?v=20261008-month-190"></script>
+<script src="assets/auto-plan-workspace-v1.js?v=20261008-month-190"></script>
+<script src="assets/month-optimizer-v1.js?v=20261008-month-190"></script>
 <script src="assets/planning-assistant-core-v1.js?v=20261001-4"></script>
 <script src="assets/planning-assistant-v1.js?v=20261006-1"></script>
 <script src="assets/employee-management-v2.js?v=20261006-erasure1"></script>
@@ -1235,4 +1235,3 @@ document.addEventListener('click',function(e){var c=e.target.closest('[data-hcat
   removeLegacyHelp();
 })();
 </script>
-

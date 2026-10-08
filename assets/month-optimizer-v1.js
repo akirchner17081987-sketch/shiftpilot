@@ -5,7 +5,7 @@
   let result=null,busy=false;
   const individualRequested=()=>el('autoPlanPeriod')?.value==='month'&&employees.some(individualMode);
   const withBase=(base,fn)=>{const original=assignments;try{assignments=base;return fn()}finally{assignments=original}};
-  const signature=()=>JSON.stringify({company:B.companyId,employees,assignments,absences,TYPES,globalSoll,dailySoll,respectHours:el('autoRespectHours')?.checked,individualBlocks:eightHourRoster()&&el('autoIndividualBlocks')?.checked,period:el('autoPlanPeriod')?.value,month:el('autoPlanMonth')?.value});
+  const signature=()=>JSON.stringify({company:B.companyId,policy:window.SFCompliance?.policy,employees,assignments,absences,TYPES,globalSoll,dailySoll,respectHours:el('autoRespectHours')?.checked,individualBlocks:eightHourRoster()&&el('autoIndividualBlocks')?.checked,period:el('autoPlanPeriod')?.value,month:el('autoPlanMonth')?.value});
   const key=s=>s.date+'|'+(s.coverageGroup||s.type);
   const fixed=a=>{const e=employees.find(e=>String(e.id)===String(a.employeeId)),r=e&&window.sfRhythmCheck?.(e,a.type,a.date);return r?.mode==='required'&&r.expected&&!['ALLE','FREI'].includes(r.expected)};
   const entry=(slot,candidate)=>{const t=typeById(candidate.type);return{date:slot.date,type:candidate.type,employeeId:candidate.e.id,start:t.start,end:t.end,resource:key(slot),coverageGroup:slot.coverageGroup,coverageLabel:slot.coverageLabel,optional:!!slot.optional}};
@@ -32,7 +32,7 @@
         if(options.length)groups.push({id,employee:e,block:!!block,options});
       }
     }
-    const people=employees.filter(e=>e.status==='active'&&!e.deletedAt).map(e=>{const limit=autoHourLimits(e),stored=e.qualifications?.find(q=>String(q).startsWith('__sp:maxConsecutive=')),target=employeeMonthlyTarget(e),individual=!!individualMode(e),nearTarget=/^Vollzeit(?:\s+180)?$/i.test(String(e.employment||'').trim())&&target>=180?Math.floor((target+4)/8)*8:Math.floor(target/8)*8;return{...e,target,individual,monthLimit:individual?Math.min(limit.monthLimit,nearTarget):limit.monthLimit,weeklyLimit:limit.weeklyLimit,maxConsecutive:Number(e.maxConsecutiveShifts??stored?.split('=')[1])||0,permissions:(e.shifts||[]).filter(t=>getSoll(dates[0],t)>0).length}});
+    const people=employees.filter(e=>e.status==='active'&&!e.deletedAt).map(e=>{const limit=autoHourLimits(e),stored=e.qualifications?.find(q=>String(q).startsWith('__sp:maxConsecutive=')),target=employeeMonthlyTarget(e),individual=!!individualMode(e),nearTarget=/^Vollzeit(?:\s+180)?$/i.test(String(e.employment||'').trim())&&target>=180?Math.floor((target+4)/8)*8:Math.floor(target/8)*8;return{...e,target,individual,monthLimit:individual?Math.min(limit.monthLimit,nearTarget):limit.monthLimit,weeklyLimit:limit.weeklyLimit,maxMonthlyShifts:limit.maxMonthlyShifts,calendarLimit:limit.calendarLimit,maxConsecutive:Number(e.maxConsecutiveShifts??stored?.split('=')[1])||0,permissions:(e.shifts||[]).filter(t=>getSoll(dates[0],t)>0).length}});
     return{month:dates[0].slice(0,7),employees:people,groups,base:[...base,...reserved],reserved,capacities:[...capacities],slots,respectHours:el('autoRespectHours')?.checked!==false};
   })}
   function completeOptional(base,proposed,individualIds=new Set()){return withBase(base,()=>{
