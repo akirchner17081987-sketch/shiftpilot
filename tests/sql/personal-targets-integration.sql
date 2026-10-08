@@ -34,4 +34,7 @@ SELECT pg_temp.set_duties(ARRAY['2027-01-04','2027-01-05','2027-01-07','2027-01-
 SELECT pg_temp.set_duties(ARRAY['2027-01-04','2027-01-05','2027-01-09','2027-01-10']::date[],ARRAY['ND','ND','SD','SD']);SELECT private.sf_validate_individual_month('10000000-0000-4000-8000-000000000001','2027-01-01',ARRAY['30000000-0000-4000-8000-000000000001'::uuid]);
 SELECT pg_temp.set_duties(ARRAY['2026-12-30','2026-12-31','2027-01-02','2027-01-03']::date[],ARRAY['ND','ND','SD','SD']);SELECT pg_temp.expect_night_error();
 SELECT pg_temp.set_duties(ARRAY['2027-01-29','2027-01-30','2027-02-02']::date[],ARRAY['ND','ND','SD']);SELECT pg_temp.expect_night_error();
+SELECT pg_temp.set_duties(ARRAY['2026-12-29','2026-12-30','2026-12-31','2027-01-01']::date[],ARRAY['SD','SD','ND','ND']);SELECT pg_temp.expect_night_error();
+SELECT pg_temp.set_duties(ARRAY['2027-01-31','2027-02-01','2027-02-03','2027-02-04']::date[],ARRAY['ND','ND','SD','SD']);SELECT pg_temp.expect_night_error();
+SELECT pg_temp.set_duties(ARRAY['2027-01-31','2027-02-01','2027-02-05','2027-02-06']::date[],ARRAY['ND','ND','SD','SD']);SELECT private.sf_validate_individual_month('10000000-0000-4000-8000-000000000001','2027-01-01',ARRAY['30000000-0000-4000-8000-000000000001'::uuid]);
 SELECT 'Personal monthly targets and night recovery integration passed' AS result;

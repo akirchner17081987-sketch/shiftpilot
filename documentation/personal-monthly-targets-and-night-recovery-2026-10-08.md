@@ -31,3 +31,8 @@ Prüfungen umfassen Nachtwechsel, Erholungszeiten über Monatsgrenzen, persönli
 - Both desktop and mobile January browser tests passed, including cancellation and an RPC error that retains all existing duties.
 - Planning hours are labelled planned/required coverage, so they are not confused with recorded IST or personal monthly SOLL.
 - The existing open-month-end exception remains: a work block can start January 31 and must be continued in February; PN 114 needs this continuation.
+
+## Complete boundary recovery
+
+- Migration 20261008010616 checks complete night islands, including a night block beginning December 31 and recovery after a February 1 night.
+- Three additional SQL cases and the matching JavaScript boundary cases passed. The stored 464-duty January draft passed the tightened authenticated server validator again.
