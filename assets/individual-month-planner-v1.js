@@ -112,7 +112,7 @@
         if (a.day === b.day + 1 && a.rank < b.rank) return false;
       }
     }
-    if (hours > e.monthLimit + .00001) return false;
+    if (hours > e.monthLimit + .00001 || own.filter(a=>a.day>=p.start&&a.day<=p.end).length>(e.maxMonthlyShifts??Infinity)) return false;
     if (p.respectHours && e.weeklyLimit > 0) for (const [w, h] of weeks) if (w <= p.end && w + 6 >= p.start && h > e.weeklyLimit + .00001) return false;
     const blocks = [];
     for (const a of own) {
@@ -211,6 +211,7 @@
     }
     let beam = [{
         hours: 0,
+        monthDuties: 0,
         weekHours: outsideWeeks.get(week(date(p.start))) || 0,
         last: prior || null,
         run,
@@ -253,7 +254,7 @@
           keep(n);
           continue;
         }
-        if (node.hours + a.hours > e.monthLimit + .00001 || p.respectHours && e.weeklyLimit > 0 && weekly + a.hours > e.weeklyLimit + .00001) continue;
+        if (node.monthDuties + 1 > (e.maxMonthlyShifts??Infinity) || node.hours + a.hours > e.monthLimit + .00001 || p.respectHours && e.weeklyLimit > 0 && weekly + a.hours > e.weeklyLimit + .00001) continue;
         if (node.recovery > 0 || a.night && !node.nightRun && node.free < 1) continue;
         if (node.last && (a.startMs - node.last.endMs < 11 * HOUR || a.rank < node.last.rank)) continue;
         if (node.nightRun === 1 && !a.night) continue;
@@ -267,6 +268,7 @@
         const bonus = (a.morning ? node.mornings < (bounds?.goal || 0) ? 35 : -15 : 0) + (node.last?.type === a.type ? 3 : -2) + (node.free >= 2 ? 2 : 0) + available / cap * 6 + (a.morning ? 35 : available > Math.max(0, cap - Math.max(0, 4 - (p.existingCounts.get(a.resource) || 0))) ? 30 : -20) + (p.prices?.get(a.resource) || 0) + noise[i][a.morning ? 0 : a.night ? 2 : 1];
         keep({
           hours: node.hours + a.hours,
+          monthDuties: node.monthDuties + 1,
           weekHours: weekly + a.hours,
           last: a,
           run: workRun,

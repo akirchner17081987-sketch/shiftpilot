@@ -33,6 +33,19 @@
     return{hours,assignment};
   };
 
+  C.monthPlanningCheck=(emp,date,all,ignoreId=null)=>{
+    const maxHours=Number(C.policy?.monthlyPlanningMaxHours)||0,maxShifts=Number(C.policy?.monthlyPlanningMaxShifts)||0;
+    if(!maxHours&&!maxShifts)return[];
+    const begin=C.parseDate(String(date).slice(0,7)+'-01'),finish=new Date(begin);finish.setMonth(finish.getMonth()+1);
+    const own=all.filter(a=>String(a.employeeId)===String(emp.id)&&a.id!==ignoreId),started=own.filter(a=>String(a.date).slice(0,7)===String(date).slice(0,7)),errors=[];
+    const target=Number(emp.monthlyHours??String((emp.qualifications||[]).find(q=>String(q).startsWith('__sp:monthlyHours='))||'').split('=')[1]??0),fullTime=/^Vollzeit(?:\s+180)?$/i.test(String(emp.employment||'').trim())&&target>=180;
+    const cap=fullTime?maxHours:Math.min(maxHours||180,target||180);
+    const startedHours=started.reduce((n,a)=>{const iv=C.shiftInterval(a);return n+(iv?(iv.end-iv.start)/HOUR:0)},0);
+    const calendarHours=own.reduce((n,a)=>{const iv=C.shiftInterval(a);return n+(iv?Math.max(0,Math.min(iv.end,+finish)-Math.max(iv.start,+begin))/HOUR:0)},0);
+    if(maxShifts&&started.length>maxShifts)errors.push(`Maximal ${maxShifts} Schichten pro Monat.`);
+    if(maxHours&&(startedHours>cap+.000001||calendarHours>maxHours+.000001))errors.push(`Monatsgrenze ${cap} Stunden überschritten; Monatsüberträge zählen zeitanteilig.`);
+    return errors;
+  };
   C.check=(emp,type,date,start,end,ignoreId=null)=>{
     const hard=[],soft=[],t=typeById(type),p=C.interval(date,start||t?.start,end||t?.end);
     if(!emp||!t)return{hard:['Mitarbeiter oder Schichtvorlage wurde nicht gefunden.'],soft:[]};
@@ -62,7 +75,9 @@
     const monthHours=assignments.filter(a=>a.employeeId===emp.id&&a.id!==ignoreId&&String(a.date).slice(0,7)===String(date).slice(0,7)).reduce((sum,a)=>{const iv=C.shiftInterval(a);return sum+(iv?(iv.end-iv.start)/HOUR:0)},0);
     if(monthTarget>0&&monthHours+duration>monthTarget+.01)soft.push(`Monats-SOLL würde auf ${(monthHours+duration).toFixed(1)} / ${Number(monthTarget).toFixed(1)} Std. steigen.`);
     const so=Number(getSoll(date,type)||0),ist=assignmentsFor(date,type).filter(a=>a.id!==ignoreId).length;if(so&&ist>=so)soft.push(`SOLL-Stärke ${so} ist bereits erreicht.`);
-    return{hard,soft,proposed:p,duration,rest};
+    const monthlyRows=[...assignments.filter(a=>a.id!==ignoreId),{employeeId:emp.id,type,date,start:start||t.start,end:end||t.end}];
+    for(const month of new Set([String(date).slice(0,7),C.iso(new Date(p.end-1)).slice(0,7)]))hard.push(...C.monthPlanningCheck(emp,month+'-01',monthlyRows));
+    return{hard:[...new Set(hard)],soft,proposed:p,duration,rest};
   };
   window.spAssignmentConflict=C.check;
 
