@@ -127,7 +127,12 @@
     for (const a of own.filter(a => a.night)) {
       if (nights.length && nights.at(-1).at(-1).day + 1 === a.day) nights.at(-1).push(a);else nights.push([a]);
     }
-    for (const block of nights) if (block.some(a => a.day >= p.start && a.day <= p.end) && (block.length < 2 || block.length > 4)) return false;
+    for (const block of nights) {
+      if (block.some(a => a.day >= p.start && a.day <= p.end) && (block.length < 2 || block.length > 4)) return false;
+      if (block[0].day > p.end + 1 || block.at(-1).day < p.start - 3) continue;
+      if (seen.has(block[0].day - 1)) return false;
+      for (let offset = 1; offset <= 3; offset++) if (seen.has(block.at(-1).day + offset)) return false;
+    }
     return true;
   }
   function validate(input, preview) {
@@ -195,7 +200,9 @@
       outside = ownBase.filter(a => a.day < p.start || a.day > p.end),
       outsideWeeks = new Map();
     for (const a of outside) outsideWeeks.set(week(a.date), (outsideWeeks.get(week(a.date)) || 0) + a.hours);
-    const prior = outside.find(a => a.day === p.start - 1);
+    const prior = outside.find(a => a.day === p.start - 1),
+      previous = outside.filter(a => a.day < p.start).sort((a,b) => b.day-a.day)[0],
+      priorFree = previous ? Math.min(3, p.start - previous.day - 1) : 3;
     let run = 0,
       nightRun = 0;
     if (prior) {
@@ -210,7 +217,8 @@
         nightRun,
         mornings: 0,
         nights: 0,
-        free: prior ? 0 : 2,
+        free: priorFree,
+        recovery: prior ? 0 : previous?.night ? Math.max(0, 3-priorFree) : 0,
         score: 0,
         parent: null,
         added: null
@@ -236,7 +244,8 @@
             last: null,
             run: 0,
             nightRun: 0,
-            free: Math.min(2, node.free + 1),
+            free: Math.min(3, node.free + 1),
+            recovery: node.nightRun ? 2 : Math.max(0,node.recovery-1),
             score: node.score + (node.free === 1 ? 2 : 0),
             parent: node,
             added: null
@@ -245,6 +254,7 @@
           continue;
         }
         if (node.hours + a.hours > e.monthLimit + .00001 || p.respectHours && e.weeklyLimit > 0 && weekly + a.hours > e.weeklyLimit + .00001) continue;
+        if (node.recovery > 0 || a.night && !node.nightRun && node.free < 1) continue;
         if (node.last && (a.startMs - node.last.endMs < 11 * HOUR || a.rank < node.last.rank)) continue;
         if (node.nightRun === 1 && !a.night) continue;
         const workRun = node.run + 1,
@@ -264,13 +274,14 @@
           mornings: morning,
           nights: node.nights + Number(a.night),
           free: 0,
+          recovery: 0,
           score: node.score + 100 + a.hours + bonus,
           parent: node,
           added: isLocked ? null : a
         });
       }
       function keep(n) {
-        const key = [n.hours, n.weekHours, n.last?.type || '', n.run, n.nightRun, n.mornings, n.nights, n.free].join('|'),
+        const key = [n.hours, n.weekHours, n.last?.type || '', n.run, n.nightRun, n.mornings, n.nights, n.free, n.recovery].join('|'),
           old = next.get(key);
         if (!old || n.score > old.score) next.set(key, n);
       }

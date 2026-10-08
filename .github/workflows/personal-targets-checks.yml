@@ -1,0 +1,43 @@
+name: Persönliche Monatsziele und Nachtblöcke
+on:
+ push:
+  branches: [main, codex/ionos-migration]
+  paths: ['assets/**','supabase/**','tests/**','.github/workflows/personal-targets-checks.yml']
+ workflow_dispatch:
+jobs:
+ targets:
+  runs-on: ubuntu-latest
+  timeout-minutes: 12
+  permissions:
+   contents: read
+  services:
+   postgres:
+    image: postgres:17
+    env:
+     POSTGRES_PASSWORD: fictitious-ci-password
+     POSTGRES_DB: personal_targets_test
+    ports: ['5432:5432']
+    options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+  steps:
+   - uses: actions/checkout@v4
+   - uses: actions/setup-node@v4
+     with:
+      node-version: '22'
+   - run: node --test tests/individual-month-planner.test.mjs
+   - run: npm ci
+   - run: npx playwright install --with-deps chromium
+   - name: Desktop and mobile personal target settings and employee account
+     run: |
+      node tests/browser/personal-targets-qa.cjs
+      node tests/browser/employee-time-account-qa.cjs
+   - name: Monthly target methods, historical periods, permissions and night recovery
+     run: |
+      psql -v ON_ERROR_STOP=1 -f tests/sql/personal-targets-bootstrap.sql
+      psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261008003320_personal_monthly_targets_and_night_recovery.sql
+      psql -v ON_ERROR_STOP=1 -f tests/sql/personal-targets-integration.sql
+     env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: fictitious-ci-password
+      PGDATABASE: personal_targets_test
