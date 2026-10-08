@@ -52,6 +52,13 @@ test('one free start day before nights and three after them are mandatory across
  assert.equal(planner.validate(minimal({base:[assignment('test','2027-02-02')]}),end),false);
  assert.equal(planner.validate(minimal({base:[assignment('test','2027-02-03')]}),end),true);
 });
+test('December night starts and February night recovery are checked for the complete cross-month block',()=>{
+ const previous=[assignment('test','2026-12-29'),assignment('test','2026-12-30'),assignment('test','2026-12-31','ND')];
+ assert.equal(planner.validate(minimal({base:previous}),[assignment('test','2027-01-01','ND')]),false);
+ const end=[assignment('test','2027-01-31','ND')];
+ assert.equal(planner.validate(minimal({base:[assignment('test','2027-02-01','ND'),assignment('test','2027-02-03'),assignment('test','2027-02-04')]}),end),false);
+ assert.equal(planner.validate(minimal({base:[assignment('test','2027-02-01','ND'),assignment('test','2027-02-05'),assignment('test','2027-02-06')]}),end),true);
+});
 test('actual December hours, previous night blocks and following February nights count at month boundaries',()=>{
  const input=minimal({base:[assignment('test','2026-12-31','ND')]}),preview=[assignment('test','2027-01-01','ND')];
  assert.equal(planner.validate(input,preview),true);

@@ -34,6 +34,7 @@ jobs:
      run: |
       psql -v ON_ERROR_STOP=1 -f tests/sql/personal-targets-bootstrap.sql
       psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261008003320_personal_monthly_targets_and_night_recovery.sql
+      psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261008010616_night_recovery_complete_month_boundaries.sql
       psql -v ON_ERROR_STOP=1 -f tests/sql/personal-targets-integration.sql
      env:
       PGHOST: localhost
