@@ -24,3 +24,10 @@ Prüfungen umfassen Nachtwechsel, Erholungszeiten über Monatsgrenzen, persönli
 - Live manager account matches all 23 personal targets (4012 h total).
 - New plan: 3712 h, 11 open duties (88 h), total target deficit 300 h; min rest 16 h, max weekly 40 h, max consecutive 5.
 - Solver found a feasible plan; optimality and complete coverage are not claimed.
+
+## Final browser regression update
+
+- The prior 17-person fixture no longer reaches its old 429-duty result because night recovery is now mandatory. Tests verify rule validity and calculate the displayed shortage from the proposal, while retaining a coverage floor, fixed FD and weekend staffing checks.
+- Both desktop and mobile January browser tests passed, including cancellation and an RPC error that retains all existing duties.
+- Planning hours are labelled planned/required coverage, so they are not confused with recorded IST or personal monthly SOLL.
+- The existing open-month-end exception remains: a work block can start January 31 and must be continued in February; PN 114 needs this continuation.
