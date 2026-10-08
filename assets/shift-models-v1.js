@@ -52,7 +52,7 @@
     return seen.size>=minimum;
   };
   M.rawRequired=(date,code,fallback)=>{const override=typeof dailySoll==='undefined'?null:dailySoll[date]?.[code],t=M.find(code);if(t?.strictWeekdays&&!t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7))return 0;return override!=null?Number(override):t&&(t.planningMode==='optional'||!t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7))?0:fallback};
-  M.requiredSoll=(date,code,fallback)=>{const g=M.coverageInfo(date,code);if(g){const own=typeof assignments==='undefined'?0:assignments.filter(a=>a.date===date&&a.type===code&&a.status!=='CANCELLED').length;return own+(g.representative===code?g.missing:0)}
+  M.requiredSoll=(date,code,fallback)=>{const rules=window.SFCompliance?.policy?.solidPlanningRules;if(rules?.enabled&&window.SFSolidPlanningCore){const rule=(rules.conditionalStaffing||[]).find(r=>r.shift===code),rows=rule?(typeof assignments==='undefined'?[]:assignments).filter(a=>a.type===rule.sourceShift&&a.date===window.SFSolidPlanningCore.plus(date,rule.sourceDayOffset)).map(a=>({...a,start:a.start||M.find(a.type)?.start,end:a.end||M.find(a.type)?.end})):[],need=window.SFSolidPlanningCore.required(date,code,rows,rules);if(need!==null)return need;}const g=M.coverageInfo(date,code);if(g){const own=typeof assignments==='undefined'?0:assignments.filter(a=>a.date===date&&a.type===code&&a.status!=='CANCELLED').length;return own+(g.representative===code?g.missing:0)}
     const raw=M.rawRequired(date,code,fallback);
     if(['OT1','OT2'].includes(code)&&M.morningOtSwitch(date)){
       const own=typeof assignments==='undefined'?0:assignments.filter(a=>a.date===date&&a.type==='OT1'&&a.status!=='CANCELLED').length;

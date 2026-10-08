@@ -41,7 +41,7 @@
     return people.map(e=>{
       const duties=all.filter(a=>String(a.employeeId)===String(e.id)&&selected.has(a.date));
       const planned=duties.reduce((sum,a)=>sum+plannedAssignmentHours(a),0);
-      const target=monthly?employeeMonthlyTarget(e):(Number(e.weeklyHours)||0)*dates.length/7;
+      const target=monthly?employeeMonthlyTarget(e)*new Set(dates.map(d=>d.slice(0,7))).size:(Number(e.weeklyHours)||0)*dates.length/7;
       return {e,duties:duties.length,planned,target,difference:planned-target};
     });
   }

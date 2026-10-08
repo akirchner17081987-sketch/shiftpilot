@@ -6,7 +6,7 @@
   C.parseDate=v=>{const m=String(v||'').slice(0,10).match(/^(\d{4})-(\d{2})-(\d{2})$/);if(!m)return null;const d=new Date(+m[1],+m[2]-1,+m[3]);return d.getFullYear()===+m[1]&&d.getMonth()===+m[2]-1&&d.getDate()===+m[3]?d:null};
   C.iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   C.mins=t=>{const m=String(t||'').match(/^(\d{1,2}):(\d{2})$/);return m&&+m[1]<24&&+m[2]<60?+m[1]*60 + +m[2]:null};
-  C.interval=(date,start,end)=>{const d=C.parseDate(date),s=C.mins(start),e=C.mins(end);if(!d||s===null||e===null||s===e)return null;return{start:d.getTime()+s*60000,end:d.getTime()+e*60000+(e<=s?DAY:0)}};
+  C.interval=(date,start,end)=>{if(C.policy?.solidPlanningRules?.enabled&&window.SFSolidPlanningCore)return window.SFSolidPlanningCore.interval(date,start,end,C.policy.solidPlanningRules.timezone);const d=C.parseDate(date),s=C.mins(start),e=C.mins(end);if(!d||s===null||e===null||s===e)return null;return{start:d.getTime()+s*60000,end:d.getTime()+e*60000+(e<=s?DAY:0)}};
   C.shiftInterval=a=>{const t=typeById(a.type);return C.interval(a.date,a.start||t?.start,a.end||t?.end)};
   C.overlap=(a,b)=>!!a&&!!b&&a.start<b.end&&b.start<a.end;
   C.fmt=d=>new Date(d+'T00:00:00').toLocaleDateString('de-DE');
@@ -41,7 +41,8 @@
     const target=Number(emp.monthlyHours??String((emp.qualifications||[]).find(q=>String(q).startsWith('__sp:monthlyHours='))||'').split('=')[1]??0),fullTime=/^Vollzeit(?:\s+180)?$/i.test(String(emp.employment||'').trim())&&target>=180;
     const cap=fullTime?maxHours:Math.min(maxHours||180,target||180);
     const startedHours=started.reduce((n,a)=>{const iv=C.shiftInterval(a);return n+(iv?(iv.end-iv.start)/HOUR:0)},0);
-    const calendarHours=own.reduce((n,a)=>{const iv=C.shiftInterval(a);return n+(iv?Math.max(0,Math.min(iv.end,+finish)-Math.max(iv.start,+begin))/HOUR:0)},0);
+    const solidRules=C.policy?.solidPlanningRules,calendarBegin=solidRules?.enabled?window.SFSolidPlanningCore.instant(String(date).slice(0,7)+'-01','00:00',solidRules.timezone):+begin,calendarFinish=solidRules?.enabled?window.SFSolidPlanningCore.instant(C.iso(finish),'00:00',solidRules.timezone):+finish;
+    const calendarHours=own.reduce((n,a)=>{const iv=C.shiftInterval(a);return n+(iv?Math.max(0,Math.min(iv.end,calendarFinish)-Math.max(iv.start,calendarBegin))/HOUR:0)},0);
     if(maxShifts&&started.length>maxShifts)errors.push(`Maximal ${maxShifts} Schichten pro Monat.`);
     if(maxHours&&(startedHours>cap+.000001||calendarHours>maxHours+.000001))errors.push(`Monatsgrenze ${cap} Stunden überschritten; Monatsüberträge zählen zeitanteilig.`);
     return errors;
@@ -77,6 +78,7 @@
     const so=Number(getSoll(date,type)||0),ist=assignmentsFor(date,type).filter(a=>a.id!==ignoreId).length;if(so&&ist>=so)soft.push(`SOLL-Stärke ${so} ist bereits erreicht.`);
     const monthlyRows=[...assignments.filter(a=>a.id!==ignoreId),{employeeId:emp.id,type,date,start:start||t.start,end:end||t.end}];
     for(const month of new Set([String(date).slice(0,7),C.iso(new Date(p.end-1)).slice(0,7)]))hard.push(...C.monthPlanningCheck(emp,month+'-01',monthlyRows));
+    if(C.policy?.solidPlanningRules?.enabled&&window.SFSolidPlanningCore)hard.push(...window.SFSolidPlanningCore.errors(emp,monthlyRows,C.policy.solidPlanningRules,[date]).map(x=>x.message));
     return{hard:[...new Set(hard)],soft,proposed:p,duration,rest};
   };
   window.spAssignmentConflict=C.check;

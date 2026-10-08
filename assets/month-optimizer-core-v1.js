@@ -1,13 +1,14 @@
 // Monatsoptimierung: ganze Arbeitsblöcke, echte Besetzungsbedarfe und persönliche Stundenziele.
-(function(root,factory){const api=factory(typeof module==='object'&&module.exports?require('./individual-month-planner-v1.js'):root.SFIndividualMonthPlanner);if(typeof module==='object'&&module.exports)module.exports=api;else root.SFMonthOptimizerCore=api})(typeof window!=='undefined'?window:globalThis,function(individual){
+(function(root,factory){const api=factory(typeof module==='object'&&module.exports?require('./individual-month-planner-v1.js'):root.SFIndividualMonthPlanner,typeof module==='object'&&module.exports?require('./solid-planning-core-v1.js'):root.SFSolidPlanningCore);if(typeof module==='object'&&module.exports)module.exports=api;else root.SFMonthOptimizerCore=api})(typeof window!=='undefined'?window:globalThis,function(individual,solid){
   const hour=3600000;
   const next=date=>{const d=new Date(date+'T12:00:00');d.setDate(d.getDate()+1);return iso(d)};
   const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   const week=date=>{const d=new Date(date+'T12:00:00');d.setDate(d.getDate()-(d.getDay()+6)%7);return iso(d)};
   const transition=(a,b)=>!(a==='O3'&&['O1','O2','TL','TL-LE','TL-RE','TEAMLEITER'].includes(String(b).toUpperCase()));
   function duty(a){const start=new Date(a.date+'T'+a.start.slice(0,5)+':00'),end=new Date(a.date+'T'+a.end.slice(0,5)+':00');if(end<=start)end.setDate(end.getDate()+1);return{...a,startMs:+start,endMs:+end,hours:(end-start)/hour,day:Math.floor(Date.parse(a.date+'T12:00:00Z')/86400000),week:week(a.date)}}
+  function solidDuty(a,p){return {...solid.duty(a,p),week:week(a.date)}}
   function prepare(input){
-    const people=new Map(input.employees.map(e=>[String(e.id),e])),base=input.base.map(duty),capacity=new Map(input.capacities),groups=input.groups.map(g=>({...g,employee:people.get(String(g.employee.id)),options:g.options.map(o=>{const a=o.map(duty);a.hours=a.reduce((n,x)=>n+x.hours,0);a.weeks=new Map();for(const x of a)a.weeks.set(x.week,(a.weeks.get(x.week)||0)+x.hours);return a})})),potential=new Map();
+    const people=new Map(input.employees.map(e=>[String(e.id),e])),base=input.base.map(a=>input.solidRules?solidDuty(a,input.solidRules):duty(a)),capacity=new Map(input.capacities),groups=input.groups.map(g=>({...g,employee:people.get(String(g.employee.id)),options:g.options.map(o=>{const a=o.map(a=>input.solidRules?solidDuty(a,input.solidRules):duty(a));a.hours=a.reduce((n,x)=>n+x.hours,0);a.weeks=new Map();for(const x of a)a.weeks.set(x.week,(a.weeks.get(x.week)||0)+x.hours);return a})})),potential=new Map();
     for(const g of groups)for(const o of g.options)for(const a of o){if(!potential.has(a.resource))potential.set(a.resource,new Set());potential.get(a.resource).add(String(g.employee.id))}
     return{...input,people,base,capacity,groups,potential};
   }
@@ -22,8 +23,9 @@
   function feasible(p,s,g,option){
     const e=g.employee,x=s.people.get(String(e.id));if(!x)return false;
     if(x.hours+option.hours>e.monthLimit+.000001||x.monthDuties+option.filter(a=>a.date.startsWith(p.month)).length>(e.maxMonthlyShifts??Infinity))return false;
-    if(Number.isFinite(e.calendarLimit)){const start=+new Date(p.month+'-01T00:00:00'),end=new Date(start);end.setMonth(end.getMonth()+1);const h=[...x.duties,...option].reduce((n,a)=>n+Math.max(0,Math.min(a.endMs,+end)-Math.max(a.startMs,start))/hour,0);if(h>e.calendarLimit+.000001)return false;}
+    if(Number.isFinite(e.calendarLimit)){const start=p.solidRules?solid.instant(p.month+'-01','00:00',p.solidRules.timezone):+new Date(p.month+'-01T00:00:00'),end=new Date(p.month+'-01T12:00:00Z');end.setUTCMonth(end.getUTCMonth()+1);const finish=p.solidRules?solid.instant(end.toISOString().slice(0,10),'00:00',p.solidRules.timezone):+new Date(end.toISOString().slice(0,10)+'T00:00:00');const h=[...x.duties,...option].reduce((n,a)=>n+Math.max(0,Math.min(a.endMs,finish)-Math.max(a.startMs,start))/hour,0);if(h>e.calendarLimit+.000001)return false;}
     if(p.respectHours&&e.weeklyLimit>0)for(const [w,h]of option.weeks)if((x.weeks.get(w)||0)+h>e.weeklyLimit+.000001)return false;
+    if(p.solidRules&&!solid.canAdd(e,x.byDay,option,p.solidRules))return false;
     const addedDays=new Set(),addedByDay=new Map(option.map(a=>[a.day,a]));
     for(const a of option){if((s.remaining.get(a.resource)||0)<1||x.days.has(a.day)||addedDays.has(a.day)||a.hours>10+.000001)return false;addedDays.add(a.day);
       for(const day of [a.day-1,a.day+1]){const b=x.byDay.get(day)||addedByDay.get(day);if(!b)continue;
@@ -62,8 +64,27 @@
     const rows=[...p.people.values()].map(e=>{const planned=best.people.get(String(e.id)).hours;return{employeeId:e.id,target:e.target,planned,missing:Math.max(0,e.target-planned),extra:Math.max(0,planned-e.target)}});
     return{records:best.records,preview:best.records.flatMap(r=>r.option.map(a=>({...a,blockId:r.group.block?r.group.id:undefined}))),remaining:[...best.remaining],quality:q,rows};
   }
+
+  function solidQuality(p,s){const all=[...p.base,...s.records.flatMap(r=>r.option)],remaining=new Map(s.remaining);for(const [key]of remaining){const [date,code]=key.split('|'),need=solid.required(date,code,all,p.solidRules);if(need!==null){const base=p.base.filter(a=>a.date===date&&a.type===code).length,used=all.filter(a=>a.date===date&&a.type===code).length;remaining.set(key,Math.max(0,need-used))}}
+    const q=quality(p,s),critical=[...remaining].filter(([k])=>p.criticalResources.includes(k)).reduce((n,[,v])=>n+Math.max(0,v),0),metrics=solid.metrics([...p.people.values()],all,p.solidRules,[p.month]);return {...q,open:[...remaining.values()].reduce((n,v)=>n+Math.max(0,v),0),critical,metrics,penalty:solid.penalty(metrics)+q.squared*.15};}
+  const solidBetter=(a,b)=>!b||a.critical<b.critical||a.critical===b.critical&&(a.open<b.open||a.open===b.open&&(a.penalty<b.penalty-1e-6||Math.abs(a.penalty-b.penalty)<1e-6&&a.deficit<b.deficit));
+  async function optimizeSolid(input,{iterations=12,yieldStep=()=>Promise.resolve(),progress=()=>{}}={}){
+    const p=prepare(input),rng=random(20270101),byResource=new Map();for(const g of p.groups)for(const option of g.options)for(const key of new Set(option.map(a=>a.resource))){const list=byResource.get(key)||[];list.push({group:g,option});byResource.set(key,list)}
+    let best=null,q=null;const seed=[];for(const bundle of input.seedBlocks||[]){const g=p.groups.find(g=>g.id===bundle.id);if(g){const option=g.options.find(o=>o.length===bundle.rows.length&&o.every((a,i)=>a.type===bundle.rows[i].type));if(option)seed.push({group:g,option})}}
+    function allowed(s,r){if(!feasible(p,s,r.group,r.option))return false;const all=[...p.base,...s.records.flatMap(x=>x.option),...r.option];for(const a of r.option){const need=solid.required(a.date,a.type,all,p.solidRules);if(need!==null&&all.filter(b=>b.date===a.date&&b.type===a.type).length>need)return false}for(const rule of p.solidRules.conditionalStaffing||[])for(const a of r.option.filter(a=>a.type===rule.sourceShift)){const date=solid.plus(a.date,-rule.sourceDayOffset),count=all.filter(b=>b.date===date&&b.type===rule.shift).length;if(count>solid.required(date,rule.shift,all,p.solidRules))return false}return true}
+    function seeded(records){const s=state(p);for(const r of records)if(allowed(s,r))commit(s,r,p.month);return s}
+    for(let i=0;i<iterations;i++){let s=seeded(i===0?seed:best.records.filter(()=>rng()>.12+(i%3)*.08));
+      const order=[...p.capacity.keys()].sort((a,b)=>Number(p.criticalResources.includes(b))-Number(p.criticalResources.includes(a))||(p.potential.get(a)?.size||0)-(p.potential.get(b)?.size||0)||(a.localeCompare(b)));
+      let changed=true;while(changed){changed=false;for(const resource of order){if((s.remaining.get(resource)||0)<1)continue;let chosen=null,score=-Infinity;for(const r of byResource.get(resource)||[]){if(s.used.has(r.group.id)||!allowed(s,r))continue;const x=s.people.get(String(r.group.employee.id)),deficit=Math.max(0,r.group.employee.target-x.hours),same=r.option.every(a=>a.start===r.option[0].start),v=r.option.reduce((n,a)=>n+(p.criticalResources.includes(a.resource)?100:1),0)*10+Math.min(deficit,r.option.hours)*.15+(same?2:0)-(r.option.length===4&&r.option[0].start>='18:00'?4:0)-(r.option.length===1?4:0)+rng()*3;if(v>score){chosen=r;score=v}}
+        if(chosen){commit(s,chosen,p.month);changed=true}}
+      }
+      const v=solidQuality(p,s);if(solidBetter(v,q)){best=s;q=v}progress({iteration:i+1,iterations,...q});await yieldStep();
+    }
+    return{preview:best.records.flatMap(r=>r.option.map(a=>({...a,blockId:r.group.id}))),quality:q,records:best.records,remaining:[...best.remaining]};
+  }
   async function optimize(input,options={}){
     const ids=new Set(input.employees.filter(e=>e.individual).map(e=>String(e.id)));
+    if(input.solidRules)return optimizeSolid(input,options);
     if(!ids.size)return optimizeLegacy(input,options);
     if(!individual)throw Error('Die individuelle Monatsplanung konnte nicht geladen werden. Bitte die Seite neu laden.');
     const bound=await optimizeLegacy({...input,groups:input.groups.filter(g=>!ids.has(String(g.employee.id)))},{...options,iterations:Math.min(16,options.iterations||16)}),capacity=new Map(input.capacities);
