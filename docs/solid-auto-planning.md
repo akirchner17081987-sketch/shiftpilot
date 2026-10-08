@@ -11,3 +11,5 @@ OT1 entfällt bei drei verschiedenen Mitarbeitern auf O3 des Vortags, die 06–0
 Die Planung erfolgt als Vorschau und wird nach Bestätigung als Entwurf gespeichert. Eine Veröffentlichung ist ein eigener bestehender Schritt. Wenn Mitarbeiterzahl, Freigaben oder Verfügbarkeit nicht ausreichen, bleiben Lücken sichtbar; der Planer verspricht keine Vollbesetzung. Eine gültige bestehende Planung wird nicht durch eine Vorschau mit mehr Pflichtlücken ersetzt.
 
 Prüfung: `node --test tests/solid-planning.test.cjs tests/solid-planning-ui.test.cjs tests/monthly-planning-limits.test.cjs` sowie die vorhandene Anwendungssuite und beide statischen Builds. Die PostgreSQL-Migration wurde zusätzlich auf identischem Schema mit echten Funktionen auf Erholung, Sommerzeit, OT-Ausnahmen, Mandantentrennung, veraltete Fingerprints und atomare Übernahme/Rücksetzung geprüft.
+
+Die Zeitraumübernahme erhält gezielt ein RPC-Laufzeitlimit von 60 Sekunden. Normale Sitzungs- und Rollenlimits bleiben erhalten. Die vollständige reale Sechsmonatsübernahme mit 1.997 flexiblen Diensten wurde einschließlich verzögerter Serverprüfungen in einer zurückgesetzten Transaktion erfolgreich geprüft.
