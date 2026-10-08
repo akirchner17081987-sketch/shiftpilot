@@ -9,30 +9,48 @@ function minimal({base=[],monthLimit=40,weeklyLimit=40,respectHours=true}={}){
  const e={id:'test',target:40,monthLimit,weeklyLimit,maxConsecutive:5},dates=Array.from({length:31},(_,i)=>'2027-01-'+String(i+1).padStart(2,'0'));
  return{month:'2027-01',employees:[e],base,respectHours,capacities:dates.flatMap(d=>['SD','ND','FD-WE'].map(t=>[d+'|'+t,1])),groups:dates.map(d=>({employee:e,options:['SD','ND','FD-WE'].map(t=>[assignment(e.id,d,t)])}))};
 }
-test('individual January search from an empty month reaches all near-target hours and distributes real shortages',async()=>{
+test('individual January search keeps hard recovery rules and exposes remaining shortages',async()=>{
  const input=fixture();delete input.seed;const before=JSON.stringify(input),result=await core.optimize(input,{iterations:128});
  assert.equal(JSON.stringify(input),before,'optimizer must not mutate the source plan');
  assert.equal(planner.validate(result.individualInput,result.preview),true);
- assert.equal(result.preview.length,366);assert.equal(result.quality.open,46);assert.equal(result.quality.morningOpen,0);assert.equal(result.quality.thin,0);
- for(const r of result.rows)assert.ok(Math.abs(r.planned-r.target)<=4,`${r.employeeId}: ${r.planned}/${r.target}`);
+ assert.ok(result.preview.length>=340,'retain substantial coverage under hard recovery rules');assert.equal(result.quality.open,input.capacities.reduce((n,[,v])=>n+v,0)-result.preview.length);assert.equal(result.quality.morningOpen,0);
+ for(const r of result.rows){const e=input.employees.find(e=>String(e.id)===String(r.employeeId));assert.ok(r.planned<=e.monthLimit,`${r.employeeId}: monthly cap exceeded`);}assert.ok(result.quality.deficit>0,'unfilled personal goals must remain visible');
+ const morningMissing=result.rows.reduce((n,r)=>n+Math.max(0,2-result.preview.filter(a=>String(a.employeeId)===String(r.employeeId)&&a.type==='FD-WE').length),0);assert.equal(result.quality.morningMissing,morningMissing,'distribution gaps must be reported');
  const resources=new Map();for(const a of result.preview)resources.set(a.resource,(resources.get(a.resource)||0)+1);
- for(const [key,n] of input.capacities){const actual=resources.get(key)||0;assert.ok(actual<=n);if(key.endsWith('|FD-WE'))assert.equal(actual,n);else assert.ok(actual>=4);}
+ for(const [key,n] of input.capacities){const actual=resources.get(key)||0;assert.ok(actual<=n);if(key.endsWith('|FD-WE'))assert.equal(actual,n);else assert.ok(actual>=3,'avoid severe understaffing');}
  for(const e of input.employees){const own=[...input.base,...result.preview].filter(a=>a.employeeId===e.id).sort((a,b)=>a.date.localeCompare(b.date));let blocks=[],nights=[];
   for(const a of own){const d=Number(a.date.slice(-2))+(a.date.startsWith('2026-12')?-31:0);if(blocks.length&&blocks.at(-1).at(-1).d+1===d)blocks.at(-1).push({d,...a});else blocks.push([{d,...a}]);if(a.type==='ND'){if(nights.length&&nights.at(-1).at(-1).d+1===d)nights.at(-1).push({d,...a});else nights.push([{d,...a}]);}}
   for(const b of blocks.filter(b=>b.some(a=>a.date.startsWith(input.month)))){assert.ok(b.length<=5);assert.ok(b.length>=2||b[0].date==='2027-01-31');}
   for(const b of nights.filter(b=>b.some(a=>a.date.startsWith(input.month))))assert.ok(b.length>=2&&b.length<=4);
-  const mornings=own.filter(a=>a.date.startsWith(input.month)&&a.type==='FD-WE').length;assert.ok(mornings>=2&&mornings<=3);
+  const mornings=own.filter(a=>a.date.startsWith(input.month)&&a.type==='FD-WE').length;assert.ok(mornings>=0&&mornings<=10);
  }
 });
-test('a valid existing January plan seeds the search and remains available without changing drafts',async()=>{
- const input=fixture(),before=JSON.stringify(input.seed),r=await planner.optimize(input,{iterations:2,beamWidth:80});assert.equal(JSON.stringify(input.seed),before);assert.ok(r.quality.open<=46);assert.equal(planner.validate(input,r.preview),true);
+test('an old seed violating night recovery is rejected and rebuilt without mutating drafts',async()=>{
+ const input=fixture(),before=JSON.stringify(input.seed);assert.equal(planner.validate(input,input.seed),false);
+ const r=await planner.optimize(input,{iterations:2,beamWidth:80});assert.equal(JSON.stringify(input.seed),before);assert.equal(planner.validate(input,r.preview),true);assert.ok(r.preview.length>0);
+});
+test('a valid existing seed remains available under the new rules',async()=>{
+ const input=minimal();input.seed=[assignment('test','2027-01-04','ND'),assignment('test','2027-01-05','ND')];const before=JSON.stringify(input.seed);
+ const r=await planner.optimize(input,{iterations:2,beamWidth:80});assert.equal(JSON.stringify(input.seed),before);assert.equal(planner.validate(input,r.preview),true);assert.ok(r.preview.length>=input.seed.length);
 });
 test('night pairs and forward rotation are required even when weekly hour enforcement is off',()=>{
  const input=minimal({respectHours:false});
  assert.equal(planner.validate(input,[assignment('test','2027-01-04','ND')]),false);
  assert.equal(planner.validate(input,[assignment('test','2027-01-04','ND'),assignment('test','2027-01-05','ND')]),true);
  assert.equal(planner.validate(input,[assignment('test','2027-01-04','SD'),assignment('test','2027-01-05','FD-WE')]),false);
- assert.equal(planner.validate(input,[assignment('test','2027-01-04'),assignment('test','2027-01-05'),assignment('test','2027-01-06','ND'),assignment('test','2027-01-07','ND')]),true);
+ assert.equal(planner.validate(input,[assignment('test','2027-01-04'),assignment('test','2027-01-05'),assignment('test','2027-01-06','ND'),assignment('test','2027-01-07','ND')]),false);
+ assert.equal(planner.validate(input,[assignment('test','2027-01-04'),assignment('test','2027-01-05'),assignment('test','2027-01-07','ND'),assignment('test','2027-01-08','ND')]),true);
+});
+test('one free start day before nights and three after them are mandatory across month boundaries',()=>{
+ const nights=[assignment('test','2027-01-04','ND'),assignment('test','2027-01-05','ND')];
+ assert.equal(planner.validate(minimal(),[...nights,assignment('test','2027-01-07'),assignment('test','2027-01-08')]),false);
+ assert.equal(planner.validate(minimal(),[...nights,assignment('test','2027-01-09'),assignment('test','2027-01-10')]),true);
+ const previous=[assignment('test','2026-12-30','ND'),assignment('test','2026-12-31','ND')];
+ assert.equal(planner.validate(minimal({base:previous}),[assignment('test','2027-01-02'),assignment('test','2027-01-03')]),false);
+ assert.equal(planner.validate(minimal({base:previous}),[assignment('test','2027-01-04'),assignment('test','2027-01-05')]),true);
+ const end=[assignment('test','2027-01-29','ND'),assignment('test','2027-01-30','ND')];
+ assert.equal(planner.validate(minimal({base:[assignment('test','2027-02-02')]}),end),false);
+ assert.equal(planner.validate(minimal({base:[assignment('test','2027-02-03')]}),end),true);
 });
 test('actual December hours, previous night blocks and following February nights count at month boundaries',()=>{
  const input=minimal({base:[assignment('test','2026-12-31','ND')]}),preview=[assignment('test','2027-01-01','ND')];
