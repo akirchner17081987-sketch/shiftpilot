@@ -6,7 +6,7 @@
   C.parseDate=v=>{const m=String(v||'').slice(0,10).match(/^(\d{4})-(\d{2})-(\d{2})$/);if(!m)return null;const d=new Date(+m[1],+m[2]-1,+m[3]);return d.getFullYear()===+m[1]&&d.getMonth()===+m[2]-1&&d.getDate()===+m[3]?d:null};
   C.iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   C.mins=t=>{const m=String(t||'').match(/^(\d{1,2}):(\d{2})$/);return m&&+m[1]<24&&+m[2]<60?+m[1]*60 + +m[2]:null};
-  C.interval=(date,start,end)=>{if(C.policy?.solidPlanningRules?.enabled&&window.SFSolidPlanningCore)return window.SFSolidPlanningCore.interval(date,start,end,C.policy.solidPlanningRules.timezone);const d=C.parseDate(date),s=C.mins(start),e=C.mins(end);if(!d||s===null||e===null||s===e)return null;return{start:d.getTime()+s*60000,end:d.getTime()+e*60000+(e<=s?DAY:0)}};
+  C.interval=(date,start,end)=>{if(C.policy?.solidPlanningRules?.enabled&&window.SFSolidPlanningCore){if(!C.parseDate(date)||C.mins(start)===null||C.mins(end)===null||C.mins(start)===C.mins(end))return null;return window.SFSolidPlanningCore.interval(date,start,end,C.policy.solidPlanningRules.timezone);}const d=C.parseDate(date),s=C.mins(start),e=C.mins(end);if(!d||s===null||e===null||s===e)return null;return{start:d.getTime()+s*60000,end:d.getTime()+e*60000+(e<=s?DAY:0)}};
   C.shiftInterval=a=>{const t=typeById(a.type);return C.interval(a.date,a.start||t?.start,a.end||t?.end)};
   C.overlap=(a,b)=>!!a&&!!b&&a.start<b.end&&b.start<a.end;
   C.fmt=d=>new Date(d+'T00:00:00').toLocaleDateString('de-DE');
