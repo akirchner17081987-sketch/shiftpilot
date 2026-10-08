@@ -12,6 +12,7 @@
   }
 
   const interval=(date,start,end)=>{
+    const rules=window.SFCompliance?.policy?.solidPlanningRules;if(rules?.enabled&&window.SFSolidPlanningCore){const i=window.SFSolidPlanningCore.interval(date,start,end,rules.timezone);return {start:new Date(i.start),end:new Date(i.end)}}
     const s=new Date(`${date}T${start}:00`),e=new Date(`${date}T${end}:00`);
     if(e<=s)e.setDate(e.getDate()+1);
     return {start:s,end:e};
