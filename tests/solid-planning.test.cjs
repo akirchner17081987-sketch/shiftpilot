@@ -10,4 +10,38 @@ test('a Friday overnight duty makes the Saturday/Sunday weekend worked',()=>{con
 test('optimizer retains a valid whole-block seed and prioritizes critical coverage',async()=>{const rows=['2027-01-01','2027-01-02','2027-01-03'].map(d=>a(d)),g={id:'seed',employee:e,options:[rows]};const r=await core.optimize({month:'2027-01',employees:[e],groups:[g],base:[],capacities:rows.map(a=>[a.resource,1]),seedBlocks:[{id:'seed',rows}],criticalResources:[rows[1].resource],respectHours:true,solidRules:p},{iterations:2});assert.equal(r.preview.length,3);assert.equal(r.quality.critical,0);assert.equal(r.quality.open,0);assert.equal(s.errors(e,r.preview,p).length,0)});
 module.exports={rules:p};
 
+test('critical minimum stays two when the configured OT2 demand is three',async()=>{
+ const rules={...p,confirmedRulesVersion:2},employees=['a','b','c'].map(id=>({...e,id,personnelNo:id})),dates=Array.from({length:31},(_,i)=>'2027-01-'+String(i+1).padStart(2,'0')).filter(d=>s.weekday(d)<=5);
+ const groups=employees.flatMap(employee=>dates.map(date=>({id:employee.id+'|'+date,employee,options:[[a(date,'OT2',employee.id)]]}))),capacities=dates.map(date=>[date+'|OT2',3]);
+ const r=await core.optimize({month:'2027-01',employees,groups,base:[],capacities,criticalCapacities:dates.map(date=>[date+'|OT2',2]),solidRules:rules},{iterations:1});
+ assert.equal(r.quality.critical,0);assert.ok(r.quality.open>0,'additional third duties remain visible as unmet demand');
+ for(const date of dates)assert.ok(r.preview.filter(a=>a.date===date).length>=2);
+ for(const employee of employees){assert.equal(s.errors(employee,r.preview,rules).length,0);assert.ok(r.preview.filter(a=>a.employeeId===employee.id).length<=18)}
+});
+
+test('critical-first search escapes a noncritical four-day seed',async()=>{
+ const rules={...p,confirmedRulesVersion:2,conditionalStaffing:[]},employees=['a','b','c'].map(id=>({...e,id,personnelNo:id})),dates=[4,5,6,7,8].map(n=>'2027-01-0'+n);
+ const groups=employees.flatMap(employee=>dates.map(date=>({id:employee.id+'|'+date,employee,options:[[a(date,'OT2',employee.id)]]})));
+ const old=dates.slice(0,4).map(date=>({...a(date,'OT2','a'),type:'TRAINING',resource:date+'|TRAINING'}));groups[0].options.unshift(old);
+ const r=await core.optimize({month:'2027-01',employees,groups,base:[],capacities:[...dates.map(d=>[d+'|OT2',2]),...old.map(a=>[a.resource,1])],criticalCapacities:dates.map(d=>[d+'|OT2',2]),seedBlocks:[{id:groups[0].id,rows:old}],solidRules:rules},{iterations:2});
+ assert.equal(r.quality.critical,0);assert.equal(r.preview.filter(a=>a.type==='OT2').length,10);
+ for(const employee of employees)assert.equal(s.errors(employee,r.preview,rules).length,0);
+});
+
+test('critical period search carries rest across months and resets personal monthly caps',async()=>{
+ const rules={...p,confirmedRulesVersion:2},employees=['a','b','c'].map(id=>({...e,id,personnelNo:id})),dates=[];
+ for(let date='2027-01-01';date<'2027-03-01';date=s.plus(date,1))if(s.weekday(date)<=5)dates.push(date);
+ const groups=employees.flatMap(employee=>dates.map(date=>({id:employee.id+'|'+date,employee,options:[[a(date,'OT2',employee.id)]]}))),capacities=dates.map(date=>[date+'|OT2',2]);
+ const r=await core.optimize({month:'2027-01',employees,groups,base:[],capacities,criticalCapacities:capacities,solidRules:rules,criticalPeriod:true,criticalOnly:true});
+ assert.equal(r.quality.critical,0);assert.equal(r.preview.length,dates.length*2);
+ for(const employee of employees){assert.equal(s.errors(employee,r.preview,rules).length,0);for(const month of ['2027-01','2027-02'])assert.ok(r.preview.filter(a=>a.employeeId===employee.id&&a.date.startsWith(month)).length<=18)}
+});
+
+test('missing O1/O3 coverage gives OT fallback priority over a third OT2',async()=>{
+ const date='2027-01-04',ot={...a(date,'OT2'),type:'OT1',start:'06:00',end:'16:00',resource:date+'|OT1'},extra=a(date,'OT2'),g={id:'a|'+date,employee:e,options:[[extra],[ot]]};
+ const r=await core.optimize({month:'2027-01',employees:[e],groups:[g],base:[],capacities:[[extra.resource,1],[ot.resource,1]],criticalCapacities:[[extra.resource,0]],solidRules:{...p,confirmedRulesVersion:2}},{iterations:1});
+ assert.equal(r.preview.length,1);assert.equal(r.preview[0].type,'OT1');assert.equal(r.quality.critical,0);
+});
+
 test('manual time validation retains invalid-input handling with solid rules enabled',()=>{const vm=require('node:vm'),fs=require('node:fs'),c={window:{SFSolidPlanningCore:s},store:{get:()=>{},set:()=>{}},typeById:()=>null,assignments:[]};vm.createContext(c);vm.runInContext(fs.readFileSync(__dirname+'/../assets/compliance-core-v2.js','utf8'),c);c.window.SFCompliance.policy={solidPlanningRules:p};for(const args of [['bad','18:00','04:00'],['2027-01-01','','04:00'],['2027-01-01','18:00','18:00']])assert.equal(c.window.SFCompliance.interval(...args),null);});
+

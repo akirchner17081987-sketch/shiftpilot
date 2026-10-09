@@ -323,7 +323,7 @@ window.SFHelpContent = {
       ],
       [
         "Wie plane ich mehrere Monate?",
-        "Bei aktivierten Erholungsregeln kannst du einen bis sechs zusammenhängende Monate als Vorschau planen. Prüfe Pflichtlücken, Stundenabweichungen und geschützte Dienste. Erst die bestätigte Übernahme speichert einen Entwurf. Die Veröffentlichung bleibt ein eigener Schritt. Veränderte Daten erfordern eine neue Vorschau."
+        "Bei aktivierten Erholungsregeln kannst du einen bis zwölf zusammenhängende Monate als Vorschau planen. Die Mindestbesetzung für OT2 und die gemeinsame Teamleitung wird zuerst über den gesamten Zeitraum verteilt; anschließend werden die übrigen Dienste ergänzt. Bei SchichtFunk gelten montags bis freitags mindestens zwei OT2 und täglich eine gemeinsame Teamleitung für Leipzig/Recklinghausen. Ein zusätzlich hinterlegter dritter OT2 bleibt als offener Bedarf sichtbar, blockiert aber bei erfüllter Mindestbesetzung die Übernahme nicht. Prüfe Pflichtlücken, Stundenabweichungen und geschützte Dienste. Erst die bestätigte Übernahme speichert einen Entwurf. Die Veröffentlichung bleibt ein eigener Schritt. Veränderte Daten erfordern eine neue Vorschau."
       ],
       [
         "Wie werden die drei Tagdienstmitarbeiter geplant?",
@@ -470,3 +470,4 @@ window.SFHelpContent = {
     ]
   }
 };
+
