@@ -18,7 +18,7 @@
     if(!on)return;
     B.pendingView='time';
     const name=document.querySelector('.side-bottom .user-row b'),role=document.querySelector('.side-bottom .user-row small');
-    const label=B.user?.email||'Zeiterfassung';if(name&&name.textContent!==label)name.textContent=label;if(role&&role.textContent!=='Nur Zeiterfassung')role.textContent='Nur Zeiterfassung';
+    const label=B.user?.email||'Zeiterfassung';if(name&&name.textContent!==label)name.textContent=label;if(role&&role.textContent!=='Mitarbeiter · Zeitverwaltung')role.textContent='Mitarbeiter · Zeitverwaltung';
     document.querySelectorAll('[data-view="time"]').forEach(el=>{el.disabled=false;el.removeAttribute('aria-disabled')});
     const view=document.getElementById('view-time');
     if(view&&!view.classList.contains('active')&&B.ready)window.switchView?.('time');

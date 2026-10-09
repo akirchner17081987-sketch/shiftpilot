@@ -2,7 +2,7 @@
 (function(){
   const B=window.SFBackend=window.SFBackend||{};
   const key=()=>`sf_active_company_v1:${B.user?.id||''}`;
-  const roles={OWNER:'Inhaber',ADMIN:'Administrator',DISPATCHER:'Disponent',PLANNER:'Planer',VIEWER:'Leser',TIME_TRACKING:'Nur Zeiterfassung'};
+  const roles={OWNER:'Inhaber',ADMIN:'Administrator',DISPATCHER:'Teamleiter',PLANNER:'Teamleiter',VIEWER:'Teamleiter · Nur lesen',TIME_TRACKING:'Mitarbeiter · Zeitverwaltung'};
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const stored=()=>{try{return sessionStorage.getItem(key())}catch{return null}};
   const remember=id=>sessionStorage.setItem(key(),id);

@@ -91,3 +91,11 @@ html[data-sf-theme="light"] #appShell #view-settings .sf-user-state:is(.invited,
   #sfUserModal .sf-user-card{max-height:calc(100dvh - 20px);padding:16px}
   #sfUserModal :is(.sf-user-modal-actions,.sf-invite-link){flex-direction:column}
 }
+
+.sf-access-extras{margin:16px 0;padding:12px;border:1px solid var(--line,#294159);border-radius:10px;min-width:0}
+.sf-access-extras legend{padding:0 6px;font-weight:700}
+#sfUserModal .sf-user-card .sf-access-extras label.sf-access-check{display:flex;align-items:center;gap:9px;margin:10px 0;line-height:1.4}
+#sfUserModal .sf-user-card .sf-access-extras input[type=checkbox]{width:18px;min-width:18px;height:18px;min-height:18px;flex:0 0 18px;margin:0;padding:0}
+.sf-access-extras p{font-size:12px;line-height:1.5}
+#sfAccessEmployeeLabel[hidden]{display:none}
+#appShell #view-settings .sf-users-matrix{min-width:720px}

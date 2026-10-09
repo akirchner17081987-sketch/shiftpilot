@@ -1,0 +1,51 @@
+name: Vier Rollen und Zusatzrechte
+on:
+  push:
+    branches: [codex/access-profiles-20261009, codex/ionos-migration]
+    paths: ['assets/access-profiles-v1.js', 'assets/team-admin-v1.js', 'assets/supabase-time-tracking-v1.js', 'supabase/migrations/20261009220109_four_primary_access_roles.sql', 'tests/sql/access-profiles-*.sql', 'tests/browser/users-permissions-qa.cjs', '.github/workflows/access-profiles-checks.yml']
+  pull_request:
+    paths: ['assets/access-profiles-v1.js', 'assets/team-admin-v1.js', 'supabase/migrations/20261009220109_four_primary_access_roles.sql', 'tests/sql/access-profiles-*.sql']
+permissions:
+  contents: read
+jobs:
+  profiles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: fictitious-ci-password
+          POSTGRES_DB: access_profiles
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Migration and permission enforcement in isolated PostgreSQL
+        run: |
+          psql -v ON_ERROR_STOP=1 -f tests/sql/access-profiles-bootstrap.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261009220109_four_primary_access_roles.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261009223333_access_profile_private_rpc_wrappers.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261009223438_access_invite_employee_lookup_index.sql
+          psql -v ON_ERROR_STOP=1 -f tests/sql/access-profiles-integration.sql
+        env:
+          PGHOST: localhost
+          PGPORT: '5432'
+          PGUSER: postgres
+          PGPASSWORD: fictitious-ci-password
+          PGDATABASE: access_profiles
+      - name: Four-role browser flows using fictitious accounts
+        run: node tests/browser/users-permissions-qa.cjs
+        env:
+          SF_USERS_BROWSER: /usr/bin/google-chrome
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: access-profiles-results
+          path: test-results/users-permissions/
