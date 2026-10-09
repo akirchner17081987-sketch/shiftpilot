@@ -22,8 +22,8 @@ begin
  insert into public.companies(id,name,created_by,timezone) values(company,'Four roles fixture',owner_id,'Europe/Berlin'),(other_company,'Foreign fixture',owner_id,'Europe/Berlin');
  insert into public.company_members(company_id,user_id,role,status) values(company,owner_id,'OWNER','ACTIVE'),(company,admin_id,'ADMIN','ACTIVE'),(company,time_id,'TIME_TRACKING','ACTIVE');
  insert into public.company_members(company_id,user_id,role,status,access_role,extra_permissions) values(company,lead_id,'PLANNER','ACTIVE','TEAM_LEAD','{}');
- insert into public.employees(id,company_id,first_name,last_name,status,auth_user_id,access_status)
- values(employee,company,'Personal','Portal','active',portal_id,'ACTIVE'),(new_employee,company,'New','Employee','active',null,'NONE');
+ insert into public.employees(id,company_id,first_name,last_name,personnel_no,status,auth_user_id,access_status)
+ values(employee,company,'Personal','Portal','FIX-PORTAL','active',portal_id,'ACTIVE'),(new_employee,company,'New','Employee','FIX-NEW','active',null,'NONE');
  insert into public.shift_templates(company_id,code,name,default_start,default_end) values(company,'FIX','Fixture','08:00','16:00');
  insert into public.shift_assignments(id,company_id,employee_id,shift_code,starts_at,ends_at,break_minutes,status,created_by)
  values(assignment,company,employee,'FIX',start_time,start_time+interval '8 hours',30,'DRAFT',owner_id);

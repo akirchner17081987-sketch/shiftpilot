@@ -30,6 +30,8 @@ jobs:
         run: |
           psql -v ON_ERROR_STOP=1 -f tests/sql/access-profiles-bootstrap.sql
           psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261009220109_four_primary_access_roles.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261009223333_access_profile_private_rpc_wrappers.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261009223438_access_invite_employee_lookup_index.sql
           psql -v ON_ERROR_STOP=1 -f tests/sql/access-profiles-integration.sql
         env:
           PGHOST: localhost
