@@ -111,7 +111,7 @@ window.SFHelpContent = {
       ],
       [
         "Wie starte ich den Monatscheck im Assistenten?",
-        "Öffne den Planungsassistenten unten rechts und wähle Monatscheck starten oder frage: Was fehlt noch für Dezember? Der Check zeigt zuerst offene Positionen und fehlende Freigaben, danach Teamregeln, Stundenvorgaben und Überbesetzung. Ausschließlich für Frühdienst freigegebene Mitarbeiter ohne Team werden nicht als fehlende Teamzuordnung gewertet. Über die Schaltflächen neben den Ergebnissen öffnest du die betreffende Auswertung oder Einstellung. Der Check ergänzt die vollständige Auto-Planungsanalyse und die Prüfung vor Veröffentlichung."
+        "Öffne den Planungsassistenten und wähle Monat prüfen oder frage: Was fehlt noch für Januar 2027? Der Check zeigt offene Positionen, fehlende Freigaben, Teamregeln, Stundenvorgaben, Überbesetzung und verbindliche Belastungsregeln. Der Belastungscheck berücksichtigt geladene Dienste vor und nach dem Monat, Arbeitsblöcke, Nacht-Erholung, Wochenstunden und persönliche Monatsgrenzen einschließlich Nachtübertrag. Vollständig freie Wochenenden werden als Verbesserungsziel getrennt angezeigt. Ausschließlich für Frühdienst freigegebene Mitarbeiter ohne Team werden nicht als fehlende Teamzuordnung gewertet. Fehlende Daten oder Regeln werden benannt. Über die Ergebnisbuttons gelangst du zur betroffenen Stelle."
       ],
       [
         "Wie übernimmt der Assistent den ausgewählten Dienst?",
@@ -123,7 +123,7 @@ window.SFHelpContent = {
       ],
       [
         "Welche Fragen versteht der Planungsassistent?",
-        "Öffne den Chat unten rechts. Du kannst Besetzung, Ersatzkandidaten, Dienste einzelner Mitarbeiter und Teams, fehlende Schichtfreigaben, Teamrhythmen und geplante Stunden abfragen. Nenne Zeitraum, Person oder Team und bei Ersatzfragen Tag und Schicht. Über Welche Hilfethemen kennst du? erhältst du einen Überblick über die Wissensdatenbank. Der Assistent prüft vorhandene Daten und verändert sie nicht."
+        "Du kannst Besetzung, Ersatzkandidaten, Mitarbeiter- und Teamdienste, Schichtfreigaben, Teamrhythmen und Stunden abfragen. Neu sind Belastung prüfen, Stunden verbessern, Ausfall durchspielen und gespeicherte Planungsgründe. Nenne Zeitraum und Mitarbeiter möglichst eindeutig. Stunden verbessern erstellt eine gemeinsame Vorschau für passende offene Dienste und einzelne Entlastungswechsel: offene Positionen und Stunden-Soll-Defizit vorher/nachher sowie die betroffenen Zuweisungen. Erst Vorschläge als Entwurf übernehmen und die folgende Bestätigung speichern Änderungen; anschließend prüft der Server Regeln, Schutz und Aktualität erneut. Veröffentlicht wird dadurch nichts. Was passiert, wenn Mitarbeiter 119 am 12.01.2027 ausfällt? simuliert ausschließlich Ersatz, ohne Abwesenheit oder Planänderung. Gespeicherte Planungsgründe zeigt die Enddiagnose neuer Auto-Planungsläufe; alte Entscheidungen werden nicht erfunden. Über Welche Hilfethemen kennst du? öffnest du die Wissensdatenbank."
       ]
     ],
     "overview": [
@@ -637,3 +637,4 @@ window.SFHelpContent = {
   },
   "reviewedAt": "2026-10-09"
 };
+
