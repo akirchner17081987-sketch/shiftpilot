@@ -69,6 +69,13 @@ const {chromium}=require('playwright');
   await done(720);await page.waitForTimeout(100);
   await page.locator('[data-sfqr-detail]').first().click();await page.locator('.sfqr-detail:not([hidden]) [data-sfqr-correct]').click();
   assert.ok((await page.evaluate(()=>window.corrections.at(-1))).startsWith('B-'));
+  // Loading progress must preserve an unfinished year edit until it is submitted.
+  await page.evaluate(()=>window.SFBackend.qrIndependentReport.refresh());
+  await page.locator('#sfQrReportYear').fill('202');
+  await page.waitForTimeout(120);
+  assert.equal(await page.locator('#sfQrReportYear').inputValue(),'202');
+  await page.locator('#sfQrReportYear').fill('2026');
+  await page.locator('#sfQrReportYear').dispatchEvent('change');await done(720);
   // Rapid switches must never let a stale annual response overwrite a monthly result.
   await page.evaluate(()=>{window.SFBackend.qrIndependentReport.refresh();});
   await page.locator('[data-sfqr-period="month"]').click();await done(60);await page.waitForTimeout(100);await done(60);

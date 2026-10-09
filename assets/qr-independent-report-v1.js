@@ -24,15 +24,16 @@
     state.from=iso(y,first,1);state.to=iso(y,first+count,0);
   }
   function syncControls(card){
+    const setValue=(input,value)=>{if(document.activeElement!==input)input.value=String(value)};
     card.querySelectorAll('[data-sfqr-period]').forEach(b=>{const active=b.dataset.sfqrPeriod===state.mode;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))});
     card.querySelector('#sfQrReportMonth').closest('label').hidden=state.mode!=='month';
     card.querySelector('#sfQrReportQuarter').closest('label').hidden=state.mode!=='quarter';
     card.querySelector('#sfQrReportYear').closest('label').hidden=state.mode==='custom';
-    card.querySelector('#sfQrReportMonth').value=String(state.month);
-    card.querySelector('#sfQrReportQuarter').value=String(state.quarter);
-    card.querySelector('#sfQrReportYear').value=String(state.year);
+    setValue(card.querySelector('#sfQrReportMonth'),state.month);
+    setValue(card.querySelector('#sfQrReportQuarter'),state.quarter);
+    setValue(card.querySelector('#sfQrReportYear'),state.year);
     for(const [id,key]of [['#sfQrReportFrom','from'],['#sfQrReportTo','to']]){
-      const input=card.querySelector(id);input.value=state[key];input.closest('label').hidden=state.mode!=='custom';
+      const input=card.querySelector(id);setValue(input,state[key]);input.closest('label').hidden=state.mode!=='custom';
     }
     card.querySelectorAll('[data-sfqr-step]').forEach(b=>b.hidden=state.mode==='custom');
     card.querySelector('#sfQrReportRange').textContent=state.from&&state.to?date(state.from+'T12:00:00Z')+' – '+date(state.to+'T12:00:00Z'):'Bitte ein gültiges Jahr wählen.';
