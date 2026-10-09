@@ -23,5 +23,5 @@ test('production help renderer displays each category and finds every added arti
  for(const row of manifest.addedArticles){node('sfHelpSearch').value=row.question;node('sfHelpSearch').input();assert.ok(node('sfHelpResults').innerHTML.includes(row.question),row.question);}
  node('sfHelpSearch').value='zzzzkeinartikelzzzz';node('sfHelpSearch').input();assert.ok(node('sfHelpResults').innerHTML.includes('Kein passender Artikel'));
  node('sfHelpClose').click();assert.equal(node('sfHelpModal').hidden,true);
- for(const file of ['content-v3','guides-v1'])assert.match(html,new RegExp('help-center-'+file+'\\.js\\?v=20261009-help-audit1'));
+ for(const file of ['content-v3','guides-v1'])assert.match(html,new RegExp('help-center-'+file+'\\.js\\?v=20261009-qrperiods1'));
 });

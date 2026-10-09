@@ -18,7 +18,7 @@ window.SFHelpGuides = {
   },
   'Wo sehe ich QR-Zeiten und Pausendetails?': {
     image: 'assets/help/qr-report.svg', alt: 'Vereinfachte QR-Auswertung mit Suche, Datumsbereich, Buchungszeile und Details zu einzelnen Pausen.',
-    steps: ['Zeiterfassung → „QR-Buchungen ohne Schichtbezug“ öffnen.', 'Nach Mitarbeiter oder Personalnummer suchen und einen Datumsbereich von höchstens 63 Tagen wählen.', 'Bei einer Buchung „Details“ öffnen, um Standort und die einzeln erfassten Pausen zu sehen.']
+    steps: ['Zeiterfassung → „QR-Buchungen ohne Schichtbezug“ öffnen.', 'Monat, Quartal oder Jahr sowie den gewünschten Zeitraum wählen; alternativ „Freier Zeitraum“ für bis zu 366 Tage verwenden. Nach Mitarbeiter oder Personalnummer suchen und bei mehreren Seiten weiterblättern.', 'Bei einer Buchung „Details“ öffnen, um Standort und die einzeln erfassten Pausen zu sehen.']
   }
 };
 
