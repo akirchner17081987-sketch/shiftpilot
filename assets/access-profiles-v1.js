@@ -46,6 +46,8 @@
   const open=B.baseOpenApp;
   B.baseOpenApp=function(view){const target=readOnly()?'schedule':(!B.can('viewTime')&&view==='time'?'schedule':view);const result=open.call(this,target);apply();return result};
   const update=B.updateState;B.updateState=function(){const r=update?.apply(this,arguments);apply();return r};
+  const qrOpen=B.qrCorrection?.open;
+  if(qrOpen)B.qrCorrection.open=function(){if(!B.can('manageTime')){window.showSaveToast?.('Korrektur gesperrt','Das Zusatzrecht Zeiten verwalten fehlt.');return}return qrOpen.apply(this,arguments)};
   function apply(){
     if(!B.accessRole)return;
     document.body.classList.toggle('sf-access-read-only',!!readOnly());
