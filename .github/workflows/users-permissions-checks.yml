@@ -1,0 +1,40 @@
+name: Benutzer und Rechte Prüfung
+on:
+  push:
+    branches: [main, codex/ionos-migration]
+    paths:
+      - index.html
+      - assets/team-admin-v1.js
+      - assets/users-permissions-v2.css
+      - assets/settings-management-v2.js
+      - assets/manager-theme-v1.css
+      - tests/browser/users-permissions-qa.cjs
+      - .github/workflows/users-permissions-checks.yml
+  pull_request:
+    paths:
+      - assets/team-admin-v1.js
+      - assets/users-permissions-v2.css
+      - tests/browser/users-permissions-qa.cjs
+      - .github/workflows/users-permissions-checks.yml
+jobs:
+  users-permissions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Browser checks with fictitious users and intercepted RPCs
+        run: node tests/browser/users-permissions-qa.cjs
+        env:
+          SF_USERS_BROWSER: /usr/bin/google-chrome
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: users-permissions-results
+          path: test-results/users-permissions/

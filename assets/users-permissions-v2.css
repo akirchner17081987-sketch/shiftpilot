@@ -1,0 +1,93 @@
+/* Benutzer & Rechte: compact list, role details and accessible dialogs. */
+#appShell #view-settings .sf-users-editor{color:var(--text,#edf6ff);min-width:0}
+#appShell #view-settings .sf-users-tools{display:grid;grid-template-columns:minmax(180px,1fr) minmax(130px,.55fr) minmax(160px,.6fr) auto;gap:10px;align-items:end;margin-bottom:12px}
+#appShell #view-settings .sf-users-tools label{display:block;min-width:0;font-size:.8125rem}
+#appShell #view-settings .sf-users-tools label>span{display:block;margin-bottom:5px;color:var(--muted,#91a7bc)}
+#appShell #view-settings .sf-users-tools :is(input,select){width:100%;box-sizing:border-box;min-height:42px;border:1px solid var(--line,#29445d);border-radius:8px;background:var(--panel2,#091624);color:var(--text,#edf6ff);padding:8px 10px;font-size:.875rem}
+#appShell #view-settings .sf-users-tools>button{min-height:42px;white-space:normal}
+#appShell #view-settings .sf-users-list-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+#appShell #view-settings .sf-users-list-head p{margin:0;color:var(--muted,#91a7bc);font-size:.8125rem}
+#appShell #view-settings .sf-users-list{display:block;min-width:0}
+#appShell #view-settings .sf-users-table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;border:1px solid var(--line,#29445d);border-radius:10px;overflow:hidden;background:var(--panel2,#0a1624)}
+#appShell #view-settings .sf-users-table th{padding:10px 12px;text-align:left;font-size:.8125rem;color:var(--muted,#91a7bc);background:var(--panel,#0d1928);font-weight:700}
+#appShell #view-settings .sf-users-table thead th:nth-child(1){width:29%}
+#appShell #view-settings .sf-users-table thead th:nth-child(2){width:22%}
+#appShell #view-settings .sf-users-table thead th:nth-child(3){width:21%}
+#appShell #view-settings .sf-users-table thead th:nth-child(4){width:28%}
+#appShell #view-settings .sf-users-table .sf-user-row{display:table-row;border:0;border-radius:0;background:transparent;padding:0}
+#appShell #view-settings .sf-users-table td{padding:12px;vertical-align:top;border-top:1px solid var(--line,#29445d);overflow-wrap:anywhere;white-space:normal;font-size:.875rem}
+#appShell #view-settings .sf-user-id{display:flex;gap:9px;align-items:flex-start;min-width:0}
+#appShell #view-settings .sf-user-id>div{min-width:0}
+#appShell #view-settings .sf-user-id b{display:block;font-size:.875rem;white-space:normal;overflow-wrap:anywhere}
+#appShell #view-settings .sf-user-avatar{width:30px;height:30px;flex:0 0 30px;display:grid;place-items:center;border-radius:50%;background:var(--panel,#17344a);color:var(--text,#62dfc5);font-weight:800;border:1px solid var(--line,#29445d)}
+#appShell #view-settings :is(.sf-user-email,.sf-user-id small,.sf-user-role-short){display:block;margin-top:3px;color:var(--muted,#91a7bc);font-size:.8125rem;line-height:1.45}
+#appShell #view-settings .sf-user-role-label{font-size:.875rem}
+#appShell #view-settings .sf-user-state{display:inline-flex;align-items:center;gap:4px;padding:5px 8px;border-radius:7px;border:1px solid #387865;background:#102e28;color:#a6f0d9;font-size:.8125rem;font-weight:700;line-height:1.4}
+#appShell #view-settings .sf-user-state.disabled{border-color:#975066;background:#331e28;color:#ffc4d1}
+#appShell #view-settings .sf-user-state:is(.invited,.expired){border-color:#8b6937;background:#302515;color:#ffe0a6}
+html[data-sf-theme="light"] #appShell #view-settings .sf-user-state.active{background:#d5e8de;color:#205a44;border-color:#7ba78b}
+html[data-sf-theme="light"] #appShell #view-settings .sf-user-state.disabled{background:#eddae0;color:#793147;border-color:#b38b97}
+html[data-sf-theme="light"] #appShell #view-settings .sf-user-state:is(.invited,.expired){background:#ece1c9;color:#654811;border-color:#b6a274}
+#appShell #view-settings .sf-user-actions{display:flex;flex-direction:column;align-items:stretch;gap:6px}
+#appShell #view-settings .sf-user-actions button{min-height:36px;padding:7px 9px;font-size:.8125rem;white-space:normal;line-height:1.35;text-align:left}
+#appShell #view-settings .sf-user-protected{color:var(--muted,#91a7bc);font-size:.8125rem;line-height:1.45}
+#appShell #view-settings .sf-users-permissions{margin-top:16px;border:1px solid var(--line,#29445d);border-radius:10px;background:var(--panel2,#0a1624);min-width:0}
+#appShell #view-settings .sf-users-permissions>summary{padding:12px;cursor:pointer;font-size:.875rem;font-weight:700}
+#appShell #view-settings .sf-users-permissions>summary small{margin-left:10px;font-weight:400;font-size:.8125rem;color:var(--muted,#91a7bc)}
+#appShell #view-settings .sf-users-permissions-body{padding:0 12px 12px;min-width:0}
+#appShell #view-settings .sf-users-permissions-body p{color:var(--muted,#91a7bc);font-size:.8125rem;line-height:1.5}
+#appShell #view-settings .sf-users-matrix-wrap{max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;border:1px solid var(--line,#29445d);border-radius:8px}
+#appShell #view-settings .sf-users-matrix{width:100%;min-width:830px;border-collapse:collapse;font-size:.8125rem}
+#appShell #view-settings .sf-users-matrix caption{text-align:left;padding:10px;font-weight:700;color:var(--text,#edf6ff)}
+#appShell #view-settings .sf-users-matrix :is(th,td){padding:9px;border-top:1px solid var(--line,#29445d);text-align:center;white-space:normal;line-height:1.4}
+#appShell #view-settings .sf-users-matrix th{background:var(--panel,#0d1928);color:var(--text,#edf6ff)}
+#appShell #view-settings .sf-users-matrix tr>th:first-child{text-align:left;min-width:195px}
+#appShell #view-settings .sf-right-yes{font-weight:700}
+#appShell #view-settings .sf-right-no{color:var(--muted,#91a7bc)}
+#appShell #view-settings .sf-users-empty{padding:24px;text-align:center;border:1px dashed var(--line,#29445d);border-radius:10px;color:var(--muted,#91a7bc)}
+#appShell #view-settings .sf-users-empty p{font-size:.875rem;line-height:1.5}
+#appShell #view-settings .sf-users-notice{padding:10px 12px;margin-bottom:10px;border:1px solid var(--line,#29445d);border-radius:8px;font-size:.875rem;line-height:1.5;overflow-wrap:anywhere}
+#appShell #view-settings .sf-users-notice.bad{border-color:#b36578}
+#appShell #view-settings .sf-users-notice[hidden]{display:none}
+.sf-users-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+#appShell #view-settings .sf-user-role-details,#sfUserModal .sf-user-role-details{margin-top:7px;font-size:.8125rem;line-height:1.5}
+#appShell #view-settings .sf-user-role-details summary,#sfUserModal .sf-user-role-details summary{cursor:pointer;min-height:24px;color:var(--text,#c1e3ee);font-weight:600}
+#appShell #view-settings .sf-user-role-details :is(p,ul),#sfUserModal .sf-user-role-details :is(p,ul){margin:6px 0;color:var(--muted,#91a7bc);font-size:.8125rem;line-height:1.5}
+#appShell #view-settings .sf-user-role-details ul,#sfUserModal .sf-user-role-details ul{padding-left:18px}
+#appShell #view-settings .sf-users-editor :is(button,input,select,summary,[tabindex]):focus-visible,#sfUserModal :is(button,input,select,summary):focus-visible{outline:3px solid var(--teal2,#18b99a);outline-offset:3px}
+#sfUserModal{position:fixed;inset:0;z-index:24000;background:rgba(2,7,13,.88);display:grid;place-items:center;padding:18px;box-sizing:border-box;overflow-y:auto}
+#sfUserModal .sf-user-card{width:min(520px,100%);max-height:calc(100dvh - 36px);overflow-y:auto;box-sizing:border-box;border:1px solid var(--line,#29455e);border-radius:14px;background:var(--panel,#0d1928);color:var(--text,#edf6ff);padding:21px;box-shadow:0 30px 90px rgba(0,0,0,.5);overflow-wrap:anywhere}
+#sfUserModal .sf-user-card h2{margin:3px 0 6px;font-size:1.25rem;color:var(--text,#edf6ff)}
+#sfUserModal .sf-user-card>p{color:var(--muted,#91a7bc);font-size:.875rem;line-height:1.5}
+#sfUserModal .sf-user-card label{display:block;color:var(--text,#a6bace);font-size:.875rem;font-weight:700;margin-top:11px}
+#sfUserModal .sf-user-card :is(input,select){width:100%;box-sizing:border-box;margin-top:6px;min-height:42px;border:1px solid var(--line,#29445d);border-radius:8px;background:var(--panel2,#081522);color:var(--text,#fff);padding:9px 11px;font-size:.9375rem}
+#sfUserModal :is(.sf-user-modal-actions,.sf-invite-link){display:flex;justify-content:flex-end;gap:8px;margin-top:17px}
+#sfUserModal .sf-user-modal-actions button{min-height:42px;white-space:normal}
+#sfUserModal .sf-invite-link input{margin:0;min-width:0}
+#sfUserModal .sf-user-msg{display:none;margin-top:11px;padding:10px;border:1px solid var(--line,#29445d);border-radius:8px;font-size:.875rem;line-height:1.5}
+#sfUserModal .sf-user-msg.show{display:block}
+#sfUserModal .sf-user-msg.bad{border-color:#b36578;color:var(--text,#ffadb8)}
+#sfUserModal button:disabled{opacity:.6;cursor:wait}
+@media(max-width:1150px){#appShell #view-settings .sf-users-tools{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}#appShell #view-settings .sf-users-search{grid-column:1/-1}}
+@media(max-width:1000px){
+  #appShell #view-settings .sf-users-table,#appShell #view-settings .sf-users-table tbody{display:block;border:0;background:transparent}
+  #appShell #view-settings .sf-users-table thead{display:none}
+  #appShell #view-settings .sf-users-table .sf-user-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;border:1px solid var(--line,#29445d);border-radius:10px;padding:12px;background:var(--panel2,#0a1624);margin-bottom:10px}
+  #appShell #view-settings .sf-users-table td{display:block;min-width:0;padding:0;border:0}
+  #appShell #view-settings .sf-users-table td:first-child{grid-column:1/-1}
+  #appShell #view-settings .sf-users-table td:not(:first-child)::before{content:attr(data-label);display:block;font-size:.75rem;font-weight:700;color:var(--muted,#91a7bc);margin-bottom:5px}
+  #appShell #view-settings .sf-users-table td:last-child{grid-column:1/-1}
+  #appShell #view-settings .sf-user-actions{flex-direction:row;flex-wrap:wrap}
+  #appShell #view-settings .sf-user-actions button{flex:1 1 140px;min-height:42px}
+}
+@media(max-width:480px){
+  #appShell #view-settings .sf-users-tools{grid-template-columns:minmax(0,1fr)}
+  #appShell #view-settings .sf-users-tools>label{grid-column:1}
+  #appShell #view-settings .sf-users-list-head{align-items:flex-start;flex-direction:column}
+  #appShell #view-settings .sf-users-table .sf-user-row{grid-template-columns:minmax(0,1fr)}
+  #appShell #view-settings .sf-users-table td{grid-column:1!important}
+  #appShell #view-settings .sf-users-permissions>summary small{display:block;margin:5px 0 0 16px}
+  #sfUserModal{padding:10px}
+  #sfUserModal .sf-user-card{max-height:calc(100dvh - 20px);padding:16px}
+  #sfUserModal :is(.sf-user-modal-actions,.sf-invite-link){flex-direction:column}
+}
