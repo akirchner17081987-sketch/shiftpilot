@@ -34,17 +34,19 @@
   };
 
   C.monthPlanningCheck=(emp,date,all,ignoreId=null)=>{
-    const maxHours=Number(C.policy?.monthlyPlanningMaxHours)||0,maxShifts=Number(C.policy?.monthlyPlanningMaxShifts)||0;
+    const confirmed=window.SFSolidPlanningCore?.limits(emp,typeof TYPES==='undefined'?[]:TYPES,C.policy?.solidPlanningRules),maxHours=confirmed?.calendarLimit||Number(C.policy?.monthlyPlanningMaxHours)||0,maxShifts=confirmed?.maxMonthlyShifts||Number(C.policy?.monthlyPlanningMaxShifts)||0;
     if(!maxHours&&!maxShifts)return[];
     const begin=C.parseDate(String(date).slice(0,7)+'-01'),finish=new Date(begin);finish.setMonth(finish.getMonth()+1);
     const own=all.filter(a=>String(a.employeeId)===String(emp.id)&&a.id!==ignoreId),started=own.filter(a=>String(a.date).slice(0,7)===String(date).slice(0,7)),errors=[];
     const target=Number(emp.monthlyHours??String((emp.qualifications||[]).find(q=>String(q).startsWith('__sp:monthlyHours='))||'').split('=')[1]??0),fullTime=/^Vollzeit(?:\s+180)?$/i.test(String(emp.employment||'').trim())&&target>=180;
-    const cap=fullTime?maxHours:Math.min(maxHours||180,target||180);
-    const startedHours=started.reduce((n,a)=>{const iv=C.shiftInterval(a);return n+(iv?(iv.end-iv.start)/HOUR:0)},0);
+    const cap=confirmed?.monthLimit??(fullTime?maxHours:Math.min(maxHours||180,target||180));
+    const counted=confirmed?started.filter(window.SFSolidPlanningCore.countsTowardCap):started;
+    const startedHours=counted.reduce((n,a)=>{const iv=C.shiftInterval(a);return n+(iv?(iv.end-iv.start)/HOUR:0)},0);
     const solidRules=C.policy?.solidPlanningRules,calendarBegin=solidRules?.enabled?window.SFSolidPlanningCore.instant(String(date).slice(0,7)+'-01','00:00',solidRules.timezone):+begin,calendarFinish=solidRules?.enabled?window.SFSolidPlanningCore.instant(C.iso(finish),'00:00',solidRules.timezone):+finish;
     const calendarHours=own.reduce((n,a)=>{const iv=C.shiftInterval(a);return n+(iv?Math.max(0,Math.min(iv.end,calendarFinish)-Math.max(iv.start,calendarBegin))/HOUR:0)},0);
-    if(maxShifts&&started.length>maxShifts)errors.push(`Maximal ${maxShifts} Schichten pro Monat.`);
-    if(maxHours&&(startedHours>cap+.000001||calendarHours>maxHours+.000001))errors.push(`Monatsgrenze ${cap} Stunden überschritten; Monatsüberträge zählen zeitanteilig.`);
+    if(maxShifts&&counted.length>maxShifts)errors.push(`Maximal ${maxShifts} Schichten pro Monat.`);
+    const totalStartedHours=started.reduce((n,a)=>{const iv=C.shiftInterval(a);return n+(iv?(iv.end-iv.start)/HOUR:0)},0);
+    if(maxHours&&(startedHours>cap+.000001||totalStartedHours>maxHours+.000001||calendarHours>maxHours+.000001))errors.push(`Monatsgrenze ${cap} Stunden überschritten; Monatsüberträge zählen zeitanteilig.`);
     return errors;
   };
   C.check=(emp,type,date,start,end,ignoreId=null)=>{

@@ -14,7 +14,40 @@
  const policy=p=>p?.enabled?p:null;
  function duty(a,p){if(Number.isFinite(a.startMs)&&Number.isFinite(a.endMs))return a;const i=interval(a.date,a.start,a.end,p?.timezone);return {...a,startMs:i.start,endMs:i.end,hours:(i.end-i.start)/H,day:Math.floor(Date.parse(a.date+'T12:00:00Z')/D)}}
  const active=a=>a.status!=='CANCELLED'&&a._dbStatus!=='CANCELLED';
- function errors(e,rows,p,affected){if(!policy(p))return[];
+ function confirmed(p){return !!policy(p)&&Number(p.confirmedRulesVersion)>=2}
+ function localDate(ms,p){const key=p.timezone||'Europe/Berlin';let f=formats.get('date|'+key);if(!f){f=new Intl.DateTimeFormat('en-CA',{timeZone:key,year:'numeric',month:'2-digit',day:'2-digit'});formats.set('date|'+key,f)}const v=Object.fromEntries(f.formatToParts(new Date(ms)).map(x=>[x.type,x.value]));return v.year+'-'+v.month+'-'+v.day}
+ const weekKey=date=>plus(date,1-weekday(date));
+ const night=a=>/^(ND|O1|O2|O3|O1S|O2S|TL|TL-LE|TL-RE|TEAMLEITER|QA)$/i.test(a.type)||a.start>='18:00';
+ const countsTowardCap=a=>!a._marketApproved;
+ function limits(e,types,p){
+  if(!confirmed(p))return null;
+  const allowed=types.filter(t=>t.active!==false&&(e.shifts||[]).includes(t.id||t.code)),minutes=t=>{const m=x=>Number(x.slice(0,2))*60+Number(x.slice(3,5));return (m(t.end)-m(t.start)+1440)%1440};
+  const eight=allowed.length>0&&allowed.every(t=>minutes(t)>0&&minutes(t)<=480);
+  const meta=k=>String((e.qualifications||[]).find(q=>String(q).startsWith('__sp:'+k+'='))||'').split('=').slice(1).join('=');
+  const target=Number(e.monthlyHours??meta('monthlyHours'))||(/^Vollzeit(?:\s+180)?$/i.test(String(e.employment||'').trim())?180:Number(e.weeklyHours||40)*4.348);
+  const full=/^Vollzeit(?:\s+180)?$/i.test(String(e.employment||'').trim())&&target>=180,configured=Number(e.weeklyLimit??e.maxWeeklyHours??meta('maxWeekly'))||Number(e.weeklyHours)||40;
+  return{eightHourModel:eight,monthLimit:full?(eight?184:190):Math.min(190,target),calendarLimit:full?190:Math.min(190,target),maxMonthlyShifts:eight?23:18,weeklyLimit:Math.min(40,configured>0?configured:40)};
+ }
+ function confirmedErrors(e,rows,p,affected){
+  const own=rows.filter(active).filter(a=>String(a.employeeId)===String(e.id)).map(a=>duty(a,p)).sort((a,b)=>a.startMs-b.startMs),wanted=affected&&new Set(affected),out=[],touch=b=>!wanted||b.some(a=>wanted.has(a.date)),push=(date,message)=>out.push({date,employeeId:e.id,message}),blocks=[];
+  for(const a of own){const b=blocks.at(-1);if(b&&(b.at(-1).date===a.date||plus(b.at(-1).date,1)===a.date))b.push(a);else blocks.push([a])}
+  for(let i=0;i<blocks.length;i++){const b=blocks[i],prev=blocks[i-1];if(touch(b)&&b.length>4)push(b[0].date,'Höchstens vier Dienste am Stück.');
+   if(prev&&(touch(b)||touch(prev))){const last=prev.at(-1),free=Math.round((Date.parse(b[0].date)-Date.parse(localDate(last.endMs-1,p)))/D)-1,rest=(b[0].startMs-last.endMs)/H;
+    if(free<2||rest<48-1e-6)push(b[0].date,'Zwischen Arbeitsblöcken mindestens zwei vollständig freie Kalendertage und 48 Stunden Ruhe.');
+   }
+  }
+  const nights=[];for(const a of own.filter(night)){const b=nights.at(-1);if(b&&plus(b.at(-1).date,1)===a.date)b.push(a);else nights.push([a])}
+  for(const b of nights){if(touch(b)&&b.length>3)push(b[0].date,'Höchstens drei Nachtdienste am Stück.');const last=b.at(-1),next=own.find(a=>a.startMs>=last.endMs&&a.date>last.date);
+   if(next&&(touch(b)||!wanted||wanted.has(next.date))){const free=Math.round((Date.parse(next.date)-Date.parse(localDate(last.endMs-1,p)))/D)-1;if(free<3)push(next.date,'Nach einem Nachtblock mindestens drei vollständig freie Kalendertage.');}
+  }
+  for(let i=1;i<own.length;i++){const a=own[i-1],b=own[i];if(wanted&&!wanted.has(a.date)&&!wanted.has(b.date))continue;if(b.startMs-a.endMs<11*H-1e-6)push(b.date,'Mindestens 11 Stunden Ruhezeit.');if(plus(a.date,1)===b.date&&a.type==='O3'&&['O1','O2','TL','TL-LE','TL-RE','TEAMLEITER'].includes(b.type))push(b.date,'Nach O3 kein früherer Nachtdienst am Folgetag.');}
+  const weeks=new Set();for(const a of own){if(wanted&&!wanted.has(a.date))continue;weeks.add(weekKey(a.date));weeks.add(weekKey(localDate(a.endMs-1,p)))}if(wanted)for(const d of wanted)weeks.add(weekKey(d));
+  const meta=String((e.qualifications||[]).find(q=>String(q).startsWith('__sp:maxWeekly='))||'').split('=')[1],configured=Number(e.weeklyLimit??e.maxWeeklyHours??meta)||Number(e.weeklyHours)||40,cap=Math.min(40,configured>0?configured:40);
+  for(const w of weeks){const start=instant(w,'00:00',p.timezone),end=instant(plus(w,7),'00:00',p.timezone),hours=own.reduce((sum,a)=>sum+Math.max(0,Math.min(a.endMs,end)-Math.max(a.startMs,start))/H,0);if(hours>cap+1e-6)push(w,'Höchstens '+cap+' Stunden pro Kalenderwoche; Nachtdienste zählen zeitanteilig.')}
+  return out.filter((x,i)=>out.findIndex(v=>v.date===x.date&&v.message===x.message)===i);
+ }
+
+ function errors(e,rows,p,affected){if(!policy(p))return[];if(confirmed(p))return confirmedErrors(e,rows,p,affected);
   const by=new Map(rows.filter(active).filter(a=>String(a.employeeId)===String(e.id)).map(a=>[a.date,duty(a,p)]));
   const dates=[...by.keys()].sort(),blocks=[];for(const date of dates){const last=blocks.at(-1);if(last&&plus(last.at(-1).date,1)===date)last.push(by.get(date));else blocks.push([by.get(date)])}
   const wanted=affected&&new Set(affected),out=[],touch=b=>!wanted||b.some(a=>wanted.has(a.date));
@@ -26,7 +59,7 @@
    if(touch(b))for(let j=1;j<b.length;j++){const a=b[j-1],c=b[j];if(c.startMs-a.endMs<11*H)out.push({date:c.date,employeeId:e.id,message:'Mindestens 11 Stunden Ruhezeit.'});if(a.type==='O3'&&['O1','O2','TL','TL-LE','TL-RE','TEAMLEITER'].includes(c.type))out.push({date:c.date,employeeId:e.id,message:'Nach O3 kein früherer Nachtdienst am Folgetag.'})}
   }return out;
  }
- function canAdd(e,byDay,option,p){if(!policy(p))return true;const values=new Map();for(const a of option){for(let n=-5;n<=5;n++){const b=byDay.get(a.day+n);if(b)values.set(b.date,b)}}for(const a of option)values.set(a.date,a);return !errors(e,[...values.values()],p,option.map(a=>a.date)).length}
+ function canAdd(e,byDay,option,p){if(!policy(p))return true;const values=new Map();for(const a of option){for(let n=-8;n<=8;n++){const b=byDay.get(a.day+n);if(b)values.set(b.date,b)}}for(const a of option)values.set(a.date,a);return !errors(e,[...values.values()],p,option.map(a=>a.date)).length}
  function required(date,code,rows,p){if(!policy(p))return null;const rule=(p.conditionalStaffing||[]).find(r=>r.shift===code);if(!rule)return null;if(weekday(date)>5)return 0;
   const from=instant(date,rule.coverageStart,p.timezone),to=instant(date,rule.coverageEnd,p.timezone),source=plus(date,rule.sourceDayOffset),seen=new Set();
   for(const a of rows){if(!active(a)||a.type!==rule.sourceShift||a.date!==source)continue;const d=duty(a,p);if(d.startMs<=from&&d.endMs>=to)seen.add(String(a.employeeId))}
@@ -40,5 +73,5 @@
   }return out;
  }
  const penalty=m=>m.nightBlocksOverPreferred*8+m.missingFreeWeekends*35+m.rollingWeekExcessHours*.3+m.startTimeChanges*3+m.isolatedDuties*4;
- return{plus,weekday,instant,interval,duty,errors,canAdd,required,metrics,penalty};
+ return{plus,weekday,instant,interval,duty,errors,canAdd,required,metrics,penalty,confirmed,limits,countsTowardCap,night,localDate,weekKey};
 });
