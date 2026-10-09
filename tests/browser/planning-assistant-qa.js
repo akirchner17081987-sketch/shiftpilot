@@ -6,7 +6,7 @@
  const input=document.getElementById('sfPlanningChatInput'),log=document.getElementById('sfPlanningChatLog'),dialog=document.getElementById('sfPlanningChat');
  check('Dialog opens and focuses input',dialog.open&&document.activeElement===input);
  check('Planning remains interactive while chat is open',!dialog.matches(':modal'));
- check('Welcome shows four clear starting points',log.querySelectorAll('.sf-chat-start .sf-chat-example').length===4);
+ check('Welcome shows seven clear starting points',log.querySelectorAll('.sf-chat-start .sf-chat-example').length===7);
  check('Additional examples and month controls start collapsed',!log.querySelector('.sf-chat-details').open&&!dialog.querySelector('.sf-chat-period').open);
  const originalButtonRect=button.getBoundingClientRect(),originalChatRect=dialog.getBoundingClientRect();
  document.body.style.minHeight='220vh';window.scrollTo(0,300);await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
@@ -60,3 +60,4 @@
  const report=document.createElement('script');report.id='qa-result';report.type='application/json';report.textContent=JSON.stringify({results,errors:window.__errors,width:innerWidth,height:innerHeight});document.body.appendChild(report);
  window.__qaResults=results;
 })();
+
