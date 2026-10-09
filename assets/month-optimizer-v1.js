@@ -113,7 +113,7 @@
       result={solid:true,month,months,company,base,movable,individualIds:[],localSignature,fingerprint:snapshot.fingerprint,metrics,beforeOpen,criticalOpen:criticalNeeds([...base,...proposed],dates).reduce((n,[,v])=>n+v,0),beforeHours:new Map(employees.map(e=>[String(e.id),original.filter(a=>String(a.employeeId)===String(e.id)&&months.includes(a.date.slice(0,7))).reduce((n,a)=>n+plannedAssignmentHours(a),0)])),demandHours:withBase([...base,...proposed],()=>dates.reduce((n,date)=>n+TYPES.reduce((v,t)=>v+getSoll(date,t.id)*plannedAssignmentHours({date,type:t.id,start:t.start,end:t.end}),0),0))};
       autoPlanPreview=proposed.map((a,i)=>({...a,id:'period-preview-'+i,day:new Date(a.date+'T12:00:00').toLocaleDateString('de-DE',{weekday:'short'}),reason:'Erholungsregeln · ganze Arbeitsblöcke · persönliche Schichtfreigaben'})).sort((a,b)=>a.date.localeCompare(b.date));autoPlanUnresolved=unresolved;autoPlanOptionalSkipped=[];autoPlanAnalyzed=true;autoPlanApplied=0;showSaveToast('Zeitraum vorbereitet',`${months.length} Monate geprüft; ${unresolved.length} Dienste bleiben offen.`);
     }catch(e){console.error('Solid planning preview',e);result=null;autoPlanPreview=[];autoPlanUnresolved=[];autoPlanAnalyzed=false;showSaveToast('Planung nicht übernommen',e.message||String(e))}
-    finally{busy=false;controls.forEach(x=>x.node.disabled=x.disabled);renderAutoPlanning()}
+    finally{busy=false;controls.forEach(x=>x.node.disabled=x.disabled);renderAutoPlanning();if(result&&typeof CustomEvent==='function')document.dispatchEvent(new CustomEvent('sf:planning-analysis-ready',{detail:{dates,assignments:[...result.base,...autoPlanPreview]}}));}
   }
   async function optimize(){
     if(solidEnabled())return optimizeSolidPeriod();
@@ -142,7 +142,7 @@
       autoPlanPreview=proposed.map((a,i)=>({...a,id:'month-preview-'+i,day:new Date(a.date+'T12:00:00').toLocaleDateString('de-DE',{weekday:'short'}),reason:a.blockId?'Monatsoptimierung · zusammenhängender Arbeitsblock · nach persönlichem Monats-SOLL':'Monatsoptimierung · feste Vorgabe oder zulässiger Einzeldienst'})).sort((a,b)=>a.date.localeCompare(b.date));autoPlanUnresolved=unresolved;autoPlanOptionalSkipped=optionalSkipped;autoPlanAnalyzed=true;autoPlanApplied=0;
       showSaveToast('Monatsoptimierung vorbereitet',`${autoPlanUnresolved.length} Pflichtpositionen verbleiben. Prüfe die Monatsstunden und bestätige die Neuverteilung.`);
     }catch(e){result=null;autoPlanPreview=[];autoPlanUnresolved=[];autoPlanAnalyzed=false;showSaveToast('Monatsoptimierung nicht übernommen',e.message||String(e))}
-    finally{busy=false;controls.forEach(x=>x.node.disabled=x.disabled);renderAutoPlanning()}
+    finally{busy=false;controls.forEach(x=>x.node.disabled=x.disabled);renderAutoPlanning();if(result&&typeof CustomEvent==='function')document.dispatchEvent(new CustomEvent('sf:planning-analysis-ready',{detail:{dates,assignments:[...result.base,...autoPlanPreview]}}));}
   }
   async function apply(){
     if(!result||busy||autoPlanApplying||!autoPlanPreview.length)return;const prepared=result,preview=autoPlanPreview.map(a=>({...a}));busy=true;let appControls=[],previousSuppression=B.suppressSync,committed=false;
@@ -164,4 +164,5 @@
   const originalApply=window.applyAutoPlanPreview;if(originalApply)window.applyAutoPlanPreview=function(){return result?apply():originalApply.apply(this,arguments)};
   window.SFMonthOptimizer={optimize,apply,buildInput,changeIndividualBlocks,getResult:()=>result,isBusy:()=>busy};
 })();
+
 

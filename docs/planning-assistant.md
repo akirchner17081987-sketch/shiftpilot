@@ -27,3 +27,14 @@ Der Assistent zeigt Dienste einzelner Mitarbeiter und Planungsteams, Überbesetz
 Die persönliche Besetzungsprüfung verwendet die vorhandenen Kandidatenprüfungen und nennt den ersten aktuellen Ausschlussgrund, ohne Krankheitskategorien oder private Notizen offenzulegen. Für Namen mit mehreren Treffern fragt der Chat nach vollständigem Namen oder Personalnummer. Mitarbeiter- und Teambezüge werden bei Rückfragen weitergeführt; ein neues Team löst den bisherigen Mitarbeiterfilter ab.
 
 Eine Teamvorgabe für einen Tag wird aus der geladenen zentralen Tagesfolge, Startdatum und tatsächlicher Einstiegsposition ermittelt. Sie ist keine Aussage über die tatsächliche Besetzung. Die Wissensdatenbank nutzt sämtliche 13 Hilfekategorien und zwölf zusätzliche Anleitungen zu Teams, Auto-Planung, Export und Stunden. Themenzuordnungen unterscheiden unter anderem DATEV, tatsächliche Zeitberichte und Gesamtdienstplan. Die Antwort nennt das Hilfe-Center als Quelle und kann die passende Suche dort öffnen. Alle Artikel stehen auch im vorhandenen Hilfe-Center.
+
+# Erweiterung vom 09.10.2026
+
+- Der Monatscheck verwendet zusätzlich die gemeinsame Erholungsregelbasis. Geladene Randdienste, Kalenderwochen, Monatsanteile, automatische Schichtanzahl und persönliche Stundenobergrenzen werden geprüft. Fehlende Regeln werden als offene Prüfung angezeigt.
+- Belastung prüfen trennt verbindliche Konflikte von Optimierungszielen wie freien Wochenenden.
+- Stunden verbessern erstellt eine gemeinsame Vorschau für direkte Zusatzbesetzungen und einzelne Entlastungswechsel. Die Suche ist begrenzt und garantiert kein globales Optimum.
+- Ausfall durchspielen benötigt eine eindeutig benannte Person und einen Zeitraum. Es verändert weder den Dienstplan noch Abwesenheiten und bietet keine automatische Übernahme.
+- Neue Auto-Planungsläufe speichern eine Enddiagnose im verwendeten Browser, getrennt nach Benutzer, Unternehmen und Rolle: Zeitraum, Zeitpunkt, offene Positionen und aggregierte Ausschlussgründe. Keine Klarnamen oder Abwesenheitskategorien. Maximal 200 Schichten pro Detailprotokoll und 20 Läufe der letzten 90 Tage. Keine Synchronisierung zwischen Geräten. Dies ist kein vollständiger Solver-Trace. Die Freigabe für eine gemeinsame Datenbanktabelle wurde abgelehnt; es wird keine Schemaänderung benötigt oder umgangen.
+- Übernahmen sind aktive Entwurfsänderungen mit eigener Bestätigung. Persönliche Grenzen, geschützte Dienste, veröffentlichte Wochen, lokale Signatur und serverseitiger Fingerprint werden erneut geprüft. Vorschauen verfallen nach 15 Minuten. Die vorhandene atomare RPC `apply_planning_period` übernimmt die Speicherung; deren vollständige Prüfungen einschließlich Pflichtbesetzung bleiben verbindlich.
+- Journalzugriff und Vorschauen stehen nur den bestehenden aktiven Planungsrollen zur Verfügung. Bei Logout, Rollen- oder Unternehmenswechsel wird der sichtbare Gesprächszustand entfernt.
+

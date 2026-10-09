@@ -22,7 +22,7 @@ jobs:
           import {readFileSync} from 'node:fs';
           import {createHash} from 'node:crypto';
           import {setTimeout as delay} from 'node:timers/promises';
-          const files=['assets/planning-assistant-core-v1.js','assets/planning-assistant-v1.js','assets/planning-assistant-v1.css','assets/help-center-content-v3.js'];
+          const files=['assets/planning-assistant-insights-v1.js','assets/month-optimizer-v1.js','assets/planning-assistant-core-v1.js','assets/planning-assistant-v1.js','assets/planning-assistant-v1.css','assets/help-center-content-v3.js'];
           const hash=data=>createHash('sha256').update(data).digest('hex');
           const expected=new Map(files.map(file=>[file,hash(readFileSync(file))]));
           for(const origin of ['https://schichtfunk.de','https://shiftpilot-two.vercel.app']){
@@ -48,3 +48,4 @@ jobs:
             if(!passed)throw Error(origin+' failed release verification');
           }
           NODE
+

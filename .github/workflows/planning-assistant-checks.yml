@@ -4,9 +4,9 @@ on:
     paths:
       - 'assets/planning-assistant-*.js'
       - 'assets/planning-assistant-*.css'
-      - 'tests/planning-assistant.test.mjs'
+      - 'tests/planning-assistant*.test.*'
       - 'tests/browser/planning-assistant-*'
-      - 'tests/e2e/planning-assistant.spec.cjs'
+      - 'tests/e2e/planning-assistant*.spec.cjs'
       - 'index.html'
       - '.github/workflows/planning-assistant-checks.yml'
   push:
@@ -14,9 +14,9 @@ on:
     paths:
       - 'assets/planning-assistant-*.js'
       - 'assets/planning-assistant-*.css'
-      - 'tests/planning-assistant.test.mjs'
+      - 'tests/planning-assistant*.test.*'
       - 'tests/browser/planning-assistant-*'
-      - 'tests/e2e/planning-assistant.spec.cjs'
+      - 'tests/e2e/planning-assistant*.spec.cjs'
       - 'index.html'
       - '.github/workflows/planning-assistant-checks.yml'
 jobs:
@@ -27,11 +27,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test tests/planning-assistant.test.mjs
+      - run: node --test tests/planning-assistant.test.mjs tests/planning-assistant-insights.test.cjs tests/solid-planning.test.cjs tests/solid-planning-ui.test.cjs
       - run: node scripts/build-static.mjs
       - run: npm ci
       - run: npx playwright install ffmpeg
-      - run: npx playwright test tests/e2e/planning-assistant.spec.cjs
+      - run: npx playwright test tests/e2e/planning-assistant.spec.cjs tests/e2e/planning-assistant-insights.spec.cjs
         env:
           SF_ASSISTANT_BROWSER_EXECUTABLE: /usr/bin/google-chrome
       - uses: actions/upload-artifact@v4
@@ -41,3 +41,4 @@ jobs:
           path: |
             playwright-report/
             test-results/
+
