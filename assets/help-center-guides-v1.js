@@ -14,10 +14,11 @@ window.SFHelpGuides = {
   },
   'Was prüfe ich vor dem Veröffentlichen?': {
     image: 'assets/help/publish-plan.svg', alt: 'Vereinfachte Veröffentlichungsprüfung mit Kennzahlen, Prüfergebnis und Freigabeschaltfläche.',
-    steps: ['Im Dienstplan die Woche besetzen und „Veröffentlichen & Mitarbeiter informieren“ öffnen.', 'In der Veröffentlichungsprüfung offene Positionen, Überschneidungen, Abwesenheitskonflikte und weitere Hinweise prüfen. Bei Bedarf „Zurück zur Planung“ wählen.', 'Erst nach der Prüfung die Veröffentlichung bestätigen. Dann werden die Schichten im Mitarbeiterportal sichtbar.']
+    steps: ['Im Dienstplan den gewünschten Zeitraum wählen und die Veröffentlichung öffnen. Im Dialog kontrollieren, ob die ausgewählte Woche oder der Monat freigegeben wird.', 'In der Veröffentlichungsprüfung offene Positionen, Überschneidungen, Abwesenheitskonflikte und weitere Hinweise prüfen. Bei Bedarf „Zurück zur Planung“ wählen.', 'Erst nach der Prüfung die Veröffentlichung bestätigen. Dann werden die Schichten im Mitarbeiterportal sichtbar.']
   },
   'Wo sehe ich QR-Zeiten und Pausendetails?': {
     image: 'assets/help/qr-report.svg', alt: 'Vereinfachte QR-Auswertung mit Suche, Datumsbereich, Buchungszeile und Details zu einzelnen Pausen.',
     steps: ['Zeiterfassung → „QR-Buchungen ohne Schichtbezug“ öffnen.', 'Nach Mitarbeiter oder Personalnummer suchen und einen Datumsbereich von höchstens 63 Tagen wählen.', 'Bei einer Buchung „Details“ öffnen, um Standort und die einzeln erfassten Pausen zu sehen.']
   }
 };
+

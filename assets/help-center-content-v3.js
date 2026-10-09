@@ -1,4 +1,4 @@
-// Hilfe-Center: flexible Tagdienstblöcke und Feiertage nach Einsatzort.
+// Hilfe-Center: Funktionsabgleich vom 09.10.2026.
 window.SFHelpContent = {
   "categories": [
     [
@@ -75,6 +75,16 @@ window.SFHelpContent = {
       "disruptions",
       "Störfall-Autopilot",
       "Akute Ausfälle und Ersatzanfragen"
+    ],
+    [
+      "personnel",
+      "Personalakte & Fristen",
+      "Dokumente, Nachweise und Profilkorrekturen"
+    ],
+    [
+      "access",
+      "Benutzer & Sicherheit",
+      "Rollen, Unternehmen und Datenschutz"
     ]
   ],
   "articles": {
@@ -166,6 +176,18 @@ window.SFHelpContent = {
       [
         "Was bedeutet Überbesetzung?",
         "Überbesetzung bedeutet, dass für eine Schicht mehr Mitarbeiter eingeplant sind als der gespeicherte SOLL-Bedarf. Sie gleicht offene Positionen anderer Schichten nicht aus. Prüfe Tagesbedarf und Zuordnungen getrennt, bevor du Mitarbeiter entfernst oder umplanst."
+      ],
+      [
+        "Für welchen Zeitraum wird ein Dienstplan veröffentlicht?",
+        "Prüfen Sie den im Veröffentlichungsdialog ausgewiesenen Zeitraum. Er richtet sich nach der gewählten Planansicht und kann eine Woche oder einen Monat betreffen. Erst die Bestätigung veröffentlicht die geprüften Dienste dieses Bereichs. Prüfen Sie offene Positionen, Konflikte und Hinweise vor der Freigabe; eine bloße Speicherung macht Entwürfe noch nicht im Mitarbeiterportal sichtbar."
+      ],
+      [
+        "Wo sehe ich Planänderungen und ausstehende Rückmeldungen?",
+        "Die Statusanzeige unterscheidet Entwurf, veröffentlichte Dienste und ausstehende Vorgänge. Über den Planverlauf können Sie die vorhandenen Änderungsereignisse und offenen Rückmeldungen prüfen. Ein Eintrag im Verlauf bedeutet nicht automatisch, dass eine angefragte Änderung bereits angenommen oder umgesetzt wurde."
+      ],
+      [
+        "Kann ich einen ganzen Planungsmonat löschen?",
+        "Inhaber und Administratoren können die gesonderte Löschfunktion für den ausgewählten Monat öffnen. Die Vorschau zeigt betroffene gespeicherte und ungespeicherte Dienste sowie Marktplatzangebote. Abgeschlossene Monate und Monate mit erfassten Arbeitszeiten oder QR-Nachweisen sind gesperrt. Andere Monate, Mitarbeiter, Abwesenheiten und SOLL-Vorgaben bleiben erhalten. Eine Nachtschicht gehört zu ihrem Startmonat. Die bestätigte Löschung ist unwiderruflich."
       ]
     ],
     "employees": [
@@ -200,6 +222,10 @@ window.SFHelpContent = {
       [
         "Braucht jeder Mitarbeiter ein Planungsteam?",
         "Nein. Mitarbeiter ohne Planungsteam behalten ihre individuelle Schichtregel. Für Mitarbeiter ausschließlich im Frühdienst kann eine Zuordnung ohne Team beabsichtigt sein. Prüfe die Schichtfreigaben und die individuelle Regel im Profil."
+      ],
+      [
+        "Was passiert beim normalen Löschen eines Mitarbeiters?",
+        "Die Löschübersicht zeigt die Folgen für den ausgewählten Mitarbeiter und dessen künftige Dienste und Abwesenheiten. Nach Bestätigung mit vollständigem Namen wird der Mitarbeiter aus der Verwaltung entfernt, für neue Planung gesperrt und sein Zugang blockiert. Vorhandene Zeit- und Abrechnungsdaten sowie abgeschlossene Monate bleiben erhalten; historische Dienste und Abwesenheiten werden archiviert. Prüfen Sie die Vorschau sorgfältig."
       ]
     ],
     "time": [
@@ -222,6 +248,30 @@ window.SFHelpContent = {
       [
         "Warum lässt sich ein Monat nicht abschließen?",
         "Die Abschlussprüfung nennt offene Einträge oder ausstehende Bestätigungen. Klären Sie diese Punkte und starten Sie den Abschluss erneut."
+      ],
+      [
+        "Welche Zeitwerte zählen in der zentralen Auswertung?",
+        "Die zentrale Zeitberechnung führt abgeschlossene QR-Dienste und bestätigte Ist-Zeiten zusammen. Überschneidende Erfassungen werden bereinigt, damit derselbe Zeitraum nicht doppelt zählt. Offene oder noch nicht bestätigte Einträge sind gesondert zu prüfen. Addieren Sie die QR-Einzelübersicht deshalb nicht pauschal zum zentralen Monatswert. Dienstplanstunden bleiben Planwerte."
+      ],
+      [
+        "Kann ich mehrere Ist-Zeiten gemeinsam erfassen?",
+        "Die Sammelerfassung zeigt vor dem Speichern, welche beendeten Dienste übernommen und direkt bestätigt werden, welche bereits bearbeitet sind und welche noch nicht beendet sind. Prüfen Sie die vorgeschlagenen Zeiten und Pausen für den ausgewählten Zeitraum. Eine Sammelbestätigung darf nur tatsächlich geleistete und geprüfte Zeiten übernehmen."
+      ],
+      [
+        "Was unterscheidet Speichern, Bestätigen und Korrektur anfordern?",
+        "Beim Bearbeiten einer Ist-Zeit speichern Sie zunächst die erfassten Angaben oder bestätigen sie über „Speichern & Bestätigen“. Eine Korrekturanforderung kennzeichnet einen noch zu klärenden Eintrag. Bestätigte Werte und ungeprüfte Angaben haben unterschiedliche Wirkung auf Abrechnung und Monatsabschluss. Die angezeigte Plan-Ist-Abweichung ist kein Stundenkonto-Saldo."
+      ],
+      [
+        "Was blockiert einen Monatsabschluss?",
+        "Inhaber und Administratoren sehen in der Abschlussprüfung veröffentlichte Dienste ohne bestätigte Ist-Zeit, offene Zeitkorrekturen, offene Abwesenheitsanträge und laufende QR-Dienste. Diese Punkte müssen geklärt sein; auch das Monatsende ist zu beachten. Planer und Disponenten können die Vorbereitung im verfügbaren Umfang unterstützen, aber keinen administrativen Abschluss erzwingen."
+      ],
+      [
+        "Was sperrt ein abgeschlossener Monat und wie öffne ich ihn wieder?",
+        "Beim Abschluss wird ein unveränderlicher Monatsstand für Stundenkonto und Berichte erzeugt. Dienstplan, Ist-Zeiten und Abwesenheiten des Monats werden serverseitig gesperrt. Berechtigte Inhaber oder Administratoren können den Monat mit Begründung und Eingabe von „ÖFFNEN“ wieder öffnen. Nach Korrekturen muss er erneut geprüft und abgeschlossen werden. Der Vorgang wird protokolliert."
+      ],
+      [
+        "Wie werden Sollstunden und Abwesenheitsgutschriften eingestellt?",
+        "Die Stundenkonto-Einstellungen unterscheiden eine Berechnung über die Fünf-Tage-Woche und persönliche Monatsziele. Beachten Sie Kontostart, Wirksamkeitsmonat und die hinterlegten Mitarbeiterziele. Gutschriften für Abwesenheitsarten sowie Feiertagseinstellungen beeinflussen das Konto. Diese Einstellungen sind von den Besetzungs-SOLL-Werten des Dienstplans zu unterscheiden."
       ]
     ],
     "qr": [
@@ -264,6 +314,14 @@ window.SFHelpContent = {
       [
         "Was passiert mit einer offenen Pause beim Dienstende?",
         "Beim bestätigten Dienstende wird eine noch offene Pause automatisch abgeschlossen. Prüfe anschließend die angezeigten Endwerte. Die Abmeldung entfernt die persönliche Live-Anzeige."
+      ],
+      [
+        "Wie korrigiert die Verwaltung eine QR-Buchung?",
+        "In der QR-Detailansicht können berechtigte Inhaber, Administratoren, Planer, Disponenten und Benutzer mit „Nur Zeiterfassung“ die tatsächlichen Beginn-, Ende- und vorhandenen Pausenzeiten korrigieren. Verwenden Sie das angezeigte Format TT.MM.JJJJ HH:MM:SS und begründen Sie die Änderung. Pausen bleiben bezahlt. Bearbeiter, Begründung, Zeitpunkt und vorherige Werte werden protokolliert. Abgeschlossene Monate müssen vorher berechtigt wieder geöffnet werden."
+      ],
+      [
+        "Was tue ich bei einer vergessenen QR-Abmeldung?",
+        "Melden Sie den tatsächlichen Beginn und das tatsächliche Ende der zuständigen Zeitverwaltung. Diese prüft die offene Buchung und schließt oder korrigiert sie mit Begründung in der QR-Detailansicht. Eine offene Pause endet spätestens mit dem eingetragenen Dienstende. Bei einer unklaren Fehlermeldung zuerst den aktuellen Buchungsstatus prüfen, bevor dieselbe Korrektur erneut ausgeführt wird."
       ]
     ],
     "absence": [
@@ -332,6 +390,10 @@ window.SFHelpContent = {
       [
         "Welche Feiertage gelten für OT-Dienste?",
         "Das gesonderte Schichtmodell OT gilt an Samstagen, Sonntagen und gesetzlichen Feiertagen am hinterlegten Einsatzort. Leipzig verwendet Sachsen, Recklinghausen Nordrhein-Westfalen. Maßgeblich ist der Standort im Mitarbeiterprofil, nicht der Wohnort. Für OT bleiben die jeweiligen persönlichen Schichtfreigaben erforderlich. Fehlt ein bekannter Einsatzort, wird kein örtlicher Feiertag unterstellt."
+      ],
+      [
+        "Was macht die individuelle Monatsplanung?",
+        "Die optionale individuelle Blockverteilung gehört zum Acht-Stunden-Modell und ist nur unter den dafür vorgesehenen Bedingungen verfügbar. Teamzuordnung und verbindliche persönliche Rhythmen begrenzen ihre Anwendung. Bei aktivierten bestätigten Planungsregeln wird dieser ältere Modus nicht verwendet; es gelten die bestätigten Arbeits-, Nacht- und Ruhezeitregeln. Prüfen Sie immer die Vorschau der tatsächlich angebotenen Planung und veröffentlichen Sie erst nach der Gesamtprüfung."
       ]
     ],
     "reports": [
@@ -345,11 +407,15 @@ window.SFHelpContent = {
       ],
       [
         "Wie funktioniert der DATEV-LODAS-Export?",
-        "Der DATEV-Export erstellt LODAS-Bewegungsdaten aus den geprüften Monatswerten und den hinterlegten Lohnarten. Kontrollieren Sie Monat, Personalnummern und Zuordnungen; unvollständige Angaben werden vor einem Export gemeldet."
+        "Inhaber und Administratoren erstellen LODAS-Bewegungsdaten aus einem geprüften, abgeschlossenen Monat. Vor dem Download sind Berater-/Mandantennummer, Personalnummern und Lohnarten-Zuordnungen zu prüfen. Die Vorprüfung meldet fehlende Angaben. Der Export gehört zur jeweiligen Abschlussrevision und lädt eine Datei herunter; eine automatische Übermittlung an DATEV erfolgt nicht."
       ],
       [
         "Warum weichen Zahlen voneinander ab?",
-        "Vergleichen Sie Zeitraum, Veröffentlichungsstatus, IST-Bestätigung und Datenquelle. QR-Buchungen ohne Schichtbezug erscheinen in einer eigenen Übersicht und sollten bei der Monatsprüfung separat beachtet werden."
+        "Vergleichen Sie Zeitraum, Plan- oder Ist-Basis, Bestätigungsstatus und Monatsabschluss. Die zentrale Zeitberechnung führt abgeschlossene QR-Dienste und bestätigte Ist-Zeiten zusammen und bereinigt Überschneidungen. Die separate QR-Übersicht dient der Detailprüfung; ihre Summe darf nicht pauschal zum zentralen Monatswert addiert werden. Offene Buchungen, Abwesenheitsgutschriften und unterschiedliche Monatsgrenzen können weitere Abweichungen erklären."
+      ],
+      [
+        "Welche Voraussetzungen hat der DATEV-Export?",
+        "Inhaber und Administratoren konfigurieren Berater- und Mandantennummer, Personalnummern und Lohnarten-Zuordnungen. Grundlage ist der geprüfte, abgeschlossene Monat mit seiner Abschlussrevision. Die Vorprüfung meldet fehlende oder ungültige Angaben; ohne passende Daten wird keine leere Datei erzeugt. Der Download erstellt eine LODAS-Datei, überträgt sie aber nicht automatisch an DATEV. Nach Wiederöffnung und neuem Abschluss müssen Export und Revision erneut geprüft werden."
       ]
     ],
     "settings": [
@@ -384,6 +450,10 @@ window.SFHelpContent = {
       [
         "Warum beginnt der Teamrhythmus erst am Startdatum?",
         "Vor dem zentralen Startdatum ist die Teambindung noch nicht aktiv. Ab dem Startdatum wird die gespeicherte Tagesfolge mit der Einstiegsposition verwendet. Eine Änderung berechnet keine vorhandenen Dienste rückwirkend neu."
+      ],
+      [
+        "Was bedeuten Pflichtbesetzung, optionale Dienste und gemeinsame Deckung?",
+        "Schichtmodelle können Pflichtbedarf oder eine optionale Wunschbesetzung beschreiben. Wochentage, exklusive Zuständigkeit und Schichtfreigaben begrenzen die Besetzung. Bei einer gemeinsamen Deckungsgruppe zählen passende Alternativen zur selben Anforderung; jede Alternative nochmals vollständig zu besetzen kann Überbesetzung erzeugen. Prüfen Sie Tagesabweichungen und die SOLL/IST-Anzeige nach Modelländerungen."
       ]
     ],
     "portal": [
@@ -406,6 +476,34 @@ window.SFHelpContent = {
       [
         "Wie erfasse ich Urlaub?",
         "Stellen Sie den Abwesenheitsantrag im Portal und verfolgen Sie seinen Status. Erst die Freigabe wird für die Planung wirksam."
+      ],
+      [
+        "Wie melde ich falsche Angaben in meinem Profil?",
+        "Öffnen Sie „Mein Profil“ und wählen Sie „Korrektur anfragen“. Beschreiben Sie den betroffenen Bereich und die gewünschte Berichtigung. Sie können den Bearbeitungsstatus und die Rückmeldung verfolgen. Eine Anfrage überschreibt Ihre Vertragsdaten, Schichtfreigaben oder andere verwaltete Angaben nicht automatisch."
+      ],
+      [
+        "Wie lese ich mein persönliches Stundenkonto?",
+        "Wählen Sie im Mitarbeiterportal den gewünschten Monat. Das Konto zeigt Soll, angerechnete Stunden, Monatssaldo und Kontostand; eine Übersicht stellt sechs Monate gegenüber. Die Anzeige kann zwischen Dezimalstunden und Stunden:Minuten wechseln. Die Monatsauswahl gilt auch für die Lohnvorschau. Bei fehlgeschlagener Aktualisierung beachten Sie den Hinweis auf den zuletzt geladenen Stand."
+      ],
+      [
+        "Was berechnet die Lohnvorschau?",
+        "Die unverbindliche Bruttovorschau verwendet abgeschlossene QR-Dienste und bestätigte Ist-Zeiten, bereinigt Überschneidungen und berücksichtigt bezahlte QR-Pausen. Die Anwendung zeigt Nacht-, Sonntags- und Feiertagszuschläge; je Zeitabschnitt gilt nur der höchste passende Satz. Offene oder ungeprüfte Zeiten sind separat ausgewiesen. Abwesenheitsgutschriften, Auszahlung des Stundenkontos, Steuern und Sozialabgaben sind nicht enthalten. Die Vorschau ist keine Lohnabrechnung."
+      ],
+      [
+        "Wer sieht meinen eingetragenen Stundenlohn?",
+        "Der für die Lohnvorschau eingegebene Stundenlohn wird privat auf diesem Gerät und separat je Monat gespeichert und nicht an den Arbeitgeber übertragen. Auf einem anderen Gerät oder nach Löschen der Browserdaten kann eine erneute Eingabe nötig sein. Wenn der Browser Speicherung verhindert, zeigt die Vorschau einen entsprechenden Hinweis."
+      ],
+      [
+        "Wie läuft ein Schichttausch mit einem Kollegen ab?",
+        "Wählen Sie einen eigenen zukünftigen veröffentlichten Dienst und fragen Sie einen geeigneten Kollegen an. Der Kollege kann annehmen oder ablehnen. Nach Zustimmung folgt die Freigabe der Disposition; erst ein umgesetzter Vorgang überträgt den Dienst. Offene eigene Anfragen können zurückgezogen werden. Status, Kommentare und bisherige Anfragen finden Sie im Schichttauschbereich."
+      ],
+      [
+        "Wie antworte ich auf eine angefragte Dienstplanänderung?",
+        "Öffnen Sie die Änderungsanfrage im Mitarbeiterportal und prüfen Sie die betroffenen Zeiten und die Begründung. Geben Sie Ihre Rückmeldung über die angebotenen Schaltflächen ab und beachten Sie anschließend den angezeigten Status. Eine offene Anfrage ist noch keine bestätigte Änderung."
+      ],
+      [
+        "Wie verwalte ich Benachrichtigungen?",
+        "Die Benachrichtigungsübersicht informiert über die für Ihren Zugang relevanten Vorgänge. Öffnen Sie eine Meldung, um zum zugehörigen Bereich zu gelangen, und nutzen Sie die angebotenen Lese- oder Löschaktionen. Das Entfernen einer Meldung löscht nicht den zugrunde liegenden Dienst, Antrag oder Nachweis. Push-Mitteilungen werden zusätzlich pro Gerät aktiviert."
       ]
     ],
     "appearance": [
@@ -420,6 +518,10 @@ window.SFHelpContent = {
       [
         "Was tun, wenn die Kamera in der PWA nicht startet?",
         "Erlauben Sie den Kamerazugriff für die SchichtFunk-Seite. Alternativ scannen Sie den QR-Code mit der normalen Kamera des Smartphones und öffnen den erkannten Link."
+      ],
+      [
+        "Wie aktiviere und teste ich Push-Mitteilungen?",
+        "Öffnen Sie den Bereich für Push-Mitteilungen, aktivieren Sie diese auf dem aktuellen Gerät und erlauben Sie Benachrichtigungen im Browser. Anschließend können Sie eine Testmitteilung anfordern. Push setzt einen unterstützten Browser, HTTPS und einen eingerichteten Push-Dienst voraus. Auf iPhone und iPad muss SchichtFunk als App zum Home-Bildschirm hinzugefügt sein. Geräte- und Betriebssystemeinstellungen können die Zustellung zusätzlich verhindern."
       ]
     ],
     "trouble": [
@@ -446,6 +548,14 @@ window.SFHelpContent = {
       [
         "Warum zeigt der Assistent andere Stunden als das Stundenkonto?",
         "Der Planungsassistent zählt geplante Dienste nach ihrem Startdatum und ohne Pausenabzug. Das Stundenkonto nutzt seine eigene Prüfung der erfassten beziehungsweise bestätigten Zeiten. Eine geplante Abweichung vom Monats-SOLL ist kein bestätigtes Überstundenkonto."
+      ],
+      [
+        "Warum fehlt eine Funktion bei mir?",
+        "Prüfen Sie Unternehmensauswahl, Benutzerrolle und den gewählten Bereich. Manche Aktionen sind nur für Inhaber oder Administratoren verfügbar, andere benötigen einen veröffentlichten Dienst, einen offenen Monat oder eine konfigurierte Funktion. „Nur Zeiterfassung“ erlaubt absichtlich keine Personal- oder Dienstplanverwaltung. Eine in der Hilfe beschriebene Funktion ist nicht automatisch für jedes Konto freigeschaltet."
+      ],
+      [
+        "Was tun bei veralteten Ansichten oder unklaren Speicherergebnissen?",
+        "Beachten Sie Hinweise auf einen älteren Datenstand, prüfen Sie Verbindung, Unternehmen und Zeitraum und laden Sie den betroffenen Bereich neu. Wenn eine Speicherung nicht eindeutig bestätigt wurde, kontrollieren Sie zunächst den aktuellen Eintrag. Wiederholen Sie Änderungen erst nach dieser Prüfung, um doppelte Anfragen oder Buchungen zu vermeiden. Melden Sie anhaltende Fehler mit Zeitpunkt und betroffener Funktion."
       ]
     ],
     "marketplace": [
@@ -467,7 +577,63 @@ window.SFHelpContent = {
         "Was geschieht nach einer Zusage?",
         "Eine Ersatzanfrage kann verbindlich angenommen oder abgelehnt werden. Die erste gültige Zusage übernimmt den Ersatzdienst; weitere Anfragen werden entsprechend geschlossen. Prüfe danach den Vorgangsstatus und den Dienstplan. Bleibt kein geeigneter Ersatz, bleibt der Ausfall offen. Beenden schließt den Störfall ohne Ersatz und zieht offene Anfragen zurück."
       ]
+    ],
+    "personnel": [
+      [
+        "Wer kann die Personalakte öffnen?",
+        "Inhaber und Administratoren wählen einen Mitarbeiter und öffnen „Personalakte öffnen“. Die Akte enthält Übersicht, Qualifikationen, Dokumente, Notizen und Verlauf. Mitarbeiterportal, normale Personalplanung und Personalakte haben unterschiedliche Zugriffsrechte."
+      ],
+      [
+        "Welche Dokumente kann ich in der Personalakte ablegen?",
+        "Im Reiter Dokumente Titel, Kategorie und Datei angeben; Dokumentdatum, Gültigkeitsdatum und Bemerkung können ergänzt werden. Unterstützt werden PDF, JPG, PNG und WebP bis maximal 10 MB. Die Ablage ist privat. Dokumente lassen sich über die berechtigte Ansicht öffnen und löschen; ein hochgeladener Nachweis ersetzt nicht automatisch die Schichtfreigabe im Mitarbeiterprofil."
+      ],
+      [
+        "Wie pflege ich Qualifikationen und Ablaufdaten?",
+        "In der Personalakte unter Qualifikationen den Nachweis mit Bezeichnung, Aussteller, Nachweisnummer und gegebenenfalls Gültigkeitsdatum hinterlegen. Prüfen Sie ablaufende und abgelaufene Nachweise in der Fristenübersicht und aktualisieren Sie die Akte nach einer Verlängerung. Schichtfreigaben und Planungseignung müssen weiterhin passend gepflegt sein."
+      ],
+      [
+        "Wie funktionieren Erinnerungen an Personalfristen?",
+        "Die Fristenansicht bündelt fällige Nachweise und Dokumente. Der Erinnerungsbereich zeigt die tägliche serverseitige Prüfung mit Friststufen 90, 60, 30, 14, 7 und 1 Tag sowie Ablauf. Meldungen richten sich an Inhaber und Administratoren und werden je Friststufe einmal erzeugt. Prüfen Sie den angezeigten Status und die hinterlegten Ablaufdaten."
+      ],
+      [
+        "Wie bearbeite ich Profiländerungsanfragen?",
+        "Inhaber und Administratoren öffnen in der Mitarbeiterverwaltung „Änderungsanfragen öffnen“. Prüfen Sie die Anfrage, ändern und speichern Sie die betreffenden Daten im Profil oder in der Personalakte und schließen Sie die Anfrage anschließend mit Rückmeldung ab. Die Bestätigung „erledigt“ allein ändert keine Stammdaten. Nicht übernommene Anfragen lassen sich mit einer Rückmeldung ablehnen."
+      ]
+    ],
+    "access": [
+      [
+        "Welche Benutzerrollen gibt es?",
+        "Inhaber (OWNER) und Administratoren (ADMIN) verwalten Benutzer und administrative Einstellungen. Planer (PLANNER) und Disponenten (DISPATCHER) bearbeiten Mitarbeiter und Dienstpläne im freigegebenen Umfang. Leser (VIEWER) haben Lesezugriff. „Nur Zeiterfassung“ (TIME_TRACKING) ist auf Zeitfunktionen beschränkt. Mitarbeitende (EMPLOYEE) nutzen ihr persönliches Portal. Eine Rolle schaltet nicht automatisch jede Verwaltungsfunktion frei; beispielsweise bleiben Personalakte, Monatsabschluss und DATEV Inhabern und Administratoren vorbehalten."
+      ],
+      [
+        "Wie lade ich Verwaltungsbenutzer ein und verwalte Zugänge?",
+        "Inhaber und Administratoren öffnen die Benutzerverwaltung, wählen E-Mail und Rolle und erstellen eine Einladung. Den angezeigten Einladungslink kopieren und an die betreffende Person weitergeben; er ist sieben Tage gültig. Die Annahme erfolgt mit der passenden E-Mail-Adresse. Einladungen lassen sich erneuern oder zurückziehen, bestehende Zugänge sperren und aktivieren. Der eigene Zugang und geschützte Inhaberrollen können nicht beliebig geändert werden. Mitarbeiterzugänge werden separat im Mitarbeiterprofil verwaltet."
+      ],
+      [
+        "Wie wechsle ich das Unternehmen?",
+        "Wenn Ihr Verwaltungskonto mehreren aktiven Unternehmen zugeordnet ist, wählen Sie „Unternehmen wechseln“ an der Unternehmensanzeige. Prüfen Sie vor Änderungen den Unternehmensnamen und Ihre dortige Rolle. Daten und Berechtigungen gelten jeweils für das ausgewählte Unternehmen. Mitarbeitende nutzen ihr zugeordnetes Portal."
+      ],
+      [
+        "Wie richte ich die Zwei-Faktor-Anmeldung ein?",
+        "Verwenden Sie die angebotene Einrichtung einer Authenticator-App und bestätigen Sie den sechsstelligen Code. Bei geschützten Aktionen kann eine erneute Bestätigung erforderlich sein. Inhaber und Administratoren können ihren letzten bestätigten Faktor nicht einfach entfernen. Geben Sie Passwort, Einrichtungsschlüssel und Einmalcodes niemals an andere weiter."
+      ],
+      [
+        "Wie setze ich mein Passwort zurück?",
+        "Wählen Sie in der Anmeldung die Passwort-Zurücksetzung und geben Sie die E-Mail-Adresse Ihres Kontos an. Öffnen Sie den erhaltenen Link und vergeben Sie ein neues Passwort. Bei abgelaufenem Link fordern Sie einen neuen an. Eine Passwortänderung ersetzt keine fehlende Unternehmenszuordnung oder gesperrte Mitgliedschaft."
+      ],
+      [
+        "Was zeigt das Audit-Protokoll?",
+        "Inhaber und Administratoren können Verwaltungsänderungen im Audit-Protokoll nachvollziehen. Die Detailansicht zeigt die zum Ereignis verfügbaren Angaben, darunter Bearbeiter, Zeitpunkt und geänderte Werte. Technische Kennungen lassen sich bei Bedarf einblenden. Das Protokoll dient der Nachvollziehbarkeit; es macht Änderungen nicht automatisch rückgängig."
+      ],
+      [
+        "Was bedeutet Datenschutz & Löschung in den Einstellungen?",
+        "Der Bereich zeigt den Status des Aufbewahrungsprofils und seine konfigurierten Fristen. Ein vorbereitetes Profil ist noch nicht aktiv. Die geschützte Freigabe verlangt MFA, eine Abkühlfrist von 24 Stunden und eine neue Anmeldung für die zweite Bestätigung. Beachten Sie die angezeigten Berechtigungen und Sperren. Konfigurierte Fristen sind keine allgemeine Aussage über gesetzliche Pflichten; vor einer Betreiberfreigabe müssen sie zum tatsächlichen Einsatz passen."
+      ],
+      [
+        "Was unterscheidet vollständige Datenlöschung vom normalen Entfernen?",
+        "Die gesonderte vollständige Mitarbeiterlöschung ist ausschließlich dem Inhaber vorbehalten und in der Demo nicht verfügbar. Sie betrifft die in der Übersicht aufgeführten zugehörigen Daten einschließlich Zeitnachweisen und Historie und ist unwiderruflich. Sie verlangt eine gesonderte Bestätigung. Verwenden Sie für das normale Ausscheiden die Mitarbeiterentfernung mit Erhalt der Abrechnungshistorie; prüfen Sie vor jeder vollständigen Löschung die ausgewiesenen Folgen und Schutzbedingungen."
+      ]
     ]
-  }
+  },
+  "reviewedAt": "2026-10-09"
 };
-
