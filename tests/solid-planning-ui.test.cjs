@@ -4,6 +4,11 @@ test('six-month preview preserves assignments and commits through one atomic per
 test('changed employee data rejects period commit before any assignment RPC',async()=>{const{c,calls}=harness();await c.SFMonthOptimizer.optimize();c.employees[0].status='inactive';await c.applyAutoPlanPreview();assert.equal(calls.length,1);assert.equal(c.assignments.length,0);assert.match(c.toast.copy,/Daten haben sich geändert/)});
 test('other-company policy disables month-count expansion',()=>{const{c}=harness();c.SFCompliance.policy.solidPlanningRules={};assert.equal(c.autoPlanningDates().length,31)});
 
+test('continuous horizon includes seven months and is capped at twelve',()=>{
+ const{c,el}=harness();el('autoPlanMonth').value='2026-12';el('autoPlanMonthCount').value='7';assert.equal(c.autoPlanningDates().length,212);assert.equal(c.autoPlanningDates().at(-1),'2027-06-30');
+ el('autoPlanMonthCount').value='13';assert.equal(c.autoPlanningDates().at(-1),'2027-11-30');
+});
+
 test('period seed cannot retain a duty outside exclusive employee scope',async()=>{
  const{c,run}=harness();c.SFShiftModels={allowsEmployee:(type,e)=>e.id==='a',coverageGroup:()=>null};
  c.assignments=[{id:'legacy-seed',_dbStatus:'DRAFT',employeeId:'b',date:'2027-01-01',type:'O1',start:'18:00',end:'04:00'}];
@@ -11,3 +16,27 @@ test('period seed cannot retain a duty outside exclusive employee scope',async()
  assert.equal(run("autoPlanPreview.some(a=>a.employeeId==='b')"),false);
  assert.equal(c.assignments[0].employeeId,'b','preview must preserve persisted draft until apply');
 });
+
+test('an unfilled third OT2 does not prevent applying the confirmed minimum of two',async()=>{
+ const{c,el,calls}=harness();el('autoPlanMonthCount').value='1';
+ c.employees.forEach(e=>e.shifts=['OT2']);c.TYPES=[{id:'OT2',start:'08:00',end:'18:00'}];c.globalSoll={OT2:3};c.getSoll=d=>d==='2027-01-01'?3:0;
+ c.SFCompliance.policy.solidPlanningRules.criticalShifts=[{code:'OT2',minimum:2,weekdays:[5]}];
+ // Only the first Friday has planning demand and employees; later Friday minima still block.
+ await c.SFMonthOptimizer.optimize();assert.equal(c.SFMonthOptimizer.getResult().criticalOpen,8);
+ c.SFCompliance.policy.solidPlanningRules.criticalShifts=[{code:'OT2',minimum:2,weekdays:[5]}];
+ c.assignments=['2027-01-08','2027-01-15','2027-01-22','2027-01-29'].flatMap(date=>['x','y'].map(employeeId=>({id:date+employeeId,employeeId,date,type:'OT2',start:'08:00',end:'18:00',_dbStatus:'PUBLISHED'})));
+ await c.SFMonthOptimizer.optimize();assert.equal(c.SFMonthOptimizer.getResult().criticalOpen,0);
+ await c.applyAutoPlanPreview();assert.equal(calls.at(-1).name,'apply_planning_period');assert.equal(calls.at(-1).args.p_assignments.length,2);
+});
+
+test('movable next-month drafts do not block a valid cross-month replacement',async()=>{
+ const{c,el,run}=harness();el('autoPlanMonthCount').value='2';c.document.querySelector=()=>null;
+ c.getSoll=d=>['2027-01-31','2027-02-01','2027-02-02'].includes(d)?1:0;
+ c.SFCompliance.policy.solidPlanningRules.confirmedRulesVersion=2;
+ c.assignments=['a','b'].flatMap(employeeId=>[1,2,3,4].map(n=>({id:employeeId+n,employeeId,date:'2027-02-0'+n,type:'O1',start:'18:00',end:'04:00',_dbStatus:'DRAFT'})));
+ await c.SFMonthOptimizer.optimize();assert.ok(c.SFMonthOptimizer.getResult(),c.toast?.copy);
+ assert.equal(run("autoPlanPreview.filter(a=>a.date==='2027-01-31').length"),1);
+ assert.equal(c.assignments.length,8,'preview does not mutate the current draft');
+ const preview=run('autoPlanPreview');for(const employee of c.employees)assert.equal(c.SFSolidPlanningCore.errors(employee,preview,c.SFCompliance.policy.solidPlanningRules).length,0);
+});
+
