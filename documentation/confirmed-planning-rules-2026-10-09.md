@@ -1,6 +1,6 @@
 # Bestätigte Planungsregeln — 09.10.2026
 
-Status: Am 09.10.2026 von Alexander Kirchner ausdrücklich bestätigt. Dies ist der verbindliche fachliche Beschluss für die nächste Anpassung von Planer und Hilfe-Center; diese Datei bestätigt keine bereits erfolgte technische Durchsetzung oder Veröffentlichung.
+Status: Am 09.10.2026 bestätigt. Die technische Umsetzung ist in diesem Änderungsstand enthalten; die Veröffentlichung erfolgt nach erfolgreicher CI-Prüfung.
 
 ## Stunden und Schichtanzahl
 
@@ -54,4 +54,4 @@ Feste Mitarbeiter- und Teamregeln werden zuerst berücksichtigt. Widersprechen s
 4. Oberfläche, Planungsassistent und Hilfe-Center mit den tatsächlich durchgesetzten Regeln abgleichen.
 5. Grenzfälle prüfen: 18/19 Dienste bei zehn Stunden; 23/24 Dienste bei acht Stunden; persönliche Teilzeitgrenzen; 190 Stunden einschließlich Monatsüberhang; vier/fünf aufeinanderfolgende Dienste; drei/vier Nächte; Erholung nach Nachtende; Wochenwechsel und 40-Stunden-Grenze; Monatswechsel; Sommer-/Winterzeit; Zusatzdienst und widersprechende feste Regeln.
 
-Die technische Änderung und ihre Prüfung stehen noch aus.
+Die Implementierung umfasst gemeinsame Clientprüfungen, verbindliche Datenbankprüfungen, genehmigte Marktplatz-Zusatzdienste und aktualisierte Hilfetexte. Grenzfälle sind in JavaScript und PostgreSQL als reproduzierbare Tests enthalten.
