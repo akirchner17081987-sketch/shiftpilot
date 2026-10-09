@@ -1,5 +1,6 @@
 begin;
 create function public.publish_schedule_period(p_company_id uuid,p_start_date date,p_end_date date) returns table(published_at timestamptz,assignment_count integer) language sql as $$select * from private.publish_schedule_period_impl(p_company_id,p_start_date,p_end_date)$$;
+create function public.manager_bulk_record_time_entries(p_company_id uuid,p_start_date date,p_end_date date,p_note text default '',p_confirm boolean default false) returns jsonb language sql as $$select private.manager_bulk_record_time_entries(p_company_id,p_start_date,p_end_date,p_note,p_confirm)$$;
 create function public.fixture_reject(statement text,expected text) returns void language plpgsql as $$
 declare rejected boolean:=false;
 begin
