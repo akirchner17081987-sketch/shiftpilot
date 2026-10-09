@@ -95,8 +95,8 @@ test('QR pause controls allow pauses six through ten and stop after ten',async()
 });
 
 test('time-only QR report renders all ten pause pairs',async()=>{
-  const fields=new Map(),field=id=>{if(!fields.has(id))fields.set(id,{});return fields.get(id)};
-  const card={querySelector:field},view={classList:{contains:()=>false}};
+  const fields=new Map(),field=id=>{if(!fields.has(id))fields.set(id,{closest:()=>({hidden:false})});return fields.get(id)};
+  const card={querySelector:field,querySelectorAll:()=>[]},view={classList:{contains:()=>false}};
   const rows=[{id:'fixture',employee_name:'Fixture',personnel_no:'TEST',started_at:'2026-09-29T18:00:00Z',ended_at:'2026-09-30T04:00:00Z',paid_minutes:600,pause_minutes:60,
     breaks:Array.from({length:10},(_,i)=>({number:i+1,started_at:'2026-09-29T20:00:00Z',ended_at:'2026-09-29T20:06:00Z'}))}];
   const B={role:'TIME_TRACKING',companyId:'fixture-company',client:{rpc:async()=>({data:rows})}};
