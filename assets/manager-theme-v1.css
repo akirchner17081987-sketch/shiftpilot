@@ -538,3 +538,10 @@ html[data-sf-theme="light"] .sf-qrc-dialog :is(input,textarea,button){
 html[data-sf-theme="light"] .sf-qrc-dialog .sf-qrc-save{
   background:var(--sf-accent)!important;border-color:var(--sf-accent)!important;color:#fff!important;
 }
+
+html[data-sf-theme="light"] #appShell #view-time .sf-qrt-actions .ghost{
+  background:var(--sf-surface-inset)!important;border-color:var(--sf-border)!important;color:var(--sf-ink)!important;
+}
+html[data-sf-theme="light"] #appShell #view-time .sf-qrt-actions .ghost:hover{
+  background:var(--sf-frame)!important;color:var(--sf-ink)!important;
+}
