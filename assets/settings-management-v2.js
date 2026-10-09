@@ -22,7 +22,7 @@
 
   function shell(){const view=document.getElementById('view-settings');if(!view)return null;const legacy=document.getElementById('sfComplianceSettings');if(legacy&&legacy.parentElement===view)legacy.remove();let root=view.querySelector('#sfSettingsV2');if(root)return root;root=document.createElement('div');root.id='sfSettingsV2';root.className='sf-set-shell';view.appendChild(root);return root}
   const title={planning:['Planung','Schichtarten, Standardzeiten und SOLL-Besetzung zentral steuern.'],company:['Unternehmen','Betriebsdaten und Zeitzone für SchichtFunk pflegen.'],display:['Darstellung','Lesbarkeit und Dichte der Arbeitsoberfläche anpassen.'],users:['Benutzer & Rechte','Teamzugänge, Rollen, Einladungen und Sperren sicher verwalten.'],compliance:['Audit & Compliance','Änderungsverlauf, Audit-Ereignisse und betriebliche Prüfregeln einsehen.'],account:['Konto','Angemeldetes Konto und Zugriffsrolle einsehen.']};
-  function render(){const root=shell();if(!root)return;const B=window.SFBackend,isAdmin=['OWNER','ADMIN'].includes(B?.role),canReadCompliance=isAdmin||['PLANNER','DISPATCHER'].includes(B?.role),tabs=[['planning','▣','Planung'],['company','◇','Unternehmen'],['display','◐','Darstellung'],...(isAdmin?[['users','♙','Benutzer & Rechte']]:[]),...(canReadCompliance?[['compliance','🛡','Audit & Compliance']]:[]),['account','○','Konto']];if((active==='users'&&!isAdmin)||(active==='compliance'&&!canReadCompliance))active='account';const [h,p]=title[active];root.innerHTML=`<aside class="sf-set-nav">${tabs.map(([k,i,l])=>`<button data-setting-tab="${k}" class="${active===k?'active':''}"><span>${i}</span><span>${l}</span></button>`).join('')}</aside><section class="sf-set-panel"><header class="sf-set-head"><div><div class="eyebrow">EINSTELLUNGEN</div><h2>${h}</h2><p>${p}</p></div><span class="status active">Gespeichert</span></header><div id="sfSettingBody"></div></section>`;root.querySelectorAll('[data-setting-tab]').forEach(b=>b.onclick=()=>{active=b.dataset.settingTab;render()});renderBody()}
+  function render(){displayResizeObserver?.disconnect();displayResizeObserver=null;const root=shell();if(!root)return;const B=window.SFBackend,isAdmin=['OWNER','ADMIN'].includes(B?.role),canReadCompliance=isAdmin||['PLANNER','DISPATCHER'].includes(B?.role),tabs=[['planning','▣','Planung'],['company','◇','Unternehmen'],['display','◐','Darstellung'],...(isAdmin?[['users','♙','Benutzer & Rechte']]:[]),...(canReadCompliance?[['compliance','🛡','Audit & Compliance']]:[]),['account','○','Konto']];if((active==='users'&&!isAdmin)||(active==='compliance'&&!canReadCompliance))active='account';const [h,p]=title[active];root.innerHTML=`<aside class="sf-set-nav">${tabs.map(([k,i,l])=>`<button data-setting-tab="${k}" class="${active===k?'active':''}"><span>${i}</span><span>${l}</span></button>`).join('')}</aside><section class="sf-set-panel"><header class="sf-set-head"><div><div class="eyebrow">EINSTELLUNGEN</div><h2>${h}</h2><p>${p}</p></div><span class="status active">Gespeichert</span></header><div id="sfSettingBody"></div></section>`;root.querySelectorAll('[data-setting-tab]').forEach(b=>b.onclick=()=>{active=b.dataset.settingTab;render()});renderBody()}
   function renderBody(){const b=document.getElementById('sfSettingBody');if(!b)return;if(active==='planning')planning(b);if(active==='company')company(b);if(active==='display')display(b);if(active==='users')window.SFBackend?.renderUserManagement?.(b);if(active==='compliance'){const C=window.SFCompliance;if(['OWNER','ADMIN'].includes(window.SFBackend?.role)&&typeof C?.renderComplianceSettings==='function')C.renderComplianceSettings(b);else if(typeof C?.renderArbzgInfo==='function')C.renderArbzgInfo(b);else b.innerHTML='<div class="sf-set-note">Audit & Compliance wird geladen …</div>'}if(active==='account')account(b)}
 
   function planningTypes(){return TYPES.filter(t=>{const g=window.SFShiftModels?.coverageGroup?.(t.id);return !g||g.representative===t.id})}
@@ -70,24 +70,111 @@
     }
     return `<svg class="sf-display-illustration" viewBox="0 0 320 174" role="img" aria-label="${esc(title)}" xmlns="http://www.w3.org/2000/svg" style="font-family:Inter,system-ui,sans-serif">${content}</svg>`;
   }
-  function display(b){
-    const c=read();
-    b.innerHTML=`<div class="sf-set-grid"><section class="sf-set-card full"><h3>Oberfläche</h3><p>Vergleiche die Beispielansichten und wähle die passende Darstellung. Mit „Darstellung anwenden“ wird deine Auswahl auf diesem Gerät gespeichert und sofort angewendet.</p><div class="sf-display-groups">${displayOptions.map(group=>{
-      const selected=group.choices.some(choice=>choice.value===c[group.key])?c[group.key]:group.fallback;
-      return `<section class="sf-display-group" aria-labelledby="${group.id}Title"><div class="sf-display-group-head"><h4 id="${group.id}Title">${group.title}</h4><select id="${group.id}" aria-label="${group.title}">${group.choices.map(choice=>`<option value="${choice.value}" ${selected===choice.value?'selected':''}>${choice.label}</option>`).join('')}</select></div><div class="sf-display-previews">${group.choices.map(choice=>`<button type="button" class="sf-display-preview" data-display-select="${group.id}" data-display-value="${choice.value}" aria-pressed="${selected===choice.value}" aria-label="${group.title}: ${choice.label} auswählen"><span class="sf-display-preview-head"><span>${choice.label}</span><span class="sf-display-selected">✓ Ausgewählt</span></span>${displayIllustration(group.key,choice.value,'Beispielansicht: '+group.title+' – '+choice.label)}<p>${choice.description}</p></button>`).join('')}</div></section>`;
-    }).join('')}</div><p class="sf-display-preview-caption">Die Beispielansichten zeigen die Unterschiede schematisch.</p><div class="sf-set-actions"><button class="primary" id="sfSaveDisplay">Darstellung anwenden</button></div></section><div class="sf-set-note">Die Einstellungen verändern ausschließlich die Darstellung. Planungsdaten und Berechnungen bleiben unverändert.</div></div>`;
-    const sync=id=>{
-      const selected=b.querySelector('#'+id).value;
-      b.querySelectorAll('[data-display-select="'+id+'"]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.displayValue===selected)));
-    };
-    b.querySelectorAll('[data-display-select]').forEach(button=>button.onclick=()=>{
-      const field=b.querySelector('#'+button.dataset.displaySelect);field.value=button.dataset.displayValue;sync(field.id);
-    });
-    displayOptions.forEach(group=>b.querySelector('#'+group.id).addEventListener('change',()=>sync(group.id)));
-    b.querySelector('#sfSaveDisplay').onclick=saveDisplay;
+  const DISPLAY_DEFAULTS={density:'comfortable',fontSize:'normal',scheduleDensity:'normal',highContrast:false,showNames:true,showTimes:true,showHours:true,statusSymbols:true};
+  const displayProfiles=[
+    {id:'standard',label:'Standard',description:'Ausgewogene Ansicht mit allen Dienstplandetails.',values:{...DISPLAY_DEFAULTS}},
+    {id:'overview',label:'Mehr Übersicht',description:'Kompakte Karten und Dienstplanansicht mit allen wichtigen Details.',values:{...DISPLAY_DEFAULTS,density:'compact',scheduleDensity:'compact'}},
+    {id:'readable',label:'Gut lesbar',description:'Größere Grundschrift, mehr Abstand und hoher Kontrast.',values:{...DISPLAY_DEFAULTS,fontSize:'large',highContrast:true}}
+  ];
+  let displayDraft=null,displayResizeObserver=null;
+  function normalizeDisplay(value={}){
+    value=value||{};const out={...DISPLAY_DEFAULTS};
+    displayOptions.forEach(group=>{if(group.choices.some(choice=>choice.value===value[group.key]))out[group.key]=value[group.key]});
+    ['showNames','showTimes','showHours','statusSymbols'].forEach(key=>out[key]=value[key]!==false);
+    out.highContrast=value.highContrast===true;return out;
   }
-  function saveDisplay(){const c={...read(),density:document.getElementById('sfDensity').value,fontSize:document.getElementById('sfFontSize').value,scheduleDensity:document.getElementById('sfScheduleDensity').value};write(c);applyDisplay(c);showSaveToast?.('Darstellung gespeichert','Die Oberfläche wurde aktualisiert.')}
-  function applyDisplay(c=read()){document.body.classList.toggle('sf-density-compact',c.density==='compact');document.documentElement.classList.toggle('sf-font-large',c.fontSize==='large');document.body.classList.toggle('sf-schedule-compact',c.scheduleDensity==='compact')}
+  const displaySignature=value=>JSON.stringify(normalizeDisplay(value));
+  function readDisplayFields(b){
+    const c=normalizeDisplay(displayDraft||read());
+    displayOptions.forEach(group=>{const field=b.querySelector('#'+group.id);if(field)c[group.key]=field.value});
+    ['highContrast','showNames','showTimes','showHours','statusSymbols'].forEach(key=>{const field=b.querySelector('[data-display-check="'+key+'"]');if(field)c[key]=field.checked});
+    return normalizeDisplay(c);
+  }
+  function display(b){
+    const c=normalizeDisplay(displayDraft||read());
+    b.innerHTML=`<div class="sf-display-editor"><section class="sf-set-card sf-display-profile-card"><h3>Darstellungsprofile</h3><p>Wähle ein Profil als Ausgangspunkt. Anschließend kannst du jede Einstellung einzeln anpassen.</p><div class="sf-display-profiles">${displayProfiles.map(profile=>`<button type="button" class="sf-display-profile" data-display-profile="${profile.id}" aria-pressed="false"><b>${profile.label}</b><span>${profile.description}</span></button>`).join('')}</div><p id="sfDisplayProfileLabel" class="sf-display-profile-label"></p></section>
+    <section class="sf-set-card sf-display-live-card" aria-labelledby="sfDisplayLiveTitle"><div class="sf-display-live-head"><div><h3 id="sfDisplayLiveTitle">Gemeinsame Live-Vorschau</h3><p>Beispieldaten zeigen deine Auswahl gemeinsam. Die übrige Oberfläche ändert sich erst beim Anwenden.</p></div><span class="sf-display-example-tag">Beispieldaten</span></div><div id="sfDisplayLive" class="sf-display-live"></div></section>
+    <section class="sf-set-card"><h3>Oberfläche</h3><p>Vergleiche die Beispielbilder und wähle die passende Darstellung.</p><div class="sf-display-groups">${displayOptions.map(group=>{
+      const selected=c[group.key];
+      return `<section class="sf-display-group" aria-labelledby="${group.id}Title"><div class="sf-display-group-head"><h4 id="${group.id}Title">${group.title}</h4><select id="${group.id}" aria-label="${group.title}">${group.choices.map(choice=>`<option value="${choice.value}" ${selected===choice.value?'selected':''}>${choice.label}</option>`).join('')}</select></div><div class="sf-display-previews">${group.choices.map(choice=>`<button type="button" class="sf-display-preview" data-display-select="${group.id}" data-display-value="${choice.value}" aria-pressed="${selected===choice.value}" aria-label="${group.title}: ${choice.label} auswählen"><span class="sf-display-preview-head"><span>${choice.label}</span><span class="sf-display-selected">✓ Ausgewählt</span></span>${displayIllustration(group.key,choice.value,'Beispielansicht: '+group.title+' – '+choice.label)}<p>${choice.description}</p></button>`).join('')}</div></section>`;
+    }).join('')}</div><p class="sf-display-preview-caption">Die einzelnen Beispielbilder sind schematisch. Die gemeinsame Vorschau kombiniert alle Einstellungen.</p></section>
+    <section class="sf-set-card"><h3>Details im Dienstplan</h3><p>Die Anzeigen sind unabhängig von „Standard“ oder „Kompakt“. Besetzungszahlen, offene Positionen und Warnungen bleiben sichtbar.</p><div class="sf-display-checks">${[
+      ['showNames','Mitarbeiternamen anzeigen','Namen in Mitarbeiterkarten und im Wochenkalender. Kürzel und Informationen beim Öffnen bleiben verfügbar.'],
+      ['showTimes','Dienstzeiten anzeigen','Beginn und Ende im Wochenkalender und in der Zeitachse.'],
+      ['showHours','SOLL/IST-Stunden anzeigen','Monats-SOLL und geplante IST-Stunden im Mitarbeiterpool und in den Dienstkarten. IST bezeichnet hier Planstunden.']
+    ].map(([key,label,note])=>`<label class="sf-display-check"><input type="checkbox" data-display-check="${key}" ${c[key]?'checked':''}><span><b>${label}</b><small>${note}</small></span></label>`).join('')}</div></section>
+    <section class="sf-set-card"><h3>Lesbarkeit und Kontrast</h3><div class="sf-display-checks">${[
+      ['highContrast','Hoher Kontrast','Deutlichere Schrift, Konturen, Formulare und Warnungen im hellen und dunklen Managerbereich.'],
+      ['statusSymbols','Zusätzliche Statussymbole','✓ vollständig, △ unterbesetzt und + über SOLL. Schichtkürzel und Warntexte bleiben immer lesbar.']
+    ].map(([key,label,note])=>`<label class="sf-display-check"><input type="checkbox" data-display-check="${key}" ${c[key]?'checked':''}><span><b>${label}</b><small>${note}</small></span></label>`).join('')}</div></section>
+    <div class="sf-set-note">Diese Einstellungen werden auf diesem Gerät gespeichert und verändern die Darstellung im Managerbereich. Planungsdaten und Berechnungen bleiben unverändert.</div>
+    <div class="sf-display-actions"><div><strong id="sfDisplayState" role="status" aria-live="polite"></strong><small>Speicherung gilt für dieses Gerät.</small></div><div class="sf-display-action-buttons"><button type="button" class="ghost" id="sfDisplayPreviewLink">Zur Vorschau ↑</button><button type="button" class="ghost" id="sfResetDisplay">Standard wiederherstellen</button><button type="button" class="primary" id="sfSaveDisplay">Darstellung anwenden</button></div></div></div>`;
+    b.querySelectorAll('[data-display-select]').forEach(button=>button.onclick=()=>{
+      b.querySelector('#'+button.dataset.displaySelect).value=button.dataset.displayValue;displayDraft=readDisplayFields(b);syncDisplayEditor(b);
+    });
+    b.querySelectorAll('select,[data-display-check]').forEach(field=>field.addEventListener('change',()=>{displayDraft=readDisplayFields(b);syncDisplayEditor(b)}));
+    b.querySelectorAll('[data-display-profile]').forEach(button=>button.onclick=()=>{
+      displayDraft={...displayProfiles.find(profile=>profile.id===button.dataset.displayProfile).values};setDisplayFields(b,displayDraft);syncDisplayEditor(b);
+    });
+    b.querySelector('#sfResetDisplay').onclick=()=>{displayDraft={...DISPLAY_DEFAULTS};setDisplayFields(b,displayDraft);syncDisplayEditor(b)};
+    b.querySelector('#sfDisplayPreviewLink').onclick=()=>{b.querySelector('.sf-display-live-card').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});b.querySelector('#sfDisplayLiveTitle').setAttribute('tabindex','-1');b.querySelector('#sfDisplayLiveTitle').focus({preventScroll:true})};
+    b.querySelector('#sfSaveDisplay').onclick=saveDisplay;syncDisplayEditor(b);
+    if(window.ResizeObserver){displayResizeObserver=new ResizeObserver(()=>positionDisplayActions(b));displayResizeObserver.observe(b);displayResizeObserver.observe(b.querySelector('.sf-display-actions'))}
+    positionDisplayActions(b);
+  }
+  function positionDisplayActions(b){
+    const bar=b?.querySelector('.sf-display-actions');if(!bar)return;const rect=b.getBoundingClientRect();if(!rect.width)return;
+    bar.style.setProperty('--sf-display-actions-left',Math.round(rect.left)+'px');bar.style.setProperty('--sf-display-actions-width',Math.floor(rect.width)+'px');
+    b.querySelector('.sf-display-editor').style.setProperty('--sf-display-actions-height',(Math.ceil(bar.getBoundingClientRect().height)+20)+'px');
+  }
+  window.addEventListener('resize',()=>positionDisplayActions(document.getElementById('sfSettingBody')));
+  function setDisplayFields(b,c){
+    displayOptions.forEach(group=>b.querySelector('#'+group.id).value=c[group.key]);
+    b.querySelectorAll('[data-display-check]').forEach(field=>field.checked=c[field.dataset.displayCheck]);
+  }
+  function syncDisplayEditor(b){
+    const c=readDisplayFields(b),dirty=displaySignature(c)!==displaySignature(read());
+    b.querySelectorAll('[data-display-select]').forEach(button=>button.setAttribute('aria-pressed',String(c[displayOptions.find(group=>group.id===button.dataset.displaySelect).key]===button.dataset.displayValue)));
+    const profile=displayProfiles.find(profile=>displaySignature(profile.values)===displaySignature(c));
+    b.querySelectorAll('[data-display-profile]').forEach(button=>button.setAttribute('aria-pressed',String(profile?.id===button.dataset.displayProfile)));
+    b.querySelector('#sfDisplayProfileLabel').textContent=profile?'Profil: '+profile.label:'Profil: Individuell angepasst';
+    b.querySelector('#sfDisplayState').textContent=dirty?'Ungespeicherte Änderungen':'Darstellung gespeichert';
+    const status=b.closest('.sf-set-panel')?.querySelector('.sf-set-head .status');
+    if(status){status.textContent=dirty?'Ungespeichert':'Gespeichert';status.classList.toggle('sf-display-dirty',dirty)}
+    renderDisplayLive(b.querySelector('#sfDisplayLive'),c);
+  }
+  function renderDisplayLive(root,c){
+    root.dataset.density=c.density;root.dataset.font=c.fontSize;root.dataset.schedule=c.scheduleDensity;root.dataset.contrast=String(c.highContrast);
+    root.innerHTML=`<div class="sf-display-live-grid"><article class="employee-drag sf-display-live-person"><div class="avatar">MA</div><div class="employee-pool-info"><b ${c.showNames?'':'hidden'}>Muster, Alex</b><small>Nr. 1001 · Mitarbeiter</small><span class="pool-detail-label">Mögliche Schichten</span><div class="pool-shifts"><span class="pool-shift-tag">FD</span><span class="pool-shift-tag">SD</span><span class="pool-shift-tag">ND</span></div><div class="sf-display-hours" ${c.showHours?'':'hidden'}><span>SOLL: 180 h · IST geplant: 168 h</span><small>Beispielmonat</small></div></div></article>
+    <section class="sf-week-shift under"><header class="sf-week-shift-head"><div class="sf-week-shift-main"><strong>FD · Frühdienst</strong><small ${c.showTimes?'':'hidden'}>06:00 – 14:00 Uhr</small></div><div class="sf-week-shift-count">${c.statusSymbols?'<span class="sf-display-live-symbol" role="img" aria-label="Unterbesetzt">△</span> ':''}<b>IST 2 / SOLL 3</b></div></header><div class="sf-week-employees"><div class="sf-week-employee"><span class="sf-week-avatar">MA</span><span class="sf-week-employee-info"><b ${c.showNames?'':'hidden'}>Muster, Alex</b><small ${c.showTimes?'':'hidden'}>06:00 – 14:00 Uhr</small><span class="sf-display-hours" ${c.showHours?'':'hidden'}>SOLL 180 h · IST geplant 168 h</span></span></div></div><div class="sf-week-open">△ 1 Position offen</div></section></div><div class="sf-display-live-note"><b>△ Hinweis</b><span>Eine Position ist noch offen. Hinweise bleiben auch bei kompakter Darstellung sichtbar.</span></div>`;
+  }
+  function displayHours(employee,date){
+    if(!employee)return'';
+    const period=window.SchichtFunkCalendarView?.getPeriod?.();
+    const month=String(date||period?.start||((typeof iso==='function'&&typeof weekStart!=='undefined')?iso(weekStart):new Date().toISOString())).slice(0,7);
+    const planned=typeof plannedMonthlyHoursForEmployee==='function'?plannedMonthlyHoursForEmployee(employee.id,month+'-01'):0;
+    const target=typeof employeeMonthlyTarget==='function'?employeeMonthlyTarget(employee):Number(employee.monthlyHours??Number(employee.weeklyHours||0)*4.348);
+    const hours=value=>Math.max(0,Number(value)||0).toLocaleString('de-DE',{maximumFractionDigits:1});
+    return `<span class="sf-display-hours" title="${esc(month)}: Monats-SOLL und geplante IST-Stunden; keine gebuchten Arbeitszeiten"><span>SOLL ${hours(target)} h · IST geplant ${hours(planned)} h</span><small>${esc(month)}</small></span>`;
+  }
+  function saveDisplay(){
+    const b=document.getElementById('sfSettingBody'),c=readDisplayFields(b);write({...read(),...c});displayDraft=null;applyDisplay(c);syncDisplayEditor(b);
+    showSaveToast?.('Darstellung gespeichert','Die Oberfläche wurde aktualisiert.');
+  }
+  function applyDisplay(value=read()){
+    const c=normalizeDisplay(value);
+    document.body.classList.toggle('sf-density-compact',c.density==='compact');
+    document.documentElement.classList.toggle('sf-font-large',c.fontSize==='large');
+    document.body.classList.toggle('sf-schedule-compact',c.scheduleDensity==='compact');
+    document.documentElement.classList.toggle('sf-display-high-contrast',c.highContrast);
+    document.body.classList.toggle('sf-display-hide-names',!c.showNames);
+    document.body.classList.toggle('sf-display-hide-times',!c.showTimes);
+    document.body.classList.toggle('sf-display-hide-hours',!c.showHours);
+    document.body.classList.toggle('sf-display-symbols',c.statusSymbols);
+    window.dispatchEvent(new CustomEvent('schichtfunk:displaychange',{detail:{...c}}));
+  }
+  window.SFDisplayPreferences={hoursMarkup:displayHours};
+  document.addEventListener('sf:schedule-period-changed',()=>window.renderPlanEmployeePool?.());
 
   const roleName=r=>({OWNER:'Inhaber',ADMIN:'Administrator',DISPATCHER:'Disponent',PLANNER:'Planer',VIEWER:'Leser',EMPLOYEE:'Mitarbeiter'})[r]||r||'Lokaler Modus';
   function openAccountSettings(){

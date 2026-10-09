@@ -102,7 +102,7 @@
     const emp=employees.find(e=>e.id===a.employeeId);
     if(!emp)return'';
     const start=a.start||t.start,end=a.end||t.end;
-    return `<button type="button" class="sf-week-employee" style="${window.SFScheduleEmployeeDisplay?.style(emp)||''}" draggable="true" data-assignment-id="${esc(a.id)}" title="${esc(emp.first+' '+emp.last)} verschieben oder bearbeiten"><span class="sf-week-avatar">${esc(initials(emp))}</span><span class="sf-week-employee-info"><b>${esc(emp.first)} ${esc(emp.last)}</b><small>${esc(start)} – ${esc(end)}</small></span></button>`;
+    return `<button type="button" class="sf-week-employee" style="${window.SFScheduleEmployeeDisplay?.style(emp)||''}" draggable="true" data-assignment-id="${esc(a.id)}" title="${esc(emp.first+' '+emp.last)} verschieben oder bearbeiten"><span class="sf-week-avatar">${esc(initials(emp))}</span><span class="sf-week-employee-info"><b>${esc([emp.last,emp.first].filter(Boolean).join(', '))}</b><small>${esc(start)} – ${esc(end)}</small>${window.SFDisplayPreferences?.hoursMarkup(emp,a.date)||''}</span></button>`;
   }
   function shiftBlock(date,id){
     const t=typeById(id);if(!t)return'';
@@ -110,10 +110,11 @@
     const soll=Number(getSoll(date,id)||0),ist=list.length,shared=window.SFShiftModels?.coverageInfo?.(date,id);
     if(!soll&&!ist&&!shared)return `<section class="sf-week-shift is-inactive" data-date="${esc(date)}" data-type="${esc(id)}" aria-label="${esc(id)}: keine Besetzung"><span class="sf-week-shift-empty">—</span></section>`;
     const st=statusFor(soll,ist),open=Math.max(0,soll-ist),over=Math.max(0,ist-soll);
+    const symbolStatus=shared?statusFor(Number(shared.target)||0,Number(shared.filled)||0):st;
     const color=accent[t.cls]||'#62a0ff';
     const rows=list.map(a=>employeeRow(a,t)).join('');
     const sharedNote=shared?`<div class="sf-week-shared" style="padding:6px 10px;font-size:11px;line-height:1.4;color:var(--muted)">${esc(shared.label)}: ${shared.filled}/${shared.target} TL insgesamt · ${shared.target===0?'kein Pflichtbedarf':shared.missing?`gemeinsam ${shared.missing} offen`:shared.coveredCodes.includes(id)?'deckt beide Standorte ab':`mit abgedeckt durch ${esc(shared.coveredCodes.join(', '))}`}</div>`:'';
-    return `<section class="sf-week-shift ${st}" data-date="${esc(date)}" data-type="${esc(id)}" style="--sf-shift-accent:${color}"><header class="sf-week-shift-head"><div class="sf-week-shift-main"><strong>${esc(id)}</strong><small>${esc(t.start)} – ${esc(t.end)}</small></div><div class="sf-week-shift-count"><b title="IST / SOLL">${shared?`${ist} TL vor Ort`:`${ist} / ${soll}`}</b></div></header><div class="sf-week-employees">${rows}</div>${sharedNote}${open?`<button type="button" class="sf-week-open" data-open-assign>＋ ${open} Position${open===1?'':'en'} offen</button>`:''}${over&&!shared?`<div class="sf-week-over">＋ ${over} über SOLL</div>`:''}</section>`;
+    return `<section class="sf-week-shift ${st}" data-date="${esc(date)}" data-type="${esc(id)}" style="--sf-shift-accent:${color}"><header class="sf-week-shift-head"><div class="sf-week-shift-main"><strong>${esc(id)}</strong><small>${esc(t.start)} – ${esc(t.end)}</small></div><div class="sf-week-shift-count"><span class="sf-display-status-symbol" role="img" aria-label="${esc({complete:'Vollständig besetzt',under:'Unterbesetzt',empty:'Unbesetzt',over:'Über SOLL'}[symbolStatus])}">${{complete:'✓',under:'△',empty:'!',over:'+'}[symbolStatus]}</span><b title="IST / SOLL">${shared?`${ist} TL vor Ort`:`${ist} / ${soll}`}</b></div></header><div class="sf-week-employees">${rows}</div>${sharedNote}${open?`<button type="button" class="sf-week-open" data-open-assign>＋ ${open} Position${open===1?'':'en'} offen</button>`:''}${over&&!shared?`<div class="sf-week-over">＋ ${over} über SOLL</div>`:''}</section>`;
   }
   function dayHeader(d,index){
     const date=iso(d),today=date===iso(new Date()),weekend=index>4;
