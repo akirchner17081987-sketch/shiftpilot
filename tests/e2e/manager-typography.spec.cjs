@@ -111,11 +111,11 @@ for(const theme of ['dark','light'])for(const width of [1920,1366,1180,768,390,3
   await measure(page,'.sf-month-date small,.sf-month-shift,.sf-month-open,.sf-month-empty',secondary);
   await page.locator('#sfMonthView').screenshot({path:info.outputPath('calendar-text.png')});
   await page.evaluate(()=>{weekStart=new Date(__fixtureWeekStart);SchichtFunkCalendarView.setMode('week');});
-  await expect(page.locator('.sf-week-employee-info small')).not.toHaveCount(0);
-  await measure(page,'.sf-week-day-coverage,.sf-week-shift-main small,.sf-week-employee-info small',secondary);
-  await measure(page,'.sf-week-open',secondary);
+  await expect(page.locator('#sfWeekBoardV2 .sf-week-employee-info small')).not.toHaveCount(0);
+  await measure(page,'#sfWeekBoardV2 .sf-week-day-coverage,#sfWeekBoardV2 .sf-week-shift-main small,#sfWeekBoardV2 .sf-week-employee-info small',secondary);
+  await measure(page,'#sfWeekBoardV2 .sf-week-open',secondary);
   await page.locator('#sfWeekBoardV2').screenshot({path:info.outputPath('week-text.png')});
-  await page.locator('.sf-week-shift').first().screenshot({path:info.outputPath('week-shift-text.png')});
+  await page.locator('#sfWeekBoardV2 .sf-week-shift').first().screenshot({path:info.outputPath('week-shift-text.png')});
   await show(page,'view-settings');await page.locator('[data-setting-tab="display"]').click();await measure(page,'.sf-set-note',note);
   expect(await page.locator('#landing-control small').evaluate(el=>getComputedStyle(el).fontSize)).toBe('10px');
   expect(await page.locator('#sfEmployeePortal em').evaluate(el=>getComputedStyle(el).fontSize)).toBe('11px');
