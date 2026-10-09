@@ -20,6 +20,20 @@ test('improvement preview, cancellation, confirmed draft, outage and scoped jour
  await page.evaluate(()=>{sessionStorage.removeItem('sf_demo_session_v1');document.dispatchEvent(new CustomEvent('sf:planning-analysis-ready',{detail:{dates:['2026-12-01','2026-12-02'],assignments:assignments.slice()}}));});
  await ask('Planungsprotokoll Dezember 2026');await expect(page.locator('#sfPlanningChatLog')).toContainText('Gespeicherte Planungsgründe');
  const stored=await page.evaluate(()=>Object.keys(localStorage).filter(k=>k.startsWith('sf-planning-runs-v1|')).map(k=>localStorage.getItem(k)).join(''));expect(stored).not.toContain('Anna');expect(stored).toContain('Enddiagnose');
+ await page.evaluate(()=>{
+   assignments=[];window.assistantRefreshes=0;window.assistantRpcCalls=[];
+   SFBackend.sync=async()=>{};
+   SFBackend.hydrate=async()=>{SFBackend.suppressSync=true;await new Promise(resolve=>setTimeout(resolve,650));dailySoll['2026-12-02'].FD=2;window.assistantRefreshes++;SFBackend.suppressSync=false;};
+   SFBackend.client={rpc:async(name)=>{window.assistantRpcCalls.push(name);return {data:{fingerprint:'fresh-data',protectedIds:[]}};}};
+   document.body.append(document.createElement('span'));
+ });
+ await expect.poll(()=>page.evaluate(()=>!!SFBackend.hydrate.__sfChatGuard)).toBe(true);
+ await ask('Verbesserungsvorschläge erstellen');
+ await expect(page.locator('#sfPlanningChatLog')).toContainText('Konkrete Verbesserungen - Vorschau');
+ expect(await page.evaluate(()=>window.assistantRefreshes)).toBe(1);
+ expect(await page.evaluate(()=>window.assistantRpcCalls)).toEqual(['preview_planning_period']);
+ expect(await page.evaluate(()=>assignments.length)).toBe(0);
+ await expect(page.locator('#sfPlanningChatLog')).toContainText('2 → 0');
  await page.evaluate(()=>{SFBackend.companyId='another-company';SFPlanningAssistant.reset();});await ask('Planungsprotokoll Dezember 2026');await expect(page.locator('#sfPlanningChatLog')).toContainText('Kein gespeichertes Planungsprotokoll');
  await page.evaluate(()=>{SFBackend.role='EMPLOYEE';});await expect(page.locator('#sfPlanningAssistantButton')).toBeHidden();expect(errors).toEqual([]);
 });

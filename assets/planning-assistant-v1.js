@@ -4,7 +4,7 @@
   if(window.SFPlanningAssistant)return;
   const Core=window.SFPlanningAssistantCore,roles=['OWNER','ADMIN','PLANNER','DISPATCHER'];
   if(!Core)return;
-  let context={},messages=[],scope=null,previousFocus=null,selectedMonth='',hydrationFailed=false,selectedService=null,planningRuns=[],journalError='',requestId=0,applyingProposal=false;
+  let context={},messages=[],scope=null,previousFocus=null,selectedMonth='',hydrationFailed=false,selectedService=null,planningRuns=[],journalError='',requestId=0,applyingProposal=false,refreshingProposal=null;
   const Insights=window.SFPlanningInsights;
   const withRows=(rows,fn)=>{const original=assignments;try{assignments=rows;return fn()}finally{assignments=original}};
   const signature=()=>JSON.stringify([identity(),window.SFCompliance?.policy,employees,assignments,absences,TYPES,typeof globalSoll==='undefined'?null:globalSoll,typeof dailySoll==='undefined'?null:dailySoll]);
@@ -12,7 +12,8 @@
   const demo=()=>sessionStorage.getItem('sf_demo_session_v1')==='active';
   const authorized=()=>!!(B().ready&&roles.includes(B().role)&&(demo()||B().user?.id&&B().companyId));
   const identity=()=>authorized()?JSON.stringify([demo(),B().user?.id||'demo',B().companyId||'demo',B().role]):null;
-  const busy=()=>!!(B().companySwitching||B().bootPromise||B().suppressSync||applyingProposal);
+  const busy=()=>!!(B().companySwitching||B().bootPromise||B().suppressSync||applyingProposal||refreshingProposal);
+  const ownRefresh=()=>!!(refreshingProposal&&refreshingProposal.owner===identity()&&refreshingProposal.request===requestId&&!B().companySwitching&&!B().bootPromise);
   const el=id=>document.getElementById(id);
   function reset(){requestId++;context={};messages=[];selectedMonth='';selectedService=null;planningRuns=[];journalError='';el('sfPlanningChatLog')?.replaceChildren();updateService();}
   function close(restore=true){
@@ -25,7 +26,7 @@
     }
   }
   function syncScope(){
-    const next=identity();if(scope!==next||busy()){close(false);reset();scope=next;}
+    const next=identity();if(scope!==next||(busy()&&!ownRefresh())){close(false);reset();scope=next;}
     if(selectedService&&!contextDates().includes(selectedService.date)){selectedService=null;context={};updatePeriod();}
     const button=el('sfPlanningAssistantButton');if(button){button.hidden=!authorized();button.disabled=busy();}
     syncPlacement();
@@ -293,7 +294,12 @@
           if(B().syncing||window.SFMonthOptimizer?.isBusy?.())throw Error('Eine Planung oder Speicherung läuft. Bitte danach erneut prüfen.');
           clearTimeout(B().syncTimer);B().syncTimer=null;await B().sync();if(B().lastSyncError)throw B().lastSyncError;
           if(owner!==identity()||request!==requestId)return;
-          const q=await B().client.rpc('preview_planning_period',{p_company_id:B().companyId,p_first_month:answer.proposal.dates[0].slice(0,7)+'-01',p_month_count:1});if(q.error)throw q.error;
+            let q;refreshingProposal={owner,request};
+            try{
+              await B().hydrate();
+              if(owner!==identity()||request!==requestId)return;
+              q=await B().client.rpc('preview_planning_period',{p_company_id:B().companyId,p_first_month:answer.proposal.dates[0].slice(0,7)+'-01',p_month_count:1});if(q.error)throw q.error;
+            }finally{refreshingProposal=null;syncScope();}
           if(owner!==identity()||request!==requestId)return;
           answer=ask(text);if(answer.proposal){const protectedIds=new Set(q.data.protectedIds||[]);if(answer.proposal.changes.some(c=>c.replaces&&protectedIds.has(c.replaces._dbId||B().asgDb?.get(String(c.replaces.id)))))throw Error('Ein vorgeschlagener Wechsel betrifft einen geschützten Dienst. Bitte im Dienstplan einzeln prüfen.');answer.proposal.fingerprint=q.data.fingerprint;}
         }
@@ -373,7 +379,7 @@
     // Clear conversations before hydration, logout or switching the company.
     for(const key of ['hydrate','finishSignOut','switchCompany']){
       const base=B()[key];if(typeof base!=='function'||base.__sfChatGuard)continue;
-      const wrapped=key==='hydrate'?async function(){close(false);reset();hydrationFailed=true;const result=await base.apply(this,arguments);hydrationFailed=false;return result;}:function(){close(false);reset();return base.apply(this,arguments);};wrapped.__sfChatGuard=true;B()[key]=wrapped;
+      const wrapped=key==='hydrate'?async function(){if(!ownRefresh()){close(false);reset();}hydrationFailed=true;const result=await base.apply(this,arguments);hydrationFailed=false;return result;}:function(){close(false);reset();return base.apply(this,arguments);};wrapped.__sfChatGuard=true;B()[key]=wrapped;
     }
   }
   window.SFPlanningAssistant={open,close,ask,reset,snapshot,setService};
