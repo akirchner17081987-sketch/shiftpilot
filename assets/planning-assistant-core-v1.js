@@ -11,10 +11,15 @@
   const formatDate=v=>new Date(v+'T12:00:00Z').toLocaleDateString('de-DE',{timeZone:'UTC'});
   const hours=v=>Number(v||0).toLocaleString('de-DE',{maximumFractionDigits:1});
   const name=e=>[e.first,e.last].filter(Boolean).join(' ')||e.personnelNo||'Mitarbeiter';
+  const Insights=typeof module!=='undefined'&&module.exports?require('./planning-assistant-insights-v1.js'):root.SFPlanningInsights;
   const meta=(e,k)=>String((e.qualifications||[]).find(q=>String(q).startsWith('__sp:'+k+'='))||'').split('=').slice(1).join('=');
   const team=e=>e.planningTeam??meta(e,'planningTeam');
   function duration(a,shifts){const t=shifts.find(t=>t.id===a.type),start=a.start||t?.start,end=a.end||t?.end;const mins=v=>/^\d{2}:\d{2}$/.test(v||'')?Number(v.slice(0,2))*60+Number(v.slice(3)):NaN;let m=mins(end)-mins(start);if(m<0)m+=1440;return Number.isFinite(m)?m/60:0;}
   function intentFor(q){
+    if(/belastungscheck|belastung.*(?:pruef|hoch)|(?:wo|wer).*(?:belast|erholung)|lange arbeitsbloecke|ruhezeiten pruefen/.test(q))return 'loadCheck';
+    if(/ausfall.*(?:durchspiel|simulier)|was passiert.*(?:ausfaellt|ausfall)|wenn.*(?:ausfaellt|fehlt)|ausfallsimulation/.test(q))return 'outage';
+    if(/planungsprotokoll|gespeicherte.*(?:gruende|planung)|(?:letzte|damalige).*planungs(?:lauf|gruende)|was hat.*besetzung.*verhindert/.test(q))return 'runReasons';
+    if(/verbesserungsvorsch|planverbesser|stunden.*(?:verbessern|optimier)|(?:wie.*(?:kollegen|mitarbeiter).*naeher.*soll)|(?:plan|monat|januar|februar|maerz|april|mai|juni|juli|august|september|oktober|november|dezember).*(?:ausgewogen|optimier|verbessern)/.test(q))return 'improvements';
     if(/^(?:bitte\s+)?(?:loesch|entfern|speicher|uebernehm|uebernimm|trag|buche|weise)\w*/.test(q)&&!/\b(wie|wo|hilfe|anleitung)\b/.test(q))return 'write';
     if(/monatscheck|planungscheck|was.*(?:fehlt|muss.*pruef)|(?:pruefe|kontrollier).*plan|planung.*(?:fertig|vollstaendig)|plan.*bereit/.test(q))return 'planningCheck';
     if(/ueberbesetz|zu viele.*(?:dienst|schicht)|mehr.*soll/.test(q))return 'overstaffed';
@@ -110,6 +115,7 @@
     if(exempt.length)add(3,'FD ohne Planungsteam',exempt.length+' ausschließlich für Frühdienst freigegebene Mitarbeiter ohne Team werden hier nicht als fehlende Teamzuordnung bewertet.',{view:'employees',employeeId:exempt[0].id,label:'Profil ansehen'});
     if(!staff.length)add(1,'Mitarbeiter','Keine aktiven Mitarbeiter geladen.',{view:'employees',label:'Mitarbeiter öffnen'});
     if(!checks.length)add(3,'Basisprüfung','Keine Auffälligkeiten in den geprüften Angaben.',schedule);
+    if(Insights){const report=Insights.audit(s,dates);for(const issue of report.issues)add(1,'Belastung: '+Insights.person(issue.employee),issue.date+' · '+issue.message,{view:'schedule',date:issue.date,label:'Belastung prüfen'});for(const warning of report.unknown)add(2,'Belastungsprüfung offen',warning,schedule);add(3,'Konkrete Verbesserungen','Passende Zusatzbesetzung und Entlastungswechsel als Vorschau prüfen.',{question:'Verbesserungsvorschläge für '+dates[0].slice(0,7),label:'Verbesserungen vorschlagen'});}
     checks.sort((a,b)=>a.priority-b.priority);
     return response('Monatscheck – '+periodLabel(dates),open+' offene Positionen. '+checks.filter(x=>x.priority<3).length+' Prüfpunkte benötigen Aufmerksamkeit.',{
       columns:['Priorität','Prüfung','Ergebnis'],rows:checks.map(x=>[x.priority===1?'Zuerst prüfen':x.priority===2?'Danach prüfen':'Hinweis',x.topic,x.text]),rowActions:checks.map(x=>x.action),
@@ -165,6 +171,19 @@
     const context={intent,dates,type,team:requestedTeam,pending:false},label=periodLabel(dates),shiftLabel=id=>{const t=s.shifts.find(t=>t.id===id);return t?.name&&t.name!==id?`${id} · ${t.name}`:id;};
     const staff=s.employees.filter(e=>!e.deletedAt&&e.status==='active');
     const nav=(view,label)=>({view,label});
+    if(Insights&&['loadCheck','improvements','outage','runReasons'].includes(intent)){
+      if(intent==='loadCheck')return Insights.workload(s,dates);
+      if(intent==='runReasons')return Insights.journal(s,dates,type);
+      if(intent==='outage'){
+        const matched=employeeMatches(q,staff);if(!matched.length&&followup&&previous.employeeId){const employee=staff.find(e=>String(e.id)===String(previous.employeeId));if(employee)matched.push(employee);}
+        if(matched.length!==1)return response('Wessen Ausfall möchtest du prüfen?',matched.length?'Bitte die Personalnummer nennen, damit der Mitarbeiter eindeutig ist.':'Bitte Mitarbeiter oder Personalnummer und den Tag des angenommenen Ausfalls nennen.',{context:{...context,pending:true}});
+        const useDates=period.explicit?dates:previous.pending&&previous.dates?previous.dates:[];
+        if(!useDates.length)return response('Für welchen Tag?', 'Bitte Datum oder Monat für den angenommenen Ausfall nennen.',{context:{...context,employeeId:matched[0].id,pending:true}});
+        return Insights.improvements(s,useDates,new Set([String(matched[0].id)]),true);
+      }
+      const anchor=dates[Math.floor(dates.length/2)],month=monthDates(Number(anchor.slice(0,4)),Number(anchor.slice(5,7)));
+      return Insights.improvements(s,month);
+    }
     if(intent==='planningCheck'){
       const anchor=dates[Math.floor(dates.length/2)],month=monthDates(Number(anchor.slice(0,4)),Number(anchor.slice(5,7)));
       return planningCheck(s,month,staff);
@@ -260,3 +279,4 @@
   const api={answer,normalize,parsePeriod,parseShift,coverage,periodLabel,validDate,team,findHelp};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.SFPlanningAssistantCore=api;
 })(typeof window==='undefined'?globalThis:window);
+
