@@ -29,7 +29,7 @@ test('improvement preview, cancellation, confirmed draft, outage and scoped jour
  });
  await expect.poll(()=>page.evaluate(()=>!!SFBackend.hydrate.__sfChatGuard)).toBe(true);
  await ask('Verbesserungsvorschläge erstellen');
- await expect(page.locator('#sfPlanningChatLog')).toContainText('Konkrete Verbesserungen - Vorschau');
+ await expect(page.locator('#sfPlanningChatLog')).toContainText(/Konkrete Verbesserungen\s*[-–]\s*Vorschau/);
  expect(await page.evaluate(()=>window.assistantRefreshes)).toBe(1);
  expect(await page.evaluate(()=>window.assistantRpcCalls)).toEqual(['preview_planning_period']);
  expect(await page.evaluate(()=>assignments.length)).toBe(0);
