@@ -71,7 +71,20 @@
     const byName=s.shifts.filter(t=>t.name&&t.name!==t.id&&q.includes(normalize(t.name)));return byName.length===1?byName[0].id:null;
   }
   function periodLabel(dates){if(dates.length===1)return formatDate(dates[0]);if(dates.length>=28&&dates[0].endsWith('-01')&&dates.at(-1).slice(0,7)===dates[0].slice(0,7))return new Date(dates[0]+'T12:00:00Z').toLocaleDateString('de-DE',{month:'long',year:'numeric',timeZone:'UTC'});return `${formatDate(dates[0])} bis ${formatDate(dates.at(-1))}`;}
-  function coverage(s,dates,type){const rows=[];for(const date of dates)for(const shift of s.shifts){if(type&&shift.id!==type)continue;const soll=Math.max(0,Number(s.getSoll(date,shift.id))||0),ist=s.assignments.filter(a=>a.date===date&&a.type===shift.id).length;if(soll||ist)rows.push({date,type:shift.id,soll,ist,missing:Math.max(0,soll-ist),extra:Math.max(0,ist-soll)});}return rows;}
+  function coverage(s,dates,type){
+    const rows=[];
+    for(const date of dates)for(const shift of s.shifts){
+      const group=s.coverageInfo?.(date,shift.id);
+      if(type&&shift.id!==type&&!group?.members?.some(member=>member.id===type))continue;
+      if(group&&group.representative!==shift.id)continue;
+      const raw=s.getSoll(date,shift.id);
+      const soll=Math.max(0,Number(group?group.target:(s.requiredSoll?.(date,shift.id,raw)??raw))||0);
+      const ist=group?Math.max(0,Number(group.filled)||0):s.assignments.filter(a=>a.date===date&&a.type===shift.id).length;
+      const optional=group?0:Math.max(0,Number(s.optionalTarget?.(date,shift.id))||0);
+      if(soll||ist)rows.push({date,type:shift.id,label:group?.label,soll,ist,missing:Math.max(0,soll-ist),extra:Math.max(0,ist-Math.max(soll,optional))});
+    }
+    return rows;
+  }
 
   const escapePattern=v=>String(v).replace(/[^a-z0-9]/g,c=>'\\'+c);
   function employeeMatches(q,staff){
@@ -270,7 +283,7 @@
         return response(`Besetzung prüfen · ${label}`,'Ich prüfe die aktuell gespeicherte Planung. Gründe aus einer früheren Auto-Planung lassen sich nur durch eine erneute Analyse mit denselben Regeln nachvollziehen. Kandidaten je Dienst können nicht gleichzeitig für mehrere Dienste zugesagt werden.',{columns:['Tag','Schicht','Offen','Aktuelle Prüfung'],rows:relevant.map(x=>{const r=s.candidates(x.type,x.date);return[formatDate(x.date),shiftLabel(x.type),String(x.missing),r.candidates.length?`${r.candidates.length} passende Mitarbeiter; Auto-Planung erneut analysieren.`:r.reasons.map(y=>`${y.count}× ${y.label}`).join('; ')||'Kein passender Mitarbeiter unter den aktuellen Regeln.'];}),actions:[nav('auto','Auto-Planung prüfen'),nav('employees','Mitarbeiter prüfen')],context});
       }
       const rows=intent==='open'?missing:intent==='overstaffed'?all.filter(x=>x.extra):all;
-      return response(`${intent==='open'?'Offene Dienste':intent==='overstaffed'?'Überbesetzte Dienste':'SOLL / IST'} · ${label}`,required?`${open} offene Positionen in ${missing.length} Schichten. ${required-open} von ${required} benötigten Positionen sind besetzt.${extra?` Zusätzlich ${extra} Besetzungen über SOLL.`:''}`:'Für diesen Zeitraum ist kein SOLL-Bedarf hinterlegt. Bitte prüfe die Einstellungen, bevor du den Plan als vollständig bewertest.',{columns:['Tag','Schicht','SOLL','IST',intent==='overstaffed'?'Über SOLL':'Offen'],rows:rows.map(x=>[formatDate(x.date),shiftLabel(x.type),String(x.soll),String(x.ist),String(intent==='overstaffed'?x.extra:x.missing)]),rowActions:rows.map(x=>({view:'schedule',date:x.date,type:x.type,label:'Dienst öffnen'})),actions:[{view:'schedule',date:dates[0],month:dates.length>1,label:'Zeitraum im Dienstplan öffnen'},nav('auto','Auto-Planung öffnen')],suggestions:['Warum konnte die Auto-Planung die offenen Dienste nicht besetzen?'],context});
+      return response(`${intent==='open'?'Offene Dienste':intent==='overstaffed'?'Überbesetzte Dienste':'SOLL / IST'} · ${label}`,required?`${open} offene Positionen in ${missing.length} Schichten. ${required-open} von ${required} benötigten Positionen sind besetzt.${extra?` Zusätzlich ${extra} Besetzungen über SOLL.`:''}`:'Für diesen Zeitraum ist kein SOLL-Bedarf hinterlegt. Bitte prüfe die Einstellungen, bevor du den Plan als vollständig bewertest.',{columns:['Tag','Schicht','SOLL','IST',intent==='overstaffed'?'Über SOLL':'Offen'],rows:rows.map(x=>[formatDate(x.date),x.label||shiftLabel(x.type),String(x.soll),String(x.ist),String(intent==='overstaffed'?x.extra:x.missing)]),rowActions:rows.map(x=>({view:'schedule',date:x.date,type:x.type,label:'Dienst öffnen'})),actions:[{view:'schedule',date:dates[0],month:dates.length>1,label:'Zeitraum im Dienstplan öffnen'},nav('auto','Auto-Planung öffnen')],suggestions:['Warum konnte die Auto-Planung die offenen Dienste nicht besetzen?'],context});
     }
     if(intent==='help')return response('Planungsanalysen und Wissensdatenbank','Ich kann offene und überbesetzte Dienste, Ersatzbesetzung, einzelne Mitarbeiter, Teams, Rhythmusvorgaben, geplante Stunden und Schichtfreigaben prüfen. Die Wissensdatenbank erklärt zusätzlich die Bedienung von SchichtFunk.',{columns:['Hilfebereich','Anleitungen'],rows:Object.entries(s.helpArticles||{}).map(([category,items])=>[s.helpCategories?.find(c=>c[0]===category)?.[1]||category,String(items.length)]),suggestions:['Welche Dienste hat Team E im Dezember?','Welche Mitarbeiter haben im Dezember zu viele Stunden?','Welche Dienste sind im Dezember überbesetzt?','Welche Mitarbeiter haben keine Schichtfreigabe?','Wie funktioniert der DATEV-LODAS-Export?','Wo finde ich meinen QR-Code?'],actions:[{help:true,label:'Wissensdatenbank öffnen'}],context:{}});
     const suggestions=/personal|mitarbeiter|team/.test(q)?['Welche Mitarbeiter haben keine Schichtfreigabe?','Bei welchen Mitarbeitern fehlt eine Teamzuordnung?','Geplante Stunden prüfen']:/plan|dienst|besetz|ersatz/.test(q)?['Monatscheck starten','Offene Dienste prüfen','Ersatz für einen Dienst suchen']:['Monatscheck starten','Offene Dienste prüfen','Ersatz für einen Dienst suchen','Geplante Stunden prüfen','Welche Hilfethemen kennst du?'];
