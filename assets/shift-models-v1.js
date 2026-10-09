@@ -21,6 +21,9 @@
   const staff=()=>typeof employees==='undefined'?[]:employees;
   M.planningRestriction=(code,employee,date,start,end)=>{
     if(!M.isCompanyLoaded()||!employee)return null;
+    const entry=employee.startDate||employee.start_date,finish=employee.contractEnd||employee.contract_end;
+    if(date&&entry&&date<entry)return 'Der Dienst liegt vor dem Eintrittsdatum.';
+    if(date&&finish&&date>finish)return 'Der Dienst liegt nach dem Vertragsende.';
     const t=M.find(code),no=String(employee.personnelNo??employee.personnel_no??''),exclusive=M.models.find(x=>x.active&&x.exclusiveEmployees&&x.allowedPersonnelNos?.map(String).includes(no));
     if(exclusive&&exclusive.id!==code)return `Personalnummer ${no} ist ausschließlich für ${exclusive.id} freigegeben.`;
     if(!t)return null;

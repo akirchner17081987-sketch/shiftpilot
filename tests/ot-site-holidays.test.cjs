@@ -24,3 +24,14 @@ test('OT model admits the local holiday, rejects the other site and uses real st
  assert.equal(m.allowsEmployee('OT',{team:'Leipzig',personnelNo:'109'},'2027-11-01'),false);assert.equal(m.allowsEmployee('OT',{team:'Recklinghausen',personnelNo:'109'},'2027-11-01'),true);
  c.dailySoll['2027-11-01']={OT:2};assert.equal(m.rawRequired('2027-11-01','OT',3),2);
 });
+
+test('planning respects entry and contract dates including inclusive boundary days',()=>{
+ const c=browser();c.window.SFBackend={companyId:'co'};c.sessionStorage={getItem:()=>null};c.TYPES=[];c.selectedType=null;c.document.getElementById=()=>null;
+ vm.runInNewContext(fs.readFileSync(require.resolve('../assets/shift-models-v1.js'),'utf8'),c);
+ const m=c.window.SFShiftModels;m.apply([{code:'FD',name:'FD',active:true,default_start:'06:00',default_end:'14:00'}],'co');
+ assert.equal(m.allowsEmployee('FD',{startDate:'2027-01-01'},'2026-12-31'),false);
+ assert.equal(m.allowsEmployee('FD',{startDate:'2027-01-01'},'2027-01-01'),true);
+ assert.equal(m.allowsEmployee('FD',{contractEnd:'2027-06-30'},'2027-07-01'),false);
+ assert.equal(m.allowsEmployee('FD',{contractEnd:'2027-06-30'},'2027-06-30'),true);
+ assert.equal(m.allowsEmployee('FD',{start_date:'2027-01-01',contract_end:'2027-06-30'},'2026-12-31'),false);
+});
