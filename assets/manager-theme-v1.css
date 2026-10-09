@@ -481,3 +481,60 @@ html[data-sf-theme="light"] :is(.sf-pf-avatar,.sf-pfd-head-icon){background:var(
   html[data-sf-theme="light"] #appShell :is(.card,.stat,.section-box,.profile-summary,.profile-metric){border-width:1px!important}
   html[data-sf-theme="light"] #appShell :is(button,.iconbtn,.ghost,#sfThemeToggle){min-height:44px}
 }
+
+/* Time workspace: nested QR operation panels and supplementary tables. */
+html[data-sf-theme="light"] #view-time :is(
+  .sf-qrt-pilot,.sf-qrt-mode-help,.sf-ta-table-wrap,.sf-tw-help
+){
+  background:var(--sf-surface-inset)!important;border-color:var(--sf-border)!important;
+  color:var(--sf-ink)!important;
+}
+html[data-sf-theme="light"] #view-time :is(
+  .sf-qrt-pilot-head b,.sf-qrt-mode-help b,.sf-mc-copy b
+){color:var(--sf-ink)!important}
+html[data-sf-theme="light"] #view-time :is(
+  .sf-qrt-pilot small,.sf-qrt-pilot label,.sf-qrt-pilot label span,
+  .sf-qrt-mode-help,.sf-qrt-pilot-note,.sf-qrt-empty,.sf-ta-empty
+){color:var(--sf-ink-muted)!important}
+html[data-sf-theme="light"] #view-time :is(
+  .sf-qr-pilot-banner,.sf-qrt-pilot-badge,.sf-qrt-pilot-chip
+){
+  background:var(--sf-good-surface)!important;border-color:#82ac9d!important;
+  color:var(--sf-good)!important;
+}
+html[data-sf-theme="light"] #view-time .sf-qr-pilot-banner b{color:var(--sf-good)!important}
+html[data-sf-theme="light"] #view-time .sf-qrt-pilot-badge.pilot{
+  background:var(--sf-warn-surface)!important;border-color:#baa16e!important;color:var(--sf-warn)!important;
+}
+html[data-sf-theme="light"] #view-time .sf-qrt-pilot-warning{color:var(--sf-warn)!important}
+html[data-sf-theme="light"] #view-time .sf-qrt-pilot :is(input,select,textarea){
+  background:var(--sf-field)!important;border-color:var(--sf-border)!important;color:var(--sf-ink)!important;color-scheme:light;
+}
+html[data-sf-theme="light"] #view-time .sf-qrt-pilot select:disabled{opacity:1}
+html[data-sf-theme="light"] #view-time .sf-qrt-pilot select:disabled option{color:var(--sf-ink-muted)!important}
+html[data-sf-theme="light"] #view-time :is(.sf-ta-table-wrap,.sfqr-scroll){scrollbar-color:#879daa var(--sf-surface-inset)}
+html[data-sf-theme="light"] #view-time .sf-ta-table-wrap :is(th,td){border-color:var(--sf-border)!important}
+html[data-sf-theme="light"] #view-time .sf-ta-status.notstarted{
+  background:var(--sf-surface)!important;border-color:var(--sf-border)!important;color:var(--sf-ink-muted)!important;
+}
+html[data-sf-theme="light"] :is(.sf-time-modal,.sf-ta-modal) :is(
+  .sf-time-bulk-summary>div,.sf-time-bulk-check
+){
+  background:var(--sf-surface-inset)!important;border-color:var(--sf-border)!important;color:var(--sf-ink)!important;
+}
+html[data-sf-theme="light"] .sf-time-modal .sf-time-bulk-check.confirm{
+  background:var(--sf-warn-surface)!important;border-color:#baa16e!important;color:var(--sf-warn)!important;
+}
+html[data-sf-theme="light"] .sf-time-modal :is(.sf-time-bulk-summary small,#sfTimeFields>small,#sfTimeRequiredHelp){
+  color:var(--sf-ink-muted)!important;
+}
+html[data-sf-theme="light"] :is(.sf-time-modal-foot,.sf-ta-modal-foot,.sf-qrt-modal-foot){
+  border-color:var(--sf-border)!important;
+}
+html[data-sf-theme="light"] :is(.sf-time-modal-back,.sf-qrc-back){background:rgba(40,54,65,.48)!important}
+html[data-sf-theme="light"] .sf-qrc-dialog :is(input,textarea,button){
+  background:var(--sf-field)!important;border-color:var(--sf-border)!important;color:var(--sf-ink)!important;color-scheme:light;
+}
+html[data-sf-theme="light"] .sf-qrc-dialog .sf-qrc-save{
+  background:var(--sf-accent)!important;border-color:var(--sf-accent)!important;color:#fff!important;
+}
