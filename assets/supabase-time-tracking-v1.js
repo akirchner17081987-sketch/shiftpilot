@@ -51,7 +51,7 @@
   }
 
   async function loadManager(monthOverride=''){
-    if(!MANAGER.has(B.role)||!B.client||!B.companyId)return false;
+    if(!MANAGER.has(B.role)||!B.client||!B.companyId||(B.accessRole&&!B.can('viewTime')))return false;
     const request=++managerLoadSequence,company=B.companyId,role=B.role,r=periodRange(monthOverride);
     if(!r){managerRows=[];managerLoadError='';return true}
     try{
@@ -90,7 +90,8 @@
   }
 
   function bulkCandidates(){const now=Date.now();return managerRows.filter(r=>r.source!=='QR'&&r.assignment_id&&r.entry_status==='open'&&!r.actual_start&&!r.actual_end&&new Date(r.ends_at).getTime()<=now)}
-  function ensureBulkAction(){const head=document.getElementById('timeTableBody')?.closest('.card')?.querySelector('.table-head');if(!head)return;let button=document.getElementById('sfTimeBulkOpen');if(!button){button=document.createElement('button');button.id='sfTimeBulkOpen';button.type='button';button.className='primary sf-time-bulk-open';head.insertBefore(button,head.querySelector('#timeSearch'));button.onclick=openBulkModal}const count=bulkCandidates().length;button.disabled=!count;button.textContent=count?`Alle offenen Zeiten erfassen (${count})`:'Keine offenen Zeiten';button.title=count?'Übernimmt die Planzeiten für alle beendeten offenen Schichten im gewählten Zeitraum.':'Im gewählten Zeitraum sind keine beendeten offenen Schichten vorhanden.'}
+  function ensureBulkAction(){
+    if(B.accessRole&&(!B.can('manageTime')||!B.can('confirmTime'))){document.querySelector('.sf-time-bulk-open')?.remove();return}const head=document.getElementById('timeTableBody')?.closest('.card')?.querySelector('.table-head');if(!head)return;let button=document.getElementById('sfTimeBulkOpen');if(!button){button=document.createElement('button');button.id='sfTimeBulkOpen';button.type='button';button.className='primary sf-time-bulk-open';head.insertBefore(button,head.querySelector('#timeSearch'));button.onclick=openBulkModal}const count=bulkCandidates().length;button.disabled=!count;button.textContent=count?`Alle offenen Zeiten erfassen (${count})`:'Keine offenen Zeiten';button.title=count?'Übernimmt die Planzeiten für alle beendeten offenen Schichten im gewählten Zeitraum.':'Im gewählten Zeitraum sind keine beendeten offenen Schichten vorhanden.'}
   function openBulkModal(){
     const rows=bulkCandidates(),range=periodRange();if(!rows.length)return;
     const future=managerRows.filter(r=>r.source!=='QR'&&r.assignment_id&&r.entry_status==='open'&&!r.actual_start&&!r.actual_end&&new Date(r.ends_at).getTime()>Date.now()).length,existing=Math.max(0,managerRows.length-rows.length-future);
@@ -119,11 +120,13 @@
   }
 
   function openManagerModal(r){
+    const canEdit=!B.accessRole||B.can('manageTime'),canReview=!B.accessRole||B.can('confirmTime');
     const m=modalShell(`${r.employee_name} · ${r.shift_code}`,`${fmtDate(r.starts_at)} · Status ${statusLabel(r.entry_status)}`,`Geplant: <b>${esc(shiftRange(r.starts_at,r.ends_at))}</b> · Pause ${Number(r.planned_break_minutes||0)} Min.${r.employee_note?`<br>Mitarbeiter: ${esc(r.employee_note)}`:''}${r.correction_note?`<br><b>Korrekturhinweis:</b> ${esc(r.correction_note)}`:''}`);
     m.querySelector('#sfTimeFields').innerHTML=fieldsHtml(r.actual_start||r.starts_at,r.actual_end||r.ends_at,r.actual_start?Number(r.actual_break_minutes||0):Number(r.planned_break_minutes||0),r.manager_note||'','Interne Bemerkung / Rückmeldung');
-    const foot=m.querySelector('#sfTimeFoot');foot.innerHTML=`<button class="sf-time-close">Schließen</button>${r.entry_status!=='open'?'<button class="sf-time-correction">Korrektur anfordern</button>':''}<button class="sf-time-save">Speichern</button><button class="sf-time-confirm">Speichern & bestätigen</button>`;foot.querySelector('.sf-time-close').onclick=m.sfClose;
+    const foot=m.querySelector('#sfTimeFoot');foot.innerHTML=`<button class="sf-time-close">Schließen</button>${canReview&&r.entry_status!=='open'?'<button class="sf-time-correction">Korrektur anfordern</button>':''}${canEdit?'<button class="sf-time-save">Speichern</button>':''}${canReview&&(canEdit||r.actual_start&&r.actual_end)?'<button class="sf-time-confirm">'+(canEdit?'Speichern & bestätigen':'Zeit bestätigen')+'</button>':''}`;foot.querySelector('.sf-time-close').onclick=m.sfClose;
+    if(!canEdit)m.querySelectorAll('#sfTimeFields input').forEach(el=>el.disabled=true);
     const save=async confirm=>{try{const v=values(m);B.showLoading?.(confirm?'Ist-Zeit wird bestätigt …':'Ist-Zeit wird gespeichert …');const q=await B.client.rpc('manager_save_time_entry',{p_assignment_id:r.assignment_id,p_actual_start:v.start,p_actual_end:v.end,p_break_minutes:v.br,p_note:v.note,p_confirm:!!confirm});if(q.error)throw q.error;m.sfClose();await renderManager();B.notifications?.refresh?.();if(typeof showSaveToast==='function')showSaveToast(confirm?'Ist-Zeit bestätigt':'Ist-Zeit gespeichert',`${r.employee_name} · ${r.shift_code}`)}catch(e){say(m,e?.message||String(e))}finally{B.hideLoading?.()}};
-    foot.querySelector('.sf-time-save').onclick=()=>save(false);foot.querySelector('.sf-time-confirm').onclick=()=>save(true);
+    foot.querySelector('.sf-time-save')?.addEventListener('click',()=>save(false));foot.querySelector('.sf-time-confirm')?.addEventListener('click',async()=>{if(canEdit)return save(true);try{const q=await B.client.rpc('manager_review_time_entry',{p_assignment_id:r.assignment_id,p_decision:'CONFIRM',p_comment:m.querySelector('#sfTimeNote').value.trim()});if(q.error)throw q.error;m.sfClose();await renderManager()}catch(e){say(m,e.message||String(e))}});
     foot.querySelector('.sf-time-correction')?.addEventListener('click',async()=>{const comment=m.querySelector('#sfTimeNote').value.trim();if(comment.length<3)return say(m,'Bitte im Bemerkungsfeld einen kurzen Korrekturhinweis angeben.','info');try{B.showLoading?.('Korrektur wird angefordert …');const q=await B.client.rpc('manager_review_time_entry',{p_assignment_id:r.assignment_id,p_decision:'CORRECTION',p_comment:comment});if(q.error)throw q.error;m.sfClose();await renderManager();B.notifications?.refresh?.();if(typeof showSaveToast==='function')showSaveToast('Korrektur angefordert',`${r.employee_name} wurde benachrichtigt.`)}catch(e){say(m,e?.message||String(e))}finally{B.hideLoading?.()}});
   }
 
