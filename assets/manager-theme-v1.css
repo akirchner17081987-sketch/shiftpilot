@@ -538,3 +538,43 @@ html[data-sf-theme="light"] .sf-qrc-dialog :is(input,textarea,button){
 html[data-sf-theme="light"] .sf-qrc-dialog .sf-qrc-save{
   background:var(--sf-accent)!important;border-color:var(--sf-accent)!important;color:#fff!important;
 }
+
+/* Account holiday controls and body-mounted account dialogs use late, fixed colours. */
+html[data-sf-theme="light"] #appShell #sfTimeAccounts .sf-hol-panel,
+html[data-sf-theme="light"] .sf-ta-modal .sf-ta-note{
+  background:var(--sf-surface-inset)!important;border-color:var(--sf-border)!important;color:var(--sf-ink-muted)!important
+}
+html[data-sf-theme="light"] #appShell #sfTimeAccounts .sf-hol-copy strong,
+html[data-sf-theme="light"] .sf-ta-modal .sf-ta-note strong{color:var(--sf-ink)!important}
+html[data-sf-theme="light"] #appShell #sfTimeAccounts :is(.sf-hol-copy small,.sf-hol-empty){color:var(--sf-ink-muted)!important}
+html[data-sf-theme="light"] #appShell #sfTimeAccounts :is(.sf-hol-btn,.sf-hol-chip),
+html[data-sf-theme="light"] #appShell #sfTimeAccounts .sf-mc-btn:not(.closemonth):not(.reopen){
+  background:var(--sf-surface)!important;border-color:var(--sf-border)!important;color:var(--sf-ink-muted)!important
+}
+html[data-sf-theme="light"] #appShell #sfTimeAccounts .sf-hol-chip.target{
+  background:var(--sf-good-surface)!important;border-color:#82ac9d!important;color:var(--sf-good)!important
+}
+html[data-sf-theme="light"] #appShell #sfTimeAccounts .sf-hol-btn.warn,
+html[data-sf-theme="light"] .sf-hol-modal .sf-hol-note{
+  background:var(--sf-warn-surface)!important;border-color:#baa16e!important;color:var(--sf-warn)!important
+}
+html[data-sf-theme="light"] .sf-hol-back{background:rgba(40,54,65,.48)!important}
+html[data-sf-theme="light"] .sf-hol-modal{
+  background:var(--sf-surface-raised)!important;border-color:var(--sf-border)!important;color:var(--sf-ink)!important;
+  box-shadow:0 24px 70px rgba(35,55,75,.24)!important
+}
+html[data-sf-theme="light"] .sf-hol-modal :is(h2,.sf-hol-note b){color:var(--sf-ink)!important}
+html[data-sf-theme="light"] .sf-hol-modal :is(p,label){color:var(--sf-ink-muted)!important}
+html[data-sf-theme="light"] .sf-hol-modal :is(.sf-hol-head,.sf-hol-foot){border-color:var(--sf-border)!important}
+html[data-sf-theme="light"] .sf-hol-modal select{
+  background:var(--sf-field)!important;border-color:var(--sf-border)!important;color:var(--sf-ink)!important;color-scheme:light
+}
+html[data-sf-theme="light"] .sf-hol-modal .sf-hol-cancel{
+  background:var(--sf-surface-inset)!important;border-color:var(--sf-border)!important;color:var(--sf-ink)!important
+}
+html[data-sf-theme="light"] .sf-hol-modal .sf-hol-save{
+  background:var(--sf-accent)!important;border-color:var(--sf-accent)!important;color:#fff!important
+}
+html[data-sf-theme="light"] .sf-hol-modal .sf-hol-error{
+  background:var(--sf-bad-surface)!important;border-color:#bc8492!important;color:var(--sf-bad)!important
+}
