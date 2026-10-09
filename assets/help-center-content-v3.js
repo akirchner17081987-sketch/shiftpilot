@@ -1,4 +1,4 @@
-// Hilfe-Center: Funktionsstand und bestätigte Planungsregeln vom 09.10.2026.
+// Hilfe-Center: flexible Tagdienstblöcke und Feiertage nach Einsatzort.
 window.SFHelpContent = {
   "categories": [
     [
@@ -324,6 +324,14 @@ window.SFHelpContent = {
       [
         "Wie plane ich mehrere Monate?",
         "Bei aktivierten Erholungsregeln kannst du einen bis sechs zusammenhängende Monate als Vorschau planen. Prüfe Pflichtlücken, Stundenabweichungen und geschützte Dienste. Erst die bestätigte Übernahme speichert einen Entwurf. Die Veröffentlichung bleibt ein eigener Schritt. Veränderte Daten erfordern eine neue Vorschau."
+      ],
+      [
+        "Wie werden die drei Tagdienstmitarbeiter geplant?",
+        "Bei SchichtFunk sind reguläre OT1-, OT2- und OT3-Dienste ausschließlich für Personalnummern 2001, 26 und 2048 vorgesehen. Die konkrete OT-Art richtet sich nach dem Bedarf und der O1-/O3-Abdeckung. Ihre früheren festen OT2-Tagesfolgen sind durch flexible Arbeitsblöcke unter den bestätigten Erholungs- und Stundengrenzen ersetzt. Bei Secontec bleiben dieselben Personalnummern ausschließlich für FD freigegeben; die frühere feste Fünf-Tage-Woche wird ebenfalls flexibel geplant. Fehlende Besetzungen oder nicht erreichte Stunden bleiben sichtbar."
+      ],
+      [
+        "Welche Feiertage gelten für OT-Dienste?",
+        "Das gesonderte Schichtmodell OT gilt an Samstagen, Sonntagen und gesetzlichen Feiertagen am hinterlegten Einsatzort. Leipzig verwendet Sachsen, Recklinghausen Nordrhein-Westfalen. Maßgeblich ist der Standort im Mitarbeiterprofil, nicht der Wohnort. Für OT bleiben die jeweiligen persönlichen Schichtfreigaben erforderlich. Fehlt ein bekannter Einsatzort, wird kein örtlicher Feiertag unterstellt."
       ]
     ],
     "reports": [
