@@ -3,3 +3,11 @@ function harness(){const fields=new Map(),el=id=>{if(!fields.has(id))fields.set(
 test('six-month preview preserves assignments and commits through one atomic period RPC',async()=>{const{c,calls,run,el}=harness();assert.equal(c.autoPlanningDates().length,181);await c.SFMonthOptimizer.optimize();assert.ok(c.SFMonthOptimizer.getResult(),c.toast?.copy);assert.equal(c.assignments.length,0);assert.equal(run('autoPlanPreview.length'),12);assert.equal(calls[0].name,'preview_planning_period');assert.equal(calls[0].args.p_month_count,6);assert.match(el('autoMonthHours').innerHTML,/190 h|190|Monatsgrenzen/);await c.applyAutoPlanPreview();assert.equal(calls[1].name,'apply_planning_period');assert.equal(calls[1].args.p_month_count,6);assert.equal(calls[1].args.p_respect_weekly,true);assert.equal(calls[1].args.p_assignments.length,12);assert.equal(calls[1].args.p_assignments[0].starts_at,'2027-01-01T17:00:00.000Z')});
 test('changed employee data rejects period commit before any assignment RPC',async()=>{const{c,calls}=harness();await c.SFMonthOptimizer.optimize();c.employees[0].status='inactive';await c.applyAutoPlanPreview();assert.equal(calls.length,1);assert.equal(c.assignments.length,0);assert.match(c.toast.copy,/Daten haben sich geändert/)});
 test('other-company policy disables month-count expansion',()=>{const{c}=harness();c.SFCompliance.policy.solidPlanningRules={};assert.equal(c.autoPlanningDates().length,31)});
+
+test('period seed cannot retain a duty outside exclusive employee scope',async()=>{
+ const{c,run}=harness();c.SFShiftModels={allowsEmployee:(type,e)=>e.id==='a',coverageGroup:()=>null};
+ c.assignments=[{id:'legacy-seed',_dbStatus:'DRAFT',employeeId:'b',date:'2027-01-01',type:'O1',start:'18:00',end:'04:00'}];
+ await c.SFMonthOptimizer.optimize();assert.ok(c.SFMonthOptimizer.getResult(),c.toast?.copy);
+ assert.equal(run("autoPlanPreview.some(a=>a.employeeId==='b')"),false);
+ assert.equal(c.assignments[0].employeeId,'b','preview must preserve persisted draft until apply');
+});

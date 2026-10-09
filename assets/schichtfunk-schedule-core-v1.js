@@ -59,6 +59,7 @@
   }
 
   function isOTDay(date){
+    if(window.SFOtPolicy)return window.SFOtPolicy.applies(date);
     const d=parseISODate(date); if(!d) return false;
     const day=d.getDay();
     return day===0 || day===6 || isBerlinHoliday(d);
