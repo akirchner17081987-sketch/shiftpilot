@@ -13,6 +13,7 @@
     "test:marketplace": "node --test tests/open-shift-marketplace.test.mjs && node tests/browser/open-shift-marketplace-qa.cjs",
     "test:absences": "node tests/browser/employee-absences-qa.cjs",
     "test:time-account": "node tests/browser/employee-time-account-qa.cjs",
+    "test:qr-periods": "node tests/browser/qr-period-views-qa.cjs",
     "test:qr-bookings": "node tests/browser/employee-qr-bookings-qa.cjs",
     "test:wage-preview": "node --test tests/employee-wage-preview.test.cjs && node tests/browser/employee-wage-preview-qa.cjs",
     "test:profile": "node tests/browser/employee-profile-qa.cjs"

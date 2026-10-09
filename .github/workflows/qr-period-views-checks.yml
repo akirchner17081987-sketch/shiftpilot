@@ -1,0 +1,26 @@
+name: QR Monats-, Quartals- und Jahresansichten
+on:
+  push:
+    branches: [main, codex/ionos-migration, codex/qr-period-views-20261009]
+    paths: ['assets/qr-independent-report-v1.js', 'tests/browser/qr-period-views-qa.cjs', '.github/workflows/qr-period-views-checks.yml']
+jobs:
+  qr-periods:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run test:qr-periods
+        env:
+          SF_QR_BROWSER_EXECUTABLE: /usr/bin/google-chrome
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qr-period-views
+          path: test-results/qr-periods-*.png

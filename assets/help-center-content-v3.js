@@ -297,7 +297,7 @@ window.SFHelpContent = {
       ],
       [
         "Wo sehe ich QR-Zeiten und Pausendetails?",
-        "Öffnen Sie Zeiterfassung → „QR-Buchungen ohne Schichtbezug“. Filtern Sie nach Mitarbeiter oder Personalnummer und einem Datumsbereich; unter „Details“ sehen Sie Standort sowie bis zu zehn einzelne Pausen. Ein Filter darf höchstens 63 Tage umfassen."
+        "Öffnen Sie Zeiterfassung → „QR-Buchungen ohne Schichtbezug“. Filtern Sie nach Mitarbeiter oder Personalnummer und einem Datumsbereich; unter „Details“ sehen Sie Standort sowie bis zu zehn einzelne Pausen. Wählen Sie die Monats-, Quartals- oder Jahresansicht und das gewünschte Jahr. Mit den Pfeilen wechseln Sie zum vorherigen oder nächsten Zeitraum. „Freier Zeitraum“ erlaubt bis zu 366 Tage. Größere Übersichten zeigen 50 Buchungen je Seite; die Mitarbeitersuche durchsucht den gesamten geladenen Zeitraum. Die Zuordnung erfolgt nach Dienstbeginn, auch bei Diensten über Mitternacht."
       ],
       [
         "Wie erneuere, deaktiviere oder lösche ich einen Code?",
