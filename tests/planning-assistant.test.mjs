@@ -38,6 +38,23 @@ test('result links retain the real employee, day, shift and assignment and fallb
  const hours=Core.answer('Geplante Stunden prüfen',s);assert.equal(hours.rowActions[0].employeeId,'e1');
  const fallback=Core.answer('Die Planung spinnt',s);assert.ok(fallback.suggestions.includes('Monatscheck starten'));assert.equal(Core.answer(fallback.suggestions[0],s).context.intent,'planningCheck');
 });
+test('coverage follows the native staffing rules for shared TL, weekday demand and optional shifts',()=>{
+ const s=fixture();
+ s.shifts=[{id:'TL-LE',name:'Teamleiter LE'},{id:'TL-RE',name:'Teamleiter RE'},{id:'OT1'},{id:'OT2'},{id:'OT'},{id:'QA'}];
+ s.assignments=[{date:'2027-01-02',type:'TL-LE',employeeId:'e1'},{date:'2027-01-02',type:'QA',employeeId:'e2'},{date:'2027-01-04',type:'OT2',employeeId:'e1'}];
+ s.getSoll=(date,type)=>date==='2027-01-02'&&type.startsWith('TL-')?1:date==='2027-01-04'&&type==='OT1'?1:date==='2027-01-04'&&type==='OT2'?2:0;
+ s.coverageInfo=(date,type)=>type.startsWith('TL-')?{representative:'TL-LE',members:[{id:'TL-LE'},{id:'TL-RE'}],label:'TL LE/RE',target:date==='2027-01-02'?1:0,filled:date==='2027-01-02'?1:0}:null;
+ s.requiredSoll=(date,type,raw)=>date==='2027-01-04'&&type==='OT1'?0:date==='2027-01-04'&&type==='OT2'?3:raw;
+ s.optionalTarget=(date,type)=>type==='QA'?1:0;
+ const check=Core.answer('Monatscheck Januar 2027',s);
+ assert.match(check.text,/2 offene Positionen/);
+ const open=Core.answer('Welche Dienste sind im Januar 2027 noch offen?',s);
+ assert.equal(open.rows.length,1);assert.deepEqual(open.rows[0].slice(1,5),['OT2','3','1','2']);
+ const tl=Core.answer('Besetzung TL-RE am 02.01.2027',s);
+ assert.equal(tl.rows[0][1],'TL LE/RE');assert.deepEqual(tl.rows[0].slice(2),['1','1','0']);
+ const extra=Core.answer('Welche Dienste sind im Januar 2027 überbesetzt?',s);
+ assert.equal(extra.rows.length,0);
+});
 function fixture(){
  const employees=[{id:'e1',first:'Anna',last:'Plan',status:'active',planningTeam:'A',shifts:['FD','SD','ND'],weeklyHours:40},{id:'e2',first:'Ben',last:'Frei',status:'active',shifts:['FD'],weeklyHours:40},{id:'e3',first:'Alt',last:'Profil',status:'inactive',shifts:['FD']},{id:'e4',first:'Deleted',last:'Person',status:'active',deletedAt:'2026-01-01',shifts:['FD']}];
  return{authorized:true,today:'2026-10-01',defaultDates:['2026-12-01'],employees,assignments:[{id:'a1',date:'2026-12-01',type:'FD',employeeId:'e1',start:'06:00',end:'14:00'}],absences:[],shifts:[{id:'FD',name:'Frühdienst',start:'06:00',end:'14:00'},{id:'SD',name:'Spätdienst',start:'14:00',end:'22:00'},{id:'ND',name:'Nachtdienst',start:'22:00',end:'06:00'}],getSoll:()=>2,monthTarget:()=>173.92,candidates:()=>({candidates:[],reasons:[{label:'Verbindlicher Rhythmus passt nicht',count:2}]}),teamRules:[]};
