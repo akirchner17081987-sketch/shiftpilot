@@ -7,7 +7,7 @@ test('improvement preview, cancellation, confirmed draft, outage and scoped jour
  await page.goto('http://sf-assistant.test/');
  await page.evaluate(()=>{sessionStorage.setItem('sf_demo_session_v1','active');SFCompliance.policy.solidPlanningRules={enabled:true,confirmedRulesVersion:2,timezone:'Europe/Berlin'};assignments=[];globalSoll={FD:0,SD:0,ND:0};dailySoll={'2026-12-02':{FD:1}};employees.forEach((e,i)=>{e.personnelNo=String(119+i);e.employment='Vollzeit';delete e.planningTeam;});});
  await page.getByRole('button',{name:'Planungsassistent',exact:true}).click();
- const ask=async q=>{await page.locator('#sfPlanningChatInput').fill(q);await page.getByRole('button',{name:'Frage senden'}).click();};
+ const ask=async q=>{await page.evaluate(()=>SFPlanningAssistant.open());await page.locator('#sfPlanningChatInput').fill(q);await page.getByRole('button',{name:'Frage senden'}).click();};
  await ask('Verbesserungsvorschläge erstellen');
  await expect(page.locator('#sfPlanningChatLog')).toContainText('Konkrete Verbesserungen – Vorschau');
  expect(await page.evaluate(()=>assignments.length)).toBe(0);

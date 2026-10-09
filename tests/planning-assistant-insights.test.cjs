@@ -45,6 +45,14 @@ test('monthly check exposes shared-policy issues and an actionable improvement e
 test('authenticated tenant scope precedes the expanded analysis',()=>{
  const s=fixture();s.authorized=false;Object.defineProperty(s,'employees',{get(){throw Error('must not read')}});assert.match(Core.answer('Verbesserungsvorschläge erstellen',s).title,/Anmeldung/);
 });
+test('a draft reassignment relieves a long block without new hard violations or mutating the plan',()=>{
+ const s=fixture();s.assignments=Array.from({length:5},(_,i)=>({id:'draft-'+i,date:'2027-01-0'+(i+4),type:'FD',employeeId:'a',_dbStatus:'DRAFT'}));s.movable=()=>true;
+ const before=JSON.stringify(s),r=Insights.improvements(s,s.defaultDates);assert.equal(r.proposal.changes.filter(c=>c.replaces).length,1);assert.equal(Insights.audit({...s,assignments:[...r.proposal.base,...r.proposal.proposed]},s.defaultDates).issues.length,0);assert.equal(JSON.stringify(s),before);
+ s.movable=()=>false;assert.equal(Insights.improvements(s,s.defaultDates).proposal.proposed.length,0);
+});
+test('planned hours use the shared timezone-aware calculation on clock changes',()=>{
+ const s=fixture();assert.equal(Insights.paid(s,{date:'2027-03-27',type:'ND'}),7);assert.equal(Insights.paid(s,{date:'2027-10-30',type:'ND'}),9);
+});
 test('integration guards confirmation, backend fingerprints, protected shifts and scoped browser journals',()=>{
  const ui=fs.readFileSync(require.resolve('../assets/planning-assistant-v1.js'),'utf8');
  assert.match(ui,/await confirmProposal/);assert.match(ui,/proposal\.signature!==signature/);assert.match(ui,/p_fingerprint:proposal\.fingerprint/);assert.match(ui,/protectedIds\.has/);assert.match(ui,/p_respect_weekly:true/);assert.match(ui,/sf-planning-runs-v1\|/);assert.match(ui,/r\.company_id===B\(\)\.companyId&&r\.actor_id===B\(\)\.user/);

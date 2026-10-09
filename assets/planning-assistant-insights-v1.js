@@ -7,7 +7,7 @@
   const response=(title,text,more={})=>({title,text,columns:[],rows:[],actions:[],...more});
   const model=(s,a)=>{const t=s.shifts.find(t=>t.id===a.type);return {...a,start:a.start||t?.start,end:a.end||t?.end}};
   const valid=a=>/^\d\d:\d\d/.test(a.start||'')&&/^\d\d:\d\d/.test(a.end||'');
-  const paid=(s,a)=>{const d=model(s,a);if(!valid(d))return 0;const mins=t=>Number(t.slice(0,2))*60+Number(t.slice(3,5));return ((mins(d.end)-mins(d.start)+1440)%1440)/60};
+  const paid=(s,a)=>{const d=model(s,a);if(!valid(d))return 0;if(s.assignmentHours)return Number(s.assignmentHours(d))||0;if(s.solidRules?.enabled&&Solid){const iv=Solid.interval(d.date,d.start,d.end,s.solidRules.timezone);return (iv.end-iv.start)/3600000;}const mins=t=>Number(t.slice(0,2))*60+Number(t.slice(3,5));return ((mins(d.end)-mins(d.start)+1440)%1440)/60};
   const hours=(s,e,rows,dates)=>rows.filter(active).filter(a=>String(a.employeeId)===String(e.id)&&dates.includes(a.date)).reduce((n,a)=>n+paid(s,a),0);
   const rulesReady=s=>!!(Solid&&s.solidRules?.enabled&&s.rulesReady!==false);
   function limits(s,e){return Solid.limits(e,s.shifts,s.solidRules)||s.hourLimits?.(e)||null}
@@ -74,10 +74,10 @@
     }
     // A single local reassignment can relieve a violation without creating a new one.
     if(!outage&&s.movable){const issues=audit(s,dates).issues;for(const issue of issues.slice(0,20)){
-      const rows=[...base,...proposed],before=audit({...s,assignments:rows},dates).issues.length;
+      const rows=[...base,...proposed],beforeIssues=audit({...s,assignments:rows},dates).issues,key=x=>String(x.employee.id)+'|'+x.date+'|'+x.message,beforeKeys=new Set(beforeIssues.map(key));
       for(const a of rows.filter(a=>base.includes(a)&&String(a.employeeId)===String(issue.employee.id)&&dates.includes(a.date)&&s.movable(a))){
         const without=rows.filter(x=>x!==a),options=candidates(s,{date:a.date,type:a.type},without,new Set([String(a.employeeId)]));
-        const c=options.find(c=>hours(s,c.e,rows,dates)<target(c.e)&&audit({...s,assignments:[...without,c.a]},dates).issues.length<before);if(!c)continue;
+        const c=options.find(c=>{if(hours(s,c.e,rows,dates)>=target(c.e))return false;const after=audit({...s,assignments:[...without,c.a]},dates).issues;return after.length<beforeIssues.length&&after.every(x=>beforeKeys.has(key(x)))});if(!c)continue;
         base.splice(base.indexOf(a),1);proposed.push(c.a);changes.push({assignment:c.a,replaces:a,employee:c.e,before:hours(s,c.e,rows,dates),after:hours(s,c.e,[...without,c.a],dates),target:target(c.e),reason:'Entlastet '+person(issue.employee)+'; Regelauffälligkeiten nehmen ab. Feste und geschützte Dienste bleiben erhalten.'});break;
       }
     }}
