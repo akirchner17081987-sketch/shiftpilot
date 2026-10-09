@@ -113,3 +113,21 @@ html.sf-display-high-contrast[data-sf-theme] body #appShell #view-schedule .empl
 
 html.sf-display-high-contrast[data-sf-theme] #appShell{--sf-ink:var(--sf-contrast-text);--sf-ink-muted:var(--sf-contrast-muted);--sf-border:var(--sf-contrast-line);--sf-surface-inset:var(--sf-contrast-bg);--sf-frame:var(--sf-contrast-bg);--sf-good:var(--sf-contrast-text);--sf-good-surface:var(--sf-contrast-bg);--sf-warn:var(--sf-contrast-text);--sf-warn-surface:var(--sf-contrast-bg)}
 html.sf-display-high-contrast[data-sf-theme] body #appShell #view-schedule :is(.sf-week-open:hover,.sf-week-open:focus-visible,.sf-week-over,.sf-week-shift.over .sf-week-shift-count b){background:var(--sf-contrast-bg)!important;color:var(--sf-contrast-text)!important;border-color:var(--sf-contrast-line)!important}
+
+/* Smaller option cards in Oberfläche; the shared live preview keeps its full size. */
+#appShell .sf-display-groups{gap:14px}
+#appShell .sf-display-groups .sf-display-group-head{gap:10px;margin-bottom:8px}
+#appShell .sf-display-groups .sf-display-group-head h4{font-size:.9375rem}
+#appShell .sf-display-groups .sf-display-previews{gap:8px}
+#appShell .sf-display-groups .sf-display-preview{display:grid;grid-template-columns:140px minmax(0,1fr);grid-template-rows:auto 1fr;gap:6px 10px;padding:9px;border-radius:9px;align-content:start}
+#appShell .sf-display-groups .sf-display-preview-head{grid-column:1/-1;margin:0;font-size:.875rem;gap:6px;min-width:0}
+#appShell .sf-display-groups .sf-display-selected{font-size:.6875rem}
+#appShell .sf-display-groups .sf-display-illustration{grid-column:1;grid-row:2;width:140px;max-width:100%;height:auto;border-radius:6px}
+#appShell .sf-display-groups .sf-display-preview p{grid-column:2;grid-row:2;margin:0;font-size:.8125rem!important;line-height:1.45!important;align-self:center;overflow-wrap:anywhere}
+@media(max-width:650px){
+  #appShell .sf-display-groups .sf-display-previews{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #appShell .sf-display-groups .sf-display-preview{grid-template-columns:minmax(0,1fr);gap:6px;padding:8px}
+  #appShell .sf-display-groups .sf-display-preview-head{flex-direction:column;align-items:flex-start;gap:2px}
+  #appShell .sf-display-groups .sf-display-illustration{width:100%;grid-column:1;grid-row:2}
+  #appShell .sf-display-groups .sf-display-preview p{display:none}
+}
