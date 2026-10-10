@@ -2,6 +2,7 @@
 (function(root,factory){
   const api=factory();
   if(typeof module==='object'&&module.exports){module.exports=api;return;}
+  if(typeof document==='undefined'){root.SFOtPolicy=api;return;}
   const rules=()=>root.SFCompliance?.policy?.solidPlanningRules?.otHolidayStatesBySite;
   const stateFor=employee=>{
     const mapping=rules();if(!mapping)return 'BE';

@@ -27,6 +27,7 @@
     if(current.hours+option.hours>e.monthLimit+.000001||current.count+option.filter(a=>a.date.startsWith(month)).length>(e.maxMonthlyShifts??Infinity))return false;
     if(Number.isFinite(e.calendarLimit)){const start=p.solidRules?solid.instant(month+'-01','00:00',p.solidRules.timezone):+new Date(month+'-01T00:00:00'),end=new Date(month+'-01T12:00:00Z');end.setUTCMonth(end.getUTCMonth()+1);const finish=p.solidRules?solid.instant(end.toISOString().slice(0,10),'00:00',p.solidRules.timezone):+new Date(end.toISOString().slice(0,10)+'T00:00:00');const h=[...x.duties,...option].reduce((n,a)=>n+Math.max(0,Math.min(a.endMs,finish)-Math.max(a.startMs,start))/hour,0);if(h>e.calendarLimit+.000001)return false;}
     if(!solid?.confirmed(p.solidRules)&&p.respectHours&&e.weeklyLimit>0)for(const [w,h]of option.weeks)if((x.weeks.get(w)||0)+h>e.weeklyLimit+.000001)return false;
+    if(p.accept&&!p.accept(e,x.duties,option))return false;
     if(p.solidRules&&!solid.canAdd(e,x.byDay,option,p.solidRules))return false;
     const addedDays=new Set(),addedByDay=new Map(option.map(a=>[a.day,a]));
     for(const a of option){if((s.remaining.get(a.resource)||0)<1||x.days.has(a.day)||addedDays.has(a.day)||a.hours>10+.000001)return false;addedDays.add(a.day);
@@ -67,7 +68,7 @@
     return{records:best.records,preview:best.records.flatMap(r=>r.option.map(a=>({...a,blockId:r.group.block?r.group.id:undefined}))),remaining:[...best.remaining],quality:q,rows};
   }
 
-  function solidQuality(p,s){const all=[...p.base,...s.records.flatMap(r=>r.option)],remaining=new Map(s.remaining);for(const [key]of remaining){const [date,code]=key.split('|'),need=solid.required(date,code,all,p.solidRules);if(need!==null){const base=p.base.filter(a=>a.date===date&&a.type===code).length,used=all.filter(a=>a.date===date&&a.type===code).length;remaining.set(key,Math.max(0,need-used))}}
+  function solidQuality(p,s){const all=[...p.base,...s.records.flatMap(r=>r.option)],remaining=new Map(s.remaining);for(const [key]of remaining){const [date,code]=key.split('|'),need=(p.required||((d,c,r)=>solid.required(d,c,r,p.solidRules)))(date,code,all);if(need!==null){const base=p.base.filter(a=>a.date===date&&a.type===code).length,used=all.filter(a=>a.date===date&&a.type===code).length;remaining.set(key,Math.max(0,need-used))}}
     const q=quality(p,s),critical=[...p.criticalCapacity.keys()].reduce((n,k)=>n+criticalOpen(p,s,k),0),metrics=solid.metrics([...p.people.values()],all,p.solidRules,[p.month]);return {...q,open:[...remaining.values()].reduce((n,v)=>n+Math.max(0,v),0),critical,metrics,penalty:solid.penalty(metrics)+q.squared*.15};}
   const criticalOpen=(p,s,key)=>Math.max(0,(p.criticalCapacity.get(key)||0)-((p.capacity.get(key)||0)-(s.remaining.get(key)||0)));
   // Search scarce minimum staffing before optional/general work can bind these people.
@@ -87,7 +88,7 @@
         }
         const date=key.split('|')[0],day=Math.floor(Date.parse(date+'T12:00:00Z')/86400000),unique=new Map();
         for(const b of nextStates){const signature=[...component.ids].sort().map(id=>{const x=b.s.people.get(id),m=x.months.get(date.slice(0,7))||{hours:0,count:0};return id+':'+m.hours+':'+m.count+':'+x.duties.filter(a=>a.day>=day-8&&a.day<=day).map(a=>a.date+a.type).sort().join(',')}).join(';');const previous=unique.get(signature);if(!previous||b.missing<previous.missing)unique.set(signature,b)}
-        beam=[...unique.values()].sort((a,b)=>a.missing-b.missing||a.s.records.length-b.s.records.length).slice(0,96);
+        beam=[...unique.values()].sort((a,b)=>a.missing-b.missing||a.s.records.length-b.s.records.length).slice(0,p.criticalBeamWidth||96);
         await yieldStep();
       }
       selected.push(...beam[0].s.records);
@@ -98,7 +99,7 @@
   async function optimizeSolid(input,{iterations=12,yieldStep=()=>Promise.resolve(),progress=()=>{}}={}){
     const p=prepare(input),rng=random(20270101),byResource=new Map();for(const g of p.groups)for(const option of g.options)for(const key of new Set(option.map(a=>a.resource))){const list=byResource.get(key)||[];list.push({group:g,option});byResource.set(key,list)}
     let best=null,q=null;const seed=[];for(const bundle of input.seedBlocks||[]){const g=p.groups.find(g=>g.id===bundle.id);if(g){const option=g.options.find(o=>o.length===bundle.rows.length&&o.every((a,i)=>a.type===bundle.rows[i].type));if(option)seed.push({group:g,option})}}
-    function allowed(s,r){if(!feasible(p,s,r.group,r.option))return false;const all=[...p.base,...s.records.flatMap(x=>x.option),...r.option];for(const a of r.option){const need=solid.required(a.date,a.type,all,p.solidRules);if(need!==null&&all.filter(b=>b.date===a.date&&b.type===a.type).length>need)return false}for(const rule of p.solidRules.conditionalStaffing||[])for(const a of r.option.filter(a=>a.type===rule.sourceShift)){const date=solid.plus(a.date,-rule.sourceDayOffset),count=all.filter(b=>b.date===date&&b.type===rule.shift).length;if(count>solid.required(date,rule.shift,all,p.solidRules))return false}return true}
+    function allowed(s,r){if(!feasible(p,s,r.group,r.option))return false;const all=[...p.base,...s.records.flatMap(x=>x.option),...r.option];for(const a of r.option){const need=(p.required||((d,c,r)=>solid.required(d,c,r,p.solidRules)))(a.date,a.type,all);if(need!==null&&all.filter(b=>b.date===a.date&&b.type===a.type).length>need)return false}for(const rule of p.solidRules.conditionalStaffing||[])for(const a of r.option.filter(a=>a.type===rule.sourceShift)){const date=solid.plus(a.date,-rule.sourceDayOffset),count=all.filter(b=>b.date===date&&b.type===rule.shift).length;if(count>(p.required||((d,c,r)=>solid.required(d,c,r,p.solidRules)))(date,rule.shift,all))return false}return true}
     function seeded(records){const s=state(p);for(const r of records)if(allowed(s,r))commit(s,r,p.month);return s}
     const minimumSeed=await criticalSeed(p,byResource,allowed,yieldStep);
     if(input.criticalOnly){const s=seeded(minimumSeed);return{preview:s.records.flatMap(r=>r.option.map(a=>({...a,blockId:r.group.id}))),quality:solidQuality(p,s),records:s.records,remaining:[...s.remaining]};}

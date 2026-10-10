@@ -1,0 +1,34 @@
+name: Staffing simulator checks
+on:
+  push:
+    branches: [codex/staffing-simulator-20261010, codex/ionos-migration]
+    paths:
+      - 'assets/staffing-simulator-*'
+      - 'assets/month-optimizer-core-v1.js'
+      - 'assets/ot-weekend-holiday-policy.js'
+      - 'tests/staffing-simulator.test.cjs'
+      - 'tests/fixtures/staffing-simulator-data.cjs'
+      - 'tests/browser/staffing-simulator-qa.cjs'
+      - '.github/workflows/staffing-simulator-checks.yml'
+      - 'index.html'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test && npm run test:ionos && npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:staffing
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: staffing-simulator-qa
+          path: test-results/staffing-simulator/

@@ -50,6 +50,7 @@ jobs:
           npx playwright install --with-deps chromium
           npm run test:reports
           npm run test:today
+          npm run test:staffing
 
 # Please do not touch the following action
       - name: Store deployment content
