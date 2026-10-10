@@ -102,7 +102,7 @@ begin
  from public.shift_assignments a join public.shift_templates s on s.company_id=a.company_id and s.code=a.shift_code
  left join public.company_locations l on l.id=s.site_id and l.company_id=p_company_id
  where a.company_id=p_company_id and a.status='PUBLISHED' and a.published_at is not null
- and a.starts_at>=p_from::timestamp at time zone tz and a.starts_at<(p_to+1)::timestamp at time zone tz
+ and a.ends_at>p_from::timestamp at time zone tz and a.starts_at<(p_to+1)::timestamp at time zone tz
  and (manager_ or a.employee_id=employee_) group by a.shift_code,a.starts_at,a.ends_at,s.site_id,l.name) grouped;
  select coalesce(jsonb_agg(to_jsonb(b)||jsonb_build_object(
  'site',coalesce((select name from public.company_locations where id=b.site_id),'Ohne Standort'),
@@ -113,7 +113,7 @@ begin
  'reports',case when manager_ and private.sf_can_manage_time(p_company_id) then coalesce((select jsonb_agg(to_jsonb(r) order by r.version desc) from public.shift_handover_reports r where r.board_id=b.id),'[]') else '[]'::jsonb end,
  'events',coalesce((select jsonb_agg(jsonb_build_object('action',ev.action,'detail',ev.detail,'created_at',ev.created_at) order by ev.created_at desc) from public.shift_handover_events ev where ev.board_id=b.id),'[]')
  ) order by b.starts_at desc),'[]') into boards_ from public.shift_handovers b
- where b.company_id=p_company_id and b.starts_at>=(p_from-1)::timestamp at time zone tz
+ where b.company_id=p_company_id and b.ends_at>p_from::timestamp at time zone tz
  and b.starts_at<(p_to+1)::timestamp at time zone tz and private.sf_handover_access(b.id);
  return jsonb_build_object('company_id',p_company_id,'manager',manager_,'can_report',manager_ and private.sf_can_manage_time(p_company_id),'timezone',tz,'as_of',now(),'shifts',shifts_,'boards',boards_,
  'employees',coalesce((select jsonb_agg(jsonb_build_object('id',e.id,'first',e.first_name,'last',e.last_name) order by e.last_name,e.first_name)
@@ -121,7 +121,7 @@ begin
  select 1 from public.shift_assignments a join public.shift_templates t on t.company_id=a.company_id and t.code=a.shift_code
  join public.shift_handovers b on b.company_id=a.company_id and b.shift_code=a.shift_code and b.starts_at=a.starts_at and b.ends_at=a.ends_at and b.site_id is not distinct from t.site_id
  where a.employee_id=e.id and a.status='PUBLISHED' and a.published_at is not null and private.sf_handover_access(b.id)
- and b.starts_at>=(p_from-1)::timestamp at time zone tz and b.starts_at<(p_to+1)::timestamp at time zone tz)),'[]'));
+ and b.ends_at>p_from::timestamp at time zone tz and b.starts_at<(p_to+1)::timestamp at time zone tz)),'[]'));
 end $$;
 
 -- Serialize with staged employee erasure before any board-wide snapshot or transfer.

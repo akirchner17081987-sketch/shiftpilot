@@ -17,4 +17,3 @@ begin
  raise exception 'Für einen Mitarbeiter dieser Übergabe läuft die endgültige Löschung. Änderungen sind gesperrt.';end if;
 end $$;
 revoke all on function private.sf_handover_freeze(uuid) from public,anon,authenticated;
-

@@ -3,7 +3,7 @@ begin;
 do $test$
 declare owner_u uuid:=gen_random_uuid(); first_u uuid:=gen_random_uuid(); next_u uuid:=gen_random_uuid(); outsider_u uuid:=gen_random_uuid(); time_u uuid:=gen_random_uuid(); lead_u uuid:=gen_random_uuid(); uid uuid;
  company_ uuid; foreign_ uuid; site_ uuid; other_site uuid; first_e uuid; next_e uuid; outsider_e uuid;
- first_a uuid; next_a uuid; outsider_a uuid; draft_a uuid; b uuid; target_b uuid; item_id uuid:=gen_random_uuid(); internal_id uuid:=gen_random_uuid(); r_id uuid; old_r uuid;
+ first_a uuid; next_a uuid; outsider_a uuid; draft_a uuid; night_e uuid; night_a uuid; night_b uuid; b uuid; target_b uuid; item_id uuid:=gen_random_uuid(); internal_id uuid:=gen_random_uuid(); r_id uuid; old_r uuid;
  d date:=(now() at time zone 'Europe/Berlin')::date-2; rev bigint:=1; q jsonb; out_ jsonb; next_assignment uuid; denied integer:=0; snapshot_ jsonb; preview_ jsonb; job_ jsonb;
 begin
  foreach uid in array array[owner_u,first_u,next_u,outsider_u,time_u,lead_u] loop
@@ -23,6 +23,13 @@ begin
  insert into public.shift_assignments(company_id,employee_id,shift_code,starts_at,ends_at,status,published_at) values(company_,outsider_e,'HO3',d::timestamp at time zone 'Europe/Berlin'+interval '14 hours',d::timestamp at time zone 'Europe/Berlin'+interval '22 hours','PUBLISHED',now()) returning id into outsider_a;
  insert into public.shift_assignments(company_id,employee_id,shift_code,starts_at,ends_at,status) values(company_,first_e,'HO1',(d+1)::timestamp at time zone 'Europe/Berlin'+interval '6 hours',(d+1)::timestamp at time zone 'Europe/Berlin'+interval '14 hours','DRAFT') returning id into draft_a;
  insert into public.time_entries(company_id,assignment_id,actual_start,actual_end,break_minutes,status,confirmed_at,confirmed_by) values(company_,first_a,d::timestamp at time zone 'Europe/Berlin'+interval '6 hours',d::timestamp at time zone 'Europe/Berlin'+interval '13 hours',0,'confirmed',now(),owner_u);
+ insert into public.employees(company_id,first_name,last_name,personnel_no,shift_permissions,weekly_hours) values(company_,'Night','Synthetic','QA-HO4',array['HO1'],40) returning id into night_e;
+ insert into public.shift_assignments(company_id,employee_id,shift_code,starts_at,ends_at,status,published_at) values(company_,night_e,'HO1',(d-1)::timestamp at time zone 'Europe/Berlin'+interval '22 hours',d::timestamp at time zone 'Europe/Berlin'+interval '6 hours','PUBLISHED',now()) returning id into night_a;
+ q:=public.shift_handover_action(company_,'OPEN',null,null,jsonb_build_object('assignment_id',night_a));night_b:=(q->>'id')::uuid;
+ q:=public.shift_handover_bundle(company_,d,d);
+ if not exists(select 1 from jsonb_array_elements(q->'shifts')x where x->>'assignment_id'=night_a::text) then raise exception 'Running overnight duty missing from date selection';end if;
+ if not exists(select 1 from jsonb_array_elements(q->'boards')x where x->>'id'=night_b::text) then raise exception 'Overnight board missing';end if;
+ q:=public.shift_handover_bundle(company_,d+1,d+1);if jsonb_array_length(q->'boards')<>0 then raise exception 'Finished prior-day boards included in selected day';end if;
  set local role authenticated;
  perform set_config('request.jwt.claims',jsonb_build_object('sub',first_u,'role','authenticated')::text,true);perform set_config('request.jwt.claim.sub',first_u::text,true);
  q:=public.shift_handover_action(company_,'OPEN',null,null,jsonb_build_object('assignment_id',first_a));b:=(q->>'id')::uuid;
@@ -89,7 +96,7 @@ begin
  if not exists(select 1 from public.shift_handovers where id=b and employee_id is null and received_at is not null) then raise exception 'Receipt not anonymized/preserved';end if;
 
  set constraints all immediate;
- perform set_config('app.handover_qa_result','PASS: shared published duty, private employee/site/company scope, task deadline/responsibility, exact next shift, carryforward/receipt, time permission, internal exclusion, confirmed evidence, immutable version, stale basis/revision, actual erasure/freeze/receipt anonymization and 17 deny cases. All synthetic data rolled back.',true);
+ perform set_config('app.handover_qa_result','PASS: date overlap/overnight duty, shared published duty, private employee/site/company scope, task deadline/responsibility, exact next shift, carryforward/receipt, time permission, internal exclusion, confirmed evidence, immutable version, stale basis/revision, actual erasure/freeze/receipt anonymization and 17 deny cases. All synthetic data rolled back.',true);
 end $test$;
 select current_setting('app.handover_qa_result') result;
 rollback;

@@ -5,4 +5,3 @@ do $$declare t text;begin foreach t in array array['shift_handovers','shift_hand
 create index shift_handover_items_board_fk on public.shift_handover_items(board_id);
 create index shift_handover_reports_board_fk on public.shift_handover_reports(board_id);
 create index shift_handover_events_board_fk on public.shift_handover_events(board_id);
-

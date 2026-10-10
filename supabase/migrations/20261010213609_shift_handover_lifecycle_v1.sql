@@ -108,4 +108,3 @@ begin
  return jsonb_build_object('id',b.id,'result_id',new_id);
 end $$;
 notify pgrst,'reload schema';
-

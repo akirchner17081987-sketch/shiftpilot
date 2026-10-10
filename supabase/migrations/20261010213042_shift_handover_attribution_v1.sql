@@ -139,4 +139,3 @@ AS $function$
  ('public','employees','id','id=any($2)')
  ) q
 $function$;
-

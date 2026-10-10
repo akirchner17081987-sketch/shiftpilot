@@ -225,4 +225,3 @@ DO $$declare t text;begin foreach t in array array['shift_handovers','shift_hand
  execute format('create trigger a00_employee_erasure_freeze before insert or update or delete on public.%I for each row execute function private.sf_guard_employee_erasure_pending()',t);
  end loop;end $$;
 notify pgrst,'reload schema';
-

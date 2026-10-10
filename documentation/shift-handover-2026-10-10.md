@@ -4,7 +4,7 @@ Umsetzung für SchichtFunk auf IONOS, 10.10.2026. Ausgangsstand: `f173bd917d5ebf
 
 ## Betrieb
 
-Im Hauptmenü und im Mitarbeiterportal unter **Schichtübergabe**. Eine veröffentlichte Schicht öffnen; gleiche Unternehmens-, Standort-, Schichtcode- und Zeitdaten ergeben einen gemeinsamen Arbeitsbereich. Mitarbeiterzugriff setzt aktiven Mitarbeiterzugang und eine passende veröffentlichte Zuweisung voraus. Die Leitung sieht eigene Unternehmensschichten. TIME_TRACKING und andere Unternehmen sind ausgeschlossen.
+Im Hauptmenü und im Mitarbeiterportal unter **Schichtübergabe**. Der Zeitraum berücksichtigt Schichten, die ihn tatsächlich überlappen, auch laufende Nachtdienste vom Vortag. Eine veröffentlichte Schicht öffnen; gleiche Unternehmens-, Standort-, Schichtcode- und Zeitdaten ergeben einen gemeinsamen Arbeitsbereich. Mitarbeiterzugriff setzt aktiven Mitarbeiterzugang und eine passende veröffentlichte Zuweisung voraus. Die Leitung sieht eigene Unternehmensschichten. TIME_TRACKING und andere Unternehmen sind ausgeschlossen.
 
 Aufgaben, einzelne Checklistenpunkte, Vorkommnisse und Hinweise mit Verantwortlichen, Frist, Ergebnis, Kritikalität und Eskalationsweg. Kritische Punkte brauchen Frist und Eskalationsweg. Erledigung braucht ein Ergebnis. Eskalationsweg und überfällige Punkte werden intern sichtbar; keine automatischen externen Nachrichten. Nachnamen stehen vor Vornamen.
 
@@ -30,6 +30,6 @@ Die vorhandene endgültige Mitarbeiterlöschung erfasst zugeordnete Punkte, kopi
 
 - `npm test`: 627 erfolgreiche Tests, einschließlich vorhandener Planungs-, Datenschutz-, Reporting-, Wunschplanungs- und HilfeCenter-Regressionen.
 - `npm run test:ionos`: 5 erfolgreiche Tests; statischer Build erfolgreich.
-- `tests/sql/shift-handover-rollback.sql`: reale RPC-Grants, synthetische Konten, veröffentlichte Schicht, Scope nach Mitarbeiter/Standort/Unternehmen, Pflichtfristen, Verantwortliche, Weitergabe, bestätigte Übernahme, Zeitrechte, Ausschluss interner Punkte, echte bestätigte Zeitnachweise, unveränderliche Versionen, veraltete Datenbasis, 17 Ablehnungsfälle; tatsächliche endgültige Löschung mit Schreibsperre und anonymisierter Übernahme. Alles in einer zurückgerollten Transaktion, keine Produktivdatenänderungen.
+- `tests/sql/shift-handover-rollback.sql`: reale RPC-Grants, synthetische Konten, veröffentlichte Schicht einschließlich Datumsgrenzen und laufendem Nachtdienst, Scope nach Mitarbeiter/Standort/Unternehmen, Pflichtfristen, Verantwortliche, Weitergabe, bestätigte Übernahme, Zeitrechte, Ausschluss interner Punkte, echte bestätigte Zeitnachweise, unveränderliche Versionen, veraltete Datenbasis, 17 Ablehnungsfälle; tatsächliche endgültige Löschung mit Schreibsperre und anonymisierter Übernahme. Alles in einer zurückgerollten Transaktion, keine Produktivdatenänderungen.
 - `tests/browser/shift-handover-qa.cjs`: GitHub-Actions-Prüfung mit tatsächlichen Portal-, UI-, Zeitumrechnungs- und CSS-Dateien, synthetischen Backendantworten; Bearbeitung, Freigabe, echte PDF-/Textdownloads, Weitergabe, Mitarbeiterübernahme, Identitätswechsel, Fehler/Rollen, Escaping, 320–1440 px, hell/dunkel.
 - Produktionsbuild führt Browserprüfung vor IONOS-Upload aus. Live-Check prüft exakte Asset-Hashes und Cacheversionen gegen denselben Release.

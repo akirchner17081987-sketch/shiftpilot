@@ -8,4 +8,3 @@ language sql stable security definer set search_path='' as $$
  and (m.status<>'ACTIVE' or m.role in ('TIME_TRACKING','VIEWER'))) limit 1;
 $$;
 notify pgrst,'reload schema';
-
