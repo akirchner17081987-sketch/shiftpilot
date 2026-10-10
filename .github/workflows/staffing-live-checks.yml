@@ -5,6 +5,7 @@ on:
     paths:
       - 'assets/staffing-simulator-*'
       - 'assets/wish-planning-*'
+      - 'assets/shift-handover-*'
       - 'assets/compliance-core-v2.js'
       - 'index.html'
       - 'assets/help-center-content-v3.js'

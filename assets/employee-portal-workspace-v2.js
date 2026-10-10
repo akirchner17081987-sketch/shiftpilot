@@ -4,14 +4,14 @@
   if(B.__employeePortalWorkspaceV2)return;B.__employeePortalWorkspaceV2=true;
   const NAV=[
     {group:'START',items:[['dashboard','⌂','Übersicht','Alles Wichtige auf einen Blick']]},
-    {group:'EINSATZ',items:[['disruptions','⚡','Ersatzanfragen','Dringende Schichten beantworten'],['marketplace','↺','Schicht-Marktplatz','Schichten anbieten und übernehmen'],['shifts','▣','Meine Schichten','Persönlichen Dienstplan ansehen']]},
+    {group:'EINSATZ',items:[['disruptions','⚡','Ersatzanfragen','Dringende Schichten beantworten'],['marketplace','↺','Schicht-Marktplatz','Schichten anbieten und übernehmen'],['shifts','▣','Meine Schichten','Persönlichen Dienstplan ansehen'],['handover','⇥','Schichtübergabe','Aufgaben weiterführen und übernehmen']]},
     {group:'ANTRÄGE & ZEIT',items:[['changes','◇','Schichtänderungen','Anfragen und Entscheidungen'],['swaps','⇄','Schichttausch','Tauschvorgänge verfolgen'],['time','◷','Arbeitszeit','QR-Buchungen und Dienstplan-Zeiten'],['absences','☼','Abwesenheiten','Anträge und Rückmeldungen'],['wishes','♡','Wunschplanung','Freizeit, Schichtwünsche und Zusagen']]},
     {group:'MEIN KONTO',items:[['account','∑','Stundenkonto','Saldo und Monatswerte'],['wage','€','Lohnvorschau','Persönliche Vorschau'],['profile','♙','Mein Profil','Eigene Stammdaten']]}
   ];
   const META={
     '⚡ Dringende Ersatzanfragen':'disruptions','Schicht-Marktplatz':'marketplace','Meine Schichten':'shifts',
     'Schichtänderungen':'changes','Schichttausch':'swaps','Arbeitszeit':'time','Abwesenheiten':'absences',
-    'Wunschplanung':'wishes','Stundenkonto':'account','Lohnvorschau':'wage','Mein Profil':'profile'
+    'Schichtübergabe':'handover','Wunschplanung':'wishes','Stundenkonto':'account','Lohnvorschau':'wage','Mein Profil':'profile'
   };
   const MOBILE_MAIN=new Set(['dashboard','shifts','time']);
   let active='dashboard',queued=false,arranging=false,modalFocusSequence=0;
@@ -88,6 +88,7 @@
       #sfEmployeePortal[data-sf-portal-active="swaps"] .sf-portal-card[data-sf-portal-section="swaps"],
       #sfEmployeePortal[data-sf-portal-active="time"] .sf-portal-card[data-sf-portal-section="time"],
       #sfEmployeePortal[data-sf-portal-active="absences"] .sf-portal-card[data-sf-portal-section="absences"],
+      #sfEmployeePortal[data-sf-portal-active="handover"] .sf-portal-card[data-sf-portal-section="handover"],
       #sfEmployeePortal[data-sf-portal-active="wishes"] .sf-portal-card[data-sf-portal-section="wishes"],
       #sfEmployeePortal[data-sf-portal-active="account"] .sf-portal-card[data-sf-portal-section="account"],
       #sfEmployeePortal[data-sf-portal-active="wage"] .sf-portal-card[data-sf-portal-section="wage"],
@@ -199,7 +200,7 @@
     const missing=active!=='dashboard'&&!portal.querySelector(`.sf-portal-card[data-sf-portal-section="${active}"]`);portal.classList.toggle('sf-employee-view-missing',missing);
     updateCounts(portal)
   }
-  function navigate(id){const portal=document.getElementById('sfEmployeePortal');if(!portal)return;active=flatNav().some(x=>x[0]===id)?id:'dashboard';try{sessionStorage.setItem('sfEmployeePortalView',active)}catch{}renderState(portal);if(active==='wishes')window.SFWishPlanning?.load();if(active==='time')B.renderEmployeeQrBookings?.();if(active==='wage')B.wagePreview?.render();if(active==='profile')B.employeeProfile?.render();const main=portal.querySelector('.sf-portal-main');if(main)main.scrollTop=0}
+  function navigate(id){const portal=document.getElementById('sfEmployeePortal');if(!portal)return;active=flatNav().some(x=>x[0]===id)?id:'dashboard';try{sessionStorage.setItem('sfEmployeePortalView',active)}catch{}renderState(portal);if(active==='handover')window.SFHandover?.load();if(active==='wishes')window.SFWishPlanning?.load();if(active==='time')B.renderEmployeeQrBookings?.();if(active==='wage')B.wagePreview?.render();if(active==='profile')B.employeeProfile?.render();const main=portal.querySelector('.sf-portal-main');if(main)main.scrollTop=0}
   function setMobileMore(portal,open,restoreFocus=true){const layer=portal.querySelector('.sf-employee-mobile-more-layer'),toggle=portal.querySelector('.sf-employee-more-toggle');if(!layer||!toggle)return;layer.hidden=!open;toggle.setAttribute('aria-expanded',String(open));document.body.classList.toggle('sf-employee-more-open',open);if(open)requestAnimationFrame(()=>layer.querySelector('.sf-employee-more-panel .sf-employee-nav-btn')?.focus());else if(restoreFocus)requestAnimationFrame(()=>toggle.focus())}
   function bindMobileMore(portal){if(portal.dataset.sfEmployeeMoreBound)return;portal.dataset.sfEmployeeMoreBound='true';portal.addEventListener('click',event=>{if(event.target.closest('.sf-employee-more-toggle')){setMobileMore(portal,true);return}if(event.target.closest('.sf-employee-more-close,.sf-employee-more-backdrop')){setMobileMore(portal,false);return}if(event.target.closest('.sf-employee-more-panel [data-sf-employee-view]'))setMobileMore(portal,false,false)});portal.addEventListener('keydown',event=>{const layer=portal.querySelector('.sf-employee-mobile-more-layer');if(!layer||layer.hidden)return;if(event.key==='Escape'){event.preventDefault();setMobileMore(portal,false);return}if(event.key!=='Tab')return;const nodes=[...layer.querySelectorAll('button:not([disabled])')].filter(node=>node.offsetParent!==null),first=nodes[0],last=nodes[nodes.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}})}
   function integrateAddedCards(cards){

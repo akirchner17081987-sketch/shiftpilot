@@ -1,6 +1,6 @@
 {
   "reviewedAt": "2026-10-10",
-  "sourceCommit": "7946566153211fc24bc2ad8a0bfd976e8efb3aeb",
+  "sourceCommit": "f173bd917d5ebf6f3fe24156583c027b6d1fa3b4",
   "addedArticles": [
     {
       "category": "wishes",
@@ -547,6 +547,123 @@
       "question": "Wie verwalte ich das Unternehmensprofil?",
       "sources": [
         "assets/company-profile-v1.js"
+      ]
+    },
+    {
+      "category": "handover",
+      "question": "Wie starte ich eine digitale Schichtübergabe?",
+      "sources": [
+        "assets/shift-handover-v1.js",
+        "assets/shift-handover-core-v1.js",
+        "database/shift-handover-v1.sql"
+      ]
+    },
+    {
+      "category": "handover",
+      "question": "Welche Punkte kann das Team in einer Übergabe dokumentieren?",
+      "sources": [
+        "assets/shift-handover-v1.js",
+        "assets/shift-handover-core-v1.js",
+        "database/shift-handover-v1.sql"
+      ]
+    },
+    {
+      "category": "handover",
+      "question": "Wie funktionieren kritische Aufgaben und Eskalationen?",
+      "sources": [
+        "assets/shift-handover-v1.js",
+        "assets/shift-handover-core-v1.js",
+        "database/shift-handover-v1.sql"
+      ]
+    },
+    {
+      "category": "handover",
+      "question": "Wie gehen offene Aufgaben an die nächste Schicht?",
+      "sources": [
+        "assets/shift-handover-v1.js",
+        "assets/shift-handover-core-v1.js",
+        "database/shift-handover-v1.sql"
+      ]
+    },
+    {
+      "category": "handover",
+      "question": "Welche Folgeschicht wählt die Übergabe aus?",
+      "sources": [
+        "assets/shift-handover-v1.js",
+        "assets/shift-handover-core-v1.js",
+        "database/shift-handover-v1.sql"
+      ]
+    },
+    {
+      "category": "handover",
+      "question": "Wie bestätigt das Folgeteam die Übernahme?",
+      "sources": [
+        "assets/shift-handover-v1.js",
+        "assets/shift-handover-core-v1.js",
+        "database/shift-handover-v1.sql"
+      ]
+    },
+    {
+      "category": "handover",
+      "question": "Welche Übergabedaten kommen in den Leistungsbericht?",
+      "sources": [
+        "assets/shift-handover-v1.js",
+        "assets/shift-handover-core-v1.js",
+        "database/shift-handover-v1.sql"
+      ]
+    },
+    {
+      "category": "handover",
+      "question": "Wie unterscheiden sich Planstunden und bestätigte Leistungszeit?",
+      "sources": [
+        "assets/shift-handover-v1.js",
+        "assets/shift-handover-core-v1.js",
+        "database/shift-handover-v1.sql"
+      ]
+    },
+    {
+      "category": "handover",
+      "question": "Wer erstellt und genehmigt einen Leistungsbericht?",
+      "sources": [
+        "assets/shift-handover-v1.js",
+        "assets/shift-handover-core-v1.js",
+        "database/shift-handover-v1.sql"
+      ]
+    },
+    {
+      "category": "handover",
+      "question": "Wie exportiere und teile ich einen freigegebenen Leistungsbericht?",
+      "sources": [
+        "assets/shift-handover-v1.js",
+        "assets/shift-handover-core-v1.js",
+        "database/shift-handover-v1.sql"
+      ]
+    },
+    {
+      "category": "handover",
+      "question": "Kann ein freigegebener Leistungsbericht später geändert werden?",
+      "sources": [
+        "assets/shift-handover-v1.js",
+        "assets/shift-handover-core-v1.js",
+        "database/shift-handover-v1.sql"
+      ]
+    },
+    {
+      "category": "handover",
+      "question": "Was bedeutet „Die Übergabe wurde inzwischen geändert“?",
+      "sources": [
+        "assets/shift-handover-v1.js",
+        "assets/shift-handover-core-v1.js",
+        "database/shift-handover-v1.sql"
+      ]
+    },
+    {
+      "category": "handover",
+      "question": "Wie werden Übergabedaten bei endgültiger Mitarbeiterlöschung behandelt?",
+      "sources": [
+        "assets/shift-handover-v1.js",
+        "assets/shift-handover-core-v1.js",
+        "database/shift-handover-v1.sql"
       ]
     }
   ],
@@ -1604,6 +1721,36 @@
     {
       "source": "assets/company-profile-v1.js",
       "category": "settings"
+    },
+    {
+      "source": "assets/shift-handover-core-v1.js",
+      "area": "Digitale Schichtübergabe",
+      "category": "handover",
+      "kind": "feature"
+    },
+    {
+      "source": "assets/shift-handover-v1.js",
+      "area": "Digitale Schichtübergabe",
+      "category": "handover",
+      "kind": "feature"
+    },
+    {
+      "source": "database/shift-handover-v1.sql",
+      "area": "Digitale Schichtübergabe",
+      "category": "handover",
+      "kind": "feature"
+    },
+    {
+      "source": "database/shift-handover-erasure-v1.sql",
+      "area": "Digitale Schichtübergabe",
+      "category": "handover",
+      "kind": "feature"
+    },
+    {
+      "source": "database/shift-handover-review-v1.sql",
+      "area": "Digitale Schichtübergabe",
+      "category": "handover",
+      "kind": "feature"
     }
   ],
   "categoryCoverage": [
@@ -1872,6 +2019,25 @@
         "Was zeigt das Audit-Protokoll?",
         "Was bedeutet Datenschutz & Löschung in den Einstellungen?",
         "Was unterscheidet vollständige Datenlöschung vom normalen Entfernen?"
+      ]
+    },
+    {
+      "id": "handover",
+      "name": "Schichtübergabe & Leistungsbericht",
+      "questions": [
+        "Wie starte ich eine digitale Schichtübergabe?",
+        "Welche Punkte kann das Team in einer Übergabe dokumentieren?",
+        "Wie funktionieren kritische Aufgaben und Eskalationen?",
+        "Wie gehen offene Aufgaben an die nächste Schicht?",
+        "Welche Folgeschicht wählt die Übergabe aus?",
+        "Wie bestätigt das Folgeteam die Übernahme?",
+        "Welche Übergabedaten kommen in den Leistungsbericht?",
+        "Wie unterscheiden sich Planstunden und bestätigte Leistungszeit?",
+        "Wer erstellt und genehmigt einen Leistungsbericht?",
+        "Wie exportiere und teile ich einen freigegebenen Leistungsbericht?",
+        "Kann ein freigegebener Leistungsbericht später geändert werden?",
+        "Was bedeutet „Die Übergabe wurde inzwischen geändert“?",
+        "Wie werden Übergabedaten bei endgültiger Mitarbeiterlöschung behandelt?"
       ]
     }
   ]

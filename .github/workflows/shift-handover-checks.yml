@@ -1,0 +1,33 @@
+name: Shift handover and approved reports
+on:
+  push:
+    branches: [codex/shift-handover-20261010, codex/ionos-migration]
+    paths:
+      - 'assets/shift-handover-*'
+      - 'assets/employee-portal-workspace-v2.js'
+      - 'assets/conflict-plausibility-v1.js'
+      - 'tests/shift-handover.test.cjs'
+      - 'tests/browser/shift-handover-qa.cjs'
+      - 'index.html'
+      - '.github/workflows/shift-handover-checks.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test && npm run test:ionos && npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:handover && npm run test:wishes && npm run test:today
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shift-handover-qa
+          path: test-results/shift-handover/

@@ -1,4 +1,4 @@
-// Hilfe-Center: Wunschplanung und Personalsimulator ergänzt am 10.10.2026.
+// Hilfe-Center: Schichtübergabe, Wunschplanung und Personalsimulator · 10.10.2026.
 window.SFHelpContent = {
   "categories": [
     [
@@ -95,6 +95,11 @@ window.SFHelpContent = {
       "access",
       "Benutzer & Sicherheit",
       "Rollen, Unternehmen und Datenschutz"
+    ],
+    [
+      "handover",
+      "Schichtübergabe & Leistungsbericht",
+      "Teamaufgaben, bestätigte Übernahme und freigegebene Berichte"
     ]
   ],
   "articles": {
@@ -782,6 +787,60 @@ window.SFHelpContent = {
       [
         "Was tun bei fehlgeschlagener Wunschplanung oder veraltetem Stand?",
         "Wähle „Aktualisieren“ und prüfe den aktuell gespeicherten Verlauf. Eine zwischenzeitlich geänderte Wunschversion wird beim Speichern abgewiesen. Nach einer unklaren Übertragung aktualisiere, bevor du neu einreichst. Die Planung bleibt bei fehlenden Schutzdaten gesperrt, bis sie wieder geladen wurden. Vorhandene Dienste müssen vor einer Freizeitzusage geklärt werden. Überlappende aktive Wünsche, inaktive Profile, nicht freigegebene Schichtmodelle und ungültige Zeiträume werden abgewiesen."
+      ]
+    ],
+    "handover": [
+      [
+        "Wie starte ich eine digitale Schichtübergabe?",
+        "Öffne <b>Schichtübergabe</b> im Hauptmenü oder Mitarbeiterportal. Wähle einen Zeitraum mit höchstens 32 Tagen, klappe <b>Veröffentlichte Schicht öffnen</b> auf und wähle den Dienst. Gleiche Schichtzeiten, Schichtmodell und Standort bilden einen gemeinsamen Arbeitsbereich. Mitarbeiter sehen nur ihre zugeordneten veröffentlichten Schichten; die Planungsleitung sieht die Schichten des eigenen Unternehmens."
+      ],
+      [
+        "Welche Punkte kann das Team in einer Übergabe dokumentieren?",
+        "Du kannst <b>Aufgaben, Checklisten, Vorkommnisse und Hinweise</b> mit Titel, Beschreibung, Verantwortlichen, Frist und Ergebnis erfassen. Checklistenpunkte werden einzeln angelegt und erledigt. Verantwortliche stammen aus der zugeordneten Schicht. Bei <b>Erledigt</b> braucht eine Aufgabe ein kurzes Ergebnis. Gesendete Übergaben sind schreibgeschützt; das Folgeteam arbeitet in seinem eigenen Arbeitsbereich weiter."
+      ],
+      [
+        "Wie funktionieren kritische Aufgaben und Eskalationen?",
+        "Für kritische Punkte sind eine <b>Frist und ein Eskalationsweg</b> Pflicht, etwa die diensthabende Einsatzleitung. Kritische überfällige Punkte werden hervorgehoben. Fristen bleiben bei Weitergabe erhalten. Es werden keine Anrufe, E-Mails oder Nachrichten automatisch ausgelöst; kontaktiere die zuständige Stelle über euren vereinbarten Weg."
+      ],
+      [
+        "Wie gehen offene Aufgaben an die nächste Schicht?",
+        "<b>An nächste Schicht übergeben</b> zeigt die konkrete nächste Schicht zur Bestätigung. Offene Punkte und Punkte in Arbeit werden einmalig dorthin übertragen, im Ursprung als <b>Weitergegeben</b> dokumentiert und mit ihrer Herkunft verknüpft. Fristen, Kritikalität, Beschreibungen und Auswahl für Berichte bleiben erhalten. Verantwortliche werden im Folgeteam neu zugeordnet. Erledigte Punkte bleiben im Ursprung."
+      ],
+      [
+        "Welche Folgeschicht wählt die Übergabe aus?",
+        "Die früheste nächste veröffentlichte Schicht am <b>selben Standort</b> nach dem Schichtende, höchstens sieben Tage später. Ohne Standortzuordnung wird nur dasselbe Schichtmodell verwendet. Es gibt keine Weitergabe zwischen Unternehmen. Fehlt eine passende veröffentlichte Schicht oder ist deren Übergabe schon gesendet, muss die Planungsleitung den Plan prüfen. Ändert sich die Folgeschicht während der Bestätigung, wird die Speicherung abgebrochen und ein neuer Stand verlangt."
+      ],
+      [
+        "Wie bestätigt das Folgeteam die Übernahme?",
+        "Öffne deine Schichtübergabe, prüfe die eingegangenen Punkte, ordne Verantwortliche zu und wähle <b>Übernahme bestätigen</b>. Der Zeitpunkt wird in Ursprung und Folgeschicht dokumentiert. Die Planungsleitung kann die Übernahme ebenfalls bestätigen. Eine gesendete Übergabe gilt bis zur Bestätigung ausdrücklich als <b>Übernahme ausstehend</b>."
+      ],
+      [
+        "Welche Übergabedaten kommen in den Leistungsbericht?",
+        "Jeder Punkt ist zunächst <b>nur intern</b>. Aktiviere <b>Für Leistungsbericht auswählen</b>, wenn Titel, Beschreibung, Status, Frist und Ergebnis für die freigegebene Fassung bestimmt sind. Prüfe diese Angaben auf vertrauliche oder personenbezogene Informationen. Interne Punkte, Eskalationskontakte, Personalnummern und Mitarbeiternamen werden nicht automatisch übernommen."
+      ],
+      [
+        "Wie unterscheiden sich Planstunden und bestätigte Leistungszeit?",
+        "Der Bericht zeigt <b>geplante Besetzung und Planstunden getrennt von bestätigten Arbeitszeiten</b>. Nur abgeschlossene bestätigte Dienstplan-Zeitbuchungen zählen als Leistungszeit. Offene, unbestätigte und QR-Buchungen ohne eindeutige Dienstzuordnung werden nicht eingerechnet. Fehlende Bestätigungen beweisen nicht, dass nicht gearbeitet wurde. Ein freigegebener Bericht bleibt ein dokumentierter Datenstand und ist keine Rechnung oder automatische Abrechnung."
+      ],
+      [
+        "Wer erstellt und genehmigt einen Leistungsbericht?",
+        "Die Planungsleitung benötigt zusätzlich <b>Zeitverwaltungsrechte</b>. Erst nach Schichtende kann sie einen Entwurf erstellen, den vollständigen Inhalt aufklappen und mit einem Prüfvermerk ausdrücklich freigeben oder ablehnen. Mitarbeiter haben keinen Zugriff auf Berichtsentwürfe oder Exporte. Bei geänderter Berichtsgrundlage muss ein neuer Entwurf erstellt werden."
+      ],
+      [
+        "Wie exportiere und teile ich einen freigegebenen Leistungsbericht?",
+        "Nur <b>freigegebene Versionen</b> bieten <b>PDF</b> und <b>Text herunterladen</b>. Der Export enthält Versionsnummer, Berichtskennung, Datenstand, Freigabezeitpunkt und Prüfvermerk sowie ausgewählte Punkte. Du kannst die Datei nach eigener Prüfung mit der Geschäftsleitung oder berechtigten Kunden teilen. Es gibt keinen automatischen Versand und keinen öffentlichen Freigabelink."
+      ],
+      [
+        "Kann ein freigegebener Leistungsbericht später geändert werden?",
+        "Nein. Freigegebene und abgelehnte Versionen werden nicht überschrieben. Für spätere Zeitbestätigungen, Korrekturen oder Ergänzungen erstellst du einen <b>neuen Berichtsentwurf</b> und gibst ihn erneut frei. Bis zu 25 Versionen je Schicht und 200 Übergabepunkte sind möglich. Der Verlauf dokumentiert Erfassung, Änderungen, Weitergabe, Übernahme und Berichtsentscheidungen."
+      ],
+      [
+        "Was bedeutet „Die Übergabe wurde inzwischen geändert“?",
+        "Ein anderes Teammitglied hat nach deinem Laden gespeichert. Aktualisiere den Arbeitsbereich, prüfe dessen Änderungen und trage deine Ergänzung erneut ein. Änderungen werden über eine gemeinsame Revision geschützt, damit parallele Bearbeitung keine fremden Eingaben überschreibt. Nach einer Zeitüberschreitung bitte ebenfalls zuerst den gespeicherten Stand prüfen."
+      ],
+      [
+        "Wie werden Übergabedaten bei endgültiger Mitarbeiterlöschung behandelt?",
+        "Die bestehende endgültige Löschung umfasst persönlich zugeordnete Übergabepunkte, ihre Ereignisse und betroffene Berichtsfassungen. Eine Übernahmezuordnung wird anonymisiert; der Übernahmezeitpunkt kann erhalten bleiben. Während einer laufenden endgültigen Löschung sind betroffene Änderungen gesperrt. Andere Teamaufgaben werden weitergeführt. Bereits heruntergeladene und extern geteilte Dateien müssen über euren betrieblichen Löschprozess behandelt werden."
       ]
     ]
   },

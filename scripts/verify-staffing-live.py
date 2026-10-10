@@ -7,7 +7,7 @@ import urllib.request
 from pathlib import Path
 
 root = Path(__file__).resolve().parent.parent
-assets = ["assets/staffing-simulator-core-v1.js", "assets/staffing-simulator-v1.js", "assets/staffing-simulator-v1.css", "assets/staffing-simulator-worker-v1.js", "assets/month-optimizer-core-v1.js", "assets/ot-weekend-holiday-policy.js", "assets/help-center-content-v3.js", "assets/wish-planning-core-v1.js", "assets/wish-planning-v1.js", "assets/wish-planning-v1.css", "assets/compliance-core-v2.js", "assets/employee-portal-workspace-v2.js", "assets/month-optimizer-v1.js", "assets/conflict-plausibility-v1.js"]
+assets = ["assets/shift-handover-core-v1.js", "assets/shift-handover-v1.js", "assets/shift-handover-v1.css", "assets/staffing-simulator-core-v1.js", "assets/staffing-simulator-v1.js", "assets/staffing-simulator-v1.css", "assets/staffing-simulator-worker-v1.js", "assets/month-optimizer-core-v1.js", "assets/ot-weekend-holiday-policy.js", "assets/help-center-content-v3.js", "assets/wish-planning-core-v1.js", "assets/wish-planning-v1.js", "assets/wish-planning-v1.css", "assets/compliance-core-v2.js", "assets/employee-portal-workspace-v2.js", "assets/month-optimizer-v1.js", "assets/conflict-plausibility-v1.js"]
 expected = {name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in assets}
 dynamic_assets = {"assets/compliance-core-v2.js", "assets/employee-portal-workspace-v2.js"}
 loader_source = re.search(r'src="(assets/conflict-plausibility-v1\.js[^\"]*)"', (root / "index.html").read_text(encoding="utf-8")).group(1)
@@ -33,7 +33,7 @@ while time.monotonic() < deadline:
             raise RuntimeError("Published index does not yet load the updated module loader cache version")
         if f'src="{help_source}"' not in index:
             raise RuntimeError("Published index does not yet load the updated help cache version")
-        print(f"Live verification passed: staffing-simulator, wish planning and help assets exactly match release {revision}, and the production index loads them with the expected help cache version.", flush=True)
+        print(f"Live verification passed: staffing-simulator, wish planning, shift handover and help assets exactly match release {revision}, and the production index loads them with the expected help cache version.", flush=True)
         break
     except Exception as error:
         print(f"Attempt {attempt}: waiting for IONOS release ({error})", flush=True)
