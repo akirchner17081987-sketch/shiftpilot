@@ -44,11 +44,12 @@
  function cells(data,config,dates,rows){
   const active=data.models.filter(t=>t.active!==false),overrides=new Map(data.daily.map(d=>[d.date+'|'+d.shift,Number(d.required)])),out=[];
   for(const date of dates){const done=new Set();for(const t of active){const group=t.coverage_group,key=date+'|'+(group||t.code);if(done.has(key))continue;done.add(key);
-   const members=group?active.filter(v=>v.coverage_group===group):[t],possible=members.filter(v=>!v.strict_weekdays||v.optional_weekdays.includes(S.weekday(date))),alternatives=possible.filter(v=>v.optional_weekdays.includes(S.weekday(date))||overrides.has(date+'|'+v.code));
+   const members=group?active.filter(v=>v.coverage_group===group):[t],possible=members.filter(v=>!v.strict_weekdays||v.optional_weekdays.includes(S.weekday(date))),alternatives=possible.filter(v=>v.code==='OT'&&data.rules.otHolidayStatesBySite?OT.applies(date,Object.values(data.rules.otHolidayStatesBySite)):v.optional_weekdays.includes(S.weekday(date))||overrides.has(date+'|'+v.code));
    let required=0;
    if(group){const values=members.filter(v=>overrides.has(date+'|'+v.code)).map(v=>overrides.get(date+'|'+v.code));required=values.length?Math.max(...values):alternatives.length?Math.max(...members.map(v=>Number(v.coverage_required)||0)):0;}
    else{const override=overrides.get(date+'|'+t.code);required=t.strict_weekdays&&!possible.length?0:override??(t.planning_mode==='optional'||!alternatives.length?0:Number(data.global[t.code])||0);const conditional=S.required(date,t.code,rows,data.rules);if(conditional!==null)required=conditional;}
    if(t.code==='OT'&&data.rules.otHolidayStatesBySite&&!OT.applies(date,Object.values(data.rules.otHolidayStatesBySite)))required=0;
+   const minimum=(data.rules.criticalShifts||[]).find(r=>r.code===t.code&&(!r.weekdays?.length||r.weekdays.includes(S.weekday(date))));if(minimum)required=Math.max(required,Number(minimum.minimum)||0);if(group&&(data.rules.criticalCoverageGroups||[]).includes(group))required=Math.max(required,...members.map(v=>Number(v.coverage_required)||0));
    const extra=config.extraCount&&members.some(v=>v.code===config.extraShift)&&alternatives.length?config.extraCount:0;required+=extra;
    const iv=S.interval(date,t.default_start,t.default_end,data.timezone),covered=new Set(rows.filter(a=>a.date===date&&members.some(v=>v.code===a.type)&&a.startMs<=iv.start&&a.endMs>=iv.end).map(a=>a.employeeId)).size;
    out.push({date,key,type:t.code,alternatives:alternatives.map(v=>v.code),required,missing:Math.max(0,required-covered),hours:(iv.end-iv.start)/H,group:group||null,extra});
@@ -56,6 +57,7 @@
  }
  const contractTarget=(e,month)=>{const first=month+'-01',last=plus(monthNext(first),-1),all=days(first,last),available=all.filter(d=>(!e.startDate||d>=e.startDate)&&(!e.contractEnd||d<=e.contractEnd));return e.monthlyHours*available.length/all.length};
  async function run(data,config,{yieldStep=()=>Promise.resolve(),progress=()=>{},iterations=4}={}){
+  data={...data,rules:{...data.rules,timezone:data.timezone}};
   const c=validate(data,config),people=staff(data,c),policy={...data.rules,timezone:data.timezone},dates=days(data.from,data.to),months=[...new Set(dates.map(d=>d.slice(0,7)))],types=data.models.filter(t=>t.active!==false).map(t=>({...t,id:t.code,start:t.default_start.slice(0,5),end:t.default_end.slice(0,5)}));
   const off=[...data.absences,...(c.outageId?[{employeeId:c.outageId,from:c.outageFrom,to:c.outageTo,fullDay:true}]:[])].map(a=>({...a,...absenceInterval(a,data.timezone)}));
   const boundary=(data.boundary||[]).filter(a=>people.some(e=>e.id===a.employeeId)).map(a=>({...S.duty(a,policy),hours:(a.endMs-a.startMs)/H,day:Math.floor(Date.parse(a.date+'T12:00:00Z')/86400000)})),preview=[],diagnoses=[];
@@ -67,7 +69,7 @@
     for(const date of monthDates){const options=[];for(const first of choices.get(date)||[]){let block=[];for(let n=0;n<4;n++){const a=choices.get(plus(date,n))?.find(a=>a.type===first.type);if(!a)break;block=[...block,a];options.push(block)}}if(options.length)groups.push({id:e.id+'|'+date,employee:e,block:true,options});}
    }
    // Extra conditional demand is represented separately from the company's fallback rule.
-   const required=(date,code,rows)=>{const value=S.required(date,code,rows,policy);return value===null?null:value+(code===c.extraShift&&S.weekday(date)<=5?c.extraCount:0)};
+   const required=(date,code,rows)=>{const value=S.required(date,code,rows,policy);return value===null?null:value+(slotByKey.get(date+'|'+code)?.extra||0)};
    const accept=(e,own,option)=>{const touched=new Set(option.flatMap(a=>[a.date.slice(0,7),S.localDate(a.endMs-1,policy).slice(0,7)]));for(const m of touched){const start=S.instant(m+'-01','00:00',data.timezone),end=S.instant(monthNext(m+'-01'),'00:00',data.timezone);if([...own,...option].reduce((n,a)=>n+Math.max(0,Math.min(a.endMs,end)-Math.max(a.startMs,start))/H,0)>e.calendarLimit+1e-6)return false;}return true};
    const input={month,employees,base,groups,capacities,criticalBeamWidth:16,respectHours:true,solidRules:policy,required,accept,criticalCapacities:[...critical]};
    const found=await O.optimize(input,{iterations,yieldStep,progress:p=>progress({month,...p})});preview.push(...found.preview.map(a=>S.duty(a,policy)));
