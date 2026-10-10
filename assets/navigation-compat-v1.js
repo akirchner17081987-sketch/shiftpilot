@@ -117,7 +117,7 @@
   loadIntegration('/assets/push-notifications-v1.js?v=20260917-domain1','data-sf-push-notifications');
 
   // QR-Zeiterfassung: Objekt-Terminals mit allgemeinem Betrieb oder optionalem Pilotmodus.
-  loadIntegration('/assets/supabase-qr-terminal-admin-v1.js?v=20260930-tenbreaks1&company=20261010-1&frame=20261010-1','data-sf-qr-terminal-admin');
+  loadIntegration('/assets/supabase-qr-terminal-admin-v1.js?v=20260930-tenbreaks1&company=20261010-1&frame=20261010-2','data-sf-qr-terminal-admin');
   loadIntegration('/assets/qr-manager-correction-v1.js?v=20261006-deformat3','data-sf-qr-manager-correction');
   loadIntegration('/assets/qr-independent-report-v1.js?v=20261009-qrperiods1','data-sf-qr-independent-report');
   loadIntegration('/assets/supabase-qr-terminal-role-guard-v1.js?v=20260908-1','data-sf-qr-terminal-role-guard');

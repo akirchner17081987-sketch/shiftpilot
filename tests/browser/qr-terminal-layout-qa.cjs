@@ -18,10 +18,13 @@ async function main(){
   const issues=await page.evaluate(()=>{
    const issues=[],rect=e=>e.getBoundingClientRect(),overlap=(a,b)=>{a=rect(a);b=rect(b);return a.left<b.right-1&&a.right>b.left+1&&a.top<b.bottom-1&&a.bottom>b.top+1},contains=(a,b)=>{a=rect(a);b=rect(b);return b.left>=a.left-1&&b.right<=a.right+1&&b.top>=a.top-1&&b.bottom<=a.bottom+1};
    if(document.documentElement.scrollWidth>innerWidth+2)issues.push('page overflow');
+   const actionRows=[...document.querySelectorAll('.sf-qrt-actions')],actionEdges=actionRows.map(rect);if(actionEdges.some(e=>Math.abs(e.left-actionEdges[0].left)>1||Math.abs(e.right-actionEdges[0].right)>1))issues.push('action groups have different bounds');
+   for(const selector of ['[data-qrt-show]','[data-qrt-rotate]','[data-qrt-toggle]']){const boxes=[...document.querySelectorAll(selector)].map(rect);if(boxes.some(e=>Math.abs(e.left-boxes[0].left)>1||Math.abs(e.width-boxes[0].width)>1))issues.push('actions do not align across active/inactive rows: '+selector)}
    const panels=[...document.querySelectorAll('.sf-qrt-pilot')];if(panels.length!==4)issues.push('missing terminal panels');
    const edges=panels.map(rect);if(edges.some(e=>Math.abs(e.left-edges[0].left)>1||Math.abs(e.right-edges[0].right)>1))issues.push('operation frames have different widths');
    for(const row of document.querySelectorAll('.sf-qrt-row')){
     const panel=row.querySelector('.sf-qrt-pilot'),main=row.querySelector('.sf-qrt-main'),actions=row.querySelector('.sf-qrt-actions'),css=getComputedStyle(row);if(Math.abs(rect(panel).width-(row.clientWidth-parseFloat(css.paddingLeft)-parseFloat(css.paddingRight)))>1)issues.push('operation frame does not use the card content width');
+    for(const button of actions.querySelectorAll('button'))if(button.scrollWidth>button.clientWidth+1||button.scrollHeight>button.clientHeight+1)issues.push('action text overflows');
     for(const el of [main,actions,panel,...row.querySelectorAll('select,button,.sf-qrt-mode-help')])if(!contains(row,el))issues.push('control outside terminal: '+el.textContent.slice(0,35));
     if(overlap(main,actions)||overlap(panel,actions)||overlap(panel,main))issues.push('terminal sections overlap');
     const mode=panel.querySelector('.sf-qrt-mode-grid');for(const el of mode.children)if(!contains(panel,el))issues.push('mode outside operation frame');if(overlap(mode.children[0],mode.children[1]))issues.push('mode label and help overlap');
@@ -31,7 +34,8 @@ async function main(){
    return issues;
   });assert.deepEqual(issues,[],theme+'/'+width+'/'+fontSize);
   if(fontSize===16&&[1920,390].includes(width))await page.locator('.sf-qrt-row').first().screenshot({path:path.join(out,theme+'-'+width+'.png')});
+  if(fontSize===16&&width===1920){await page.setViewportSize({width,height:1800});await page.locator('.sf-qrt-list').screenshot({path:path.join(out,theme+'-actions-aligned.png')});}
  }
- await page.evaluate(async()=>{SFBackend.role='PLANNER';await SFBackend.qrTerminalAdmin.refresh();await SFBackend.qrOperationGuard.refresh()});assert.equal(await page.locator('[data-qrt-site-save]:visible').count(),0);assert.equal(await page.locator('[data-qrt-mode]').count(),0);assert.equal(await page.locator('.sf-qrt-pilot').count(),4);assert.deepEqual(errors,[]);console.log('QR terminal layout QA passed: equal operation frames, contained controls, no overlaps, dark/light, desktop/mobile, large text and read-only role.');
+ await page.evaluate(async()=>{SFBackend.role='PLANNER';await SFBackend.qrTerminalAdmin.refresh();await SFBackend.qrOperationGuard.refresh()});assert.equal(await page.locator('[data-qrt-site-save]:visible').count(),0);assert.equal(await page.locator('[data-qrt-mode]').count(),0);assert.equal(await page.locator('.sf-qrt-pilot').count(),4);assert.deepEqual(errors,[]);console.log('QR terminal layout QA passed: aligned active/inactive actions, equal operation frames, contained controls, no overlaps, dark/light, desktop/mobile, large text and read-only role.');
 }
 main().catch(e=>{console.error(e);process.exitCode=1}).finally(async()=>{await browser?.close();await new Promise(r=>server?.close(r)||r())});
