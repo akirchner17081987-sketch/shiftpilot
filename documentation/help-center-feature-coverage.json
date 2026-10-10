@@ -2,6 +2,20 @@
   "reviewedAt": "2026-10-10",
   "sourceCommit": "7946566153211fc24bc2ad8a0bfd976e8efb3aeb",
   "addedArticles": [
+    {"category":"staffing","question":"Wie vergleiche ich den künftigen Personalbedarf?","sources":["assets/staffing-simulator-v1.js","assets/staffing-simulator-core-v1.js"]},
+    {"category":"staffing","question":"Wer kann den Personalsimulator nutzen?","sources":["assets/staffing-simulator-v1.js","assets/staffing-simulator-core-v1.js"]},
+    {"category":"staffing","question":"Wie simuliere ich Neueinstellungen mit einem Referenzprofil?","sources":["assets/staffing-simulator-v1.js","assets/staffing-simulator-core-v1.js"]},
+    {"category":"staffing","question":"Wie prüfe ich andere Vertragsstunden oder zusätzlichen Besetzungsbedarf?","sources":["assets/staffing-simulator-v1.js","assets/staffing-simulator-core-v1.js"]},
+    {"category":"staffing","question":"Wie spiele ich einen Personalausfall durch?","sources":["assets/staffing-simulator-v1.js","assets/staffing-simulator-core-v1.js"]},
+    {"category":"staffing","question":"Was bedeuten die Kennzahlen im Personalvergleich?","sources":["assets/staffing-simulator-v1.js","assets/staffing-simulator-core-v1.js"]},
+    {"category":"staffing","question":"Wie werden Vertragsziele und fehlende Stunden im Simulator berechnet?","sources":["assets/staffing-simulator-v1.js","assets/staffing-simulator-core-v1.js"]},
+    {"category":"staffing","question":"Wie gebe ich Arbeitgeberkosten ein und warum fehlt ein Euro-Ergebnis?","sources":["assets/staffing-simulator-v1.js","assets/staffing-simulator-core-v1.js"]},
+    {"category":"staffing","question":"Wo finde ich Engpässe und die simulierte Planvorschau?","sources":["assets/staffing-simulator-v1.js","assets/staffing-simulator-core-v1.js"]},
+    {"category":"staffing","question":"Wie speichere, lade oder kopiere ich einen Personalvergleich?","sources":["assets/staffing-simulator-v1.js","assets/staffing-simulator-core-v1.js"]},
+    {"category":"staffing","question":"Wie exportiere ich den Personalvergleich als CSV?","sources":["assets/staffing-simulator-v1.js","assets/staffing-simulator-core-v1.js"]},
+    {"category":"staffing","question":"Ändert eine Personalsimulation den echten Dienstplan?","sources":["assets/staffing-simulator-v1.js","assets/staffing-simulator-core-v1.js"]},
+    {"category":"staffing","question":"Wie belastbar sind Bedarf und Kosten im Personalsimulator?","sources":["assets/staffing-simulator-v1.js","assets/staffing-simulator-core-v1.js"]},
+    {"category":"staffing","question":"Was tun, wenn der Personalsimulator keine Ergebnisse liefert?","sources":["assets/staffing-simulator-v1.js","assets/staffing-simulator-core-v1.js"]},
     {"category":"reports","question":"Wie nutze ich das erweiterte Auswertungs-Dashboard?","sources":["assets/reports-workspace-v1.js","assets/reports-workspace-core-v1.js"]},
     {"category":"reports","question":"Was zeigen Besetzungskalender und Handlungsbedarf?","sources":["assets/reports-workspace-v1.js","assets/reports-workspace-core-v1.js"]},
     {"category":"reports","question":"Wie vergleiche und exportiere ich die Auswertung?","sources":["assets/reports-workspace-v1.js","tests/browser/reports-workspace-qa.cjs"]},
@@ -319,6 +333,9 @@
     }
   ],
   "moduleInventory": [
+    {"source":"assets/staffing-simulator-v1.js","area":"Personalbedarf, Ausfälle und Kosten vergleichen","category":"staffing","kind":"feature-or-support"},
+    {"source":"assets/staffing-simulator-core-v1.js","area":"Personalbedarf, Ausfälle und Kosten vergleichen","category":"staffing","kind":"feature-or-support"},
+    {"source":"assets/staffing-simulator-worker-v1.js","area":"Personalbedarf, Ausfälle und Kosten vergleichen","category":"staffing","kind":"feature-or-support"},
     {
       "source": "assets/absence-management-v3.js",
       "area": "Abwesenheiten und Genehmigungen",
@@ -1345,6 +1362,7 @@
     }
   ],
   "categoryCoverage": [
+    {"id":"staffing","name":"Personalsimulator","questions":["Wie vergleiche ich den künftigen Personalbedarf?","Wer kann den Personalsimulator nutzen?","Wie simuliere ich Neueinstellungen mit einem Referenzprofil?","Wie prüfe ich andere Vertragsstunden oder zusätzlichen Besetzungsbedarf?","Wie spiele ich einen Personalausfall durch?","Was bedeuten die Kennzahlen im Personalvergleich?","Wie werden Vertragsziele und fehlende Stunden im Simulator berechnet?","Wie gebe ich Arbeitgeberkosten ein und warum fehlt ein Euro-Ergebnis?","Wo finde ich Engpässe und die simulierte Planvorschau?","Wie speichere, lade oder kopiere ich einen Personalvergleich?","Wie exportiere ich den Personalvergleich als CSV?","Ändert eine Personalsimulation den echten Dienstplan?","Wie belastbar sind Bedarf und Kosten im Personalsimulator?","Was tun, wenn der Personalsimulator keine Ergebnisse liefert?"]},
     {
       "id": "start",
       "name": "Erste Schritte",

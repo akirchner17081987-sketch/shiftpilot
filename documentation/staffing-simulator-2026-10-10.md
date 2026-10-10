@@ -30,4 +30,12 @@ Firmen-/Rollenwechsel löschen den lokalen Zustand und beenden den Worker. Spät
 
 ## Prüfung
 
+### HilfeCenter
+
+Eigene Kategorie **Personalsimulator** mit 14 Artikeln: Einstieg, Rollen und Voraussetzungen, Referenzprofile und Neueinstellungen, Vertragsänderung und Mehrbedarf, Ausfallvergleich, Kennzahlen, Vertragsziele, Arbeitgeberkosten, Engpässe und Planvorschau, Speichern/Laden/Kopieren/Löschen, CSV-Export, Abgrenzung zur operativen Planung, Aussagegrenzen und Fehlerhilfe. Die drei bisherigen Kurzartikel wurden aus Auto-Planung übernommen und erweitert. Zwei Anleitungen enthalten nummerierte Schritte mit den tatsächlichen Schaltflächennamen.
+
+Alle Simulatorartikel und die zugehörigen Module sind im Hilfe-Inventar hinterlegt. Der bestehende Hilfe-Regressionstest prüft ihre Anzeige und Auffindbarkeit über die Suche. Die Live-Prüfung kontrolliert zusätzlich den exakten Inhalt der ausgelieferten Hilfe-Datei sowie deren neue Cache-Version in der Produktionsseite.
+
+### Funktionsprüfung
+
 Rechentests: Regeln, Monatsgrenzen, Sommerzeit, Teilabwesenheiten, Ausfälle, gemeinsame Leitung, Profilbindungen, Vertragsanteile, fehlende Kosten, ungültige Referenzen und bedingter Mehrbedarf. Vollständige bestehende Anwendungstests. Browserprüfung nutzt echte Assets und Worker mit synthetischen RPC-Daten für Vergleich, Details, Export, Speicherung, Abbruch, Fehler, Rechtewechsel und 320–1440px in Hell/Dunkel. Datenbank-Rollbackprüfung für Lesen/Speichern/Kopieren/Löschen, Revisionen und nicht berechtigte Zugriffe; Sicherheitsberater ohne neuen Simulatorbefund.

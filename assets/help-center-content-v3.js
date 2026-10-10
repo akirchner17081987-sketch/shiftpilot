@@ -1,4 +1,4 @@
-// Hilfe-Center: Funktionsabgleich vom 09.10.2026.
+// Hilfe-Center: Funktionsabgleich vom 09.10.2026, Personalsimulator ergänzt am 10.10.2026.
 window.SFHelpContent = {
   "categories": [
     [
@@ -40,6 +40,11 @@ window.SFHelpContent = {
       "auto",
       "Auto-Planung",
       "Vorschläge und Planungsregeln"
+    ],
+    [
+      "staffing",
+      "Personalsimulator",
+      "Personalbedarf, Ausfälle und Kosten vergleichen"
     ],
     [
       "reports",
@@ -340,10 +345,65 @@ window.SFHelpContent = {
         "SchichtFunk markiert den Konflikt. Prüfen Sie Ersatz oder Änderung und kontrollieren Sie die Besetzung danach erneut; die Schicht verschwindet nicht stillschweigend."
       ]
     ],
+    "staffing": [
+      [
+        "Wie vergleiche ich den künftigen Personalbedarf?",
+        "<ol><li>Öffne im Menü „Personalsimulator“ und wähle Startmonat sowie 3, 6 oder 12 Monate.</li><li>Wähle „Planungsdaten laden“. Prüfe Unternehmen, Zeitraum und aktive Profile in der Datenanzeige.</li><li>Trage unter „Varianten festlegen“ deine Annahmen ein. Bei neuen Stellen wählst du ein Referenzprofil. Über „Variante hinzufügen“ sind bis zu drei Varianten möglich.</li><li>Wähle „Varianten vergleichen“. „Aktueller Personalbestand“ wird zusätzlich automatisch als Referenz berechnet.</li><li>Vergleiche Besetzung, offene Dienste, Vertragsziele und bei eingegebenen Kostensätzen das Budget. Prüfe danach Monatsdetails und Planvorschau.</li></ol>Die vorbereiteten Varianten mit drei und vier zusätzlichen Mitarbeitern sind bearbeitbare Beispiele, keine Einstellungsempfehlung. Ein passendes Referenzprofil musst du selbst auswählen."
+      ],
+      [
+        "Wer kann den Personalsimulator nutzen?",
+        "Der Personalsimulator steht aktiven Inhabern und Administratoren des ausgewählten Unternehmens zur Verfügung. Für Planer, die Rolle Zeiterfassung, Mitarbeiter im Portal und die Demo ist er nicht freigeschaltet. Das Unternehmen benötigt die bestätigten Erholungsregeln Version 2. Fehlen diese, erscheint beim Laden ein Hinweis. Gespeicherte Vergleiche sehen nur Inhaber und Administratoren desselben Unternehmens. Beim Unternehmens- oder Rollenwechsel werden geladene Ergebnisse verworfen und laufende Berechnungen beendet."
+      ],
+      [
+        "Wie simuliere ich Neueinstellungen mit einem Referenzprofil?",
+        "Gib je Variante 0 bis 20 zusätzliche Mitarbeiter an. Bei mindestens einer neuen Stelle wählst du unter „Referenzprofil neuer Stellen“ ein vorhandenes aktives Profil. Alle neuen Stellen dieser Variante erhalten dessen Schichtfreigaben, Standort und verbindlichen Rhythmus sowie die von dir eingetragenen Monatsstunden und das Wochenmaximum. Sie stehen ab dem Startmonat zur Verfügung. Bestehende Abwesenheiten, Personalnummern und personengebundene Sonderfreigaben werden nicht kopiert. Wähle deshalb ein Profil, das zur geplanten Tätigkeit passt; prüfe besonders ausschließlich bestimmten Personen erlaubte Dienste. Die neuen Stellen erscheinen nur in der Simulation. Bereits als Planungsplatzhalter markierte Profile zählen nicht zum aktuellen Personalbestand; ihre ausgeschlossene Anzahl wird angezeigt."
+      ],
+      [
+        "Wie prüfe ich andere Vertragsstunden oder zusätzlichen Besetzungsbedarf?",
+        "Öffne in der Variante „Vertragsänderung, Mehrbedarf & Ausfall“. Für eine Vertragsänderung wählst du einen bestehenden Mitarbeiter und trägst sein neues Monatsziel sowie Wochenmaximum ein. Je Variante ist eine solche Vertragsänderung möglich. Für Mehrbedarf wählst du ein Schichtmodell und die zusätzliche Personenanzahl je Einsatztag. Der Mehrbedarf gilt für dessen reguläre Einsatztage im gesamten Simulationszeitraum. Bei gemeinsamer Teamleitung wird der gemeinsame Bedarf erhöht. Hinterlegte Stunden- und Erholungsgrenzen gelten weiterhin. Die echten Verträge und SOLL-Stärken werden dadurch nicht bearbeitet."
+      ],
+      [
+        "Wie spiele ich einen Personalausfall durch?",
+        "Wähle in „Vertragsänderung, Mehrbedarf & Ausfall“ unter „Angenommener Ausfall“ einen Mitarbeiter sowie „Ausfall von“ und „Ausfall bis“. Beide Daten müssen innerhalb des Simulationszeitraums liegen. Pro Variante lässt sich ein zusätzlicher ganztägiger Ausfall simulieren; bereits genehmigte Abwesenheiten werden ebenfalls berücksichtigt. Nach „Varianten vergleichen“ wählst du die Variante unter „Verteilung & Engpässe prüfen“. Dort stehen offene Dienste mit und ohne diesen Ausfall sowie die Differenz. Beide Werte beruhen auf eigenen Planungssuchen; die Differenz ist eine Szenariowirkung, keine sichere Vorhersage. Es wird keine echte Abwesenheit angelegt."
+      ],
+      [
+        "Was bedeuten die Kennzahlen im Personalvergleich?",
+        "„Personal“ zählt die berücksichtigten Profile einschließlich simulierter neuer Stellen. „Bedarf gedeckt“ zeigt den Anteil besetzter benötigter Dienstpositionen, keine Stundenquote. Ohne Pflichtbedarf steht dort „Kein Pflichtbedarf“. „Offene Dienste“ zählt unbesetzte Positionen: Fehlen an einem Tag zwei Personen, sind das zwei offene Dienste. „Offene Bedarfsstunden“ summiert die dazugehörige Dauer. „Bis zu Vertragszielen fehlen“ zeigt dagegen die fehlenden Dienststunden der Mitarbeiter. Offene Dienste und fehlende Vertragsstunden können gleichzeitig auftreten, etwa bei unpassenden Freigaben oder Rhythmen. Das geschätzte Vertragsbudget und seine Änderung zur Referenz erscheinen bei vollständig angegebenen Kostensätzen."
+      ],
+      [
+        "Wie werden Vertragsziele und fehlende Stunden im Simulator berechnet?",
+        "Unter „Vertragsziele je Mitarbeiter“ siehst du Vertragsziel, geplante Dienststunden und „Fehlen je Monat summiert“. Bei Eintritt oder Austritt im Monat wird das Ziel nach Kalendertagen anteilig berechnet. Nachtdienste zählen mit den tatsächlichen Zeitanteilen im jeweiligen Kalendermonat. Fehlstunden werden je Person und Monat berechnet und anschließend summiert; Mehrstunden eines anderen Monats gleichen sie nicht aus. Urlaubsgutschriften und andere Zeitkontogutschriften sind nicht enthalten. Die Anzeige ist deshalb eine Betrachtung der Dienststunden und kein Lohn- oder Stundenkonto."
+      ],
+      [
+        "Wie gebe ich Arbeitgeberkosten ein und warum fehlt ein Euro-Ergebnis?",
+        "Trage unter „Zeitraum & Kostenbasis“ einen durchschnittlichen Arbeitgeberkostensatz je Vertragsstunde für den Bestand ein. Für neue Stellen gibt es in jeder Variante einen eigenen Kostensatz. Berücksichtige die gewünschten Nebenkosten und Zuschläge selbst in diesen Werten. Das Budget berechnet sich aus den anteiligen Vertragsstunden mal Kostensatz, auch wenn Dienste offen oder Stundenziele unerreicht bleiben. Es gibt keine automatische Zuschlags- oder Lohnabrechnung. Fehlt ein benötigter Kostensatz, erscheint „Nicht angegeben“; die Zahl 0 gilt dagegen als bewusst eingegebene Annahme. Die Budgetänderung ist nur bei berechenbarer Variante und Referenz verfügbar. Private Lohnvorschauen der Mitarbeiter werden nicht gelesen."
+      ],
+      [
+        "Wo finde ich Engpässe und die simulierte Planvorschau?",
+        "Wähle unter „Verteilung & Engpässe prüfen“ die gewünschte Variante. Die Monatstabelle zeigt benötigte und offene Dienste sowie offene Stunden. Öffne „Welche Freigaben fehlen bei offenen Diensten?“, um mögliche Ausschlussgründe zu sehen. Diese werden über die offenen Tage gezählt; sie sind keine Anzahl zusätzlich benötigter Mitarbeiter. „Vertragsziele je Mitarbeiter“ zeigt die Stundenverteilung. In „Planvorschau“ siehst du Datum, Schicht, Zeit und Zuordnung. Mit „Zurück“ und „Weiter“ blätterst du durch jeweils 50 Dienste. Ein verbleibender Engpass kann auch durch die gefundene Verteilung entstehen."
+      ],
+      [
+        "Wie speichere, lade oder kopiere ich einen Personalvergleich?",
+        "<ol><li>Prüfe nach dem Laden der Planungsdaten die Annahmen und gib unter „Vergleich speichern & wiederverwenden“ eine Bezeichnung ein.</li><li>„Vergleich speichern“ legt einen neuen Vergleich an oder aktualisiert den zuvor geladenen Vergleich. „Als Kopie speichern“ erstellt einen separaten Eintrag.</li><li>Wähle unter „Gespeicherte Vergleiche“ einen Eintrag und klicke „Auswahl laden“. Anschließend berechnest du ihn mit „Varianten vergleichen“ neu.</li><li>„Auswahl löschen“ entfernt den ausgewählten gespeicherten Vergleich nach Bestätigung.</li></ol>Gespeichert werden Annahmen und Profilbezüge, keine berechnete Planvorschau. Jede neue Berechnung lädt aktuelle Planungsdaten; Ergebnisse können sich daher verändern. Pro Unternehmen sind bis zu 50 gespeicherte Vergleiche möglich. Bei einer zwischenzeitlichen Änderung durch jemand anderen wird das Überschreiben abgewiesen. Lade dann die aktuelle Fassung und prüfe deine Änderungen erneut."
+      ],
+      [
+        "Wie exportiere ich den Personalvergleich als CSV?",
+        "Klicke nach erfolgreicher Berechnung auf „Vergleich als CSV“. Die Datei enthält Unternehmen, Datenstand, Zeitraum, Ergebniskennzahlen und wesentliche Annahmen je Variante, etwa neue Stellen, Kostensätze, Mehrbedarf und Ausfallzeitraum. Sie verwendet Semikolon als Trennzeichen und kann zum Beispiel in Excel geöffnet werden. Die CSV ist ein Vergleichsexport; die vollständige Planvorschau und alle Profil- und Vertragsdetails sind darin nicht enthalten. Speichere die Annahmen im Simulator, wenn du den Vergleich später wieder berechnen möchtest."
+      ],
+      [
+        "Ändert eine Personalsimulation den echten Dienstplan?",
+        "Nein. Die Simulation plant den Zeitraum getrennt neu; echte Dienste innerhalb des Zeitraums werden dabei nicht als Bindung übernommen. Dienste davor und danach, genehmigte Abwesenheiten, Freigaben und verbindliche Regeln begrenzen die Vorschau. Der Simulator ändert weder Dienstpläne noch Personalstammdaten oder Abwesenheiten und verschickt keine Ersatzanfragen. Auch „Vergleich speichern“ speichert ausschließlich die Annahmen. Eine Übernahme der Planvorschau in den echten Dienstplan gibt es hier nicht. Für operative Planung nutzt du Dienstplan und Auto-Planung."
+      ],
+      [
+        "Wie belastbar sind Bedarf und Kosten im Personalsimulator?",
+        "Die Suche liefert eine abschließend geprüfte mögliche Verteilung nach den hinterlegten Regeln, keinen Nachweis des absolut geringsten Personalbedarfs. Offene Dienste bedeuten, dass in diesem Lauf keine vollständige Besetzung gefunden wurde. Mehr Personal kann fehlende Schichtfreigaben oder unpassende Rhythmen nicht automatisch ausgleichen. Vergleiche deshalb neben der Personalzahl auch Profile, Vertragsumfang, Monatsdetails und Engpässe. Freiwillige Zusatzdienste werden nicht vorausgesetzt. Kosten beruhen ausschließlich auf deinen Annahmen; fehlende Vertragsstunden enthalten keine Abwesenheitsgutschriften. Die Qualität der Aussage hängt auch von aktuellen Mitarbeiterdaten, genehmigten Abwesenheiten und korrekt hinterlegten Regeln ab."
+      ],
+      [
+        "Was tun, wenn der Personalsimulator keine Ergebnisse liefert?",
+        "Prüfe zuerst Rolle, ausgewähltes Unternehmen und den angezeigten Hinweis. Nach einer Änderung von Startmonat oder Zeitraum wählst du erneut „Planungsdaten laden“. Neue Stellen benötigen ein verfügbares Referenzprofil; nach gelöschten oder inaktiven Profilen kann eine neue Auswahl nötig sein. Ein angenommener Ausfall muss vollständig im Simulationszeitraum liegen. Bei fehlenden bestätigten Erholungsregeln müssen diese zunächst für das Unternehmen eingerichtet werden. Längere Zeiträume und Ausfallvergleiche benötigen mehr Rechenzeit; der Fortschritt zeigt Variante und Monat. Mit „Berechnung abbrechen“ kannst du stoppen. Bei einem Verbindungsfehler erneut laden, bei einem Startfehler die Seite neu laden. Scheitert die abschließende Regelprüfung, wird keine ungeprüfte Vorschau als Ergebnis angezeigt; prüfe den genannten Konflikt in den Planungsdaten."
+      ]
+    ],
     "auto": [
-      ["Wie vergleiche ich den künftigen Personalbedarf?", "Öffne als Inhaber oder Administrator den Personalsimulator. Wähle 3, 6 oder 12 Monate und lade die Planungsdaten. Vergleiche den aktuellen Bestand mit bis zu drei Varianten: neue Stellen, geänderte Monatsstunden und Wochenmaxima, zusätzliche Besetzung oder angenommener Ausfall. Die Vorschau zeigt offene Dienste, Schichtfreigaben, Vertragsziele und ein optionales Vertragsbudget. Planungsplatzhalter zählen nicht zum aktuellen Personalbestand."],
-      ["Ändert eine Personalsimulation den echten Dienstplan?", "Nein. Die Simulation plant den Zeitraum getrennt neu; echte Dienste innerhalb des Zeitraums werden dabei nicht als Bindung übernommen. Dienste davor und danach, genehmigte Abwesenheiten, Freigaben und verbindliche Regeln begrenzen die Vorschau. Gespeichert werden nur die Annahmen. Bei erneutem Berechnen werden aktuelle Daten verwendet."],
-      ["Wie belastbar sind Bedarf und Kosten im Personalsimulator?", "Die Suche liefert eine geprüfte mögliche Verteilung, keinen Nachweis des absolut geringsten Personalbedarfs. Mehr Personal kann auch fehlende Schichtfreigaben oder unpassende Rhythmen nicht automatisch ausgleichen. Kosten sind Vertragsstunden mal selbst eingegebene Arbeitgeberkosten inklusive der von dir berücksichtigten Nebenkosten und Zuschläge. Private Lohnvorschauen werden nicht gelesen. Zeitkontogutschriften, etwa für Urlaub, sind nicht Bestandteil der Dienststundenziele. Der Simulator benötigt die bestätigten Erholungsregeln Version 2."],
       [
         "Welche Regeln nutzt die Auto-Planung?",
         "Die Auto-Planung prüft Aktivstatus, Schichtfreigaben, Qualifikationen, Abwesenheiten, Doppelbelegungen, SOLL-Stärken und verbindliche Mitarbeiter- und Teamregeln. Für SchichtFunk und Secontec Services – 8h gelten zusätzlich die bestätigten Stunden-, Block- und Erholungsgrenzen. Konflikte bleiben sichtbar und werden nicht durch eine automatische Besetzung übergangen."
