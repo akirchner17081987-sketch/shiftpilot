@@ -30,7 +30,7 @@ async function main(){
    const head=document.querySelector('.sf-qrt-head'),create=head.querySelector('.sf-qrt-create');for(const el of create.children)if(!contains(head,el))issues.push('create control outside header');const controls=[...create.children];for(let i=0;i<controls.length;i++)for(let j=i+1;j<controls.length;j++)if(overlap(controls[i],controls[j]))issues.push('create controls overlap');
    return issues;
   });assert.deepEqual(issues,[],theme+'/'+width+'/'+fontSize);
-  if(fontSize===16&&[1920,390].includes(width))await page.screenshot({path:path.join(out,theme+'-'+width+'.png'),fullPage:true});
+  if(fontSize===16&&[1920,390].includes(width))await page.locator('.sf-qrt-row').first().screenshot({path:path.join(out,theme+'-'+width+'.png')});
  }
  await page.evaluate(async()=>{SFBackend.role='PLANNER';await SFBackend.qrTerminalAdmin.refresh();await SFBackend.qrOperationGuard.refresh()});assert.equal(await page.locator('[data-qrt-site-save]:visible').count(),0);assert.equal(await page.locator('[data-qrt-mode]').count(),0);assert.equal(await page.locator('.sf-qrt-pilot').count(),4);assert.deepEqual(errors,[]);console.log('QR terminal layout QA passed: equal operation frames, contained controls, no overlaps, dark/light, desktop/mobile, large text and read-only role.');
 }
