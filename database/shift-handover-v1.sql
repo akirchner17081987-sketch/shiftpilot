@@ -124,6 +124,24 @@ begin
  and b.starts_at>=(p_from-1)::timestamp at time zone tz and b.starts_at<(p_to+1)::timestamp at time zone tz)),'[]'));
 end $$;
 
+-- Serialize with staged employee erasure before any board-wide snapshot or transfer.
+create or replace function private.sf_handover_freeze(p_board uuid) returns void
+language plpgsql security definer set search_path='' as $$
+declare company_ uuid; ids_ uuid[];
+begin
+ if auth.uid() is null then raise exception 'Keine Übergaberechte.' using errcode='42501';end if;
+ select company_id into strict company_ from public.shift_handovers where id=p_board;
+ select array_agg(distinct employee_id) into ids_ from (
+ select a.employee_id from public.shift_assignments a join public.shift_templates t on t.company_id=a.company_id and t.code=a.shift_code join public.shift_handovers b on b.company_id=a.company_id and b.shift_code=a.shift_code and b.starts_at=a.starts_at and b.ends_at=a.ends_at and b.site_id is not distinct from t.site_id where b.id=p_board
+ union select employee_id from public.shift_handover_items where board_id=p_board
+ union select responsible_employee_id from public.shift_handover_items where board_id=p_board
+ union select employee_id from public.shift_handovers where id=p_board) employees_;
+ perform 1 from public.employees e where e.company_id=company_ and e.id=any(ids_) order by e.id for key share;
+ if exists(select 1 from private.employee_erasure_jobs j where j.company_id=company_ and j.status='EXTERNAL'
+ and exists(select 1 from unnest(ids_) employee_ where j.plan->'references' ? employee_::text)) then
+ raise exception 'Für einen Mitarbeiter dieser Übergabe läuft die endgültige Löschung. Änderungen sind gesperrt.';end if;
+end $$;
+revoke all on function private.sf_handover_freeze(uuid) from public,anon,authenticated;
 create or replace function private.shift_handover_action(p_company_id uuid,p_action text,p_id uuid default null,p_revision bigint default null,p_input jsonb default '{}') returns jsonb
 language plpgsql security definer set search_path='' as $$
 declare manager_ boolean; employee_ uuid; a public.shift_assignments%rowtype; b public.shift_handovers%rowtype;
@@ -145,6 +163,7 @@ begin
  end if;
  select * into b from public.shift_handovers where id=p_id and company_id=p_company_id for update;
  if b.id is null or not private.sf_handover_access(b.id) then raise exception 'Keine Rechte für diese Schichtübergabe.' using errcode='42501';end if;
+ perform private.sf_handover_freeze(b.id);
  if p_revision is distinct from b.revision then raise exception 'Die Übergabe wurde inzwischen geändert. Bitte aktualisieren.' using errcode='40001';end if;
  if p_action in ('ADD','UPDATE') then
  if b.state<>'WORKING' then raise exception 'Die gesendete Übergabe ist abgeschlossen. In der Folgeschicht weiterarbeiten.';end if;
@@ -179,6 +198,8 @@ begin
  if a.id is null then raise exception 'Keine nächste veröffentlichte Schicht am selben Standort innerhalb von sieben Tagen vorhanden.';end if;
  insert into public.shift_handovers(company_id,site_id,shift_code,starts_at,ends_at) values(p_company_id,b.site_id,a.shift_code,a.starts_at,a.ends_at) on conflict do nothing;
  select * into target_ from public.shift_handovers where company_id=p_company_id and site_id is not distinct from b.site_id and shift_code=a.shift_code and starts_at=a.starts_at and ends_at=a.ends_at for update;
+ perform private.sf_handover_freeze(target_.id);
+ if (select count(*) from public.shift_handover_items where board_id=target_.id)+(select count(*) from public.shift_handover_items where board_id=b.id and status in ('OPEN','IN_PROGRESS'))>200 then raise exception 'Die Folgeschicht hätte mehr als 200 Punkte. Bitte Aufgaben vorher erledigen.';end if;
  if target_.state<>'WORKING' then raise exception 'Die Folgeschicht wurde bereits übergeben. Bitte Planungsleitung informieren.';end if;
  insert into public.shift_handover_items(company_id,board_id,source_id,employee_id,kind,title,detail,status,critical,due_at,escalation,report_include,resolution)
  select company_id,target_.id,id,employee_id,kind,title,detail,'OPEN',critical,due_at,escalation,report_include,resolution from public.shift_handover_items where board_id=b.id and status in ('OPEN','IN_PROGRESS');

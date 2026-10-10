@@ -79,6 +79,7 @@ begin
  if coalesce((preview_->'counts'->>'shift_handover_items')::integer,0)<>3 or coalesce((preview_->'counts'->>'shift_handover_reports')::integer,0)<>2 then raise exception 'Erasure does not include carried task/report content: %',preview_->'counts';end if;
  job_:=public.server_stage_employee_erasure(company_,first_e,owner_u,gen_random_uuid(),'First Synthetic',true,preview_->>'fingerprint');
  begin update public.shift_handover_items set detail='Late write' where id=item_id;raise exception 'Pending erasure edited task';exception when raise_exception then if sqlerrm not like 'Für diesen Mitarbeiter läuft%' then raise;end if;end;
+ begin perform public.shift_handover_action(company_,'DRAFT',b,rev,'{}');raise exception 'Pending erasure allowed new personal report';exception when raise_exception then if sqlerrm not like 'Für einen Mitarbeiter dieser Übergabe läuft%' then raise;end if;end;
  perform public.server_commit_employee_erasure((job_->>'job_id')::uuid,owner_u);
  if exists(select 1 from public.employees where id=first_e) or exists(select 1 from public.shift_handover_items where employee_id=first_e) or exists(select 1 from public.shift_handover_reports where board_id=b) then raise exception 'Erasure left personal tasks/reports';end if;
  if not exists(select 1 from public.shift_handovers where id=target_b) or not exists(select 1 from public.employees where id=next_e) then raise exception 'Erasure lost colleague board/profile';end if;
