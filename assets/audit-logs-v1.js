@@ -4,6 +4,7 @@
   let rows=[],loading=false;
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const labels={
+    COMPANY_PROFILE_UPDATED:'Unternehmensprofil geändert',COMPANY_LOCATION_CREATED:'Standort angelegt',COMPANY_LOCATION_UPDATED:'Standort geändert',COMPANY_QR_LOCATION_UPDATED:'QR-Standort geändert',
     INSERT:'Angelegt',UPDATE:'Geändert',DELETE:'Gelöscht',
     SHIFT_CREATED_DRAFT:'Schicht als Entwurf angelegt',
     FULL_SCHEDULE_RESET:'Gesamten Dienstplan gelöscht',
@@ -145,3 +146,4 @@
     document.getElementById('sfAuditReset')?.addEventListener('click',()=>{['sfAuditFrom','sfAuditTo','sfAuditActor','sfAuditAction'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});load()});
   });
 })();
+

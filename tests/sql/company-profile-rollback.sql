@@ -1,0 +1,70 @@
+-- Synthetic accounts only. Company, logo, contacts, sites, terminals and audit records are rolled back.
+begin;
+do $test$
+declare owner_u uuid:=gen_random_uuid(); admin_u uuid:=gen_random_uuid(); lead_u uuid:=gen_random_uuid(); employee_u uuid:=gen_random_uuid(); foreign_u uuid:=gen_random_uuid(); time_u uuid:=gen_random_uuid(); ro_u uuid:=gen_random_uuid(); uid uuid;
+ company uuid; foreign_company uuid; site uuid; foreign_site uuid; terminal uuid; r jsonb; saved jsonb; current_profile jsonb; model jsonb; negatives integer:=0;
+ payload jsonb:=jsonb_build_object('name','Company Profile QA','timezone','Europe/Berlin','display_location','QA Central','business_address','Example Street 1','logo_data_url','','contacts',jsonb_build_array(jsonb_build_object('id','visible','kind','planning','name','Visible Contact','email','visible@example.invalid','visible_to_employees',true),jsonb_build_object('id','internal','kind','personnel','name','HIDDEN_CONTACT','email','hidden@example.invalid','visible_to_employees',false)));
+begin
+ foreach uid in array array[owner_u,admin_u,lead_u,employee_u,foreign_u,time_u,ro_u] loop
+  insert into auth.users(id,aud,role,email,raw_app_meta_data,raw_user_meta_data,created_at,updated_at) values(uid,'authenticated','authenticated','sf-company-qa-'||uid||'@example.invalid','{}','{}',now(),now());
+ end loop;
+ insert into public.companies(name,created_by) values('Company Profile QA Initial',owner_u) returning id into company;
+ insert into public.companies(name,created_by) values('Company Profile Foreign',foreign_u) returning id into foreign_company;
+ insert into public.company_members(company_id,user_id,role,status,access_role,extra_permissions) values(company,owner_u,'OWNER','ACTIVE','OWNER','{}'),(company,admin_u,'ADMIN','ACTIVE','ADMIN','{}'),(company,lead_u,'PLANNER','ACTIVE','TEAM_LEAD','{}'),(foreign_company,foreign_u,'OWNER','ACTIVE','OWNER','{}'),(company,time_u,'TIME_TRACKING','ACTIVE','EMPLOYEE',array['manage_time','confirm_time']),(company,ro_u,'VIEWER','ACTIVE','TEAM_LEAD',array['read_only']) on conflict do nothing;
+ insert into public.employees(company_id,auth_user_id,first_name,last_name,personnel_no,access_status) values(company,employee_u,'Synthetic','Employee','COMPANY-QA-EMP','ACTIVE');
+ insert into public.company_locations(company_id,code,name) values(foreign_company,'OTHER','Foreign location') returning id into foreign_site;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',owner_u,'role','authenticated','aal','aal2')::text,true);perform set_config('request.jwt.claim.sub',owner_u::text,true);
+ set local role authenticated;
+ r:=public.manager_company_profile(company);if r->>'name'<>'Company Profile QA Initial' or (r->>'revision')::integer<>0 or r->>'can_edit'<>'true' then raise exception 'Initial profile failed';end if;
+ saved:=public.manager_save_company_profile(company,payload,(r->>'revision')::bigint,(r->>'company_updated_at')::timestamptz);
+ if saved->>'name'<>'Company Profile QA' or saved->>'display_location'<>'QA Central' or (saved->>'revision')::integer<>1 then raise exception 'Atomic save/returned revision failed: %',saved;end if;
+ begin perform public.manager_save_company_profile(company,payload,0,(r->>'company_updated_at')::timestamptz);raise exception 'Stale profile accepted';exception when serialization_failure then negatives:=negatives+1;end;
+ begin perform public.manager_save_company_profile(company,payload||jsonb_build_object('name','BAD WRITE','contacts',jsonb_build_array(jsonb_build_object('kind','time','name','Bad email','email','invalid'))),1,(saved->>'company_updated_at')::timestamptz);raise exception 'Bad contacts accepted';exception when invalid_parameter_value then negatives:=negatives+1;end;
+ r:=public.manager_company_profile(company);if r->>'name'<>'Company Profile QA' or (r->>'revision')::integer<>1 then raise exception 'Invalid save changed company';end if;
+ begin perform public.manager_save_company_profile(company,payload||jsonb_build_object('logo_data_url','data:image/png;base64,aGVsbG8='),1,(r->>'company_updated_at')::timestamptz);raise exception 'Invalid PNG accepted';exception when invalid_parameter_value then negatives:=negatives+1;end;
+ begin update public.company_profiles set display_location='UNSAFE' where company_id=company;raise exception 'Direct profile writes accepted';exception when insufficient_privilege then negatives:=negatives+1;end;
+ r:=public.manager_save_company_location(company,'{"code":"QA","name":"QA Location"}',0);site:=(r->>'id')::uuid;
+ begin perform public.manager_save_company_location(company,r,0);raise exception 'Stale site accepted';exception when serialization_failure then negatives:=negatives+1;end;
+ model:=jsonb_build_object('code','QA8','name','QA Day','start','06:00','end','14:00','color','teal','soll',1,'site_id',site);
+ perform public.manager_manage_shift_model(company,'CREATE',model);
+ begin perform public.manager_manage_shift_model(company,'UPDATE',model||jsonb_build_object('site_id',foreign_site));raise exception 'Foreign shift site accepted';exception when invalid_parameter_value then negatives:=negatives+1;end;
+ r:=public.manager_create_time_qr_terminal_at_site(company,'QA Terminal','QA Door',site);terminal:=(r->>'id')::uuid;
+ if r->>'site_id'<>site::text or r->>'qr_path' is null or r->>'is_active'='true' then raise exception 'QR creation changed secret/default behavior';end if;
+ r:=public.manager_list_time_qr_terminals(company);if r->0->>'site_id'<>site::text or r::text like '%token_hash%' or r::text like '%qr_path%' then raise exception 'QR list site missing or secret exposed';end if;
+ begin perform public.manager_set_time_qr_terminal_site(company,terminal,foreign_site,site);raise exception 'Foreign QR site accepted';exception when invalid_parameter_value then negatives:=negatives+1;end;
+ begin perform public.manager_set_time_qr_terminal_site(company,terminal,null,null);raise exception 'Stale QR site accepted';exception when serialization_failure then negatives:=negatives+1;end;
+ r:=public.manager_save_company_location(company,jsonb_build_object('id',site,'code','QA','name','QA Location','is_active',false),1);
+ -- Existing assignments survive archive; unchanged site remains editable.
+ perform public.manager_manage_shift_model(company,'UPDATE',model);
+ begin perform public.manager_create_time_qr_terminal_at_site(company,'Archived QA','',site);raise exception 'Archived new QR site accepted';exception when invalid_parameter_value then negatives:=negatives+1;end;
+ begin perform public.manager_manage_shift_model(company,'CREATE',model||jsonb_build_object('code','QA9'));raise exception 'Archived new shift site accepted';exception when invalid_parameter_value then negatives:=negatives+1;end;
+ perform public.manager_set_time_qr_terminal_site(company,terminal,null,site);
+ r:=public.manager_company_profile_history(company);if jsonb_array_length(r)<3 or r::text like '%logo_data_url%' then raise exception 'History missing or includes logo bytes';end if;
+ -- Administrator who did not create the company can save centrally.
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',admin_u,'role','authenticated','aal','aal2')::text,true);perform set_config('request.jwt.claim.sub',admin_u::text,true);
+ r:=public.manager_company_profile(company);current_profile:=public.manager_save_company_profile(company,payload||jsonb_build_object('display_location','Admin Central'),(r->>'revision')::bigint,(r->>'company_updated_at')::timestamptz);
+ if current_profile->>'display_location'<>'Admin Central' then raise exception 'Noncreator admin save failed';end if;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',lead_u,'role','authenticated')::text,true);perform set_config('request.jwt.claim.sub',lead_u::text,true);
+ r:=public.manager_company_profile(company);if r->>'can_edit'<>'false' or r->>'display_location'<>'Admin Central' then raise exception 'Lead read/can edit incorrect';end if;
+ begin perform public.manager_save_company_profile(company,payload,(r->>'revision')::bigint,(r->>'company_updated_at')::timestamptz);raise exception 'Lead write accepted';exception when insufficient_privilege then negatives:=negatives+1;end;
+ begin perform public.manager_company_profile_history(company);raise exception 'Lead history accepted';exception when insufficient_privilege then negatives:=negatives+1;end;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',ro_u,'role','authenticated')::text,true);perform set_config('request.jwt.claim.sub',ro_u::text,true);
+ r:=public.manager_company_profile(company);if r->>'can_edit'<>'false' then raise exception 'Read-only lead writable';end if;
+ begin perform public.manager_save_company_location(company,'{"code":"BAD","name":"Bad"}',0);raise exception 'Read-only lead site write accepted';exception when insufficient_privilege then negatives:=negatives+1;end;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',employee_u,'role','authenticated')::text,true);perform set_config('request.jwt.claim.sub',employee_u::text,true);
+ r:=public.employee_my_company_profile(company);if jsonb_array_length(r->'contacts')<>1 or r::text like '%HIDDEN_CONTACT%' or r ? 'business_address' or r ? 'sites' then raise exception 'Employee internal data leak';end if;
+ if (select count(*) from public.company_profiles)>0 or (select count(*) from public.company_locations)>0 then raise exception 'Employee direct read leak';end if;
+ begin perform public.manager_company_profile(company);raise exception 'Employee full profile accepted';exception when insufficient_privilege then negatives:=negatives+1;end;
+ begin perform public.employee_my_company_profile(foreign_company);raise exception 'Employee cross-tenant accepted';exception when insufficient_privilege then negatives:=negatives+1;end;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',time_u,'role','authenticated')::text,true);perform set_config('request.jwt.claim.sub',time_u::text,true);
+ begin perform public.manager_company_profile(company);raise exception 'Time-only full profile accepted';exception when insufficient_privilege then negatives:=negatives+1;end;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',foreign_u,'role','authenticated')::text,true);perform set_config('request.jwt.claim.sub',foreign_u::text,true);
+ begin perform public.manager_company_profile(company);raise exception 'Cross-tenant manager accepted';exception when insufficient_privilege then negatives:=negatives+1;end;
+ set local role anon;
+ begin perform public.manager_company_profile(company);raise exception 'Anonymous full profile accepted';exception when insufficient_privilege then negatives:=negatives+1;end;
+ reset role;
+ if negatives<>18 then raise exception 'Unexpected negative assertion count %',negatives;end if;
+ raise notice 'Company profile QA passed: 18 rejection checks plus persistence, admin, archive, audit, QR and employee privacy.';
+end;
+$test$;
+rollback;

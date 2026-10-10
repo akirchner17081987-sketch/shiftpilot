@@ -420,6 +420,22 @@ window.SFHelpContent = {
     ],
     "settings": [
       [
+        "Was bewirken Unternehmenslogo, Zeitzone und Feiertagsregel?",
+        "Das Unternehmenslogo wird verkleinert, als PNG gespeichert und im PDF-Dienstplan sowie in Arbeitszeit-PDFs im richtigen Seitenverhältnis angezeigt. Die Exportvorschau zeigt fiktive Beispieldaten. Eine Änderung der Zeitzone verlangt eine Bestätigung: gespeicherte Zeitpunkte bleiben erhalten, Anzeige und Kalendertagszuordnung verwenden die neue Zeitzone. Die bestehende Feiertagsregel wird angezeigt und kann im Stundenkonto geöffnet werden. Sie wird durch eine Änderung der Unternehmensdaten nicht automatisch geändert."
+      ],
+      [
+        "Wer sieht betriebliche Ansprechpartner und Änderungen?",
+        "Unter Unternehmen → Ansprechpartner wird je Kontakt festgelegt, ob er im Mitarbeiterportal unter Mein Profil erscheint. Interne Kontakte und Standortkontakte bleiben in der Verwaltung. Inhaber und Administratoren sehen unter Verlauf Bearbeiter, Zeitpunkt und geänderte Angaben. Ein Logo wird als Änderungsmerkmal protokolliert, ohne die Bilddaten in den Verlauf zu kopieren."
+      ],
+      [
+        "Wie verwalte und verwende ich Unternehmensstandorte?",
+        "Unter Unternehmen → Standorte legen Inhaber und Administratoren Standorte mit Kürzel, Adresse und internen Kontakten an. In Schichtmodellen und QR-Terminals kann ein aktiver Standort zugeordnet werden. Archivierte Standorte bleiben bestehenden Zuordnungen und historischen Auswertungen erhalten; neue Zuordnungen sind gesperrt. Im Dienstplan-PDF filtern Schichtstandorte die zugeordneten Modelle. Das Monats-SOLL bleibt das vollständige persönliche Vertragsziel, kein anteiliges Standortziel. Die bisherigen Mitarbeiterauswahlen Leipzig und Recklinghausen bleiben erhalten."
+      ],
+      [
+        "Wie verwalte ich das Unternehmensprofil?",
+        "Unter Einstellungen → Unternehmen pflegen Inhaber und Administratoren Betriebsdaten, Geschäftsadresse, Exportlogo und Ansprechpartner. Speichern übernimmt diese Angaben zentral für alle Geräte. Teamleiter sehen eine Leseansicht. Ungespeicherte Eingaben, Speicherfehler und gleichzeitige Änderungen anderer Administratoren werden angezeigt. Ein lokaler alter Standort lässt sich ausdrücklich übernehmen."
+      ],
+      [
         "Wo ändere ich SOLL-Stärken?",
         "Öffnen Sie Einstellungen und pflegen Sie die globale Standardbesetzung je Schichtart. Einen abweichenden Bedarf legen Sie für den einzelnen Tag separat fest."
       ],
@@ -635,6 +651,5 @@ window.SFHelpContent = {
       ]
     ]
   },
-  "reviewedAt": "2026-10-09"
+  "reviewedAt": "2026-10-10"
 };
-

@@ -14,7 +14,7 @@
   M.apply=(rows,companyId)=>{
     if(demo())return;
     M.companyId=companyId;
-    M.models=(rows||[]).map(x=>({id:x.code,name:x.name||x.code,start:x.default_start?.slice(0,5)||'06:00',end:x.default_end?.slice(0,5)||'14:00',cls:palette[x.css_class]?x.css_class:'teal',active:x.active!==false,_dbId:x.id,sortOrder:x.sort_order||0,planningMode:x.planning_mode||'required',optionalStaffing:Number(x.optional_staffing)||0,responsibleEmployeeId:x.responsible_employee_id||null,responsibleOnly:x.responsible_only===true,optionalWeekdays:x.optional_weekdays||[1,2,3,4,5,6,7],coverageGroup:x.coverage_group||null,coverageRequired:Number(x.coverage_required)||0,morningOtMinimum:Number(x.morning_ot_switch_min)||0,allowedPersonnelNos:x.allowed_personnel_nos||null,exclusiveEmployees:x.exclusive_employees===true,requiresPlanningTeam:x.requires_planning_team===true,strictWeekdays:x.strict_weekdays===true,strictTimes:x.strict_times===true,rhythmAlias:x.rhythm_alias||null}));
+    M.models=(rows||[]).map(x=>({id:x.code,name:x.name||x.code,start:x.default_start?.slice(0,5)||'06:00',end:x.default_end?.slice(0,5)||'14:00',cls:palette[x.css_class]?x.css_class:'teal',active:x.active!==false,_dbId:x.id,sortOrder:x.sort_order||0,planningMode:x.planning_mode||'required',optionalStaffing:Number(x.optional_staffing)||0,responsibleEmployeeId:x.responsible_employee_id||null,responsibleOnly:x.responsible_only===true,optionalWeekdays:x.optional_weekdays||[1,2,3,4,5,6,7],coverageGroup:x.coverage_group||null,coverageRequired:Number(x.coverage_required)||0,morningOtMinimum:Number(x.morning_ot_switch_min)||0,allowedPersonnelNos:x.allowed_personnel_nos||null,exclusiveEmployees:x.exclusive_employees===true,requiresPlanningTeam:x.requires_planning_team===true,strictWeekdays:x.strict_weekdays===true,strictTimes:x.strict_times===true,rhythmAlias:x.rhythm_alias||null,siteId:x.site_id||null}));
     if(typeof TYPES!=='undefined')TYPES.splice(0,TYPES.length,...M.models.filter(x=>x.active).map(x=>({...x})));
     if(typeof selectedType!=='undefined'&&!M.activeCodes().includes(selectedType))selectedType=M.activeCodes()[0]||null;
   };
@@ -87,7 +87,7 @@
     if(only&&(!responsible||(planningMode==='optional'&&optionalStaffing>1)))throw Error('Bei exklusiver Zuständigkeit ist ein Mitarbeiter und höchstens eine optionale Besetzung erforderlich.');
     if(responsible&&!staff().some(e=>String(e._dbId||e.id)===String(responsible)&&e.status==='active'))throw Error('Bitte einen aktiven Mitarbeiter dieses Unternehmens auswählen.');
     if(!Array.isArray(days)||!days.length||new Set(days).size!==days.length||days.some(d=>!Number.isInteger(d)||d<1||d>7))throw Error('Bitte gültige Wochentage auswählen.');
-    return{code:model.code,name:model.name.trim(),start:model.start,end:model.end,soll:planningMode==='optional'?0:model.soll,color:model.color,planning_mode:planningMode,optional_staffing:optionalStaffing,responsible_employee_id:responsible,responsible_only:!!only,optional_weekdays:days};
+    return{...(model.site_id!==undefined?{site_id:model.site_id||null}:{}),code:model.code,name:model.name.trim(),start:model.start,end:model.end,soll:planningMode==='optional'?0:model.soll,color:model.color,planning_mode:planningMode,optional_staffing:optionalStaffing,responsible_employee_id:responsible,responsible_only:!!only,optional_weekdays:days};
   };
   async function reload(companyId){
     const [models,gs,ds]=await Promise.all([
@@ -147,8 +147,11 @@
     shade.querySelector('input:not(:disabled),button')?.focus();
     return{shade,close,setSaving(value){saving=value;shade.querySelectorAll('button,input,select').forEach(e=>{if(e.id!=='sfModelCode'||!e.dataset.fixed)e.disabled=value;});}};
   }
-  M.openEditor=code=>{
+  M.openEditor=async code=>{
     if(!M.canManage()||M.busy)return;
+    const companyId=B.companyId;
+    try{await window.SFCompanyProfile?.load()}catch(e){window.showSaveToast?.('Standorte konnten nicht geladen werden',e.message);return;}
+    if(companyId!==B.companyId||!M.canManage())return;
     const existing=code?M.find(code):null,action=!existing?'CREATE':existing.active?'UPDATE':'RESTORE';
     const d=dialog(existing?(existing.active?'Schichtmodell bearbeiten':'Schichtmodell wiederherstellen'):'Schichtmodell hinzufügen',`
       <p>Das Modell gilt nur für das aktuell ausgewählte Unternehmen. Zeiten über Mitternacht sind möglich.</p>
@@ -159,6 +162,7 @@
         <label><span>Ende</span><input id="sfModelEnd" type="time" ${existing?.coverageGroup?'readonly':''} required value="${esc(existing?.end||'14:00')}"></label>
         <label><span>SOLL-Stärke</span><input id="sfModelSoll" type="number" min="0" max="99" step="1" required value="${Number(existing&&globalSoll[existing.id]||0)}"></label>
         <label><span>Farbe</span><select id="sfModelColor" aria-label="Farbe">${Object.entries(palette).map(([id,label])=>`<option value="${id}" ${id===(existing?.cls||'teal')?'selected':''}>${label}</option>`).join('')}</select></label>
+        ${window.SFCompanyProfile?`<label><span>Unternehmensstandort</span><select id="sfModelSite">${window.SFCompanyProfile.siteOptions(existing?.siteId)}</select></label>`:''}
         <label><span>Planungsart</span><select id="sfModelMode" aria-label="Planungsart"><option value="required">Pflichtbesetzung</option><option value="optional" ${existing?.planningMode==='optional'?'selected':''}>Optional · nach Pflichtdiensten</option></select></label>
         <label><span>Optionale Wunschbesetzung</span><input id="sfModelOptional" type="number" min="1" max="99" value="${existing?.optionalStaffing||1}"></label>
         <label><span>Zuständiger Mitarbeiter</span><select id="sfModelResponsible" aria-label="Zuständiger Mitarbeiter"><option value="">Keine feste Zuständigkeit</option>${staff().filter(e=>e.status==='active').map(e=>`<option value="${esc(e._dbId||e.id)}" ${String(existing?.responsibleEmployeeId)===String(e._dbId||e.id)?'selected':''}>${esc(e.first+' '+e.last)}</option>`).join('')}</select></label>
@@ -170,7 +174,7 @@
     d.shade.querySelector('form').onsubmit=async e=>{
       e.preventDefault();d.setSaving(true);const error=d.shade.querySelector('[role=alert]');error.textContent='';
       try{
-        await M.perform(action,{code:existing?.id||val('sfModelCode').trim().toUpperCase(),name:val('sfModelName'),start:val('sfModelStart'),end:val('sfModelEnd'),soll:Number(val('sfModelSoll')),color:val('sfModelColor'),planning_mode:val('sfModelMode'),optional_staffing:val('sfModelMode')==='optional'?Number(val('sfModelOptional')):0,responsible_employee_id:val('sfModelResponsible')||null,responsible_only:val('sfModelOnly')==='true',optional_weekdays:[...d.shade.querySelectorAll('[data-sf-optional-day]:checked')].map(el=>Number(el.value))});
+        await M.perform(action,{code:existing?.id||val('sfModelCode').trim().toUpperCase(),name:val('sfModelName'),start:val('sfModelStart'),end:val('sfModelEnd'),soll:Number(val('sfModelSoll')),color:val('sfModelColor'),...(d.shade.querySelector('#sfModelSite')?{site_id:val('sfModelSite')||null}:{}),planning_mode:val('sfModelMode'),optional_staffing:val('sfModelMode')==='optional'?Number(val('sfModelOptional')):0,responsible_employee_id:val('sfModelResponsible')||null,responsible_only:val('sfModelOnly')==='true',optional_weekdays:[...d.shade.querySelectorAll('[data-sf-optional-day]:checked')].map(el=>Number(el.value))});
         d.setSaving(false);d.close();window.showSaveToast?.('Schichtmodell gespeichert','Das Modell ist im aktuellen Unternehmen verfügbar.');
       }catch(err){d.setSaving(false);syncMode();error.textContent=err.message||'Das Modell konnte nicht gespeichert werden.';}
     };
@@ -211,3 +215,4 @@
   };
   const update=B.updateState;B.updateState=function(){const r=update?.apply(this,arguments);if(B.ready)window.SFSettingsV2?.refreshPlanning();return r;};
 })();
+

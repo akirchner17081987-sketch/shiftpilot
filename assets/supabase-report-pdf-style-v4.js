@@ -21,13 +21,13 @@
   function script(src,test){return new Promise((resolve,reject)=>{if(test())return resolve();const old=[...document.scripts].find(x=>x.src===src);if(old){if(test())return resolve();old.addEventListener('load',resolve,{once:true});old.addEventListener('error',reject,{once:true});return}const s=document.createElement('script');s.src=src;s.async=true;s.onload=resolve;s.onerror=()=>reject(new Error('PDF-Bibliothek konnte nicht geladen werden'));document.head.appendChild(s)})}
   async function needPdf(){await script('https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js',()=>!!window.jspdf?.jsPDF);await script('https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js',()=>!!window.jspdf?.jsPDF?.API?.autoTable)}
   async function bundle(employeeId=null){const q=await B.client.rpc('manager_time_report_bundle',{p_company_id:B.companyId,p_month:monthDate(),p_employee_id:employeeId||null});if(q.error)throw q.error;return typeof q.data==='string'?JSON.parse(q.data):q.data}
-  async function loadLogo(){if(logoData)return logoData;try{const r=await fetch('assets/schichtfunk-logo.svg',{cache:'force-cache'});if(!r.ok)throw new Error('Logo nicht erreichbar');const svg=await r.text(),blob=new Blob([svg],{type:'image/svg+xml;charset=utf-8'}),url=URL.createObjectURL(blob);const img=await new Promise((resolve,reject)=>{const i=new Image();i.onload=()=>resolve(i);i.onerror=reject;i.src=url});const c=document.createElement('canvas');c.width=1720;c.height=500;const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);ctx.drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);logoData=c.toDataURL('image/png');return logoData}catch(e){console.warn('SchichtFunk PDF-Logo',e);return null}}
+  async function loadLogo(){const profile=await window.SFCompanyProfile?.exportProfile();if(profile?.logo_data_url)return profile.logo_data_url;if(logoData)return logoData;try{const r=await fetch('assets/schichtfunk-logo.svg',{cache:'force-cache'});if(!r.ok)throw new Error('Logo nicht erreichbar');const svg=await r.text(),blob=new Blob([svg],{type:'image/svg+xml;charset=utf-8'}),url=URL.createObjectURL(blob);const img=await new Promise((resolve,reject)=>{const i=new Image();i.onload=()=>resolve(i);i.onerror=reject;i.src=url});const c=document.createElement('canvas');c.width=1720;c.height=500;const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);ctx.drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);logoData=c.toDataURL('image/png');return logoData}catch(e){console.warn('SchichtFunk PDF-Logo',e);return null}}
 
   function drawHeader(doc,data,title,sub,logo){
     const pw=doc.internal.pageSize.getWidth();
     doc.setFillColor(8,24,38);doc.roundedRect(12,9,pw-24,31,3,3,'F');
     doc.setFillColor(39,214,180);doc.roundedRect(12,9,3.2,31,1.6,1.6,'F');
-    if(logo){try{doc.addImage(logo,'PNG',18,14,51.5,15,undefined,'FAST')}catch(e){console.warn('Logo in PDF',e)}}
+    if(logo){try{window.SFCompanyProfile?.drawLogo?window.SFCompanyProfile.drawLogo(doc,logo,18,14,51.5,15):doc.addImage(logo,'PNG',18,14,51.5,15,undefined,'FAST')}catch(e){console.warn('Logo in PDF',e)}}
     const tx=75;
     doc.setTextColor(59,225,196);doc.setFont('helvetica','bold');doc.setFontSize(6.8);doc.text('MONATS- / STUNDENKONTO',tx,15.5);
     doc.setTextColor(247,251,253);doc.setFontSize(13.5);doc.text(title,tx,23);
@@ -41,7 +41,7 @@
     const pw=doc.internal.pageSize.getWidth();
     doc.setFillColor(8,24,38);doc.roundedRect(12,7,pw-24,17,2.2,2.2,'F');
     doc.setFillColor(39,214,180);doc.roundedRect(12,7,2.4,17,1.2,1.2,'F');
-    if(logo){try{doc.addImage(logo,'PNG',18,10,29,8.4,undefined,'FAST')}catch(e){}}
+    if(logo){try{window.SFCompanyProfile?.drawLogo?window.SFCompanyProfile.drawLogo(doc,logo,18,10,29,8.4):doc.addImage(logo,'PNG',18,10,29,8.4,undefined,'FAST')}catch(e){}}
     doc.setFont('helvetica','bold');doc.setFontSize(8.8);doc.setTextColor(247,251,253);doc.text(title,53,13.3);
     doc.setFont('helvetica','normal');doc.setFontSize(6.3);doc.setTextColor(166,188,203);doc.text(sub||'',53,18.3,{maxWidth:150});
     doc.setFont('helvetica','bold');doc.setFontSize(8.2);doc.setTextColor(247,251,253);doc.text(monthLabel(data),pw-18,13.2,{align:'right'});
@@ -52,9 +52,10 @@
   function footer(doc){const n=doc.getNumberOfPages();for(let i=1;i<=n;i++){doc.setPage(i);const pw=doc.internal.pageSize.getWidth(),ph=doc.internal.pageSize.getHeight();doc.setDrawColor(218,226,232);doc.setLineWidth(.25);doc.line(14,ph-11,pw-14,ph-11);doc.setTextColor(112,128,140);doc.setFont('helvetica','normal');doc.setFontSize(6.6);doc.text('SchichtFunk · Klar geplant. Stark besetzt.',14,ph-6.2);doc.text(`Vertraulich · Seite ${i} von ${n}`,pw-14,ph-6.2,{align:'right'});doc.setTextColor(0,0,0)}}
 
   async function exportPdf(employeeId=null){
+    const companyId=B.companyId,userId=B.user?.id;const assertContext=()=>{if(companyId!==B.companyId||userId!==B.user?.id||B.companySwitching)throw Error('Der Unternehmenszugang wurde geändert. Bitte Export neu starten.');};
     busy(true);setStatus('PDF wird erstellt …');
     try{
-      await needPdf();const [data,logo]=await Promise.all([bundle(employeeId),loadLogo()]);const emp=employeeId?(data.employees||[])[0]:null,{jsPDF}=window.jspdf;if(employeeId&&!emp)throw new Error('Mitarbeiter wurde nicht gefunden');
+      await needPdf();const [data,logo]=await Promise.all([bundle(employeeId),loadLogo()]);assertContext();const emp=employeeId?(data.employees||[])[0]:null,{jsPDF}=window.jspdf;if(employeeId&&!emp)throw new Error('Mitarbeiter wurde nicht gefunden');
       const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4',compress:true});
       if(emp){
         const title='Mitarbeiter-Monatsauswertung',sub=`${emp.employee_name} · Personal-Nr. ${emp.personnel_no||'–'} · ${emp.weekly_hours||0} Std./Woche`;
@@ -70,7 +71,7 @@
         const s=rows.reduce((a,r)=>{a.t+=Number(r.target_minutes||0);a.w+=Number(r.confirmed_work_minutes||0);a.a+=Number(r.absence_credit_minutes||0);a.i+=Number(r.credited_total_minutes||0);a.m+=Number(r.month_balance_minutes||0);a.k+=Number(r.account_balance_minutes||0);a.p+=Number(r.pending_entries||0);return a},{t:0,w:0,a:0,i:0,m:0,k:0,p:0});body.push(['GESAMT','','',h(s.t),h(s.w),h(s.a),h(s.i),hs(s.m),hs(s.k),String(s.p)]);
         doc.autoTable({startY:44,margin:{left:14,right:14,top:28,bottom:15},tableWidth:269,head:[['Mitarbeiter','Pers.-Nr.','Std./W.','SOLL','Arbeit','Abwes.','IST','Monat +/-','Konto','Offen']],body,theme:'striped',styles:{fontSize:6.6,cellPadding:1.75,textColor:[35,52,65],lineColor:[226,232,236],lineWidth:.1},headStyles:{fillColor:[17,42,58],textColor:[239,249,248]},alternateRowStyles:{fillColor:[247,249,250]},didParseCell:d=>{if(d.section!=='body')return;const total=d.row.index===body.length-1;if(total){d.cell.styles.fontStyle='bold';d.cell.styles.fillColor=[228,247,242]}if(d.column.index===7||d.column.index===8){const src=total?(d.column.index===7?s.m:s.k):(d.column.index===7?rows[d.row.index]?.month_balance_minutes:rows[d.row.index]?.account_balance_minutes);d.cell.styles.textColor=balanceColor(src);if(Number(src||0)!==0)d.cell.styles.fontStyle='bold'}},didDrawPage:hook=>{if(hook.pageNumber>1)drawCompactHeader(doc,data,title,sub,logo)}});
       }
-      footer(doc);doc.save(safe(`SchichtFunk_${employeeId?emp?.employee_name:'Gesamtauswertung'}_${monthValue()}`)+'.pdf');setStatus('PDF erstellt ✓');
+      assertContext();footer(doc);doc.save(safe(`SchichtFunk_${employeeId?emp?.employee_name:'Gesamtauswertung'}_${monthValue()}`)+'.pdf');setStatus('PDF erstellt ✓');
     }catch(e){console.error(e);setStatus('PDF-Export fehlgeschlagen');alert('PDF-Export fehlgeschlagen: '+(e?.message||e))}finally{busy(false)}
   }
 
