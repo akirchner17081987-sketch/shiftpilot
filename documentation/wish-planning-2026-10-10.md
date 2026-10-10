@@ -15,7 +15,7 @@ Verwaltung: neuer Bereich **Wunschplanung** für OWNER, ADMIN, PLANNER und DISPA
 
 Frontend: der ursprüngliche Compliance-Kern berücksichtigt den Schutz, einschließlich früher abgegriffener Funktionsreferenzen. Fehlende Schutzdaten sperren Planung bis zum Neuladen. Auto-Planung und Simulator berücksichtigen Zusagen, Wünsche und historische Belastung. Minimaler Feed/Snapshot ohne Hinweise und Entscheidungsgründe. Firmen-/Benutzer-/Rollenwechsel löschen den lokalen Zustand; verspätete Antworten werden verworfen. Anfragen haben 30 Sekunden Zeitlimit. Neue virtuelle Stellen übernehmen keine persönlichen Wünsche des Referenzprofils.
 
-Wünsche und Verlauf sind in Löschmanifest und Änderungssperre der vollständigen Mitarbeiterlöschung aufgenommen. FK-Kaskaden sind eine zusätzliche Absicherung. Zwei tatsächlich angewandte Migrationen sind unter den vom Server erzeugten Versionsnummern eingecheckt.
+Wünsche und Verlauf sind in Löschmanifest und Änderungssperre der vollständigen Mitarbeiterlöschung aufgenommen. FK-Kaskaden sind eine zusätzliche Absicherung. Die tatsächlich angewandten Migrationen sind unter den vom Server erzeugten Versionsnummern eingecheckt.
 
 ## Erklärbare Fairness
 
@@ -23,7 +23,7 @@ Ansicht: ausgewählter Monat und zwei Vormonate, veröffentlichte Planstunden st
 
 Wunschquote: je Person/Datum letzte Entscheidung; Zusage/Vormerkung gegen Ablehnung. PENDING/WITHDRAWN ausgeschlossen; RELEASED bleibt als erteilte Zusage erhalten. Misst Entscheidungen, keine tatsächliche Erfüllung jeder Schichtpräferenz. Keine Gesamtbewertung oder Rangliste.
 
-Optimierer: verbindliche Regeln und Pflichtbesetzung zuerst. Geschützte Freizeit harter Ausschluss. Weiche Präferenzen: offener OFF-Konflikt −10, passende SHIFT +8, andere SHIFT −8, IMPORTANT doppelt. Historische Nacht-/Wochenendanteile der drei vollständigen Vormonate werden nur zwischen identischen Schichtfreigabegruppen berücksichtigt. Bestehende Stundenbasis erforderlich; relative Mehrbelastung gegenüber gruppengewichteter Quote senkt Präferenz um 2 pro zusätzlicher entsprechender Stunde. Fehlende Daten führen zu keiner angenommenen Gleichheit. Keine Garantie mathematisch optimaler Fairness oder Besetzung. Die Vorschau erklärt passende Wunschtage und Abweichungen.
+Optimierer: verbindliche Regeln und Pflichtbesetzung zuerst. Geschützte Freizeit harter Ausschluss. Weiche Präferenzen: offener OFF-Konflikt −10, passende SHIFT +8, andere SHIFT −8, IMPORTANT doppelt. Historische Nacht-/Wochenendanteile der drei vollständigen Vormonate werden nur zwischen identischen Schichtfreigabegruppen berücksichtigt. Veröffentlichter Status mit Veröffentlichungszeitpunkt erforderlich; Entwürfe zählen nicht. Der Simulator liest dafür einen eigenen minimalen historischen Feed. Bestehende Stundenbasis erforderlich; relative Mehrbelastung gegenüber gruppengewichteter Quote senkt Präferenz um 2 pro zusätzlicher entsprechender Stunde. Fehlende Daten führen zu keiner angenommenen Gleichheit. Keine Garantie mathematisch optimaler Fairness oder Besetzung. Die Vorschau erklärt passende Wunschtage und Abweichungen.
 
 ## Hilfe und Prüfung
 

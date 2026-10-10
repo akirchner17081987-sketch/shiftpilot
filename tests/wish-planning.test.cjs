@@ -30,8 +30,8 @@ test('optimizer preserves coverage and chooses the employee without a conflictin
  const promised=await O.optimize({...input,...C.optimizer([w()],people,[],'2027-02',zone)},{iterations:2});assert.equal(promised.preview[0].employeeId,'b');
 });
 test('historical workload compares only matching shift permissions and normalizes by planned hours',()=>{
- const people=[{id:'a',shifts:['ND']},{id:'b',shifts:['ND']},{id:'c',shifts:['FD']}],base=[d('2027-01-05','22:00','06:00','a','ND'),d('2027-01-05','14:00','22:00','b','ND')],p=C.optimizer([],people,base,'2027-02',zone);
- const option=[d('2027-02-02','22:00','06:00','a','ND')];assert.ok(p.preferenceScore(people[0],[],option)<p.preferenceScore(people[1],[],option));assert.equal(p.preferenceScore(people[2],[],option),0);
+ const people=[{id:'a',shifts:['ND']},{id:'b',shifts:['ND']},{id:'c',shifts:['FD']}],base=[d('2027-01-05','22:00','06:00','a','ND'),d('2027-01-05','14:00','22:00','b','ND')].map(a=>({...a,status:'PUBLISHED',published_at:'2027-01-01T12:00Z'})),p=C.optimizer([],people,base,'2027-02',zone);
+ const option=[d('2027-02-02','22:00','06:00','a','ND')];assert.ok(p.preferenceScore(people[0],[],option)<p.preferenceScore(people[1],[],option));assert.equal(p.preferenceScore(people[2],[],option),0);const draft=C.optimizer([],people,base.map(a=>({...a,status:'DRAFT'})),'2027-02',zone);assert.equal(draft.preferenceScore(people[0],[],option),0);const missing=C.optimizer([],people,base.map(a=>({...a,published_at:null})),'2027-02',zone);assert.equal(missing.preferenceScore(people[0],[],option),0);
 });
 test('reports remain alphabetical by last name and use only supplied employee records',()=>{
  const data={employees:[{id:'a',first:'Max',last:'Zorn'},{id:'b',first:'Ida',last:'Adler'}],duties:[],wishes:[],fairness_from:'2027-01-01',fairness_to:'2027-01-31',timezone:zone};assert.deepEqual(C.report(data).map(x=>x.last),['Adler','Zorn']);assert.equal(C.report({...data,employees:[data.employees[0]]}).length,1);

@@ -71,7 +71,7 @@
    // Extra conditional demand is represented separately from the company's fallback rule.
    const required=(date,code,rows)=>{const value=S.required(date,code,rows,policy);return value===null?null:value+(slotByKey.get(date+'|'+code)?.extra||0)};
    const accept=(e,own,option)=>{const touched=new Set(option.flatMap(a=>[a.date.slice(0,7),S.localDate(a.endMs-1,policy).slice(0,7)]));for(const m of touched){const start=S.instant(m+'-01','00:00',data.timezone),end=S.instant(monthNext(m+'-01'),'00:00',data.timezone);if([...own,...option].reduce((n,a)=>n+Math.max(0,Math.min(a.endMs,end)-Math.max(a.startMs,start))/H,0)>e.calendarLimit+1e-6)return false;}return true};
-   const wishes=W?.optimizer(data.wishes||[],employees,base,month,data.timezone);const input={...wishes,month,employees,base,groups,capacities,criticalBeamWidth:16,respectHours:true,solidRules:policy,required,accept:(e,own,option)=>accept(e,own,option)&&(!wishes||wishes.accept(e,own,option)),criticalCapacities:[...critical]};
+   const wishes=W?.optimizer(data.wishes||[],employees,data.wish_history||[],month,data.timezone);const input={...wishes,month,employees,base,groups,capacities,criticalBeamWidth:16,respectHours:true,solidRules:policy,required,accept:(e,own,option)=>accept(e,own,option)&&(!wishes||wishes.accept(e,own,option)),criticalCapacities:[...critical]};
    const found=await O.optimize(input,{iterations,yieldStep,progress:p=>progress({month,...p})});preview.push(...found.preview.map(a=>S.duty(a,policy)));
   }
   const all=[...boundary,...preview],errors=[];
