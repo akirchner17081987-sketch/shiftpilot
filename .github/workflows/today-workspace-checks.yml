@@ -1,0 +1,34 @@
+name: Today workspace checks
+on:
+  push:
+    branches: [codex/today-workspace-20261010, codex/ionos-migration]
+    paths:
+      - 'assets/today-*'
+      - 'assets/disruption-autopilot-v1.js'
+      - 'assets/supabase-time-tracking-v1.js'
+      - 'tests/fixtures/today-data.cjs'
+      - 'tests/today-workspace.test.cjs'
+      - 'tests/browser/today-workspace-qa.cjs'
+      - '.github/workflows/today-workspace-checks.yml'
+      - 'index.html'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test && npm run test:ionos && npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:today
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: today-workspace-qa
+          path: test-results/today-workspace/

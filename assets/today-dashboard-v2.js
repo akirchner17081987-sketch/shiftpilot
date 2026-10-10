@@ -1,6 +1,6 @@
 // SchichtFunk – Heute-Dashboard V2
 (function(){
-  if(window.__sfTodayDashboardV2)return;
+  if(window.SFToday||window.__sfTodayDashboardV2)return;
   window.__sfTodayDashboardV2=true;
 
   const B=window.SFBackend=window.SFBackend||{};
@@ -111,6 +111,7 @@
   function incidentForAssignment(a){const id=dbId(a);return openIncidents().find(x=>String(x.assignment_id||x.assignmentId||'')===id)}
 
   async function loadLive(force=false){
+    if(window.SFToday)return;
     if(demo()||loading||!B.client?.rpc||!B.companyId)return;
     if(!force&&Date.now()-lastLoadedAt<12000)return;
     loading=true;render(false);
@@ -173,6 +174,7 @@
   function actionButton(item){return item.action==='autopilot'?`<button class="primary" onclick="sfTodayV2Autopilot()">${esc(item.button)}</button>`:`<button class="ghost" onclick="sfTodayV2Nav('${esc(item.action)}')">${esc(item.button)}</button>`}
 
   function render(fetch=true){
+    if(window.SFToday)return;
     const page=document.getElementById('view-overview');if(!page)return;
     css();page.className='view sf-today-v2'+(page.classList.contains('active')?' active':'');
     const d=today(),rows=relevantAssignments(d),cov=todayCoverage(d),warnings=workWarnings(rows),states=rows.map(a=>({a,s:state(a,d)}));
@@ -216,6 +218,7 @@
     btn?.setAttribute('title','Heute-Dashboard');
   }
   function boot(){
+    if(window.SFToday)return;
     const page=document.getElementById('view-overview');if(!page)return setTimeout(boot,100);
     markNavigation();window.renderTodayDashboard=render;window.renderOverview=render;render();
     document.addEventListener('click',e=>{if(e.target.closest?.('[data-view="overview"]'))setTimeout(()=>render(),0)});

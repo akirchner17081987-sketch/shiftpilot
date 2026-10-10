@@ -127,9 +127,11 @@ window.SFHelpContent = {
       ]
     ],
     "overview": [
+      ["Warum steht dort „Check-in fehlt – bitte prüfen“?", "15 Minuten nach dem geplanten Beginn fehlt eine passende Zeitbuchung. Das ist kein Nachweis des Nichterscheinens. Bei fehlenden Zeitrechten oder veralteten Daten wird kein solcher Verdacht angezeigt. Der Datenstand und fehlgeschlagene Aktualisierungen sind sichtbar. „Zeit prüfen“ öffnet die betreffende Meldung beziehungsweise QR-Buchung."],
+      ["Wie zeigt „Heute“ Pausen und offene Buchungen?", "„Jetzt im Dienst“ zählt laufende Buchungen einschließlich Pausen, je Person einmal. Beginn, Anwesenheitsdauer, bezahlte Pausen und QR-Terminal werden angezeigt. Pausen werden nicht von der Anwesenheitsdauer abgezogen. Buchungen über 24 Stunden werden zur Prüfung markiert und nicht als aktuelle Anwesenheit gezählt. „Handlungsbedarf“ zeigt die vollständige Anzahl; „Weitere anzeigen“ lädt die übrigen Hinweise in die Liste."],
       [
         "Was zeigt „Heute“?",
-        "Das Heute-Dashboard zeigt unter anderem die aktuelle Besetzung, relevante Nachtschichten, den Status einzelner Einsätze und Schnellzugriffe auf Dienstplan, Zeiterfassung, Abwesenheiten und Auto-Planung."
+        "„Heute“ zeigt veröffentlichte Planung, tatsächliche Anwesenheit und beendete Dienste getrennt. Freie QR-Dienste ohne Dienstplan gehören ebenfalls dazu. Standort- und Schichtfilter gelten für die gesamte Übersicht; die Kennzahlen öffnen die passende Liste. Entwürfe stehen separat und erhöhen die veröffentlichte Besetzung nicht. Unter „Nächste 2 Stunden“ stehen geplante Schichtwechsel und offene Positionen. Namen erscheinen als Nachname, Vorname."
       ],
       [
         "Was bedeutet die Einsatzbereitschafts-Ampel?",
