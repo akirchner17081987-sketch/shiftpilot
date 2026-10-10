@@ -5,6 +5,7 @@ on:
     paths:
       - 'assets/wish-planning-*'
       - 'assets/compliance-core-v2.js'
+      - 'assets/conflict-plausibility-v1.js'
       - 'assets/employee-portal-workspace-v2.js'
       - 'assets/month-optimizer-*'
       - 'tests/browser/wish-planning-qa.cjs'
