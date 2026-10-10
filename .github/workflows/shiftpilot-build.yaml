@@ -45,6 +45,11 @@ jobs:
           npm test
           npm run test:ionos
 
+      - name: Verify reporting workspace and complete exports
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:reports
+
 # Please do not touch the following action
       - name: Store deployment content
         uses: ionos-deploy-now/artifact-action@v1
@@ -57,3 +62,4 @@ jobs:
           folder: ${{ env.DEPLOYMENT_FOLDER }}
           config-file: .deploy-now/shiftpilot/config.yaml
           action: upload
+

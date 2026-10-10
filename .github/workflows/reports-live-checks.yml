@@ -1,0 +1,21 @@
+name: Reports live verification
+on:
+  push:
+    branches: [codex/ionos-migration]
+    paths:
+      - 'assets/reports-workspace*'
+      - 'scripts/verify-reports-live.py'
+      - '.github/workflows/reports-live-checks.yml'
+jobs:
+  verify-published-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Wait for and verify the exact IONOS release
+        run: python scripts/verify-reports-live.py

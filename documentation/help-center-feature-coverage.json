@@ -1,7 +1,10 @@
 {
   "reviewedAt": "2026-10-10",
-  "sourceCommit": "d5dd383c26196497286646d171ccb3fad158ba69",
+  "sourceCommit": "7946566153211fc24bc2ad8a0bfd976e8efb3aeb",
   "addedArticles": [
+    {"category":"reports","question":"Wie nutze ich das erweiterte Auswertungs-Dashboard?","sources":["assets/reports-workspace-v1.js","assets/reports-workspace-core-v1.js"]},
+    {"category":"reports","question":"Was zeigen Besetzungskalender und Handlungsbedarf?","sources":["assets/reports-workspace-v1.js","assets/reports-workspace-core-v1.js"]},
+    {"category":"reports","question":"Wie vergleiche und exportiere ich die Auswertung?","sources":["assets/reports-workspace-v1.js","tests/browser/reports-workspace-qa.cjs"]},
     {
       "category": "access",
       "question": "Welche Benutzerrollen gibt es?",
@@ -13,7 +16,7 @@
     },
     {
       "category": "access",
-      "question": "Wie lade ich Verwaltungsbenutzer ein und verwalte Zugänge?",
+      "question": "Wie lade ich Verwaltungsbenutzer ein und verwalte Zug�nge?",
       "sources": [
         "assets/team-admin-v1.js"
       ]
@@ -34,7 +37,7 @@
     },
     {
       "category": "access",
-      "question": "Wie setze ich mein Passwort zurück?",
+      "question": "Wie setze ich mein Passwort zur�ck?",
       "sources": [
         "assets/supabase-password-reset-v1.js",
         "assets/supabase-auth-errors-v1.js"
@@ -49,14 +52,14 @@
     },
     {
       "category": "access",
-      "question": "Was bedeutet Datenschutz & Löschung in den Einstellungen?",
+      "question": "Was bedeutet Datenschutz & L�schung in den Einstellungen?",
       "sources": [
         "assets/privacy-retention-ui-v1.js"
       ]
     },
     {
       "category": "personnel",
-      "question": "Wer kann die Personalakte öffnen?",
+      "question": "Wer kann die Personalakte �ffnen?",
       "sources": [
         "assets/supabase-personnel-file-v1.js"
       ]
@@ -93,21 +96,21 @@
     },
     {
       "category": "personnel",
-      "question": "Wie bearbeite ich Profiländerungsanfragen?",
+      "question": "Wie bearbeite ich Profil�nderungsanfragen?",
       "sources": [
         "assets/employee-profile-manager-v1.js"
       ]
     },
     {
       "category": "employees",
-      "question": "Was passiert beim normalen Löschen eines Mitarbeiters?",
+      "question": "Was passiert beim normalen L�schen eines Mitarbeiters?",
       "sources": [
         "assets/employee-removal-v1.js"
       ]
     },
     {
       "category": "access",
-      "question": "Was unterscheidet vollständige Datenlöschung vom normalen Entfernen?",
+      "question": "Was unterscheidet vollst�ndige Datenl�schung vom normalen Entfernen?",
       "sources": [
         "assets/employee-erasure-v1.js",
         "assets/employee-removal-v1.js"
@@ -115,7 +118,7 @@
     },
     {
       "category": "time",
-      "question": "Welche Zeitwerte zählen in der zentralen Auswertung?",
+      "question": "Welche Zeitwerte z�hlen in der zentralen Auswertung?",
       "sources": [
         "assets/central-time-core-v1.js",
         "assets/central-time-reports-v1.js"
@@ -130,7 +133,7 @@
     },
     {
       "category": "time",
-      "question": "Was unterscheidet Speichern, Bestätigen und Korrektur anfordern?",
+      "question": "Was unterscheidet Speichern, Best�tigen und Korrektur anfordern?",
       "sources": [
         "assets/supabase-time-tracking-v1.js"
       ]
@@ -158,7 +161,7 @@
     },
     {
       "category": "time",
-      "question": "Was sperrt ein abgeschlossener Monat und wie öffne ich ihn wieder?",
+      "question": "Was sperrt ein abgeschlossener Monat und wie �ffne ich ihn wieder?",
       "sources": [
         "assets/supabase-time-month-close-v1.js"
       ]
@@ -173,7 +176,7 @@
     },
     {
       "category": "portal",
-      "question": "Wie lese ich mein persönliches Stundenkonto?",
+      "question": "Wie lese ich mein pers�nliches Stundenkonto?",
       "sources": [
         "assets/employee-time-account-v2.js"
       ]
@@ -201,7 +204,7 @@
     },
     {
       "category": "schedule",
-      "question": "Für welchen Zeitraum wird ein Dienstplan veröffentlicht?",
+      "question": "F�r welchen Zeitraum wird ein Dienstplan ver�ffentlicht?",
       "sources": [
         "assets/supabase-publish-v1.js",
         "assets/publish-dialog-design-v1.js"
@@ -209,7 +212,7 @@
     },
     {
       "category": "schedule",
-      "question": "Wo sehe ich Planänderungen und ausstehende Rückmeldungen?",
+      "question": "Wo sehe ich Plan�nderungen und ausstehende R�ckmeldungen?",
       "sources": [
         "assets/schedule-status-history-v1.js",
         "assets/compliance-workflow-v2.js"
@@ -217,7 +220,7 @@
     },
     {
       "category": "schedule",
-      "question": "Kann ich einen ganzen Planungsmonat löschen?",
+      "question": "Kann ich einen ganzen Planungsmonat l�schen?",
       "sources": [
         "assets/supabase-schedule-reset-v1.js"
       ]
@@ -239,14 +242,14 @@
     },
     {
       "category": "portal",
-      "question": "Wie läuft ein Schichttausch mit einem Kollegen ab?",
+      "question": "Wie l�uft ein Schichttausch mit einem Kollegen ab?",
       "sources": [
         "assets/supabase-shift-swap-v1.js"
       ]
     },
     {
       "category": "portal",
-      "question": "Wie antworte ich auf eine angefragte Dienstplanänderung?",
+      "question": "Wie antworte ich auf eine angefragte Dienstplan�nderung?",
       "sources": [
         "assets/supabase-employee-change-response-v1.js",
         "assets/compliance-workflow-v2.js"
@@ -295,7 +298,7 @@
     },
     {
       "category": "settings",
-      "question": "Wer sieht betriebliche Ansprechpartner und Änderungen?",
+      "question": "Wer sieht betriebliche Ansprechpartner und �nderungen?",
       "sources": [
         "assets/company-profile-v1.js"
       ]
@@ -324,19 +327,19 @@
     },
     {
       "source": "assets/assignment-quick-delete-v1.js",
-      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "area": "Dienstplan, Ver�ffentlichung, Konflikte, Import und Export",
       "category": "schedule",
       "kind": "feature-or-support"
     },
     {
       "source": "assets/assignment-ux-v4.js",
-      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "area": "Dienstplan, Ver�ffentlichung, Konflikte, Import und Export",
       "category": "schedule",
       "kind": "feature-or-support"
     },
     {
       "source": "assets/audit-logs-v1.js",
-      "area": "Datenschutz, Audit und vollständige Löschung",
+      "area": "Datenschutz, Audit und vollst�ndige L�schung",
       "category": "access",
       "kind": "feature-or-support"
     },
@@ -348,7 +351,7 @@
     },
     {
       "source": "assets/calendar-view-switch-v1.js",
-      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "area": "Dienstplan, Ver�ffentlichung, Konflikte, Import und Export",
       "category": "schedule",
       "kind": "feature-or-support"
     },
@@ -378,25 +381,25 @@
     },
     {
       "source": "assets/compliance-core-v2.js",
-      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "area": "Dienstplan, Ver�ffentlichung, Konflikte, Import und Export",
       "category": "schedule",
       "kind": "feature-or-support"
     },
     {
       "source": "assets/compliance-ui-v2.js",
-      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "area": "Dienstplan, Ver�ffentlichung, Konflikte, Import und Export",
       "category": "schedule",
       "kind": "feature-or-support"
     },
     {
       "source": "assets/compliance-workflow-v2.js",
-      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "area": "Dienstplan, Ver�ffentlichung, Konflikte, Import und Export",
       "category": "schedule",
       "kind": "feature-or-support"
     },
     {
       "source": "assets/conflict-plausibility-v1.js",
-      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "area": "Dienstplan, Ver�ffentlichung, Konflikte, Import und Export",
       "category": "schedule",
       "kind": "feature-or-support"
     },
@@ -516,55 +519,55 @@
     },
     {
       "source": "assets/disruption-autopilot-v1.js",
-      "area": "Ausfälle und Ersatzsuche",
+      "area": "Ausf�lle und Ersatzsuche",
       "category": "disruptions",
       "kind": "feature-or-support"
     },
     {
       "source": "assets/dynamic-employee-pool-v1.js",
-      "area": "Mitarbeiter, Verfügbarkeit, persönliche Rhythmen und Entfernen",
+      "area": "Mitarbeiter, Verf�gbarkeit, pers�nliche Rhythmen und Entfernen",
       "category": "employees",
       "kind": "feature-or-support"
     },
     {
       "source": "assets/employee-core-v1.js",
-      "area": "Mitarbeiter, Verfügbarkeit, persönliche Rhythmen und Entfernen",
+      "area": "Mitarbeiter, Verf�gbarkeit, pers�nliche Rhythmen und Entfernen",
       "category": "employees",
       "kind": "feature-or-support"
     },
     {
       "source": "assets/employee-erasure-v1.js",
-      "area": "Datenschutz, Audit und vollständige Löschung",
+      "area": "Datenschutz, Audit und vollst�ndige L�schung",
       "category": "access",
       "kind": "feature-or-support"
     },
     {
       "source": "assets/employee-management-v2.js",
-      "area": "Mitarbeiter, Verfügbarkeit, persönliche Rhythmen und Entfernen",
+      "area": "Mitarbeiter, Verf�gbarkeit, pers�nliche Rhythmen und Entfernen",
       "category": "employees",
       "kind": "feature-or-support"
     },
     {
       "source": "assets/employee-mobile-pwa-polish-v2.js",
-      "area": "Mitarbeiter, Verfügbarkeit, persönliche Rhythmen und Entfernen",
+      "area": "Mitarbeiter, Verf�gbarkeit, pers�nliche Rhythmen und Entfernen",
       "category": "employees",
       "kind": "support-or-legacy"
     },
     {
       "source": "assets/employee-mobile-pwa-v1.js",
-      "area": "Mitarbeiter, Verfügbarkeit, persönliche Rhythmen und Entfernen",
+      "area": "Mitarbeiter, Verf�gbarkeit, pers�nliche Rhythmen und Entfernen",
       "category": "employees",
       "kind": "feature-or-support"
     },
     {
       "source": "assets/employee-portal-vertical-layout-v1.js",
-      "area": "Portal, eigene Dienste, Tausch und Rückmeldungen",
+      "area": "Portal, eigene Dienste, Tausch und R�ckmeldungen",
       "category": "portal",
       "kind": "feature-or-support"
     },
     {
       "source": "assets/employee-portal-workspace-v2.js",
-      "area": "Portal, eigene Dienste, Tausch und Rückmeldungen",
+      "area": "Portal, eigene Dienste, Tausch und R�ckmeldungen",
       "category": "portal",
       "kind": "feature-or-support"
     },
@@ -600,19 +603,19 @@
     },
     {
       "source": "assets/employee-removal-v1.js",
-      "area": "Mitarbeiter, Verfügbarkeit, persönliche Rhythmen und Entfernen",
+      "area": "Mitarbeiter, Verf�gbarkeit, pers�nliche Rhythmen und Entfernen",
       "category": "employees",
       "kind": "feature-or-support"
     },
     {
       "source": "assets/employee-rhythm-v1.js",
-      "area": "Mitarbeiter, Verfügbarkeit, persönliche Rhythmen und Entfernen",
+      "area": "Mitarbeiter, Verf�gbarkeit, pers�nliche Rhythmen und Entfernen",
       "category": "employees",
       "kind": "feature-or-support"
     },
     {
       "source": "assets/employee-shifts-month-v1.js",
-      "area": "Portal, eigene Dienste, Tausch und Rückmeldungen",
+      "area": "Portal, eigene Dienste, Tausch und R�ckmeldungen",
       "category": "portal",
       "kind": "feature-or-support"
     },
@@ -690,7 +693,7 @@
     },
     {
       "source": "assets/monthly-schedule-import-v1.js",
-      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "area": "Dienstplan, Ver�ffentlichung, Konflikte, Import und Export",
       "category": "schedule",
       "kind": "feature-or-support"
     },
@@ -714,7 +717,7 @@
     },
     {
       "source": "assets/open-shift-marketplace-v1.js",
-      "area": "Offene Dienste und freiwillige Übernahmen",
+      "area": "Offene Dienste und freiwillige �bernahmen",
       "category": "marketplace",
       "kind": "feature-or-support"
     },
@@ -744,13 +747,13 @@
     },
     {
       "source": "assets/privacy-retention-ui-v1.js",
-      "area": "Datenschutz, Audit und vollständige Löschung",
+      "area": "Datenschutz, Audit und vollst�ndige L�schung",
       "category": "access",
       "kind": "feature-or-support"
     },
     {
       "source": "assets/publish-dialog-design-v1.js",
-      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "area": "Dienstplan, Ver�ffentlichung, Konflikte, Import und Export",
       "category": "schedule",
       "kind": "feature-or-support"
     },
@@ -804,67 +807,67 @@
     },
     {
       "source": "assets/schedule-employee-display-v1.js",
-      "area": "Mitarbeiter, Verfügbarkeit, persönliche Rhythmen und Entfernen",
+      "area": "Mitarbeiter, Verf�gbarkeit, pers�nliche Rhythmen und Entfernen",
       "category": "employees",
       "kind": "feature-or-support"
     },
     {
       "source": "assets/schedule-employee-pool-polish-v1.js",
-      "area": "Mitarbeiter, Verfügbarkeit, persönliche Rhythmen und Entfernen",
+      "area": "Mitarbeiter, Verf�gbarkeit, pers�nliche Rhythmen und Entfernen",
       "category": "employees",
       "kind": "support-or-legacy"
     },
     {
       "source": "assets/schedule-export-core-v1.js",
-      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "area": "Dienstplan, Ver�ffentlichung, Konflikte, Import und Export",
       "category": "schedule",
       "kind": "feature-or-support"
     },
     {
       "source": "assets/schedule-export-v1.js",
-      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "area": "Dienstplan, Ver�ffentlichung, Konflikte, Import und Export",
       "category": "schedule",
       "kind": "feature-or-support"
     },
     {
       "source": "assets/schedule-final-v1.js",
-      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "area": "Dienstplan, Ver�ffentlichung, Konflikte, Import und Export",
       "category": "schedule",
       "kind": "feature-or-support"
     },
     {
       "source": "assets/schedule-month-view-v1.js",
-      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "area": "Dienstplan, Ver�ffentlichung, Konflikte, Import und Export",
       "category": "schedule",
       "kind": "feature-or-support"
     },
     {
       "source": "assets/schedule-readability-v1.js",
-      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "area": "Dienstplan, Ver�ffentlichung, Konflikte, Import und Export",
       "category": "schedule",
       "kind": "feature-or-support"
     },
     {
       "source": "assets/schedule-status-history-v1.js",
-      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "area": "Dienstplan, Ver�ffentlichung, Konflikte, Import und Export",
       "category": "schedule",
       "kind": "feature-or-support"
     },
     {
       "source": "assets/schedule-toolbar-polish-v1.js",
-      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "area": "Dienstplan, Ver�ffentlichung, Konflikte, Import und Export",
       "category": "schedule",
       "kind": "support-or-legacy"
     },
     {
       "source": "assets/schedule-ux-v3.js",
-      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "area": "Dienstplan, Ver�ffentlichung, Konflikte, Import und Export",
       "category": "schedule",
       "kind": "feature-or-support"
     },
     {
       "source": "assets/schedule-week-board-v2-phase1.js",
-      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "area": "Dienstplan, Ver�ffentlichung, Konflikte, Import und Export",
       "category": "schedule",
       "kind": "feature-or-support"
     },
@@ -888,7 +891,7 @@
     },
     {
       "source": "assets/schichtfunk-schedule-core-v1.js",
-      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "area": "Dienstplan, Ver�ffentlichung, Konflikte, Import und Export",
       "category": "schedule",
       "kind": "feature-or-support"
     },
@@ -996,7 +999,7 @@
     },
     {
       "source": "assets/supabase-compliance-bridge-v1.js",
-      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "area": "Dienstplan, Ver�ffentlichung, Konflikte, Import und Export",
       "category": "schedule",
       "kind": "support-or-legacy"
     },
@@ -1038,7 +1041,7 @@
     },
     {
       "source": "assets/supabase-employee-change-response-v1.js",
-      "area": "Portal, eigene Dienste, Tausch und Rückmeldungen",
+      "area": "Portal, eigene Dienste, Tausch und R�ckmeldungen",
       "category": "portal",
       "kind": "feature-or-support"
     },
@@ -1050,7 +1053,7 @@
     },
     {
       "source": "assets/supabase-employee-sync-reconcile-v1.js",
-      "area": "Mitarbeiter, Verfügbarkeit, persönliche Rhythmen und Entfernen",
+      "area": "Mitarbeiter, Verf�gbarkeit, pers�nliche Rhythmen und Entfernen",
       "category": "employees",
       "kind": "support-or-legacy"
     },
@@ -1164,7 +1167,7 @@
     },
     {
       "source": "assets/supabase-publish-v1.js",
-      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "area": "Dienstplan, Ver�ffentlichung, Konflikte, Import und Export",
       "category": "schedule",
       "kind": "feature-or-support"
     },
@@ -1218,19 +1221,19 @@
     },
     {
       "source": "assets/supabase-schedule-reset-v1.js",
-      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "area": "Dienstplan, Ver�ffentlichung, Konflikte, Import und Export",
       "category": "schedule",
       "kind": "feature-or-support"
     },
     {
       "source": "assets/supabase-shift-marketplace-v1.js",
-      "area": "Offene Dienste und freiwillige Übernahmen",
+      "area": "Offene Dienste und freiwillige �bernahmen",
       "category": "marketplace",
       "kind": "feature-or-support"
     },
     {
       "source": "assets/supabase-shift-swap-v1.js",
-      "area": "Portal, eigene Dienste, Tausch und Rückmeldungen",
+      "area": "Portal, eigene Dienste, Tausch und R�ckmeldungen",
       "category": "portal",
       "kind": "feature-or-support"
     },
@@ -1348,22 +1351,22 @@
       "questions": [
         "Wie melde ich mich an?",
         "Wie beginne ich mit der Planung?",
-        "Speichern oder veröffentlichen?",
+        "Speichern oder ver�ffentlichen?",
         "Wie funktioniert die Demo?",
         "Wo finde ich Hilfe?",
         "Wie starte ich den Monatscheck im Assistenten?",
-        "Wie übernimmt der Assistent den ausgewählten Dienst?",
-        "Was bedeuten die Stunden bei Ersatzvorschlägen?",
+        "Wie �bernimmt der Assistent den ausgew�hlten Dienst?",
+        "Was bedeuten die Stunden bei Ersatzvorschl�gen?",
         "Welche Fragen versteht der Planungsassistent?"
       ]
     },
     {
       "id": "overview",
-      "name": "Heute & Übersicht",
+      "name": "Heute & �bersicht",
       "questions": [
-        "Was zeigt „Heute“?",
+        "Was zeigt "Heute"?",
         "Was bedeutet die Einsatzbereitschafts-Ampel?",
-        "Kann ein Mitarbeiter die Einsatzbereitschaft bestätigen?",
+        "Kann ein Mitarbeiter die Einsatzbereitschaft best�tigen?",
         "Warum fehlen Kennzahlen?"
       ]
     },
@@ -1371,17 +1374,17 @@
       "id": "schedule",
       "name": "Dienstplan",
       "questions": [
-        "Wie besetze oder ändere ich eine Schicht?",
+        "Wie besetze oder �ndere ich eine Schicht?",
         "Was bedeutet SOLL / IST?",
         "Welche Kalenderansichten gibt es?",
         "Wie importiere ich einen Monatsplan aus Excel?",
-        "Was prüfe ich vor dem Veröffentlichen?",
+        "Was pr�fe ich vor dem Ver�ffentlichen?",
         "Wie nutze ich Schichtvorlagen?",
         "Wie exportiere ich den Gesamtdienstplan eines Monats?",
-        "Was bedeutet Überbesetzung?",
-        "Für welchen Zeitraum wird ein Dienstplan veröffentlicht?",
-        "Wo sehe ich Planänderungen und ausstehende Rückmeldungen?",
-        "Kann ich einen ganzen Planungsmonat löschen?"
+        "Was bedeutet �berbesetzung?",
+        "F�r welchen Zeitraum wird ein Dienstplan ver�ffentlicht?",
+        "Wo sehe ich Plan�nderungen und ausstehende R�ckmeldungen?",
+        "Kann ich einen ganzen Planungsmonat l�schen?"
       ]
     },
     {
@@ -1390,29 +1393,29 @@
       "questions": [
         "Welche Daten pflege ich im Mitarbeiterprofil?",
         "Wie richte ich einen wiederkehrenden Tagesrhythmus ein?",
-        "Was bedeuten „Bevorzugen“ und „Verbindlich“?",
+        "Was bedeuten "Bevorzugen" und "Verbindlich"?",
         "Wie funktioniert eine feste Arbeitswoche?",
         "Warum kann ich jemanden nicht einplanen?",
-        "Wie erhält ein Mitarbeiter Zugang?",
+        "Wie erh�lt ein Mitarbeiter Zugang?",
         "Wie ordne ich einen Mitarbeiter einem Planungsteam zu?",
         "Braucht jeder Mitarbeiter ein Planungsteam?",
-        "Was passiert beim normalen Löschen eines Mitarbeiters?"
+        "Was passiert beim normalen L�schen eines Mitarbeiters?"
       ]
     },
     {
       "id": "time",
       "name": "Zeiterfassung",
       "questions": [
-        "Was ist geplant und was ist tatsächlich?",
+        "Was ist geplant und was ist tats�chlich?",
         "Wie korrigiere ich eine Zeiterfassung?",
         "Was zeigt das Stundenkonto?",
-        "Was sehe ich mit dem Zugang „Nur Zeiterfassung“?",
-        "Warum lässt sich ein Monat nicht abschließen?",
-        "Welche Zeitwerte zählen in der zentralen Auswertung?",
+        "Was sehe ich mit dem Zugang "Nur Zeiterfassung"?",
+        "Warum l�sst sich ein Monat nicht abschlie�en?",
+        "Welche Zeitwerte z�hlen in der zentralen Auswertung?",
         "Kann ich mehrere Ist-Zeiten gemeinsam erfassen?",
-        "Was unterscheidet Speichern, Bestätigen und Korrektur anfordern?",
+        "Was unterscheidet Speichern, Best�tigen und Korrektur anfordern?",
         "Was blockiert einen Monatsabschluss?",
-        "Was sperrt ein abgeschlossener Monat und wie öffne ich ihn wieder?",
+        "Was sperrt ein abgeschlossener Monat und wie �ffne ich ihn wieder?",
         "Wie werden Sollstunden und Abwesenheitsgutschriften eingestellt?"
       ]
     },
@@ -1422,11 +1425,11 @@
       "questions": [
         "Wie legt die Verwaltung eine QR-Stempelstation an?",
         "Wie erfasst ein Mitarbeiter seine Zeit per QR?",
-        "Wie viele Pausen sind möglich?",
+        "Wie viele Pausen sind m�glich?",
         "Werden QR-Pausen bezahlt?",
         "Brauche ich eine geplante Schicht?",
         "Wo sehe ich QR-Zeiten und Pausendetails?",
-        "Wie erneuere, deaktiviere oder lösche ich einen Code?",
+        "Wie erneuere, deaktiviere oder l�sche ich einen Code?",
         "Warum funktioniert ein QR-Scan nicht?",
         "Was zeigt die Live-Anzeige nach der QR-Anmeldung?",
         "Was passiert mit einer offenen Pause beim Dienstende?",
@@ -1448,18 +1451,18 @@
       "name": "Auto-Planung",
       "questions": [
         "Welche Regeln nutzt die Auto-Planung?",
-        "Werden Vorschläge sofort übernommen?",
-        "Was prüfe ich nach der Übernahme?",
-        "Wie erstelle und übernehme ich Auto-Planungsvorschläge?",
-        "Warum muss ich Vorschläge nach Änderungen neu erstellen?",
-        "Warum bleiben trotz verfügbarer Mitarbeiter Dienste offen?",
+        "Werden Vorschl�ge sofort �bernommen?",
+        "Was pr�fe ich nach der �bernahme?",
+        "Wie erstelle und �bernehme ich Auto-Planungsvorschl�ge?",
+        "Warum muss ich Vorschl�ge nach �nderungen neu erstellen?",
+        "Warum bleiben trotz verf�gbarer Mitarbeiter Dienste offen?",
         "Welche Stunden- und Schichtgrenzen gelten?",
-        "Wie viele Dienste und Nächte sind am Stück erlaubt?",
-        "Wie werden freie Tage nach einer Nachtschicht gezählt?",
+        "Wie viele Dienste und N�chte sind am St�ck erlaubt?",
+        "Wie werden freie Tage nach einer Nachtschicht gez�hlt?",
         "Was passiert bei nicht erreichbarem Monats-SOLL?",
         "Wie plane ich mehrere Monate?",
         "Wie werden die drei Tagdienstmitarbeiter geplant?",
-        "Welche Feiertage gelten für OT-Dienste?",
+        "Welche Feiertage gelten f�r OT-Dienste?",
         "Was macht die individuelle Monatsplanung?"
       ]
     },
@@ -1478,12 +1481,12 @@
       "id": "settings",
       "name": "Einstellungen & Sicherheit",
       "questions": [
-        "Wo ändere ich SOLL-Stärken?",
-        "Wo ändere ich die allgemeinen Schichtzeiten?",
+        "Wo �ndere ich SOLL-St�rken?",
+        "Wo �ndere ich die allgemeinen Schichtzeiten?",
         "Welche Rollen gibt es bei der Zeiterfassung?",
-        "Wie schütze ich meinen Zugang?",
+        "Wie sch�tze ich meinen Zugang?",
         "Was dokumentieren Audit-Logs?",
-        "Wie stelle ich Teamrhythmen A–E ein?",
+        "Wie stelle ich Teamrhythmen A-E ein?",
         "Was bedeutet die Einstiegsposition im Teamrhythmus?",
         "Warum beginnt der Teamrhythmus erst am Startdatum?",
         "Was bedeuten Pflichtbesetzung, optionale Dienste und gemeinsame Deckung?"
@@ -1499,11 +1502,11 @@
         "Wo starte ich den QR-Scanner?",
         "Wie erfasse ich Urlaub?",
         "Wie melde ich falsche Angaben in meinem Profil?",
-        "Wie lese ich mein persönliches Stundenkonto?",
+        "Wie lese ich mein pers�nliches Stundenkonto?",
         "Was berechnet die Lohnvorschau?",
         "Wer sieht meinen eingetragenen Stundenlohn?",
-        "Wie läuft ein Schichttausch mit einem Kollegen ab?",
-        "Wie antworte ich auf eine angefragte Dienstplanänderung?",
+        "Wie l�uft ein Schichttausch mit einem Kollegen ab?",
+        "Wie antworte ich auf eine angefragte Dienstplan�nderung?",
         "Wie verwalte ich Benachrichtigungen?"
       ]
     },
@@ -1522,7 +1525,7 @@
       "name": "Fehler & Hilfe",
       "questions": [
         "Ich kann mich nicht anmelden.",
-        "Eine Änderung wird nicht gespeichert.",
+        "Eine �nderung wird nicht gespeichert.",
         "Der aktuelle QR-Code ist nicht auffindbar.",
         "Der Zeiterfassungszugang sieht keine Planung.",
         "Wie melde ich einen Fehler?",
@@ -1535,13 +1538,13 @@
       "id": "marketplace",
       "name": "Schicht-Marktplatz",
       "questions": [
-        "Wie veröffentliche ich offene Plätze?",
-        "Dürfen Mitarbeiter zusätzliche Dienste übernehmen?"
+        "Wie ver�ffentliche ich offene Pl�tze?",
+        "D�rfen Mitarbeiter zus�tzliche Dienste �bernehmen?"
       ]
     },
     {
       "id": "disruptions",
-      "name": "Störfall-Autopilot",
+      "name": "St�rfall-Autopilot",
       "questions": [
         "Wie melde ich einen akuten Ausfall?",
         "Was geschieht nach einer Zusage?"
@@ -1551,11 +1554,11 @@
       "id": "personnel",
       "name": "Personalakte & Fristen",
       "questions": [
-        "Wer kann die Personalakte öffnen?",
+        "Wer kann die Personalakte �ffnen?",
         "Welche Dokumente kann ich in der Personalakte ablegen?",
         "Wie pflege ich Qualifikationen und Ablaufdaten?",
         "Wie funktionieren Erinnerungen an Personalfristen?",
-        "Wie bearbeite ich Profiländerungsanfragen?"
+        "Wie bearbeite ich Profil�nderungsanfragen?"
       ]
     },
     {
@@ -1563,13 +1566,13 @@
       "name": "Benutzer & Sicherheit",
       "questions": [
         "Welche Benutzerrollen gibt es?",
-        "Wie lade ich Verwaltungsbenutzer ein und verwalte Zugänge?",
+        "Wie lade ich Verwaltungsbenutzer ein und verwalte Zug�nge?",
         "Wie wechsle ich das Unternehmen?",
         "Wie richte ich die Zwei-Faktor-Anmeldung ein?",
-        "Wie setze ich mein Passwort zurück?",
+        "Wie setze ich mein Passwort zur�ck?",
         "Was zeigt das Audit-Protokoll?",
-        "Was bedeutet Datenschutz & Löschung in den Einstellungen?",
-        "Was unterscheidet vollständige Datenlöschung vom normalen Entfernen?"
+        "Was bedeutet Datenschutz & L�schung in den Einstellungen?",
+        "Was unterscheidet vollst�ndige Datenl�schung vom normalen Entfernen?"
       ]
     }
   ]
