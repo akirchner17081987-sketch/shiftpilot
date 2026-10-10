@@ -8,10 +8,12 @@ on:
       - assets/shift-models-v1.js
       - assets/schedule-export-*.js
       - assets/supabase-qr-terminal-admin-v1.js
+      - assets/supabase-qr-pilot-guard-v1.js
       - assets/supabase-report-pdf-style-v4.js
       - supabase/migrations/*company_profile*.sql
       - tests/company-profile.test.cjs
       - tests/browser/company-profile-qa.cjs
+      - tests/browser/qr-terminal-layout-qa.cjs
       - .github/workflows/company-profile-checks.yml
   workflow_dispatch:
 permissions:
@@ -30,9 +32,12 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: node --test tests/company-profile.test.cjs tests/schedule-export.test.mjs tests/shift-models.test.mjs tests/qr-terminal-admin.test.mjs
       - run: node tests/browser/company-profile-qa.cjs
+      - run: node tests/browser/qr-terminal-layout-qa.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: unternehmensprofil-pruefung
-          path: test-results/company-profile/
+          path: |
+            test-results/company-profile/
+            test-results/qr-terminal-layout/
           retention-days: 7
