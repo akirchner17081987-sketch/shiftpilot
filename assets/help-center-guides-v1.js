@@ -2,7 +2,7 @@
 window.SFHelpGuides = {
   'Wie legt die Verwaltung eine QR-Stempelstation an?': {
     image: 'assets/help/qr-terminal.svg', alt: 'Vereinfachte Ansicht der QR-Stempelstationen mit Anlegen, QR anzeigen und den Ausgaben PNG speichern und Drucken.',
-    steps: ['Unter Zeiterfassung die QR-Stempelstationen öffnen, Name und Standort eingeben und „Anlegen“ wählen.', 'Beim gewünschten Terminal „QR anzeigen“ öffnen.', 'Den aktuellen Code als PNG speichern oder drucken und am Standort bereitstellen. „QR erneuern“ nur nutzen, wenn der bisherige Ausdruck ungültig werden soll.']
+    steps: ['Unter Zeiterfassung die QR-Stempelstationen öffnen, Name und Standort-Hinweis eingeben, bei Bedarf einen Unternehmensstandort auswählen und „Anlegen“ wählen.', 'Beim gewünschten Terminal „QR anzeigen“ öffnen.', 'Den aktuellen Code als PNG speichern oder drucken und am Standort bereitstellen. „QR erneuern“ nur nutzen, wenn der bisherige Ausdruck ungültig werden soll.']
   },
   'Wie erfasst ein Mitarbeiter seine Zeit per QR?': {
     image: 'assets/help/qr-booking.svg', alt: 'Vereinfachte mobile QR-Buchung: Anmeldung, Arbeitszeit beginnen, Pause beginnen, Pause beenden und Arbeitszeit beenden.',
@@ -21,4 +21,5 @@ window.SFHelpGuides = {
     steps: ['Zeiterfassung → „QR-Buchungen ohne Schichtbezug“ öffnen.', 'Monat, Quartal oder Jahr sowie den gewünschten Zeitraum wählen; alternativ „Freier Zeitraum“ für bis zu 366 Tage verwenden. Nach Mitarbeiter oder Personalnummer suchen und bei mehreren Seiten weiterblättern.', 'Bei einer Buchung „Details“ öffnen, um Standort und die einzeln erfassten Pausen zu sehen.']
   }
 };
+
 

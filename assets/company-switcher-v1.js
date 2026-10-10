@@ -35,9 +35,13 @@
       const member=rows.find(x=>x.company_id===id);
       if(!member)throw new Error('Für dieses Unternehmen besteht kein aktiver Zugang.');
       if(id===B.companyId){close();return false;}
-      if(B.syncing||B.autoPlanApplying||B.openMarketPublishing||B.scheduleResetting||B.schedulePublishing||B.shiftModelSaving||B.teamRhythmSaving||B.employeeRemovalBusy||B.employeeStatusSaving||B.employeeStatusConfirming||B.bootPromise||B.employeeBootPromise)throw new Error('Daten werden noch gespeichert oder geladen. Bitte versuche es gleich erneut.');
+      if(B.companyProfileSaving||B.syncing||B.autoPlanApplying||B.openMarketPublishing||B.scheduleResetting||B.schedulePublishing||B.shiftModelSaving||B.teamRhythmSaving||B.employeeRemovalBusy||B.employeeStatusSaving||B.employeeStatusConfirming||B.bootPromise||B.employeeBootPromise)throw new Error('Daten werden noch gespeichert oder geladen. Bitte versuche es gleich erneut.');
       B.showLoading?.('Unternehmen wird gewechselt …');
       if(B.syncTimer){clearTimeout(B.syncTimer);B.syncTimer=null;await B.sync?.();if(B.lastSyncError)throw B.lastSyncError;}
+      if(window.SFCompanyProfile?.hasUnsavedChanges()){
+        if(!confirm('Ungespeicherte Unternehmensdaten verwerfen und das Unternehmen wechseln?')){B.hideLoading?.();return false;}
+        window.SFCompanyProfile.discardDraft();
+      }
       remember(id);
       // Reload all modules and caches. Never change companyId while old requests run.
       sessionStorage.removeItem('sf_workspace_state_v2');
@@ -119,3 +123,4 @@
   });
   styles();bind();
 })();
+

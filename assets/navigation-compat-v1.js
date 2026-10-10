@@ -87,8 +87,8 @@
   loadIntegration('/assets/qa-integration-v1.js?v=20261001-models1?v=20260912-marketplace1','data-sf-qa-integration');
   loadIntegration('/assets/calendar-view-switch-v1.js?v=20261001-period1','data-sf-calendar-view');
   loadStyle('/assets/schedule-export-v1.css?v=20261003-sites1','data-sf-schedule-export-style');
-  loadIntegration('/assets/schedule-export-core-v1.js?v=20261004-exporttotals1','data-sf-schedule-export-core');
-  loadIntegration('/assets/schedule-export-v1.js?v=20261004-exporttotals1','data-sf-schedule-export');
+  loadIntegration('/assets/schedule-export-core-v1.js?v=20261004-exporttotals1&company=20261010-1','data-sf-schedule-export-core');
+  loadIntegration('/assets/schedule-export-v1.js?v=20261004-exporttotals1&company=20261010-1','data-sf-schedule-export');
   loadIntegration('/assets/publish-dialog-design-v1.js?v=20261001-period1','data-sf-publish-dialog-design');
   loadIntegration('/assets/demo-reset-v1.js?v=20260906-absences1','data-sf-demo-reset');
   loadIntegration('/assets/demo-august-2026-v1.js?v=20260907-startgate2','data-sf-demo-august-2026');
@@ -117,7 +117,7 @@
   loadIntegration('/assets/push-notifications-v1.js?v=20260917-domain1','data-sf-push-notifications');
 
   // QR-Zeiterfassung: Objekt-Terminals mit allgemeinem Betrieb oder optionalem Pilotmodus.
-  loadIntegration('/assets/supabase-qr-terminal-admin-v1.js?v=20260930-tenbreaks1','data-sf-qr-terminal-admin');
+  loadIntegration('/assets/supabase-qr-terminal-admin-v1.js?v=20260930-tenbreaks1&company=20261010-1','data-sf-qr-terminal-admin');
   loadIntegration('/assets/qr-manager-correction-v1.js?v=20261006-deformat3','data-sf-qr-manager-correction');
   loadIntegration('/assets/qr-independent-report-v1.js?v=20261009-qrperiods1','data-sf-qr-independent-report');
   loadIntegration('/assets/supabase-qr-terminal-role-guard-v1.js?v=20260908-1','data-sf-qr-terminal-role-guard');
@@ -126,3 +126,4 @@
   // Monatsdienstplan-Import: Excel/CSV-Matrix mit Vorprüfung und Schutz produktiver Datensätze.
   loadIntegration('/assets/monthly-schedule-import-v1.js?v=20260911-1','data-sf-monthly-schedule-import');
 })();
+

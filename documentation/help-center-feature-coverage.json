@@ -1,6 +1,6 @@
 {
-  "reviewedAt": "2026-10-09",
-  "sourceCommit": "903292a42d0fecf95ad387bffb414ed2e5fcde54",
+  "reviewedAt": "2026-10-10",
+  "sourceCommit": "d5dd383c26196497286646d171ccb3fad158ba69",
   "addedArticles": [
     {
       "category": "access",
@@ -284,6 +284,34 @@
         "assets/supabase-delta-sync-v1.js",
         "assets/employee-time-account-v2.js",
         "assets/qr-manager-correction-v1.js"
+      ]
+    },
+    {
+      "category": "settings",
+      "question": "Was bewirken Unternehmenslogo, Zeitzone und Feiertagsregel?",
+      "sources": [
+        "assets/company-profile-v1.js"
+      ]
+    },
+    {
+      "category": "settings",
+      "question": "Wer sieht betriebliche Ansprechpartner und Änderungen?",
+      "sources": [
+        "assets/company-profile-v1.js"
+      ]
+    },
+    {
+      "category": "settings",
+      "question": "Wie verwalte und verwende ich Unternehmensstandorte?",
+      "sources": [
+        "assets/company-profile-v1.js"
+      ]
+    },
+    {
+      "category": "settings",
+      "question": "Wie verwalte ich das Unternehmensprofil?",
+      "sources": [
+        "assets/company-profile-v1.js"
       ]
     }
   ],
@@ -1307,6 +1335,10 @@
       "area": "Darstellung, mobile Navigation und App-Nutzung",
       "category": "appearance",
       "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/company-profile-v1.js",
+      "category": "settings"
     }
   ],
   "categoryCoverage": [
