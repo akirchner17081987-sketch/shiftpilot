@@ -51,6 +51,7 @@ jobs:
           npm run test:reports
           npm run test:today
           npm run test:staffing
+          npm run test:wishes
 
 # Please do not touch the following action
       - name: Store deployment content

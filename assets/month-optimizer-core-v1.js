@@ -40,8 +40,8 @@
     if(e.maxConsecutive>0)for(const day of addedDays){let count=1;for(const direction of [-1,1])for(let d=day+direction;x.days.has(d)||addedDays.has(d);d+=direction){if(++count>e.maxConsecutive)return false}}
     return true;
   }
-  function quality(p,s){let deficit=0,squared=0,extra=0;for(const e of p.people.values()){const h=s.people.get(String(e.id)).hours,d=Math.max(0,e.target-h);deficit+=d;squared+=d*d/Math.max(1,e.target);extra+=Math.max(0,h-e.target)}return{open:[...s.remaining.values()].reduce((n,x)=>n+x,0),deficit,squared,extra}}
-  const better=(a,b)=>!b||a.open<b.open||a.open===b.open&&(a.deficit<b.deficit-.000001||Math.abs(a.deficit-b.deficit)<.000001&&a.squared<b.squared-.000001);
+  function quality(p,s){let deficit=0,squared=0,extra=0;for(const e of p.people.values()){const h=s.people.get(String(e.id)).hours,d=Math.max(0,e.target-h);deficit+=d;squared+=d*d/Math.max(1,e.target);extra+=Math.max(0,h-e.target)}return{open:[...s.remaining.values()].reduce((n,x)=>n+x,0),deficit,squared,extra,preferencePenalty:p.preferencePenalty?.([...p.base,...s.records.flatMap(r=>r.option)])||0}}
+  const better=(a,b)=>!b||a.open<b.open||a.open===b.open&&(a.deficit<b.deficit-.000001||Math.abs(a.deficit-b.deficit)<.000001&&(a.squared+a.preferencePenalty)<(b.squared+b.preferencePenalty)-.000001);
   function random(seed){let n=seed||1;return()=>{n=(Math.imul(1664525,n)+1013904223)>>>0;return n/4294967296}}
   function fill(p,retained,seed,variant){
     const s=state(p,retained),rng=random(seed),bias=new Map(p.groups.map(g=>[g.id,.8+rng()*.4]));
@@ -49,7 +49,7 @@
     while(true){let chosen=null,best=-Infinity;
       for(const g of p.groups){if(s.used.has(g.id))continue;const current=s.people.get(String(g.employee.id)),target=Math.max(1,g.employee.target),deficit=Math.max(0,target-current.hours),urgency=deficit/target;
         for(const option of g.options){if(!feasible(p,s,g,option))continue;const hours=option.hours,scarcity=option.reduce((n,a)=>n+1/Math.max(1,p.potential.get(a.resource)?.size||1),0),same=option.every(a=>a.type===option[0].type),permissions=Math.max(1,g.employee.permissions||1);
-          const score=(scarcity*weights[0]+Math.min(deficit,hours)*urgency*weights[1]+option.length*.8+(same?.6:0)+hours*.05/permissions-(hours>deficit?(hours-deficit)*2:0))*bias.get(g.id);
+          const score=(p.preferenceScore?.(g.employee,current.duties,option)||0)+(scarcity*weights[0]+Math.min(deficit,hours)*urgency*weights[1]+option.length*.8+(same?.6:0)+hours*.05/permissions-(hours>deficit?(hours-deficit)*2:0))*bias.get(g.id);
           if(score>best){best=score;chosen={group:g,option}}
         }
       }
@@ -69,7 +69,7 @@
   }
 
   function solidQuality(p,s){const all=[...p.base,...s.records.flatMap(r=>r.option)],remaining=new Map(s.remaining);for(const [key]of remaining){const [date,code]=key.split('|'),need=(p.required||((d,c,r)=>solid.required(d,c,r,p.solidRules)))(date,code,all);if(need!==null){const base=p.base.filter(a=>a.date===date&&a.type===code).length,used=all.filter(a=>a.date===date&&a.type===code).length;remaining.set(key,Math.max(0,need-used))}}
-    const q=quality(p,s),critical=[...p.criticalCapacity.keys()].reduce((n,k)=>n+criticalOpen(p,s,k),0),metrics=solid.metrics([...p.people.values()],all,p.solidRules,[p.month]);return {...q,open:[...remaining.values()].reduce((n,v)=>n+Math.max(0,v),0),critical,metrics,penalty:solid.penalty(metrics)+q.squared*.15};}
+    const q=quality(p,s),critical=[...p.criticalCapacity.keys()].reduce((n,k)=>n+criticalOpen(p,s,k),0),metrics=solid.metrics([...p.people.values()],all,p.solidRules,[p.month]);return {...q,open:[...remaining.values()].reduce((n,v)=>n+Math.max(0,v),0),critical,metrics,penalty:solid.penalty(metrics)+q.squared*.15+q.preferencePenalty};}
   const criticalOpen=(p,s,key)=>Math.max(0,(p.criticalCapacity.get(key)||0)-((p.capacity.get(key)||0)-(s.remaining.get(key)||0)));
   // Search scarce minimum staffing before optional/general work can bind these people.
   // Components with disjoint employee pools can be planned independently.
@@ -80,6 +80,7 @@
     for(const component of components){
       let beam=[{s:state(p),missing:0}];const keys=component.keys.sort();
       for(const key of keys){const candidates=[],seen=new Set();for(const r of byResource.get(key)||[]){if(r.option.length!==1)continue;const a=r.option[0],id=String(a.employeeId)+'|'+a.start+'|'+a.end;if(seen.has(id))continue;seen.add(id);candidates.push(r)}
+        if(p.preferenceScore)candidates.sort((a,b)=>p.preferenceScore(b.group.employee,[],b.option)-p.preferenceScore(a.group.employee,[],a.option));
         const nextStates=[];for(const b of beam){const need=criticalOpen(p,b.s,key);
           function choose(s,at,left){if(!left||at===candidates.length){nextStates.push({s,missing:b.missing+left});return}
             for(let i=at;i<candidates.length;i++){const r=candidates[i];if(s.used.has(r.group.id)||!allowed(s,r))continue;const n=state(p,s.records);commit(n,r,p.month);choose(n,i+1,left-1)}
@@ -88,7 +89,7 @@
         }
         const date=key.split('|')[0],day=Math.floor(Date.parse(date+'T12:00:00Z')/86400000),unique=new Map();
         for(const b of nextStates){const signature=[...component.ids].sort().map(id=>{const x=b.s.people.get(id),m=x.months.get(date.slice(0,7))||{hours:0,count:0};return id+':'+m.hours+':'+m.count+':'+x.duties.filter(a=>a.day>=day-8&&a.day<=day).map(a=>a.date+a.type).sort().join(',')}).join(';');const previous=unique.get(signature);if(!previous||b.missing<previous.missing)unique.set(signature,b)}
-        beam=[...unique.values()].sort((a,b)=>a.missing-b.missing||a.s.records.length-b.s.records.length).slice(0,p.criticalBeamWidth||96);
+        beam=[...unique.values()].sort((a,b)=>a.missing-b.missing||(p.preferencePenalty?.([...p.base,...a.s.records.flatMap(r=>r.option)])||0)-(p.preferencePenalty?.([...p.base,...b.s.records.flatMap(r=>r.option)])||0)||a.s.records.length-b.s.records.length).slice(0,p.criticalBeamWidth||96);
         await yieldStep();
       }
       selected.push(...beam[0].s.records);
@@ -108,7 +109,7 @@
       // Additional OT2 above its confirmed minimum comes after those fallback duties.
       const priority=key=>{if(criticalOpen(p,s,key)>0)return 0;const code=key.split('|')[1],rules=p.solidRules.conditionalStaffing||[];if(rules.some(r=>r.sourceShift===code))return 1;if(rules.some(r=>r.shift===code))return 3;return p.criticalCapacity.has(key)?4:2};
       const order=[...p.capacity.keys()].sort((a,b)=>priority(a)-priority(b)||(p.potential.get(a)?.size||0)-(p.potential.get(b)?.size||0)||(a.localeCompare(b)));
-      let changed=true;while(changed){changed=false;for(const resource of order){if((s.remaining.get(resource)||0)<1)continue;let chosen=null,score=-Infinity;for(const r of byResource.get(resource)||[]){if(s.used.has(r.group.id)||!allowed(s,r))continue;const x=s.people.get(String(r.group.employee.id)),deficit=Math.max(0,r.group.employee.target-x.hours),same=r.option.every(a=>a.start===r.option[0].start),v=r.option.reduce((n,a)=>n+(criticalOpen(p,s,a.resource)>0?100:1),0)*10+Math.min(deficit,r.option.hours)*.15+(same?2:0)-(r.option.length===4&&r.option[0].start>='18:00'?4:0)-(r.option.length===1?4:0)+rng()*3;if(v>score){chosen=r;score=v}}
+      let changed=true;while(changed){changed=false;for(const resource of order){if((s.remaining.get(resource)||0)<1)continue;let chosen=null,score=-Infinity;for(const r of byResource.get(resource)||[]){if(s.used.has(r.group.id)||!allowed(s,r))continue;const x=s.people.get(String(r.group.employee.id)),deficit=Math.max(0,r.group.employee.target-x.hours),same=r.option.every(a=>a.start===r.option[0].start),v=(p.preferenceScore?.(r.group.employee,x.duties,r.option)||0)+r.option.reduce((n,a)=>n+(criticalOpen(p,s,a.resource)>0?100:1),0)*10+Math.min(deficit,r.option.hours)*.15+(same?2:0)-(r.option.length===4&&r.option[0].start>='18:00'?4:0)-(r.option.length===1?4:0)+rng()*3;if(v>score){chosen=r;score=v}}
         if(chosen){commit(s,chosen,p.month);changed=true}}
       }
       const v=solidQuality(p,s);if(solidBetter(v,q)){best=s;q=v}progress({iteration:i+1,iterations,...q});await yieldStep();

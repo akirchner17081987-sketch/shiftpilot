@@ -1,4 +1,4 @@
-// Hilfe-Center: Funktionsabgleich vom 09.10.2026, Personalsimulator ergänzt am 10.10.2026.
+// Hilfe-Center: Wunschplanung und Personalsimulator ergänzt am 10.10.2026.
 window.SFHelpContent = {
   "categories": [
     [
@@ -45,6 +45,11 @@ window.SFHelpContent = {
       "staffing",
       "Personalsimulator",
       "Personalbedarf, Ausfälle und Kosten vergleichen"
+    ],
+    [
+      "wishes",
+      "Wunschplanung & Fairness",
+      "Freizeit verbindlich zusagen und Entscheidungen verstehen"
     ],
     [
       "reports",
@@ -132,8 +137,14 @@ window.SFHelpContent = {
       ]
     ],
     "overview": [
-      ["Warum steht dort „Check-in fehlt – bitte prüfen“?", "15 Minuten nach dem geplanten Beginn fehlt eine passende Zeitbuchung. Das ist kein Nachweis des Nichterscheinens. Bei fehlenden Zeitrechten oder veralteten Daten wird kein solcher Verdacht angezeigt. Der Datenstand und fehlgeschlagene Aktualisierungen sind sichtbar. „Zeit prüfen“ öffnet die betreffende Meldung beziehungsweise QR-Buchung."],
-      ["Wie zeigt „Heute“ Pausen und offene Buchungen?", "„Jetzt im Dienst“ zählt laufende Buchungen einschließlich Pausen, je Person einmal. Beginn, Anwesenheitsdauer, bezahlte Pausen und QR-Terminal werden angezeigt. Pausen werden nicht von der Anwesenheitsdauer abgezogen. Buchungen über 24 Stunden werden zur Prüfung markiert und nicht als aktuelle Anwesenheit gezählt. „Handlungsbedarf“ zeigt die vollständige Anzahl; „Weitere anzeigen“ lädt die übrigen Hinweise in die Liste."],
+      [
+        "Warum steht dort „Check-in fehlt – bitte prüfen“?",
+        "15 Minuten nach dem geplanten Beginn fehlt eine passende Zeitbuchung. Das ist kein Nachweis des Nichterscheinens. Bei fehlenden Zeitrechten oder veralteten Daten wird kein solcher Verdacht angezeigt. Der Datenstand und fehlgeschlagene Aktualisierungen sind sichtbar. „Zeit prüfen“ öffnet die betreffende Meldung beziehungsweise QR-Buchung."
+      ],
+      [
+        "Wie zeigt „Heute“ Pausen und offene Buchungen?",
+        "„Jetzt im Dienst“ zählt laufende Buchungen einschließlich Pausen, je Person einmal. Beginn, Anwesenheitsdauer, bezahlte Pausen und QR-Terminal werden angezeigt. Pausen werden nicht von der Anwesenheitsdauer abgezogen. Buchungen über 24 Stunden werden zur Prüfung markiert und nicht als aktuelle Anwesenheit gezählt. „Handlungsbedarf“ zeigt die vollständige Anzahl; „Weitere anzeigen“ lädt die übrigen Hinweise in die Liste."
+      ],
       [
         "Was zeigt „Heute“?",
         "„Heute“ zeigt veröffentlichte Planung, tatsächliche Anwesenheit und beendete Dienste getrennt. Freie QR-Dienste ohne Dienstplan gehören ebenfalls dazu. Standort- und Schichtfilter gelten für die gesamte Übersicht; die Kennzahlen öffnen die passende Liste. Entwürfe stehen separat und erhöhen die veröffentlichte Besetzung nicht. Unter „Nächste 2 Stunden“ stehen geplante Schichtwechsel und offene Positionen. Namen erscheinen als Nachname, Vorname."
@@ -392,7 +403,7 @@ window.SFHelpContent = {
       ],
       [
         "Ändert eine Personalsimulation den echten Dienstplan?",
-        "Nein. Die Simulation plant den Zeitraum getrennt neu; echte Dienste innerhalb des Zeitraums werden dabei nicht als Bindung übernommen. Dienste davor und danach, genehmigte Abwesenheiten, Freigaben und verbindliche Regeln begrenzen die Vorschau. Der Simulator ändert weder Dienstpläne noch Personalstammdaten oder Abwesenheiten und verschickt keine Ersatzanfragen. Auch „Vergleich speichern“ speichert ausschließlich die Annahmen. Eine Übernahme der Planvorschau in den echten Dienstplan gibt es hier nicht. Für operative Planung nutzt du Dienstplan und Auto-Planung."
+        "Nein. Die Simulation plant den Zeitraum getrennt neu; echte Dienste innerhalb des Zeitraums werden dabei nicht als Bindung übernommen. Dienste davor und danach, genehmigte Abwesenheiten, Freigaben und verbindliche Regeln begrenzen die Vorschau. Der Simulator ändert weder Dienstpläne noch Personalstammdaten oder Abwesenheiten und verschickt keine Ersatzanfragen. Auch „Vergleich speichern“ speichert ausschließlich die Annahmen. Eine Übernahme der Planvorschau in den echten Dienstplan gibt es hier nicht. Für operative Planung nutzt du Dienstplan und Auto-Planung. Geschützte Freizeitzusagen bleiben auch in der Simulation gesperrt. Wünsche und die bisherige Nacht- und Wochenendverteilung fließen als Präferenzen ein. Neue simulierte Stellen übernehmen keine persönlichen Wünsche des Referenzprofils."
       ],
       [
         "Wie belastbar sind Bedarf und Kosten im Personalsimulator?",
@@ -726,8 +737,53 @@ window.SFHelpContent = {
         "Was unterscheidet vollständige Datenlöschung vom normalen Entfernen?",
         "Die gesonderte vollständige Mitarbeiterlöschung ist ausschließlich dem Inhaber vorbehalten und in der Demo nicht verfügbar. Sie betrifft die in der Übersicht aufgeführten zugehörigen Daten einschließlich Zeitnachweisen und Historie und ist unwiderruflich. Sie verlangt eine gesonderte Bestätigung. Verwenden Sie für das normale Ausscheiden die Mitarbeiterentfernung mit Erhalt der Abrechnungshistorie; prüfen Sie vor jeder vollständigen Löschung die ausgewiesenen Folgen und Schutzbedingungen."
       ]
+    ],
+    "wishes": [
+      [
+        "Wie beginne ich mit der Wunschplanung?",
+        "Öffne in der Verwaltung „Wunschplanung“ oder im Mitarbeiterportal denselben Bereich. Wähle den Planungsmonat. Unter „Neuen Wunsch erfassen“ beziehungsweise „einreichen“ wählst du Freizeit oder eine bevorzugte Schicht, Von/Bis, Priorität und optional einen Hinweis. Die Verwaltung wählt zusätzlich den Mitarbeiter. Ein Wunsch umfasst 1–31 Kalendertage innerhalb der nächsten zwei Jahre und des Vertragszeitraums. Ein Hinweis ist freiwillig; private Gründe sind nicht erforderlich. Über Kalender, Statusfilter und Mitarbeitersuche findest du Wünsche und Zusagen."
+      ],
+      [
+        "Wer darf Wünsche sehen und entscheiden?",
+        "Inhaber, Administratoren, Planer und Disponenten des ausgewählten Unternehmens können Wünsche erfassen und entscheiden. Aktive Mitarbeiter mit freigeschaltetem Portal sehen und bearbeiten ausschließlich ihre eigenen Wünsche, Zusagen und Fairnesswerte. Die Rolle Zeiterfassung und der Demo-Modus haben keinen Zugriff auf die echte Wunschplanung. Beim Unternehmens-, Benutzer- oder Rollenwechsel wird der geladene Stand verworfen."
+      ],
+      [
+        "Was unterscheidet Freizeitwunsch, Freizeitzusage und Schichtwunsch?",
+        "Ein offener Freizeitwunsch ist eine Präferenz. Erst „Freizeit zusagen“ macht ihn verbindlich und schützt den gesamten Zeitraum. „Schichtwunsch vormerken“ bestätigt eine Präferenz, garantiert aber keinen konkreten Einsatz. Ein Einsatz steht im veröffentlichten Dienstplan. Für Schichtwünsche werden nur freigegebene aktive Schichtmodelle angeboten. Wünsche ersetzen keinen Abwesenheitsantrag und erzeugen keine Stundengutschrift."
+      ],
+      [
+        "Wie sage ich Freizeit verbindlich zu?",
+        "<ol><li>Öffne den betreffenden Wunsch in „Wunschplanung“.</li><li>Prüfe den Zeitraum, die bisherige Verteilung und eventuell vorhandene Dienste.</li><li>Bei Überschneidungen plane die bestehenden Dienste zuerst bewusst um. Eine Zusage wird bis dahin gesperrt.</li><li>Wähle „Freizeit zusagen“ und bestätige die verbindliche Zusage.</li></ol>Die grüne Markierung zeigt den geschützten Zeitraum. „Begründet ablehnen“ verlangt mindestens fünf Zeichen als nachvollziehbare Begründung. Entscheidungen und Rückmeldungen bleiben im Verlauf sichtbar."
+      ],
+      [
+        "Wie schützt das System zugesagte Freizeit?",
+        "Die Zusage sperrt neue und geänderte Dienstzuweisungen für den gesamten Zeitraum in der Unternehmenszeitzone. Auch ein am Vortag beginnender Nachtdienst darf nicht hineinreichen. Der Schutz gilt serverseitig für manuelle Planung, Auto-Planung, Dienstübernahmen und Schichttausch; auch der Personalsimulator berücksichtigt ihn. Eine Freigabeanfrage hebt die Sperre nicht auf. Die Zusage endet als Schutz nur durch die ausdrückliche freiwillige Freigabe des betroffenen Mitarbeiters."
+      ],
+      [
+        "Wie frage ich die Freigabe einer Zusage an?",
+        "Die Verwaltung wählt bei einer geschützten Zusage „Freigabe anfragen“ und hinterlegt mindestens fünf Zeichen als Begründung. Der Status wechselt zu „Freigabe angefragt · weiter geschützt“. Im Portal kann der Mitarbeiter „Freizeitzusage beibehalten“ oder „Zusage freiwillig freigeben“ wählen. Eine Freigabe muss ausdrücklich bestätigt werden. Die Verwaltung kann die Zusage nicht selbst aufheben. Die Anfrage steht im Portal mit Verlauf; es wird dafür derzeit keine zusätzliche Push-Mitteilung verschickt."
+      ],
+      [
+        "Wie ziehe ich einen Wunsch zurück oder gebe meine Zusage frei?",
+        "Im Mitarbeiterportal kannst du offene Wünsche und vorgemerkte Schichtwünsche über „Wunsch zurückziehen“ zurücknehmen. Eine geschützte Zusage gibst nur du über „Zusage freiwillig freigeben“ mit anschließender Bestätigung frei. Danach darf die Planung den Zeitraum wieder besetzen. Bei einer Freigabeanfrage kannst du stattdessen „Freizeitzusage beibehalten“ wählen; der Schutz besteht durchgehend. Sämtliche Schritte bleiben im Verlauf."
+      ],
+      [
+        "Wie erklärt die Wunschplanung Fairness?",
+        "„Fairness nachvollziehen“ zeigt für den gewählten Monat und zwei Vormonate die veröffentlichten Planungsstunden, Nachtstunden von 22–06 Uhr, Stunden am Samstag/Sonntag und entschiedene Wunschtage. Nacht und Wochenende werden zusätzlich je 100 Planstunden ausgewiesen: entsprechende Stunden geteilt durch veröffentlichte Planstunden mal 100. Monatsüberträge und Zeitumstellungen zählen zeitanteilig. Eine Stunde kann Nacht- und Wochenendstunde zugleich sein. Ohne Planungsstunden gibt es keine Quote. Das sind Planungswerte, keine tatsächlich gebuchten Zeiten, Lohnwerte oder Leistungsbewertungen."
+      ],
+      [
+        "Was bedeutet die Quote zugesagter Wunschtage?",
+        "Pro Person und Kalendertag zählt im Vergleichszeitraum die zuletzt getroffene Entscheidung. Zugesagte Freizeit und vorgemerkte Schichtwünsche zählen positiv, abgelehnte Tage negativ. Offene und zurückgezogene Wünsche zählen nicht. Eine später freiwillig freigegebene Zusage bleibt als erteilte Zusage berücksichtigt. Die Quote misst Entscheidungen; sie beweist nicht, dass jede Schichtpräferenz im Dienstplan erfüllt wurde. Freigaben, Rhythmen, Vertragsumfang und Besetzung können Unterschiede erklären. Es gibt keine Gesamtpunktzahl oder automatische Rangliste für Mitarbeiter."
+      ],
+      [
+        "Wie berücksichtigt die Auto-Planung Wünsche und Fairness?",
+        "Verbindliche Regeln und Pflichtbesetzung haben Vorrang. Geschützte Freizeit ist ein harter Ausschluss. Offene Freizeitwünsche und vorgemerkte oder offene Schichtwünsche beeinflussen die Auswahl als Präferenz. „Besonders wichtig“ verdoppelt das Wunschgewicht, erzeugt aber keinen Anspruch oder Vorrang vor Schutzregeln. Mitarbeiter mit genau denselben Schichtfreigaben werden anhand der Nacht- und Wochenendanteile der drei vollständigen Vormonate verglichen, soweit veröffentlichte Planstunden vorliegen. In der Planvorschau stehen passende Wunschtage und Abweichungen. Die Planung genehmigt keine Wünsche automatisch und garantiert keine mathematisch optimale Verteilung."
+      ],
+      [
+        "Was tun bei fehlgeschlagener Wunschplanung oder veraltetem Stand?",
+        "Wähle „Aktualisieren“ und prüfe den aktuell gespeicherten Verlauf. Eine zwischenzeitlich geänderte Wunschversion wird beim Speichern abgewiesen. Nach einer unklaren Übertragung aktualisiere, bevor du neu einreichst. Die Planung bleibt bei fehlenden Schutzdaten gesperrt, bis sie wieder geladen wurden. Vorhandene Dienste müssen vor einer Freizeitzusage geklärt werden. Überlappende aktive Wünsche, inaktive Profile, nicht freigegebene Schichtmodelle und ungültige Zeiträume werden abgewiesen."
+      ]
     ]
   },
   "reviewedAt": "2026-10-10"
 };
-

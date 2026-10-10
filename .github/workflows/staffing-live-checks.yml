@@ -4,6 +4,9 @@ on:
     branches: [codex/ionos-migration]
     paths:
       - 'assets/staffing-simulator-*'
+      - 'assets/wish-planning-*'
+      - 'assets/compliance-core-v2.js'
+      - 'index.html'
       - 'assets/help-center-content-v3.js'
       - 'scripts/verify-staffing-live.py'
       - '.github/workflows/staffing-live-checks.yml'

@@ -6,7 +6,7 @@
   const solid=window.SFSolidPlanningCore,solidRules=()=>window.SFCompliance?.policy?.solidPlanningRules,solidEnabled=()=>!!solidRules()?.enabled;
   const individualRequested=()=>!solidEnabled()&&el('autoPlanPeriod')?.value==='month'&&employees.some(individualMode);
   const withBase=(base,fn)=>{const original=assignments;try{assignments=base;return fn()}finally{assignments=original}};
-  const signature=()=>JSON.stringify({company:B.companyId,policy:window.SFCompliance?.policy,employees,assignments,absences,TYPES,globalSoll,dailySoll,respectHours:el('autoRespectHours')?.checked,individualBlocks:eightHourRoster()&&el('autoIndividualBlocks')?.checked,period:el('autoPlanPeriod')?.value,month:el('autoPlanMonth')?.value,monthCount:el('autoPlanMonthCount')?.value});
+  const signature=()=>JSON.stringify({company:B.companyId,wishes:window.SFWishPlanning?.signature(),policy:window.SFCompliance?.policy,employees,assignments,absences,TYPES,globalSoll,dailySoll,respectHours:el('autoRespectHours')?.checked,individualBlocks:eightHourRoster()&&el('autoIndividualBlocks')?.checked,period:el('autoPlanPeriod')?.value,month:el('autoPlanMonth')?.value,monthCount:el('autoPlanMonthCount')?.value});
   const key=s=>s.date+'|'+(s.coverageGroup||s.type);
   const fixed=a=>{const e=employees.find(e=>String(e.id)===String(a.employeeId)),r=e&&window.sfRhythmCheck?.(e,a.type,a.date);return r?.mode==='required'&&r.expected&&!['ALLE','FREI'].includes(r.expected)};
   const entry=(slot,candidate)=>{const t=typeById(candidate.type);return{date:slot.date,type:candidate.type,employeeId:candidate.e.id,start:t.start,end:t.end,resource:key(slot),coverageGroup:slot.coverageGroup,coverageLabel:slot.coverageLabel,optional:!!slot.optional}};
@@ -34,7 +34,7 @@
       }
     }
     const people=employees.filter(e=>e.status==='active'&&!e.deletedAt).map(e=>{const limit=autoHourLimits(e),stored=e.qualifications?.find(q=>String(q).startsWith('__sp:maxConsecutive=')),target=employeeMonthlyTarget(e),individual=!!individualMode(e),nearTarget=/^Vollzeit(?:\s+180)?$/i.test(String(e.employment||'').trim())&&target>=180?Math.floor((target+4)/8)*8:Math.floor(target/8)*8;return{...e,target,individual,monthLimit:individual?Math.min(limit.monthLimit,nearTarget):limit.monthLimit,weeklyLimit:limit.weeklyLimit,maxMonthlyShifts:limit.maxMonthlyShifts,calendarLimit:limit.calendarLimit,maxConsecutive:Number(e.maxConsecutiveShifts??stored?.split('=')[1])||0,permissions:(e.shifts||[]).filter(t=>getSoll(dates[0],t)>0).length}});
-    return{month:dates[0].slice(0,7),employees:people,groups,base:[...base,...reserved],reserved,capacities:[...capacities],slots,respectHours:el('autoRespectHours')?.checked!==false};
+    return{...window.SFWishPlanning?.optimizer(dates[0].slice(0,7),people,base),month:dates[0].slice(0,7),employees:people,groups,base:[...base,...reserved],reserved,capacities:[...capacities],slots,respectHours:el('autoRespectHours')?.checked!==false};
   })}
   function completeOptional(base,proposed,individualIds=new Set()){return withBase(base,()=>{
     const pending=withBase([...base,...proposed],()=>[...autoOpenSlots(),...autoOptionalSlots()]);
@@ -88,7 +88,7 @@
       for(const rows of blocks){const id=String(e.id)+'|'+rows[0].date;let g=groupMap.get(id);if(!g){g={id,employee:e,block:true,options:[]};groups.push(g);groupMap.set(id,g)}const bundle=rows.map(a=>{const t=typeById(a.type),coverage=window.SFShiftModels?.coverageGroup(a.type);return {...a,start:a.start||t.start,end:a.end||t.end,resource:a.date+'|'+(coverage?.key||a.type)}});for(const a of bundle){const slot=slots.find(s=>s.date===a.date&&(s.alternatives||[s.type]).includes(a.type));if(slot)a.resource=key(slot)}g.options.unshift(bundle);seedBlocks.push({id,rows:bundle})}
     }});
     const criticalCapacities=criticalNeeds([...base,...reserved],dates);
-    return {month:month||dates[0].slice(0,7),criticalPeriod:!month,employees:people,base:[...base,...reserved].map(a=>({...a,start:a.start||typeById(a.type)?.start,end:a.end||typeById(a.type)?.end})),reserved,groups,seedBlocks,capacities:[...capacities],slots,respectHours:true,solidRules:solidRules(),criticalCapacities,criticalResources:criticalCapacities.filter(([,n])=>n>0).map(([k])=>k)};
+    return {...window.SFWishPlanning?.optimizer(month||dates[0].slice(0,7),people,base),month:month||dates[0].slice(0,7),criticalPeriod:!month,employees:people,base:[...base,...reserved].map(a=>({...a,start:a.start||typeById(a.type)?.start,end:a.end||typeById(a.type)?.end})),reserved,groups,seedBlocks,capacities:[...capacities],slots,respectHours:true,solidRules:solidRules(),criticalCapacities,criticalResources:criticalCapacities.filter(([,n])=>n>0).map(([k])=>k)};
   })}
   function validateSolid(base,preview,months){const all=[...base,...preview].map(a=>({...a,start:a.start||typeById(a.type)?.start,end:a.end||typeById(a.type)?.end}));for(const e of employees){const changed=preview.filter(a=>String(a.employeeId)===String(e.id)).map(a=>a.date),errors=solid.errors(e,all,solidRules(),changed);if(errors.length)throw Error((e.personnelNo||e.id)+': '+errors[0].message)}return solid.metrics(employees,all,solidRules(),months)}
   async function optimizeSolidPeriod(){
@@ -98,7 +98,7 @@
     try{
       if(dates.some(d=>window.SFCompliance?.isWeekPublished?.(d)))throw Error('Der Zeitraum enthält veröffentlichte Wochen. Bitte Änderungen dort einzeln prüfen.');
       let snapshot={fingerprint:null,protectedIds:[]};if(B.ready&&B.client){if(B.syncing)throw Error('Eine Speicherung läuft noch.');clearTimeout(B.syncTimer);B.syncTimer=null;await B.sync();if(B.lastSyncError)throw B.lastSyncError;await B.hydrate();const q=await B.client.rpc('preview_planning_period',{p_company_id:company,p_first_month:month+'-01',p_month_count:months.length});if(q.error)throw q.error;snapshot=q.data}
-      if(B.companyId!==company)throw Error('Das Unternehmen wurde gewechselt.');
+      if(B.companyId!==company)throw Error('Das Unternehmen wurde gewechselt.');await window.SFWishPlanning?.refreshFeed();
       const original=assignments.slice(),localSignature=signature(),protectedIds=new Set(snapshot.protectedIds||[]),movable=original.filter(a=>months.includes(a.date.slice(0,7))&&!a.publishedAt&&(!a._dbStatus||a._dbStatus==='DRAFT')&&!fixed(a)&&!protectedIds.has(a._dbId||B.asgDb?.get(String(a.id)))&&!/markt|market|freiwill|tausch/i.test(a.note||'')&&!(typeof timeEntries!=='undefined'&&(timeEntries[a.id]?.actualStart||timeEntries[a.id]?.actualEnd))),moving=new Set(movable.map(a=>a.id)),base=original.filter(a=>!moving.has(a.id)),proposed=[],qualities=[];
       el('autoAnalysis').innerHTML='<div class="sf-auto-status"><b>OT2 und Leitung zuerst verteilen</b><p>Verbindliche Mindestbesetzungen werden über den gesamten Zeitraum reserviert.</p></div>';
       const minimumInput=solidBuild(base,null,[]),minimumFound=await core.optimize({...minimumInput,criticalOnly:true},{yieldStep:()=>new Promise(resolve=>setTimeout(resolve,0))}),minimum=[...minimumInput.reserved,...minimumFound.preview];
@@ -124,7 +124,7 @@
       if(dates.some(d=>window.SFCompliance?.isWeekPublished?.(d)))throw Error('Der Monat enthält veröffentlichte Wochen. Bitte prüfe Änderungen dort einzeln im Dienstplan.');
       let snapshot={fingerprint:null,protectedIds:[]};
       if(B.ready&&B.client){if(B.syncing)throw Error('Eine Speicherung läuft noch. Bitte starte die Monatsoptimierung anschließend erneut.');clearTimeout(B.syncTimer);B.syncTimer=null;await B.sync();if(B.lastSyncError)throw B.lastSyncError;await B.hydrate();const q=await B.client.rpc('preview_month_optimization',{p_company_id:company,p_month:month+'-01'});if(q.error)throw q.error;snapshot=q.data}
-      if(B.companyId!==company)throw Error('Das Unternehmen wurde gewechselt.');
+      if(B.companyId!==company)throw Error('Das Unternehmen wurde gewechselt.');await window.SFWishPlanning?.refreshFeed();
       const original=assignments.slice(),localSignature=signature(),protectedIds=new Set(snapshot.protectedIds||[]),movable=original.filter(a=>a.date.startsWith(month)&&!a.publishedAt&&(!a._dbStatus||a._dbStatus==='DRAFT')&&!fixed(a)&&!protectedIds.has(a._dbId||B.asgDb?.get(String(a.id)))&&!/markt|market|freiwill|tausch/i.test(a.note||'')&&!(typeof timeEntries!=='undefined'&&timeEntries[a.id]?.actualStart)&&!(typeof timeEntries!=='undefined'&&timeEntries[a.id]?.actualEnd)),moving=new Set(movable.map(a=>a.id)),base=original.filter(a=>!moving.has(a.id)),beforeOpen=autoOpenSlots().length;
       el('autoAnalysis').innerHTML='<div class="sf-auto-status"><b>Monat wird optimiert …</b><p>Ganze Arbeitsblöcke und persönliche Stundenziele werden geprüft.</p></div>';
       await new Promise(resolve=>setTimeout(resolve,0));const input=buildInput(base);

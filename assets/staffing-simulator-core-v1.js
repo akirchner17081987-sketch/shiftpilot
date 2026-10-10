@@ -1,5 +1,5 @@
 // Isolated what-if planning. Never imports a backend or mutates application state.
-(function(root,factory){const node=typeof module==='object'&&module.exports,api=factory(node?require('./solid-planning-core-v1.js'):root.SFSolidPlanningCore,node?require('./month-optimizer-core-v1.js'):root.SFMonthOptimizerCore,node?require('./ot-weekend-holiday-policy.js'):root.SFOtPolicy);if(node)module.exports=api;else root.SFStaffingSimulatorCore=api})(typeof window==='undefined'?globalThis:window,function(S,O,OT){
+(function(root,factory){const node=typeof module==='object'&&module.exports,api=factory(node?require('./solid-planning-core-v1.js'):root.SFSolidPlanningCore,node?require('./month-optimizer-core-v1.js'):root.SFMonthOptimizerCore,node?require('./ot-weekend-holiday-policy.js'):root.SFOtPolicy,node?require('./wish-planning-core-v1.js'):root.SFWishCore);if(node)module.exports=api;else root.SFStaffingSimulatorCore=api})(typeof window==='undefined'?globalThis:window,function(S,O,OT,W){
  'use strict';
  const H=3600000,clone=x=>JSON.parse(JSON.stringify(x)),meta=(e,k)=>String((e.qualifications||[]).find(q=>String(q).startsWith('__sp:'+k+'='))||'').split('=').slice(1).join('=');
  const plus=S.plus,monthNext=m=>new Date(Date.UTC(+m.slice(0,4),+m.slice(5,7),1)).toISOString().slice(0,10),round=x=>Math.round(x*100)/100;
@@ -39,7 +39,7 @@
   const mapping=data.rules.otHolidayStatesBySite;if(t.code==='OT'&&mapping&&!OT.applies(date,[OT.siteState(meta(e,'team'),mapping)]))return 'Kein OT-Tag am Einsatzort';
   const r=e.rhythms?.[date];if(r?.mode==='required'&&!(r.exemptOt&&['OT1','OT2','OT3'].includes(t.code))&&r.expected!=='ALLE'&&r.expected!==t.code.toUpperCase())return 'Verbindlicher Rhythmus';
   const iv=S.interval(date,t.default_start,t.default_end,data.timezone);if((iv.end-iv.start)/H>10+.000001)return 'Schicht länger als 10 Stunden';
-  if(off.some(a=>a.employeeId===e.id&&a.start<iv.end&&a.end>iv.start))return 'Abwesenheit oder angenommener Ausfall';return '';
+  if(off.some(a=>a.employeeId===e.id&&a.start<iv.end&&a.end>iv.start))return 'Abwesenheit oder angenommener Ausfall';if(W?.conflict(data.wishes||[],e.id,{date,start:t.default_start,end:t.default_end},data.timezone))return 'Geschützte Freizeitzusage';return '';
  }
  function cells(data,config,dates,rows){
   const active=data.models.filter(t=>t.active!==false),overrides=new Map(data.daily.map(d=>[d.date+'|'+d.shift,Number(d.required)])),out=[];
@@ -71,7 +71,7 @@
    // Extra conditional demand is represented separately from the company's fallback rule.
    const required=(date,code,rows)=>{const value=S.required(date,code,rows,policy);return value===null?null:value+(slotByKey.get(date+'|'+code)?.extra||0)};
    const accept=(e,own,option)=>{const touched=new Set(option.flatMap(a=>[a.date.slice(0,7),S.localDate(a.endMs-1,policy).slice(0,7)]));for(const m of touched){const start=S.instant(m+'-01','00:00',data.timezone),end=S.instant(monthNext(m+'-01'),'00:00',data.timezone);if([...own,...option].reduce((n,a)=>n+Math.max(0,Math.min(a.endMs,end)-Math.max(a.startMs,start))/H,0)>e.calendarLimit+1e-6)return false;}return true};
-   const input={month,employees,base,groups,capacities,criticalBeamWidth:16,respectHours:true,solidRules:policy,required,accept,criticalCapacities:[...critical]};
+   const wishes=W?.optimizer(data.wishes||[],employees,base,month,data.timezone);const input={...wishes,month,employees,base,groups,capacities,criticalBeamWidth:16,respectHours:true,solidRules:policy,required,accept:(e,own,option)=>accept(e,own,option)&&(!wishes||wishes.accept(e,own,option)),criticalCapacities:[...critical]};
    const found=await O.optimize(input,{iterations,yieldStep,progress:p=>progress({month,...p})});preview.push(...found.preview.map(a=>S.duty(a,policy)));
   }
   const all=[...boundary,...preview],errors=[];

@@ -53,6 +53,7 @@
     const hard=[],soft=[],t=typeById(type),p=C.interval(date,start||t?.start,end||t?.end);
     if(!emp||!t)return{hard:['Mitarbeiter oder Schichtvorlage wurde nicht gefunden.'],soft:[]};
     if(!p)return{hard:['Beginn und Ende müssen gültig und unterschiedlich sein.'],soft:[]};
+    const wishBlock=window.SFWishPlanning?.check(emp.id,{date,type,start:start||t.start,end:end||t.end});if(wishBlock)hard.push(wishBlock.message);
     if(emp.status!=='active')hard.push('Mitarbeiter ist inaktiv.');
     const meta=key=>String((emp.qualifications||[]).find(q=>String(q).startsWith('__sp:'+key+'='))||'').split('=').slice(1).join('=');
     if((emp.availabilityStatus||meta('availability'))==='red')hard.push('Mitarbeiter ist aktuell nicht einplanbar.');

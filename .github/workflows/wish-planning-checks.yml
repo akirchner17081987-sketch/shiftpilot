@@ -1,0 +1,34 @@
+name: Wunschplanung and protected promises
+on:
+  push:
+    branches: [codex/wish-planning-20261010, codex/ionos-migration]
+    paths:
+      - 'assets/wish-planning-*'
+      - 'assets/compliance-core-v2.js'
+      - 'assets/employee-portal-workspace-v2.js'
+      - 'assets/month-optimizer-*'
+      - 'tests/browser/wish-planning-qa.cjs'
+      - 'tests/wish-planning.test.cjs'
+      - 'index.html'
+      - '.github/workflows/wish-planning-checks.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test && npm run test:ionos && npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:wishes && npm run test:staffing
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wish-planning-qa
+          path: test-results/wish-planning/
