@@ -1,149 +1,145 @@
-// SchichtFunk – Audit-Logs V1 (nur Inhaber/Administratoren)
+// SchichtFunk audit workspace V2: cursor search, contextual changes and complete exports.
 (function(){
-  const B=window.SFBackend=window.SFBackend||{},ADMIN=new Set(['OWNER','ADMIN']);
-  let rows=[],loading=false;
-  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const labels={
-    COMPANY_PROFILE_UPDATED:'Unternehmensprofil geändert',COMPANY_LOCATION_CREATED:'Standort angelegt',COMPANY_LOCATION_UPDATED:'Standort geändert',COMPANY_QR_LOCATION_UPDATED:'QR-Standort geändert',
-    INSERT:'Angelegt',UPDATE:'Geändert',DELETE:'Gelöscht',
-    SHIFT_CREATED_DRAFT:'Schicht als Entwurf angelegt',
-    FULL_SCHEDULE_RESET:'Gesamten Dienstplan gelöscht',
-    SHIFT_MARKET_ALL_WITHDRAWN:'Alle Marktplatzangebote zurückgezogen',
-    MONTH_SCHEDULE_RESET:'Dienstplanmonat gelöscht',
-    SHIFT_DELETED_DRAFT:'Schichtentwurf gelöscht',
-    SHIFT_CHANGE_APPLIED:'Schichtänderung übernommen',
-    PLAN_PUBLISHED:'Dienstplan veröffentlicht',
-    LEGACY_ASSIGNMENT_IMPORTED_WITH_EXCEPTION:'Historische Schicht mit Ausnahme übernommen',
-    LEGACY_ASSIGNMENT_REVIEW_RESOLVED:'Prüfung historischer Schicht abgeschlossen',
-    SHIFT_SWAP_APPLIED:'Schichttausch übernommen',
-    ABSENCE_REQUEST_CREATED:'Abwesenheitsantrag erstellt',
-    SHIFT_CHANGE_CREATED:'Schichtänderung beantragt',
-    TIME_ENTRY_MANAGER_UPDATED:'Zeiteintrag durch Führungskraft geändert',
-    QR_SHIFT_CORRECTED:'QR-Buchung korrigiert',
-    SHIFT_MARKET_CLAIMED:'Freie Schicht vorgemerkt',
-    SHIFT_MARKET_OFFERED:'Schicht zum Tausch angeboten',
-    ABSENCE_REQUEST_APPROVED:'Abwesenheitsantrag genehmigt',
-    ABSENCE_REQUEST_REJECTED:'Abwesenheitsantrag abgelehnt',
-    SHIFT_SWAP_COLLEAGUE_APPROVED:'Schichttausch durch Kollegen bestätigt',
-    SHIFT_SWAP_REQUESTED:'Schichttausch beantragt',
-    TIME_ACCOUNT_SETTINGS_UPDATED:'Arbeitszeitkonto-Einstellungen geändert',
-    TIME_ENTRY_CORRECTION_REQUESTED:'Zeitkorrektur beantragt',
-    TIME_ENTRY_RECORDED:'Zeiteintrag erfasst',
-    TIME_ENTRY_RESUBMITTED:'Zeiteintrag erneut eingereicht',
-    COMPANY_BOOTSTRAPPED:'Unternehmen eingerichtet',
-    PERSONNEL_DOCUMENT_ADDED:'Personaldokument hinzugefügt',
-    PERSONNEL_DOCUMENT_DELETED:'Personaldokument gelöscht',
-    PERSONNEL_QUALIFICATION_UPDATED:'Qualifikation aktualisiert'
-  };
-  const entityLabels={client_event:'Anwendungsaktion',schedule:'Dienstplan',plan_publication:'Dienstplan-Veröffentlichung',shift_change_request:'Schichtänderung',shift_assignment:'Schichtzuweisung',audit_event:'Audit-Eintrag',shift_swap_request:'Schichttausch',absence:'Abwesenheit',time_entry:'Zeiteintrag',qr_independent_shift:'QR-Buchung',company:'Unternehmen',personnel_document:'Personaldokument',personnel_qualification:'Qualifikation'};
-  const roleLabels={OWNER:'Inhaber',ADMIN:'Administrator',DISPATCHER:'Disponent',PLANNER:'Planer',TIME_TRACKING:'Zeiterfassung',VIEWER:'Leser',EMPLOYEE:'Mitarbeiter',SYSTEM:'System'};
-  const fieldLabels={status:'Status',role:'Rolle',first_name:'Vorname',last_name:'Nachname',personnel_no:'Personalnummer',email:'E-Mail',phone:'Telefon',start_date:'Eintrittsdatum',contract_end:'Vertragsende',birth_date:'Geburtsdatum',weekly_hours:'Wochenstunden',shift_code:'Schicht',work_date:'Datum',starts_at:'Beginn',ends_at:'Ende',break_minutes:'Pause',absence_type:'Abwesenheitsart',full_day:'Ganztägig',note:'Notiz',reason_text:'Begründung',reason_code:'Grund',published_at:'Veröffentlicht am',active:'Aktiv',employment:'Beschäftigung',work_time_model:'Arbeitszeitmodell',required_count:'SOLL-Besetzung'};
-  const valueLabels={REQUESTED:'Beantragt',PENDING:'Ausstehend',APPROVED:'Genehmigt',REJECTED:'Abgelehnt',CANCELLED:'Storniert',ACTIVE:'Aktiv',INACTIVE:'Inaktiv',DRAFT:'Entwurf',PUBLISHED:'Veröffentlicht',READY_TO_APPLY:'Bereit zur Übernahme',APPLIED:'Übernommen',EMPLOYEE:'Mitarbeiter',OWNER:'Inhaber',ADMIN:'Administrator',DISPATCHER:'Disponent',PLANNER:'Planer',VIEWER:'Leser'};
-  const technicalFields=new Set(['id','company_id','legacy_id','created_at','updated_at','created_by','updated_by','version']);
-
-  function css(){if(document.getElementById('sfAuditCss'))return;const s=document.createElement('style');s.id='sfAuditCss';s.textContent=`
-    #sfAuditNav[hidden]{display:none!important}.sf-audit-toolbar{display:grid;grid-template-columns:repeat(4,minmax(145px,1fr)) auto;gap:10px;align-items:end}.sf-audit-toolbar label{display:grid;gap:6px;color:#9eb3c9;font-size:11px;font-weight:800}.sf-audit-toolbar input,.sf-audit-toolbar select{width:100%;min-height:40px;box-sizing:border-box;border:1px solid #29445d;border-radius:8px;background:#091624;color:#edf6ff;padding:8px 10px}.sf-audit-list{display:grid;gap:8px;margin-top:14px;max-height:min(68vh,720px);overflow-y:scroll;overscroll-behavior:contain;scrollbar-gutter:stable;padding-right:6px;scrollbar-width:thin;scrollbar-color:#2fd4bd #0a1725}.sf-audit-list::-webkit-scrollbar{width:10px}.sf-audit-list::-webkit-scrollbar-track{background:#0a1725;border-radius:10px}.sf-audit-list::-webkit-scrollbar-thumb{background:#2a766e;border:2px solid #0a1725;border-radius:10px}.sf-audit-list::-webkit-scrollbar-thumb:hover{background:#2fd4bd}.sf-audit-row{width:100%;display:grid;grid-template-columns:165px minmax(170px,1fr) minmax(190px,1.2fr) 125px 24px;gap:12px;align-items:center;text-align:left;border:1px solid #20394f;border-radius:10px;background:#0a1725;color:#eaf4ff;padding:12px}.sf-audit-row:hover{border-color:#367092;background:#0d1d2d}.sf-audit-row small{display:block;color:#89a0b6;margin-top:3px}.sf-audit-action{font-weight:900}.sf-audit-entity{color:#a8bdd0}.sf-audit-empty{padding:35px;text-align:center;border:1px dashed #29445d;border-radius:10px;color:#8da4ba}.sf-audit-modal{position:fixed;inset:0;z-index:25000;background:rgba(2,7,13,.88);display:grid;place-items:center;padding:18px}.sf-audit-detail{width:min(900px,96vw);max-height:90vh;overflow:auto;border:1px solid #29455e;border-radius:16px;background:#091522;box-shadow:0 30px 90px rgba(0,0,0,.55)}.sf-audit-detail header{display:flex;justify-content:space-between;gap:15px;padding:20px;border-bottom:1px solid #20384e}.sf-audit-detail h2{margin:3px 0}.sf-audit-detail-body{padding:20px}.sf-audit-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:15px}.sf-audit-meta div{border:1px solid #20384e;border-radius:9px;background:#0c1a29;padding:11px}.sf-audit-meta small{display:block;color:#849bb0;margin-bottom:4px}.sf-audit-changes{display:grid;gap:8px}.sf-audit-change-head,.sf-audit-change-row{display:grid;grid-template-columns:minmax(135px,.75fr) minmax(150px,1fr) 28px minmax(150px,1fr);gap:10px;align-items:center}.sf-audit-change-head{padding:0 12px;color:#839bb1;font-size:11px;font-weight:800}.sf-audit-change-row{border:1px solid #20384e;border-radius:9px;background:#0c1a29;padding:12px}.sf-audit-change-row>strong{font-size:12px}.sf-audit-change-value{overflow-wrap:anywhere;color:#d7e5f1}.sf-audit-change-arrow{text-align:center;color:#57dec5;font-weight:900}.sf-audit-technical{margin-top:15px;border-top:1px solid #20384e;padding-top:12px}.sf-audit-technical summary{cursor:pointer;color:#8da4ba;font-size:11px}.sf-audit-tech-meta{display:grid;gap:6px;margin-top:10px;padding:10px;border:1px solid #20384e;border-radius:9px;background:#07121e}.sf-audit-tech-meta span{display:grid;grid-template-columns:90px 1fr;gap:10px;color:#839bb1;font-size:10px}.sf-audit-tech-meta code{color:#b8cada;overflow-wrap:anywhere}.sf-audit-technical-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.sf-audit-technical pre{white-space:pre-wrap;overflow-wrap:anywhere;border:1px solid #20384e;border-radius:9px;background:#07121e;color:#9eb3c7;font:10px/1.5 ui-monospace,monospace;margin:0;padding:10px}.sf-audit-close{min-width:42px}@media(max-width:820px){.sf-audit-toolbar{grid-template-columns:1fr 1fr}.sf-audit-row{grid-template-columns:1fr 1fr}.sf-audit-row>span:last-child{display:none}.sf-audit-meta,.sf-audit-technical-grid{grid-template-columns:1fr}}@media(max-width:620px){.sf-audit-change-head{display:none}.sf-audit-change-row{grid-template-columns:1fr}.sf-audit-change-arrow{text-align:left}.sf-audit-change-arrow:after{content:' Neuer Wert'}}@media(max-width:520px){.sf-audit-toolbar,.sf-audit-row{grid-template-columns:1fr}}
-  `;document.head.appendChild(s)}
-
-  function actionLabel(r){const type=String(r.event_type||'Ereignis'),prefix=type.split('_')[0];return labels[type]||labels[prefix]||'Sonstiges Ereignis'}
-  function entityLabel(type){const key=String(type||'System').toLowerCase();return entityLabels[key]||fieldLabel(key)}
-  function dateTime(v){return new Intl.DateTimeFormat('de-DE',{dateStyle:'medium',timeStyle:'medium'}).format(new Date(v))}
-  function fieldLabel(key){if(fieldLabels[key])return fieldLabels[key];return String(key||'Wert').replaceAll('_',' ').replace(/\b\w/g,c=>c.toUpperCase())}
-  function displayValue(value,key){
-    if(value===null||value===undefined||value==='')return '–';
-    if(typeof value==='boolean')return value?'Ja':'Nein';
-    if(Array.isArray(value))return value.length?value.map(v=>displayValue(v,key)).join(', '):'–';
-    if(typeof value==='object')return Object.entries(value).filter(([k])=>!technicalFields.has(k)).map(([k,v])=>`${fieldLabel(k)}: ${displayValue(v,k)}`).join(' · ')||'–';
-    const raw=String(value),translated=valueLabels[raw.toUpperCase()];
-    if(translated)return translated;
-    if(/^\d{4}-\d{2}-\d{2}T/.test(raw)){const d=new Date(raw);if(!Number.isNaN(d.valueOf()))return dateTime(raw)}
-    if(/^\d{4}-\d{2}-\d{2}$/.test(raw)){const d=new Date(raw+'T00:00:00');return new Intl.DateTimeFormat('de-DE',{dateStyle:'medium'}).format(d)}
-    if(key==='break_minutes')return `${raw} Minuten`;
-    return raw;
+  'use strict';
+  const B=window.SFBackend=window.SFBackend||{},A=window.SFAudit={},ADMIN=new Set(['OWNER','ADMIN']);
+  const admin=()=>ADMIN.has(B.accessRole||B.role)&&ADMIN.has(B.role);
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const categories={time:'Zeiterfassung',planning:'Dienstplanung',personnel:'Personal & Abwesenheiten',access:'Benutzer & Berechtigungen',settings:'Einstellungen',other:'Weitere Ereignisse'};
+  const entities={employees:'Mitarbeiter',employee:'Mitarbeiter',absences:'Abwesenheit',absence:'Abwesenheit',shift_assignments:'Schichtzuweisung',shift_assignment:'Schichtzuweisung',shift_change_requests:'Schichtänderung',shift_change_request:'Schichtänderung',shift_swap_request:'Schichttausch',time_entries:'Zeiteintrag',time_entry:'Zeiteintrag',company_members:'Benutzerzugang',company_member_invites:'Einladung',global_staffing_requirements:'Standardbesetzung',daily_staffing_overrides:'Tagesbesetzung',company_compliance_policy:'Compliance-Regeln',shift_templates:'Schichtmodell',company:'Unternehmen',schedule:'Dienstplan',plan_publication:'Dienstplan-Veröffentlichung',qr_independent_shift:'QR-Buchung',personnel_document:'Personaldokument',personnel_qualification:'Qualifikation',client_event:'Anwendungsaktion',audit_event:'Audit-Ereignis',notification:'Benachrichtigung'};
+  const actions={COMPANY_PROFILE_UPDATED:'Unternehmensprofil geändert',COMPANY_LOCATION_CREATED:'Standort angelegt',COMPANY_LOCATION_UPDATED:'Standort geändert',COMPANY_QR_LOCATION_UPDATED:'QR-Standort geändert',SHIFT_CREATED_DRAFT:'Schichtentwurf angelegt',FULL_SCHEDULE_RESET:'Gesamten Dienstplan gelöscht',SHIFT_MARKET_ALL_WITHDRAWN:'Marktplatzangebote zurückgezogen',MONTH_SCHEDULE_RESET:'Dienstplanmonat gelöscht',SHIFT_DELETED_DRAFT:'Schichtentwurf gelöscht',SHIFT_CHANGE_APPLIED:'Schichtänderung übernommen',PLAN_PUBLISHED:'Dienstplan veröffentlicht',LEGACY_ASSIGNMENT_IMPORTED_WITH_EXCEPTION:'Historische Schicht mit Ausnahme übernommen',LEGACY_ASSIGNMENT_REVIEW_RESOLVED:'Historische Schicht geprüft',SHIFT_SWAP_APPLIED:'Schichttausch übernommen',ABSENCE_REQUEST_CREATED:'Abwesenheit beantragt',SHIFT_CHANGE_CREATED:'Schichtänderung beantragt',TIME_ENTRY_MANAGER_UPDATED:'Zeiteintrag korrigiert',QR_SHIFT_CORRECTED:'QR-Buchung korrigiert',SHIFT_MARKET_CLAIMED:'Freie Schicht vorgemerkt',SHIFT_MARKET_OFFERED:'Schicht zum Tausch angeboten',ABSENCE_REQUEST_APPROVED:'Abwesenheit genehmigt',ABSENCE_REQUEST_REJECTED:'Abwesenheit abgelehnt',SHIFT_SWAP_COLLEAGUE_APPROVED:'Schichttausch bestätigt',SHIFT_SWAP_REQUESTED:'Schichttausch beantragt',TIME_ACCOUNT_SETTINGS_UPDATED:'Stundenkonto-Regeln geändert',TIME_ENTRY_CORRECTION_REQUESTED:'Zeitkorrektur angefordert',TIME_ENTRY_RECORDED:'Zeiteintrag erfasst',TIME_ENTRY_RESUBMITTED:'Zeiteintrag erneut eingereicht',TIME_ENTRY_CONFIRMED:'Zeiteintrag bestätigt',COMPANY_BOOTSTRAPPED:'Unternehmen eingerichtet',PERSONNEL_DOCUMENT_ADDED:'Personaldokument hinzugefügt',PERSONNEL_DOCUMENT_DELETED:'Personaldokument gelöscht',PERSONNEL_QUALIFICATION_UPDATED:'Qualifikation aktualisiert',MONTH_OPTIMIZED:'Dienstplanmonat optimiert',TIME_MONTH_CLOSED:'Zeitmonat abgeschlossen',TIME_MONTH_REOPENED:'Zeitmonat wieder geöffnet'};
+  const roles={OWNER:'Inhaber',ADMIN:'Administrator',TEAM_LEAD:'Teamleiter',EMPLOYEE:'Mitarbeiter',SYSTEM:'System',DISPATCHER:'Teamleiter (damals: Disponent)',PLANNER:'Teamleiter (damals: Planer)',VIEWER:'Teamleiter (damals: Leser)',TIME_TRACKING:'Mitarbeiter (damals: Zeiterfassung)'};
+  const fields={status:'Status',role:'Rolle',access_role:'Hauptrolle',extra_permissions:'Zusatzrechte',first_name:'Vorname',last_name:'Nachname',personnel_no:'Personalnummer',email:'E-Mail',phone:'Telefon',address:'Adresse',start_date:'Eintrittsdatum',end_date:'Enddatum',contract_end:'Vertragsende',birth_date:'Geburtsdatum',weekly_hours:'Wochenstunden',shift_code:'Schicht',work_date:'Diensttag',starts_at:'Geplanter Beginn',ends_at:'Geplantes Ende',actual_start:'Tatsächlicher Beginn',actual_end:'Tatsächliches Ende',started_at:'Beginn',ended_at:'Ende',break_minutes:'Pause',absence_type:'Abwesenheitsart',full_day:'Ganztägig',note:'Bemerkung',reason_text:'Begründung',reason_code:'Grund',published_at:'Veröffentlicht am',active:'Aktiv',is_active:'Aktiv',employment:'Beschäftigung',work_time_model:'Arbeitszeitmodell',required_count:'SOLL-Besetzung',timezone:'Zeitzone',display_location:'Unternehmensstandort',business_address:'Geschäftsadresse',employee_id:'Mitarbeiter',assignment_id:'Schichtzuweisung',employeeId:'Mitarbeiter',startsAt:'Beginn',endsAt:'Ende',breakMinutes:'Pause',name:'Name',code:'Kürzel',site_id:'Standort',month:'Monat',publishedAssignments:'Veröffentlichte Schichten',deletedAssignments:'Gelöschte Schichten',count:'Anzahl',manage_time:'Zeiten verwalten',confirm_time:'Zeiten bestätigen',publish_schedule:'Dienstplan veröffentlichen',contacts:'Ansprechpartner',logo_data_url:'Unternehmenslogo'};
+  const values={REQUESTED:'Beantragt',PENDING:'Ausstehend',APPROVED:'Genehmigt',REJECTED:'Abgelehnt',CANCELLED:'Storniert',ACTIVE:'Aktiv',INACTIVE:'Inaktiv',DRAFT:'Entwurf',PUBLISHED:'Veröffentlicht',READY_TO_APPLY:'Bereit zur Übernahme',APPLIED:'Übernommen',OPEN:'Offen',RECORDED:'Zur Prüfung',CONFIRMED:'Bestätigt',CORRECTION_REQUESTED:'Korrektur erforderlich'};
+  const technical=new Set(['id','company_id','legacy_id','created_at','updated_at','created_by','updated_by','version','auth_user_id','deleted_by']);
+  let state=null,sequence=0,exportSequence=0,queryTimer,modalClose;
+  const el=id=>document.getElementById(id);
+  const roster=()=>typeof employees!=='undefined'?employees:(window.employees||[]);
+  const shifts=()=>typeof assignments!=='undefined'?assignments:(window.assignments||[]);
+  function zone(){const z=B.companyTimeZone||B.company?.timezone||'Europe/Berlin';try{new Intl.DateTimeFormat('de-DE',{timeZone:z});return z}catch{return 'Europe/Berlin'}}
+  const datetime=v=>{const d=new Date(v);return Number.isFinite(+d)?new Intl.DateTimeFormat('de-DE',{timeZone:zone(),dateStyle:'medium',timeStyle:'medium'}).format(d):'–'};
+  function dateInZone(v){return new Intl.DateTimeFormat('sv-SE',{timeZone:zone(),year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(v))}
+  function addDays(v,n){const d=new Date(v+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)}
+  function midnight(v){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(v)||new Date(v+'T00:00:00Z').toISOString().slice(0,10)!==v)throw Error('Bitte ein gültiges Datum auswählen.');
+    const [y,m,d]=v.split('-').map(Number),wanted=Date.UTC(y,m-1,d);let stamp=wanted;
+    for(let i=0;i<4;i++){const p=Object.fromEntries(new Intl.DateTimeFormat('en-CA',{timeZone:zone(),year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(new Date(stamp)).filter(x=>x.type!=='literal').map(x=>[x.type,x.value]));stamp+=wanted-Date.UTC(+p.year,+p.month-1,+p.day,+p.hour,+p.minute,+p.second)}
+    return new Date(stamp).toISOString();
   }
-  function changeRows(oldValues,newValues){
-    const before=oldValues&&typeof oldValues==='object'?oldValues:{},after=newValues&&typeof newValues==='object'?newValues:{};
-    return [...new Set([...Object.keys(before),...Object.keys(after)])]
-      .filter(key=>!technicalFields.has(key)&&JSON.stringify(before[key])!==JSON.stringify(after[key]))
-      .map(key=>({key,before:displayValue(before[key],key),after:displayValue(after[key],key)}));
+  function field(k){return fields[k]||String(k).replaceAll('_',' ').replace(/^./,x=>x.toUpperCase())}
+  function action(r){if(actions[r.event_type])return actions[r.event_type];const op={INSERT:'angelegt',UPDATE:'geändert',DELETE:'gelöscht'}[String(r.event_type).split('_')[0]];return op?`${entities[r.entity_type]||field(r.entity_type||'Eintrag')} ${op}`:field(String(r.event_type||'Ereignis').toLowerCase())}
+  function employee(id){const local=B.empLocal?.get(String(id));return roster().find(e=>[e.id,e._dbId,local&&e.id===local?id:null].filter(Boolean).some(x=>String(x)===String(id))||String(e.id)===String(local||''))}
+  const employeeName=e=>[e?.last,e?.first].filter(Boolean).join(', ');
+  function display(v,k){
+    if(v===null||v===undefined||v==='')return '–';if(typeof v==='boolean')return v?'Ja':'Nein';
+    if(k==='logo_data_url')return v?'Logo hinterlegt':'–';
+    if(k==='employee_id'||k==='employeeId'){const e=employee(v);if(e)return employeeName(e)}
+    if(k==='site_id'){const name=window.SFCompanyProfile?.siteLabel?.(v);if(name)return name}
+    if(Array.isArray(v))return v.length?v.map(x=>display(x,k)).join(', '):'–';
+    if(typeof v==='object')return Object.entries(v).filter(([key])=>!technical.has(key)).map(([key,x])=>`${field(key)}: ${display(x,key)}`).join(' · ')||'–';
+    if((k==='role'||k==='access_role')&&roles[String(v)])return roles[String(v)];
+    if(values[String(v).toUpperCase()])return values[String(v).toUpperCase()];
+    if(fields[v]&&k==='extra_permissions')return fields[v];
+    if(/^\d{4}-\d{2}-\d{2}T/.test(String(v)))return datetime(v);
+    if(/^\d{4}-\d{2}-\d{2}$/.test(String(v)))return new Intl.DateTimeFormat('de-DE',{dateStyle:'medium',timeZone:'UTC'}).format(new Date(v+'T12:00:00Z'));
+    if(['break_minutes','breakMinutes'].includes(k))return `${v} Min.`;return String(v);
   }
-  function ensureAccess(){const nav=document.getElementById('sfAuditNav');if(nav)nav.hidden=!ADMIN.has(B.role);if(!ADMIN.has(B.role)&&document.getElementById('view-audit')?.classList.contains('active'))window.switchView?.('overview')}
-
-  async function load(){
-    if(loading||!ADMIN.has(B.role)||!B.client||!B.companyId)return;
-    loading=true;
-    const list=document.getElementById('sfAuditList');
-    if(list)list.innerHTML='<div class="sf-audit-empty">Audit-Logs werden geladen …</div>';
+  function changes(r){const old=r.old_values||{},next=r.new_values||{};return [...new Set([...Object.keys(old),...Object.keys(next)])].filter(k=>!technical.has(k)&&JSON.stringify(old[k])!==JSON.stringify(next[k])).map(k=>({key:k,before:display(old[k],k),after:display(next[k],k)}))}
+  function context(){return{company:B.companyId,user:B.user?.id,client:B.client,role:B.role,access:B.accessRole}}
+  function same(c){return !!c&&admin()&&!B.companySwitching&&c.company===B.companyId&&c.user===B.user?.id&&c.client===B.client&&c.role===B.role&&c.access===B.accessRole}
+  function assert(c){if(!same(c))throw Error('Unternehmen oder Berechtigung hat sich geändert. Bitte erneut laden.')}
+  function invalidate(){sequence++;exportSequence++;clearTimeout(queryTimer);modalClose?.();state=null;const list=el('sfAuditList');if(list)list.replaceChildren();if(el('sfAuditCount'))el('sfAuditCount').textContent='0';if(el('sfAuditSummary'))el('sfAuditSummary').textContent='Bitte den Verlauf neu laden.';if(el('sfAuditScope'))el('sfAuditScope').textContent='';['sfAuditSearch','sfAuditCategory'].forEach(id=>{if(el(id))el(id).value=''});if(el('sfAuditActor'))el('sfAuditActor').innerHTML='<option value="">Alle Bearbeiter</option>';if(el('sfAuditAction'))el('sfAuditAction').innerHTML='<option value="">Alle Aktionen</option>';['sfAuditCsv','sfAuditPdf','sfAuditMore'].forEach(id=>{if(el(id))el(id).disabled=true});message('');}
+  function ensure(){const nav=el('sfAuditNav');if(nav)nav.hidden=!admin()||!!B.client?.__sfDemoLocalClientV1;if(state&&!same(state.context))invalidate();if(!admin()){modalClose?.();if(el('view-audit')?.classList.contains('active'))window.switchView?.('overview')}}
+  function subject(r){const v=r.new_values||r.old_values||{},old=r.old_values||{},id=r.subject_id||v.employee_id||v.employeeId||old.employee_id||old.employeeId;
+    const e=employee(id);const snapshot=[v.last_name,v.first_name].filter(Boolean).join(', ');
+    const name=r.subject_name||employeeName(e)||snapshot;
+    const no=r.subject_personnel_no||e?.personnelNo||v.personnel_no;
+    const date=v.work_date||v.date||(v.starts_at?dateInZone(v.starts_at):v.actual_start?dateInZone(v.actual_start):r.subject_starts_at?dateInZone(r.subject_starts_at):'');
+    return {id,name:name||(v.name||entities[r.entity_type]||field(r.entity_type||'Vorgang')),detail:[no?`Pers.-Nr. ${no}`:'',v.shift_code||v.type||'',date,v.month||r.metadata?.month||''].filter(Boolean).join(' · ')};
+  }
+  function actor(r){return !r.actor_id?'System':state?.users.get(r.actor_id)||r.actor_email||`Ehemaliger Benutzer · ${String(r.actor_id).slice(0,8)}`}
+  function role(r){const saved=r.metadata?.actor_access_role||r.actor_role;return roles[saved]||saved||'System'}
+  function reason(r){const n=r.new_values||{},o=r.old_values||{},m=r.metadata||{};return n.reason_text||n.correction_reason||m.reason_text||m.reason||n.note||o.reason_text||''}
+  function important(r){return /FULL_SCHEDULE_RESET|MONTH_SCHEDULE_RESET|DELETE_|REOPEN|ACCESS|MEMBER|COMPLIANCE/.test(r.event_type||'')}
+  function css(){if(el('sfAuditWorkspaceCss'))return;const link=document.createElement('link');link.id='sfAuditWorkspaceCss';link.rel='stylesheet';link.href='assets/audit-logs-v2.css?v=20261010-1';document.head.append(link)}
+  function mount(){css();const view=el('view-audit');if(!view||view.dataset.auditWorkspace)return;view.dataset.auditWorkspace='2';const today=dateInZone(Date.now());
+    view.innerHTML=`<div class="sf-audit-v2"><header class="page-head sf-audit-head"><div><div class="eyebrow">SICHERHEIT & NACHVOLLZIEHBARKEIT</div><h1>Audit-Logs</h1><p>Änderungen finden, vergleichen und als Prüfbericht exportieren.</p></div><div class="sf-audit-actions"><button type="button" class="ghost" id="sfAuditRefresh">Aktualisieren</button><button type="button" class="ghost" id="sfAuditCsv" disabled>CSV exportieren</button><button type="button" class="primary" id="sfAuditPdf" disabled>PDF exportieren</button></div></header>
+    <form id="sfAuditForm" class="sf-audit-filters"><div class="sf-audit-searchline"><label>Suche<input id="sfAuditSearch" type="search" maxlength="200" placeholder="Mitarbeiter, Personalnummer, Schicht, Begründung oder Audit-ID"></label><label>Bereich<select id="sfAuditCategory"><option value="">Alle Bereiche</option>${Object.entries(categories).map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select></label><label>Bearbeiter<select id="sfAuditActor"><option value="">Alle Bearbeiter</option></select></label><label>Aktion<select id="sfAuditAction"><option value="">Alle Aktionen</option></select></label></div>
+    <div class="sf-audit-periodline"><label>Zeitraum<select id="sfAuditPeriod"><option value="all">Gesamter Verlauf</option><option value="month">Monat</option><option value="quarter">Quartal</option><option value="year">Jahr</option><option value="custom">Eigener Zeitraum</option></select></label><label id="sfAuditMonthLabel" hidden>Monat<input id="sfAuditMonth" type="month" value="${today.slice(0,7)}"></label><label id="sfAuditYearLabel" hidden>Jahr<input id="sfAuditYear" type="number" min="2000" max="2100" value="${today.slice(0,4)}"></label><label id="sfAuditQuarterLabel" hidden>Quartal<select id="sfAuditQuarter">${[1,2,3,4].map(q=>`<option value="${q}" ${q===Math.ceil(Number(today.slice(5,7))/3)?'selected':''}>${q}. Quartal</option>`).join('')}</select></label><label>Von<input id="sfAuditFrom" type="date" disabled></label><label>Bis<input id="sfAuditTo" type="date" disabled></label><div class="sf-audit-actions"><button type="button" class="ghost" id="sfAuditReset">Zurücksetzen</button><button type="submit" class="primary" id="sfAuditApply">Filtern</button></div></div></form>
+    <div id="sfAuditMessage" class="sf-audit-message" role="status" aria-live="polite" hidden></div><div class="sf-audit-resultsbar"><p id="sfAuditSummary" aria-live="polite">Verlauf wird geladen …</p><label class="sf-audit-group-toggle"><input id="sfAuditGrouped" type="checkbox" checked> Vorgänge bündeln</label></div><p class="sf-audit-scope" id="sfAuditScope"></p><div class="sf-audit-list-head" aria-hidden="true"><span>Zeitpunkt</span><span>Bearbeiter</span><span>Änderung</span><span>Betroffen</span><span></span></div><div id="sfAuditList" class="sf-audit-results" aria-busy="false"></div><div class="sf-audit-loadbar"><span id="sfAuditCount">0</span><button type="button" class="ghost" id="sfAuditMore" hidden>Weitere 50 laden</button></div></div>`;
+    el('sfAuditForm').onsubmit=e=>{e.preventDefault();clearTimeout(queryTimer);load()};
+    el('sfAuditRefresh').onclick=()=>load();el('sfAuditMore').onclick=()=>load(true);el('sfAuditGrouped').onchange=render;
+    el('sfAuditCsv').onclick=()=>exportReport('csv');el('sfAuditPdf').onclick=()=>exportReport('pdf');
+    el('sfAuditSearch').oninput=()=>{clearTimeout(queryTimer);queryTimer=setTimeout(()=>load(),400)};
+    ['sfAuditActor','sfAuditAction','sfAuditCategory'].forEach(id=>el(id).onchange=()=>load());
+    ['sfAuditPeriod','sfAuditMonth','sfAuditYear','sfAuditQuarter'].forEach(id=>el(id).onchange=()=>{period();load()});
+    el('sfAuditReset').onclick=()=>{clearTimeout(queryTimer);['sfAuditSearch','sfAuditCategory','sfAuditActor','sfAuditAction','sfAuditFrom','sfAuditTo'].forEach(id=>el(id).value='');el('sfAuditPeriod').value='all';period();load()};period();
+  }
+  function period(){const mode=el('sfAuditPeriod').value;el('sfAuditMonthLabel').hidden=mode!=='month';el('sfAuditYearLabel').hidden=!['quarter','year'].includes(mode);el('sfAuditQuarterLabel').hidden=mode!=='quarter';let start='',end='';
+    const year=Number(el('sfAuditYear').value);if(mode==='month'&&/^\d{4}-(0[1-9]|1[0-2])$/.test(el('sfAuditMonth').value)){const [y,m]=el('sfAuditMonth').value.split('-').map(Number);start=`${y}-${String(m).padStart(2,'0')}-01`;end=new Date(Date.UTC(y,m,0)).toISOString().slice(0,10)}
+    if(['year','quarter'].includes(mode)&&year>=2000&&year<=2100){const first=mode==='year'?1:(Number(el('sfAuditQuarter').value)-1)*3+1,last=mode==='year'?12:first+2;start=`${year}-${String(first).padStart(2,'0')}-01`;end=new Date(Date.UTC(year,last,0)).toISOString().slice(0,10)}
+    ['sfAuditFrom','sfAuditTo'].forEach(id=>el(id).disabled=mode!=='custom');if(mode!=='custom'){el('sfAuditFrom').value=start;el('sfAuditTo').value=end}}
+  function filters(){const from=el('sfAuditFrom').value,to=el('sfAuditTo').value,mode=el('sfAuditPeriod').value;if(mode!=='all'&&mode!=='custom'&&(!from||!to))throw Error('Bitte einen gültigen Zeitraum auswählen.');if(from&&to&&from>to)throw Error('Das Bis-Datum darf nicht vor dem Von-Datum liegen.');
+    return {p_from:from?midnight(from):null,p_to:to?midnight(addDays(to,1)):null,p_actor:el('sfAuditActor').value||null,p_action:el('sfAuditAction').value||null,p_category:el('sfAuditCategory').value||null,p_query:el('sfAuditSearch').value.trim()||null,from,to};}
+  function message(text,bad=false){const box=el('sfAuditMessage');if(!box)return;box.hidden=!text;box.textContent=text||'';box.classList.toggle('is-error',bad);box.setAttribute('role',bad?'alert':'status')}
+  function busy(value){el('sfAuditList')?.setAttribute('aria-busy',String(value));for(const id of ['sfAuditMore','sfAuditCsv','sfAuditPdf','sfAuditRefresh'])if(el(id))el(id).disabled=value||!!state?.exporting||(!state?.rows.length&&['sfAuditCsv','sfAuditPdf'].includes(id));}
+  function read(q){if(q.error)throw Error(q.error.message||'Die Daten konnten nicht geladen werden.');const d=typeof q.data==='string'?JSON.parse(q.data):q.data;if(!d||!Array.isArray(d.rows)||!Number.isFinite(Number(d.total)))throw Error('Die Audit-Antwort ist unvollständig. Bitte erneut laden.');return d}
+  async function request(c,f,cursor,asOf,limit=50){const {from,to,...params}=f;const q=await c.client.rpc('manager_audit_workspace',{p_company_id:c.company,...params,p_before_at:cursor?.created_at||null,p_before_id:cursor?.id||null,p_as_of:asOf||null,p_limit:limit});assert(c);return read(q)}
+  async function load(more=false){ensure();if(!admin()||!B.client||!B.companyId||B.client.__sfDemoLocalClientV1)return;mount();const c=context();let f;try{f=filters()}catch(e){message(e.message,true);return}const seq=++sequence;
+    if(more&&(!state||!same(state.context)||state.loading||state.rows.length>=state.total))return;
+    const previous=more?state:null;if(!more){modalClose?.();state={context:c,rows:[],total:0,filters:f,users:new Map(),loading:true};el('sfAuditList').innerHTML='<div class="sf-audit-placeholder">Audit-Logs werden geladen …</div>';el('sfAuditSummary').textContent='Verlauf wird geladen …';el('sfAuditCount').textContent='0';el('sfAuditMore').hidden=true}else state.loading=true;busy(true);message('');
     try{
-      const from=document.getElementById('sfAuditFrom')?.value||null;
-      const toValue=document.getElementById('sfAuditTo')?.value||null;
-      const to=toValue?new Date(toValue+'T00:00:00'):null;
-      if(to)to.setDate(to.getDate()+1);
-      const actor=document.getElementById('sfAuditActor')?.value||null;
-      const action=document.getElementById('sfAuditAction')?.value||null;
-      const [q,users]=await Promise.all([
-        B.client.rpc('manager_list_audit_events',{p_company_id:B.companyId,p_from:from?new Date(from+'T00:00:00').toISOString():null,p_to:to?to.toISOString():null,p_actor_id:actor||null,p_action:action||null,p_limit:500}),
-        B.client.rpc('manager_list_company_users',{p_company_id:B.companyId})
-      ]);
-      if(q.error)throw q.error;
-      if(users.error)throw users.error;
-      const emails=new Map((users.data||[]).filter(x=>x.user_id).map(x=>[x.user_id,x.email]));
-      rows=(q.data||[]).map(x=>({...x,actor_email:x.actor_id?(emails.get(x.actor_id)||x.actor_email):'System'}));
-      renderFilters();
-      renderList();
-    }catch(e){
-      if(list)list.innerHTML=`<div class="sf-audit-empty">Audit-Logs konnten nicht geladen werden.<br>${esc(e.message||e)}</div>`;
-    }finally{loading=false}
+      const [data,uq]=await Promise.all([request(c,f,previous?.rows.at(-1),previous?.asOf),more?Promise.resolve(null):c.client.rpc('manager_list_company_users',{p_company_id:c.company})]);assert(c);if(seq!==sequence)return;if(uq?.error)throw Error(uq.error.message);const users=previous?.users||new Map((uq?.data||[]).filter(u=>u.user_id).map(u=>[u.user_id,u.email||`Benutzer · ${u.user_id.slice(0,8)}`]));
+      const priorIds=new Set(previous?.rows.map(r=>r.id)||[]);const fresh=data.rows.filter(r=>!priorIds.has(r.id));if(more&&!fresh.length&&previous.rows.length<data.total)throw Error('Weitere Einträge konnten nicht vollständig geladen werden. Bitte aktualisieren.');
+      state={context:c,rows:[...(previous?.rows||[]),...fresh],total:data.total===null?previous.total:Number(data.total),filters:f,users,asOf:data.as_of,loading:false,loadedAt:new Date().toISOString(),actions:more?previous.actions:data.actions||[],actors:more?previous.actors:data.actors||[]};facets();render();
+    }catch(e){if(seq!==sequence||!same(c))return;if(previous){state=previous;state.loading=false;render()}else{state.loading=false;el('sfAuditList').innerHTML='<div class="sf-audit-placeholder">Verlauf konnte nicht geladen werden. Bitte erneut versuchen.</div>';el('sfAuditSummary').textContent='Keine aktuellen Daten';}message(e.message,true)}finally{if(seq===sequence&&same(c)){state.loading=false;busy(false)}}
   }
-
-  function renderFilters(){
-    const actor=document.getElementById('sfAuditActor'),action=document.getElementById('sfAuditAction');
-    if(!actor||!action)return;
-    const av=actor.value,ac=action.value;
-    const actors=[...new Map(rows.filter(r=>r.actor_id).map(r=>[r.actor_id,r.actor_email||r.actor_role])).entries()].sort((a,b)=>a[1].localeCompare(b[1]));
-    const actions=[...new Set(rows.map(r=>r.event_type).filter(Boolean))].sort();
-    actor.innerHTML='<option value="">Alle Benutzer</option>'+actors.map(([id,name])=>`<option value="${esc(id)}">${esc(name)}</option>`).join('');
-    action.innerHTML='<option value="">Alle Aktionen</option>'+actions.map(x=>`<option value="${esc(x)}">${esc(actionLabel({event_type:x}))}</option>`).join('');
-    actor.value=av;action.value=ac;
+  function facets(){const actorSelect=el('sfAuditActor'),actionSelect=el('sfAuditAction'),av=actorSelect.value,ac=actionSelect.value;const actors=[...new Set([...state.actors,...state.users.keys(),...(av?[av]:[])])].map(id=>[id,id==='SYSTEM'?'System':state.users.get(id)||`Ehemaliger Benutzer · ${id.slice(0,8)}`]).sort((a,b)=>a[1].localeCompare(b[1],'de'));
+    actorSelect.innerHTML='<option value="">Alle Bearbeiter</option>'+actors.map(([id,name])=>`<option value="${esc(id)}">${esc(name)}</option>`).join('');actorSelect.value=av;
+    const events=[...new Set([...state.actions,...(ac?[ac]:[])])].map(type=>[type,action({event_type:type,entity_type:type.replace(/^(INSERT|UPDATE|DELETE)_/,'').toLowerCase()})]).sort((a,b)=>a[1].localeCompare(b[1],'de'));
+    actionSelect.innerHTML='<option value="">Alle Aktionen</option>'+events.map(([type,label])=>`<option value="${esc(type)}">${esc(label)}</option>`).join('');actionSelect.value=ac;
   }
-
-  function renderList(){
-    const list=document.getElementById('sfAuditList'),count=document.getElementById('sfAuditCount');
-    if(!list)return;
-    if(count)count.textContent=String(rows.length);
-    list.innerHTML=rows.length?rows.map(r=>`<button type="button" class="sf-audit-row" data-audit-id="${esc(r.id)}"><span><b>${esc(dateTime(r.created_at))}</b></span><span><b>${esc(r.actor_email||'System')}</b><small>${esc(roleLabels[r.actor_role]||r.actor_role||'System')}</small></span><span class="sf-audit-action">${esc(actionLabel(r))}<small class="sf-audit-entity">${esc(entityLabel(r.entity_type))}</small></span><span>${r.old_values&&r.new_values?'Vorher → Nachher':r.new_values?'Neuer Eintrag':r.old_values?'Entfernt':'Ereignis'}</span><span>›</span></button>`).join(''):'<div class="sf-audit-empty">Für die gewählten Filter wurden keine Einträge gefunden.</div>';
-    list.querySelectorAll('[data-audit-id]').forEach(b=>b.onclick=()=>detail(rows.find(r=>r.id===b.dataset.auditId)));
+  function rowHtml(r){const s=subject(r),diff=changes(r),summary=diff.length?diff.slice(0,2).map(x=>`${field(x.key)}: ${x.before} → ${x.after}`).join(' · '):reason(r)||'Ereignisdetails öffnen';return `<button type="button" class="sf-audit-item" data-audit-id="${esc(r.id)}" aria-label="${esc(action(r)+' · '+s.name+' · '+datetime(r.created_at))}"><span><strong>${esc(datetime(r.created_at))}</strong><small>${esc(zone())}</small></span><span><strong>${esc(actor(r))}</strong><small>${esc(role(r))}</small></span><span><strong>${esc(action(r))}${important(r)?'<em class="sf-audit-sensitive">Wichtige Änderung</em>':''}</strong><small class="sf-audit-summary-text">${esc(summary)}</small></span><span><strong>${esc(s.name)}</strong><small>${esc(s.detail||categories[r.category]||'')}</small></span><span aria-hidden="true">›</span></button>`}
+  function groupedRows(rows){const groups=new Map();for(const r of rows){const tx=r.metadata?.transaction_id,key=tx?`${tx}:${r.actor_id||'SYSTEM'}`:`row:${r.id}`;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r)}return [...groups.values()]}
+  function render(){if(!state||!same(state.context))return;const rows=state.rows;el('sfAuditSummary').textContent=`${rows.length.toLocaleString('de-DE')} von ${state.total.toLocaleString('de-DE')} Ereignissen geladen`;el('sfAuditCount').textContent=`${rows.length.toLocaleString('de-DE')} / ${state.total.toLocaleString('de-DE')}`;el('sfAuditScope').textContent=`Nur für Inhaber und Administratoren · Zeitzone: ${zone()} · Aktualisiert: ${datetime(state.loadedAt)}. Neue Vorgänge werden nach gemeinsamer Datenbankaktion gebündelt.`;el('sfAuditMore').hidden=rows.length>=state.total;
+    const groups=el('sfAuditGrouped').checked?groupedRows(rows):rows.map(r=>[r]);el('sfAuditList').innerHTML=rows.length?groups.map(g=>{if(g.length===1)return rowHtml(g[0]);const main=g.find(r=>!r.metadata?.backendCaptured)||g[0];return `<details class="sf-audit-group"><summary><span><strong>${esc(action(main))}</strong><small>${esc(actor(main)+' · '+datetime(main.created_at))}</small></span><span class="sf-audit-group-count">${g.length} geladene Ereignisse</span></summary><div>${g.map(rowHtml).join('')}</div></details>`}).join(''):'<div class="sf-audit-placeholder">Keine Ereignisse für diese Auswahl. Passe den Zeitraum oder die Filter an.</div>';
+    el('sfAuditList').querySelectorAll('[data-audit-id]').forEach(btn=>btn.onclick=()=>detail(rows.find(r=>r.id===btn.dataset.auditId)));busy(state.loading);
   }
-
-  function detail(r){
-    if(!r)return;
-    document.getElementById('sfAuditModal')?.remove();
-    const m=document.createElement('div');m.id='sfAuditModal';m.className='sf-audit-modal';
-    const json=v=>esc(JSON.stringify(v??{},null,2)),changes=changeRows(r.old_values,r.new_values);
-    const changesHtml=changes.length?`<div class="sf-audit-changes"><div class="sf-audit-change-head"><span>Feld</span><span>Vorher</span><span></span><span>Nachher</span></div>${changes.map(change=>`<div class="sf-audit-change-row"><strong>${esc(fieldLabel(change.key))}</strong><span class="sf-audit-change-value">${esc(change.before)}</span><span class="sf-audit-change-arrow">→</span><span class="sf-audit-change-value">${esc(change.after)}</span></div>`).join('')}</div>`:'<div class="sf-audit-empty">Keine fachlichen Feldänderungen vorhanden.</div>';
-    m.innerHTML=`<section class="sf-audit-detail" role="dialog" aria-modal="true" aria-labelledby="sfAuditDetailTitle"><header><div><div class="eyebrow">AUDIT-DETAIL</div><h2 id="sfAuditDetailTitle">${esc(actionLabel(r))}</h2><small>${esc(entityLabel(r.entity_type))}</small></div><button type="button" class="ghost sf-audit-close" aria-label="Schließen">✕</button></header><div class="sf-audit-detail-body"><div class="sf-audit-meta"><div><small>Zeitstempel</small><b>${esc(dateTime(r.created_at))}</b></div><div><small>Benutzer</small><b>${esc(r.actor_email||'System')}</b></div><div><small>Rolle</small><b>${esc(roleLabels[r.actor_role]||r.actor_role||'System')}</b></div></div>${changesHtml}<details class="sf-audit-technical"><summary>Technische Details anzeigen</summary><div class="sf-audit-tech-meta"><span><b>Audit-ID</b><code>${esc(r.id)}</code></span>${r.entity_id?`<span><b>Objekt-ID</b><code>${esc(r.entity_id)}</code></span>`:''}</div><div class="sf-audit-technical-grid"><pre>${json(r.old_values)}</pre><pre>${json(r.new_values)}</pre></div></details></div></section>`;
-    document.body.appendChild(m);
-    const close=()=>m.remove();
-    m.querySelector('.sf-audit-close').onclick=close;
-    m.onclick=e=>{if(e.target===m)close()};
-    const key=e=>{if(e.key==='Escape'){document.removeEventListener('keydown',key);close()}};
-    document.addEventListener('keydown',key);
-    m.querySelector('.sf-audit-close').focus();
+  function target(r){const v=r.new_values||r.old_values||{},subjectId=r.subject_id||v.employee_id||v.employeeId;const e=employee(subjectId||(r.entity_type==='employees'?r.entity_id:null));
+    const id=r.target_assignment_id||v.assignment_id||r.metadata?.assignment_id||(['shift_assignment','shift_assignments'].includes(r.entity_type)?r.entity_id:null),local=B.asgLocal?.get(id);const a=shifts().find(x=>String(x._dbId||'')===String(id)||String(x.id)===String(local||id));
+    if(r.category==='time'&&a&&typeof window.editTimeEntry==='function'&&B.can?.('viewTime'))return{label:'Zeiteintrag öffnen',open:async()=>{window.switchView?.('time');const mode=el('timePeriod'),picker=el('sfTimeMonthPicker');if(mode)mode.value='month';if(picker)picker.value=a.date.slice(0,7);await B.timeTracking?.refreshManager?.(a.date.slice(0,7));window.editTimeEntry(a.id)}};
+    if(a&&e&&typeof window.selectEmployee==='function')return{label:'Schicht öffnen',open:()=>{window.switchView?.('employees');window.selectEmployee(e.id);const button=el('view-employees')?.querySelector(`[data-shift="${CSS.escape(String(a.id))}"]`);if(button)button.click();else message('Die Schicht ist im Mitarbeiterprofil nicht mehr verfügbar.',true)}};
+    if(e&&!e.deletedAt&&typeof window.selectEmployee==='function')return{label:'Mitarbeiter öffnen',open:()=>{window.switchView?.('employees');window.selectEmployee(e.id)}};
+    return null;
   }
-
-  window.renderAuditLogs=()=>{css();ensureAccess();if(ADMIN.has(B.role))load()};
-  document.addEventListener('click',e=>{if(e.target.closest('[data-view="audit"]'))setTimeout(window.renderAuditLogs,0)});
-  const originalBoot=B.boot;
-  if(typeof originalBoot==='function'&&!B.__auditBootWrapped){
-    B.__auditBootWrapped=true;
-    B.boot=async function(){const result=await originalBoot.apply(this,arguments);ensureAccess();return result};
+  function detail(r){if(!r||!state||!same(state.context))return;modalClose?.();const c=state.context,trigger=document.activeElement,m=document.createElement('div');m.id='sfAuditModal';m.className='sf-audit-modal sf-audit-v2';const s=subject(r),diff=changes(r),why=reason(r),t=target(r);
+    m.innerHTML=`<section class="sf-audit-detail" role="dialog" aria-modal="true" aria-labelledby="sfAuditDetailTitle" tabindex="-1"><header><div><div class="eyebrow">AUDIT-DETAIL</div><h2 id="sfAuditDetailTitle">${esc(action(r))}</h2><p>${esc(s.name)}${s.detail?' · '+esc(s.detail):''}</p></div><button type="button" class="ghost sf-audit-close" aria-label="Schließen">✕</button></header><div class="sf-audit-detail-body"><dl class="sf-audit-meta"><div><dt>Zeitpunkt · ${esc(zone())}</dt><dd>${esc(datetime(r.created_at))}</dd></div><div><dt>Bearbeiter</dt><dd>${esc(actor(r))}</dd></div><div><dt>Rolle zum Ereignis</dt><dd>${esc(role(r))}</dd></div></dl>${why?`<div class="sf-audit-reason"><strong>Begründung / Bemerkung</strong><p>${esc(why)}</p></div>`:''}<h3>Feldänderungen</h3>${diff.length?`<div class="sf-audit-diff-head"><span>Feld</span><span>Vorher</span><span>Nachher</span></div><div class="sf-audit-diffs">${diff.map(x=>`<div class="sf-audit-diff"><strong>${esc(field(x.key))}</strong><div><small>Vorher</small>${esc(x.before)}</div><div><small>Nachher</small>${esc(x.after)}</div></div>`).join('')}</div>`:'<p class="sf-audit-placeholder">Dieses Ereignis enthält keine fachlichen Feldänderungen.</p>'}<div class="sf-audit-detail-actions">${t?`<button type="button" class="primary" id="sfAuditOpenTarget">${esc(t.label)}</button>`:'<span>Kein direkt öffnbarer Datensatz vorhanden.</span>'}<button type="button" class="ghost" id="sfAuditCopyId">Audit-ID kopieren</button></div><details class="sf-audit-technical"><summary>Technische Details</summary><dl><dt>Audit-ID</dt><dd><code>${esc(r.id)}</code></dd><dt>Objekt-ID</dt><dd><code>${esc(r.entity_id||'–')}</code></dd><dt>Aktion</dt><dd><code>${esc(r.event_type)}</code></dd></dl><div class="sf-audit-json"><div><h4>Vorher</h4><pre>${esc(JSON.stringify(r.old_values||{},null,2))}</pre></div><div><h4>Nachher</h4><pre>${esc(JSON.stringify(r.new_values||{},null,2))}</pre></div></div><h4>Vorgangsinformationen</h4><pre>${esc(JSON.stringify(r.metadata||{},null,2))}</pre></details><p id="sfAuditDetailMessage" role="status" aria-live="polite"></p></div></section>`;
+    const bodyOverflow=document.body.style.overflow;document.body.style.overflow='hidden';document.body.append(m);let closed=false;const close=()=>{if(closed)return;closed=true;document.removeEventListener('keydown',key);m.remove();document.body.style.overflow=bodyOverflow;if(trigger?.isConnected)trigger.focus();if(modalClose===close)modalClose=null};
+    const key=e=>{if(e.key==='Escape'){e.preventDefault();close()}else if(e.key==='Tab'){const focus=[...m.querySelectorAll('button,summary,[tabindex="0"]')].filter(x=>x.getClientRects().length);if(!focus.length)return;const first=focus[0],last=focus.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}};
+    modalClose=close;document.addEventListener('keydown',key);m.querySelector('.sf-audit-close').onclick=close;m.onclick=e=>{if(e.target===m)close()};m.querySelector('.sf-audit-close').focus();
+    el('sfAuditCopyId').onclick=async()=>{try{assert(c);await navigator.clipboard.writeText(r.id);if(m.isConnected)el('sfAuditDetailMessage').textContent='Audit-ID kopiert.'}catch{if(m.isConnected)el('sfAuditDetailMessage').textContent='Kopieren nicht möglich. Die Audit-ID steht in den technischen Details.'}};
+    if(t)el('sfAuditOpenTarget').onclick=async()=>{try{assert(c);close();await t.open();assert(c)}catch(e){if(same(c))window.showSaveToast?.('Datensatz nicht verfügbar',e.message)}};
   }
-  document.addEventListener('DOMContentLoaded',()=>{
-    css();ensureAccess();
-    let attempts=0;
-    const accessTimer=setInterval(()=>{ensureAccess();attempts+=1;if(B.role||attempts>=40)clearInterval(accessTimer)},250);
-    document.getElementById('sfAuditApply')?.addEventListener('click',load);
-    document.getElementById('sfAuditReset')?.addEventListener('click',()=>{['sfAuditFrom','sfAuditTo','sfAuditActor','sfAuditAction'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});load()});
-  });
+  function filterText(f){return [f.from||f.to?`${f.from||'Beginn'} bis ${f.to||'heute'}`:'Gesamter Verlauf',f.p_category?categories[f.p_category]:'Alle Bereiche',f.p_actor?(f.p_actor==='SYSTEM'?'System':state.users.get(f.p_actor)||f.p_actor):'Alle Bearbeiter',f.p_action?action({event_type:f.p_action,entity_type:f.p_action.replace(/^(INSERT|UPDATE|DELETE)_/,'').toLowerCase()}):'Alle Aktionen',f.p_query?`Suche: ${f.p_query}`:''].filter(Boolean).join(' · ')}
+  function csvCell(v){let s=String(v??'');if(/^[\s\u0000-\u001f]*[=+\-@]/.test(s))s="'"+s;return '"'+s.replaceAll('"','""')+'"'}
+  function exportLine(r){const s=subject(r);return[r.id,datetime(r.created_at),zone(),actor(r),role(r),action(r),categories[r.category]||'Weitere Ereignisse',s.name,s.detail,reason(r),changes(r).map(x=>`${field(x.key)}: ${x.before} → ${x.after}`).join('\n'),r.entity_id||'',r.metadata?.transaction_id||'']}
+  function download(text,name){const url=URL.createObjectURL(new Blob(['\ufeff',text],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000)}
+  async function script(url,ready){if(ready())return;await new Promise((resolve,reject)=>{const tag=document.createElement('script');tag.src=url;tag.onload=()=>{if(ready())resolve();else{tag.remove();reject(Error('PDF-Bibliothek konnte nicht geladen werden.'))}};tag.onerror=()=>{tag.remove();reject(Error('PDF-Bibliothek konnte nicht geladen werden. Bitte erneut versuchen.'))};document.head.append(tag)})}
+  async function pdf(rows,report,c,seq){await script('https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js',()=>!!window.jspdf?.jsPDF);await script('https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js',()=>!!window.jspdf?.jsPDF?.API?.autoTable);assert(c);if(seq!==exportSequence)return;
+    const doc=new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a4',compress:true});doc.setFontSize(17);doc.text('SchichtFunk | Audit-Prüfbericht',14,17);doc.setFontSize(9);doc.text(report.company,14,24);const info=doc.splitTextToSize(`${report.filter}\nErstellt: ${report.created} · Zeitzone: ${report.zone} · ${rows.length} Ereignisse`,269);doc.text(info,14,31);
+    doc.autoTable({startY:34+info.length*4,margin:{left:14,right:14,top:18,bottom:16},head:[['Zeitpunkt / Audit-ID','Bearbeiter / Rolle','Aktion / Betroffen','Änderungen / Begründung']],body:rows.map(r=>{const s=subject(r);return[`${datetime(r.created_at)}\n${r.id}`,`${actor(r)}\n${role(r)}`,`${action(r)}\n${s.name}\n${s.detail}`,`${changes(r).map(x=>`${field(x.key)}: ${x.before} -> ${x.after}`).join('\n')||'Ereignis ohne Feldänderungen'}${reason(r)?'\nGrund: '+reason(r):''}`]}),styles:{fontSize:7,cellPadding:2,textColor:[28,45,58],overflow:'linebreak'},headStyles:{fillColor:[17,42,58],textColor:[255,255,255]},alternateRowStyles:{fillColor:[238,244,246]},columnStyles:{0:{cellWidth:55},1:{cellWidth:48},2:{cellWidth:66},3:{cellWidth:100}}});
+    const pages=doc.getNumberOfPages();for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFontSize(8);doc.text(`SchichtFunk · Audit-Logs · ${report.zone}`,14,doc.internal.pageSize.getHeight()-8);doc.text(`Seite ${i} / ${pages}`,doc.internal.pageSize.getWidth()-14,doc.internal.pageSize.getHeight()-8,{align:'right'})}assert(c);if(seq===exportSequence)doc.save(`SchichtFunk-Audit-${dateInZone(Date.now())}.pdf`);
+  }
+  async function exportReport(kind){if(!state||state.loading||state.exporting||!state.rows.length)return;clearTimeout(queryTimer);const c=state.context,baseline=state;let f;try{assert(c);f=filters()}catch(e){if(same(c))message(e.message,true);return}if(JSON.stringify(f)!==JSON.stringify(baseline.filters)){message('Bitte die geänderten Filter zuerst anwenden.',true);return}const seq=++exportSequence;baseline.exporting=true;busy(true);const report={company:B.company?.name||'SchichtFunk',filter:filterText(f),created:datetime(Date.now()),zone:zone()};
+    try{let all=[],cursor=null,asOf=baseline.asOf,total=baseline.total;while(true){assert(c);if(seq!==exportSequence||state!==baseline)throw Error('Der Export wurde wegen einer geänderten Auswahl abgebrochen.');const data=await request(c,f,cursor,asOf,1000);if(data.total!==null&&Number(data.total)!==total)throw Error('Der Verlauf hat sich während des Exports geändert. Bitte aktualisieren und erneut exportieren.');if(!data.rows.length){if(all.length!==total)throw Error('Der Export ist unvollständig. Bitte erneut versuchen.');break}const next=data.rows.at(-1);if(cursor&&cursor.id===next.id)throw Error('Der Export konnte nicht weitergeladen werden.');all.push(...data.rows);cursor=next;message(`Export wird vorbereitet: ${all.length.toLocaleString('de-DE')} von ${total.toLocaleString('de-DE')} Ereignissen …`);if(all.length>=total)break;}
+      assert(c);if(seq!==exportSequence||state!==baseline)return;if(all.length!==total||new Set(all.map(r=>r.id)).size!==total)throw Error('Der Export ist unvollständig. Bitte aktualisieren.');
+      if(kind==='csv'){const headers=['Audit-ID','Zeitpunkt','Zeitzone','Bearbeiter','Rolle zum Ereignis','Aktion','Bereich','Betroffen','Dienst / Personalnummer','Begründung','Feldänderungen','Objekt-ID','Vorgang'];const lines=[['SchichtFunk Audit-Prüfbericht'],['Unternehmen',report.company],['Filter',report.filter],['Erstellt',report.created],['Zeitzone',report.zone],['Ereignisse',all.length],[],headers,...all.map(exportLine)];download(lines.map(row=>row.map(csvCell).join(';')).join('\r\n'),`SchichtFunk-Audit-${dateInZone(Date.now())}.csv`)}else await pdf(all,report,c,seq);if(seq===exportSequence&&state===baseline)message(`${all.length.toLocaleString('de-DE')} Ereignisse vollständig exportiert.`);
+    }catch(e){if(same(c)&&seq===exportSequence&&state===baseline)message(e.message,true)}finally{baseline.exporting=false;if(state===baseline&&same(c))busy(false)}
+  }
+  A.reload=()=>load();A.export=exportReport;A.close=()=>modalClose?.();A.formatDateTime=datetime;A.midnight=midnight;A.changes=changes;A.csvCell=csvCell;
+  window.renderAuditLogs=()=>{ensure();mount();return load()};
+  const update=B.updateState;if(typeof update==='function')B.updateState=function(){const r=update.apply(this,arguments);ensure();return r};
+  window.addEventListener('sf:company-timezone-change',()=>{if(state)invalidate();if(el('view-audit')?.classList.contains('active')){period();load()}});
+  document.addEventListener('sf:company-profile-change',ensure);document.addEventListener('visibilitychange',ensure);
+  function init(){mount();ensure();let attempts=0;const timer=setInterval(()=>{ensure();if(B.ready||++attempts>=80)clearInterval(timer)},250)}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
-
