@@ -639,7 +639,7 @@ window.SFHelpContent = {
       ],
       [
         "Was zeigt das Audit-Protokoll?",
-        "Inhaber und Administratoren können Verwaltungsänderungen im Audit-Protokoll nachvollziehen. Die Detailansicht zeigt die zum Ereignis verfügbaren Angaben, darunter Bearbeiter, Zeitpunkt und geänderte Werte. Technische Kennungen lassen sich bei Bedarf einblenden. Das Protokoll dient der Nachvollziehbarkeit; es macht Änderungen nicht automatisch rückgängig."
+        "Inhaber und Administratoren können den gesamten Audit-Verlauf durchsuchen und nach Monat, Quartal, Jahr, Bearbeiter, Aktion und Bereich filtern. Der Zähler zeigt geladene und insgesamt passende Ereignisse. Weitere 50 laden ergänzt ältere Einträge. Die Detailansicht zeigt Vorher/Nachher, Begründungen und die damalige Rolle. Neue zusammengehörige Datenbankaktionen lassen sich bündeln; ältere Einträge bleiben einzeln nachvollziehbar. CSV und PDF exportieren alle passenden Ereignisse einschließlich Filterangaben und Audit-IDs. Zeitstempel verwenden die Unternehmenszeitzone. Verfügbare Datensätze lassen sich direkt öffnen."
       ],
       [
         "Was bedeutet Datenschutz & Löschung in den Einstellungen?",

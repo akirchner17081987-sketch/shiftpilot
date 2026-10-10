@@ -1,0 +1,27 @@
+name: Audit workspace checks
+on:
+  push:
+    branches: [codex/audit-workspace-20261010, codex/ionos-migration]
+    paths: ["assets/audit-logs*", "tests/audit-workspace*", "tests/browser/audit-workspace*", ".github/workflows/audit-workspace-checks.yml", "supabase/migrations/*audit_workspace*"]
+  pull_request:
+    paths: ["assets/audit-logs*", "tests/audit-workspace*", "tests/browser/audit-workspace*", ".github/workflows/audit-workspace-checks.yml", "supabase/migrations/*audit_workspace*"]
+permissions:
+  contents: read
+jobs:
+  audit-workspace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:audit
+      - name: Save browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-workspace-evidence
+          path: test-results/audit-workspace/

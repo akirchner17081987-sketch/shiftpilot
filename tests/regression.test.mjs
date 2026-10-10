@@ -137,25 +137,25 @@ test('Audit-Logs are an administrator-only filtered detail workspace', () => {
   assert.match(index, /id="sfAuditAction"/);
   assert.match(index, /name==='audit'&&!\['OWNER','ADMIN'\]\.includes\(B\?\.role\)/);
   assert.match(auditLogs, /ADMIN=new Set\(\['OWNER','ADMIN'\]\)/);
-  assert.match(auditLogs, /manager_list_audit_events/);
+  assert.match(auditLogs, /manager_audit_workspace/);
   assert.match(auditLogs, /manager_list_company_users/);
-  assert.match(auditLogs, /const accessTimer=setInterval/);
-  assert.match(auditLogs, /if\(B\.role\|\|attempts>=40\)clearInterval\(accessTimer\)/);
+  assert.match(auditLogs, /const timer=setInterval/);
+  assert.match(auditLogs, /if\(B\.ready\|\|\+\+attempts>=80\)clearInterval\(timer\)/);
   assert.match(auditLogs, /AUDIT-DETAIL/);
   assert.match(auditLogs, /Vorher/);
   assert.match(auditLogs, /Nachher/);
-  assert.match(auditLogs, /function changeRows\(oldValues,newValues\)/);
-  assert.match(auditLogs, /Technische Details anzeigen/);
+  assert.match(auditLogs, /function changes\(r\)/);
+  assert.match(auditLogs, /Technische Details/);
   assert.match(auditLogs, /REQUESTED:'Beantragt'/);
   assert.match(auditLogs, /APPROVED:'Genehmigt'/);
   assert.match(auditLogs, /FULL_SCHEDULE_RESET:'Gesamten Dienstplan gelöscht'/);
   assert.match(auditLogs, /PLAN_PUBLISHED:'Dienstplan veröffentlicht'/);
-  assert.match(auditLogs, /ABSENCE_REQUEST_APPROVED:'Abwesenheitsantrag genehmigt'/);
+  assert.match(auditLogs, /ABSENCE_REQUEST_APPROVED:'Abwesenheit genehmigt'/);
   assert.match(auditLogs, /schedule:'Dienstplan'/);
   assert.match(auditLogs, /absence:'Abwesenheit'/);
   assert.doesNotMatch(auditLogs, /r\.id\.slice\(0,8\)/);
-  assert.match(auditLogs, />Audit-ID<\/b><code>\$\{esc\(r\.id\)\}/);
-  assert.match(auditLogs, />Objekt-ID<\/b><code>\$\{esc\(r\.entity_id\)\}/);
+  assert.match(auditLogs, />Audit-ID<\/dt><dd><code>\$\{esc\(r\.id\)\}/);
+  assert.match(auditLogs, />Objekt-ID<\/dt><dd><code>\$\{esc\(r\.entity_id\|\|/);
 });
 
 test('Audit backend is append-only, tenant-scoped and captured by database triggers', () => {
