@@ -6,11 +6,11 @@ declare tz text; today_ date; can_time boolean; settings_ public.time_account_se
  result_ jsonb; people_ jsonb; times_ jsonb:='[]'; qr_ jsonb:='[]';
 begin
  if auth.uid() is null or not private.sf_is_manager(p_company_id,false) then
-  raise exception 'F�r dieses Unternehmen fehlen Auswertungsrechte.' using errcode='42501';
+  raise exception 'Für dieses Unternehmen fehlen Auswertungsrechte.' using errcode='42501';
  end if;
  if p_start_date is null or p_end_date is null or p_end_date<p_start_date or p_end_date-p_start_date>30
     or date_trunc('month',p_start_date)<>date_trunc('month',p_end_date) then
-  raise exception 'Bitte einen g�ltigen Monatsabschnitt mit h�chstens 31 Tagen angeben.' using errcode='22023';
+  raise exception 'Bitte einen gültigen Monatsabschnitt mit höchstens 31 Tagen angeben.' using errcode='22023';
  end if;
  select timezone into strict tz from public.companies where id=p_company_id;
  today_:=(now() at time zone tz)::date;

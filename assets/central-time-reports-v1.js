@@ -17,13 +17,13 @@
     const stats=document.getElementById('reportStats'),list=document.getElementById('reportHours');if(!stats||!list)return;
     let card=document.getElementById('sfCentralReportHours');
     if(!card){card=document.createElement('div');card.id='sfCentralReportHours';card.className='stat';stats.appendChild(card)}
-    if(!cache||cache.key!==ctx.key){card.innerHTML=`<div><small>Erfasste Arbeitsstunden</small><strong>-</strong><em>${esc(error||'QR- und best�tigte Zeiten werden geladen .')}</em></div>`;return}
+    if(!cache||cache.key!==ctx.key){card.innerHTML=`<div><small>Erfasste Arbeitsstunden</small><strong>–</strong><em>${esc(error||'QR- und bestätigte Zeiten werden geladen …')}</em></div>`;return}
     const people=typeof employees!=='undefined'?employees.filter(e=>e.status==='active'):[],summary=cache.data.confirmed_summary||[];
     const rows=people.map(e=>{const dbId=e._dbId||B.empDb?.get(String(e.id))||e.id,r=summary.find(x=>x.employee_id===dbId||String(x.employee_legacy_id)===String(e.id));return {e,seconds:Number(r?.confirmed_seconds||0),plan:typeof hoursForEmployeeDates==='function'?hoursForEmployeeDates(e.id,typeof reportDates==='function'?reportDates():[]):0}});
-    card.innerHTML=`<div><small>Erfasste Arbeitsstunden</small><strong>${hours(rows.reduce((sum,r)=>sum+r.seconds,0))}</strong><em>${esc(error||'Abgeschlossene QR-Dienste und best�tigte Meldungen')}</em></div>`;
+    card.innerHTML=`<div><small>Erfasste Arbeitsstunden</small><strong>${hours(rows.reduce((sum,r)=>sum+r.seconds,0))}</strong><em>${esc(error||'Abgeschlossene QR-Dienste und bestätigte Meldungen')}</em></div>`;
     list.innerHTML=rows.sort((a,b)=>b.plan-a.plan).slice(0,15).map(r=>{
       const dates=typeof reportDates==='function'?reportDates():[],target=typeof reportTargetForEmployee==='function'?reportTargetForEmployee(r.e,dates):Number(r.e.weeklyHours||0)*dates.length/7;
-      return `<div class="section-box" style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><b>${esc(r.e.first+' '+r.e.last)}</b><span>IST ${hours(r.seconds)} / SOLL ${Number(target).toLocaleString('de-DE',{maximumFractionDigits:1})} Std.</span></div><small style="display:block;margin-top:5px;color:var(--muted)">Plan ${r.plan.toLocaleString('de-DE',{maximumFractionDigits:1})} Std. � QR und best�tigte Zeitmeldungen</small></div>`;
+      return `<div class="section-box" style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><b>${esc(r.e.first+' '+r.e.last)}</b><span>IST ${hours(r.seconds)} / SOLL ${Number(target).toLocaleString('de-DE',{maximumFractionDigits:1})} Std.</span></div><small style="display:block;margin-top:5px;color:var(--muted)">Plan ${r.plan.toLocaleString('de-DE',{maximumFractionDigits:1})} Std. · QR und bestätigte Zeitmeldungen</small></div>`;
     }).join('')||'<div class="empty">Keine aktiven Mitarbeiter.</div>';
   }
   async function refresh(force=false){
@@ -37,9 +37,9 @@
       if(request!==sequence||context()?.key!==ctx.key)return;
       if(q.error)throw q.error;
       const data=typeof q.data==='string'?JSON.parse(q.data):q.data;
-      if(!Array.isArray(data?.confirmed_summary))throw new Error('Zentrale Zeiten nicht verf�gbar.');
+      if(!Array.isArray(data?.confirmed_summary))throw new Error('Zentrale Zeiten nicht verfügbar.');
       cache={key:ctx.key,data,loaded:Date.now()};error='';
-    }catch(e){if(request!==sequence||context()?.key!==ctx.key)return;error='Zeitwerte nicht aktuell - bitte erneut laden.'}
+    }catch(e){if(request!==sequence||context()?.key!==ctx.key)return;error='Zeitwerte nicht aktuell – bitte erneut laden.'}
     finally{if(request===sequence){inflight='';if(context()?.key===ctx.key)paint(ctx)}}
   }
   const base=window.renderReports;

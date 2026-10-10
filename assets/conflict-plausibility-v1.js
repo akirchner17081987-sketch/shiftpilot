@@ -1,4 +1,4 @@
-// SchichtFunk - Compliance + Supabase loader
+// SchichtFunk – Compliance + Supabase loader
 (function(){
   const files=[
     'assets/status-toast-v2.js',

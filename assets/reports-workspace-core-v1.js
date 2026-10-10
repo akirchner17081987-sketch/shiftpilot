@@ -7,10 +7,10 @@
  const D=86400000,M=60000,collator=new Intl.Collator('de',{numeric:true,sensitivity:'base'});
  const plus=(d,n)=>new Date(Date.parse(d+'T12:00:00Z')+n*D).toISOString().slice(0,10);
  const valid=d=>/^\d{4}-\d{2}-\d{2}$/.test(d||'')&&Number.isFinite(Date.parse(d+'T12:00:00Z'))&&plus(d,0)===d;
- const days=(a,b)=>{if(!valid(a)||!valid(b)||a>b||Date.parse(b)-Date.parse(a)>365*D)throw Error('Bitte einen Zeitraum von h�chstens 366 Tagen ausw�hlen.');const out=[];for(let d=a;d<=b;d=plus(d,1))out.push(d);return out};
+ const days=(a,b)=>{if(!valid(a)||!valid(b)||a>b||Date.parse(b)-Date.parse(a)>365*D)throw Error('Bitte einen Zeitraum von höchstens 366 Tagen auswählen.');const out=[];for(let d=a;d<=b;d=plus(d,1))out.push(d);return out};
  const monthLast=d=>new Date(Date.UTC(+d.slice(0,4),+d.slice(5,7),0)).toISOString().slice(0,10);
  const weekday=d=>new Date(d+'T12:00:00Z').getUTCDay()||7;
- function period(mode,anchor){if(!valid(anchor))throw Error('Bitte ein g�ltiges Bezugsdatum ausw�hlen.');let from=anchor,to=anchor;
+ function period(mode,anchor){if(!valid(anchor))throw Error('Bitte ein gültiges Bezugsdatum auswählen.');let from=anchor,to=anchor;
   if(mode==='week'){from=plus(anchor,1-weekday(anchor));to=plus(from,6)}
   if(mode==='month'){from=anchor.slice(0,7)+'-01';to=monthLast(from)}
   if(mode==='quarter'){const m=Math.floor((+anchor.slice(5,7)-1)/3)*3+1;from=anchor.slice(0,4)+'-'+String(m).padStart(2,'0')+'-01';to=monthLast(shiftMonth(from,2))}
@@ -21,7 +21,7 @@
  function chunks(from,to){days(from,to);const out=[];for(let d=from;d<=to;){const end=monthLast(d)<to?monthLast(d):to;out.push({from:d,to:end});d=plus(end,1)}return out}
  const unique=(rows,key='id')=>[...new Map(rows.map(x=>[x[key],x])).values()];
  function merge(parts){if(!parts.length)throw Error('Keine Auswertungsdaten vorhanden.');const first=parts[0],people=new Map();
-  for(const p of parts){if(p.company_id!==first.company_id||p.timezone!==first.timezone||p.can_time!==first.can_time)throw Error('Der Unternehmenszugang hat sich ge�ndert. Bitte neu laden.');
+  for(const p of parts){if(p.company_id!==first.company_id||p.timezone!==first.timezone||p.can_time!==first.can_time)throw Error('Der Unternehmenszugang hat sich geändert. Bitte neu laden.');
    for(const e of p.employees){let row=people.get(e.id);if(!row){row={...e};for(const k of ['target_minutes','elapsed_target_minutes','credit_minutes','elapsed_credit_minutes','confirmed_minutes'])row[k]=0;people.set(e.id,row)}
     for(const k of ['target_minutes','elapsed_target_minutes','credit_minutes','elapsed_credit_minutes','confirmed_minutes'])row[k]+=Number(e[k]||0);
    }
@@ -82,11 +82,11 @@
    }
   }
   const calendar=allDays.map(date=>{const own=cells.filter(c=>c.date===date),required=own.reduce((n,c)=>n+c.required,0),missing=own.reduce((n,c)=>n+c.missing,0);return{date,required,filled:required-missing,missing,ratio:required?1-missing/required:null,optionalMissing:own.reduce((n,c)=>n+c.optionalMissing,0),state:required===0?'neutral':missing===0?'good':missing<required?'warn':'bad'}});
-  const alerts=cells.filter(c=>c.missing).map(c=>({kind:'coverage',date:c.date,shift:c.code,title:c.label+' � '+c.missing+' Positionen offen',detail:'Besetzt '+c.filled+' / Bedarf '+c.required+(c.shared?' � gemeinsame Besetzung':''),count:c.missing}));
-  for(const a of assignments){const e=employeeRows.find(e=>e.id===a.employee_id);for(const off of absence.filter(b=>absenceOverlap(a,b)))alerts.push({kind:'absence',date:a.date,shift:a.shift,assignment:a.id,employee:e.id,title:e.name+' � Abwesenheitskonflikt',detail:a.shift+' �berschneidet sich mit '+off.type,count:1});
-   if(data.can_time&&Date.parse(a.end)<=now){const te=data.times.find(t=>t.id===a.id);if(!te?.start&&!data.qr.some(q=>q.employee_id===a.employee_id&&q.end&&Date.parse(q.start)<=Date.parse(a.start)&&Date.parse(q.end)>=Date.parse(a.end)))alerts.push({kind:'missingTime',date:a.date,shift:a.shift,assignment:a.id,employee:e.id,title:e.name+' � Ist-Zeit fehlt',detail:a.shift+' ist beendet; Zeitmeldung pr�fen.',count:1});}
+  const alerts=cells.filter(c=>c.missing).map(c=>({kind:'coverage',date:c.date,shift:c.code,title:c.label+' · '+c.missing+' Positionen offen',detail:'Besetzt '+c.filled+' / Bedarf '+c.required+(c.shared?' · gemeinsame Besetzung':''),count:c.missing}));
+  for(const a of assignments){const e=employeeRows.find(e=>e.id===a.employee_id);for(const off of absence.filter(b=>absenceOverlap(a,b)))alerts.push({kind:'absence',date:a.date,shift:a.shift,assignment:a.id,employee:e.id,title:e.name+' · Abwesenheitskonflikt',detail:a.shift+' überschneidet sich mit '+off.type,count:1});
+   if(data.can_time&&Date.parse(a.end)<=now){const te=data.times.find(t=>t.id===a.id);if(!te?.start&&!data.qr.some(q=>q.employee_id===a.employee_id&&q.end&&Date.parse(q.start)<=Date.parse(a.start)&&Date.parse(q.end)>=Date.parse(a.end)))alerts.push({kind:'missingTime',date:a.date,shift:a.shift,assignment:a.id,employee:e.id,title:e.name+' · Ist-Zeit fehlt',detail:a.shift+' ist beendet; Zeitmeldung prüfen.',count:1});}
   }
-  for(const t of data.can_time?timeRows:[]){const e=employeeRows.find(e=>e.id===t.employee_id);if(['recorded','correction_requested'].includes(t.status))alerts.push({kind:'review',date:t.date,assignment:t.id,employee:e.id,title:e.name+' � '+(t.status==='recorded'?'Zeit zur Pr�fung':'Korrektur angefordert'),detail:t.shift+' � Zeiterfassung �ffnen',count:1});if(t.status==='qr_running')alerts.push({kind:'running',date:today,employee:e.id,title:e.name+' � QR-Dienst l�uft',detail:'Laufende Zeit wird noch nicht als abgeschlossene Arbeitszeit gez�hlt.',count:1});}
+  for(const t of data.can_time?timeRows:[]){const e=employeeRows.find(e=>e.id===t.employee_id);if(['recorded','correction_requested'].includes(t.status))alerts.push({kind:'review',date:t.date,assignment:t.id,employee:e.id,title:e.name+' · '+(t.status==='recorded'?'Zeit zur Prüfung':'Korrektur angefordert'),detail:t.shift+' · Zeiterfassung öffnen',count:1});if(t.status==='qr_running')alerts.push({kind:'running',date:today,employee:e.id,title:e.name+' · QR-Dienst läuft',detail:'Laufende Zeit wird noch nicht als abgeschlossene Arbeitszeit gezählt.',count:1});}
   alerts.sort((a,b)=>({absence:0,review:1,missingTime:2,coverage:3,running:4}[a.kind]-{absence:0,review:1,missingTime:2,coverage:3,running:4}[b.kind])||(a.date||'').localeCompare(b.date||'')||collator.compare(a.title,b.title));
   const required=cells.reduce((n,c)=>n+c.required,0),missing=cells.reduce((n,c)=>n+c.missing,0),sum=k=>employeeRows.reduce((n,e)=>n+Number(e[k]||0),0);
   const summary={plan:sum('plan'),captured:data.can_time?sum('captured'):null,confirmed:data.can_time?sum('confirmed'):null,target:sum('target'),credit:sum('credit'),elapsedTarget:sum('elapsedTarget'),required,missing,coverage:required?(required-missing)/required:null,
