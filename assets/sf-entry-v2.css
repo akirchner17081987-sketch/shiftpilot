@@ -42,7 +42,7 @@
 .sf-entry-loading{max-height:160px;opacity:1;transition:max-height .55s ease,opacity .3s ease,margin .55s ease}
 .sf-entry-login-slot{width:min(100%,450px);margin:0 auto;max-height:0;opacity:0;overflow:hidden;transform:translateY(24px) scale(.98);pointer-events:none;transition:max-height .82s cubic-bezier(.2,.8,.2,1),opacity .62s ease,transform .75s ease}
 #sfEntryOverlay.sf-entry-login-ready .sf-entry-inner{padding-top:12px;padding-bottom:28px}
-#sfEntryOverlay.sf-entry-login-ready .sf-entry-logo{width:min(86vw,430px);max-height:320px;margin-bottom:-74px;filter:drop-shadow(0 3px 18px rgba(5,174,255,.16))}
+#sfEntryOverlay.sf-entry-login-ready .sf-entry-logo{width:min(88vw,440px);max-height:330px;margin-bottom:-18px;filter:drop-shadow(0 3px 18px rgba(5,174,255,.16))}
 #sfEntryOverlay.sf-entry-login-ready .sf-entry-orbits{transform:translateX(-50%) scale(.72);opacity:.38}
 #sfEntryOverlay.sf-entry-login-ready .sf-entry-loading{max-height:0;opacity:0;margin:0;overflow:hidden;pointer-events:none}
 #sfEntryOverlay.sf-entry-login-ready .sf-entry-login-slot{max-height:570px;opacity:1;overflow:visible;transform:translateY(0) scale(1);pointer-events:auto}
@@ -67,7 +67,7 @@
 #sfEntryOverlay.sf-entry-authenticating #sfAuthSubmit::before{content:"";display:inline-block;width:11px;height:11px;border:2px solid rgba(255,255,255,.35);border-top-color:white;border-radius:50%;margin-right:8px;vertical-align:-2px;animation:sf-entry-spin .8s linear infinite}
 @media(max-width:520px){
  #sfEntryOverlay.sf-entry-login-ready .sf-entry-inner{width:100%;padding:8px 12px 24px}
- #sfEntryOverlay.sf-entry-login-ready .sf-entry-logo{width:min(90vw,355px);max-height:268px;margin-bottom:-48px}
+ #sfEntryOverlay.sf-entry-login-ready .sf-entry-logo{width:min(91vw,355px);max-height:260px;margin-bottom:-8px}
  #sfEntryOverlay.sf-entry-login-ready .sf-entry-login-slot{max-height:620px}
  #sfEntryOverlay #sfAuthBackdrop .sf-auth-head{padding:16px 18px 5px}
  #sfEntryOverlay #sfAuthBackdrop .sf-auth-body{padding:6px 18px}
