@@ -1,0 +1,11 @@
+# Geschützte betriebliche Angaben
+
+Die Dienstplan-Sortierung enthält keine fest eingebauten Unternehmenskennungen oder Personalnummern mehr. Der Browser lädt die Sortier- und Farbzuordnungen zusammen mit betrieblichen Hilfeartikeln über `company_private_client_configuration` nach bestätigter Anmeldung. Die vorhandenen eigentlichen Planungsdaten und serverseitigen Planungsprüfungen bleiben maßgeblich.
+
+Die Konfiguration liegt in `private.company_client_configuration`, außerhalb des öffentlichen API-Schemas. RLS prüft die aktive Unternehmenszugehörigkeit und die vorhandenen Rollen für die Unternehmensverwaltung. Der RPC arbeitet als `SECURITY INVOKER`, prüft die Zugehörigkeit selbst, verweigert anonyme Aufrufe und fordert bei Inhabern/Administratoren MFA (AAL2). Es gibt kein Schreibrecht für Browser-Rollen.
+
+Öffentliche Hilfeartikel erläutern das allgemeine Verfahren. Betriebliche Antworten werden nur im angemeldeten, ausgewählten Unternehmenskontext verwendet und als Text escaped. Datenfehler verhindern eine teilweise Initialisierung. Abmeldung und Unternehmenswechsel verwerfen die Konfiguration und schließen die bisherige Hilfeansicht; verspätete Antworten werden verworfen. Die Konfiguration wird nicht in Browser-Speicher geschrieben. Die lokale Demo erhält keine produktiven internen Angaben.
+
+Die betroffenen Dateiversionen und der PWA-Cache werden aktualisiert. Öffentlich ausgelieferte Dateien enthalten keine konkreten Unternehmenskennungen oder Personenzuordnungen; ein Regressionstest prüft sämtliche öffentlichen Text-Assets. Bereits heruntergeladene Dateien außerhalb unseres Servers können technisch nicht zurückgerufen werden.
+
+Validierung: 683 Funktionstests, 5 IONOS-Prüfungen und statischer Build erfolgreich. Datenbanktests bestätigen erlaubten Zugriff mit aktiver Zugehörigkeit/AAL2 sowie die Ablehnung anonymer Nutzer, fremder Unternehmenszugänge und Inhaber ohne MFA. Der Security Advisor meldet keinen neuen Befund für die neue Konfiguration.

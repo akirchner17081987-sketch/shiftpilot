@@ -4,13 +4,13 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 const source=fs.readFileSync(new URL('../assets/supabase-data-v1.js',import.meta.url),'utf8');
-function harness({failPage=false}={}){
+function harness({failPage=false,failPrivate=false,logoutDuringPrivate=false}={}){
   const rows=Array.from({length:1562},(_,i)=>({id:String(i).padStart(6,'0'),company_id:'target',employee_id:'person',legacy_id:'shift-'+i,status:'DRAFT',shift_code:'FD',starts_at:i<1251?'2026-12-01T05:00:00Z':'2027-01-01T05:00:00Z',ends_at:i<1251?'2026-12-01T13:00:00Z':'2027-01-01T13:00:00Z',version:1}));
   rows.push({...rows[0],id:'999998',company_id:'other'}, {...rows[0],id:'999999',status:'CANCELLED'});
   const calls=[],deletes=[];
   const c={console,Map,Set,Date,Intl,localStorage:{getItem:()=>null},sessionStorage:{getItem:()=>null},document:{querySelector:()=>null},employees:[],assignments:[{id:'previous'}],absences:[],globalSoll:{},dailySoll:{},timeEntries:{},TYPES:[],setTimeout:()=>0,clearTimeout(){}};
   c.window=c;c.SFBackend={companyId:'target',user:{id:'manager'},ready:true};
-  c.SFBackend.client={rpc:async(name,args)=>({data:name==='employee_roster_generation'?0:[],error:null}),from(table){
+  c.SFBackend.client={rpc:async(name,args)=>{if(name==='company_private_client_configuration'){if(logoutDuringPrivate){c.SFBackend.clearCompanyPrivateConfiguration();c.SFBackend.companyId=null;}return {data:{helpArticles:{auto:{internal:'private-test'}}},error:failPrivate?{message:'Private configuration unavailable'}:null};}return {data:name==='employee_roster_generation'?0:[],error:null};},from(table){
     const filters=[],orders=[];let count=null,mode='read',payload;
     const q={select(){return q},eq(k,v){filters.push([k,'eq',v]);return q},neq(k,v){filters.push([k,'neq',v]);return q},gt(k,v){filters.push([k,'gt',v]);return q},order(k){orders.push(k);return q},limit(n){count=n;return q},range(first,last){count=last-first+1;filters.push(['range','slice',first]);return q},upsert(p){mode='upsert';payload=p;return q},update(){mode='update';return q},delete(){mode='delete';return q},single(){return q},then(resolve,reject){return Promise.resolve().then(()=>{
       calls.push({table,filters:[...filters],orders:[...orders],count,mode});
@@ -50,3 +50,8 @@ test('synchronization finds a removed draft beyond the first 1000 without deleti
   c.assignments=c.assignments.filter(a=>a._dbId!=='001561');await c.SFBackend.sync();
   assert.equal(c.SFBackend.lastSyncError,null);assert.deepEqual(deletes,['001561']);
 });
+
+
+test('private configuration is hydrated for the selected authenticated company',async()=>{const{c}=harness();await c.SFBackend.hydrate();assert.equal(c.SFBackend.companyPrivateConfiguration.companyId,'target');assert.equal(c.SFBackend.companyPrivateConfiguration.data.helpArticles.auto.internal,'private-test');c.SFBackend.clearCompanyPrivateConfiguration();assert.equal(c.SFBackend.companyPrivateConfiguration,null);});
+test('failed private configuration blocks hydration before replacing data',async()=>{const{c}=harness({failPrivate:true}),previous=c.assignments;await assert.rejects(c.SFBackend.hydrate(),{message:'Private configuration unavailable'});assert.equal(c.assignments,previous);assert.equal(c.SFBackend.companyPrivateConfiguration,undefined);});
+test('logout invalidates a late private response before any company data is applied',async()=>{const{c}=harness({logoutDuringPrivate:true}),previous=c.assignments;await c.SFBackend.hydrate();assert.equal(c.SFBackend.companyPrivateConfiguration,null);assert.equal(c.assignments,previous);});

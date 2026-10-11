@@ -46,7 +46,7 @@
       // Reload all modules and caches. Never change companyId while old requests run.
       sessionStorage.removeItem('sf_workspace_state_v2');
       sessionStorage.setItem('sf_active_view_v1','overview');
-      B.ready=false;B.suppressSync=true;
+      B.clearCompanyPrivateConfiguration?.();B.ready=false;B.suppressSync=true;
       location.reload();
       return true;
     }catch(error){B.hideLoading?.();throw error;}

@@ -422,7 +422,7 @@ window.SFHelpContent = {
     "auto": [
       [
         "Welche Regeln nutzt die Auto-Planung?",
-        "Die Auto-Planung prüft Aktivstatus, Schichtfreigaben, Qualifikationen, Abwesenheiten, Doppelbelegungen, SOLL-Stärken und verbindliche Mitarbeiter- und Teamregeln. Für SchichtFunk und Secontec Services – 8h gelten zusätzlich die bestätigten Stunden-, Block- und Erholungsgrenzen. Konflikte bleiben sichtbar und werden nicht durch eine automatische Besetzung übergangen."
+        "Die Auto-Planung prüft Aktivstatus, Schichtfreigaben, Qualifikationen, Abwesenheiten, Doppelbelegungen, SOLL-Stärken und verbindliche Mitarbeiter- und Teamregeln. Es gelten die für das ausgewählte Unternehmen geschützten Planungsregeln. Konflikte bleiben sichtbar und werden nicht durch eine automatische Besetzung übergangen."
       ],
       [
         "Werden Vorschläge sofort übernommen?",
@@ -446,31 +446,31 @@ window.SFHelpContent = {
       ],
       [
         "Welche Stunden- und Schichtgrenzen gelten?",
-        "Für die bestätigten Modelle gilt höchstens 190 Stunden je Kalendermonat und höchstens 40 Stunden je Kalenderwoche (Montag bis Sonntag). Niedrigere persönliche Vertragsgrenzen bleiben verbindlich. Im 10-Stunden-Modell werden höchstens 18 Dienste automatisch geplant. Im 8-Stunden-Modell sind bei Vollzeit bis zu 23 Dienste beziehungsweise 184 automatisch geplante Stunden möglich; für Teilzeit gelten die niedrigeren Vertragsstunden. 180 Stunden bleiben das Vollzeit-Ziel. Nachtdienste werden für Wochen- und Monatsgrenzen mit ihren tatsächlichen Zeitanteilen gezählt."
+        "Die Grenzen richten sich nach den hinterlegten Unternehmensregeln, dem Schichtmodell und dem persönlichen Vertrag. Die für dein Unternehmen freigegebenen Angaben werden nach der Anmeldung geladen. Nachtdienste zählen mit ihren tatsächlichen Zeitanteilen in die jeweilige Kalenderwoche und den Kalendermonat."
       ],
       [
         "Wie viele Dienste und Nächte sind am Stück erlaubt?",
-        "Höchstens vier Dienste und höchstens drei Nachtdienste am Stück. Zwischen Arbeitsblöcken liegen mindestens zwei vollständig freie Kalendertage und mindestens 48 tatsächliche Stunden Ruhe. Nach einem Nachtblock liegen mindestens drei vollständig freie Kalendertage. Die frühere Ausnahme für kurze OT-Blöcke erlaubt keine verkürzte Erholung mehr."
+        "Die zulässige Blocklänge und die anschließende Erholung richten sich nach den geschützten Unternehmensregeln. Persönliche Freigaben und verbindliche Vertragsgrenzen bleiben maßgeblich. Angemeldete Planer sehen die geltenden Werte ihres Unternehmens."
       ],
       [
         "Wie werden freie Tage nach einer Nachtschicht gezählt?",
-        "Ein freier Kalendertag enthält keine Arbeitszeit. Endet die letzte Nachtschicht am 4. Januar morgens, zählt der 4. Januar noch als Arbeitstag. Nach drei vollständig freien Tagen am 5., 6. und 7. Januar ist der nächste Dienst frühestens am 8. Januar möglich. Die Prüfung gilt auch über Monatsgrenzen und Zeitumstellungen."
+        "Ein vollständig freier Kalendertag enthält keine Arbeitszeit. Der Tag, an dem eine Nachtschicht endet, kann deshalb noch als Arbeitstag zählen. Die erforderliche Zahl freier Tage wird aus den Unternehmensregeln geladen; die Prüfung berücksichtigt Monatsgrenzen und Zeitumstellungen."
       ],
       [
         "Was passiert bei nicht erreichbarem Monats-SOLL?",
-        "Das Monats-SOLL und eine vollständige Besetzung heben feste Grenzen nicht auf. Der Planer zeigt Zielabweichungen und offene Positionen. Feste Mitarbeiter- und Teamregeln werden berücksichtigt; widersprechen sie den Belastungsgrenzen, bleibt der Konflikt offen. Innerhalb eines Blocks wird möglichst dieselbe Schicht bevorzugt; Wechsel folgen möglichst Früh → Spät → Nacht. O3 → O1/O2/TL am Folgetag bleibt gesperrt."
+        "Das Monats-SOLL und eine vollständige Besetzung heben feste Grenzen nicht auf. Der Planer zeigt Zielabweichungen und offene Positionen. Feste Mitarbeiter- und Teamregeln werden berücksichtigt; widersprechen sie den Belastungsgrenzen, bleibt der Konflikt offen. Verbindliche Schichtwechselregeln kommen aus den geschützten Planungsdaten."
       ],
       [
         "Wie plane ich mehrere Monate?",
-        "Bei aktivierten Erholungsregeln kannst du einen bis zwölf zusammenhängende Monate als Vorschau planen. Die Mindestbesetzung für OT2 und die gemeinsame Teamleitung wird zuerst über den gesamten Zeitraum verteilt; anschließend werden die übrigen Dienste ergänzt. Bei SchichtFunk gelten montags bis freitags mindestens zwei OT2 und täglich eine gemeinsame Teamleitung für Leipzig/Recklinghausen. Ein zusätzlich hinterlegter dritter OT2 bleibt als offener Bedarf sichtbar, blockiert aber bei erfüllter Mindestbesetzung die Übernahme nicht. Prüfe Pflichtlücken, Stundenabweichungen und geschützte Dienste. Erst die bestätigte Übernahme speichert einen Entwurf. Die Veröffentlichung bleibt ein eigener Schritt. Veränderte Daten erfordern eine neue Vorschau."
+        "Bei aktivierten Erholungsregeln kannst du einen bis zwölf zusammenhängende Monate als Vorschau planen. Verbindliche Mindestbesetzungen werden zuerst über den gesamten Zeitraum verteilt; anschließend werden die übrigen Dienste ergänzt. Prüfe Pflichtlücken, Stundenabweichungen und geschützte Dienste. Erst die bestätigte Übernahme speichert einen Entwurf. Veränderte Daten erfordern eine neue Vorschau."
       ],
       [
-        "Wie werden die drei Tagdienstmitarbeiter geplant?",
-        "Bei SchichtFunk sind reguläre OT1-, OT2- und OT3-Dienste ausschließlich für Personalnummern 2001, 26 und 2048 vorgesehen. Die konkrete OT-Art richtet sich nach dem Bedarf und der O1-/O3-Abdeckung. Ihre früheren festen OT2-Tagesfolgen sind durch flexible Arbeitsblöcke unter den bestätigten Erholungs- und Stundengrenzen ersetzt. Bei Secontec bleiben dieselben Personalnummern ausschließlich für FD freigegeben; die frühere feste Fünf-Tage-Woche wird ebenfalls flexibel geplant. Fehlende Besetzungen oder nicht erreichte Stunden bleiben sichtbar."
+        "Wie werden Mitarbeiter mit festen Schichtfreigaben geplant?",
+        "Mitarbeiter mit festen Schichtfreigaben werden entsprechend ihren hinterlegten Profilen und den verbindlichen Unternehmensregeln eingeplant. Die konkreten Personenzuordnungen sind nur nach Anmeldung verfügbar. Fehlende Besetzungen oder nicht erreichte Stunden bleiben sichtbar."
       ],
       [
         "Welche Feiertage gelten für OT-Dienste?",
-        "Das gesonderte Schichtmodell OT gilt an Samstagen, Sonntagen und gesetzlichen Feiertagen am hinterlegten Einsatzort. Leipzig verwendet Sachsen, Recklinghausen Nordrhein-Westfalen. Maßgeblich ist der Standort im Mitarbeiterprofil, nicht der Wohnort. Für OT bleiben die jeweiligen persönlichen Schichtfreigaben erforderlich. Fehlt ein bekannter Einsatzort, wird kein örtlicher Feiertag unterstellt."
+        "Für standortabhängige Schichtmodelle gelten die Feiertage des hinterlegten Einsatzortes. Maßgeblich ist die geschützte Standortzuordnung im Mitarbeiterprofil. Persönliche Schichtfreigaben bleiben erforderlich; bei unbekanntem Einsatzort wird kein örtlicher Feiertag unterstellt."
       ],
       [
         "Was macht die individuelle Monatsplanung?",
