@@ -91,7 +91,8 @@
         clean();return switchView.apply(self,args);
       }).catch(error=>{
         if(request!==navigation||!B.ready||B.__explicitSignOut||B.__finishingSignOut)return;
-        clean();window.showSaveToast?.('Bereich konnte nicht geladen werden','Bitte öffne den Bereich erneut.');console.error('SchichtFunk Bereich',error);
+        message('Bereich konnte nicht geladen werden','Bitte lade die Seite erneut, damit alle Funktionen vollständig verfügbar sind.');
+        card?.querySelector('[data-startup-reload]')?.removeAttribute('hidden');console.error('SchichtFunk Bereich',error);
       });
     };
     wrapped.__sfStartup=true;window.switchView=wrapped;

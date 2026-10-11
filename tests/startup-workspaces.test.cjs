@@ -60,8 +60,9 @@ test('lazy completion cannot navigate after logout or a tenant change',async()=>
  for(const action of ['logout','company']){const h=harness(),data=deferred();h.B.ready=true;h.B.user={id:'alex'};h.B.companyId='company-a';h.B.managerViewNeedsLoading=()=>true;h.B.ensureManagerViewModules=()=>data.promise;
  const p=h.c.switchView('employees');if(action==='logout')h.B.finishSignOut(true);else h.B.companyId='company-b';data.resolve();await p;assert.equal(h.events.some(e=>e[0]==='view'),false)}
 });
-test('a lazy module failure keeps the old view and lets the user retry',async()=>{
+test('a lazy module failure never opens an incomplete workspace and offers a page reload',async()=>{
  const h=harness();h.B.ready=true;h.B.user={id:'alex'};h.B.companyId='company-a';h.B.managerViewNeedsLoading=()=>true;h.B.ensureManagerViewModules=async()=>{throw Error('asset failed')};
- await h.c.switchView('time');assert.equal(h.events.some(e=>e[0]==='view'),false);assert.ok(h.events.some(e=>e[0]==='toast'));assert.equal(h.nodes.has('sfStartupStatus'),false);
- h.B.ensureManagerViewModules=async()=>{};await h.c.switchView('time');assert.deepEqual(h.events.filter(e=>e[0]==='view'),[['view','time']]);
+ await h.c.switchView('time');assert.equal(h.events.some(e=>e[0]==='view'),false);assert.equal(h.nodes.get('sfStartupStatus').querySelector('h2').textContent,'Bereich konnte nicht geladen werden');
+ h.nodes.get('sfStartupStatus').querySelector('[data-startup-reload]').onclick();assert.ok(h.events.some(e=>e[0]==='reload'));
+ h.B.managerViewNeedsLoading=()=>false;h.c.switchView('schedule');assert.deepEqual(h.events.filter(e=>e[0]==='view'),[['view','schedule']]);assert.equal(h.nodes.has('sfStartupStatus'),false);
 });

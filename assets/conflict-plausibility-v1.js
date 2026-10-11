@@ -90,7 +90,7 @@
   const timeModules=new Set(files.slice(managerStart,files.indexOf('assets/supabase-personnel-file-observer-guard-v1.js')));
   const personnelModules=new Set(files.filter(file=>file.includes('supabase-personnel-')&&!file.includes('notification-navigation')));
   const coreFiles=files.slice(managerStart).filter(file=>!timeModules.has(file)&&!personnelModules.has(file));
-  const loaded=new Set(),promises=new Map();
+  const loaded=new Set(),promises=new Map(),failedGroups=new Map();
   const isDemo=()=>typeof sessionStorage!=='undefined'&&sessionStorage.getItem('sf_demo_session_v1')==='active';
   const groupFor=view=>view==='employees'?'personnel':['time','reports'].includes(view)?'time':null;
   const present=file=>[...document.scripts].some(s=>{try{return new URL(s.src,location.href).pathname===new URL(file,location.href).pathname}catch{return false}});
@@ -99,10 +99,11 @@
   const loadGroup=(from,to,done)=>{let pending=to-from;if(!pending){done();return}for(let i=from;i<to;i++)append(files[i],()=>{if(!--pending)done()})};
   const loadManagerGroup=group=>{
     if(loaded.has(group))return Promise.resolve();
+    if(failedGroups.has(group))return Promise.reject(failedGroups.get(group));
     if(promises.has(group))return promises.get(group);
     const selected=group==='personnel'?files.filter(file=>personnelModules.has(file)):group==='time'?files.filter(file=>timeModules.has(file)):coreFiles;
     const promise=Promise.allSettled(selected.map(file=>new Promise((resolve,reject)=>append(file,resolve,reject))))
-      .then(results=>{const failed=results.find(result=>result.status==='rejected');if(failed)throw failed.reason;loaded.add(group)}).finally(()=>promises.delete(group));
+      .then(results=>{const failed=results.find(result=>result.status==='rejected');if(failed){failedGroups.set(group,failed.reason);throw failed.reason}loaded.add(group)}).finally(()=>promises.delete(group));
     promises.set(group,promise);return promise;
   };
   const start=()=>{

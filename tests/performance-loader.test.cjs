@@ -27,12 +27,11 @@ test('workspaces load once on demand, retain dependency order and share time/rep
  const t=e.B.ensureManagerViewModules('time'),r=e.B.ensureManagerViewModules('reports');assert.equal(t,r);assert.equal(e.scripts.length,85);e.scripts.slice(79).forEach(s=>s.onload());await t;
  await e.B.ensureManagerViewModules('reports');assert.equal(e.scripts.length,85);assert.ok(e.scripts.every(s=>s.async===false));
 });
-test('a failed workspace stays unready and its failed script can be retried',async()=>{
+test('a partially loaded workspace stays blocked until a fresh page can install all dependencies',async()=>{
  const e=loader('OWNER');e.scripts.slice().forEach(s=>s.onload());const boot=e.B.boot();await flush();e.scripts.slice(56).forEach(s=>s.onload());await boot;
  const first=e.B.ensureManagerViewModules('employees'),assertion=assert.rejects(first,/Modul konnte nicht geladen/);
  const group=e.scripts.slice(68);group[0].onerror();group.slice(1).forEach(s=>s.onload());await assertion;
- assert.equal(e.B.managerViewNeedsLoading('employees'),true);const retry=e.B.ensureManagerViewModules('employees');assert.equal(e.scripts.length,79);e.scripts.at(-1).onload();await retry;
- assert.equal(e.B.managerViewNeedsLoading('employees'),false);
+ assert.equal(e.B.managerViewNeedsLoading('employees'),true);await assert.rejects(e.B.ensureManagerViewModules('employees'),/Modul konnte nicht geladen/);assert.equal(e.scripts.length,78,'No partially installed dependency group is reported as ready');
 });
 test('restored time-only accounts prepare their own initial workspace before boot returns',async()=>{
  const e=loader('TIME_TRACKING');e.scripts.slice().forEach(s=>s.onload());const boot=e.B.boot();await flush();e.scripts.slice(56).forEach(s=>s.onload());await flush();assert.equal(e.scripts.length,74);e.scripts.slice(68).forEach(s=>s.onload());await boot;
