@@ -2,7 +2,7 @@
 (function(){
   const B=window.SFBackend=window.SFBackend||{};
   if(B.__absenceManagerV2)return;B.__absenceManagerV2=true;
-  const ALLOWED=new Set(['OWNER','ADMIN','DISPATCHER','PLANNER']);
+  const ALLOWED=new Set(['OWNER','ADMIN']);
   let rendering=false,lastKey='',lastContext='',lastLoadedAt=0;
 
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -32,7 +32,8 @@
   }
 
   async function fetchOpen(client,companyId){
-    const q=await client.from('absences').select('id,employee_id,start_date,end_date,absence_type,status,full_day,start_time,end_time,note,requested_at').eq('company_id',companyId).eq('request_source','EMPLOYEE').eq('status','Beantragt').order('requested_at',{ascending:true});
+    const q=await client.rpc('manager_absence_overview',{p_company_id:companyId});
+    if(!q.error)q.data=(q.data||[]).filter(a=>a.request_source==='EMPLOYEE'&&a.status==='Beantragt').sort((a,b)=>String(a.requested_at||'').localeCompare(String(b.requested_at||'')));
     if(q.error)throw q.error;return q.data||[];
   }
 

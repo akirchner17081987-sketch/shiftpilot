@@ -19,7 +19,7 @@ test('shared labels survive grouping while ordinary slot payloads keep their exi
 // Real sync implementation: immutable August history plus a new December draft.
 function syncFixture(){
  const writes=[],saved={shift_assignments:[{id:'db-aug',legacy_id:'aug',status:'PUBLISHED'}],absences:[{id:'absence-aug',legacy_id:'absence-aug'}]},fail={time:false};
- const B={ready:true,companyId:'company-a',user:{id:'owner'},client:{from(table){
+ const B={ready:true,role:'OWNER',companyId:'company-a',user:{id:'owner'},client:{rpc:async()=>({data:[],error:null}),from(table){
   let operation=null,payload=null,id=null,single=false,cursor=null,pageSize=null;
   const query={upsert(value){operation='upsert';payload=value;return query},update(value){operation='update';payload=value;return query},delete(){operation='delete';return query},select(){return query},eq(key,value){if(key==='id')id=value;return query},order(){return query},limit(n){pageSize=n;return query},gt(key,value){if(key==='id')cursor=value;return query},single(){single=true;return query},then(resolve,reject){return Promise.resolve().then(()=>{
    if(operation){writes.push({table,payload,id});const rows=Array.isArray(payload)?payload:[payload];

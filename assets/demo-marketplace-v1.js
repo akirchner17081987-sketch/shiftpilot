@@ -260,6 +260,7 @@
       if(!row){const assignment=assignmentRows().find(x=>String(x.id)===String(args.p_assignment_id));row={assignment_id:String(args.p_assignment_id),employee_id:assignment?.employee_id||'demo-e01',employee_name:'Anna Becker',shift_code:assignment?.shift_code||'Schicht',starts_at:assignment?.starts_at||args.p_actual_start,ends_at:assignment?.ends_at||args.p_actual_end,planned_break_minutes:Number(args.p_break_minutes||0),manager_note:'',correction_note:''};timeRows.push(row)}
       row.actual_start=args.p_actual_start;row.actual_end=args.p_actual_end;row.actual_break_minutes=Number(args.p_break_minutes||0);row.employee_note=String(args.p_note||'').slice(0,1000);row.entry_status='recorded';row.submitted_at=new Date().toISOString();row.correction_note='';saveTime();return {data:clone(row),error:null};
     }
+    if(name==='manager_absence_overview')return {data:clone(absenceRows()),error:null};
     if(name==='manager_review_absence_request')return {data:args.p_decision==='APPROVE'?'Genehmigt':'Abgelehnt',error:null};
     return null;
   }
