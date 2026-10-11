@@ -9,12 +9,16 @@
   const warning = root.querySelector('#sfEntryWarning');
   const skip = root.querySelector('#sfEntrySkip');
   const image = root.querySelector('#sfEntryLogoImage');
+  const slot = root.querySelector('#sfEntryLoginSlot');
   const startedAt = performance.now();
   const times = { startedAt, brand: null, document: null, resources: null, ready: null };
   const done = {brand:false, document:false, resources:false, ready:false};
   let dismissed = false;
   let observer = null;
   let readyTarget = null;
+  let morphed = false;
+  let activeAuth = null;
+  let metricsWritten = false;
   let raf = 0;
 
   function mark(stage) {
@@ -56,9 +60,10 @@
   function dismiss() {
     if (dismissed) return;
     dismissed = true;
-    mark('ready');
-    measure();
-    if (observer) observer.disconnect();
+    if (!done.ready) mark('ready');
+    if (!metricsWritten) { measure(); metricsWritten = true; }
+    clearTimeout(slowTimer);
+    observer?.disconnect();
     window.removeEventListener('load', onLoad);
     root.classList.add('sf-entry-out');
     setTimeout(() => root.remove(), 500);
@@ -69,18 +74,55 @@
       getComputedStyle(el).visibility !== 'hidden';
   }
 
+  function syncAuthLoading() {
+    if (!morphed) return;
+    const loading = !!document.getElementById('sfCloudLoading');
+    if (root.classList.contains('sf-entry-authenticating') !== loading) {
+      root.classList.toggle('sf-entry-authenticating', loading);
+    }
+  }
+
+  function morphToLogin(auth) {
+    if (!slot || dismissed || !auth) return;
+    if (activeAuth !== auth) {
+      // Move the real Supabase form; never create a duplicate form or listeners.
+      slot.appendChild(auth);
+      activeAuth = auth;
+    }
+    if (!morphed) {
+      morphed = true;
+      readyTarget = 'login';
+      mark('ready');
+      if (!metricsWritten) { measure(); metricsWritten = true; }
+      clearTimeout(slowTimer);
+      root.classList.add('sf-entry-login-ready');
+      skip.disabled = true;
+      skip.hidden = true;
+      setTimeout(() => {
+        const email = document.getElementById('sfEmail');
+        if (email && email.isConnected && (document.activeElement === document.body || document.activeElement === skip)) {
+          email.focus({preventScroll:true});
+        }
+      }, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 660);
+    }
+    syncAuthLoading();
+  }
+
   function checkReady() {
     if (dismissed) return;
     const auth = document.getElementById('sfAuthBackdrop');
     const manager = document.getElementById('appShell');
     const employee = document.getElementById('sfEmployeePortal');
-    const loginReady = isVisible(auth) && !!window.SFBackend?.client;
     const managerReady = isVisible(manager) && !!window.SFBackend?.ready;
     const employeeReady = isVisible(employee) && !!window.SFBackend?.ready;
-    if (!loginReady && !managerReady && !employeeReady) return;
-    readyTarget = loginReady ? 'login' : employeeReady ? 'employee' : 'manager';
-    // Real application readiness ends the entry. Never delay access to the login.
-    dismiss();
+    if (managerReady || employeeReady) {
+      readyTarget = employeeReady ? 'employee' : 'manager';
+      dismiss();
+      return;
+    }
+    // The branded entry now *becomes* the login; background stays continuous.
+    if (isVisible(auth) && !!window.SFBackend?.client) morphToLogin(auth);
+    else syncAuthLoading();
   }
 
   function onLoad() { mark('resources'); checkReady(); }
@@ -125,7 +167,8 @@
   observer.observe(document.documentElement, {childList:true,subtree:true,attributes:true,attributeFilter:['style','class']});
   skip?.addEventListener('click', () => {
     root.classList.add('sf-entry-skip-animation');
-    if (done.ready || readyTarget) dismiss();
+    // Skip only the decorative intro, never bypass protected auth readiness.
+    if (activeAuth) morphToLogin(activeAuth);
     else {
       label.textContent = 'Anmeldung wird vorbereitet';
       skip.textContent = 'Bitte kurz warten …';
@@ -140,8 +183,6 @@
     skip.textContent = 'Seite neu laden';
     skip.onclick = () => location.reload();
   }, 20000);
-  const oldDismiss = dismiss;
-  // Keep the timeout from retaining the overlay after readiness.
-  root.addEventListener('transitionend', () => { if (dismissed) clearTimeout(slowTimer); }, {once:true});
+  // An unchanged startup still warns after 20 seconds. Readiness clears the timer.
   checkReady();
 })();
