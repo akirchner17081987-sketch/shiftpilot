@@ -1,7 +1,7 @@
 name: Planning performance and preview checks
 on:
   push:
-    branches: [main, codex/ionos-migration, codex/planning-performance-20261011]
+    branches: [main, codex/ionos-migration, codex/faster-authenticated-startup-20261011, codex/planning-performance-20261011]
     paths:
       - index.html
       - assets/conflict-plausibility-v1.js
@@ -44,3 +44,4 @@ jobs:
             playwright-report/
             test-results/
           retention-days: 7
+

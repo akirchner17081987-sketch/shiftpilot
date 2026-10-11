@@ -122,6 +122,15 @@ test('MFA retains priority over an existing login and releases entry after app i
   assert.ok(h.root.classList.contains('sf-entry-out'));
 });
 
+test('the authenticated manager frame dismisses the entry while protected data remain loading', () => {
+  const h=entryHarness();h.backend.shellReady=true;h.add('appShell');
+  assert.equal(h.backend.ready,false);assert.ok(h.root.classList.contains('sf-entry-out'));
+});
+test('an unverified frame does not dismiss the entry and the employee portal requires ready data', () => {
+  const h=entryHarness();h.add('appShell');assert.ok(!h.root.classList.contains('sf-entry-out'));
+  h.nodes.get('appShell').remove();h.backend.shellReady=true;h.add('sfEmployeePortal');assert.ok(!h.root.classList.contains('sf-entry-out'));
+});
+
 test('cancelled MFA can return to the original login form', () => {
   const h=entryHarness();h.add('sfMfaModal');
   h.nodes.get('sfMfaModal').remove();const auth=h.add('sfAuthBackdrop');
@@ -182,7 +191,8 @@ test('entry preserves the production page-ready and role-gated loader', () => {
   const loader = read('assets/conflict-plausibility-v1.js');
   assert.match(loader, /s\.async=false/);
   assert.match(loader, /window\.SFPageReady\.then\(init\)/);
-  assert.match(loader, /if\(B\.role!=='EMPLOYEE'\)await loadManager\(\)/);
+  assert.match(loader, /if\(B\.role!=='EMPLOYEE'\)\{/);
+  assert.match(loader, /await B\.prepareManagerModules\(\)/);
   assert.match(loader, /const result=await baseBoot\.apply\(this,arguments\)/);
   assert.match(page, /rel="preconnect" href="https:\/\/zbvloohfjleadjnqhbbh\.supabase\.co"/);
 });
