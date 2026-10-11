@@ -47,8 +47,16 @@
 <path d="M204.00 274.00L211.00 274.00" stroke="#0BA7F2" stroke-width="4"/>
 <path d="M143.00 335.00L143.00 342.00" stroke="#0BA7F2" stroke-width="4"/>
 <path d="M82.00 274.00L75.00 274.00" stroke="#0BA7F2" stroke-width="4"/>
-<path d="M143 218V274L181 306" stroke="#E6FBFF" stroke-width="10"/>
-<path d="M143 218V274L181 306" stroke="#A2EEFF" stroke-width="3" opacity=".7"/>
+<g id="clock-hands" transform="translate(143 274)">
+<g id="clock-minute-hand">
+<path d="M0 -56V0" stroke="#E6FBFF" stroke-width="10"/>
+<path d="M0 -56V0" stroke="#A2EEFF" stroke-width="3" opacity=".7"/>
+</g>
+<g id="clock-hour-hand">
+<path d="M0 0L38 32" stroke="#E6FBFF" stroke-width="10"/>
+<path d="M0 0L38 32" stroke="#A2EEFF" stroke-width="3" opacity=".7"/>
+</g>
+</g>
 <circle cx="143" cy="274" r="5" fill="#EAFFFF"/>
 </g>
 <g id="radio-waves" stroke="url(#neon2)">
