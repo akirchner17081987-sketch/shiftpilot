@@ -8,6 +8,69 @@ const logo = read('assets/schichtfunk-logo-v2-entry.svg');
 const boot = read('assets/sf-entry-v2.js');
 const css = read('assets/sf-entry-v2.css');
 
+function logoutHarness({demo=false, signOut=async()=>({})}={}) {
+  const timers=new Map(), removed=[], storageCleared=[], navigations=[], dialogs=[];
+  const nodes=new Map(); let nextTimer=0;
+  for (const id of ['appShell','landingPage','sfEmployeePortal','sfNotifyPanel']) {
+    const node={style:{values:{},setProperty(key,value){this.values[key]=value}},remove(){removed.push(id);nodes.delete(id)}};
+    nodes.set(id,node);
+  }
+  const message={className:'',textContent:''};
+  const context={window:{},document:{getElementById:id=>nodes.get(id),querySelector:selector=>selector==='#sfAuthMsg'?message:null},
+    sessionStorage:{getItem:key=>key==='sf_demo_session_v1'&&demo?'active':null,removeItem:key=>storageCleared.push(['session',key])},
+    localStorage:{removeItem:key=>storageCleared.push(['local',key])},
+    location:{pathname:'/',search:'?sfPerf=1',hash:'#app',replace(url){const B=context.window.SFBackend;navigations.push({url,ready:B.ready,user:B.user,companyId:B.companyId,role:B.role,appDisplay:nodes.get('appShell').style.values.display,cleared:storageCleared.length})}},
+    history:{replaceState(){}},console:{warn(){},error(){}},
+    setTimeout(fn,ms){timers.set(++nextTimer,{fn,ms});return nextTimer},clearTimeout:id=>timers.delete(id)};
+  runInNewContext(read('assets/supabase-auth-v1.js'),context);
+  const B=context.window.SFBackend;
+  Object.assign(B,{ready:true,user:{id:'test-user'},companyId:'test-company',role:'OWNER',client:{auth:{signOut}},
+    hideLoading(){},closeAuth(){},updateState(){},authDialog:mode=>dialogs.push(mode)});
+  return {B,nodes,removed,storageCleared,navigations,dialogs,message,
+    runTimer(ms){const entry=[...timers].find(([,timer])=>timer.ms===ms);assert.ok(entry,'missing timer '+ms);timers.delete(entry[0]);return entry[1].fn()}};
+}
+
+test('explicit local logout clears the session and hides protected views before restarting the animated root', async()=>{
+  const scopes=[];const h=logoutHarness({signOut:async options=>{scopes.push(options.scope);return {}}});
+  await h.B.signOutSafely();
+  assert.deepEqual(scopes,['local']);
+  assert.deepEqual(h.navigations,[{url:'/',ready:false,user:null,companyId:null,role:null,appDisplay:'none',cleared:2}]);
+  assert.deepEqual(h.removed,['sfEmployeePortal','sfNotifyPanel']);
+  assert.deepEqual(h.dialogs,[]);
+  h.B.finishSignOut(true);
+  assert.equal(h.navigations.length,1,'duplicate SIGNED_OUT completion must not navigate twice');
+});
+
+test('a stalled local signout still clears local state before returning to the animated root', async()=>{
+  const h=logoutHarness({signOut:()=>new Promise(()=>{})});
+  const pending=h.B.signOutSafely();h.runTimer(5000);await pending;
+  assert.equal(h.navigations.length,1);assert.equal(h.navigations[0].url,'/');
+  assert.equal(h.navigations[0].cleared,2);assert.equal(h.B.ready,false);
+});
+
+test('session expiry keeps the existing reauthentication message without a reload loop',()=>{
+  const h=logoutHarness();h.B.finishSignOut(false);h.runTimer(0);
+  assert.deepEqual(h.navigations,[]);assert.deepEqual(h.storageCleared,[]);assert.deepEqual(h.dialogs,['login']);
+  assert.match(h.message.textContent,/Anmeldung ist abgelaufen/);assert.equal(h.B.__finishingSignOut,false);
+});
+
+test('the separate demo logout does not restart an active demo session',async()=>{
+  const h=logoutHarness({demo:true});await h.B.signOutSafely();h.runTimer(0);
+  assert.deepEqual(h.navigations,[]);assert.deepEqual(h.dialogs,['login']);
+});
+
+test('successful global signout also returns to the animated root',async()=>{
+  const scopes=[];const h=logoutHarness({signOut:async options=>{scopes.push(options.scope);return {}}});
+  assert.equal(await h.B.signOutAllSessionsSafely(),true);assert.deepEqual(scopes,['global']);
+  assert.equal(h.navigations.length,1);assert.equal(h.navigations[0].cleared,2);
+});
+
+test('failed global session revocation keeps the current session and does not redirect',async()=>{
+  const h=logoutHarness({signOut:async()=>({error:new Error('test failure')})});
+  assert.equal(await h.B.signOutAllSessionsSafely(),false);
+  assert.deepEqual(h.navigations,[]);assert.deepEqual(h.storageCleared,[]);assert.equal(h.B.ready,true);
+});
+
 function entryHarness() {
   const timers = new Map(), nodes = new Map(), events = new Map();
   const frames = []; let changed; let timerId = 0;
