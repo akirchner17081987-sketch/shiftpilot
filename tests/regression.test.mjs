@@ -668,7 +668,8 @@ test('employee forms expose clear labels, required fields, help and live status 
 
 test('employee startup skips manager-only modules and detaches inactive application shells', () => {
   assert.match(moduleLoader, /const managerStart=files\.indexOf\('assets\/supabase-time-month-close-v1\.js'\)/);
-  assert.match(moduleLoader, /if\(B\.role!==\'EMPLOYEE\'\)await loadManager\(\)/);
+  assert.match(moduleLoader, /B\.prepareManagerModules=\(\)=>B\.role==='EMPLOYEE'\?Promise\.resolve\(\)/);
+  assert.match(moduleLoader, /B\.ensureManagerViewModules=view=>B\.role==='EMPLOYEE'\?Promise\.resolve\(\)/);
   assert.match(moduleLoader, /const present=file=>/);
   assert.match(moduleLoader, /if\(present\(file\)\)\{next\(\);return\}/);
   assert.match(moduleLoader, /if\(i>=managerStart\)\{start\(\);return\}/);
@@ -711,3 +712,4 @@ test('password recovery uses a parseable callback and requires a valid session',
   assert.match(passwordReset, /attributes\.nonce=nonce/);
   assert.match(passwordReset, /\^\\d\{6\}\$/);
 });
+
