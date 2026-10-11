@@ -14,6 +14,7 @@ test('entry overlay is created before the protected application shell', () => {
   assert.ok(page.includes('assets/sf-entry-v2.js'));
   assert.ok(page.includes('assets/schichtfunk-logo-v2-entry.svg'));
   assert.match(page, /class="sf-login-only"/);
+  assert.match(page, /id="sfEntryLoginSlot"/);
 });
 test('real vector mark exposes independently animated identity groups', () => {
   for (const id of ['calendar','clock','radio-waves','wordmark','tagline']) {
@@ -30,4 +31,19 @@ test('startup reports measured stage milestones without pre-auth data requests',
   assert.ok(!boot.includes('setTimeout(dismiss,'));
   assert.ok(!boot.includes('setTimeout(dismiss,'));
   assert.match(boot, /entryToReadyMs/);
+});
+
+test('the protected login is relocated inside the entry instead of replacing it', () => {
+  assert.match(boot, /slot\.appendChild\(auth\)/);
+  assert.match(boot, /function morphToLogin\(auth\)/);
+  assert.match(boot, /sf-entry-login-ready/);
+  assert.match(css, /#sfEntryOverlay #sfAuthBackdrop\.sf-auth-backdrop/);
+  assert.match(css, /#sfEntryOverlay\.sf-entry-login-ready \.sf-entry-login-slot/);
+  assert.ok(!boot.includes("document.createElement('input')"));
+});
+test('entry is removed only after a ready manager or employee view', () => {
+  assert.match(boot, /if \(managerReady \|\| employeeReady\)/);
+  assert.match(boot, /if \(isVisible\(auth\) && !!window\.SFBackend\?\.client\) morphToLogin\(auth\)/);
+  assert.match(boot, /root\.classList\.add\('sf-entry-out'\)/);
+  assert.match(boot, /syncAuthLoading\(\)/);
 });
