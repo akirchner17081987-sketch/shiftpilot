@@ -2,6 +2,8 @@
 /* SchichtFunk 2.0 – protected entry/loading bridge; independent of app theme */
 #sfEntryOverlay{position:fixed;inset:0;z-index:30000;display:grid;place-items:center;background:#040e1d;color:#f4f9ff;overflow:auto;isolation:isolate;opacity:1;transition:opacity .46s ease,visibility .46s ease}
 #sfEntryOverlay.sf-entry-out{opacity:0;visibility:hidden;pointer-events:none}
+/* MFA uses z-index 26000 and must remain visible above the entry during restore. */
+#sfEntryOverlay.sf-entry-mfa-ready{z-index:25000;pointer-events:none}
 #sfEntryOverlay::before{content:"";position:absolute;inset:-35%;pointer-events:none;background:radial-gradient(ellipse at 50% 45%,rgba(19,102,192,.26),transparent 44%),radial-gradient(ellipse at 50% 82%,rgba(0,204,255,.08),transparent 37%);animation:sf-entry-breathe 5s ease-in-out infinite alternate}
 #sfEntryOverlay::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.28;background-image:linear-gradient(rgba(69,166,215,.09) 1px,transparent 1px),linear-gradient(90deg,rgba(69,166,215,.09) 1px,transparent 1px);background-size:46px 46px;mask-image:linear-gradient(to top,#000,transparent 75%)}
 .sf-entry-inner{z-index:1;position:relative;width:min(92vw,720px);padding:24px 12px 34px;text-align:center}
@@ -85,3 +87,4 @@ body > #sfAuthBackdrop .sf-auth-brand{display:block;width:min(92%,350px);height:
 body > #sfAuthBackdrop .sf-auth-head .eyebrow{color:#45c7ed}
 body > #sfAuthBackdrop .sf-auth-foot .primary{color:#fff;background:linear-gradient(110deg,#087be2,#16b7e6);border-color:#3bafe9}
 @media(max-width:520px){body > #sfAuthBackdrop .sf-auth-brand{height:210px;margin-top:-12px;margin-bottom:-32px}}
+

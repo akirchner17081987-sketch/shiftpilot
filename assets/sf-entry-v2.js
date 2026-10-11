@@ -110,6 +110,20 @@
 
   function checkReady() {
     if (dismissed) return;
+    // A restored AAL1 session can require MFA before a login form or app exists.
+    // Let the real security dialog stay above the decorative entry surface.
+    const mfaReady = isVisible(document.getElementById('sfMfaModal'));
+    root.classList.toggle('sf-entry-mfa-ready', mfaReady);
+    root.inert = mfaReady;
+    if (mfaReady) {
+      readyTarget = 'mfa';
+      mark('ready');
+      label.textContent = 'Sicherheitscode erforderlich';
+      clearTimeout(slowTimer);
+      warning.hidden = true;
+      skip.hidden = true;
+      return;
+    }
     const auth = document.getElementById('sfAuthBackdrop');
     const manager = document.getElementById('appShell');
     const employee = document.getElementById('sfEmployeePortal');
@@ -186,3 +200,4 @@
   // An unchanged startup still warns after 20 seconds. Readiness clears the timer.
   checkReady();
 })();
+
