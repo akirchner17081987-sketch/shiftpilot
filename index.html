@@ -12,8 +12,8 @@
 <link rel="manifest" href="/site.webmanifest" />
 <title>SchichtFunk – Dienstplanung</title>
 <link rel="preload" href="assets/schichtfunk-logo-v2-entry.svg" as="image" type="image/svg+xml">
-<link rel="stylesheet" href="assets/sf-entry-v2.css?v=20261011-1">
-<script defer src="assets/sf-entry-v2.js?v=20261011-1"></script>
+<link rel="stylesheet" href="assets/sf-entry-v2.css?v=20261011-2">
+<script defer src="assets/sf-entry-v2.js?v=20261011-2"></script>
 <script>
 try{document.documentElement.dataset.sfTheme=localStorage.getItem('schichtfunk-manager-theme')==='light'?'light':'dark'}catch(e){document.documentElement.dataset.sfTheme='dark'}
 </script>
@@ -164,7 +164,7 @@ html[data-sf-theme="light"] #sfEmployeePortal{
 </head>
 <body>
 <!-- SchichtFunk 2.0: progress while existing protected application boots -->
-<div id="sfEntryOverlay" role="status" aria-label="SchichtFunk wird gestartet">
+<div id="sfEntryOverlay" role="region" aria-label="SchichtFunk Start und Anmeldung">
   <div class="sf-entry-inner">
     <div class="sf-entry-orbits" aria-hidden="true"></div>
     <img id="sfEntryLogoImage" class="sf-entry-logo" src="assets/schichtfunk-logo-v2-entry.svg" width="620" height="455" alt="SchichtFunk 2.0 – Klar geplant. Stark besetzt.">
@@ -174,6 +174,7 @@ html[data-sf-theme="light"] #sfEmployeePortal{
       <div class="sf-entry-footer"><span id="sfEntryCounter" class="sf-entry-step">0 / 4</span><button id="sfEntrySkip" class="sf-entry-skip" type="button">Animation überspringen</button></div>
       <p id="sfEntryWarning" class="sf-entry-warning" hidden></p>
     </div>
+    <div id="sfEntryLoginSlot" class="sf-entry-login-slot" aria-label="SchichtFunk Anmeldung"></div>
   </div>
 </div>
 <script>try{performance.mark('sf-entry-visible')}catch(e){}</script>
