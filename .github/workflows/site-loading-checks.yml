@@ -2,7 +2,7 @@ name: Site loading and dependencies
 on:
   push:
     branches: [main, codex/ionos-migration, codex/site-loading-performance-20261011, codex/auto-plan-progress-20261011]
-    paths: [index.html, demo.html, qr-time.html, 'assets/**', 'tests/site-loading.test.cjs', 'tests/browser/site-loading-qa.cjs', '.github/workflows/site-loading-checks.yml']
+    paths: [index.html, demo.html, qr-time.html, 'assets/**', 'tests/site-loading.test.cjs', 'tests/e2e/auto-plan-workspace.spec.cjs', 'tests/month-optimizer.test.mjs', 'tests/browser/site-loading-qa.cjs', '.github/workflows/site-loading-checks.yml']
   workflow_dispatch:
 permissions:
   contents: read
