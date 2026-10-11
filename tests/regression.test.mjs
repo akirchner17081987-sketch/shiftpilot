@@ -192,7 +192,7 @@ test('auto planning supports a selected week, calendar month, or exact date', ()
   assert.match(index, /function autoMonday\(value\)/);
   assert.match(index, /if\(mode==='date'\)return\[document\.getElementById\('autoPlanDate'\)/);
   assert.match(index, /autoPlannedHours\(e\.id,simulated,date\)/);
-  assert.match(index, /function autoOpenSlots\(\)\{const dates=autoPlanningDates\(\)/);
+  assert.match(index, /function autoOpenSlots\(dates=autoPlanningDates\(\),counts=autoAssignmentCounts\(\)\)/);
 });
 
 test('all operational shift codes are available as standard shifts', () => {

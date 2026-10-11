@@ -18,8 +18,11 @@
       cursor=page[page.length-1].id;
     }
   };
-  const datePart=(v,tz='Europe/Berlin')=>(B.companyTimeZone=tz,new Intl.DateTimeFormat('sv-SE',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(v)));
-  const timePart=(v,tz='Europe/Berlin')=>(B.companyTimeZone=tz,new Intl.DateTimeFormat('de-DE',{timeZone:tz,hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(v)).replace('24:','00:'));
+  // Formatters carry no employee data and can be reused for every row in a company timezone.
+  const localFormats=new Map();
+  const localFormat=(tz,part)=>{const key=tz+'|'+part;let f=localFormats.get(key);if(!f){f=new Intl.DateTimeFormat(part==='date'?'sv-SE':'de-DE',part==='date'?{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}:{timeZone:tz,hour:'2-digit',minute:'2-digit',hour12:false});localFormats.set(key,f)}return f};
+  const datePart=(v,tz='Europe/Berlin')=>(B.companyTimeZone=tz,localFormat(tz,'date').format(new Date(v)));
+  const timePart=(v,tz='Europe/Berlin')=>(B.companyTimeZone=tz,localFormat(tz,'time').format(new Date(v)).replace('24:','00:'));
   const interval=(date,start,end)=>{const s=new Date(`${date}T${start}:00`),e=new Date(`${date}T${end}:00`);if(e<=s)e.setDate(e.getDate()+1);return{startsAt:s.toISOString(),endsAt:e.toISOString()}};
   const monday=date=>{const d=new Date(date+'T00:00:00');d.setDate(d.getDate()-((d.getDay()+6)%7));return d.toISOString().slice(0,10)};
   const empPayload=e=>({company_id:B.companyId,legacy_id:String(e.id),first_name:e.first||'',last_name:e.last||'',personnel_no:e.personnelNo||null,role:e.role||'Sicherheitsmitarbeiter',employment:e.employment||'Vollzeit',weekly_hours:Number(e.weeklyHours||0),start_date:e.startDate||null,contract_end:e.contractEnd||null,birth_date:e.birthDate||null,status:e.status||'active',email:e.email||null,phone:e.phone||null,address:e.address||null,zip:e.zip||null,city:e.city||null,shift_permissions:e.shifts||[],qualifications:e.qualifications||[],work_time_model:e.workTimeModel||'SHIFT',note:e.note||''});

@@ -87,7 +87,7 @@ test('optional QA reserves Florian when another eligible person covers the requi
  const {c,run}=optionalHarness();c.generateAutoPlanPreview();const preview=run('autoPlanPreview');assert.equal(c.autoOpenSlots().length,1);assert.equal(preview.length,2);assert.equal(preview[0].type,'FD');assert.equal(preview[0].employeeId,'b');assert.equal(preview[1].type,'QA');assert.equal(preview[1].employeeId,'f');assert.equal(preview[1].optional,true);assert.equal(run('autoPlanUnresolved.length'),0);
 });
 test('mandatory shortage uses Florian and optional QA is informational rather than a gap',()=>{
- const {c,run,id}=optionalHarness();c.employees[1].status='inactive';c.generateAutoPlanPreview();assert.equal(run('autoPlanPreview.length'),1);assert.equal(run('autoPlanPreview[0].employeeId'),'f');assert.equal(run('autoPlanUnresolved.length'),0);assert.equal(run('autoPlanOptionalSkipped.length'),1);assert.equal(id('autoUnresolvedCount').textContent,0);assert.match(id('autoSuggestions').innerHTML,/Keine Pflichtlücke/);assert.doesNotMatch(id('autoAnalysis').innerHTML,/is-warning/);
+ const {c,run,id}=optionalHarness();c.employees[1].status='inactive';c.generateAutoPlanPreview();assert.equal(run('autoPlanPreview.length'),1);assert.equal(run('autoPlanPreview[0].employeeId'),'f');assert.equal(run('autoPlanUnresolved.length'),0);assert.equal(run('autoPlanOptionalSkipped.length'),1);assert.equal(id('autoUnresolvedCount').textContent,0);assert.match(id('autoOptionalSkipped').innerHTML,/Keine Pflichtlücke/);assert.doesNotMatch(id('autoAnalysis').innerHTML,/is-warning/);
 });
 test('daily QA required is scheduled before another mandatory shift; daily off excludes optional QA',()=>{
  const {c,run}=optionalHarness();c.dailySoll['2026-12-01']={QA:1};c.generateAutoPlanPreview();assert.equal(run('autoPlanPreview[0].type'),'QA');assert.equal(run('autoPlanPreview[0].employeeId'),'f');assert.equal(run('autoPlanPreview[0].optional'),false);assert.equal(c.autoOptionalSlots().length,0);assert.equal(run('autoPlanPreview[1].employeeId'),'b');c.dailySoll['2026-12-01'].QA=0;c.generateAutoPlanPreview();assert.equal(run('autoPlanPreview.length'),1);assert.equal(c.autoOptionalSlots().length,0);
@@ -222,4 +222,25 @@ test('weekly draft comparison uses weekly SOLL and differentiates surplus from d
  c.assignments=Array.from({length:6},(_,i)=>({employeeId:'e',date:'2026-12-'+String(i+1).padStart(2,'0'),type:'FD'}));
  run('autoPlanAnalyzed=true;renderAutoPlanning()');
  assert.match(id('autoStaircase').innerHTML,/Zeitraum-SOLL/);assert.match(id('autoStaircase').innerHTML,/SOLL <b>40 h<\/b>/);assert.match(id('autoStaircase').innerHTML,/is-extra/);assert.match(id('autoStaircase').innerHTML,/\+8 h/);
+});
+
+test('twelve-month preview shows one month at a time while preserving whole-period hours and all proposals',()=>{
+ const {c,id,run,api}=harness();id('autoPlanPeriod').value='month';id('autoPlanMonth').value='2027-01';id('autoPlanMonthCount').value='12';c.window.SFCompliance={policy:{solidPlanningRules:{enabled:true}}};
+ c.assignments=[{employeeId:'e',date:'2027-01-01',type:'FD'},{employeeId:'e',date:'2027-12-31',type:'FD'}];
+ run('autoPlanAnalyzed=true;renderAutoPlanning()');
+ assert.match(id('autoStaircase').innerHTML,/Plan-IST <b>16 h/);assert.match(id('autoStaircase').innerHTML,/SOLL <b>2.160 h/);
+ assert.match(id('autoStaircase').innerHTML,/2027-01-01 ·/);assert.doesNotMatch(id('autoStaircase').innerHTML,/2027-12-31 ·/);
+ api.stairMonth('2027-12');assert.match(id('autoStaircase').innerHTML,/2027-12-31 ·/);assert.doesNotMatch(id('autoStaircase').innerHTML,/2027-01-01 ·/);
+ assert.match(id('autoStaircase').innerHTML,/Plan-IST <b>16 h/);assert.equal(c.assignments.length,2);assert.equal(run('autoPlanPreview.length'),0);
+});
+test('all unresolved groups remain reachable through pagination and each period change resets the page',()=>{
+ const {c,id,run,api}=harness();id('autoPlanPeriod').value='month';id('autoPlanMonth').value='2027-01';id('autoPlanMonthCount').value='12';c.window.SFCompliance={policy:{solidPlanningRules:{enabled:true}}};
+ run('autoPlanAnalyzed=true;renderAutoPlanning()');assert.equal(id('autoUnresolvedCount').textContent,365);assert.match(id('autoUnresolved').innerHTML,/Seite 1 von 7/);
+ api.unresolvedPage(6);assert.match(id('autoUnresolved').innerHTML,/Seite 7 von 7/);assert.match(id('autoUnresolved').innerHTML,/2027-12-31/);
+ id('autoPlanMonth').value='2028-01';run('renderAutoPlanning()');assert.match(id('autoUnresolved').innerHTML,/Seite 1 von 7/);assert.equal(id('autoUnresolvedCount').textContent,366);
+});
+test('render aggregation visits each selected duty once instead of scanning the whole roster per employee',()=>{
+ const {c,id,run}=harness();id('autoPlanPeriod').value='month';let visits=0;c.plannedAssignmentHours=()=>{visits++;return 8};
+ c.employees=Array.from({length:50},(_,i)=>({id:'e'+i,first:'Test',last:String(i),status:'active',weeklyHours:40}));c.assignments=c.employees.map(e=>({employeeId:e.id,date:'2026-12-01',type:'FD'}));
+ run('autoPlanAnalyzed=true;renderAutoPlanning()');assert.equal(visits,50);assert.match(id('autoStaircase').innerHTML,/400 h/);
 });

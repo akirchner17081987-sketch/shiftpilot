@@ -434,7 +434,7 @@ window.SFHelpContent = {
       ],
       [
         "Wie erstelle und übernehme ich Auto-Planungsvorschläge?",
-        "Wähle Tag, Woche oder Monat, prüfe die Stunden- und Verteilungsregeln und klicke Vorschläge erstellen. Prüfe Vorschläge und offene Positionen; einzelne Vorschläge lassen sich entfernen. Übernehmen benötigt eine Bestätigung und speichert einen Entwurf. Die Veröffentlichung erfolgt danach gesondert im Dienstplan."
+        "Wähle Tag, Woche oder Monat, prüfe die Stunden- und Verteilungsregeln und klicke Vorschläge erstellen. Prüfe Vorschläge und offene Positionen; einzelne Vorschläge lassen sich entfernen. Bei längeren Zeiträumen wählst du den angezeigten Monat direkt in der Planvorschau. Die Gesamtstunden gelten weiterhin für den vollständigen Planungszeitraum. Tagesdetails werden beim Aufklappen angezeigt; mit Alle Tage öffnen siehst du sämtliche Vorschläge. Lange Listen offener Positionen blätterst du mit Zurück und Weiter durch. Übernehmen benötigt eine Bestätigung und speichert einen Entwurf. Die Veröffentlichung erfolgt danach gesondert im Dienstplan."
       ],
       [
         "Warum muss ich Vorschläge nach Änderungen neu erstellen?",

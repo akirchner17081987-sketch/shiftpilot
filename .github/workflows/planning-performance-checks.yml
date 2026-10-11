@@ -1,0 +1,45 @@
+name: Planning performance and preview checks
+on:
+  push:
+    branches: [main, codex/ionos-migration, codex/planning-performance-20261011]
+    paths:
+      - index.html
+      - assets/conflict-plausibility-v1.js
+      - assets/supabase-data-v1.js
+      - assets/auto-plan-workspace-v1.js
+      - assets/auto-plan-period-v1.css
+      - tests/performance-loader.test.cjs
+      - tests/browser/planning-performance-qa.cjs
+      - .github/workflows/planning-performance-checks.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  performance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/browser/planning-performance-qa.cjs
+        env:
+          SF_PERFORMANCE_BASE: e6b9ee5867b53eb51c9b7f275d04a8e8f60be4db
+      - run: npx playwright test tests/e2e/auto-plan-workspace.spec.cjs tests/e2e/schedule-publication-period.spec.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: planning-performance-qa
+          path: |
+            test-results/planning-performance/
+            playwright-report/
+            test-results/
+          retention-days: 7
