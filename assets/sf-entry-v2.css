@@ -76,3 +76,12 @@
 @media(prefers-reduced-motion:reduce){
  #sfEntryOverlay .sf-entry-logo,#sfEntryOverlay .sf-entry-inner,#sfEntryOverlay .sf-entry-orbits,#sfEntryOverlay .sf-entry-login-slot,#sfEntryOverlay .sf-entry-loading{transition:none!important}
 }
+
+/* Keep the same visual identity when login is reopened after logout/session expiry. */
+body > #sfAuthBackdrop.sf-auth-backdrop{background:radial-gradient(ellipse at 50% 37%,rgba(18,100,182,.22),transparent 44%),#040e1d}
+body > #sfAuthBackdrop .sf-auth-card{border-color:rgba(71,150,209,.36);background:linear-gradient(155deg,#0c1d31,#051120);box-shadow:0 28px 75px rgba(0,0,0,.4)}
+body > #sfAuthBackdrop .sf-auth-head{padding-top:0;text-align:center}
+body > #sfAuthBackdrop .sf-auth-brand{display:block;width:min(92%,350px);height:240px;max-width:100%;margin:-13px auto -35px;object-fit:contain;object-position:center}
+body > #sfAuthBackdrop .sf-auth-head .eyebrow{color:#45c7ed}
+body > #sfAuthBackdrop .sf-auth-foot .primary{color:#fff;background:linear-gradient(110deg,#087be2,#16b7e6);border-color:#3bafe9}
+@media(max-width:520px){body > #sfAuthBackdrop .sf-auth-brand{height:210px;margin-top:-12px;margin-bottom:-32px}}
