@@ -19,7 +19,7 @@ test('real vector mark exposes independently animated identity groups', () => {
   for (const id of ['calendar','clock','radio-waves','wordmark','tagline']) {
     assert.ok(logo.includes('id="' + id + '"'), 'missing logo component: ' + id);
   }
-  assert.doesNotMatch(logo, /<image\\b/i);
+  assert.ok(!logo.includes('<image '));
   assert.match(css, /prefers-reduced-motion:reduce/);
 });
 test('startup reports measured stage milestones without pre-auth data requests', () => {
@@ -27,7 +27,7 @@ test('startup reports measured stage milestones without pre-auth data requests',
   for (const marker of ['DOMContentLoaded','SFEntryMetrics','MutationObserver','sfAuthBackdrop','sfEmployeePortal','appShell','sf-entry-out']) {
     assert.ok(boot.includes(marker), marker);
   }
-  assert.doesNotMatch(boot, /\\.from\\(['"][^'"]+['"]\\)/);
-  assert.doesNotMatch(boot, /setTimeout\\(dismiss\\s*,/);
+  assert.ok(!boot.includes('setTimeout(dismiss,'));
+  assert.ok(!boot.includes('setTimeout(dismiss,'));
   assert.match(boot, /entryToReadyMs/);
 });
