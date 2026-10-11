@@ -27,12 +27,13 @@ test('help exposes operational details only for the authenticated current compan
  b.companyId='company-a';b.user=null;draw();assert.ok(!node('sfHelpResults').innerHTML.includes('private-number'));
 });
 test('public assets contain no concrete company identifiers or personnel assignments',()=>{
- const sql=read('database/company-private-client-configuration-v1.sql'),ids=sql.match(/[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}/g)||[];
  for(const file of fs.readdirSync(path.join(root,'assets')).filter(f=>/\.(js|json|html|svg)$/.test(f))){
-  const text=read('assets/'+file);for(const id of ids)assert.ok(!text.includes(id),file+' contains a company identifier');
+  const text=read('assets/'+file),ids=text.match(/[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}/g)||[];
+  for(const id of ids)assert.ok(id.startsWith('00000000-'),file+' contains a concrete company identifier');
   assert.doesNotMatch(text,/['"](?:2001|2048|2059|2015)['"]|Personalnummern 2001|Bei SchichtFunk gelten|Secontec Services/,file);
  }
 });
 test('private configuration has tenant RLS and an invoker RPC with no anonymous grant',()=>{
- const sql=read('database/company-private-client-configuration-v1.sql');assert.match(sql,/enable row level security/);assert.match(sql,/for select to authenticated/);assert.match(sql,/sf_company_profile_can_read\(company_id\)/);assert.match(sql,/security invoker set search_path = ''/);assert.match(sql,/auth.uid\(\) is null/);assert.match(sql,/sf_assert_aal2/);assert.match(sql,/revoke all on function public.company_private_client_configuration\(uuid\) from public, anon/);assert.doesNotMatch(sql,/grant .* to anon|security definer/i);
+ const sql=read('database/company-private-client-configuration-v1.sql');assert.match(sql,/enable row level security/);assert.match(sql,/for select to authenticated/);assert.match(sql,/sf_company_profile_can_read\(company_id\)/);assert.match(sql,/security invoker set search_path = ''/);assert.match(sql,/auth.uid\(\) is null/);assert.match(sql,/sf_assert_aal2/);assert.match(sql,/revoke all on function public.company_private_client_configuration\(uuid\) from public, anon/);assert.doesNotMatch(sql,/grant .* to anon|security definer|insert into private.company_client_configuration/i);
+ assert.equal(sql,read('supabase/migrations/20261011210301_private_company_client_configuration.sql'));
 });
