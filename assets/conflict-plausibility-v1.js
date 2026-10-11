@@ -106,7 +106,7 @@
   // Authentication-first bootstrap: install all security/session/role hooks BEFORE
   // initializing Supabase. Manager/portal feature modules must be installed
   // BEFORE any authenticated B.boot runs, never before the login form is usable.
-  const essentialIndices=new Set([0,6,7,8,12,14,15,16,25,26,27,28,53]);
+  const essentialIndices=new Set([0,6,7,8,12,14,15,16,25,26,27,28]);
   const bootstrapFiles=files.slice(0,managerStart).filter((_,i)=>essentialIndices.has(i));
   const deferredFiles=files.slice(0,managerStart).filter((_,i)=>!essentialIndices.has(i));
   const loadSelected=async selected=>{
