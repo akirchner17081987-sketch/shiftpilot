@@ -61,6 +61,11 @@
 #sfEntryOverlay.sf-entry-login-ready .sf-entry-logo [id="clock-hour-hand"]{transform-box:view-box;transform-origin:0 0;animation:sf-entry-hand-turn 60s linear infinite}
 #sfEntryOverlay.sf-entry-login-ready .sf-entry-logo [id="clock-hour-hand"]{animation-duration:720s}
 @keyframes sf-entry-hand-turn{to{transform:rotate(360deg)}}
+/* Advance the highlighted calendar day through all fifteen cells. */
+@media(prefers-reduced-motion:no-preference){
+ #sfEntryOverlay.sf-entry-login-ready:not(.sf-entry-skip-animation) .sf-entry-logo .sf-entry-day{fill:#164b73;opacity:.65;animation:sf-entry-day-cycle 18s steps(1,end) infinite;animation-delay:var(--sf-day-delay)}
+}
+@keyframes sf-entry-day-cycle{0%{fill:#05e7e9;opacity:1}6.666667%,100%{fill:#164b73;opacity:.65}}
 @keyframes sf-entry-idle-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
 @keyframes sf-entry-idle-signal{0%,100%{opacity:.48}40%,60%{opacity:1}}
 @keyframes sf-entry-idle-glow{0%,100%{opacity:.72}50%{opacity:1}}
