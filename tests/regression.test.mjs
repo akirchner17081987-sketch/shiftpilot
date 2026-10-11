@@ -671,7 +671,10 @@ test('employee startup skips manager-only modules and detaches inactive applicat
   assert.match(moduleLoader, /if\(B\.role!==\'EMPLOYEE\'\)await loadManager\(\)/);
   assert.match(moduleLoader, /const present=file=>/);
   assert.match(moduleLoader, /if\(present\(file\)\)\{next\(\);return\}/);
-  assert.match(moduleLoader, /if\(i>=managerStart\)\{start\(\);return\}/);
+  assert.match(moduleLoader, /loadSelected\(bootstrapFiles\)\.then\(start\)/);
+  assert.match(moduleLoader, /await ensureDeferred\(\)/);
+  assert.match(moduleLoader, /const deferredFiles=files\.slice\(0,managerStart\)/);
+  assert.match(moduleLoader, /if\(B\.role!==\'EMPLOYEE\'\)await loadManager\(\)/);
   assert.match(employeeAccess, /const detachNonEmployeeShell=/);
   assert.match(employeeAccess, /detachNonEmployeeShell\(\);document\.getElementById\('sfEmployeePortal'\)/);
   assert.match(employeeAccess, /event==='SIGNED_OUT'\)restoreNonEmployeeShell\(\)/);
