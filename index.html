@@ -12,6 +12,9 @@
 <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png" />
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
 <link rel="manifest" href="/site.webmanifest" />
+<link rel="preload" href="assets/schichtfunk-logo-v2-entry.svg" as="image" type="image/svg+xml">
+<link rel="stylesheet" href="assets/sf-entry-v2.css?v=20261011-3">
+<script defer src="assets/sf-entry-v2.js?v=20261011-2"></script>
 <title>SchichtFunk – Dienstplanung</title>
 <script>
 try{document.documentElement.dataset.sfTheme=localStorage.getItem('schichtfunk-manager-theme')==='light'?'light':'dark'}catch(e){document.documentElement.dataset.sfTheme='dark'}
@@ -164,6 +167,21 @@ html[data-sf-theme="light"] #sfEmployeePortal{
 <link rel="stylesheet" href="assets/company-profile-v1.css?v=20261011-company-error1">
 </head>
 <body>
+<!-- SchichtFunk 2.0: progress while existing protected application boots -->
+<div id="sfEntryOverlay" role="region" aria-label="SchichtFunk Start und Anmeldung">
+  <div class="sf-entry-inner">
+    <div class="sf-entry-orbits" aria-hidden="true"></div>
+    <img id="sfEntryLogoImage" class="sf-entry-logo" src="assets/schichtfunk-logo-v2-entry.svg" width="620" height="455" alt="SchichtFunk 2.0 – Klar geplant. Stark besetzt.">
+    <div class="sf-entry-loading">
+      <p class="sf-entry-state" id="sfEntryStatus" aria-live="polite">SchichtFunk startet …</p>
+      <div class="sf-entry-bar" aria-hidden="true"><span id="sfEntryBar"></span></div>
+      <div class="sf-entry-footer"><span id="sfEntryCounter" class="sf-entry-step">0 / 4</span><button id="sfEntrySkip" class="sf-entry-skip" type="button">Animation überspringen</button></div>
+      <p id="sfEntryWarning" class="sf-entry-warning" hidden></p>
+    </div>
+    <div id="sfEntryLoginSlot" class="sf-entry-login-slot" aria-label="SchichtFunk Anmeldung"></div>
+  </div>
+</div>
+<script>try{performance.mark('sf-entry-visible')}catch(e){}</script>
 
 <section id="landingPage">
   <header class="landing-nav">
@@ -973,7 +991,7 @@ table th,table td{font-size:13px;line-height:1.35}
 <script defer src="assets/ot-weekend-holiday-policy.js?v=sim1-20261009-critical-period1"></script>
 <script defer src="assets/dynamic-employee-pool-v1.js"></script>
 <script defer src="assets/schichtfunk-rebrand.js"></script>
-<script defer src="assets/schichtfunk-brand-cleanup-v2.js?v=20260929-customday1&loading=20261011-1"></script>
+<script defer src="assets/schichtfunk-brand-cleanup-v2.js?v=20260929-customday1&loading=20261011-1&entry=20261011-1"></script>
 <link rel="stylesheet" href="assets/schedule-employee-display-v1.css?v=20261003-persondark1">
 <script defer src="assets/schedule-employee-display-v1.js?v=20261004-teamorder1"></script>
 <script defer src="assets/navigation-compat-v1.js?v=20260930-tenbreaks1&today=20261010-1&qr=20261009-qrperiods1&period=20261001-1&models=1&auto=20261001-workflow2&mobile=20261002-sheetguard1&export=20261004-exporttotals1&company=20261010-1&frame=20261010-2&loading=20261011-1"></script>
