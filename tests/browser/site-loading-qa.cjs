@@ -51,10 +51,10 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
  metrics.owner=await run('current','OWNER',true);for(const role of ['ADMIN','PLANNER','DISPATCHER','VIEWER','EMPLOYEE','TIME_TRACKING'])metrics[role]=await run('current',role);
  // Exercise the actual demo entry and its document.write/defer chain with synthetic demo authorization.
  const demoContext=await browser.newContext({serviceWorkers:'block'}),demoPage=await demoContext.newPage(),demoErrors=[],demoExternal=[];
- demoPage.on('pageerror',e=>demoErrors.push(e.message));
+ demoPage.on('pageerror',e=>{demoErrors.push(e.message);console.error('Demo page error:',e.stack)});
  await demoPage.route('**/*',r=>{const u=new URL(r.request().url());if(u.origin===origin)return r.continue();if(u.hostname==='zbvloohfjleadjnqhbbh.supabase.co'&&['/functions/v1/demo-auth','/functions/v1/demo-analytics'].includes(u.pathname))return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({expiresAt:new Date(Date.now()+3600000).toISOString()})});demoExternal.push(u.href);return r.abort()});
  await demoPage.goto(origin+'/demo.html');await demoPage.waitForFunction(()=>window.__sfDemoReadyV1===true,{timeout:45000}).catch(async e=>{console.error({demoErrors,demoExternal,gate:await demoPage.locator('#sfDemoBootGate').evaluate(n=>({text:n.innerText,dataset:{...n.dataset}})).catch(()=>null)});throw e});
- assert.deepEqual(demoErrors,[],'Demo JS errors');assert.deepEqual(demoExternal,[],'Demo must not reach production data');
+ assert.equal(await demoPage.locator('#sfDemoResetBtn').count(),1);await demoPage.locator('#sfDemoResetBtn').click();await demoPage.locator('.sf-demo-reset-modal').waitFor();await demoPage.locator('.sf-demo-reset-cancel').click();assert.deepEqual(demoErrors,[],'Demo JS errors');assert.deepEqual(demoExternal,[],'Demo must not reach production data');
  assert.equal(await demoPage.evaluate(()=>SFBackend.client.__sfDemoLocalClientV1),true);assert.ok(await demoPage.evaluate(()=>employees.length>=15));
  await demoPage.evaluate(()=>SFDemoPerspective.set('employee'));assert.equal(await demoPage.locator('#sfEmployeePortal').count(),1);await demoPage.evaluate(()=>SFDemoPerspective.set('manager'));assert.equal(await demoPage.evaluate(()=>SFBackend.role),'ADMIN');
  assert.deepEqual(demoErrors,[]);metrics.demo={ready:true,localClient:true,perspectives:['manager','employee']};await demoContext.close();

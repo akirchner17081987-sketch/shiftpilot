@@ -73,7 +73,7 @@
     let btn=document.getElementById('sfDemoResetBtn');
     if(!btn){
       btn=document.createElement('button');btn.id='sfDemoResetBtn';btn.className='iconbtn';btn.type='button';btn.innerHTML='↻ Demo zurücksetzen';btn.title='Nur diese Demo-Sitzung auf den aktuellen Standard zurücksetzen';btn.onclick=openDialog;
-      const exit=document.getElementById('sfDemoExitBtn');if(exit)top.insertBefore(btn,exit);else top.appendChild(btn);
+      const exit=document.getElementById('sfDemoExitBtn');if(exit?.parentNode===top)top.insertBefore(btn,exit);else top.appendChild(btn);
     }
   }
 

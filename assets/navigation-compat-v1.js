@@ -92,7 +92,7 @@
   loadIntegration('/assets/schedule-export-core-v1.js?v=20261004-exporttotals1&company=20261010-1','data-sf-schedule-export-core');
   loadIntegration('/assets/schedule-export-v1.js?v=20261004-exporttotals1&company=20261010-1','data-sf-schedule-export');
   loadIntegration('/assets/publish-dialog-design-v1.js?v=20261001-period1','data-sf-publish-dialog-design');
-  loadIntegration('/assets/demo-reset-v1.js?v=20260906-absences1','data-sf-demo-reset');
+  loadIntegration('/assets/demo-reset-v1.js?v=20260906-absences1&loading=20261011-1','data-sf-demo-reset');
   loadIntegration('/assets/demo-august-2026-v1.js?v=20260907-startgate2','data-sf-demo-august-2026');
   loadIntegration('/assets/demo-datev-snapshot-fix-v1.js?v=20260904-2','data-sf-demo-datev-snapshot-fix');
 
