@@ -30,10 +30,11 @@ Kontosperrung, Rollenwechsel, Nur-Lesen oder Entzug des Zusatzrechts entfernen d
 ## Technische Prüfung
 
 - SQL-Migration: `20261011225332_personnel_conversations_access.sql`, mit Supabase CLI erzeugt.
-- 14 fachliche PostgreSQL-Prüfungen plus Testhülle (15 erfolgreiche Tests): keine Standardfreigabe; MFA; unberechtigte Vergabe; atomarer Rollback; Firmen-/Mitarbeiter-/Benutzergrenzen; minimale Antwortfelder; Gesprächs- und Auditpersistenz; direkter Tabellen-/Speicherzugriff; Qualifikationsfreigabe und Widerruf; bestehende Personalrechte; Zuordnungswechsel; Kontosperrung; Rechteentzug; gesperrte anonyme RPCs und Invoker-Wrapper.
+- Zusätzliche Migration: `20261011230604_atomic_conversation_qualification_approval.sql`.
+- 15 fachliche PostgreSQL-Prüfungen plus Testhülle (16 erfolgreiche Tests): keine Standardfreigabe; MFA; unberechtigte Vergabe; atomarer Rollback; Firmen-/Mitarbeiter-/Benutzergrenzen; minimale Antwortfelder; Gesprächs- und Auditpersistenz; direkter Tabellen-/Speicherzugriff; Qualifikationsfreigabe und Widerruf; bestehende Personalrechte; Zuordnungswechsel; Kontosperrung; Rechteentzug; gesperrte anonyme RPCs und Invoker-Wrapper.
 - Browserprüfung auf Desktop und Mobil: echte Personalaktenoberfläche mit fiktiven Daten, reduzierte Tabs, Schreibablauf, Escaping, Widerruf und Qualifikationsfreigabe.
 - Benutzerverwaltung: vier Bildschirm-/Themevarianten einschließlich Mitarbeiterzuordnung und Rechtentzug.
 - MFA: Erstregistrierung für Inhaber und Teamleiter, parallele Anforderungen, ungültiger Code und Abbruch.
-- Vollständiger Lauf: 718 Tests erfolgreich (703 bestehende und 15 neue SQL-Prüfungen); statischer Build erfolgreich.
+- Vollständiger Lauf: 719 Tests erfolgreich (703 bestehende und 16 neue SQL-Prüfungen); statischer Build erfolgreich. Qualifikationsspeicherung und Freigabe erfolgen gemeinsam in einer Transaktion; parallele Bearbeitung kann die geprüften Angaben nicht zwischen Speichern und Freigabe austauschen.
 
 Dies ist ein Implementierungs- und Prüfprotokoll für diese Zugriffserweiterung, keine umfassende DSGVO-Zertifizierung. Die konkrete Delegation, Erforderlichkeit, Schulung und zulässigen Gesprächsinhalte werden vom Unternehmen festgelegt.
