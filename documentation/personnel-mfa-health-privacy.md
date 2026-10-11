@@ -17,8 +17,9 @@ Die vorhandenen vertrauenswürdigen Datenbankrollen OWNER/ADMIN bilden die Perso
 
 ## Implementierte Kontrollen
 
+- Die erstmalige MFA-Einrichtung funktioniert auch vor Abschluss der Anmeldung: geschützte Anfragen warten auf die bestätigte Einrichtung und werden danach einmal fortgesetzt. Abbruch/Abmeldung führt zu keiner Wiederholung; parallele Anfragen teilen dieselbe Einrichtung.
 - Alle acht Personalakten-RPCs aus Rollout-Stufe 3 werden aktiviert. Ihre gemeinsame serverseitige Berechtigungsprüfung verlangt zusätzlich AAL2, auch ohne den PostgREST-Vorfilter.
-- Der private Dokumentenspeicher prüft Unternehmen, Mitarbeiterzuordnung, aktive Personalberechtigung und AAL2 unabhängig vom Frontend.
+- Der private Dokumentenspeicher prüft Unternehmen, Mitarbeiterzuordnung, aktive Personalberechtigung und AAL2 unabhängig vom Frontend. Bereits ausgestellte signierte Downloadlinks bleiben bis zum Ablauf ihrer bestehenden Gültigkeit von 120 Sekunden nutzbar.
 - Restriktive RLS schützt vollständige Abwesenheitsdatensätze, Audit-Details und gespeicherte Monats-Snapshots. Mitarbeiter können weiterhin ihre eigenen Datensätze lesen.
 - `manager_absence_overview` prüft die aktive Mitgliedschaft und liefert für Teamleitungen ausschließlich bestätigte, neutrale Verfügbarkeitsdaten. Es gibt keinen Rückfall auf die Rohdatentabelle.
 - Frontend-Synchronisierung schreibt und löscht Abwesenheiten nur für OWNER/ADMIN. Dadurch überschreibt eine Teamleitung keine echten Gründe mit redigierten Daten.
@@ -35,6 +36,7 @@ Die Tests verwenden ausschließlich fiktive Daten in einer isolierten PostgreSQL
 - `npm run test:personnel-privacy`: negative und positive Aufrufe aller acht RPCs, AAL1/AAL2, gefälschte Benutzer-Metadaten, fremde Unternehmen, gesperrte Mitgliedschaft, Dokumentenspeicher, RLS, Planungsdaten, Antragsentscheidungen, archivierte Berichte und Benachrichtigungen.
 - `npm run test:personnel-privacy:browser`: tatsächlicher Abwesenheitsbereich auf Desktop und Mobilgerät; neutrale Planungssicht, geschützte Details, erhaltene Konflikterkennung und Personalaktionen.
 - `node tests/browser/employee-absences-qa.cjs`: Mitarbeiterportal mit Formularen, eigenen Krankmeldungen, Rückmeldungen, Mandanten-/Benutzerwechsel und XSS-Prüfung; sechs Desktop-/Mobilvarianten einschließlich der vollständigen App.
+- `node tests/browser/personnel-mfa-enrollment-qa.cjs`: erste Einrichtung während der Anmeldung, ungültiger Code, parallele geschützte Anfragen und Abbruch/Abmeldung mit fiktiven Auth-Antworten.
 - `npm run build`, `npm run test:ionos`, `npm run test:login-gate`: statischer Build und bestehende Hosting-/Login-Prüfungen.
 
 Die Datei `personnel-health-privacy-preview.html` zeigt die tatsächliche Abwesenheitsoberfläche mit fiktiven Beispieldaten und einem Rollenwechsel. Sie hat keine Verbindung zur produktiven Datenbank und stellt keine echte MFA-Anmeldung dar.
