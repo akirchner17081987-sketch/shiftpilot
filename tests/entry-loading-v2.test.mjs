@@ -54,3 +54,23 @@ test('wordmark stays above the login card after the animation', () => {
   assert.doesNotMatch(css, /margin-bottom:-74px/);
   assert.doesNotMatch(css, /margin-bottom:-48px/);
 });
+
+test('authentication bootstrap precedes feature modules and preserves access control', () => {
+  const loader = read('assets/conflict-plausibility-v1.js');
+  assert.match(loader, /const LOAD_WINDOW=10/);
+  assert.match(loader, /s\.async=false/);
+  assert.match(loader, /loadSelected\(bootstrapFiles\)\.then\(start\)/);
+  assert.match(loader, /await ensureDeferred\(\)/);
+  assert.match(loader, /if\(B\.role!==\'EMPLOYEE\'\)await loadManager\(\)/);
+  assert.match(loader, /requestIdleCallback\(preload/);
+  const moduleList = loader.split('const files=[')[1].split('];')[0];
+  const names = [...moduleList.matchAll(/'assets\/[^']+\.js'/g)].map(x => x[0].slice(1,-1));
+  const indices = [0,6,7,8,12,14,15,16,25,26,27,28];
+  const expected = ['supabase-auth-errors-v1.js','supabase-auth-v1.js','supabase-password-reset-v1.js','supabase-auth-redirect-v1.js','supabase-data-v1.js','supabase-mfa-v1.js','supabase-employee-access-v1.js'];
+  for (const file of expected) {
+    assert.ok(indices.map(i=>names[i]).some(name=>name.endsWith('/'+file)), file);
+  }
+  assert.ok(!indices.includes(names.indexOf('assets/time-only-access-v1.js')), 'time-only wrapper must preserve deferred dependency order');
+  assert.ok(loader.indexOf('await ensureDeferred()') < loader.indexOf('const result=await baseBoot.apply(this,arguments)'), 'never hydrate before required modules load');
+  assert.match(page, /rel="preconnect" href="https:\/\/zbvloohfjleadjnqhbbh\.supabase\.co"/);
+});
