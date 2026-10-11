@@ -690,7 +690,7 @@ window.SFHelpContent = {
     "personnel": [
       [
         "Wer kann die Personalakte öffnen?",
-        "Inhaber und Administratoren wählen einen Mitarbeiter und öffnen „Personalakte öffnen“. Die Akte enthält Übersicht, Qualifikationen, Dokumente, Notizen und Verlauf. Mitarbeiterportal, normale Personalplanung und Personalakte haben unterschiedliche Zugriffsrechte."
+        "Inhaber und Administratoren öffnen die vollständige Personalakte mit MFA. Ausgewählte Teamleiter erhalten mit dem Zusatzrecht Personalgespräche, MFA und ausdrücklicher Mitarbeiterzuordnung Zugriff auf neue Gesprächsnotizen, Ziele und einzeln freigegebene berufliche Qualifikationen. Private Notizen, Dokumente und Gesundheitsangaben bleiben gesondert geschützt."
       ],
       [
         "Welche Dokumente kann ich in der Personalakte ablegen?",
@@ -707,12 +707,20 @@ window.SFHelpContent = {
       [
         "Wie bearbeite ich Profiländerungsanfragen?",
         "Inhaber und Administratoren öffnen in der Mitarbeiterverwaltung „Änderungsanfragen öffnen“. Prüfen Sie die Anfrage, ändern und speichern Sie die betreffenden Daten im Profil oder in der Personalakte und schließen Sie die Anfrage anschließend mit Rückmeldung ab. Die Bestätigung „erledigt“ allein ändert keine Stammdaten. Nicht übernommene Anfragen lassen sich mit einer Rückmeldung ablehnen."
+      ],
+      [
+        "Wie erhalten Teamleiter Zugriff auf Personalgespräche?",
+        "Inhaber oder Administratoren öffnen Einstellungen → Benutzer & Rechte und bearbeiten den Teamleiter. Aktiviere Personalgespräche (MFA erforderlich), wähle die benötigten Mitarbeiter ausdrücklich aus und speichere. Nach MFA öffnet der Teamleiter im zugeordneten Mitarbeiterprofil Personalgespräche. Eine Kontosperrung oder der Rechteentzug entfernt die Zuordnungen. Nach Reaktivierung müssen sie neu gewählt werden."
+      ],
+      [
+        "Welche Qualifikationen werden für Personalgespräche geteilt?",
+        "Inhaber und Administratoren aktivieren Für Personalgespräche freigeben im Bearbeitungsdialog eines beruflichen Nachweises. Teile nur erforderliche Angaben ohne Gesundheitsinformationen. Bezeichnung, Kategorie, Aussteller und Gültigkeit werden geteilt; Bemerkung und Zertifikatsnummer bleiben privat. Bestehende Nachweise sind zunächst privat, Änderungen am Nachweis setzen die Freigabe zurück."
       ]
     ],
     "access": [
       [
         "Welche Benutzerrollen gibt es?",
-        "Inhaber (OWNER) und Administratoren (ADMIN) verwalten Benutzer und administrative Einstellungen. Planer (PLANNER) und Disponenten (DISPATCHER) bearbeiten Mitarbeiter und Dienstpläne im freigegebenen Umfang. Leser (VIEWER) haben Lesezugriff. „Nur Zeiterfassung“ (TIME_TRACKING) ist auf Zeitfunktionen beschränkt. Mitarbeitende (EMPLOYEE) nutzen ihr persönliches Portal. Eine Rolle schaltet nicht automatisch jede Verwaltungsfunktion frei; beispielsweise bleiben Personalakte, Monatsabschluss und DATEV Inhabern und Administratoren vorbehalten."
+        "Es gibt vier Hauptrollen: Inhaber, Administrator, Teamleiter und Mitarbeiter. Teamleiter können Mitarbeiter und Dienstpläne bearbeiten; zusätzliche Veröffentlichungs- und Zeitrechte werden ausdrücklich vergeben. Personalgespräche erfordern ein eigenes Zusatzrecht, konkrete Mitarbeiterzuordnung und MFA. Nur lesender Dienstplanzugriff beschränkt die Teamleiterrolle auf den Dienstplan. Inhaber verwalten Administratoren; Mitarbeitende nutzen ihr persönliches Portal oder ausdrücklich freigegebene Zeitfunktionen."
       ],
       [
         "Wie lade ich Verwaltungsbenutzer ein und verwalte Zugänge?",
@@ -724,7 +732,7 @@ window.SFHelpContent = {
       ],
       [
         "Wie richte ich die Zwei-Faktor-Anmeldung ein?",
-        "Verwenden Sie die angebotene Einrichtung einer Authenticator-App und bestätigen Sie den sechsstelligen Code. Bei geschützten Aktionen kann eine erneute Bestätigung erforderlich sein. Inhaber und Administratoren können ihren letzten bestätigten Faktor nicht einfach entfernen. Geben Sie Passwort, Einrichtungsschlüssel und Einmalcodes niemals an andere weiter."
+        "Verwenden Sie die angebotene Einrichtung einer Authenticator-App und bestätigen Sie den sechsstelligen Code. Bei geschützten Aktionen kann eine erneute Bestätigung erforderlich sein. Inhaber und Administratoren können ihren letzten bestätigten Faktor nicht einfach entfernen. Geben Sie Passwort, Einrichtungsschlüssel und Einmalcodes niemals an andere weiter. Das gilt auch für Teamleiter mit dem Zusatzrecht Personalgespräche; Personalzugriffe erfordern einen bestätigten zweiten Faktor."
       ],
       [
         "Wie setze ich mein Passwort zurück?",
@@ -844,5 +852,5 @@ window.SFHelpContent = {
       ]
     ]
   },
-  "reviewedAt": "2026-10-10"
+  "reviewedAt": "2026-10-12"
 };
