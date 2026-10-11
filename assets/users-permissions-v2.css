@@ -99,3 +99,24 @@ html[data-sf-theme="light"] #appShell #view-settings .sf-user-state:is(.invited,
 .sf-access-extras p{font-size:12px;line-height:1.5}
 #sfAccessEmployeeLabel[hidden]{display:none}
 #appShell #view-settings .sf-users-matrix{min-width:720px}
+
+/* Employee assignments share compact checkbox sizing with permission rows. */
+#sfUserModal .sf-user-card label.sf-access-check{display:flex;align-items:center;gap:10px;margin:0;line-height:1.45;min-width:0;cursor:pointer}
+#sfUserModal .sf-user-card .sf-access-check input[type=checkbox]{width:18px;min-width:18px;max-width:18px;height:18px;min-height:18px;flex:0 0 18px;margin:0;padding:0;accent-color:var(--teal2,#18b99a);cursor:pointer}
+#sfUserModal .sf-access-check>span{min-width:0;overflow-wrap:anywhere}
+#sfUserModal .sf-personnel-assignments{min-width:0;margin:18px 0 0;padding:14px;border:1px solid var(--line,#294159);border-radius:10px}
+#sfUserModal .sf-personnel-assignments legend{padding:0 6px;font-size:.9375rem;font-weight:700}
+#sfUserModal .sf-personnel-assignments p{margin:0;font-size:.8125rem;line-height:1.55;color:var(--muted,#91a7bc)}
+#sfUserModal .sf-user-card .sf-personnel-search{margin:14px 0;font-size:.8125rem}
+#sfUserModal .sf-personnel-list-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 12px;margin:0 0 8px;font-size:.8125rem;line-height:1.5}
+#sfUserModal .sf-personnel-list-head>span{color:var(--muted,#91a7bc)}
+#sfUserModal .sf-personnel-choices{max-height:220px;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;border:1px solid var(--line,#294159);border-radius:8px;background:var(--panel2,#081522);scrollbar-width:thin;scrollbar-color:var(--line,#294159) transparent}
+#sfUserModal .sf-user-card .sf-personnel-choices label.sf-access-check{padding:10px 12px;min-height:44px;box-sizing:border-box;font-size:.875rem;font-weight:600;border-bottom:1px solid var(--line,#294159)}
+#sfUserModal .sf-personnel-choices label.sf-access-check:last-of-type{border-bottom:0}
+#sfUserModal .sf-personnel-choices label.sf-access-check:is(:hover,:focus-within){background:var(--panel,#0d1928)}
+#sfUserModal .sf-personnel-choices label.sf-access-check:has(input:checked){box-shadow:inset 3px 0 var(--teal2,#18b99a);background:var(--panel,#0d1928)}
+#sfUserModal .sf-personnel-choices .sf-personnel-empty{padding:16px 12px;text-align:center}
+#sfUserModal .sf-personnel-protection{margin-top:14px;padding-top:12px;border-top:1px solid var(--line,#294159)}
+#sfUserModal .sf-personnel-protection>b{display:block;font-size:.8125rem;margin-bottom:4px}
+#sfUserModal .sf-personnel-protection p+p{margin-top:6px}
+#sfUserModal :is(.sf-personnel-assignments,[data-personnel-choice],.sf-personnel-empty)[hidden]{display:none}
