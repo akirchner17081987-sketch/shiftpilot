@@ -154,7 +154,7 @@
   }, {once:true});
 
   // Inline the exact saved SVG so calendar, clock, waves, wordmark can animate separately.
-  fetch('assets/schichtfunk-logo-v2-entry.svg?v=20261011-hands1', {cache:'force-cache'})
+  fetch('assets/schichtfunk-logo-v2-entry.svg?v=20261011-days1', {cache:'force-cache'})
     .then(response => { if (!response.ok) throw new Error('Brand asset failed'); return response.text(); })
     .then(source => {
       if (dismissed) return;
