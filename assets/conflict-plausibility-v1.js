@@ -102,7 +102,8 @@
     if(B.__loaderInitStarted)return;B.__loaderInitStarted=true;
     const baseBoot=B.boot;
     if(typeof baseBoot==='function'&&!B.__roleLoaderWrapped){B.__roleLoaderWrapped=true;B.boot=async function(){const result=await baseBoot.apply(this,arguments);if(B.role!=='EMPLOYEE')await loadManager();return result}};
-    Promise.resolve(B.init?.()).catch(e=>{B.hideLoading?.();console.error('SchichtFunk Supabase init',e);B.updateState?.()});
+    const init=()=>Promise.resolve(B.init?.()).catch(e=>{B.hideLoading?.();console.error('SchichtFunk Supabase init',e);B.updateState?.()});
+    if(window.SFPageReady)window.SFPageReady.then(init);else init();
   };
   const load=i=>{
     if(i>=managerStart){start();return}

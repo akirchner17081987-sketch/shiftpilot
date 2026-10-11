@@ -7,8 +7,9 @@ import urllib.request
 from pathlib import Path
 
 root = Path(__file__).resolve().parent.parent
-assets = ["assets/supabase-data-v1.js", "assets/auto-plan-workspace-v1.js", "assets/auto-plan-period-v1.css", "assets/shift-handover-core-v1.js", "assets/shift-handover-v1.js", "assets/shift-handover-v1.css", "assets/staffing-simulator-core-v1.js", "assets/staffing-simulator-v1.js", "assets/staffing-simulator-v1.css", "assets/staffing-simulator-worker-v1.js", "assets/month-optimizer-core-v1.js", "assets/ot-weekend-holiday-policy.js", "assets/help-center-content-v3.js", "assets/wish-planning-core-v1.js", "assets/wish-planning-v1.js", "assets/wish-planning-v1.css", "assets/compliance-core-v2.js", "assets/employee-portal-workspace-v2.js", "assets/month-optimizer-v1.js", "assets/conflict-plausibility-v1.js"]
-expected = {name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in assets}
+assets = ["assets/navigation-compat-v1.js", "assets/schichtfunk-brand-cleanup-v2.js", "assets/page-quality-v1.js", "assets/page-quality-legacy-v1.js", "assets/help-center-renderer-v2.js", "assets/help-center-dedupe-v1.js", "assets/help-center-legacy-cleanup-v1.js", "assets/supabase-data-v1.js", "assets/auto-plan-workspace-v1.js", "assets/auto-plan-period-v1.css", "assets/shift-handover-core-v1.js", "assets/shift-handover-v1.js", "assets/shift-handover-v1.css", "assets/staffing-simulator-core-v1.js", "assets/staffing-simulator-v1.js", "assets/staffing-simulator-v1.css", "assets/staffing-simulator-worker-v1.js", "assets/month-optimizer-core-v1.js", "assets/ot-weekend-holiday-policy.js", "assets/help-center-content-v3.js", "assets/wish-planning-core-v1.js", "assets/wish-planning-v1.js", "assets/wish-planning-v1.css", "assets/compliance-core-v2.js", "assets/employee-portal-workspace-v2.js", "assets/month-optimizer-v1.js", "assets/conflict-plausibility-v1.js"]
+pages = ["demo.html", "qr-time.html"]
+expected = {name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in assets + pages}
 dynamic_assets = {"assets/supabase-data-v1.js", "assets/compliance-core-v2.js", "assets/employee-portal-workspace-v2.js"}
 loader_source = re.search(r'src="(assets/conflict-plausibility-v1\.js[^\"]*)"', (root / "index.html").read_text(encoding="utf-8")).group(1)
 help_source = re.search(r'src="(assets/help-center-content-v3\.js[^\"]*)"', (root / "index.html").read_text(encoding="utf-8")).group(1)
@@ -37,7 +38,7 @@ while time.monotonic() < deadline:
             raise RuntimeError("Published index does not yet load the updated help cache version")
         if f'src="{preview_source}"' not in index or f'href="{preview_style}"' not in index:
             raise RuntimeError("Published index does not yet load the updated auto-planning preview")
-        print(f"Live verification passed: staffing-simulator, wish planning, shift handover, auto-planning performance and help assets exactly match release {revision}, and the production index loads them with the expected help cache version.", flush=True)
+        print(f"Live verification passed: staffing-simulator, wish planning, shift handover, auto-planning performance, page loading and help assets exactly match release {revision}, and the production index loads them with the expected help cache version.", flush=True)
         break
     except Exception as error:
         print(f"Attempt {attempt}: waiting for IONOS release ({error})", flush=True)

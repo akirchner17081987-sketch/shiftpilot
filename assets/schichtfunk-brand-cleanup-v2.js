@@ -130,7 +130,7 @@
 
   function loadDatev(){
     ensureDatevHost();
-    if(document.getElementById('sfDatevLodasExportScript'))return;
+    if([...document.scripts].some(s=>new URL(s.src,location.href).pathname.endsWith('/datev-lodas-export-v1.js')))return;
     const s=document.createElement('script');
     s.id='sfDatevLodasExportScript';
     s.src='assets/datev-lodas-export-v1.js?v=20260912-extension-selector1';
@@ -140,7 +140,7 @@
   }
 
   function loadTimeMonthPicker(){
-    if(document.getElementById('sfTimeMonthPickerScript'))return;
+    if([...document.scripts].some(s=>new URL(s.src,location.href).pathname.endsWith('/time-month-picker-v1.js')))return;
     const s=document.createElement('script');
     s.id='sfTimeMonthPickerScript';
     s.src='assets/time-month-picker-v1.js?v=20260929-customday1';
@@ -152,12 +152,10 @@
     run();
     ensureLegalLinks();
     ensureDatevHost();
-    loadDatev();
-    loadTimeMonthPicker();
     const observer=new MutationObserver(()=>{enhanceDatevPanel();ensureLegalLinks()});
     observer.observe(document.documentElement,{childList:true,subtree:true});
     document.addEventListener('click',e=>{
-      if(e.target.closest?.('[data-view="time"]'))setTimeout(()=>{ensureDatevHost();enhanceDatevPanel()},650);
+      if(e.target.closest?.('[data-view="time"]'))setTimeout(()=>{if(window.SFBackend?.ready&&window.SFBackend.role!=='EMPLOYEE'){loadDatev();loadTimeMonthPicker()}ensureDatevHost();enhanceDatevPanel()},650);
     },true);
     setTimeout(()=>{ensureLegalLinks();ensureDatevHost();enhanceDatevPanel()},2800);
   }

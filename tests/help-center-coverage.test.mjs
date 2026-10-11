@@ -17,7 +17,7 @@ test('all audited features resolve to existing help and implementation sources',
 test('production help renderer displays each category and finds every added article',()=>{
  const c=content(),nodes=new Map(),listeners={};function node(id){if(!nodes.has(id))nodes.set(id,{value:'',innerHTML:'',textContent:'',hidden:true,addEventListener(type,fn){this[type]=fn;},setAttribute(){},focus(){}});return nodes.get(id);}
  c.document={getElementById:node,querySelector:()=>node('helpButton'),addEventListener(type,fn){listeners[type]=fn;}};c.setTimeout=fn=>fn();
- const html=read('index.html'),script=html.match(/<script id="schichtfunk-help-center-v2-js">([\s\S]*?)<\/script>/);assert.ok(script);vm.runInNewContext(script[1],c);
+ const html=read('index.html');assert.match(html,/<script defer id="schichtfunk-help-center-v2-js" src="assets\/help-center-renderer-v2\.js/);vm.runInNewContext(read('assets/help-center-renderer-v2.js'),c);
  node('helpButton').click();assert.equal(node('sfHelpModal').hidden,false);
  for(const [id,name] of c.window.SFHelpContent.categories){listeners.click({target:{closest:selector=>selector==='[data-hcat]'?{dataset:{hcat:id}}:null}});assert.equal(node('sfHelpCategoryTitle').textContent,name);for(const [q] of c.window.SFHelpContent.articles[id])assert.ok(node('sfHelpResults').innerHTML.includes(q));}
  for(const row of manifest.addedArticles){node('sfHelpSearch').value=row.question;node('sfHelpSearch').input();assert.ok(node('sfHelpResults').innerHTML.includes(row.question),row.question);}

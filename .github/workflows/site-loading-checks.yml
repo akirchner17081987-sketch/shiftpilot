@@ -1,0 +1,36 @@
+name: Site loading and dependencies
+on:
+  push:
+    branches: [main, codex/ionos-migration, codex/site-loading-performance-20261011]
+    paths: [index.html, demo.html, qr-time.html, 'assets/**', 'tests/site-loading.test.cjs', 'tests/browser/site-loading-qa.cjs', '.github/workflows/site-loading-checks.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  loading:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test tests/e2e/auto-plan-workspace.spec.cjs tests/e2e/schedule-publication-period.spec.cjs
+      - run: node tests/browser/site-loading-qa.cjs
+        env:
+          SF_SITE_LOADING_BASE: ad5b370599ae659ae03921f3b46a0e5ab5a74819
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: site-loading-qa
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7

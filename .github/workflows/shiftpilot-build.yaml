@@ -54,6 +54,7 @@ jobs:
           npm run test:wishes
           npm run test:handover
           npm run test:performance
+          npm run test:site-loading
 
 # Please do not touch the following action
       - name: Store deployment content

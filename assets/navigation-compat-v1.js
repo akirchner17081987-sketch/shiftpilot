@@ -61,7 +61,9 @@
   setTimeout(bindGlobalSearchKeyboard,0);
   setTimeout(bindGlobalSearchKeyboard,500);
 
+  const demoOnly=new Set(['data-sf-demo-reset','data-sf-demo-august-2026','data-sf-demo-datev-snapshot-fix','data-sf-demo-qr-local-bridge']);
   function loadIntegration(src,marker){
+    if(demoOnly.has(marker)&&sessionStorage.getItem('sf_demo_session_v1')!=='active')return;
     if(document.querySelector(`script[${marker}]`))return;
     const script=document.createElement('script');script.src=src;script.async=false;script.setAttribute(marker,'1');document.head.appendChild(script);
   }

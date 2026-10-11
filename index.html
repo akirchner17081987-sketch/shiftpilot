@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <meta name="theme-color" content="#08111f" />
 <meta name="application-name" content="SchichtFunk" />
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://zbvloohfjleadjnqhbbh.supabase.co" crossorigin>
 <link rel="icon" href="/favicon.ico" sizes="any" />
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png" />
 <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png" />
@@ -14,6 +16,7 @@
 <script>
 try{document.documentElement.dataset.sfTheme=localStorage.getItem('schichtfunk-manager-theme')==='light'?'light':'dark'}catch(e){document.documentElement.dataset.sfTheme='dark'}
 </script>
+<script>window.SFPageReady=new Promise(resolve=>document.addEventListener('DOMContentLoaded',()=>setTimeout(resolve,0),{once:true}));</script>
 <style>
 :root{
   --bg:#08111f; --bg2:#0b1524; --panel:#101d2d; --panel2:#132338; --line:#21334a;
@@ -92,10 +95,8 @@ button,input,select,textarea{font:inherit} button{cursor:pointer}
 <link rel="stylesheet" href="assets/employee-shiftboxes-v2.css">
 <link rel="stylesheet" href="assets/ot-weekend-holiday-policy.css">
 <link rel="stylesheet" href="assets/dynamic-employee-pool-v1.css">
-<link rel="stylesheet" href="assets/schichtfunk-rebrand.css?v=20260918-static-brand">
 <link rel="stylesheet" href="assets/assignment-quick-delete-v1.css">
 <link rel="stylesheet" href="assets/employee-core-v1.css">
-<link rel="stylesheet" href="assets/schichtfunk-rebrand.css?v=20260918-static-brand">
 <link rel="stylesheet" href="assets/mobile-responsive-v1.css?v=20260917-compact-manager1">
 <link rel="stylesheet" href="assets/mobile-manager-navigation-v1.css?v=20260918-static-brand">
 <link rel="stylesheet" href="assets/auto-plan-period-v1.css?v=20261011-performance1">
@@ -107,7 +108,7 @@ button,input,select,textarea{font:inherit} button{cursor:pointer}
 <link id="sfUsersCss" rel="stylesheet" href="assets/users-permissions-v2.css?v=20261009-users1">
 <link rel="stylesheet" href="assets/manager-schedule-time-layout-v1.css?v=20261006-1">
 <script defer src="assets/manager-schedule-time-layout-v1.js?v=20261006-1"></script>
-<link rel="stylesheet" href="assets/schichtfunk-rebrand.css">
+<link rel="stylesheet" href="assets/schichtfunk-rebrand.css?v=20260918-static-brand">
 <link rel="stylesheet" href="assets/planning-assistant-v1.css?v=20261009-1">
 <style id="sf-employee-scrollbars-v1">
 /* SchichtFunk: einheitliche Scrollleisten im Mitarbeiterportal */
@@ -837,7 +838,7 @@ const _saveAbsenceDialogDynamicBase=saveAbsenceDialog;
 saveAbsenceDialog=function(){if(!document.getElementById('absEmp')?.value){alert('Bitte zuerst einen Mitarbeiter über die Suche auswählen.');document.getElementById('absEmpSearch')?.focus();return}_saveAbsenceDialogDynamicBase()}
 </script>
 
-<script src="assets/template-manager.js?v=20261001-models1"></script>
+<script defer src="assets/template-manager.js?v=20261001-models1"></script>
 <!-- SCHICHTFUNK_QUALITY_PASS_V1 -->
 <style id="schichtfunk-quality-pass-v1">
 /* ===== SchichtFunk Quality Pass: Lesbarkeit, Fokus, Responsive, Konsistenz ===== */
@@ -895,73 +896,7 @@ table th,table td{font-size:13px;line-height:1.35}
 }
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 </style>
-<script id="schichtfunk-quality-pass-js-v1">
-(function(){
-  const VIEW={overview:'overview',schedule:'schedule',employees:'employees',time:'time',absence:'absence',auto:'auto',reports:'reports',settings:'settings'};
-  window.spNavigate=function(name){
-    const target=VIEW[name]||name;
-    if(typeof switchView==='function')switchView(target);
-    const main=document.querySelector('.main');
-    if(main)main.scrollTo({top:0,behavior:'instant'});
-    window.scrollTo({top:0,behavior:'instant'});
-  };
-
-  function emptyState(id,text){
-    const el=document.getElementById(id); if(!el)return;
-    if(!el.textContent.trim() && !el.children.length)el.innerHTML='<div class="sp-empty">'+text+'</div>';
-  }
-  function improveOverview(){
-    const stats=[...document.querySelectorAll('#view-overview #overviewStats .stat')];
-    // Die aktuelle Dashboard-Logik vergibt Ziele über data-db-action.
-    // Keine positionsabhängigen Klick-Handler ergänzen: Reihenfolge und Anzahl
-    // der Kennzahlen können sich ändern.
-    stats.forEach(card=>{
-      if(!card.dataset.dbAction)return;
-      card.classList.add('sp-clickable');
-    });
-    emptyState('overviewIssues','Aktuell besteht kein Handlungsbedarf.');
-    emptyState('overviewAbsences','Für den gewählten Zeitraum liegen keine weiteren Abwesenheiten vor.');
-    emptyState('overviewWorkload','Noch keine Auslastungsdaten für diesen Zeitraum.');
-    emptyState('overviewShiftMix','Noch keine Schichtverteilung für diesen Zeitraum.');
-  }
-
-  // Bestehende Renderfunktion erweitern, ohne Fachlogik zu ersetzen.
-  if(typeof renderOverview==='function' && !renderOverview.__qualityWrapped){
-    const base=renderOverview;
-    const wrapped=function(){const r=base.apply(this,arguments);requestAnimationFrame(improveOverview);return r;};
-    wrapped.__qualityWrapped=true;window.renderOverview=wrapped;
-  }
-
-  function improveControls(){
-    document.querySelectorAll('button').forEach(b=>{if(!b.getAttribute('type'))b.setAttribute('type','button');});
-    const iconButtons=[...document.querySelectorAll('.iconbtn')];
-    iconButtons.forEach(b=>{
-      const t=(b.textContent||'').trim();
-      if(!b.getAttribute('aria-label')){
-        if(t==='?')b.setAttribute('aria-label','Hilfe');
-        else if(t==='✕'||t==='×')b.setAttribute('aria-label','Schließen');
-        else b.setAttribute('aria-label',b.title||'Aktion');
-      }
-    });
-    // Schnellaktionen robust an die echte View-Navigation binden.
-    document.querySelectorAll('#view-overview button').forEach(b=>{
-      const t=(b.textContent||'').trim();
-      if(t.includes('Dienstplan öffnen'))b.onclick=()=>spNavigate('schedule');
-    });
-  }
-
-  document.addEventListener('keydown',e=>{
-    // Globale Suche mit Strg/Cmd+K fokussieren.
-    if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){
-      e.preventDefault();document.getElementById('globalSearch')?.focus();
-    }
-  });
-
-  document.addEventListener('DOMContentLoaded',()=>{improveControls();setTimeout(improveOverview,0);});
-  // Bei SPA-View-Wechseln erneut kleine Qualitätsverbesserungen anwenden.
-  document.addEventListener('click',e=>{if(e.target.closest('[data-view]'))setTimeout(()=>{improveControls();if(document.getElementById('view-overview')?.classList.contains('active'))improveOverview();},0);});
-})();
-</script>
+<script defer id="schichtfunk-quality-pass-js-v1" src="assets/page-quality-v1.js?v=20261011-load1"></script>
 <!-- /SCHICHTFUNK_QUALITY_PASS_V1 -->
 
 <!-- SCHICHTFUNK_SCHEDULE_UX_V2 -->
@@ -1032,40 +967,40 @@ table th,table td{font-size:13px;line-height:1.35}
 </style>
 <!-- /SCHICHTFUNK_SCHEDULE_UX_V2 -->
 
-<script src="assets/schedule-ux-v3.js"></script>
-<script src="assets/assignment-ux-v4.js?v=20261002-weekdays1"></script>
-<script src="assets/soll-summary-v5.js"></script>
-<script src="assets/ot-weekend-holiday-policy.js?v=sim1-20261009-critical-period1"></script>
-<script src="assets/dynamic-employee-pool-v1.js"></script>
-<script src="assets/schichtfunk-rebrand.js"></script>
-<script src="assets/schichtfunk-brand-cleanup-v2.js?v=20260929-customday1"></script>
+<script defer src="assets/schedule-ux-v3.js"></script>
+<script defer src="assets/assignment-ux-v4.js?v=20261002-weekdays1"></script>
+<script defer src="assets/soll-summary-v5.js"></script>
+<script defer src="assets/ot-weekend-holiday-policy.js?v=sim1-20261009-critical-period1"></script>
+<script defer src="assets/dynamic-employee-pool-v1.js"></script>
+<script defer src="assets/schichtfunk-rebrand.js"></script>
+<script defer src="assets/schichtfunk-brand-cleanup-v2.js?v=20260929-customday1&loading=20261011-1"></script>
 <link rel="stylesheet" href="assets/schedule-employee-display-v1.css?v=20261003-persondark1">
-<script src="assets/schedule-employee-display-v1.js?v=20261004-teamorder1"></script>
-<script src="assets/navigation-compat-v1.js?v=20260930-tenbreaks1&today=20261010-1&qr=20261009-qrperiods1&period=20261001-1&models=1&auto=20261001-workflow2&mobile=20261002-sheetguard1&export=20261004-exporttotals1&company=20261010-1&frame=20261010-2"></script>
-<script src="assets/schichtfunk-schedule-core-v1.js?v=20261009-critical-period1"></script>
-<script src="assets/assignment-quick-delete-v1.js"></script>
-<script src="assets/solid-planning-core-v1.js?v=20261009-critical-period1"></script>
-<script src="assets/conflict-plausibility-v1.js?v=20261009-accessroles1&company=20261010-1&today=20261010-1&wishes=20261010-1&handover=20261010-1&absence=20261011-1&performance=20261011-1"></script>
-<script src="assets/employee-core-v1.js?v=20261001-removal1"></script>
-<script src="assets/shift-models-v1.js?v=20261009-critical-period1"></script>
-<script src="assets/employee-rhythm-v1.js?v=20261004-fd-split1"></script>
-<script src="assets/planning-teams-v1.js?v=20261004-fd-split1"></script>
+<script defer src="assets/schedule-employee-display-v1.js?v=20261004-teamorder1"></script>
+<script defer src="assets/navigation-compat-v1.js?v=20260930-tenbreaks1&today=20261010-1&qr=20261009-qrperiods1&period=20261001-1&models=1&auto=20261001-workflow2&mobile=20261002-sheetguard1&export=20261004-exporttotals1&company=20261010-1&frame=20261010-2&loading=20261011-1"></script>
+<script defer src="assets/schichtfunk-schedule-core-v1.js?v=20261009-critical-period1"></script>
+<script defer src="assets/assignment-quick-delete-v1.js"></script>
+<script defer src="assets/solid-planning-core-v1.js?v=20261009-critical-period1"></script>
+<script defer src="assets/conflict-plausibility-v1.js?v=20261009-accessroles1&company=20261010-1&today=20261010-1&wishes=20261010-1&handover=20261010-1&absence=20261011-1&performance=20261011-1&loading=20261011-1"></script>
+<script defer src="assets/employee-core-v1.js?v=20261001-removal1"></script>
+<script defer src="assets/shift-models-v1.js?v=20261009-critical-period1"></script>
+<script defer src="assets/employee-rhythm-v1.js?v=20261004-fd-split1"></script>
+<script defer src="assets/planning-teams-v1.js?v=20261004-fd-split1"></script>
 <link rel="stylesheet" href="assets/open-shift-marketplace-v1.css?v=20261001-market1">
-<script src="assets/open-shift-marketplace-v1.js?v=20261002-sharedtl2"></script>
-<script src="assets/individual-month-planner-v1.js?v=20261008-solid-auto3"></script>
-<script src="assets/month-optimizer-core-v1.js?v=sim1-20261009-critical-period1&wish=20261010-1"></script>
-<script src="assets/auto-plan-workspace-v1.js?v=20261011-performance1"></script>
-<script src="assets/month-optimizer-v1.js?v=20261009-assistant1&wish=20261010-1"></script>
-<script src="assets/planning-assistant-insights-v1.js?v=20261009-1"></script>
-<script src="assets/planning-assistant-core-v1.js?v=20261009-staffing1"></script>
-<script src="assets/planning-assistant-v1.js?v=20261009-staffing1"></script>
-<script src="assets/employee-management-v2.js?v=20261006-erasure1&pool=20261009-focus3"></script>
-<script src="assets/team-admin-v1.js?v=20261009-accessroles1"></script>
-<script src="assets/audit-logs-v1.js?v=20261010-audit2"></script>
-<script src="assets/settings-management-v2.js?v=20261009-accessroles1&company=20261010-1"></script>
-<script src="assets/company-datetime-v1.js?v=20260902-datetime1"></script>
-<script src="assets/schedule-final-v1.js?v=20260831-complete1"></script>
-<script src="assets/absence-management-v3.js?v=20261009-conflict-period"></script>
+<script defer src="assets/open-shift-marketplace-v1.js?v=20261002-sharedtl2"></script>
+<script defer src="assets/individual-month-planner-v1.js?v=20261008-solid-auto3"></script>
+<script defer src="assets/month-optimizer-core-v1.js?v=sim1-20261009-critical-period1&wish=20261010-1"></script>
+<script defer src="assets/auto-plan-workspace-v1.js?v=20261011-performance1"></script>
+<script defer src="assets/month-optimizer-v1.js?v=20261009-assistant1&wish=20261010-1"></script>
+<script defer src="assets/planning-assistant-insights-v1.js?v=20261009-1"></script>
+<script defer src="assets/planning-assistant-core-v1.js?v=20261009-staffing1"></script>
+<script defer src="assets/planning-assistant-v1.js?v=20261009-staffing1"></script>
+<script defer src="assets/employee-management-v2.js?v=20261006-erasure1&pool=20261009-focus3"></script>
+<script defer src="assets/team-admin-v1.js?v=20261009-accessroles1"></script>
+<script defer src="assets/audit-logs-v1.js?v=20261010-audit2"></script>
+<script defer src="assets/settings-management-v2.js?v=20261009-accessroles1&company=20261010-1"></script>
+<script defer src="assets/company-datetime-v1.js?v=20260902-datetime1"></script>
+<script defer src="assets/schedule-final-v1.js?v=20260831-complete1"></script>
+<script defer src="assets/absence-management-v3.js?v=20261009-conflict-period"></script>
 <!-- SHIFTPILOT_QUALITY_PASS_V1 -->
 <style id="shiftpilot-quality-pass-v1">
 /* ===== ShiftPilot Quality Pass: Lesbarkeit, Fokus, Responsive, Konsistenz ===== */
@@ -1123,145 +1058,40 @@ table th,table td{font-size:13px;line-height:1.35}
 }
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 </style>
-<script id="shiftpilot-quality-pass-js-v1">
-(function(){
-  const VIEW={overview:'overview',schedule:'schedule',employees:'employees',time:'time',absence:'absence',auto:'auto',reports:'reports',settings:'settings'};
-  window.spNavigate=function(name){
-    const target=VIEW[name]||name;
-    if(typeof switchView==='function')switchView(target);
-    const main=document.querySelector('.main');
-    if(main)main.scrollTo({top:0,behavior:'instant'});
-    window.scrollTo({top:0,behavior:'instant'});
-  };
-
-  function emptyState(id,text){
-    const el=document.getElementById(id); if(!el)return;
-    if(!el.textContent.trim() && !el.children.length)el.innerHTML='<div class="sp-empty">'+text+'</div>';
-  }
-  function improveOverview(){
-    const stats=[...document.querySelectorAll('#view-overview #overviewStats .stat')];
-    // Ziele werden vom Dashboard selbst ueber data-db-action verwaltet.
-    stats.forEach(card=>{
-      if(!card.dataset.dbAction)return;
-      card.classList.add('sp-clickable');
-    });
-    emptyState('overviewIssues','Aktuell besteht kein Handlungsbedarf.');
-    emptyState('overviewAbsences','Für den gewählten Zeitraum liegen keine weiteren Abwesenheiten vor.');
-    emptyState('overviewWorkload','Noch keine Auslastungsdaten für diesen Zeitraum.');
-    emptyState('overviewShiftMix','Noch keine Schichtverteilung für diesen Zeitraum.');
-  }
-
-  // Bestehende Renderfunktion erweitern, ohne Fachlogik zu ersetzen.
-  if(typeof renderOverview==='function' && !renderOverview.__qualityWrapped){
-    const base=renderOverview;
-    const wrapped=function(){const r=base.apply(this,arguments);requestAnimationFrame(improveOverview);return r;};
-    wrapped.__qualityWrapped=true;window.renderOverview=wrapped;
-  }
-
-  function improveControls(){
-    document.querySelectorAll('button').forEach(b=>{if(!b.getAttribute('type'))b.setAttribute('type','button');});
-    const iconButtons=[...document.querySelectorAll('.iconbtn')];
-    iconButtons.forEach(b=>{
-      const t=(b.textContent||'').trim();
-      if(!b.getAttribute('aria-label')){
-        if(t==='?')b.setAttribute('aria-label','Hilfe');
-        else if(t==='✕'||t==='×')b.setAttribute('aria-label','Schließen');
-        else b.setAttribute('aria-label',b.title||'Aktion');
-      }
-    });
-    // Schnellaktionen robust an die echte View-Navigation binden.
-    document.querySelectorAll('#view-overview button').forEach(b=>{
-      const t=(b.textContent||'').trim();
-      if(t.includes('Dienstplan öffnen'))b.onclick=()=>spNavigate('schedule');
-    });
-  }
-
-  document.addEventListener('keydown',e=>{
-    // Globale Suche mit Strg/Cmd+K fokussieren.
-    if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){
-      e.preventDefault();document.getElementById('globalSearch')?.focus();
-    }
-  });
-
-  document.addEventListener('DOMContentLoaded',()=>{improveControls();setTimeout(improveOverview,0);});
-  // Bei SPA-View-Wechseln erneut kleine Qualitätsverbesserungen anwenden.
-  document.addEventListener('click',e=>{if(e.target.closest('[data-view]'))setTimeout(()=>{improveControls();if(document.getElementById('view-overview')?.classList.contains('active'))improveOverview();},0);});
-})();
-</script>
+<script defer id="shiftpilot-quality-pass-js-v1" src="assets/page-quality-legacy-v1.js?v=20261011-load1"></script>
 <!-- /SHIFTPILOT_QUALITY_PASS_V1 -->
-<script src="assets/supabase-shift-marketplace-v1.js?v=20261002-sharedtl1"></script>
-<script src="assets/readiness-traffic-light-v1.js?v=20261005-period1"></script>
-<script src="assets/disruption-autopilot-v1.js?v=20261010-today1"></script>
-<script src="assets/assignment-ux-v4.js?v=20261002-weekdays1"></script>
-<script src="assets/mobile-manager-navigation-v1.js?v=20260907-1"></script>
-<script src="assets/manager-theme-v1.js?v=20261006-1"></script>
+<script defer src="assets/supabase-shift-marketplace-v1.js?v=20261002-sharedtl1"></script>
+<script defer src="assets/readiness-traffic-light-v1.js?v=20261005-period1"></script>
+<script defer src="assets/disruption-autopilot-v1.js?v=20261010-today1"></script>
+
+<script defer src="assets/mobile-manager-navigation-v1.js?v=20260907-1"></script>
+<script defer src="assets/manager-theme-v1.js?v=20261006-1"></script>
 <!-- SCHICHTFUNK_HELP_CENTER_V2 -->
 <style id="schichtfunk-help-center-v2">
 .sf-help-backdrop{position:fixed;inset:0;z-index:10000;background:rgba(2,8,15,.78);backdrop-filter:blur(8px);display:grid;place-items:center;padding:24px}.sf-help-backdrop[hidden]{display:none}.sf-help{width:min(1080px,96vw);height:min(720px,90vh);display:grid;grid-template-columns:236px 1fr;grid-template-rows:auto 1fr auto;background:#0b1725;border:1px solid #2a435a;border-radius:16px;overflow:hidden;box-shadow:0 30px 100px rgba(0,0,0,.58)}.sf-help-head{grid-column:1/-1;display:flex;align-items:center;gap:14px;padding:17px 18px;border-bottom:1px solid #20364d}.sf-help-kicker{color:#35dfc4;font-size:11px;font-weight:900;letter-spacing:.14em}.sf-help-head h2{margin:4px 0 0;font-size:20px}.sf-help-search{flex:1;position:relative}.sf-help-search input{width:100%;height:42px;padding:0 42px 0 38px;background:#081522;border:1px solid #2f566d;border-radius:10px;color:#eef8ff;outline:none}.sf-help-search input:focus{border-color:#3ce3c8;box-shadow:0 0 0 3px rgba(60,227,200,.12)}.sf-help-search:before{content:'⌕';position:absolute;left:13px;top:8px;color:#6d9bb2;font-size:20px;z-index:1}.sf-help-clear,.sf-help-close{border:1px solid #2b455b;background:#0f1d2d;color:#aec1d1;border-radius:9px}.sf-help-clear{position:absolute;right:8px;top:7px;width:28px;height:28px;min-height:28px;border:0;background:transparent}.sf-help-close{width:36px;height:36px;min-height:36px;font-size:18px}.sf-help-nav{grid-row:2;padding:16px 10px;background:#091522;border-right:1px solid #20364d;overflow:auto}.sf-help-nav button{width:100%;min-height:44px;border:0;background:transparent;color:#94a9bd;border-radius:9px;text-align:left;padding:8px 10px;display:flex;flex-direction:column;gap:2px;margin-bottom:4px}.sf-help-nav button:hover,.sf-help-nav button.active{background:#123229;color:#e8fff9;box-shadow:inset 3px 0 0 #2ed9b8}.sf-help-nav b{font-size:12px}.sf-help-nav small{font-size:10px;color:#718ba1}.sf-help-nav button.active small{color:#8ce8d5}.sf-help-main{grid-row:2;padding:22px 24px;overflow:auto}.sf-help-main h3{margin:0;font-size:20px}.sf-help-main>p{margin:5px 0 17px;color:#9ab0c4;font-size:13px}.sf-help-results{display:flex;flex-direction:column;gap:9px}.sf-help-article{border:1px solid #244057;background:#0e1c2c;border-radius:10px;overflow:hidden}.sf-help-article button{width:100%;min-height:48px;border:0;background:transparent;color:#eaf5ff;text-align:left;padding:13px 15px;display:flex;align-items:center;justify-content:space-between;gap:12px;font-weight:800}.sf-help-article button:hover{background:#132638}.sf-help-article button span:last-child{color:#6ea4ae;font-size:18px}.sf-help-answer{display:none;padding:0 15px 15px;color:#b4c7d7;font-size:13px;line-height:1.6}.sf-help-article.open .sf-help-answer{display:block}.sf-help-empty{padding:28px 8px;color:#91a7bb;text-align:center;border:1px dashed #2a435a;border-radius:10px}.sf-help-foot{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-top:1px solid #20364d;color:#8197ab;font-size:11px}.sf-help-foot strong{color:#bcd0de}@media(max-width:720px){.sf-help{height:94vh;grid-template-columns:1fr;grid-template-rows:auto auto 1fr auto}.sf-help-nav{grid-row:2;display:flex;gap:5px;overflow-x:auto;padding:9px;border-right:0;border-bottom:1px solid #20364d}.sf-help-nav button{min-width:150px;margin:0}.sf-help-main{grid-row:3;padding:17px}.sf-help-head{flex-wrap:wrap}.sf-help-head>div:first-child{width:100%}.sf-help-search{order:3;flex-basis:100%}}
 </style>
 <div class="sf-help-backdrop" id="sfHelpModal" hidden><section class="sf-help" role="dialog" aria-modal="true" aria-labelledby="sfHelpTitle"><header class="sf-help-head"><div><div class="sf-help-kicker">SCHICHTFUNK HILFE-CENTER</div><h2 id="sfHelpTitle">Wie können wir helfen?</h2></div><div class="sf-help-search"><input id="sfHelpSearch" type="search" placeholder="Problem oder Funktion suchen ..." aria-label="Hilfe durchsuchen"><button class="sf-help-clear" id="sfHelpClear" type="button" aria-label="Suche leeren">×</button></div><button class="sf-help-close" id="sfHelpClose" type="button" aria-label="Hilfe schließen">×</button></header><nav class="sf-help-nav" id="sfHelpNav" aria-label="Hilfekategorien"></nav><main class="sf-help-main"><h3 id="sfHelpCategoryTitle"></h3><p id="sfHelpCategoryIntro"></p><div class="sf-help-results" id="sfHelpResults"></div></main><footer class="sf-help-foot"><span>Die Hilfe verändert keine Daten.</span><span><strong>ESC</strong> schließen · <strong>Strg/Cmd + K</strong> Suche</span></footer></section></div>
-<script src="assets/help-center-content-v3.js?v=20261009-qrperiods1-sim1&company=20261010-1&audit=20261010-1&reports=20261010-1&today=20261010-1&staffing=20261010-help1&wishes=20261010-1&handover=20261010-1&performance=20261011-1"></script>
+<script defer src="assets/help-center-content-v3.js?v=20261009-qrperiods1-sim1&company=20261010-1&audit=20261010-1&reports=20261010-1&today=20261010-1&staffing=20261010-help1&wishes=20261010-1&handover=20261010-1&performance=20261011-1"></script>
 <link rel="stylesheet" href="assets/help-center-guides-v1.css?v=20260930-1">
-<script src="assets/help-center-guides-v1.js?v=20261009-qrperiods1&company=20261010-1"></script>
-<script id="schichtfunk-help-center-v2-js">
-(function(){
-var cats=window.SFHelpContent.categories,data=window.SFHelpContent.articles;
-var modal=document.getElementById('sfHelpModal'),nav=document.getElementById('sfHelpNav'),res=document.getElementById('sfHelpResults'),title=document.getElementById('sfHelpCategoryTitle'),intro=document.getElementById('sfHelpCategoryIntro'),search=document.getElementById('sfHelpSearch'),active='start';
-function escapeHtml(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
-function guideFor(question){var g=(window.SFHelpGuides||{})[question];if(!g)return '';return '<section class="sf-help-guide" aria-label="Bebilderte Anleitung"><h4>Schritt für Schritt</h4><figure><a href="'+g.image+'" target="_blank" rel="noopener" aria-label="Abbildung vergrößern: '+escapeHtml(question)+'"><img src="'+g.image+'" alt="'+escapeHtml(g.alt)+'" loading="lazy"></a><figcaption>Vereinfachte Ansicht der Bedienoberfläche · <a href="'+g.image+'" target="_blank" rel="noopener">Abbildung vergrößern</a></figcaption></figure><ol>'+g.steps.map(function(step){return '<li><span>'+escapeHtml(step)+'</span></li>'}).join('')+'</ol></section>'}
-function draw(){var q=(search.value||'').toLowerCase().trim(),cat=cats.filter(function(c){return c[0]===active})[0]||cats[0],rows=[];(q?cats:[cat]).forEach(function(c){(data[c[0]]||[]).forEach(function(a){if(!q||(c[1]+' '+a[0]+' '+a[1]).toLowerCase().indexOf(q)>=0)rows.push([c,a])})});nav.innerHTML=cats.map(function(c){return '<button type="button" class="'+(c[0]===active?'active':'')+'" data-hcat="'+c[0]+'"><b>'+c[1]+'</b><small>'+c[2]+'</small></button>'}).join('');title.textContent=q?'Suchergebnisse für „'+search.value+'“':cat[1];intro.textContent=q?rows.length+' passende Hilfeartikel gefunden.':cat[2];res.innerHTML=rows.length?rows.map(function(r,i){return '<article class="sf-help-article"><button type="button" aria-expanded="false" aria-controls="sfHelpAnswer'+i+'"><span>'+r[1][0]+(q&&r[0][0]!==active?' <small>· '+r[0][1]+'</small>':'')+'</span><span aria-hidden="true">›</span></button><div class="sf-help-answer" id="sfHelpAnswer'+i+'">'+r[1][1]+guideFor(r[1][0])+'</div></article>'}).join(''):'<div class="sf-help-empty">Kein passender Artikel gefunden. Versuchen Sie „Plan“, „Zeit“ oder „Konflikt“.</div>'}
-function open(){modal.hidden=false;draw();setTimeout(function(){search.focus()},0)}function close(){modal.hidden=true}
-document.addEventListener('click',function(e){var c=e.target.closest('[data-hcat]');if(c){active=c.dataset.hcat;search.value='';draw();return}var q=e.target.closest('.sf-help-article>button');if(q){var expanded=q.parentElement.classList.toggle('open');q.setAttribute('aria-expanded',String(expanded))}});document.getElementById('sfHelpClose').addEventListener('click',close);document.getElementById('sfHelpClear').addEventListener('click',function(){search.value='';draw();search.focus()});search.addEventListener('input',draw);modal.addEventListener('click',function(e){if(e.target===modal)close()});document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!modal.hidden)close();if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();open()}});var hb=document.querySelector('.top-actions .iconbtn');if(hb){hb.id='sfHelpButton';hb.type='button';hb.title='Hilfe-Center';hb.setAttribute('aria-label','Hilfe-Center öffnen');hb.addEventListener('click',open)}})();
-</script>
+<script defer src="assets/help-center-guides-v1.js?v=20261009-qrperiods1&company=20261010-1"></script>
+<script defer id="schichtfunk-help-center-v2-js" src="assets/help-center-renderer-v2.js?v=20261011-load1"></script>
 <!-- /SCHICHTFUNK_HELP_CENTER_V2 -->
-<script id="schichtfunk-help-dedupe-v1">
-(function(){
-  function dedupe(){
-    var legacy=document.getElementById('sfHelpCenter');if(legacy&&legacy.parentNode)legacy.parentNode.removeChild(legacy);var nodes=[].slice.call(document.querySelectorAll('[id="sfHelpModal"]'));
-    if(nodes.length<2) nodes=[].slice.call(document.querySelectorAll('.sf-help-backdrop'));
-    if(nodes.length<2)return;
-    nodes.slice(1).forEach(function(n){if(n&&n.parentNode)n.parentNode.removeChild(n)});
-  }
-  function run(){
-    dedupe();
-    if(window.MutationObserver){
-      var obs=new MutationObserver(function(){dedupe()});
-      obs.observe(document.body,{childList:true,subtree:true});
-      setTimeout(function(){obs.disconnect();dedupe()},3000);
-    }
-  }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run);else run();
-})();
-</script>
+<script defer id="schichtfunk-help-dedupe-v1" src="assets/help-center-dedupe-v1.js?v=20261011-load1"></script>
 <link rel="stylesheet" href="assets/reports-workspace-v1.css?v=20261010-reports1">
-<script src="assets/reports-workspace-core-v1.js?v=20261010-reports1"></script>
-<script src="assets/reports-workspace-v1.js?v=20261010-reports1"></script>
+<script defer src="assets/reports-workspace-core-v1.js?v=20261010-reports1"></script>
+<script defer src="assets/reports-workspace-v1.js?v=20261010-reports1"></script>
 <link rel="stylesheet" href="assets/today-workspace-v3.css?v=20261010-today1">
-<script src="assets/today-workspace-core-v1.js?v=20261010-today1"></script>
-<script src="assets/today-workspace-v3.js?v=20261010-today1"></script>
+<script defer src="assets/today-workspace-core-v1.js?v=20261010-today1"></script>
+<script defer src="assets/today-workspace-v3.js?v=20261010-today1"></script>
 <link rel="stylesheet" href="assets/staffing-simulator-v1.css?v=20261010-sim1">
-<script src="assets/wish-planning-core-v1.js?v=20261010-wish1"></script>
-<script src="assets/staffing-simulator-core-v1.js?v=20261010-sim1&wish=20261010-1"></script>
-<script src="assets/staffing-simulator-v1.js?v=20261010-wish1"></script>
+<script defer src="assets/wish-planning-core-v1.js?v=20261010-wish1"></script>
+<script defer src="assets/staffing-simulator-core-v1.js?v=20261010-sim1&wish=20261010-1"></script>
+<script defer src="assets/staffing-simulator-v1.js?v=20261010-wish1"></script>
 <link rel="stylesheet" href="assets/wish-planning-v1.css?v=20261010-wish1">
-<script src="assets/wish-planning-v1.js?v=20261010-wish1"></script>
+<script defer src="assets/wish-planning-v1.js?v=20261010-wish1"></script>
 <link rel="stylesheet" href="assets/shift-handover-v1.css?v=20261010-handover1">
-<script src="assets/shift-handover-core-v1.js?v=20261010-handover1"></script>
-<script src="assets/shift-handover-v1.js?v=20261010-handover1"></script>
+<script defer src="assets/shift-handover-core-v1.js?v=20261010-handover1"></script>
+<script defer src="assets/shift-handover-v1.js?v=20261010-handover1"></script>
+<script defer src="assets/help-center-legacy-cleanup-v1.js?v=20261011-load1"></script>
 </body>
 </html>
-<script>
-(function(){
-  function removeLegacyHelp(){var legacy=document.getElementById("sfHelpCenter");if(legacy&&legacy.parentNode)legacy.parentNode.removeChild(legacy);}
-  document.addEventListener("click",function(event){
-    var trigger=event.target&&event.target.closest?event.target.closest("#sfHelpButton"):null;
-    if(!trigger)return;
-    setTimeout(removeLegacyHelp,0);
-    setTimeout(removeLegacyHelp,100);
-  },true);
-  removeLegacyHelp();
-})();
-</script>
-
-
-
