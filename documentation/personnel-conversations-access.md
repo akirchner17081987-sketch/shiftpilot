@@ -1,40 +1,41 @@
-# Personalgespräche für ausgewählte Teamleiter
+# Personalgespräche: automatische Mitarbeiterzuordnung
 
-Stand: 12. Oktober 2026. Ergänzung zur MFA-/Gesundheitsdatenabsicherung aus PR #78.
+Stand: 12. Oktober 2026. Ersetzt die manuelle Zuordnung aus PR #79/#80.
+
+Aktive Teamleiter erhalten automatisch den Gesprächsbereich aller Mitarbeiter ihres Unternehmens. Neue Mitarbeiter gehören unmittelbar dazu; eine einzelne Auswahl ist nicht mehr erforderlich. Teamleiter-Akten sind ausgeschlossen. Die bisherige Trennung privater Dokumente, alter privater Notizen und Krankheitsgründe bleibt auf ausdrücklichen Wunsch bestehen.
 
 ## Bedienung
 
-1. Inhaber oder Administrator: **Einstellungen → Benutzer & Rechte → Teamleiter bearbeiten**.
-2. **Personalgespräche (MFA erforderlich)** aktivieren und die benötigten aktiven Mitarbeiter ausdrücklich auswählen. Speichern übernimmt Recht und Zuordnungen gemeinsam. Eine Freigabe ohne Mitarbeiter wird abgelehnt.
-3. Teamleiter richten einen Authenticator ein, bestätigen MFA und öffnen im zugeordneten Mitarbeiterprofil **Personalgespräche**.
-4. Der Bereich enthält neue Gesprächsnotizen, vereinbarte Ziele, Folgetermine und einzeln freigegebene berufliche Qualifikationen. Gesundheitsangaben gehören nicht in diesen Bereich.
-5. Inhaber/Administrator können berufliche Qualifikationen im Bearbeitungsdialog ausdrücklich **für Personalgespräche freigeben**. Bemerkung und Zertifikatsnummer bleiben privat. Änderungen am Nachweis setzen seine Freigabe zunächst zurück.
+1. Inhaber/Administrator legt einen Zugang mit der Rolle **Teamleiter** an oder aktiviert ihn. Das Gesprächsrecht wird bei der Mitgliedschaft automatisch ergänzt; andere Zusatzrechte bleiben unverändert.
+2. **Einstellungen → Benutzer & Rechte → Rolle ändern** zeigt die automatisch zugeordneten Mitarbeiter als alphabetische, durchsuchbare Liste. Die Zuordnung wird nicht über Checkboxen verändert.
+3. Teamleiter richten einen Authenticator ein, bestätigen MFA und öffnen im Mitarbeiterprofil **Personalgespräche**.
+4. Sichtbar sind neue Gesprächsnotizen, vereinbarte Ziele, Folgetermine und ausdrücklich für Gespräche freigegebene berufliche Qualifikationen. Gesundheitsangaben gehören nicht in Gesprächsnotizen.
+5. Inhaber/Administrator kann berufliche Qualifikationen ausdrücklich für Gespräche freigeben. Bemerkung und Zertifikatsnummer bleiben privat. Inhaltliche Änderungen setzen die Freigabe zurück.
 
-Das Zusatzrecht ist standardmäßig aus. Bestehende Teamleiter und Mitarbeiter erhalten keine automatischen Freigaben. Bei Einladungen wird das Recht noch nicht vergeben; die Zuordnung erfolgt nach Annahme des Zugangs. Die vier Hauptrollen bleiben erhalten.
+Einladungen vergeben weiterhin nur die Hauptrolle und ausgewählte andere Rechte. Nach Annahme wird das Gesprächsrecht bei einer regulären Teamleiter-Mitgliedschaft automatisch ergänzt. Gesperrte Zugänge und das ausdrücklich eingeschränkte Sonderprofil **Nur lesender Dienstplanzugriff** erhalten keine Personaldaten. Nach Reaktivierung einer regulären Teamleiter-Mitgliedschaft greift die automatische Regel wieder.
 
-## Zugriff und Nachweis
+## Datenbankseitige Grenzen
 
-| Gegenstand | Zugeordneter Teamleiter mit MFA | Inhaber/Administrator mit MFA |
+- Firmenzugehörigkeit, aktive Teamleiter-Mitgliedschaft und MFA/AAL2 werden bei jedem Gesprächsaufruf geprüft.
+- Der zulässige Personenkreis wird aus aktuellen Mitarbeiter- und Benutzerkontodaten berechnet. Alte manuelle Zuordnungen und veraltete JWT-/UI-Angaben können die Regel nicht erweitern.
+- Mitarbeiter mit Personalrolle **Teamleiter** sind ausgeschlossen. Ebenso sind Profile ausgeschlossen, die über `auth_user_id` oder die E-Mail-Adresse einem Teamleiter-, Inhaber- oder Administratorkonto zugeordnet sind. Auch deaktivierte Führungskraftkonten bleiben als solche geschützt.
+- Teamleiter können geschützte Führungsprofile nicht durch Änderung von Rolle, Kontoverknüpfung oder E-Mail-Adresse in den erlaubten Personenkreis verschieben. Diese Identitätsänderungen erfolgen durch Personalverantwortliche.
+- Die eigene Teamleiter-Akte gehört ebenfalls nicht zum Teamleiter-Gesprächsbereich. Inhaber/Administrator behält den bisherigen MFA-geschützten Personalzugriff.
+- Neue Mitarbeiter und Rollen-/Kontowechsel wirken unmittelbar auf die serverseitige Prüfung. Softgelöschte Mitarbeiter sind ausgeschlossen; bestehende inaktive, nicht gelöschte Mitarbeiter bleiben im Personalbestand.
+
+| Inhalt | Regulärer Teamleiter mit MFA | Inhaber/Administrator mit MFA |
 |---|---|---|
-| Name, Personalnummer, Funktion, Status | Lesen | Lesen |
-| Neue Gesprächsnotizen, Ziele, Folgetermin | Lesen und hinzufügen | Lesen und hinzufügen |
-| Für Gespräche freigegebene Qualifikationen | Minimale Angaben lesen | Verwalten und Freigabe bestimmen |
-| Bestehende private Notizen, Dokumente, Detaildaten | Gesperrt | Bestehender Personalzugriff |
+| Namen, Personalnummer, Funktion, Status normaler Mitarbeiter | Lesen | Lesen |
+| Neue Gesprächsnotizen, Ziele, Folgetermine | Lesen und hinzufügen | Lesen und hinzufügen |
+| Freigegebene berufliche Qualifikationen | Minimale Angaben lesen | Verwalten und Freigabe bestimmen |
+| Teamleiter-/Führungskraftakten | Gesperrt | Bestehender Personalzugriff |
+| Private Detaildaten, Dokumente, alte private Notizen | Gesperrt | Bestehender Personalzugriff |
 | Krankheitsgründe und medizinische Unterlagen | Gesperrt | Bestehender gesonderter Personalzugriff |
-| Mitarbeiter ohne ausdrückliche Zuordnung | Gesperrt | Eigene Firma nach bestehendem Berechtigungskonzept |
 
-Jeder erfolgreiche Personalakten-/Gesprächsaufruf und jede neue Gesprächsnotiz erzeugt einen Audit-Eintrag. Die Gesprächsinhalte werden nicht in Audit-Metadaten dupliziert. Einträge sind in dieser Oberfläche nur ergänzbar; bestehende Texte werden nicht überschrieben. Gesetzliche Auskunfts-, Berichtigungs- und Löschverfahren bleiben gesonderte organisatorische Prozesse.
-
-Kontosperrung, Rollenwechsel, Nur-Lesen oder Entzug des Zusatzrechts entfernen die Zuordnungen. Nach Reaktivierung müssen sie ausdrücklich neu gewählt werden. Jede RPC prüft aktuelle Datenbankrechte, aktive Mitgliedschaft, Firmenzugehörigkeit, Mitarbeiterzuordnung und AAL2. Manipulierte UI-/JWT-Benutzermetadaten gewähren keinen Zugriff. Die sieben übrigen Personalverwaltungs-RPCs und privater Dokumentenspeicher bleiben auf den bisherigen Personalkreis beschränkt.
+Erfolgreiche Leseaufrufe und neue Gesprächsnotizen erzeugen Audit-Einträge ohne Gesprächsinhalte in den Metadaten. Die Aktivierung der automatischen Regel wird je betroffenem Teamleiterkonto protokolliert. Die sieben anderen Personalverwaltungs-RPCs und der private Dokumentenspeicher bleiben auf den bisherigen Personalkreis beschränkt.
 
 ## Technische Prüfung
 
-- SQL-Migration: `20261011225332_personnel_conversations_access.sql`, mit Supabase CLI erzeugt.
-- Zusätzliche Migration: `20261011230604_atomic_conversation_qualification_approval.sql`.
-- 15 fachliche PostgreSQL-Prüfungen plus Testhülle (16 erfolgreiche Tests): keine Standardfreigabe; MFA; unberechtigte Vergabe; atomarer Rollback; Firmen-/Mitarbeiter-/Benutzergrenzen; minimale Antwortfelder; Gesprächs- und Auditpersistenz; direkter Tabellen-/Speicherzugriff; Qualifikationsfreigabe und Widerruf; bestehende Personalrechte; Zuordnungswechsel; Kontosperrung; Rechteentzug; gesperrte anonyme RPCs und Invoker-Wrapper.
-- Browserprüfung auf Desktop und Mobil: echte Personalaktenoberfläche mit fiktiven Daten, reduzierte Tabs, Schreibablauf, Escaping, Widerruf und Qualifikationsfreigabe.
-- Benutzerverwaltung: vier Bildschirm-/Themevarianten einschließlich Mitarbeiterzuordnung und Rechtentzug.
-- MFA: Erstregistrierung für Inhaber und Teamleiter, parallele Anforderungen, ungültiger Code und Abbruch.
-- Vollständiger Lauf: 719 Tests erfolgreich (703 bestehende und 16 neue SQL-Prüfungen); statischer Build erfolgreich. Qualifikationsspeicherung und Freigabe erfolgen gemeinsam in einer Transaktion; parallele Bearbeitung kann die geprüften Angaben nicht zwischen Speichern und Freigabe austauschen.
+Migration `20261011234351_team_lead_automatic_personnel_scope.sql`, mit Supabase CLI erzeugt, baut auf den vorhandenen MFA- und Gesprächsmigrationen auf. Isolierte PostgreSQL-Prüfungen in `tests/personnel-automatic-scope.test.mjs` decken automatische Bestands-/Neuzuordnung, Teamleiter-Ausschluss nach Personalrolle/Konto/E-Mail, MFA, Firmen-/Kontogrenzen, aktuelle Rollenwechsel, Schutz gegen Identitätsänderung, private Inhalte, Nur-Lesen, Sperrung/Reaktivierung, alte Clients und Auditierung ab.
 
-Dies ist ein Implementierungs- und Prüfprotokoll für diese Zugriffserweiterung, keine umfassende DSGVO-Zertifizierung. Die konkrete Delegation, Erforderlichkeit, Schulung und zulässigen Gesprächsinhalte werden vom Unternehmen festgelegt.
+Die Benutzer- und Personalgespräche-Browserprüfungen verwenden fiktive Daten und abgefangene RPCs. Sie prüfen die tatsächliche Oberfläche, die unveränderliche automatische Liste und die Sperre geschützter Profile. Die produktive Datenbankaktivierung wird gesondert mit rückgerollten Testzugriffen überprüft.

@@ -5,7 +5,13 @@
   const ADMIN=new Set(['OWNER','ADMIN']);
   let bundle=null, activeTab='overview', busy=false;
   const conversationUser=()=>B.accessRole==='TEAM_LEAD'&&B.accessPermissions?.includes('personnel_conversations')&&!B.accessPermissions?.includes('read_only');
-  const canOpen=()=>ADMIN.has(B.role)||conversationUser()&&B.personnelConversationEmployeeIds?.includes(empDbId());
+  const canOpen=()=>{
+    if(ADMIN.has(B.role))return true;
+    if(!conversationUser()||!empDbId())return false;
+    if(B.personnelConversationScope!=='ALL_NON_LEADERS')return !!B.personnelConversationEmployeeIds?.includes(empDbId());
+    const role=String(empLocal()?.role||'').toLocaleLowerCase('de-DE').replace(/[^a-z]/g,'');
+    return !/^(teamleit|teamlead|teamleader|tl$|owner$|admin$|inhaber$|administrator$)/.test(role)&&!B.personnelConversationExcludedEmployeeIds?.includes(empDbId());
+  };
   const limited=()=>bundle?.access_scope==='CONVERSATIONS';
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const dmy=v=>v?new Date(String(v).slice(0,10)+'T12:00:00').toLocaleDateString('de-DE'):'–';

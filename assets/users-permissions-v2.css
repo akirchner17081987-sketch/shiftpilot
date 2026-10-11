@@ -120,3 +120,9 @@ html[data-sf-theme="light"] #appShell #view-settings .sf-user-state:is(.invited,
 #sfUserModal .sf-personnel-protection>b{display:block;font-size:.8125rem;margin-bottom:4px}
 #sfUserModal .sf-personnel-protection p+p{margin-top:6px}
 #sfUserModal #sfPersonnelAssignments[hidden],#sfUserModal .sf-user-card .sf-personnel-choices :is(label.sf-access-check,.sf-personnel-empty)[hidden]{display:none}
+
+#sfUserModal .sf-personnel-assigned-row{display:flex;align-items:center;gap:10px;padding:10px 12px;min-height:44px;box-sizing:border-box;border-bottom:1px solid var(--line,#294159);font-size:.875rem;font-weight:600;line-height:1.45}
+#sfUserModal .sf-personnel-assigned-row:last-of-type{border-bottom:0}
+#sfUserModal .sf-personnel-assigned-row>span:last-child{min-width:0;overflow-wrap:anywhere}
+#sfUserModal .sf-personnel-assigned-mark{flex:0 0 18px;text-align:center;color:var(--teal2,#18b99a)}
+#sfUserModal .sf-personnel-assigned-row[hidden]{display:none}
