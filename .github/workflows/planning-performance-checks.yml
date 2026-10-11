@@ -1,13 +1,16 @@
 name: Planning performance and preview checks
 on:
   push:
-    branches: [main, codex/ionos-migration, codex/planning-performance-20261011]
+    branches: [main, codex/ionos-migration, codex/faster-authenticated-startup-20261011, codex/planning-performance-20261011]
     paths:
       - index.html
       - assets/conflict-plausibility-v1.js
       - assets/supabase-data-v1.js
       - assets/auto-plan-workspace-v1.js
       - assets/auto-plan-period-v1.css
+      - assets/supabase-startup-v1.js
+      - tests/startup-workspaces.test.cjs
+      - tests/regression.test.mjs
       - tests/performance-loader.test.cjs
       - tests/browser/planning-performance-qa.cjs
       - .github/workflows/planning-performance-checks.yml
@@ -44,3 +47,4 @@ jobs:
             playwright-report/
             test-results/
           retention-days: 7
+

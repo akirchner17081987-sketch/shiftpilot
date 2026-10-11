@@ -43,6 +43,7 @@
   }
 
   async function selectEmployeeAndOpen(localId,tab){
+    await B.ensureManagerViewModules?.('employees');
     showEmployees();
     await sleep(80);
     try{
@@ -104,3 +105,4 @@
     drillDown(item.dataset.id);
   },true);
 })();
+

@@ -127,7 +127,7 @@
     const auth = document.getElementById('sfAuthBackdrop');
     const manager = document.getElementById('appShell');
     const employee = document.getElementById('sfEmployeePortal');
-    const managerReady = isVisible(manager) && !!window.SFBackend?.ready;
+    const managerReady = isVisible(manager) && (!!window.SFBackend?.ready || !!window.SFBackend?.shellReady);
     const employeeReady = isVisible(employee) && !!window.SFBackend?.ready;
     if (managerReady || employeeReady) {
       readyTarget = employeeReady ? 'employee' : 'manager';
@@ -200,4 +200,3 @@
   // An unchanged startup still warns after 20 seconds. Readiness clears the timer.
   checkReady();
 })();
-
