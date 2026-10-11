@@ -3,11 +3,13 @@
   const B=window.SFBackend=window.SFBackend||{};
   if(B.__absenceManagerV2)return;B.__absenceManagerV2=true;
   const ALLOWED=new Set(['OWNER','ADMIN','DISPATCHER','PLANNER']);
-  let rendering=false,lastKey='';
+  let rendering=false,lastKey='',lastContext='',lastLoadedAt=0;
 
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const fmt=v=>{if(!v)return'–';try{return new Date(String(v).slice(0,10)+'T00:00:00').toLocaleDateString('de-DE')}catch{return String(v)}};
   const role=()=>String(B.role||'').toUpperCase();
+  const context=()=>B.ready&&!B.companySwitching&&B.client&&B.companyId&&B.user?.id&&ALLOWED.has(role())?JSON.stringify([B.companyId,B.user.id,role()]):'';
+  function reset(){lastKey='';lastLoadedAt=0;updateBadge(0);document.getElementById('sfAbsenceManagerV2')?.remove();}
   const employeesList=()=>{try{return typeof employees!=='undefined'&&Array.isArray(employees)?employees:(Array.isArray(window.employees)?window.employees:[])}catch{return Array.isArray(window.employees)?window.employees:[]}};
   const assignmentsList=()=>{try{return typeof assignments!=='undefined'&&Array.isArray(assignments)?assignments:(Array.isArray(window.assignments)?window.assignments:[])}catch{return Array.isArray(window.assignments)?window.assignments:[]}};
   const localEmployee=dbId=>employeesList().find(e=>String(e._dbId||B.empDb?.get?.(String(e.id)))===String(dbId));
@@ -29,24 +31,29 @@
     return assignmentsList().filter(x=>String(x.employeeId)===String(e.id)&&String(x.date)>=String(a.start_date)&&String(x.date)<=String(a.end_date)).length;
   }
 
-  async function fetchOpen(){
-    if(!B.client||!B.companyId)return[];
-    const q=await B.client.from('absences').select('id,employee_id,start_date,end_date,absence_type,status,full_day,start_time,end_time,note,requested_at').eq('company_id',B.companyId).eq('request_source','EMPLOYEE').eq('status','Beantragt').order('requested_at',{ascending:true});
+  async function fetchOpen(client,companyId){
+    const q=await client.from('absences').select('id,employee_id,start_date,end_date,absence_type,status,full_day,start_time,end_time,note,requested_at').eq('company_id',companyId).eq('request_source','EMPLOYEE').eq('status','Beantragt').order('requested_at',{ascending:true});
     if(q.error)throw q.error;return q.data||[];
   }
 
   function updateBadge(n){
     const b=document.querySelector('.nav button[data-view="absence"] .badge');if(!b)return;
     b.textContent=String(n);b.style.display=n?'inline-flex':'none';
+    b.title=n+' offene Mitarbeiteranträge · alle Zeiträume';
   }
 
   async function render(force=false){
-    if(rendering||!ALLOWED.has(role())||!B.ready||!B.client||!B.companyId)return;
+    const current=context(),client=B.client;
+    if(current!==lastContext){lastContext=current;reset();}
+    if(!current||rendering)return;
     const page=document.getElementById('view-absence');if(!page)return;
     document.getElementById('sfManagerAbsenceRequests')?.remove();
     rendering=true;css();
     try{
-      const rows=await fetchOpen(),key=rows.map(x=>x.id+':'+x.status).join('|');updateBadge(rows.length);
+      const rows=await fetchOpen(client,B.companyId);
+      if(context()!==current||B.client!==client)return;
+      lastLoadedAt=Date.now();
+      const key=rows.map(x=>x.id+':'+x.status).join('|');updateBadge(rows.length);
       let box=document.getElementById('sfAbsenceManagerV2');
       if(!box){box=document.createElement('div');box.id='sfAbsenceManagerV2';box.className='sf-abs-mgr-v2';const anchor=page.querySelector('.absence-manage-card')||page.querySelector('.page-head')?.nextElementSibling;if(anchor)page.insertBefore(box,anchor);else page.prepend(box)}
       if(!force&&key===lastKey&&box.dataset.ready==='1')return;
@@ -55,7 +62,7 @@
       if(!rows.length){box.innerHTML='<div class="sf-abs-mgr-v2-head"><span>✓</span><h3>Mitarbeiteranträge</h3><span class="sf-abs-mgr-v2-count">0 offen</span></div><div class="sf-abs-mgr-v2-empty">✓ Keine offenen Abwesenheitsanträge.</div>';return}
       box.innerHTML=`<div class="sf-abs-mgr-v2-head"><span>☼</span><h3>Mitarbeiteranträge</h3><span class="sf-abs-mgr-v2-count">${rows.length} offen</span><span class="sf-abs-mgr-v2-note">Genehmigte Anträge werden sofort planungswirksam.</span></div><div class="sf-abs-mgr-v2-list">${rows.map(a=>{const e=localEmployee(a.employee_id),c=conflicts(a),partial=!a.full_day;return `<div class="sf-abs-mgr-v2-row" data-id="${a.id}"><div><b>${esc(e?e.first+' '+e.last:'Mitarbeiter')} · ${esc(a.absence_type)}</b><small>${esc(fmt(a.start_date))}${a.end_date!==a.start_date?' – '+esc(fmt(a.end_date)):''}${partial?' · '+esc(String(a.start_time||'').slice(0,5))+'–'+esc(String(a.end_time||'').slice(0,5)):''}</small>${a.note?`<small>Hinweis: ${esc(a.note)}</small>`:''}</div><div><span class="sf-abs-mgr-v2-status">In Prüfung</span><small>${c?`⚠ ${c} geplante Schicht${c===1?'':'en'}`:'Keine Planungskonflikte'}</small></div><div><small>Antrag eingegangen</small><b>${a.requested_at?esc(new Date(a.requested_at).toLocaleString('de-DE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})):'–'}</b></div><div class="sf-abs-mgr-v2-actions"><button type="button" class="sf-abs-mgr-v2-reject" data-decision="REJECT">Ablehnen</button><button type="button" class="sf-abs-mgr-v2-approve" data-decision="APPROVE">${a.absence_type==='Krank'?'Als erfasst übernehmen':'Genehmigen'}</button></div></div>`}).join('')}</div>`;
       box.querySelectorAll('[data-decision]').forEach(btn=>btn.addEventListener('click',()=>openDecision(rows.find(x=>x.id===btn.closest('[data-id]')?.dataset.id),btn.dataset.decision)));
-    }catch(e){console.error('Mitarbeiteranträge konnten nicht geladen werden',e)}finally{rendering=false}
+    }catch(e){if(context()===current){reset();console.error('Mitarbeiteranträge konnten nicht geladen werden',e)}}finally{rendering=false}
   }
 
   function openDecision(a,decision){
@@ -66,8 +73,9 @@
   }
 
   B.renderAbsenceManagerV2=()=>render(true);
+  const updateState=B.updateState;B.updateState=function(){const result=updateState?.apply(this,arguments);render(true);return result};
   document.addEventListener('click',e=>{const nav=e.target.closest('.nav button[data-view="absence"]');if(nav)setTimeout(()=>render(true),80)},true);
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&document.getElementById('view-absence')?.classList.contains('active'))setTimeout(()=>render(true),100)});
-  setInterval(()=>{if(document.getElementById('view-absence')?.classList.contains('active'))render(false)},2500);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(()=>render(true),100)});
+  setInterval(()=>{if(context()!==lastContext||(!document.hidden&&(!lastLoadedAt||Date.now()-lastLoadedAt>=60000||document.getElementById('view-absence')?.classList.contains('active'))))render(false)},2500);
   setTimeout(()=>render(true),300);setTimeout(()=>render(true),1200);
 })();
