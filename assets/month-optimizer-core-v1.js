@@ -121,10 +121,11 @@
     if(input.solidRules)return optimizeSolid(input,options);
     if(!ids.size)return optimizeLegacy(input,options);
     if(!individual)throw Error('Die individuelle Monatsplanung konnte nicht geladen werden. Bitte die Seite neu laden.');
-    const bound=await optimizeLegacy({...input,groups:input.groups.filter(g=>!ids.has(String(g.employee.id)))},{...options,iterations:Math.min(16,options.iterations||16)}),capacity=new Map(input.capacities);
+    const boundIterations=Math.min(16,options.iterations||16),freeIterations=options.iterations||128,total=boundIterations+freeIterations,report=(offset,phase)=>p=>options.progress?.({...p,completed:offset+p.iteration,total,phase});
+    const bound=await optimizeLegacy({...input,groups:input.groups.filter(g=>!ids.has(String(g.employee.id)))},{...options,iterations:boundIterations,progress:report(0,'fixed')}),capacity=new Map(input.capacities);
     for(const a of bound.preview)capacity.set(a.resource,capacity.get(a.resource)-1);
     const freeInput={...input,employees:input.employees.filter(e=>ids.has(String(e.id))),groups:input.groups.filter(g=>ids.has(String(g.employee.id))),base:[...input.base,...bound.preview],capacities:[...capacity],seed:(input.seed||[]).filter(a=>ids.has(String(a.employeeId)))};
-    const found=await individual.optimize(freeInput,{...options,iterations:options.iterations||128,beamWidth:240}),preview=[...bound.preview,...found.preview];
+    const found=await individual.optimize(freeInput,{...options,iterations:freeIterations,beamWidth:240,progress:report(boundIterations,'individual')}),preview=[...bound.preview,...found.preview];
     const all=[...input.base,...preview],used=new Map();for(const a of preview)used.set(a.resource,(used.get(a.resource)||0)+1);
     const open=input.capacities.reduce((n,[key,count])=>n+Math.max(0,count-(used.get(key)||0)),0);
     return{preview,individualInput:freeInput,quality:{...found.quality,open},rows:input.employees.map(e=>{const hours=all.filter(a=>String(a.employeeId)===String(e.id)&&a.date.startsWith(input.month)).reduce((n,a)=>n+duty(a).hours,0);return{employeeId:e.id,target:e.target,planned:hours,missing:Math.max(0,e.target-hours),extra:Math.max(0,hours-e.target)}})};

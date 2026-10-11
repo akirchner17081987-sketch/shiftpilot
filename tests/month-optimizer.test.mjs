@@ -79,3 +79,9 @@ test('unrelated ten-hour models do not disable individual eight-hour planning',(
  c.plannedAssignmentHours=a=>a.type==='OT'?10:8;c.SFAutoPlanWorkspace.render();assert.equal(id('autoIndividualBlocks').disabled,false);
  c.plannedAssignmentHours=a=>a.type==='ND'?10:8;c.SFAutoPlanWorkspace.render();assert.equal(id('autoIndividualBlocks').disabled,true);assert.match(id('autoIndividualBlocksHint').textContent,/8-Stunden-Schichten SD und ND/);
 });
+
+test('individual optimization reports one cumulative work count across both search phases',async()=>{
+ const input=JSON.parse(read('tests/fixtures/individual-january-2027.json')),updates=[];
+ await core.optimize(input,{iterations:2,progress:p=>updates.push({completed:p.completed,total:p.total,phase:p.phase})});
+ assert.deepEqual(updates.map(p=>p.completed),[1,2,3,4]);assert.ok(updates.every(p=>p.total===4));assert.deepEqual(updates.map(p=>p.phase),['fixed','fixed','individual','individual']);
+});

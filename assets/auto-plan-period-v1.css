@@ -110,3 +110,22 @@ html[data-sf-theme="light"] .sf-auto-hours tbody th[style*="--sf-person-bg"]{--s
 .sf-auto-draft-balance.is-extra{color:var(--cyan,var(--text))}
 .sf-auto-draft-balance.is-balanced{color:var(--green)}
 @media(max-width:600px){.sf-auto-stair-table th:first-child{width:230px;min-width:230px;max-width:230px}.sf-auto-draft-metrics{gap:4px 8px}.sf-auto-draft-summary{gap:8px 16px}}
+
+/* Auto-planning progress: real work counts, indeterminate data preparation. */
+.sf-auto-progress{margin:18px 0;padding:18px 20px;border:1px solid #2a746e;border-radius:13px;background:#102c35;color:#e1f3f1;min-width:0}
+.sf-auto-progress[hidden]{display:none!important}
+.sf-auto-progress-head{display:flex;justify-content:space-between;gap:16px;align-items:center;font-size:15px}
+#sfAutoProgressPercent{font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums;color:#62e5d1}
+.sf-auto-progress-track{height:10px;margin:13px 0;border-radius:9px;overflow:hidden;background:#203d4a}
+.sf-auto-progress-track i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#24cbb0,#32a9db);transition:width .15s ease}
+.sf-auto-progress.is-indeterminate .sf-auto-progress-track i{animation:sfAutoProgressMove 1.4s ease-in-out infinite}
+.sf-auto-progress p{margin:0;font-size:13px;line-height:1.6;overflow-wrap:anywhere}
+.sf-auto-progress small{display:block;margin-top:7px;color:#a9c6cd;font-size:12px;font-variant-numeric:tabular-nums}
+.sf-auto-progress.is-error{border-color:#a86656}.sf-auto-progress.is-error .sf-auto-progress-track{display:none}
+html[data-sf-theme="light"] .sf-auto-progress{background:#d9eceb;color:#193b3b;border-color:#74a9a0}
+html[data-sf-theme="light"] #sfAutoProgressPercent{color:#075e52}
+html[data-sf-theme="light"] .sf-auto-progress-track{background:#bad3d1}
+html[data-sf-theme="light"] .sf-auto-progress small{color:#3e6167}
+@keyframes sfAutoProgressMove{0%{transform:translateX(-100%)}100%{transform:translateX(300%)}}
+@media(max-width:600px){.sf-auto-progress{padding:15px}.sf-auto-progress-head{align-items:flex-start;font-size:14px}}
+@media(prefers-reduced-motion:reduce){.sf-auto-progress-track i{animation:none!important;transition:none}}

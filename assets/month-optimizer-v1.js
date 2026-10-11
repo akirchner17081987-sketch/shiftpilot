@@ -1,5 +1,6 @@
 // Prüfung und bestätigte Übernahme einer optimierten Monatsverteilung.
 (function(){
+  const P=()=>window.SFAutoPlanProgress;
   const B=window.SFBackend=window.SFBackend||{},el=id=>document.getElementById(id),core=window.SFMonthOptimizerCore;
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   let result=null,busy=false;
@@ -94,44 +95,50 @@
   async function optimizeSolidPeriod(){
     if(busy||autoPlanApplying||el('autoPlanPeriod')?.value!=='month')return;
     const company=B.companyId,dates=autoPlanningDates(),months=[...new Set(dates.map(d=>d.slice(0,7)))],month=months[0];busy=true;result=null;autoPlanPreview=[];autoPlanAnalyzed=false;
-    const controls=[...document.querySelectorAll('#view-auto button,#view-auto input,#view-auto select')].map(node=>({node,disabled:node.disabled}));controls.forEach(x=>x.node.disabled=true);
+    const controls=[...document.querySelectorAll('#view-auto button,#view-auto input,#view-auto select')].map(node=>({node,disabled:node.disabled}));controls.forEach(x=>x.node.disabled=true);P()?.start();
     try{
+      await P()?.paint();
       if(dates.some(d=>window.SFCompliance?.isWeekPublished?.(d)))throw Error('Der Zeitraum enthält veröffentlichte Wochen. Bitte Änderungen dort einzeln prüfen.');
       let snapshot={fingerprint:null,protectedIds:[]};if(B.ready&&B.client){if(B.syncing)throw Error('Eine Speicherung läuft noch.');clearTimeout(B.syncTimer);B.syncTimer=null;await B.sync();if(B.lastSyncError)throw B.lastSyncError;await B.hydrate();const q=await B.client.rpc('preview_planning_period',{p_company_id:company,p_first_month:month+'-01',p_month_count:months.length});if(q.error)throw q.error;snapshot=q.data}
       if(B.companyId!==company)throw Error('Das Unternehmen wurde gewechselt.');await window.SFWishPlanning?.refreshFeed();
       const original=assignments.slice(),localSignature=signature(),protectedIds=new Set(snapshot.protectedIds||[]),movable=original.filter(a=>months.includes(a.date.slice(0,7))&&!a.publishedAt&&(!a._dbStatus||a._dbStatus==='DRAFT')&&!fixed(a)&&!protectedIds.has(a._dbId||B.asgDb?.get(String(a.id)))&&!/markt|market|freiwill|tausch/i.test(a.note||'')&&!(typeof timeEntries!=='undefined'&&(timeEntries[a.id]?.actualStart||timeEntries[a.id]?.actualEnd))),moving=new Set(movable.map(a=>a.id)),base=original.filter(a=>!moving.has(a.id)),proposed=[],qualities=[];
       el('autoAnalysis').innerHTML='<div class="sf-auto-status"><b>OT2 und Leitung zuerst verteilen</b><p>Verbindliche Mindestbesetzungen werden über den gesamten Zeitraum reserviert.</p></div>';
+      P()?.phase('Pflichtbesetzung vorbereiten','Leitungs- und OT2-Positionen werden zuerst über den gesamten Zeitraum verteilt.');await P()?.paint();
       const minimumInput=solidBuild(base,null,[]),minimumFound=await core.optimize({...minimumInput,criticalOnly:true},{yieldStep:()=>new Promise(resolve=>setTimeout(resolve,0))}),minimum=[...minimumInput.reserved,...minimumFound.preview];
       for(const m of months){
         // All movable drafts in this atomic period are replaced; only protected/outside duties constrain its boundaries.
-        const input=solidBuild([...base,...proposed,...minimum.filter(a=>a.date.slice(0,7)>=m)],m,movable.filter(a=>a.date.startsWith(m))),found=await core.optimize(input,{iterations:12,yieldStep:()=>new Promise(resolve=>setTimeout(resolve,0)),progress:p=>{el('autoAnalysis').innerHTML=`<div class="sf-auto-status"><b>${esc(m)}: ${p.iteration}/${p.iterations} Verteilungen geprüft</b><p>${p.open} offene Dienste; ${p.critical} offene Leitungs-/OT2-Positionen.</p></div>`}});
+        P()?.update({completed:months.indexOf(m)*12,total:months.length*12,label:'Monat '+(months.indexOf(m)+1)+' von '+months.length+' planen',detail:m+' · Arbeitsblöcke und Stundenlimits prüfen'});await P()?.paint();
+        const input=solidBuild([...base,...proposed,...minimum.filter(a=>a.date.slice(0,7)>=m)],m,movable.filter(a=>a.date.startsWith(m))),found=await core.optimize(input,{iterations:12,yieldStep:()=>new Promise(resolve=>setTimeout(resolve,0)),progress:p=>{P()?.update({completed:months.indexOf(m)*12+p.iteration,total:months.length*p.iterations,label:'Monat '+(months.indexOf(m)+1)+' von '+months.length+' planen',detail:m+' · '+p.iteration+'/'+p.iterations+' Verteilungen geprüft · '+p.open+' offene Dienste'});el('autoAnalysis').innerHTML=`<div class="sf-auto-status"><b>${esc(m)}: ${p.iteration}/${p.iterations} Verteilungen geprüft</b><p>${p.open} offene Dienste; ${p.critical} offene Leitungs-/OT2-Positionen.</p></div>`}});
         proposed.push(...minimum.filter(a=>a.date.startsWith(m)),...input.reserved,...found.preview);qualities.push(found.quality);
       }
       if(signature()!==localSignature||B.companyId!==company)throw Error('Die Planungsdaten wurden geändert. Bitte erneut starten.');
+      P()?.message('Ergebnis abschließend prüfen','Erholungsregeln, Monatsgrenzen und verbleibende Pflichtpositionen werden geprüft.');await P()?.paint();
       const metrics=validateSolid(base,proposed,months),unresolved=withBase([...base,...proposed],()=>autoOpenSlots().map(slot=>({...slot,reason:'Unter Erholungsregeln, Schichtfreigaben und Stundenlimits bleibt dieser Dienst offen.'}))),beforeOpen=withBase(original,()=>autoOpenSlots().length),originalValid=employees.every(e=>!solid.errors(e,original.map(a=>({...a,start:a.start||typeById(a.type)?.start,end:a.end||typeById(a.type)?.end})),solidRules(),movable.filter(a=>String(a.employeeId)===String(e.id)).map(a=>a.date)).length);
       if(originalValid&&unresolved.length>beforeOpen)throw Error('Die Neuverteilung würde mehr Pflichtlücken erzeugen. Der bestehende Plan bleibt erhalten.');
       result={solid:true,month,months,company,base,movable,individualIds:[],localSignature,fingerprint:snapshot.fingerprint,metrics,beforeOpen,criticalOpen:criticalNeeds([...base,...proposed],dates).reduce((n,[,v])=>n+v,0),beforeHours:new Map(employees.map(e=>[String(e.id),original.filter(a=>String(a.employeeId)===String(e.id)&&months.includes(a.date.slice(0,7))).reduce((n,a)=>n+plannedAssignmentHours(a),0)])),demandHours:withBase([...base,...proposed],()=>dates.reduce((n,date)=>n+TYPES.reduce((v,t)=>v+getSoll(date,t.id)*plannedAssignmentHours({date,type:t.id,start:t.start,end:t.end}),0),0))};
-      autoPlanPreview=proposed.map((a,i)=>({...a,id:'period-preview-'+i,day:new Date(a.date+'T12:00:00').toLocaleDateString('de-DE',{weekday:'short'}),reason:'Erholungsregeln · ganze Arbeitsblöcke · persönliche Schichtfreigaben'})).sort((a,b)=>a.date.localeCompare(b.date));autoPlanUnresolved=unresolved;autoPlanOptionalSkipped=[];autoPlanAnalyzed=true;autoPlanApplied=0;showSaveToast('Zeitraum vorbereitet',`${months.length} Monate geprüft; ${unresolved.length} Dienste bleiben offen.`);
-    }catch(e){console.error('Solid planning preview',e);result=null;autoPlanPreview=[];autoPlanUnresolved=[];autoPlanAnalyzed=false;showSaveToast('Planung nicht übernommen',e.message||String(e))}
+      autoPlanPreview=proposed.map((a,i)=>({...a,id:'period-preview-'+i,day:new Date(a.date+'T12:00:00').toLocaleDateString('de-DE',{weekday:'short'}),reason:'Erholungsregeln · ganze Arbeitsblöcke · persönliche Schichtfreigaben'})).sort((a,b)=>a.date.localeCompare(b.date));autoPlanUnresolved=unresolved;autoPlanOptionalSkipped=[];autoPlanAnalyzed=true;autoPlanApplied=0;P()?.finish();showSaveToast('Zeitraum vorbereitet',`${months.length} Monate geprüft; ${unresolved.length} Dienste bleiben offen.`);
+    }catch(e){P()?.finish(e.message||String(e));console.error('Solid planning preview',e);result=null;autoPlanPreview=[];autoPlanUnresolved=[];autoPlanAnalyzed=false;showSaveToast('Planung nicht übernommen',e.message||String(e))}
     finally{busy=false;controls.forEach(x=>x.node.disabled=x.disabled);renderAutoPlanning();if(result&&typeof CustomEvent==='function')document.dispatchEvent(new CustomEvent('sf:planning-analysis-ready',{detail:{dates,assignments:[...result.base,...autoPlanPreview]}}));}
   }
   async function optimize(){
     if(solidEnabled())return optimizeSolidPeriod();
     if(busy||autoPlanApplying||el('autoPlanPeriod')?.value!=='month')return;
     const company=B.companyId,dates=autoPlanningDates(),month=dates[0].slice(0,7);busy=true;result=null;autoPlanPreview=[];autoPlanAnalyzed=false;
-    const controls=[...document.querySelectorAll('#view-auto button,#view-auto input,#view-auto select')].map(node=>({node,disabled:node.disabled}));controls.forEach(x=>x.node.disabled=true);
+    const controls=[...document.querySelectorAll('#view-auto button,#view-auto input,#view-auto select')].map(node=>({node,disabled:node.disabled}));controls.forEach(x=>x.node.disabled=true);P()?.start();
     try{
+      await P()?.paint();
       if(dates.some(d=>window.SFCompliance?.isWeekPublished?.(d)))throw Error('Der Monat enthält veröffentlichte Wochen. Bitte prüfe Änderungen dort einzeln im Dienstplan.');
       let snapshot={fingerprint:null,protectedIds:[]};
       if(B.ready&&B.client){if(B.syncing)throw Error('Eine Speicherung läuft noch. Bitte starte die Monatsoptimierung anschließend erneut.');clearTimeout(B.syncTimer);B.syncTimer=null;await B.sync();if(B.lastSyncError)throw B.lastSyncError;await B.hydrate();const q=await B.client.rpc('preview_month_optimization',{p_company_id:company,p_month:month+'-01'});if(q.error)throw q.error;snapshot=q.data}
       if(B.companyId!==company)throw Error('Das Unternehmen wurde gewechselt.');await window.SFWishPlanning?.refreshFeed();
       const original=assignments.slice(),localSignature=signature(),protectedIds=new Set(snapshot.protectedIds||[]),movable=original.filter(a=>a.date.startsWith(month)&&!a.publishedAt&&(!a._dbStatus||a._dbStatus==='DRAFT')&&!fixed(a)&&!protectedIds.has(a._dbId||B.asgDb?.get(String(a.id)))&&!/markt|market|freiwill|tausch/i.test(a.note||'')&&!(typeof timeEntries!=='undefined'&&timeEntries[a.id]?.actualStart)&&!(typeof timeEntries!=='undefined'&&timeEntries[a.id]?.actualEnd)),moving=new Set(movable.map(a=>a.id)),base=original.filter(a=>!moving.has(a.id)),beforeOpen=autoOpenSlots().length;
       el('autoAnalysis').innerHTML='<div class="sf-auto-status"><b>Monat wird optimiert …</b><p>Ganze Arbeitsblöcke und persönliche Stundenziele werden geprüft.</p></div>';
-      await new Promise(resolve=>setTimeout(resolve,0));const input=buildInput(base);
+      P()?.phase('Monatsplanung vorbereiten','Feste Vorgaben, ganze Arbeitsblöcke und persönliche Stundenziele werden vorbereitet.');await (P()?.paint()||new Promise(resolve=>setTimeout(resolve,0)));const input=buildInput(base);
       input.seed=movable.map(a=>({...a,start:a.start||typeById(a.type)?.start,end:a.end||typeById(a.type)?.end,resource:a.date+'|'+(a.coverageGroup||a.type)}));
-      const found=await core.optimize(input,{iterations:128,yieldStep:()=>new Promise(resolve=>setTimeout(resolve,0)),progress:p=>{el('autoAnalysis').innerHTML=`<div class="sf-auto-status"><b>Monatsverteilung wird geprüft: ${p.iteration}/${p.iterations}</b><p>Beste geprüfte Verteilung: ${p.open} offene Pflichtpositionen.</p></div>`}});
+      const found=await core.optimize(input,{iterations:128,yieldStep:()=>new Promise(resolve=>setTimeout(resolve,0)),progress:p=>{P()?.update({completed:p.completed??p.iteration,total:p.total??p.iterations,label:p.phase==='fixed'?'Feste und gebundene Verteilungen prüfen':'Monatsverteilungen prüfen',detail:(p.completed??p.iteration)+'/'+(p.total??p.iterations)+' Verteilungen geprüft · '+p.open+' offene Pflichtpositionen'});el('autoAnalysis').innerHTML=`<div class="sf-auto-status"><b>Monatsverteilung wird geprüft: ${p.iteration}/${p.iterations}</b><p>Beste geprüfte Verteilung: ${p.open} offene Pflichtpositionen.</p></div>`}});
       if(signature()!==localSignature||B.companyId!==company)throw Error('Die Planungsdaten wurden während der Optimierung geändert. Bitte erneut starten.');
       if(found.quality.open>beforeOpen)throw Error('Die geprüfte Neuverteilung würde mehr Pflichtlücken erzeugen. Der bestehende Dienstplan bleibt erhalten.');
+      P()?.message('Ergebnis abschließend prüfen','Vorschläge, optionale Besetzungen und persönliche Planungsregeln werden geprüft.');await P()?.paint();
       const proposed=[...input.reserved,...found.preview],allBase=input.base.filter(a=>!input.reserved.includes(a));
       const individualIds=new Set(input.employees.filter(e=>e.individual).map(e=>String(e.id))),optionalSkipped=completeOptional(allBase,proposed,individualIds);
       withBase(allBase,()=>window.SFShiftModels?.normalizeMorningOt?.(proposed,allBase));
@@ -140,8 +147,8 @@
       result={month,company,base:allBase,movable,individualInput:found.individualInput,individualIds:[...individualIds],localSignature,fingerprint:snapshot.fingerprint,beforeHours:new Map(employees.map(e=>[String(e.id),original.filter(a=>String(a.employeeId)===String(e.id)&&a.date.startsWith(month)).reduce((n,a)=>n+plannedAssignmentHours(a),0)])),demandHours:withBase([],()=>autoOpenSlots().reduce((n,s)=>{const t=typeById(s.type);return n+plannedAssignmentHours({date:s.date,type:s.type,start:t.start,end:t.end})},0))};
       validateIndividual(result,proposed);
       autoPlanPreview=proposed.map((a,i)=>({...a,id:'month-preview-'+i,day:new Date(a.date+'T12:00:00').toLocaleDateString('de-DE',{weekday:'short'}),reason:a.blockId?'Monatsoptimierung · zusammenhängender Arbeitsblock · nach persönlichem Monats-SOLL':'Monatsoptimierung · feste Vorgabe oder zulässiger Einzeldienst'})).sort((a,b)=>a.date.localeCompare(b.date));autoPlanUnresolved=unresolved;autoPlanOptionalSkipped=optionalSkipped;autoPlanAnalyzed=true;autoPlanApplied=0;
-      showSaveToast('Monatsoptimierung vorbereitet',`${autoPlanUnresolved.length} Pflichtpositionen verbleiben. Prüfe die Monatsstunden und bestätige die Neuverteilung.`);
-    }catch(e){result=null;autoPlanPreview=[];autoPlanUnresolved=[];autoPlanAnalyzed=false;showSaveToast('Monatsoptimierung nicht übernommen',e.message||String(e))}
+      P()?.finish();showSaveToast('Monatsoptimierung vorbereitet',`${autoPlanUnresolved.length} Pflichtpositionen verbleiben. Prüfe die Monatsstunden und bestätige die Neuverteilung.`);
+    }catch(e){P()?.finish(e.message||String(e));result=null;autoPlanPreview=[];autoPlanUnresolved=[];autoPlanAnalyzed=false;showSaveToast('Monatsoptimierung nicht übernommen',e.message||String(e))}
     finally{busy=false;controls.forEach(x=>x.node.disabled=x.disabled);renderAutoPlanning();if(result&&typeof CustomEvent==='function')document.dispatchEvent(new CustomEvent('sf:planning-analysis-ready',{detail:{dates,assignments:[...result.base,...autoPlanPreview]}}));}
   }
   async function apply(){
