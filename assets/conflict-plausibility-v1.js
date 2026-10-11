@@ -103,16 +103,46 @@
     managerPromise=loadRange(managerStart,files.length).then(()=>{const B=window.SFBackend;if(B?.ready&&B.role!=='EMPLOYEE')B.baseOpenApp?.(B.pendingView||'overview')});
     return managerPromise;
   };
+  // Authentication-first bootstrap: install all security/session/role hooks BEFORE
+  // initializing Supabase. Manager/portal feature modules must be installed
+  // BEFORE any authenticated B.boot runs, never before the login form is usable.
+  const essentialIndices=new Set([0,6,7,8,12,14,15,16,25,26,27,28,53]);
+  const bootstrapFiles=files.slice(0,managerStart).filter((_,i)=>essentialIndices.has(i));
+  const deferredFiles=files.slice(0,managerStart).filter((_,i)=>!essentialIndices.has(i));
+  const loadSelected=async selected=>{
+    for(let i=0;i<selected.length;i+=LOAD_WINDOW){
+      await Promise.all(selected.slice(i,i+LOAD_WINDOW).map(file=>new Promise(resolve=>append(file,resolve))));
+    }
+  };
+  let deferredPromise=null;
+  const ensureDeferred=()=>deferredPromise||(deferredPromise=loadSelected(deferredFiles));
   const start=()=>{
     const B=window.SFBackend=window.SFBackend||{};
     if(B.__loaderInitStarted)return;B.__loaderInitStarted=true;
     const baseBoot=B.boot;
-    if(typeof baseBoot==='function'&&!B.__roleLoaderWrapped){B.__roleLoaderWrapped=true;B.boot=async function(){const result=await baseBoot.apply(this,arguments);if(B.role!=='EMPLOYEE')await loadManager();return result}};
-    Promise.resolve(B.init?.()).catch(e=>{B.hideLoading?.();console.error('SchichtFunk Supabase init',e);B.updateState?.()});
+    if(typeof baseBoot==='function'&&!B.__roleLoaderWrapped){
+      B.__roleLoaderWrapped=true;
+      B.boot=async function(){
+        // Required hooks, data/absence/employee/time integrations load before
+        // any authenticated database hydration, including restored sessions.
+        await ensureDeferred();
+        const result=await baseBoot.apply(this,arguments);
+        if(B.role!=='EMPLOYEE')await loadManager();
+        return result;
+      };
+    }
+    Promise.resolve(B.init?.()).then(()=>{
+      // Once login is usable, quietly prepare app code while the user signs in.
+      // No protected data is prefetched; the existing B.boot still handles auth.
+      if(!B.ready){
+        const preload=()=>ensureDeferred().catch(error=>console.error('SchichtFunk Modul-Vorladen',error));
+        if('requestIdleCallback' in window) requestIdleCallback(preload,{timeout:2500});
+        else setTimeout(preload,750);
+      }
+    }).catch(e=>{B.hideLoading?.();console.error('SchichtFunk Supabase init',e);B.updateState?.()});
   };
-  loadRange(0,managerStart).then(start).catch(error=>{
-    console.error('SchichtFunk-Modul-Bootstrap',error);
-    // A script failure must never fake a logged-in session.
+  loadSelected(bootstrapFiles).then(start).catch(error=>{
+    console.error('SchichtFunk Auth-Bootstrap',error);
     window.SFBackend?.hideLoading?.();
   });
 })();
