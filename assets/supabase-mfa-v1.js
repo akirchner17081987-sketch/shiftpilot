@@ -31,7 +31,7 @@
   const say=(m,text,kind='bad')=>{const e=m.querySelector('#sfMfaMsg');if(e){e.className=`sf-mfa-msg show ${kind}`;e.textContent=text}};
   const isPrivileged=()=>['OWNER','ADMIN'].includes(B.role);
   const isMfaRequired=error=>/MFA_REQUIRED/i.test([error?.message,error?.details,error?.hint,error?.code].filter(Boolean).join(' '));
-  const signOut=()=>{close();return B.signOutSafely?.()||B.client?.auth?.signOut?.({scope:'local'})};
+  const signOut=()=>{B.__mfaEnrollmentReject?.(new Error('Die MFA-Einrichtung wurde abgebrochen.'));close();return B.signOutSafely?.()||B.client?.auth?.signOut?.({scope:'local'})};
 
   async function assurance(){
     const {data,error}=await B.client.auth.mfa.getAuthenticatorAssuranceLevel();
@@ -92,23 +92,43 @@
       foot.innerHTML='<button class="ghost" id="sfMfaEnrollCancel" type="button">Abbrechen</button><button class="primary" id="sfMfaEnrollVerify" type="button">Aktivieren</button>';
       const cleanup=async()=>{if(factorId&&!verified)try{await B.client.auth.mfa.unenroll({factorId})}catch{}};
       foot.querySelector('#sfMfaEnrollCancel').onclick=async()=>{await cleanup();if(mandatory)await signOut();else close()};
-      foot.querySelector('#sfMfaEnrollVerify').onclick=async e=>{const code=body.querySelector('#sfMfaEnrollCode').value.replace(/\s/g,'');if(!sixDigits.test(code))return say(m,'Bitte genau sechs Ziffern eingeben.');e.currentTarget.disabled=true;try{await verifyCode(factorId,code);verified=true;say(m,'Der Zwei-Faktor-Schutz ist jetzt aktiv.','good');setTimeout(()=>mandatory?close():B.openMfaSettings(),700)}catch(x){e.currentTarget.disabled=false;say(m,x?.message||'Aktivierung fehlgeschlagen.')}};
+      foot.querySelector('#sfMfaEnrollVerify').onclick=async e=>{const code=body.querySelector('#sfMfaEnrollCode').value.replace(/\s/g,'');if(!sixDigits.test(code))return say(m,'Bitte genau sechs Ziffern eingeben.');e.currentTarget.disabled=true;try{await verifyCode(factorId,code);if((await assurance())?.currentLevel!=='aal2')throw new Error('Die sichere MFA-Sitzung konnte nicht bestätigt werden.');verified=true;say(m,'Der Zwei-Faktor-Schutz ist jetzt aktiv.','good');setTimeout(()=>{if(mandatory){close();B.__mfaEnrollmentResolve?.(true)}else B.openMfaSettings()},700)}catch(x){e.currentTarget.disabled=false;say(m,x?.message||'Aktivierung fehlgeschlagen.')}};
     }catch(e){body.innerHTML='<div id="sfMfaMsg" class="sf-mfa-msg show bad"></div>';say(m,e?.message||'Authenticator konnte nicht eingerichtet werden.');foot.innerHTML=mandatory?'<button class="ghost" id="sfMfaSignOut" type="button">Abmelden</button><button class="primary" id="sfMfaRetry" type="button">Erneut versuchen</button>':'<button class="ghost" id="sfMfaClose" type="button">Schließen</button>';if(mandatory){foot.querySelector('#sfMfaSignOut').onclick=signOut;foot.querySelector('#sfMfaRetry').onclick=()=>enroll(m,{mandatory:true})}else foot.querySelector('#sfMfaClose').onclick=close}
   }
 
   B.openMfaSettings=async function(options={}){
-    if(!B.ready||!B.client)return;
     const mandatory=options===true||options?.mandatory===true;
+    if(!B.client||(!B.ready&&!mandatory))return;
     const m=shell(mandatory?'Authenticator jetzt einrichten':'Zwei-Faktor-Schutz',mandatory?'Für Inhaber und Administratoren ist ein bestätigter Authenticator erforderlich, bevor sensible Bereiche verwendet werden können.':'Verwalte bestätigte Authenticator-Apps für dein persönliches Konto.');
     const body=m.querySelector('#sfMfaBody'),foot=m.querySelector('#sfMfaFoot');body.innerHTML='<div id="sfMfaMsg" class="sf-mfa-msg show good">Sicherheitsstatus wird geladen …</div>';
     try{
       const available=await allFactors();
       const verifiedCount=available.filter(x=>x.status==='verified').length;
       body.innerHTML=`<div class="sf-mfa-list">${available.length?available.map(x=>{const lastRequired=isPrivileged()&&x.status==='verified'&&verifiedCount<=1;return `<div class="sf-mfa-factor"><div><b>${esc(x.friendly_name||'Authenticator')}</b><small>${x.status==='verified'?'Bestätigter zweiter Faktor':'Einrichtung noch nicht abgeschlossen'}</small></div><button class="ghost" data-mfa-remove="${esc(x.id)}" type="button" ${lastRequired?'disabled title="Mindestens ein Faktor ist für privilegierte Konten erforderlich"':''}>${lastRequired?'Erforderlich':'Entfernen'}</button></div>`}).join(''):'<div class="sf-mfa-msg show bad">Noch kein Authenticator eingerichtet.</div>'}</div><div id="sfMfaMsg" class="sf-mfa-msg" role="alert"></div>`;
-      foot.innerHTML=`${mandatory?'':'<button class="ghost" id="sfMfaClose" type="button">Schließen</button>'}<button class="primary" id="sfMfaAdd" type="button">Authenticator hinzufügen</button>`;
-      if(!mandatory)foot.querySelector('#sfMfaClose').onclick=close;foot.querySelector('#sfMfaAdd').onclick=()=>enroll(m,{mandatory});
+      foot.innerHTML=`${mandatory?'<button class="ghost" id="sfMfaSignOut" type="button">Abmelden</button>':'<button class="ghost" id="sfMfaClose" type="button">Schließen</button>'}<button class="primary" id="sfMfaAdd" type="button">Authenticator hinzufügen</button>`;
+      if(mandatory)foot.querySelector('#sfMfaSignOut').onclick=signOut;else foot.querySelector('#sfMfaClose').onclick=close;foot.querySelector('#sfMfaAdd').onclick=()=>enroll(m,{mandatory});
       body.querySelectorAll('[data-mfa-remove]').forEach(btn=>btn.onclick=async()=>{const current=await allFactors(),target=current.find(x=>x.id===btn.dataset.mfaRemove);if(isPrivileged()&&target?.status==='verified'&&current.filter(x=>x.status==='verified').length<=1)return say(m,'Mindestens ein bestätigter Authenticator ist für dieses privilegierte Konto erforderlich.');if(!confirm('Diesen Authenticator wirklich entfernen? Halte vorher einen weiteren Faktor bereit.'))return;btn.disabled=true;const result=await B.client.auth.mfa.unenroll({factorId:btn.dataset.mfaRemove});if(result.error){btn.disabled=false;say(m,result.error.message);return}await B.client.auth.refreshSession();B.openMfaSettings({mandatory})});
     }catch(e){body.innerHTML='<div id="sfMfaMsg" class="sf-mfa-msg show bad"></div>';say(m,e?.message||'Sicherheitsstatus konnte nicht geladen werden.');foot.innerHTML=mandatory?'<button class="ghost" id="sfMfaSignOut" type="button">Abmelden</button><button class="primary" id="sfMfaRetry" type="button">Erneut versuchen</button>':'<button class="ghost" id="sfMfaClose" type="button">Schließen</button>';if(mandatory){foot.querySelector('#sfMfaSignOut').onclick=signOut;foot.querySelector('#sfMfaRetry').onclick=()=>B.openMfaSettings({mandatory:true})}else foot.querySelector('#sfMfaClose').onclick=close}
+  };
+
+  // Protected startup RPCs may require MFA before the application is ready.
+  // Resume exactly those requests after verified enrollment; cancellation never retries them.
+  B.requirePrivilegedMfaEnrollment=async function(){
+    if(!isPrivileged())throw new Error('Für diese Aktion muss zuerst ein Authenticator eingerichtet werden.');
+    if(B.__mfaEnrollmentPromise)return B.__mfaEnrollmentPromise;
+    if((await factors()).length)return true;
+    if(B.__mfaEnrollmentPromise)return B.__mfaEnrollmentPromise;
+    B.__mfaEnrollmentPromise=new Promise((resolve,reject)=>{
+      B.__mfaEnrollmentResolve=resolve;B.__mfaEnrollmentReject=reject;
+      B.__mfaEnrollmentSubscription=B.client.auth.onAuthStateChange?.(event=>{
+        if(event==='SIGNED_OUT')reject(new Error('Die MFA-Einrichtung wurde abgebrochen.'));
+      })?.data?.subscription;
+      Promise.resolve(B.openMfaSettings({mandatory:true})).catch(reject);
+    }).finally(()=>{
+      B.__mfaEnrollmentSubscription?.unsubscribe();B.__mfaEnrollmentSubscription=null;
+      B.__mfaEnrollmentPromise=null;B.__mfaEnrollmentResolve=null;B.__mfaEnrollmentReject=null;
+    });
+    return B.__mfaEnrollmentPromise;
   };
 
   B.enforcePrivilegedMfaEnrollment=async function(){
@@ -126,10 +146,7 @@
       let result=await base(...args);
       if(!isMfaRequired(result?.error)||sessionStorage.getItem('sf_demo_session_v1')==='active')return result;
       try{
-        if(!(await factors()).length){
-          if(isPrivileged())B.openMfaSettings({mandatory:true});
-          return {...result,error:{...result.error,message:'Für diese Aktion muss zuerst ein Authenticator eingerichtet werden.'}};
-        }
+        if(!(await factors()).length)await B.requirePrivilegedMfaEnrollment();
         await B.requireMfaChallenge();
         result=await base(...args);
         if(isMfaRequired(result?.error))return {...result,error:{...result.error,message:'Die sichere MFA-Sitzung konnte nicht bestätigt werden. Bitte erneut anmelden.'}};

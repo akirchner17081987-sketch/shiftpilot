@@ -12,6 +12,7 @@
     if(key==='confirmTime')return !!allowed('confirm_time');
     if(key==='viewTime')return !!(allowed('manage_time')||allowed('confirm_time'));
     if(['manageUsers','compliance'].includes(key))return admin();
+    if(key==='manageAbsences')return admin();
     if(['plan','manageEmployees'].includes(key))return admin()||B.accessRole==='TEAM_LEAD';
     return previousCan?.(key)||false;
   };
