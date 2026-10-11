@@ -47,3 +47,10 @@ test('entry is removed only after a ready manager or employee view', () => {
   assert.match(boot, /root\.classList\.add\('sf-entry-out'\)/);
   assert.match(boot, /syncAuthLoading\(\)/);
 });
+
+test('wordmark stays above the login card after the animation', () => {
+  assert.match(css, /margin-bottom:-18px/);
+  assert.match(css, /margin-bottom:-8px/);
+  assert.doesNotMatch(css, /margin-bottom:-74px/);
+  assert.doesNotMatch(css, /margin-bottom:-48px/);
+});
