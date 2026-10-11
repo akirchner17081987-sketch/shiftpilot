@@ -1,0 +1,36 @@
+
+/* SchichtFunk 2.0 – protected entry/loading bridge; independent of app theme */
+#sfEntryOverlay{position:fixed;inset:0;z-index:30000;display:grid;place-items:center;background:#040e1d;color:#f4f9ff;overflow:auto;isolation:isolate;opacity:1;transition:opacity .46s ease,visibility .46s ease}
+#sfEntryOverlay.sf-entry-out{opacity:0;visibility:hidden;pointer-events:none}
+#sfEntryOverlay::before{content:"";position:absolute;inset:-35%;pointer-events:none;background:radial-gradient(ellipse at 50% 45%,rgba(19,102,192,.26),transparent 44%),radial-gradient(ellipse at 50% 82%,rgba(0,204,255,.08),transparent 37%);animation:sf-entry-breathe 5s ease-in-out infinite alternate}
+#sfEntryOverlay::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.28;background-image:linear-gradient(rgba(69,166,215,.09) 1px,transparent 1px),linear-gradient(90deg,rgba(69,166,215,.09) 1px,transparent 1px);background-size:46px 46px;mask-image:linear-gradient(to top,#000,transparent 75%)}
+.sf-entry-inner{z-index:1;position:relative;width:min(92vw,720px);padding:24px 12px 34px;text-align:center}
+.sf-entry-orbits{position:absolute;top:8%;left:50%;transform:translateX(-50%);width:min(84vw,540px);aspect-ratio:1;pointer-events:none}
+.sf-entry-orbits::before,.sf-entry-orbits::after{content:"";position:absolute;inset:12%;border-radius:50%;border:1px solid rgba(45,189,252,.17);box-shadow:0 0 35px rgba(5,101,204,.1);animation:sf-entry-spin 18s linear infinite}
+.sf-entry-orbits::after{inset:0;border-style:dashed;opacity:.4;animation-direction:reverse;animation-duration:25s}
+.sf-entry-logo{display:block;position:relative;width:min(92vw,620px);height:auto;max-height:390px;object-fit:contain;filter:drop-shadow(0 4px 28px rgba(5,174,255,.25));margin:0 auto -20px}
+.sf-entry-logo svg{width:100%;height:auto;display:block;overflow:visible}
+.sf-entry-logo [id="calendar"]{transform-origin:48% 40%;animation:sf-entry-appear .85s both}
+.sf-entry-logo [id="clock"]{transform-origin:40% 53%;animation:sf-entry-clock .95s .3s both}
+.sf-entry-logo [id="orbit"]{animation:sf-entry-appear .9s .5s both}
+.sf-entry-logo [id="radio-waves"]{transform-origin:54% 50%;animation:sf-entry-pulse 1.2s .65s both}
+.sf-entry-logo [id="wordmark"]{animation:sf-entry-rise .8s 1s both}
+.sf-entry-logo [id="tagline"]{animation:sf-entry-rise .75s 1.35s both}
+.sf-entry-loading{position:relative;margin:-4px auto 0;width:min(85%,340px)}
+.sf-entry-state{color:#b4cee4;font-size:12px;letter-spacing:.08em;margin:0 0 13px}
+.sf-entry-bar{height:4px;border-radius:10px;background:#1b304c;overflow:hidden}
+.sf-entry-bar span{display:block;height:100%;width:0;border-radius:10px;background:linear-gradient(90deg,#1ce7e7,#1a87fa);box-shadow:0 0 13px rgba(25,203,254,.55);transition:width .34s ease}
+.sf-entry-footer{display:flex;justify-content:center;align-items:center;gap:13px;min-height:38px;margin-top:16px}
+.sf-entry-step{font-size:11px;color:#729bbd;font-variant-numeric:tabular-nums}
+.sf-entry-skip{background:transparent;border:1px solid rgba(93,172,227,.36);color:#b8dcf3;padding:8px 12px;border-radius:9px;font-size:11px;cursor:pointer}
+.sf-entry-skip:hover,.sf-entry-skip:focus-visible{border-color:#58dffa;color:#fff;outline:none}
+.sf-entry-warning{max-width:390px;margin:12px auto 0;color:#edc77b;font-size:11px;line-height:1.5}
+@keyframes sf-entry-breathe{to{opacity:.6;transform:scale(1.12)}}
+@keyframes sf-entry-spin{to{transform:rotate(360deg)}}
+@keyframes sf-entry-appear{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+@keyframes sf-entry-clock{from{opacity:0;transform:rotate(-22deg) scale(.8)}to{opacity:1;transform:rotate(0) scale(1)}}
+@keyframes sf-entry-pulse{0%{opacity:0;transform:scale(.68)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes sf-entry-rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:520px){.sf-entry-inner{padding:0 5px 38px}.sf-entry-logo{width:100%;margin-bottom:-24px}.sf-entry-loading{margin-top:0}.sf-entry-orbits{top:15%}}
+@media(prefers-reduced-motion:reduce){#sfEntryOverlay *,#sfEntryOverlay::before,#sfEntryOverlay::after{animation:none!important;transition:none!important}}
+#sfEntryOverlay.sf-entry-skip-animation *,#sfEntryOverlay.sf-entry-skip-animation::before,#sfEntryOverlay.sf-entry-skip-animation::after{animation:none!important}
