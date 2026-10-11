@@ -48,6 +48,18 @@
 #sfEntryOverlay.sf-entry-login-ready .sf-entry-orbits{transform:translateX(-50%) scale(.72);opacity:.38}
 #sfEntryOverlay.sf-entry-login-ready .sf-entry-loading{max-height:0;opacity:0;margin:0;overflow:hidden;pointer-events:none}
 #sfEntryOverlay.sf-entry-login-ready .sf-entry-login-slot{max-height:570px;opacity:1;overflow:visible;transform:translateY(0) scale(1);pointer-events:auto}
+
+/* Keep the logo alive while the real login form waits for authentication. */
+#sfEntryOverlay.sf-entry-login-ready .sf-entry-logo [id="logo-symbol"]{animation:sf-entry-idle-float 5.6s ease-in-out infinite}
+#sfEntryOverlay.sf-entry-login-ready .sf-entry-logo [id="radio-waves"]{animation:none;opacity:1;transform:none}
+#sfEntryOverlay.sf-entry-login-ready .sf-entry-logo [id="radio-waves"] > path{animation:sf-entry-idle-signal 2.8s ease-in-out infinite}
+#sfEntryOverlay.sf-entry-login-ready .sf-entry-logo [id="radio-waves"] > path:nth-child(2){animation-delay:.22s}
+#sfEntryOverlay.sf-entry-login-ready .sf-entry-logo [id="radio-waves"] > path:nth-child(3){animation-delay:.44s}
+#sfEntryOverlay.sf-entry-login-ready .sf-entry-logo [id="orbit"]{animation:sf-entry-idle-glow 4.6s ease-in-out infinite}
+@keyframes sf-entry-idle-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes sf-entry-idle-signal{0%,100%{opacity:.48}40%,60%{opacity:1}}
+@keyframes sf-entry-idle-glow{0%,100%{opacity:.72}50%{opacity:1}}
+
 /* Auth form is relocated; retain every original listener, error message and Supabase call. */
 #sfEntryOverlay #sfAuthBackdrop.sf-auth-backdrop{position:relative;inset:auto;z-index:1;display:block;width:100%;height:auto;min-height:0;padding:0;background:transparent;backdrop-filter:none}
 #sfEntryOverlay #sfAuthBackdrop .sf-auth-card{width:100%;max-width:none;background:linear-gradient(155deg,rgba(12,29,49,.91),rgba(5,17,32,.94));border:1px solid rgba(71,150,209,.36);border-radius:17px;box-shadow:0 22px 75px rgba(0,0,0,.31),inset 0 1px 0 rgba(106,194,255,.08);text-align:left}
