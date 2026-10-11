@@ -665,6 +665,24 @@
         "assets/shift-handover-core-v1.js",
         "database/shift-handover-v1.sql"
       ]
+    },
+    {
+      "category": "personnel",
+      "question": "Wie erhalten Teamleiter Zugriff auf Personalgespräche?",
+      "sources": [
+        "assets/supabase-personnel-file-v1.js",
+        "assets/team-admin-v1.js",
+        "supabase/migrations/20261011225332_personnel_conversations_access.sql"
+      ]
+    },
+    {
+      "category": "personnel",
+      "question": "Welche Qualifikationen werden für Personalgespräche geteilt?",
+      "sources": [
+        "assets/supabase-personnel-file-v1.js",
+        "assets/team-admin-v1.js",
+        "supabase/migrations/20261011225332_personnel_conversations_access.sql"
+      ]
     }
   ],
   "moduleInventory": [

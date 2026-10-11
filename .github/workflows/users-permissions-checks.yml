@@ -5,6 +5,11 @@ on:
     paths:
       - index.html
       - assets/team-admin-v1.js
+      - assets/supabase-personnel-file-v1.js
+      - assets/supabase-personnel-file-enhancements-v1.js
+      - assets/supabase-mfa-v1.js
+      - tests/browser/personnel-conversations-qa.cjs
+      - tests/browser/personnel-mfa-enrollment-qa.cjs
       - assets/users-permissions-v2.css
       - assets/settings-management-v2.js
       - assets/manager-theme-v1.css
@@ -13,6 +18,11 @@ on:
   pull_request:
     paths:
       - assets/team-admin-v1.js
+      - assets/supabase-personnel-file-v1.js
+      - assets/supabase-personnel-file-enhancements-v1.js
+      - assets/supabase-mfa-v1.js
+      - tests/browser/personnel-conversations-qa.cjs
+      - tests/browser/personnel-mfa-enrollment-qa.cjs
       - assets/users-permissions-v2.css
       - tests/browser/users-permissions-qa.cjs
       - .github/workflows/users-permissions-checks.yml
@@ -33,8 +43,16 @@ jobs:
         run: node tests/browser/users-permissions-qa.cjs
         env:
           SF_USERS_BROWSER: /usr/bin/google-chrome
+      - name: Personnel conversations and MFA with synthetic data
+        run: |
+          node tests/browser/personnel-conversations-qa.cjs
+          node tests/browser/personnel-mfa-enrollment-qa.cjs
+        env:
+          SF_PERSONNEL_BROWSER: /usr/bin/google-chrome
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: users-permissions-results
-          path: test-results/users-permissions/
+          path: |
+            test-results/users-permissions/
+            test-results/personnel-conversations/

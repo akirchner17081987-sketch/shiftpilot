@@ -29,7 +29,7 @@
 
   const close=()=>document.getElementById('sfMfaModal')?.remove();
   const say=(m,text,kind='bad')=>{const e=m.querySelector('#sfMfaMsg');if(e){e.className=`sf-mfa-msg show ${kind}`;e.textContent=text}};
-  const isPrivileged=()=>['OWNER','ADMIN'].includes(B.role);
+  const isPrivileged=()=>['OWNER','ADMIN'].includes(B.role)||(B.accessRole==='TEAM_LEAD'&&B.accessPermissions?.includes('personnel_conversations')&&!B.accessPermissions?.includes('read_only'));
   const isMfaRequired=error=>/MFA_REQUIRED/i.test([error?.message,error?.details,error?.hint,error?.code].filter(Boolean).join(' '));
   const signOut=()=>{B.__mfaEnrollmentReject?.(new Error('Die MFA-Einrichtung wurde abgebrochen.'));close();return B.signOutSafely?.()||B.client?.auth?.signOut?.({scope:'local'})};
 
