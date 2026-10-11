@@ -21,7 +21,7 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
  }
  const file=url.pathname.slice(1);if(!file||file.includes('..')||!fs.existsSync(path.join(root,file))){res.writeHead(404);return res.end()}
  const countKey=variant+'|'+file;counters.set(countKey,(counters.get(countKey)||0)+1);
- const js=file.endsWith('.js'),css=file.endsWith('.css');res.setHeader('Content-Type',js?'text/javascript; charset=utf-8':css?'text/css; charset=utf-8':file.endsWith('.svg')?'image/svg+xml':'application/octet-stream');res.setHeader('Cache-Control','public, max-age=86400');
+ const js=file.endsWith('.js'),css=file.endsWith('.css');res.setHeader('Content-Type',js?'text/javascript; charset=utf-8':css?'text/css; charset=utf-8':file.endsWith('.html')?'text/html; charset=utf-8':file.endsWith('.svg')?'image/svg+xml':'application/octet-stream');res.setHeader('Cache-Control','public, max-age=86400');
  let body=file==='assets/supabase-auth-v1.js'?auth:js||css?source(variant,file):fs.readFileSync(path.join(root,file));
  // Controlled round-trip latency; baseline/current source preparation occurs before navigation.
  setTimeout(()=>res.end(body),js||css?35:0);
@@ -40,7 +40,7 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
  for(const view of ['schedule','employees','absence','auto','time','reports','settings']){await page.evaluate(v=>showView(v),view);assert.equal(await page.locator('#view-'+view).evaluate(n=>n.classList.contains('active')),true,view+' navigation')}
  await page.evaluate(()=>{employees=[{id:'qa-e',first:'Vorname',last:'Nachname',status:'active',employment:'Vollzeit',weeklyHours:40,shifts:TYPES.map(t=>t.id),qualifications:[]}];const t=TYPES[0];assignments=[{id:'qa-a',employeeId:'qa-e',type:t.id,date:iso(weekStart),start:t.start,end:t.end}];showView('schedule');editAssignment('qa-a')});await page.locator('#spAssignModal').waitFor();await page.evaluate(()=>spCloseAssignModal());
  await page.locator('#sfHelpButton').click();await page.locator('#sfHelpModal:not([hidden])').waitFor();assert.ok(await page.locator('#sfHelpResults .sf-help-article').count()>0);await page.locator('#sfHelpClose').click();
- for(const [theme,width]of[['dark',1440],['light',390]]){await page.setViewportSize({width,height:1000});await page.evaluate(t=>document.documentElement.dataset.sfTheme=t,theme);await page.evaluate(()=>showView('auto'));assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),true);await page.screenshot({path:path.join(out,'auto-'+theme+'-'+width+'.png')})}
+ for(const [theme,width]of[['dark',1440],['light',390]]){await page.setViewportSize({width,height:1000});await page.evaluate(t=>document.documentElement.dataset.sfTheme=t,theme);await page.evaluate(()=>showView('auto'));if(width<820)await page.waitForFunction(()=>document.querySelector('#appShell .sidebar').getBoundingClientRect().right<=1);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),true);await page.screenshot({path:path.join(out,'auto-'+theme+'-'+width+'.png'),animations:'disabled'})}
  assert.deepEqual(errors,[]);assert.deepEqual(await page.evaluate(()=>qa.writes),[]);
  }
  }
