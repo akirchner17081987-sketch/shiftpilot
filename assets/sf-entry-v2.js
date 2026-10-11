@@ -34,8 +34,8 @@
   function measure() {
     const nav = performance.getEntriesByType('navigation')[0];
     const assets = performance.getEntriesByType('resource');
-    const scripts = assets.filter(entry => /\\.js(?:[?#]|$)/.test(entry.name));
-    const styles = assets.filter(entry => /\\.css(?:[?#]|$)/.test(entry.name));
+    const scripts = assets.filter(entry => new URL(entry.name).pathname.endsWith(".js"));
+    const styles = assets.filter(entry => new URL(entry.name).pathname.endsWith(".css"));
     const result = Object.freeze({
       startedAt: Math.round(startedAt),
       entryToReadyMs: times.ready,
