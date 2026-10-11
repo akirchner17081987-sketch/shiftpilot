@@ -8,6 +8,9 @@ on:
       - assets/supabase-data-v1.js
       - assets/auto-plan-workspace-v1.js
       - assets/auto-plan-period-v1.css
+      - assets/supabase-startup-v1.js
+      - tests/startup-workspaces.test.cjs
+      - tests/regression.test.mjs
       - tests/performance-loader.test.cjs
       - tests/browser/planning-performance-qa.cjs
       - .github/workflows/planning-performance-checks.yml
