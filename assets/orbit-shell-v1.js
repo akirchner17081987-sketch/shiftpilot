@@ -122,7 +122,7 @@
   function applyMotion() {
     stopMotion();
     if (shell) shell.dataset.orbitMotion = effectiveMotion();
-    document.querySelectorAll('[data-orbit-motion]').forEach(select => { if (select.value !== motion) select.value = motion; });
+    document.querySelectorAll('select[data-orbit-motion]').forEach(select => { if (select.value !== motion) select.value = motion; });
   }
   function setMotion(value) {
     if (!['full', 'subtle', 'off'].includes(value)) return;
@@ -159,7 +159,7 @@
       if (buttons.get(openGroup).disabled) close();
     }
   }
-  function applySelectValues() { document.querySelectorAll('[data-orbit-motion]').forEach(select => { if (select.value !== motion) select.value = motion; }); }
+  function applySelectValues() { document.querySelectorAll('select[data-orbit-motion]').forEach(select => { if (select.value !== motion) select.value = motion; }); }
   function scheduleRefresh() { if (queue) return; queue = true; requestAnimationFrame(() => { queue = false; refresh(); }); }
   function init() {
     shell = document.getElementById('appShell');
@@ -192,7 +192,7 @@
     shell.append(popup, dock); shell.classList.add('sf-orbit'); applyMotion(); refresh();
     document.addEventListener('click', event => { if (openGroup && !dock.contains(event.target) && !popup.contains(event.target)) close(); });
     document.addEventListener('keydown', event => { if (event.key === 'Escape' && openGroup) { event.preventDefault(); close(true); } });
-    document.addEventListener('change', event => { if (event.target.matches('[data-orbit-motion]')) setMotion(event.target.value); });
+    document.addEventListener('change', event => { if (event.target.matches('select[data-orbit-motion]')) setMotion(event.target.value); });
     window.addEventListener('resize', positionPopup); window.visualViewport?.addEventListener('resize', positionPopup);
     reducedMotion.addEventListener?.('change', applyMotion);
     document.addEventListener('visibilitychange', () => { if (document.hidden) close(); else scheduleRefresh(); });

@@ -71,8 +71,8 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
    await page.emulateMedia({reducedMotion:'reduce'});await page.waitForFunction(()=>SFOrbit.effectiveMotion()==='off');
    await page.emulateMedia({reducedMotion:'no-preference'});
    await page.locator('[data-orbit-category="settings"]').click();await page.locator('[data-setting-tab="display"]').click();
-   await page.locator('[data-orbit-motion]').selectOption('subtle');assert.equal(await page.evaluate(()=>SFOrbit.motion()),'subtle');
-   await page.locator('[data-orbit-motion]').selectOption('full');
+   await page.locator('select[data-orbit-motion]').selectOption('subtle');assert.equal(await page.evaluate(()=>SFOrbit.motion()),'subtle');
+   await page.locator('select[data-orbit-motion]').selectOption('full');
    for(const [theme,width] of [['dark',1440],['light',390],['dark',320]]){
      await page.setViewportSize({width,height:1000});await page.evaluate(t=>SFManagerTheme.apply(t,false),theme);
      await page.locator('[data-orbit-category="personal"]').click();
