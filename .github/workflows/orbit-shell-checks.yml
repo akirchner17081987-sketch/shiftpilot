@@ -1,0 +1,30 @@
+name: Orbit shell and navigation
+on:
+  push:
+    branches: [codex/orbit-redesign-20261013]
+  pull_request:
+    paths: [index.html, 'assets/orbit-shell-*', assets/settings-management-v2.js, assets/help-center-content-v3.js, tests/browser/site-loading-qa.cjs, .github/workflows/orbit-shell-checks.yml]
+permissions:
+  contents: read
+jobs:
+  orbit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: npm run test:ionos
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/browser/site-loading-qa.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: orbit-navigation-qa
+          path: test-results/site-loading
+          retention-days: 7

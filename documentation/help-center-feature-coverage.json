@@ -1,5 +1,5 @@
 {
-  "reviewedAt": "2026-10-12",
+  "reviewedAt": "2026-10-13",
   "sourceCommit": "1ab633a34363f39c256bd1b5a2ef3c23dbed2282",
   "addedArticles": [
     {
@@ -944,6 +944,22 @@
         "assets/background-auto-plan-v1.js",
         "assets/background-auto-plan-core-v1.js",
         "supabase/migrations/20261012195421_background_auto_planning_jobs.sql"
+      ]
+    },
+    {
+      "category": "start",
+      "question": "Wie bediene ich die neue Orbit-Navigation?",
+      "sources": [
+        "assets/orbit-shell-v1.js",
+        "assets/orbit-shell-v1.css"
+      ]
+    },
+    {
+      "category": "appearance",
+      "question": "Wie ändere ich die Hologramm-Animation?",
+      "sources": [
+        "assets/orbit-shell-v1.js",
+        "assets/settings-management-v2.js"
       ]
     }
   ],
@@ -2133,6 +2149,12 @@
       "area": "Gespeicherte Hintergrundplanung und Wiederaufnahme",
       "category": "auto",
       "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/orbit-shell-v1.js",
+      "area": "Orbit-Navigation und Hologramm-Darstellung",
+      "category": "start",
+      "kind": "feature-or-support"
     }
   ],
   "categoryCoverage": [
@@ -2147,7 +2169,8 @@
         "Wo finde ich Hilfe?",
         "Was bedeuten die animierte Startseite und „3 von 4“?",
         "Warum sehe ich nach der Anmeldung zunächst eine Ladeanzeige?",
-        "Was passiert beim Abmelden?"
+        "Was passiert beim Abmelden?",
+        "Wie bediene ich die neue Orbit-Navigation?"
       ]
     },
     {
@@ -2381,7 +2404,8 @@
         "Kann ich SchichtFunk auf dem Startbildschirm nutzen?",
         "Was tun, wenn die Kamera in der PWA nicht startet?",
         "Wie aktiviere und teste ich Push-Mitteilungen?",
-        "Wo stelle ich Schriftgröße, Kontrast und Darstellungsdichte ein?"
+        "Wo stelle ich Schriftgröße, Kontrast und Darstellungsdichte ein?",
+        "Wie ändere ich die Hologramm-Animation?"
       ]
     },
     {
@@ -2586,12 +2610,12 @@
     "entry": "index.html"
   },
   "currentAudit": {
-    "date": "2026-10-12",
+    "date": "2026-10-13",
     "baselineArticleCount": 177,
-    "addedArticleCount": 27,
+    "addedArticleCount": 29,
     "correctedArticleCount": 11,
-    "articleCount": 204,
+    "articleCount": 209,
     "categoryCount": 21,
-    "assetJavaScriptCount": 192
+    "assetJavaScriptCount": 196
   }
 }

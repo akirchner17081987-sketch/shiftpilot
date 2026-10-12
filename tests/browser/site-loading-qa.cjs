@@ -12,7 +12,7 @@ B.init=async()=>{qa.initMs=performance.now()-qa.start;qa.initParsed=!!document.g
 B.client=client;B.ensureCompany=async()=>{B.role=qa.role;B.accessRole=({PLANNER:'TEAM_LEAD',DISPATCHER:'TEAM_LEAD',VIEWER:'TEAM_LEAD',TIME_TRACKING:'EMPLOYEE'})[qa.role]||qa.role;B.accessPermissions=qa.role==='VIEWER'?['read_only']:qa.role==='TIME_TRACKING'?['manage_time','confirm_time']:['PLANNER','DISPATCHER'].includes(qa.role)?['publish_schedule','manage_time','confirm_time']:[];B.companyId='qa';B.companyMemberships=[{company_id:'qa',role:qa.role}];};B.importLegacy=async()=>{};B.installStoreBridge=()=>{};B.installComplianceBridge=()=>{};
 B.hydrate=B.hydrateTimeOnly=async()=>{employees=[];assignments=[];absences=[];globalSoll={};dailySoll={};if(B.beginStartup){await new Promise(r=>setTimeout(r,250));qa.startup={shellVisible:getComputedStyle(document.getElementById('appShell')).display!=='none',ready:B.ready,shellReady:B.shellReady,entryDismissed:document.getElementById('sfEntryOverlay')?.classList.contains('sf-entry-out')||!document.getElementById('sfEntryOverlay'),viewInert:document.querySelector('#appShell .view').inert,status:!!document.getElementById('sfStartupStatus')};}};B.hydrateEmployee=async()=>{B.employeeDbId='qa-employee';B.employeePortalData=emptyEmployee()};await B.boot({user:{id:'qa-user',email:'qa@example.invalid'}});if(qa.role!=='EMPLOYEE')B.baseOpenApp(qa.role==='TIME_TRACKING'?'time':'overview');qa.done=true;};
 })();`;
-let server,browser;
+let server,browser,qaPage;
 async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(),today=require('../fixtures/today-data.cjs').fixture();today.company_id='qa';
  server=http.createServer((req,res)=>{const url=new URL(req.url,'http://localhost'),referer=new URL(req.headers.referer||'http://localhost/?variant=current'),variant=url.searchParams.get('variant')||referer.searchParams.get('variant')||'current';
  if(url.pathname==='/'||url.pathname==='/index.html'){
@@ -26,7 +26,7 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
  // Controlled round-trip latency; baseline/current source preparation occurs before navigation.
  setTimeout(()=>res.end(body),js||css?35:0);
  });await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+server.address().port;browser=await chromium.launch({headless:true});const metrics={conditions:'Real page and modules with synthetic auth/read-only data, 35 ms asset latency. Timings are fixture measurements, not a signed-in production session.'};
- async function run(variant,role,extra=false){const context=await browser.newContext({serviceWorkers:'block',viewport:{width:1440,height:1000}}),page=await context.newPage(),errors=[],external=[],dialogs=[];page.on('pageerror',e=>errors.push(e.message));page.on('dialog',async d=>{dialogs.push(d.message());await d.dismiss()});
+ async function run(variant,role,extra=false){const context=await browser.newContext({serviceWorkers:'block',viewport:{width:1440,height:1000}}),page=await context.newPage(),errors=[],external=[],dialogs=[];qaPage=page;page.on('pageerror',e=>errors.push(e.message));page.on('dialog',async d=>{dialogs.push(d.message());await d.dismiss()});
  await page.route('**/*',r=>{if(new URL(r.request().url()).origin!==origin){external.push(r.request().url());return r.abort()}return r.continue()});
  await page.goto(origin+'/?variant='+variant+'&role='+role);await page.waitForFunction(()=>qa.done,{timeout:45000}).catch(async e=>{console.error({variant,role,errors,dialogs,qa:await page.evaluate(()=>qa)});throw e});
  const data=await page.evaluate(()=>({...qa,scriptCount:document.scripts.length,paths:[...document.scripts].filter(s=>s.src).map(s=>new URL(s.src).pathname),styles:[...document.querySelectorAll('link[rel="stylesheet"]')].map(s=>new URL(s.href).pathname)}));
@@ -38,7 +38,53 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
  if(role==='EMPLOYEE'){assert.equal(await page.locator('#sfEmployeePortal').count(),1)}
  if(role==='TIME_TRACKING'){assert.equal(await page.locator('#view-time').evaluate(n=>n.classList.contains('active')),true)}
  if(role==='OWNER'){assert.deepEqual(data.startup,{shellVisible:true,ready:false,shellReady:true,entryDismissed:true,viewInert:true,status:true});assert.equal(await page.locator('#sfStartupStatus').count(),0);assert.equal(await page.locator('#appShell').evaluate(n=>n.getAttribute('aria-busy')),null)}
+ if(windowOrbit(data)) {
+   if(role==='TIME_TRACKING') {
+     await page.locator('[data-orbit-category="personal"]').click();
+     assert.equal(await page.locator('#sfOrbitPopup [data-orbit-target="time"]').isEnabled(),true);
+     for(const category of ['planning','analysis','settings'])assert.equal(await page.locator('[data-orbit-category="'+category+'"]').isDisabled(),true);
+     assert.equal(await page.locator('#sfOrbitPopup .sf-orbit-entry:not(:disabled)').count(),1,'time-only navigation must not widen permissions');
+     await page.keyboard.press('Escape');
+   }
+   if(role==='EMPLOYEE')assert.equal(await page.locator('#sfOrbitDock').isVisible(),false);
+ }
  if(extra){
+ if(windowOrbit(data)) {
+   const mainBefore=await page.locator('#appShell .main').boundingBox();
+   await page.locator('[data-orbit-category="planning"]').click();
+   await page.waitForFunction(()=>document.querySelectorAll('#sfOrbitPopup .sf-orbit-entry').length===4);
+   assert.equal(await page.locator('#sfOrbitPopup .sf-orbit-entry').count(),4);
+   const size=await page.locator('#sfOrbitPopup').boundingBox();assert.ok(size.width<=300,'compact menu');
+   const mainAfter=await page.locator('#appShell .main').boundingBox();
+   for(const axis of ['x','y','width'])assert.equal(mainAfter[axis],mainBefore[axis],'opening must not move the workspace');
+   assert.equal(await page.locator('#sfOrbitPopup').evaluate(n=>getComputedStyle(n).position),'fixed','menu is outside the document flow; background data may change content height');
+   await page.locator('#sfOrbitPopup [data-orbit-target="schedule"]').click();
+   assert.equal(await page.locator('#view-schedule').evaluate(n=>n.classList.contains('active')),true,'proxy must activate original route');
+   assert.equal(await page.locator('[data-orbit-category="planning"] small').innerText(),'Dienstplan');
+   await page.locator('[data-orbit-category="personal"]').click();await page.waitForFunction(()=>document.querySelectorAll('#sfOrbitPopup .sf-orbit-entry').length===6);assert.equal(await page.locator('#sfOrbitPopup .sf-orbit-entry').count(),6);
+   await page.locator('[data-orbit-category="analysis"]').click();await page.waitForFunction(()=>document.querySelectorAll('#sfOrbitPopup .sf-orbit-entry').length===2);assert.equal(await page.locator('#sfOrbitPopup .sf-orbit-entry').count(),2);
+   await page.keyboard.press('Escape');assert.equal(await page.locator('#sfOrbitPopup').getAttribute('aria-hidden'),'true');
+   await page.evaluate(()=>SFOrbit.setMotion('subtle'));assert.equal(await page.evaluate(()=>localStorage.getItem('sf_orbit_motion_v1')),'subtle');
+   await page.evaluate(()=>SFOrbit.setMotion('off'));await page.locator('[data-orbit-category="planning"]').click();
+   assert.equal(await page.locator('#sfOrbitPopup').evaluate(n=>n.getAnimations({subtree:true}).length),0,'off must remove all menu effects');
+   await page.keyboard.press('Escape');await page.evaluate(()=>SFOrbit.setMotion('full'));
+   await page.emulateMedia({reducedMotion:'reduce'});await page.waitForFunction(()=>SFOrbit.effectiveMotion()==='off');
+   await page.emulateMedia({reducedMotion:'no-preference'});
+   await page.locator('[data-orbit-category="settings"]').click();await page.locator('[data-setting-tab="display"]').click();
+   await page.locator('select[data-orbit-motion]').selectOption('subtle');assert.equal(await page.evaluate(()=>SFOrbit.motion()),'subtle');
+   await page.locator('select[data-orbit-motion]').selectOption('full');
+   for(const [theme,width] of [['dark',1440],['light',390],['dark',320]]){
+     await page.setViewportSize({width,height:1000});await page.evaluate(t=>SFManagerTheme.apply(t,false),theme);
+     assert.equal(await page.locator('#appShell .topbar .company-card').isVisible(),true,'company switching stays available on mobile');
+     await page.locator('[data-orbit-category="personal"]').click();
+     const menu=await page.locator('#sfOrbitPopup').boundingBox();assert.ok(menu.x>=0&&menu.x+menu.width<=width+1,'menu fits viewport');
+     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),true,'page fits viewport');
+     assert.equal(await page.evaluate(()=>{const b=document.querySelector('#sfOrbitPopup [data-orbit-target="time"]'),r=b.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return b.contains(hit);}),true,'assistant must not cover the last menu entry');
+     await page.screenshot({path:path.join(out,'orbit-'+theme+'-'+width+'.png'),animations:'disabled'});
+     await page.keyboard.press('Escape');
+   }
+   await page.setViewportSize({width:1440,height:1000});await page.evaluate(()=>SFManagerTheme.apply('dark',false));
+ }
  for(const view of ['schedule','employees','absence','auto','time','reports','settings']){await page.evaluate(v=>showView(v),view);await page.locator('#view-'+view+'.active').waitFor({state:'visible'});assert.equal(await page.locator('#view-'+view).evaluate(n=>n.classList.contains('active')),true,view+' navigation')}
  await page.evaluate(()=>{employees=[{id:'qa-e',first:'Vorname',last:'Nachname',status:'active',employment:'Vollzeit',weeklyHours:40,shifts:TYPES.map(t=>t.id),qualifications:[]}];const t=TYPES[0];assignments=[{id:'qa-a',employeeId:'qa-e',type:t.id,date:iso(weekStart),start:t.start,end:t.end}];showView('schedule');editAssignment('qa-a')});await page.locator('#spAssignModal').waitFor();await page.evaluate(()=>spCloseAssignModal());
  await page.locator('#sfHelpButton').click();await page.locator('#sfHelpModal:not([hidden])').waitFor();assert.ok(await page.locator('#sfHelpResults .sf-help-article').count()>0);await page.locator('#sfHelpClose').click();
@@ -63,5 +109,6 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
  const result=[...counters].filter(([key])=>key.startsWith('current|')).map(([key,count])=>({path:key.slice(8),count}));metrics.requestPaths=result.length;
  fs.writeFileSync(path.join(out,'metrics.json'),JSON.stringify(metrics,null,2));console.log(JSON.stringify(metrics,null,2));console.log('Site loading QA passed: real static/dynamic modules, complete DOM before auth, duplicate-free execution, signed-out and seven roles, navigation, assignment dialog, help, light/dark and no production requests or writes.');
 }
-main().catch(e=>{console.error(e);process.exitCode=1}).finally(async()=>{await browser?.close();await new Promise(r=>server?.close(r)||r())});
+function windowOrbit(data){return data.paths.includes('/assets/orbit-shell-v1.js')}
+main().catch(async e=>{console.error(e);process.exitCode=1;if(qaPage&&!qaPage.isClosed()){await qaPage.screenshot({path:path.join(out,'orbit-failure.png'),animations:'disabled'}).catch(()=>{});fs.writeFileSync(path.join(out,'orbit-failure.html'),await qaPage.content().catch(()=>''));}}).finally(async()=>{await browser?.close();await new Promise(r=>server?.close(r)||r())});
 

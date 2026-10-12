@@ -1,4 +1,4 @@
-// Aktive SchichtFunk-Hilfe: vollständiger Funktionsabgleich · 12.10.2026.
+// Aktive SchichtFunk-Hilfe: Orbit-Navigation ergänzt · 13.10.2026.
 window.SFHelpContent = {
   "categories": [
     [
@@ -127,7 +127,7 @@ window.SFHelpContent = {
       ],
       [
         "Wo finde ich Hilfe?",
-        "Öffnen Sie das Fragezeichen im Kopfbereich oder drücken Sie Strg/Cmd + K. Auf kleinen Bildschirmen finden Sie zusätzlich den Hilfe-Knopf unter Einstellungen in der seitlichen Navigation. Die Suche durchsucht alle Hilfekategorien und findet mehrere Suchwörter unabhängig von ihrer Reihenfolge. Auch „2FA“ wird als MFA erkannt."
+        "Öffnen Sie das Fragezeichen im Kopfbereich. Die Suche durchsucht alle Hilfekategorien und findet mehrere Suchwörter unabhängig von ihrer Reihenfolge. Auch „2FA“ wird als MFA erkannt. Die globale Mitarbeitersuche erreichen Sie weiterhin mit Strg/Cmd + K."
       ],
       [
         "Was bedeuten die animierte Startseite und „3 von 4“?",
@@ -140,6 +140,10 @@ window.SFHelpContent = {
       [
         "Was passiert beim Abmelden?",
         "Abmelden beendet die Sitzung und führt zurück zur animierten SchichtFunk-Anmeldung. Ein späterer Login lädt Unternehmenszuordnung, Rolle und Berechtigungen neu. Lassen Sie an gemeinsam genutzten Geräten keine angemeldete Sitzung zurück; das Schließen eines Dialogs ersetzt das Abmelden nicht."
+      ],
+      [
+        "Wie bediene ich die neue Orbit-Navigation?",
+        "Die Hauptnavigation steht am unteren Bildschirmrand. Planung öffnet Dienstplan, Auto-Planung, Wunschplanung und Störfallautopilot. Personal enthält Personalsimulator, Schichtübergabe, Schicht-Marktplatz, Mitarbeiter, Abwesenheit und Zeiterfassung. Auswertung & Kontrolle enthält Auswertung und Audit-Logs. Einstellungen öffnet sich direkt; das SchichtFunk-Logo führt zur Übersicht. Sichtbarkeit und Verfügbarkeit richten sich weiterhin nach Ihrem Zugang. Die aktive Kategorie zeigt den ausgewählten Unterpunkt. Ein erneuter Klick, ein Klick außerhalb oder Escape schließt das Auswahlmenü."
       ]
     ],
     "overview": [
@@ -692,6 +696,10 @@ window.SFHelpContent = {
       [
         "Wo stelle ich Schriftgröße, Kontrast und Darstellungsdichte ein?",
         "Unter Einstellungen → Darstellung können Sie Schriftgröße, Kontrast, allgemeine Dichte und Dienstplandichte anpassen. Weitere Optionen steuern Namen, Zeiten, Stunden und Statussymbole in der Anzeige. Die Live-Vorschau hilft bei der Auswahl; das Preset „Gut lesbar“ kombiniert größere Schrift, mehr Abstand und hohen Kontrast. Die Darstellungseinstellungen werden auf diesem Gerät gespeichert und ändern keine Dienstpläne oder Vertragsdaten."
+      ],
+      [
+        "Wie ändere ich die Hologramm-Animation?",
+        "Unter Einstellungen → Darstellung → Orbit-Menüanimation wählen Sie Voll, Dezent oder Aus. Voll baut die Glas- und Lichtfläche in etwa einer Sekunde auf; Unterpunkte sind sofort anwählbar. Dezent verwendet einen kurzen Übergang. Das Menü schließt in etwa 200 Millisekunden; Aus öffnet und schließt sofort. Die Auswahl wird unmittelbar auf diesem Gerät gespeichert. Eine Systemeinstellung für reduzierte Bewegung hat Vorrang."
       ]
     ],
     "trouble": [
@@ -979,5 +987,5 @@ window.SFHelpContent = {
       ]
     ]
   },
-  "reviewedAt": "2026-10-12"
+  "reviewedAt": "2026-10-13"
 };
