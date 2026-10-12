@@ -442,6 +442,14 @@ window.SFHelpContent = {
     ],
     "auto": [
       [
+        "Läuft die Auto-Planung weiter, wenn ich den Browser verlasse?",
+        "Bei aktiven Unternehmensregeln wird die Monats- und Zeitraumplanung nach der Vorbereitung als Hintergrundauftrag gespeichert. Sobald „Hintergrundauftrag gespeichert“ angezeigt wird, kannst du andere Programme nutzen oder den Browser schließen. Der Server berechnet weiter und speichert den Fortschritt. Bei der nächsten Anmeldung findest du den Auftrag wieder in der Auto-Planung."
+      ],
+      [
+        "Wie öffne oder beende ich eine Hintergrundplanung?",
+        "In der Auto-Planung siehst du den laufenden Auftrag und kannst ihn über „Hintergrundplanung abbrechen“ beenden. Ein fertiger Vorschlag bleibt sieben Tage gespeichert und lässt sich über „Gespeichertes Ergebnis ansehen“ öffnen. Prüfe Stunden, Besetzung und Pflichtlücken und bestätige danach ausdrücklich die Übernahme als Entwurf. Während der Berechnung geänderte Planungsdaten erfordern einen neuen Auftrag. Für ein Unternehmen läuft jeweils höchstens eine Hintergrundplanung."
+      ],
+      [
         "Welche Regeln nutzt die Auto-Planung?",
         "Die Auto-Planung prüft Aktivstatus, Schichtfreigaben, Qualifikationen, Abwesenheiten, Doppelbelegungen, SOLL-Stärken und verbindliche Mitarbeiter- und Teamregeln. Es gelten die für das ausgewählte Unternehmen geschützten Planungsregeln. Konflikte bleiben sichtbar und werden nicht durch eine automatische Besetzung übergangen."
       ],
