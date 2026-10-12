@@ -558,6 +558,10 @@ window.SFHelpContent = {
         "Unter Einstellungen → Unternehmen pflegen Inhaber und Administratoren Betriebsdaten, Geschäftsadresse, Exportlogo und Ansprechpartner. Speichern übernimmt diese Angaben zentral für alle Geräte. Teamleiter sehen eine Leseansicht. Ungespeicherte Eingaben, Speicherfehler und gleichzeitige Änderungen anderer Administratoren werden angezeigt. Ein lokaler alter Standort lässt sich ausdrücklich übernehmen."
       ],
       [
+        "Wo sehe und ändere ich die aktuell geltenden Planungsregeln?",
+        "Unter Einstellungen → Planungsregeln stehen ausschließlich die Regeln des ausgewählten Unternehmens: Monats- und Wochenstunden, Dienste am Stück, Nachtblöcke, Erholung, Optimierungsziele, bedingte Besetzung, Schichtfreigaben, Teamrhythmen und Mitarbeitervorgaben. Inhaber und Administratoren können die angebotenen allgemeinen Werte ändern und speichern. Der Änderungsgrund ist optional; vorherige und neue Werte werden im Audit-Verlauf dokumentiert. Schichtmodelle, SOLL-Besetzung und Teamrhythmen bearbeiten Sie über die Schaltflächen unter Planung, persönliche Vorgaben im Mitarbeiterprofil. Änderungen gelten nur für dieses Unternehmen, verwerfen veraltete Vorschauen und wirken bei neuen Planungen und Regelprüfungen. Bestehende Dienste werden nicht automatisch verändert. Bei gleichzeitigen Änderungen müssen Sie die gespeicherten Werte neu laden. Gesetzliche Schutzprüfungen und verbindliche Freigabesperren bleiben bestehen."
+      ],
+      [
         "Wo ändere ich SOLL-Stärken?",
         "Öffnen Sie Einstellungen und pflegen Sie die globale Standardbesetzung je Schichtart. Einen abweichenden Bedarf legen Sie für den einzelnen Tag separat fest."
       ],
