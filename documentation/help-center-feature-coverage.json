@@ -919,6 +919,14 @@
         "assets/supabase-startup-v1.js",
         "assets/auto-plan-progress-v1.js"
       ]
+    },
+    {
+      "category": "settings",
+      "question": "Wo sehe und ändere ich die aktuell geltenden Planungsregeln?",
+      "sources": [
+        "assets/settings-management-v2.js",
+        "supabase/migrations/20261012021422_company_planning_rule_settings.sql"
+      ]
     }
   ],
   "moduleInventory": [
@@ -2293,6 +2301,7 @@
         "Wer sieht betriebliche Ansprechpartner und Änderungen?",
         "Wie verwalte und verwende ich Unternehmensstandorte?",
         "Wie verwalte ich das Unternehmensprofil?",
+        "Wo sehe und ändere ich die aktuell geltenden Planungsregeln?",
         "Wo ändere ich SOLL-Stärken?",
         "Wo ändere ich die allgemeinen Schichtzeiten?",
         "Welche Rollen gibt es bei der Zeiterfassung?",
