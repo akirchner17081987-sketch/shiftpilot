@@ -9,6 +9,8 @@ test('OT-only monthly extension is scoped and preserves weekly and recovery rule
  assert.equal(s.limits(ot,types,rules).maxMonthlyShifts,22);
  assert.equal(s.limits(ot,types,rules).weeklyLimit,40);
  assert.equal(s.limits({...ot,shifts:['OT2','O1']},types,rules).monthLimit,190);
+ assert.equal(s.limits({...ot,shifts:['OT']},types,rules).monthLimit,190);
+ assert.equal(s.limits({...ot,shifts:['OT2','OT']},types,rules).monthLimit,190);
  assert.equal(s.limits({...ot,employment:'Teilzeit',monthlyHours:144},types,rules).monthLimit,144);
  assert.equal(s.limits(ot,types,{...rules,otOnlyMonthlyMaxHours:221}).monthLimit,190);
  assert.equal(s.limits(ot,types,p).monthLimit,190);

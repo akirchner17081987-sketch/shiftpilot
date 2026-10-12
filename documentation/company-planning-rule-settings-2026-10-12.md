@@ -4,7 +4,7 @@ Unter **Einstellungen → Planungsregeln** werden die authentifiziert geladenen 
 
 Nur OWNER/ADMIN können die angebotenen allgemeinen Regeln speichern. PLANNER/DISPATCHER können lesen und entsprechend ihren bestehenden Rechten die bisherigen Schicht-/Team-/Mitarbeitereditoren benutzen. Authentifizierung, aktive Unternehmensmitgliedschaft und bestehende RLS bleiben erforderlich. READ_ONLY/TIME_TRACKING haben keine zusätzlichen Schreibrechte.
 
-Keine Firmenregeln werden aus Browserdaten übernommen oder für andere Unternehmen kopiert. `planningPolicyCompanyId` und die geladene Schichtmodell-Identität müssen zum ausgewählten Unternehmen passen. Abmeldung und Unternehmenswechsel verwerfen die Regelansicht und den geladenen Stand. Die aktuelle SchichtFunk-Konfiguration einschließlich allgemeinem Maximum 190 h und ausschließlich berechtigter OT-Freigabe bis 220 h bleibt unverändert.
+Keine Firmenregeln werden aus Browserdaten übernommen oder für andere Unternehmen kopiert. `planningPolicyCompanyId` und die geladene Schichtmodell-Identität müssen zum ausgewählten Unternehmen passen. Abmeldung und Unternehmenswechsel verwerfen die Regelansicht und den geladenen Stand. Die aktuelle SchichtFunk-Konfiguration einschließlich allgemeinem Maximum 190 h und ausschließlich berechtigter Tagdienst-Freigabe für OT1/OT2/OT3 bis 220 h bleibt unverändert. Die normale OT am Wochenende gehört nicht zur Tagdienstgruppe; für sie gelten die allgemeinen Planungsregeln. Die Bezeichnungen in Einstellungen, Auto-Planung und Hilfe erläutern diese Abgrenzung ausdrücklich.
 
 ## Speichern und Wirkung
 

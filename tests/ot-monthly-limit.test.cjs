@@ -23,6 +23,10 @@ test('database OT extension accepts 220h, rejects excess, and excludes mixed rol
  await db.query("INSERT INTO shift_assignments SELECT gen_random_uuid(),$1,$2,'DRAFT',('2027-01-01 08:00 Europe/Berlin'::timestamptz+n*interval '1 day'),('2027-01-01 18:00 Europe/Berlin'::timestamptz+n*interval '1 day') FROM generate_series(0,21) n",[company,employee]);
  const check=()=>db.query("SELECT private.sf_assert_month_planning_limits($1,$2,'2027-01-01')",[company,employee]);
  await check(); // 22 duties = 220 hours.
+ await db.query("UPDATE employees SET shift_permissions=ARRAY['OT'] WHERE id=$1",[employee]);
+ await assert.rejects(check(),/Maximal 18|190 Stunden/);
+ await db.query("UPDATE employees SET shift_permissions=ARRAY['OT2','OT'] WHERE id=$1",[employee]);
+ await assert.rejects(check(),/Maximal 18|190 Stunden/);
  await db.query("UPDATE employees SET shift_permissions=ARRAY['OT2','O1'] WHERE id=$1",[employee]);
  await assert.rejects(check(),/Maximal 18|190 Stunden/);
  await db.query("UPDATE employees SET shift_permissions=ARRAY['OT2'],employment='Teilzeit',qualifications=ARRAY['__sp:monthlyHours=144'] WHERE id=$1",[employee]);
