@@ -26,7 +26,8 @@
   const meta=k=>String((e.qualifications||[]).find(q=>String(q).startsWith('__sp:'+k+'='))||'').split('=').slice(1).join('=');
   const target=Number(e.monthlyHours??meta('monthlyHours'))||(/^Vollzeit(?:\s+180)?$/i.test(String(e.employment||'').trim())?180:Number(e.weeklyHours||40)*4.348);
   const full=/^Vollzeit(?:\s+180)?$/i.test(String(e.employment||'').trim())&&target>=180,configured=Number(e.weeklyLimit??e.maxWeeklyHours??meta('maxWeekly'))||Number(e.weeklyHours)||40;
-  return{eightHourModel:eight,monthLimit:full?(eight?184:190):Math.min(190,target),calendarLimit:full?190:Math.min(190,target),maxMonthlyShifts:eight?23:18,weeklyLimit:Math.min(40,configured>0?configured:40)};
+  const otMaximum=Number(p.otOnlyMonthlyMaxHours),otOnly=full&&(e.shifts||[]).length>0&&e.shifts.every(code=>['OT1','OT2','OT3'].includes(code))&&Number.isFinite(otMaximum)&&otMaximum>0&&otMaximum<=220;
+  return{eightHourModel:eight,monthLimit:otOnly?otMaximum:full?(eight?184:190):Math.min(190,target),calendarLimit:otOnly?otMaximum:full?190:Math.min(190,target),maxMonthlyShifts:otOnly?Math.floor(otMaximum/10):eight?23:18,weeklyLimit:Math.min(40,configured>0?configured:40)};
  }
  function confirmedErrors(e,rows,p,affected){
   const own=rows.filter(active).filter(a=>String(a.employeeId)===String(e.id)).map(a=>duty(a,p)).sort((a,b)=>a.startMs-b.startMs),wanted=affected&&new Set(affected),out=[],touch=b=>!wanted||b.some(a=>wanted.has(a.date)),push=(date,message)=>out.push({date,employeeId:e.id,message}),blocks=[];

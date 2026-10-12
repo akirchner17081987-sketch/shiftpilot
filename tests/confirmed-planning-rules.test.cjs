@@ -2,6 +2,18 @@ const test=require('node:test'),assert=require('node:assert/strict'),s=require('
 const p={enabled:true,confirmedRulesVersion:2,timezone:'Europe/Berlin',shortBlockRecoveryPersonnelNos:['2001'],shortBlockMaximum:2};
 const e={id:'a',personnelNo:'2001',employment:'Vollzeit',weeklyHours:40,monthlyHours:180};
 const a=(date,type='FD',start='06:00',end='14:00')=>({date,type,start,end,employeeId:'a'});
+test('OT-only monthly extension is scoped and preserves weekly and recovery rules',()=>{
+ const rules={...p,otOnlyMonthlyMaxHours:220},types=[{id:'OT2',start:'08:00',end:'18:00'},{id:'O1',start:'18:00',end:'04:00'}],ot={...e,shifts:['OT2']};
+ assert.equal(s.limits(ot,types,rules).monthLimit,220);
+ assert.equal(s.limits(ot,types,rules).calendarLimit,220);
+ assert.equal(s.limits(ot,types,rules).maxMonthlyShifts,22);
+ assert.equal(s.limits(ot,types,rules).weeklyLimit,40);
+ assert.equal(s.limits({...ot,shifts:['OT2','O1']},types,rules).monthLimit,190);
+ assert.equal(s.limits({...ot,employment:'Teilzeit',monthlyHours:144},types,rules).monthLimit,144);
+ assert.equal(s.limits(ot,types,{...rules,otOnlyMonthlyMaxHours:221}).monthLimit,190);
+ assert.equal(s.limits(ot,types,p).monthLimit,190);
+ assert.ok(s.errors(ot,[4,5,6,7,8].map(n=>a('2027-01-0'+n,'OT2','08:00','18:00')),rules).length);
+});
 test('model caps use permitted active templates and preserve lower individual contracts',()=>{
  const types=[{id:'FD',start:'06:00',end:'14:00'},{id:'O1',start:'18:00',end:'04:00'}];
  assert.equal(s.limits({...e,shifts:['FD']},types,p).maxMonthlyShifts,23);
