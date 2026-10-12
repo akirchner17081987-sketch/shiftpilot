@@ -52,6 +52,7 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
  if(windowOrbit(data)) {
    const mainBefore=await page.locator('#appShell .main').boundingBox();
    await page.locator('[data-orbit-category="planning"]').click();
+   await page.waitForFunction(()=>document.querySelectorAll('#sfOrbitPopup .sf-orbit-entry').length===4);
    assert.equal(await page.locator('#sfOrbitPopup .sf-orbit-entry').count(),4);
    const size=await page.locator('#sfOrbitPopup').boundingBox();assert.ok(size.width<=300,'compact menu');
    const mainAfter=await page.locator('#appShell .main').boundingBox();
@@ -60,8 +61,8 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
    await page.locator('#sfOrbitPopup [data-orbit-target="schedule"]').click();
    assert.equal(await page.locator('#view-schedule').evaluate(n=>n.classList.contains('active')),true,'proxy must activate original route');
    assert.equal(await page.locator('[data-orbit-category="planning"] small').innerText(),'Dienstplan');
-   await page.locator('[data-orbit-category="personal"]').click();assert.equal(await page.locator('#sfOrbitPopup .sf-orbit-entry').count(),6);
-   await page.locator('[data-orbit-category="analysis"]').click();assert.equal(await page.locator('#sfOrbitPopup .sf-orbit-entry').count(),2);
+   await page.locator('[data-orbit-category="personal"]').click();await page.waitForFunction(()=>document.querySelectorAll('#sfOrbitPopup .sf-orbit-entry').length===6);assert.equal(await page.locator('#sfOrbitPopup .sf-orbit-entry').count(),6);
+   await page.locator('[data-orbit-category="analysis"]').click();await page.waitForFunction(()=>document.querySelectorAll('#sfOrbitPopup .sf-orbit-entry').length===2);assert.equal(await page.locator('#sfOrbitPopup .sf-orbit-entry').count(),2);
    await page.keyboard.press('Escape');assert.equal(await page.locator('#sfOrbitPopup').getAttribute('aria-hidden'),'true');
    await page.evaluate(()=>SFOrbit.setMotion('subtle'));assert.equal(await page.evaluate(()=>localStorage.getItem('sf_orbit_motion_v1')),'subtle');
    await page.evaluate(()=>SFOrbit.setMotion('off'));await page.locator('[data-orbit-category="planning"]').click();

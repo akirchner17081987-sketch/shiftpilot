@@ -7,7 +7,10 @@ html[data-sf-theme="light"] #appShell.sf-orbit{--orbit-canvas:#dce1ef;--orbit-su
 #appShell.sf-orbit .sf-orbit-brand{flex:none;width:180px;padding:0;border:0;background:transparent;box-shadow:none}
 #appShell.sf-orbit .sf-orbit-brand img{display:block;width:180px;height:54px;object-fit:contain}
 html[data-sf-theme="light"] #appShell.sf-orbit .sf-orbit-brand{background:#0a192c;border-radius:12px;padding:4px 8px;width:188px}
-#appShell.sf-orbit>.topbar .company-card{flex:0 1 210px;margin:0;padding:10px 12px;background:var(--orbit-inset)!important;border-color:var(--orbit-line)!important;border-radius:12px;text-align:left;min-width:160px}
+#appShell.sf-orbit>.topbar .company-card{flex:0 1 230px;margin:0;padding:10px 12px;background:var(--orbit-inset)!important;border-color:var(--orbit-line)!important;border-radius:12px;text-align:left;min-width:160px}
+#appShell.sf-orbit>.topbar .company-card>span:nth-child(2){min-width:0}
+#appShell.sf-orbit>.topbar .company-card b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#appShell.sf-orbit>.topbar .company-card small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #appShell.sf-orbit .company-card :is(b,small){color:var(--orbit-text)!important}
 #appShell.sf-orbit .company-card small{color:var(--orbit-muted)!important}
 #appShell.sf-orbit>.topbar .search{flex:1 1 180px;width:auto;min-width:160px;background:var(--orbit-inset)!important;border-color:var(--orbit-line)!important;border-radius:12px}
