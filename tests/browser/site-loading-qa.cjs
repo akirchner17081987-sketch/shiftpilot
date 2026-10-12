@@ -12,7 +12,7 @@ B.init=async()=>{qa.initMs=performance.now()-qa.start;qa.initParsed=!!document.g
 B.client=client;B.ensureCompany=async()=>{B.role=qa.role;B.accessRole=({PLANNER:'TEAM_LEAD',DISPATCHER:'TEAM_LEAD',VIEWER:'TEAM_LEAD',TIME_TRACKING:'EMPLOYEE'})[qa.role]||qa.role;B.accessPermissions=qa.role==='VIEWER'?['read_only']:qa.role==='TIME_TRACKING'?['manage_time','confirm_time']:['PLANNER','DISPATCHER'].includes(qa.role)?['publish_schedule','manage_time','confirm_time']:[];B.companyId='qa';B.companyMemberships=[{company_id:'qa',role:qa.role}];};B.importLegacy=async()=>{};B.installStoreBridge=()=>{};B.installComplianceBridge=()=>{};
 B.hydrate=B.hydrateTimeOnly=async()=>{employees=[];assignments=[];absences=[];globalSoll={};dailySoll={};if(B.beginStartup){await new Promise(r=>setTimeout(r,250));qa.startup={shellVisible:getComputedStyle(document.getElementById('appShell')).display!=='none',ready:B.ready,shellReady:B.shellReady,entryDismissed:document.getElementById('sfEntryOverlay')?.classList.contains('sf-entry-out')||!document.getElementById('sfEntryOverlay'),viewInert:document.querySelector('#appShell .view').inert,status:!!document.getElementById('sfStartupStatus')};}};B.hydrateEmployee=async()=>{B.employeeDbId='qa-employee';B.employeePortalData=emptyEmployee()};await B.boot({user:{id:'qa-user',email:'qa@example.invalid'}});if(qa.role!=='EMPLOYEE')B.baseOpenApp(qa.role==='TIME_TRACKING'?'time':'overview');qa.done=true;};
 })();`;
-let server,browser;
+let server,browser,qaPage;
 async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(),today=require('../fixtures/today-data.cjs').fixture();today.company_id='qa';
  server=http.createServer((req,res)=>{const url=new URL(req.url,'http://localhost'),referer=new URL(req.headers.referer||'http://localhost/?variant=current'),variant=url.searchParams.get('variant')||referer.searchParams.get('variant')||'current';
  if(url.pathname==='/'||url.pathname==='/index.html'){
@@ -26,7 +26,7 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
  // Controlled round-trip latency; baseline/current source preparation occurs before navigation.
  setTimeout(()=>res.end(body),js||css?35:0);
  });await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+server.address().port;browser=await chromium.launch({headless:true});const metrics={conditions:'Real page and modules with synthetic auth/read-only data, 35 ms asset latency. Timings are fixture measurements, not a signed-in production session.'};
- async function run(variant,role,extra=false){const context=await browser.newContext({serviceWorkers:'block',viewport:{width:1440,height:1000}}),page=await context.newPage(),errors=[],external=[],dialogs=[];page.on('pageerror',e=>errors.push(e.message));page.on('dialog',async d=>{dialogs.push(d.message());await d.dismiss()});
+ async function run(variant,role,extra=false){const context=await browser.newContext({serviceWorkers:'block',viewport:{width:1440,height:1000}}),page=await context.newPage(),errors=[],external=[],dialogs=[];qaPage=page;page.on('pageerror',e=>errors.push(e.message));page.on('dialog',async d=>{dialogs.push(d.message());await d.dismiss()});
  await page.route('**/*',r=>{if(new URL(r.request().url()).origin!==origin){external.push(r.request().url());return r.abort()}return r.continue()});
  await page.goto(origin+'/?variant='+variant+'&role='+role);await page.waitForFunction(()=>qa.done,{timeout:45000}).catch(async e=>{console.error({variant,role,errors,dialogs,qa:await page.evaluate(()=>qa)});throw e});
  const data=await page.evaluate(()=>({...qa,scriptCount:document.scripts.length,paths:[...document.scripts].filter(s=>s.src).map(s=>new URL(s.src).pathname),styles:[...document.querySelectorAll('link[rel="stylesheet"]')].map(s=>new URL(s.href).pathname)}));
@@ -54,7 +54,9 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
    await page.locator('[data-orbit-category="planning"]').click();
    assert.equal(await page.locator('#sfOrbitPopup .sf-orbit-entry').count(),4);
    const size=await page.locator('#sfOrbitPopup').boundingBox();assert.ok(size.width<=300,'compact menu');
-   assert.deepEqual(await page.locator('#appShell .main').boundingBox(),mainBefore,'opening must not move the workspace');
+   const mainAfter=await page.locator('#appShell .main').boundingBox();
+   for(const axis of ['x','y','width'])assert.equal(mainAfter[axis],mainBefore[axis],'opening must not move the workspace');
+   assert.equal(await page.locator('#sfOrbitPopup').evaluate(n=>getComputedStyle(n).position),'fixed','menu is outside the document flow; background data may change content height');
    await page.locator('#sfOrbitPopup [data-orbit-target="schedule"]').click();
    assert.equal(await page.locator('#view-schedule').evaluate(n=>n.classList.contains('active')),true,'proxy must activate original route');
    assert.equal(await page.locator('[data-orbit-category="planning"] small').innerText(),'Dienstplan');
@@ -105,5 +107,5 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
  fs.writeFileSync(path.join(out,'metrics.json'),JSON.stringify(metrics,null,2));console.log(JSON.stringify(metrics,null,2));console.log('Site loading QA passed: real static/dynamic modules, complete DOM before auth, duplicate-free execution, signed-out and seven roles, navigation, assignment dialog, help, light/dark and no production requests or writes.');
 }
 function windowOrbit(data){return data.paths.includes('/assets/orbit-shell-v1.js')}
-main().catch(e=>{console.error(e);process.exitCode=1}).finally(async()=>{await browser?.close();await new Promise(r=>server?.close(r)||r())});
+main().catch(async e=>{console.error(e);process.exitCode=1;if(qaPage&&!qaPage.isClosed()){await qaPage.screenshot({path:path.join(out,'orbit-failure.png'),animations:'disabled'}).catch(()=>{});fs.writeFileSync(path.join(out,'orbit-failure.html'),await qaPage.content().catch(()=>''));}}).finally(async()=>{await browser?.close();await new Promise(r=>server?.close(r)||r())});
 
