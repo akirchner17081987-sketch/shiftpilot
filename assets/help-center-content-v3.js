@@ -883,7 +883,7 @@ window.SFHelpContent = {
       ],
       [
         "Was tun bei fehlgeschlagener Wunschplanung oder veraltetem Stand?",
-        "Wähle „Aktualisieren“ und prüfe den aktuell gespeicherten Verlauf. Eine zwischenzeitlich geänderte Wunschversion wird beim Speichern abgewiesen. Nach einer unklaren Übertragung aktualisiere, bevor du neu einreichst. Die Planung bleibt bei fehlenden Schutzdaten gesperrt, bis sie wieder geladen wurden. Vorhandene Dienste müssen vor einer Freizeitzusage geklärt werden. Überlappende aktive Wünsche, inaktive Profile, nicht freigegebene Schichtmodelle und ungültige Zeiträume werden abgewiesen."
+        "Wähle „Aktualisieren“ und prüfe den aktuell gespeicherten Verlauf. Eine zwischenzeitlich geänderte Wunschversion wird beim Speichern abgewiesen. Nach einer unklaren Übertragung aktualisiere, bevor du neu einreichst. Ein Dienstplan kann vor der Wunschabgabe als Entwurf vorgeplant werden. Offene Wünsche und noch nicht geladene Wunschdaten sperren die Vorplanung nicht. Wünsche werden automatisch nachgeladen und können später im Entwurf berücksichtigt werden. Bereits bestätigte Freizeitzusagen bleiben geschützt und werden beim Speichern serverseitig geprüft. Vorhandene Dienste müssen vor einer Freizeitzusage geklärt werden. Überlappende aktive Wünsche, inaktive Profile, nicht freigegebene Schichtmodelle und ungültige Zeiträume werden abgewiesen."
       ]
     ],
     "handover": [
