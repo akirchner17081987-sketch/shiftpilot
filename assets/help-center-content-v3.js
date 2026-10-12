@@ -1,4 +1,4 @@
-// Hilfe-Center: Schichtübergabe, Wunschplanung und Personalsimulator · 10.10.2026.
+// Aktive SchichtFunk-Hilfe: vollständiger Funktionsabgleich · 12.10.2026.
 window.SFHelpContent = {
   "categories": [
     [
@@ -40,6 +40,11 @@ window.SFHelpContent = {
       "auto",
       "Auto-Planung",
       "Vorschläge und Planungsregeln"
+    ],
+    [
+      "assistant",
+      "Planungsassistent",
+      "Monat prüfen, Ersatz suchen und Verbesserungen erklären"
     ],
     [
       "staffing",
@@ -122,23 +127,19 @@ window.SFHelpContent = {
       ],
       [
         "Wo finde ich Hilfe?",
-        "Öffnen Sie das Fragezeichen im Kopfbereich oder drücken Sie Strg/Cmd + K. Die Suche durchsucht alle Hilfekategorien."
+        "Öffnen Sie das Fragezeichen im Kopfbereich oder drücken Sie Strg/Cmd + K. Auf kleinen Bildschirmen finden Sie zusätzlich den Hilfe-Knopf unter Einstellungen in der seitlichen Navigation. Die Suche durchsucht alle Hilfekategorien und findet mehrere Suchwörter unabhängig von ihrer Reihenfolge. Auch „2FA“ wird als MFA erkannt."
       ],
       [
-        "Wie starte ich den Monatscheck im Assistenten?",
-        "Öffne den Planungsassistenten und wähle Monat prüfen oder frage: Was fehlt noch für Januar 2027? Der Check zeigt offene Positionen, fehlende Freigaben, Teamregeln, Stundenvorgaben, Überbesetzung und verbindliche Belastungsregeln. Der Belastungscheck berücksichtigt geladene Dienste vor und nach dem Monat, Arbeitsblöcke, Nacht-Erholung, Wochenstunden und persönliche Monatsgrenzen einschließlich Nachtübertrag. Vollständig freie Wochenenden werden als Verbesserungsziel getrennt angezeigt. Ausschließlich für Frühdienst freigegebene Mitarbeiter ohne Team werden nicht als fehlende Teamzuordnung gewertet. Fehlende Daten oder Regeln werden benannt. Über die Ergebnisbuttons gelangst du zur betroffenen Stelle."
+        "Was bedeuten die animierte Startseite und „3 von 4“?",
+        "Die animierte SchichtFunk-Startseite bereitet die Anmeldung vor. Logo, Anwendungsdokument, Ressourcen und bereitgestellte Anmeldung beziehungsweise Oberfläche bilden vier Startschritte. „3 von 4“ bezeichnet den Start der Anwendung, keine Dienstplanberechnung. Die Logoanimation kann während der Anmeldung weiterlaufen. Ein sichtbarer Rahmen nach dem Login bedeutet noch nicht, dass alle Unternehmensdaten bereitstehen."
       ],
       [
-        "Wie übernimmt der Assistent den ausgewählten Dienst?",
-        "In der Wochenbesetzung oder bei SOLL/IST öffnet Assistent die Ersatzsuche für den betreffenden Tag und die betreffende Schicht. Die Auswahl erscheint oben im Chat. Danach versteht der Chat zum Beispiel: Warum konnte die Auto-Planung diesen Dienst nicht besetzen? Mit Auswahl lösen, einem anderen Bezugsmonat oder beim Unternehmenswechsel wird der Bezug aufgehoben. Ein Dienst öffnen springt zum Zeitraum und markiert die betreffende Stelle; der Assistent speichert keine Zuordnung."
+        "Warum sehe ich nach der Anmeldung zunächst eine Ladeanzeige?",
+        "Nach bestätigter Anmeldung erscheint die Verwaltungsoberfläche, während Unternehmensdaten und der gewählte Bereich vorbereitet werden. Mitarbeiter wechseln erst in das Portal, wenn ihre eigenen Daten bereitstehen. Warten Sie auf die fertige Ansicht und beachten Sie Fehlerhinweise. Die Oberfläche zeigt keine erfolgreiche Datenladung an, wenn die Übertragung fehlgeschlagen ist."
       ],
       [
-        "Was bedeuten die Stunden bei Ersatzvorschlägen?",
-        "Die Spalten Woche nach Einsatz und Monat nach Einsatz enthalten die bereits geplanten Stunden zuzüglich der vorgeschlagenen Schicht, ohne Pausenabzug. Daneben stehen die hinterlegten SOLL-Stunden. Eine Überschreitung ist ein Planungshinweis und kein bestätigtes Überstundenkonto. Der Folgedienst zeigt den nächsten gespeicherten Dienst, soweit einer vorhanden ist. Eignung und Rangfolge folgen den aktuellen Auto-Planungsregeln; mehrere Ersatzvorschläge bilden keine gemeinsame Besetzungszusage."
-      ],
-      [
-        "Welche Fragen versteht der Planungsassistent?",
-        "Du kannst Besetzung, Ersatzkandidaten, Mitarbeiter- und Teamdienste, Schichtfreigaben, Teamrhythmen und Stunden abfragen. Neu sind Belastung prüfen, Stunden verbessern, Ausfall durchspielen und gespeicherte Planungsgründe. Nenne Zeitraum und Mitarbeiter möglichst eindeutig. Stunden verbessern erstellt eine gemeinsame Vorschau für passende offene Dienste und einzelne Entlastungswechsel: offene Positionen und Stunden-Soll-Defizit vorher/nachher sowie die betroffenen Zuweisungen. Erst Vorschläge als Entwurf übernehmen und die folgende Bestätigung speichern Änderungen; anschließend prüft der Server Regeln, Schutz und Aktualität erneut. Veröffentlicht wird dadurch nichts. Was passiert, wenn Mitarbeiter 119 am 12.01.2027 ausfällt? simuliert ausschließlich Ersatz, ohne Abwesenheit oder Planänderung. Gespeicherte Planungsgründe zeigt die Enddiagnose neuer Auto-Planungsläufe; alte Entscheidungen werden nicht erfunden. Über Welche Hilfethemen kennst du? öffnest du die Wissensdatenbank."
+        "Was passiert beim Abmelden?",
+        "Abmelden beendet die Sitzung und führt zurück zur animierten SchichtFunk-Anmeldung. Ein späterer Login lädt Unternehmenszuordnung, Rolle und Berechtigungen neu. Lassen Sie an gemeinsam genutzten Geräten keine angemeldete Sitzung zurück; das Schließen eines Dialogs ersetzt das Abmelden nicht."
       ]
     ],
     "overview": [
@@ -249,6 +250,10 @@ window.SFHelpContent = {
       [
         "Was passiert beim normalen Löschen eines Mitarbeiters?",
         "Die Löschübersicht zeigt die Folgen für den ausgewählten Mitarbeiter und dessen künftige Dienste und Abwesenheiten. Nach Bestätigung mit vollständigem Namen wird der Mitarbeiter aus der Verwaltung entfernt, für neue Planung gesperrt und sein Zugang blockiert. Vorhandene Zeit- und Abrechnungsdaten sowie abgeschlossene Monate bleiben erhalten; historische Dienste und Abwesenheiten werden archiviert. Prüfen Sie die Vorschau sorgfältig."
+      ],
+      [
+        "Was unterscheidet Inaktivsetzen vom Entfernen eines Mitarbeiters?",
+        "Ein inaktives Profil bleibt im Mitarbeiterbestand und kann über den Status wieder aktiviert werden. Inaktive Mitarbeiter werden nicht neu eingeplant; vorhandene Dienste müssen gesondert geprüft werden. Die bestätigte Mitarbeiterentfernung ist ein eigener Ablauf mit einer Folgenübersicht und erhält relevante Zeit- und Abrechnungshistorie. Die vollständige Datenlöschung ist eine weitere, gesonderte Inhaberaktion."
       ]
     ],
     "time": [
@@ -286,7 +291,7 @@ window.SFHelpContent = {
       ],
       [
         "Was blockiert einen Monatsabschluss?",
-        "Inhaber und Administratoren sehen in der Abschlussprüfung veröffentlichte Dienste ohne bestätigte Ist-Zeit, offene Zeitkorrekturen, offene Abwesenheitsanträge und laufende QR-Dienste. Diese Punkte müssen geklärt sein; auch das Monatsende ist zu beachten. Planer und Disponenten können die Vorbereitung im verfügbaren Umfang unterstützen, aber keinen administrativen Abschluss erzwingen."
+        "Inhaber und Administratoren sehen in der Abschlussprüfung veröffentlichte Dienste ohne bestätigte IST-Zeit, offene Zeitkorrekturen, offene Abwesenheitsanträge und laufende QR-Dienste. Diese Punkte sowie das Monatsende sind vor dem Abschluss zu klären. Teamleiter können mit passenden Zeitrechten die Erfassung und Bestätigung vorbereiten; den administrativen Monatsabschluss und die Bearbeitung geschützter Abwesenheitsanträge dürfen sie dadurch nicht erzwingen."
       ],
       [
         "Was sperrt ein abgeschlossener Monat und wie öffne ich ihn wieder?",
@@ -295,6 +300,10 @@ window.SFHelpContent = {
       [
         "Wie werden Sollstunden und Abwesenheitsgutschriften eingestellt?",
         "Die Stundenkonto-Einstellungen unterscheiden eine Berechnung über die Fünf-Tage-Woche und persönliche Monatsziele. Beachten Sie Kontostart, Wirksamkeitsmonat und die hinterlegten Mitarbeiterziele. Gutschriften für Abwesenheitsarten sowie Feiertagseinstellungen beeinflussen das Konto. Diese Einstellungen sind von den Besetzungs-SOLL-Werten des Dienstplans zu unterscheiden."
+      ],
+      [
+        "Wie wähle ich Tag, Kalenderwoche, Monat oder ein eigenes Datum?",
+        "In der Zeiterfassung wählen Sie „Aktueller Tag“, „Aktuelle KW“, „Gesamter Monat“ oder „Benutzerdefiniertes Datum“. Für den Monat steht eine eigene Monatswahl bereit; beim benutzerdefinierten Datum wählen Sie den gewünschten Kalendertag. Tages- und Wochenansichten berücksichtigen vollständige Nachtschichten. Die separate QR-Buchungsliste hat eigene Filter und soll nicht zusätzlich auf den zentralen Monatswert aufaddiert werden."
       ]
     ],
     "qr": [
@@ -350,7 +359,7 @@ window.SFHelpContent = {
     "absence": [
       [
         "Wie erfasse oder beantrage ich Abwesenheit?",
-        "Wählen Sie Art, Mitarbeiter und Zeitraum. Mitarbeitende können ihre Anträge im Portal stellen; die Verwaltung bearbeitet sie im Bereich Abwesenheiten."
+        "Mitarbeiter öffnen im Portal Abwesenheiten → „Antrag stellen“, wählen Urlaub, Sonderurlaub, Krank, Kind Krank oder Home-Office und tragen Start- und Enddatum ein. Ein Kommentar ist freiwillig. Bei einem tageweisen Antrag zählen Start- und Enddatum mit; bei stundenweiser Abwesenheit sind zusätzlich Beginn und Ende anzugeben. Der Antrag wird gespeichert und kann im Portal mit Status und Rückmeldung verfolgt werden. Inhaber und Administratoren bearbeiten ihn in der Verwaltung; eine Antragstellung allein ist keine Genehmigung."
       ],
       [
         "Wann beeinflusst ein Antrag die Planung?",
@@ -359,6 +368,18 @@ window.SFHelpContent = {
       [
         "Was geschieht bei einer bestehenden Schicht?",
         "SchichtFunk markiert den Konflikt. Prüfen Sie Ersatz oder Änderung und kontrollieren Sie die Besetzung danach erneut; die Schicht verschwindet nicht stillschweigend."
+      ],
+      [
+        "Wer darf Abwesenheitsanträge und Krankheitsgründe sehen?",
+        "Inhaber und Administratoren bearbeiten Abwesenheitsanträge mit der erforderlichen MFA-Bestätigung. Mitarbeiter sehen ihre eigenen Anträge im Portal. Teamleiter erhalten für die Planung nur die erforderlichen gesperrten Zeiträume; Krankheitsgründe und private Freitexte gehören nicht zu ihrer Planungsansicht. Das automatische Gesprächsrecht ändert diese Trennung nicht."
+      ],
+      [
+        "Was bedeutet die Zahl neben „Abwesenheiten“?",
+        "Die Zahl zählt noch offene Mitarbeiteranträge im aktuellen Unternehmen, unabhängig vom gerade gewählten Monat oder Filter. Sie ist keine Anzahl aller Abwesenheiten oder Krankmeldungen. Berechtigte Personalverantwortliche finden die offenen Vorgänge im Bereich „Mitarbeiteranträge“. Bei einem Ladefehler oder fehlendem Zugriff wird kein ungesicherter Zähler aus einem alten Unternehmen übernommen."
+      ],
+      [
+        "Wo sehe ich Entscheidung und Rückmeldung zu meinem Antrag?",
+        "Im Mitarbeiterportal zeigt Abwesenheiten offene, genehmigte beziehungsweise erfasste und abgelehnte Anträge. Über die Filter finden Sie den gewünschten Status und die Abwesenheitsart. Nach einer Aktualisierung sehen Sie die gespeicherte Entscheidung und gegebenenfalls die Rückmeldung der Verwaltung. Wiederholen Sie einen unklar gespeicherten Antrag erst, nachdem Sie den aktuellen Bestand geprüft haben."
       ]
     ],
     "staffing": [
@@ -475,6 +496,14 @@ window.SFHelpContent = {
       [
         "Was macht die individuelle Monatsplanung?",
         "Die optionale individuelle Blockverteilung gehört zum Acht-Stunden-Modell und ist nur unter den dafür vorgesehenen Bedingungen verfügbar. Teamzuordnung und verbindliche persönliche Rhythmen begrenzen ihre Anwendung. Bei aktivierten bestätigten Planungsregeln wird dieser ältere Modus nicht verwendet; es gelten die bestätigten Arbeits-, Nacht- und Ruhezeitregeln. Prüfen Sie immer die Vorschau der tatsächlich angebotenen Planung und veröffentlichen Sie erst nach der Gesamtprüfung."
+      ],
+      [
+        "Was bedeutet der Fortschrittsbalken der Auto-Planung?",
+        "Arbeitsschritt und vergangene Zeit zeigen, dass die Planung läuft. Beim Datenladen und Vorbereiten steht „In Arbeit“, weil noch kein messbarer Prozentwert vorliegt. Die Monatsplanung zählt tatsächlich geprüfte Verteilungen über den gesamten ausgewählten Zeitraum. 100 % erscheint erst nach erfolgreicher Abschlussprüfung und bedeutet eine fertige Vorschau. Sie müssen diese noch prüfen, als Entwurf übernehmen und gesondert veröffentlichen."
+      ],
+      [
+        "Was tue ich, wenn eine Auto-Planung fehlschlägt?",
+        "Lesen Sie den angezeigten Fehler und prüfen Sie Verbindung, Unternehmen, Zeitraum und Regeln. Während einer laufenden Berechnung sind die betroffenen Bedienelemente gesperrt, damit keine parallelen Läufe starten. Bei einem Fehler wird die Berechnung nicht als erfolgreich mit 100 % bestätigt. Prüfen Sie zuerst, ob eine Vorschau oder ein Entwurf tatsächlich gespeichert wurde, bevor Sie den Lauf wiederholen."
       ]
     ],
     "reports": [
@@ -538,7 +567,7 @@ window.SFHelpContent = {
       ],
       [
         "Welche Rollen gibt es bei der Zeiterfassung?",
-        "Inhaber und Administratoren verwalten QR-Terminals. Planung und Disposition können je nach Berechtigung die QR-Auswertung sehen; „Nur Zeiterfassung“ erhält die Zeitansicht und QR-Buchungen, aber keinen Zugriff auf die übrigen Planungsbereiche."
+        "Inhaber und Administratoren verwalten QR-Terminals und administrative Monatsabschlüsse. Teamleiter und Mitarbeiter können ausdrücklich Zeitrechte erhalten: „Zeiten verwalten“ erlaubt Bearbeitung, „Zeiten bestätigen“ erlaubt Bestätigung und Korrekturanforderung. Ohne passende Zeitrechte bleibt die Verwaltungs-Zeiterfassung gesperrt. Ein Mitarbeiter mit Zeitrechten sieht den dafür freigegebenen Verwaltungsbereich; ohne solche Rechte nutzt er sein persönliches Portal. Zeitrechte gewähren weder Personalakten- noch Abwesenheitsverwaltungsrechte."
       ],
       [
         "Wie schütze ich meinen Zugang?",
@@ -563,12 +592,20 @@ window.SFHelpContent = {
       [
         "Was bedeuten Pflichtbesetzung, optionale Dienste und gemeinsame Deckung?",
         "Schichtmodelle können Pflichtbedarf oder eine optionale Wunschbesetzung beschreiben. Wochentage, exklusive Zuständigkeit und Schichtfreigaben begrenzen die Besetzung. Bei einer gemeinsamen Deckungsgruppe zählen passende Alternativen zur selben Anforderung; jede Alternative nochmals vollständig zu besetzen kann Überbesetzung erzeugen. Prüfen Sie Tagesabweichungen und die SOLL/IST-Anzeige nach Modelländerungen."
+      ],
+      [
+        "Wo finde ich die Informationen zu Arbeitszeitgrenzen und Ausgleich?",
+        "Unter Einstellungen → Audit & Compliance steht die hinterlegte Planer-Information zu Schichtspanne, Arbeitszeit, echten Ruhepausen, Ruhezeiten und Ausgleich. Teamleiter können die dafür angebotene Information lesen; administrative Prüfregeln werden durch die berechtigte Verwaltung gepflegt. Bezahlte Anwesenheit und Arbeitszeitprüfung sind getrennte Größen. Die Übersicht verweist auf ihre Quellen und ersetzt keine vollständige Prüfung des konkreten Dienstplans."
+      ],
+      [
+        "Wie pflege ich Schichtmodelle und ihre Besetzungsregeln?",
+        "In der Verwaltung können berechtigte Benutzer Schichtmodelle anlegen, bearbeiten oder löschen. Prüfen Sie Kürzel, Zeiten, Wochentage, Standort, Mitarbeiterfreigaben sowie Pflichtbedarf, optionale Besetzung und gemeinsame Deckung. Bestehende Zuordnungen und Folgen einer Löschung müssen im angezeigten Ablauf geprüft werden. Geänderte Regeln erfordern eine neue Auto-Planungsvorschau; bereits gespeicherte Dienste werden nicht stillschweigend neu geplant."
       ]
     ],
     "portal": [
       [
         "Was finde ich im Mitarbeiterportal?",
-        "Je nach Freigabe finden Sie Übersicht, Ersatzanfragen, Schicht-Marktplatz, Meine Schichten, Schichtänderungen, Schichttausch, Arbeitszeit, Abwesenheiten, Stundenkonto, Lohnvorschau und Mein Profil."
+        "Je nach Freigabe finden Sie Übersicht, Ersatzanfragen, Schicht-Marktplatz, Meine Schichten, Schichtänderungen, Schichttausch, Arbeitszeit, Abwesenheiten, Stundenkonto, Lohnvorschau und Mein Profil. Hinzu kommen Wunschplanung mit geschützten Freizeitzusagen sowie die digitale Schichtübergabe für eigene veröffentlichte Dienste. Berichtsentwürfe und deren Freigabe gehören zur berechtigten Verwaltung und sind nicht für Mitarbeiter freigeschaltet."
       ],
       [
         "Wann sehe ich meine Schichten?",
@@ -596,7 +633,7 @@ window.SFHelpContent = {
       ],
       [
         "Was berechnet die Lohnvorschau?",
-        "Die unverbindliche Bruttovorschau verwendet abgeschlossene QR-Dienste und bestätigte Ist-Zeiten, bereinigt Überschneidungen und berücksichtigt bezahlte QR-Pausen. Die Anwendung zeigt Nacht-, Sonntags- und Feiertagszuschläge; je Zeitabschnitt gilt nur der höchste passende Satz. Offene oder ungeprüfte Zeiten sind separat ausgewiesen. Abwesenheitsgutschriften, Auszahlung des Stundenkontos, Steuern und Sozialabgaben sind nicht enthalten. Die Vorschau ist keine Lohnabrechnung."
+        "Die unverbindliche Bruttovorschau verwendet abgeschlossene QR-Dienste und bestätigte Ist-Zeiten, bereinigt Überschneidungen und berücksichtigt bezahlte QR-Pausen. Nachtzuschläge werden ausschließlich für Zeitanteile von 22:00 bis 06:00 Uhr berechnet; Sonntags- und Feiertagszuschläge richten sich nach den hinterlegten Sätzen und Feiertagen. Je Zeitabschnitt gilt nur der höchste passende Zuschlagssatz. Offene oder ungeprüfte Zeiten werden separat ausgewiesen. Abwesenheitsgutschriften, Auszahlung des Stundenkontos, Steuern und Sozialabgaben sind nicht enthalten. Die Vorschau ist keine Lohnabrechnung."
       ],
       [
         "Wer sieht meinen eingetragenen Stundenlohn?",
@@ -613,6 +650,14 @@ window.SFHelpContent = {
       [
         "Wie verwalte ich Benachrichtigungen?",
         "Die Benachrichtigungsübersicht informiert über die für Ihren Zugang relevanten Vorgänge. Öffnen Sie eine Meldung, um zum zugehörigen Bereich zu gelangen, und nutzen Sie die angebotenen Lese- oder Löschaktionen. Das Entfernen einer Meldung löscht nicht den zugrunde liegenden Dienst, Antrag oder Nachweis. Push-Mitteilungen werden zusätzlich pro Gerät aktiviert."
+      ],
+      [
+        "Wo sehe ich meine QR-Buchungen mit Beginn, Ende und Pausen?",
+        "Im Mitarbeiterportal unter Arbeitszeit wechseln Sie zwischen „Meine QR-Buchungen“ und „Dienstplan-Zeiten“. Ihre eigenen QR-Buchungen zeigen Dienstbeginn, Dienstende, Standort und Pausendetails. Wählen Sie den Monat und filtern Sie offene beziehungsweise abgeschlossene Dienste; „Weitere anzeigen“ ergänzt zusätzliche Buchungen. Prüfen Sie bei fehlenden Angaben den Aktualisierungsstand. Die Anzeige anderer Mitarbeiter oder eine Verwaltungskorrektur ist dadurch nicht freigeschaltet."
+      ],
+      [
+        "Wie wechsle ich den Monat bei „Meine Schichten“?",
+        "Öffnen Sie im Mitarbeiterportal „Meine Schichten“ und wählen Sie den gewünschten Monat. Die Liste zeigt Ihre eigenen veröffentlichten Dienste in diesem Zeitraum. Leere Ergebnisse können am Zeitraum, an einer noch fehlenden Veröffentlichung oder an Ihrer persönlichen Zuordnung liegen; Dienstplanentwürfe erscheinen nicht im Portal."
       ]
     ],
     "appearance": [
@@ -631,6 +676,10 @@ window.SFHelpContent = {
       [
         "Wie aktiviere und teste ich Push-Mitteilungen?",
         "Öffnen Sie den Bereich für Push-Mitteilungen, aktivieren Sie diese auf dem aktuellen Gerät und erlauben Sie Benachrichtigungen im Browser. Anschließend können Sie eine Testmitteilung anfordern. Push setzt einen unterstützten Browser, HTTPS und einen eingerichteten Push-Dienst voraus. Auf iPhone und iPad muss SchichtFunk als App zum Home-Bildschirm hinzugefügt sein. Geräte- und Betriebssystemeinstellungen können die Zustellung zusätzlich verhindern."
+      ],
+      [
+        "Wo stelle ich Schriftgröße, Kontrast und Darstellungsdichte ein?",
+        "Unter Einstellungen → Darstellung können Sie Schriftgröße, Kontrast, allgemeine Dichte und Dienstplandichte anpassen. Weitere Optionen steuern Namen, Zeiten, Stunden und Statussymbole in der Anzeige. Die Live-Vorschau hilft bei der Auswahl; das Preset „Gut lesbar“ kombiniert größere Schrift, mehr Abstand und hohen Kontrast. Die Darstellungseinstellungen werden auf diesem Gerät gespeichert und ändern keine Dienstpläne oder Vertragsdaten."
       ]
     ],
     "trouble": [
@@ -665,6 +714,14 @@ window.SFHelpContent = {
       [
         "Was tun bei veralteten Ansichten oder unklaren Speicherergebnissen?",
         "Beachten Sie Hinweise auf einen älteren Datenstand, prüfen Sie Verbindung, Unternehmen und Zeitraum und laden Sie den betroffenen Bereich neu. Wenn eine Speicherung nicht eindeutig bestätigt wurde, kontrollieren Sie zunächst den aktuellen Eintrag. Wiederholen Sie Änderungen erst nach dieser Prüfung, um doppelte Anfragen oder Buchungen zu vermeiden. Melden Sie anhaltende Fehler mit Zeitpunkt und betroffener Funktion."
+      ],
+      [
+        "Was tue ich bei „Daten konnten nicht geladen werden“ oder „Bereich konnte nicht geladen werden“?",
+        "Prüfen Sie die Verbindung und wählen Sie „Erneut laden“. Gespeicherte Daten werden durch den Hinweis nicht gelöscht. Vermeiden Sie weitere Bearbeitung, solange die betreffende Ansicht nicht vollständig bereitsteht. Prüfen Sie nach dem Neuladen Unternehmen und Zeitraum. Bleibt der Fehler bestehen, notieren Sie Bereich, Zeitpunkt und die genaue Meldung ohne Zugangsdaten oder private Personalakten."
+      ],
+      [
+        "Warum steht eine Ladeanzeige noch auf „In Arbeit“?",
+        "Beim Datenladen oder bei Vorbereitungen kann kein verlässlicher Prozentwert berechnet werden. Der Text benennt den Arbeitsschritt; die Auto-Planung zeigt zusätzlich die vergangene Zeit. Das ist kein Nachweis einer erfolgreichen Speicherung. Warten Sie auf Abschluss oder Fehlerhinweis und starten Sie nicht mehrere gleiche Aktionen gleichzeitig. Bei einem unklaren Speicherergebnis prüfen Sie zuerst den vorhandenen Stand."
       ]
     ],
     "marketplace": [
@@ -675,6 +732,10 @@ window.SFHelpContent = {
       [
         "Dürfen Mitarbeiter zusätzliche Dienste übernehmen?",
         "Mitarbeiter dürfen freiwillige Zusatzdienste über die automatische Schichtanzahl hinaus anfragen. Jede Übernahme benötigt eine Planerfreigabe. Die Anfrage allein ändert den Dienstplan nicht. Die Grenzen von 190 Monatsstunden, 40 Stunden je Kalenderwoche, niedrigeren persönlichen Stundenlimits sowie alle Erholungs- und Wechselregeln bleiben verbindlich. Eine genehmigte Marktplatzübernahme wird bei der automatischen Schichtanzahl gesondert berücksichtigt."
+      ],
+      [
+        "Was bewirkt „Alle Angebote zurückziehen“?",
+        "Die Verwaltung bestätigt das Zurückziehen aller noch offenen Angebote und ausstehenden Übernahmeanfragen im aktuellen Unternehmen. Die Aktion gilt unabhängig von den gerade ausgewählten Filtern und Zeiträumen. Bereits freigegebene Schichten und der veröffentlichte Dienstplan bleiben erhalten. Ein zurückgezogenes Angebot steht nicht mehr zur freiwilligen Übernahme bereit."
       ]
     ],
     "disruptions": [
@@ -690,7 +751,7 @@ window.SFHelpContent = {
     "personnel": [
       [
         "Wer kann die Personalakte öffnen?",
-        "Inhaber und Administratoren öffnen die vollständige Personalakte mit MFA. Ausgewählte Teamleiter erhalten mit dem Zusatzrecht Personalgespräche, MFA und ausdrücklicher Mitarbeiterzuordnung Zugriff auf neue Gesprächsnotizen, Ziele und einzeln freigegebene berufliche Qualifikationen. Private Notizen, Dokumente und Gesundheitsangaben bleiben gesondert geschützt."
+        "Inhaber und Administratoren öffnen die vollständige Personalakte mit bestätigter Zwei-Faktor-Anmeldung. Teamleiter mit Verwaltungszugang erhalten automatisch den Gesprächsbereich aller nicht gelöschten Mitarbeiter desselben Unternehmens. Teamleiter- und sonstige Führungskraftprofile sind ausgeschlossen. Sichtbar sind neue Gesprächsnotizen, Ziele, Folgetermine und ausdrücklich freigegebene berufliche Qualifikationen. Private Dokumente, alte private Notizen, private Detaildaten und Krankheitsgründe bleiben gesperrt. Das Sonderprofil „Nur lesender Dienstplanzugriff“ erhält keine Personaldaten."
       ],
       [
         "Welche Dokumente kann ich in der Personalakte ablegen?",
@@ -710,17 +771,33 @@ window.SFHelpContent = {
       ],
       [
         "Wie erhalten Teamleiter Zugriff auf Personalgespräche?",
-        "Inhaber oder Administratoren öffnen Einstellungen → Benutzer & Rechte und bearbeiten den Teamleiter. Aktiviere Personalgespräche (MFA erforderlich), wähle die benötigten Mitarbeiter ausdrücklich aus und speichere. Nach MFA öffnet der Teamleiter im zugeordneten Mitarbeiterprofil Personalgespräche. Eine Kontosperrung oder der Rechteentzug entfernt die Zuordnungen. Nach Reaktivierung müssen sie neu gewählt werden."
+        "Mit einem aktiven Teamleiter-Verwaltungszugang werden die Mitarbeiter automatisch zugeordnet, auch neu angelegte und nicht gelöschte inaktive Profile. Unter Einstellungen → Benutzer & Rechte zeigt „Rolle ändern“ die alphabetische Liste mit Suche und Gesamtzahl. Einzelne Freigaben sind nicht mehr erforderlich. Nach bestätigter MFA öffnet der Teamleiter im Mitarbeiterprofil „Personalgespräche“. Eine Kontosperrung, eine andere Zugangsrolle oder „Nur lesender Dienstplanzugriff“ sperrt den Zugriff; nach Reaktivierung als Teamleiter greift die automatische Zuordnung wieder. Die Berechtigung gilt nur im jeweiligen Unternehmen."
       ],
       [
         "Welche Qualifikationen werden für Personalgespräche geteilt?",
         "Inhaber und Administratoren aktivieren Für Personalgespräche freigeben im Bearbeitungsdialog eines beruflichen Nachweises. Teile nur erforderliche Angaben ohne Gesundheitsinformationen. Bezeichnung, Kategorie, Aussteller und Gültigkeit werden geteilt; Bemerkung und Zertifikatsnummer bleiben privat. Bestehende Nachweise sind zunächst privat, Änderungen am Nachweis setzen die Freigabe zurück."
+      ],
+      [
+        "Warum kann ein Teamleiter die Akte eines anderen Teamleiters nicht öffnen?",
+        "Teamleiter- und sonstige Führungskraftprofile sind vom Teamleiter-Gesprächsbereich ausgeschlossen. Die Prüfung berücksichtigt die Personalrolle sowie das zugeordnete Benutzerkonto und dessen E-Mail, auch bei deaktivierten Führungskraftkonten. Das eigene Teamleiterprofil ist ebenfalls kein freigegebener Mitarbeiter-Gesprächsbereich. Eine manuelle Auswahl kann die Sperre nicht aufheben. Inhaber und Administratoren behalten ihren MFA-geschützten Personalzugriff."
+      ],
+      [
+        "Was erfasse ich in einem Personalgespräch?",
+        "Im Reiter „Personalgespräche“ tragen Sie Gesprächsdatum, Betreff und Gesprächsnotiz ein; Ziele und nächster Gesprächstermin können ergänzt werden. Der Folgetermin darf nicht vor dem Gesprächsdatum liegen. Bestehende Gesprächseinträge werden angezeigt; diese Oberfläche ergänzt neue Einträge und überschreibt ältere Texte nicht. Halten Sie die Notiz berufsbezogen und tragen Sie dort keine Krankheitsdiagnosen ein."
+      ],
+      [
+        "Warum ist eine Qualifikation im Gesprächsbereich nicht mehr sichtbar?",
+        "Berufliche Nachweise werden nur nach ausdrücklicher Freigabe durch Inhaber oder Administratoren geteilt. Eine inhaltliche Änderung am Nachweis setzt die Freigabe zunächst zurück, damit ungeprüfte Änderungen nicht automatisch sichtbar werden. Die berechtigte Verwaltung prüft den aktuellen Inhalt und kann ihn zusammen mit der Freigabe speichern. Private Bemerkungen und Nachweisnummern werden weiterhin nicht geteilt."
+      ],
+      [
+        "Was wird bei Personalgesprächen protokolliert?",
+        "Erfolgreiches Öffnen des Gesprächsbereichs und das Hinzufügen einer Gesprächsnotiz erzeugen Audit-Einträge. Die Protokolle enthalten den Vorgang und den Bezug zum Mitarbeiter, nicht eine Kopie der Gesprächsinhalte. Das Audit-Protokoll steht der berechtigten Verwaltung zur Verfügung; Teamleiter erhalten darüber keinen Zugriff auf private Aktenbereiche."
       ]
     ],
     "access": [
       [
         "Welche Benutzerrollen gibt es?",
-        "Es gibt vier Hauptrollen: Inhaber, Administrator, Teamleiter und Mitarbeiter. Teamleiter können Mitarbeiter und Dienstpläne bearbeiten; zusätzliche Veröffentlichungs- und Zeitrechte werden ausdrücklich vergeben. Personalgespräche erfordern ein eigenes Zusatzrecht, konkrete Mitarbeiterzuordnung und MFA. Nur lesender Dienstplanzugriff beschränkt die Teamleiterrolle auf den Dienstplan. Inhaber verwalten Administratoren; Mitarbeitende nutzen ihr persönliches Portal oder ausdrücklich freigegebene Zeitfunktionen."
+        "Es gibt vier Hauptrollen: Inhaber, Administrator, Teamleiter und Mitarbeiter. Teamleiter können Mitarbeiter und Dienstpläne bearbeiten und erhalten automatisch die eingeschränkten Gesprächsbereiche normaler Mitarbeiter derselben Firma. Veröffentlichung, Zeitbearbeitung und Zeitbestätigung sind getrennte Zusatzrechte. „Nur lesender Dienstplanzugriff“ beschränkt einen Zugang auf den Dienstplan und sperrt Personaldaten. Inhaber verwalten Administratoren; Mitarbeiter nutzen ihr eigenes Portal oder ausdrücklich freigegebene Zeitfunktionen. Private Personalaktenbereiche bleiben Inhabern und Administratoren vorbehalten; Personalzugriffe benötigen MFA."
       ],
       [
         "Wie lade ich Verwaltungsbenutzer ein und verwalte Zugänge?",
@@ -732,7 +809,7 @@ window.SFHelpContent = {
       ],
       [
         "Wie richte ich die Zwei-Faktor-Anmeldung ein?",
-        "Verwenden Sie die angebotene Einrichtung einer Authenticator-App und bestätigen Sie den sechsstelligen Code. Bei geschützten Aktionen kann eine erneute Bestätigung erforderlich sein. Inhaber und Administratoren können ihren letzten bestätigten Faktor nicht einfach entfernen. Geben Sie Passwort, Einrichtungsschlüssel und Einmalcodes niemals an andere weiter. Das gilt auch für Teamleiter mit dem Zusatzrecht Personalgespräche; Personalzugriffe erfordern einen bestätigten zweiten Faktor."
+        "Verwenden Sie die angebotene Einrichtung einer Authenticator-App und bestätigen Sie den sechsstelligen Code. Bei einer geschützten Aktion kann eine erneute Bestätigung nötig sein. Das gilt für Inhaber, Administratoren und Teamleiter, die Personalgespräche öffnen. Inhaber und Administratoren können ihren letzten bestätigten Faktor nicht einfach entfernen. Geben Sie Passwort, Einrichtungsschlüssel und Einmalcodes nicht weiter. Das Abbrechen der MFA-Einrichtung erteilt keinen Personalzugriff."
       ],
       [
         "Wie setze ich mein Passwort zurück?",
@@ -749,6 +826,14 @@ window.SFHelpContent = {
       [
         "Was unterscheidet vollständige Datenlöschung vom normalen Entfernen?",
         "Die gesonderte vollständige Mitarbeiterlöschung ist ausschließlich dem Inhaber vorbehalten und in der Demo nicht verfügbar. Sie betrifft die in der Übersicht aufgeführten zugehörigen Daten einschließlich Zeitnachweisen und Historie und ist unwiderruflich. Sie verlangt eine gesonderte Bestätigung. Verwenden Sie für das normale Ausscheiden die Mitarbeiterentfernung mit Erhalt der Abrechnungshistorie; prüfen Sie vor jeder vollständigen Löschung die ausgewiesenen Folgen und Schutzbedingungen."
+      ],
+      [
+        "Was unterscheidet die Personalrolle „Teamleiter“ von der Zugangsrolle?",
+        "Die Funktion im Mitarbeiterprofil beschreibt den beruflichen Einsatz; die Zugangsrolle unter Einstellungen → Benutzer & Rechte steuert die erlaubten Aktionen. Eine Personalrolle allein erteilt keine Verwaltungsrechte. Für die Führungskraft-Sperre im Gesprächsbereich werden Personalrolle und Benutzerkonto berücksichtigt. Geschützte Führungsrollen, Kontoverknüpfungen und deren E-Mail dürfen dort nur Personalverantwortliche ändern."
+      ],
+      [
+        "Was unterscheidet „Zeiten verwalten“ von „Zeiten bestätigen“?",
+        "„Zeiten verwalten“ erlaubt die Bearbeitung von Zeiteinträgen. „Zeiten bestätigen“ erlaubt Freigabe beziehungsweise Korrekturanforderung. Beide Zusatzrechte lassen sich getrennt vergeben. Sie eröffnen keine private Personalakte, keine Abwesenheitsverwaltung und keinen administrativen Monatsabschluss. Prüfen Sie in Benutzer & Rechte die tatsächlichen Rechte des Zugangs."
       ]
     ],
     "wishes": [
@@ -849,6 +934,36 @@ window.SFHelpContent = {
       [
         "Wie werden Übergabedaten bei endgültiger Mitarbeiterlöschung behandelt?",
         "Die bestehende endgültige Löschung umfasst persönlich zugeordnete Übergabepunkte, ihre Ereignisse und betroffene Berichtsfassungen. Eine Übernahmezuordnung wird anonymisiert; der Übernahmezeitpunkt kann erhalten bleiben. Während einer laufenden endgültigen Löschung sind betroffene Änderungen gesperrt. Andere Teamaufgaben werden weitergeführt. Bereits heruntergeladene und extern geteilte Dateien müssen über euren betrieblichen Löschprozess behandelt werden."
+      ]
+    ],
+    "assistant": [
+      [
+        "Wie starte ich den Monatscheck im Assistenten?",
+        "Öffne den Planungsassistenten und wähle Monat prüfen oder frage: Was fehlt noch für Januar 2027? Der Check zeigt offene Positionen, fehlende Freigaben, Teamregeln, Stundenvorgaben, Überbesetzung und verbindliche Belastungsregeln. Der Belastungscheck berücksichtigt geladene Dienste vor und nach dem Monat, Arbeitsblöcke, Nacht-Erholung, Wochenstunden und persönliche Monatsgrenzen einschließlich Nachtübertrag. Vollständig freie Wochenenden werden als Verbesserungsziel getrennt angezeigt. Ausschließlich für Frühdienst freigegebene Mitarbeiter ohne Team werden nicht als fehlende Teamzuordnung gewertet. Fehlende Daten oder Regeln werden benannt. Über die Ergebnisbuttons gelangst du zur betroffenen Stelle."
+      ],
+      [
+        "Wie übernimmt der Assistent den ausgewählten Dienst?",
+        "In der Wochenbesetzung oder bei SOLL/IST öffnet Assistent die Ersatzsuche für den betreffenden Tag und die betreffende Schicht. Die Auswahl erscheint oben im Chat. Danach versteht der Chat zum Beispiel: Warum konnte die Auto-Planung diesen Dienst nicht besetzen? Mit Auswahl lösen, einem anderen Bezugsmonat oder beim Unternehmenswechsel wird der Bezug aufgehoben. Ein Dienst öffnen springt zum Zeitraum und markiert die betreffende Stelle; der Assistent speichert keine Zuordnung."
+      ],
+      [
+        "Was bedeuten die Stunden bei Ersatzvorschlägen?",
+        "Die Spalten Woche nach Einsatz und Monat nach Einsatz enthalten die bereits geplanten Stunden zuzüglich der vorgeschlagenen Schicht, ohne Pausenabzug. Daneben stehen die hinterlegten SOLL-Stunden. Eine Überschreitung ist ein Planungshinweis und kein bestätigtes Überstundenkonto. Der Folgedienst zeigt den nächsten gespeicherten Dienst, soweit einer vorhanden ist. Eignung und Rangfolge folgen den aktuellen Auto-Planungsregeln; mehrere Ersatzvorschläge bilden keine gemeinsame Besetzungszusage."
+      ],
+      [
+        "Welche Fragen versteht der Planungsassistent?",
+        "Du kannst Besetzung, Ersatzkandidaten, Mitarbeiter- und Teamdienste, Schichtfreigaben, Teamrhythmen und Stunden abfragen. Neu sind Belastung prüfen, Stunden verbessern, Ausfall durchspielen und gespeicherte Planungsgründe. Nenne Zeitraum und Mitarbeiter möglichst eindeutig. Stunden verbessern erstellt eine gemeinsame Vorschau für passende offene Dienste und einzelne Entlastungswechsel: offene Positionen und Stunden-Soll-Defizit vorher/nachher sowie die betroffenen Zuweisungen. Erst Vorschläge als Entwurf übernehmen und die folgende Bestätigung speichern Änderungen; anschließend prüft der Server Regeln, Schutz und Aktualität erneut. Veröffentlicht wird dadurch nichts. Was passiert, wenn der ausgewählte Mitarbeiter morgen ausfällt? simuliert ausschließlich Ersatz, ohne Abwesenheit oder Planänderung. Gespeicherte Planungsgründe zeigt die Enddiagnose neuer Auto-Planungsläufe; alte Entscheidungen werden nicht erfunden. Über Welche Hilfethemen kennst du? öffnest du die Wissensdatenbank."
+      ],
+      [
+        "Wie lasse ich den Assistenten Belastung und Stundenversorgung prüfen?",
+        "Fragen Sie zum Beispiel „Belastung prüfen“ oder „Stunden verbessern“ und wählen Sie den passenden Monat. Der Belastungscheck benennt Regelauffälligkeiten und berücksichtigt gespeicherte Dienste an den Monatsgrenzen. „Stunden verbessern“ zeigt gemeinsame Vorschläge für offene Dienste und einzelne Entlastungswechsel mit Stunden und Zielabweichungen vorher/nachher. Feste und geschützte Dienste werden berücksichtigt. Die Vorschau garantiert keine vollständig optimale Besetzung."
+      ],
+      [
+        "Speichert der Planungsassistent automatisch Änderungen?",
+        "Die Fragen nach Besetzung, Belastung oder Ersatz lesen und prüfen den aktuellen Stand. Auch „Ausfall durchspielen“ bucht keine Abwesenheit und verändert keinen Dienst. Nur eine angebotene Verbesserungsvorschau kann über „Vorschläge als Entwurf übernehmen“ nach ausdrücklicher Bestätigung gespeichert werden. Vorher werden Datenstand, Regeln und Schutz erneut geprüft. Eine Übernahme veröffentlicht den Plan nicht."
+      ],
+      [
+        "Wo finde ich gespeicherte Planungsgründe und wie lange bleiben sie erhalten?",
+        "Fragen Sie den Assistenten nach „Gespeicherte Planungsgründe“ für den gewünschten Zeitraum. Neue Auto-Planungsläufe speichern die Enddiagnose verbleibender Lücken im verwendeten Browser, getrennt nach Benutzer und Unternehmen. Bis zu 20 Läufe aus den letzten 90 Tagen bleiben verfügbar; höchstens 200 Schichten werden im Detail dargestellt. Es gibt keine Synchronisierung auf andere Geräte und keine nachträglich erfundenen Gründe für ältere Läufe. Spätere Planänderungen können vom damaligen Ergebnis abweichen."
       ]
     ]
   },

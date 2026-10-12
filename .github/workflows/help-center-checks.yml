@@ -1,0 +1,47 @@
+name: Hilfe-Center Funktionsabgleich
+on:
+  push:
+    branches: [main, codex/ionos-migration]
+    paths:
+      - index.html
+      - assets/help-center-*.js
+      - assets/help-center-*.css
+      - assets/help/**
+      - documentation/help-center-*
+      - tests/help-center-coverage.test.mjs
+      - tests/browser/help-center-qa.cjs
+      - .github/workflows/help-center-checks.yml
+  pull_request:
+    paths:
+      - index.html
+      - assets/help-center-*.js
+      - assets/help-center-*.css
+      - assets/help/**
+      - documentation/help-center-*
+      - tests/help-center-coverage.test.mjs
+      - tests/browser/help-center-qa.cjs
+      - .github/workflows/help-center-checks.yml
+permissions:
+  contents: read
+jobs:
+  help-center:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Topic inventory, actual renderer and private content boundaries
+        run: node --test tests/help-center-coverage.test.mjs tests/private-client-configuration.test.cjs
+      - name: Desktop and mobile help with real content and fictional page context
+        run: node tests/browser/help-center-qa.cjs
+        env:
+          SF_HELP_BROWSER: /usr/bin/google-chrome
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: help-center-results
+          path: test-results/help-center/
