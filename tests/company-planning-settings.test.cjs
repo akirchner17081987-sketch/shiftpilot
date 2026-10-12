@@ -6,7 +6,7 @@ function fixture(){
  const ctx={document:{readyState:'loading',addEventListener(){},querySelector:s=>s==='.company-card b'?{textContent:'Alpha'}:null},console,addEventListener(){},setTimeout(){},localStorage:{getItem:()=>null},TYPES:[{id:'OT2',start:'08:00',end:'18:00',active:true}],employees:[{id:'a',last:'Alpha',first:'Person',personnelNo:'private-alpha',status:'active',shifts:['OT2'],weeklyHours:40}],globalSoll:{OT2:2},SFBackend:{ready:true,companyId:'alpha',planningPolicyCompanyId:'alpha',role:'OWNER',companyTimeZone:'Europe/Berlin'},SFCompliance:{policy:{solidPlanningRules:{enabled:true,confirmedRulesVersion:2,timezone:'Europe/Berlin',otOnlyMonthlyMaxHours:220}}},SFShiftModels:{isCompanyLoaded:()=>true,models:[{id:'OT2',start:'08:00',end:'18:00',active:true}],coverageGroup:()=>null,invalidate(){}},SFSolidPlanningCore:core};ctx.window=ctx;vm.createContext(ctx);vm.runInContext(source,ctx);return{ctx,body};
 }
 test('settings show current company only, suppress stale company data and signed-out data',()=>{
- const{ctx,body}=fixture();ctx.SFPlanningRuleSettings.render(body);assert.match(body.innerHTML,/Alpha/);assert.match(body.innerHTML,/private-alpha/);assert.match(body.innerHTML,/value="220"/);assert.doesNotMatch(body.innerHTML,/8 h:|Secontec|FD-WE/);
+ const{ctx,body}=fixture();ctx.SFPlanningRuleSettings.render(body);assert.match(body.innerHTML,/Alpha/);assert.match(body.innerHTML,/private-alpha/);assert.match(body.innerHTML,/value="220"/);assert.match(body.innerHTML,/OT1, OT2 und OT3/);assert.match(body.innerHTML,/normale OT am Wochenende ist davon ausgenommen/);assert.doesNotMatch(body.innerHTML,/8 h:|Secontec|FD-WE/);
  ctx.SFBackend.companyId='beta';ctx.SFPlanningRuleSettings.render(body);assert.doesNotMatch(body.innerHTML,/private-alpha|value="220"/);
  ctx.SFBackend.companyId='alpha';ctx.SFBackend.ready=false;ctx.SFPlanningRuleSettings.render(body);assert.doesNotMatch(body.innerHTML,/private-alpha|value="220"/);
 });
@@ -24,7 +24,7 @@ test('configured blocks, nights, recovery and monthly caps change actual client 
  assert.equal(core.errors(e,rows,{...p,maxCalendarWeekHours:16}).some(r=>r.message.includes('Kalenderwoche')),true);
  assert.equal(core.errors(e,[rows[0],{...rows[0],date:'2027-01-04'}],{...p,minFreeCalendarDays:3}).some(r=>r.message.includes('Kalendertage')),true);
  const l=core.limits(e,[{id:'FD',start:'06:00',end:'14:00'}],{...p,monthlyMaxHours:175,eightHourAutoMaxHours:168,eightHourMaxShifts:21});assert.equal(l.monthLimit,168);assert.equal(l.calendarLimit,175);assert.equal(l.maxMonthlyShifts,21);
- assert.doesNotMatch(core.summary({...p,otOnlyMonthlyMaxHours:220},[{id:'O3',start:'22:00',end:'08:00'}]),/OT-Tagdienstkräfte|; 8 h:/);
+ assert.doesNotMatch(core.summary({...p,otOnlyMonthlyMaxHours:220},[{id:'O3',start:'22:00',end:'08:00'}]),/Tagdienst OT1|; 8 h:/);
  assert.match(core.summary({enabled:true,minBlockRestHours:48,minFreeStartDays:2},[],{monthlyPlanningMaxHours:190,monthlyPlanningMaxShifts:18}),/190 h.*48 h/);
  assert.doesNotMatch(core.summary({enabled:true,minBlockRestHours:48,minFreeStartDays:2}),/190|vollständig freie/);
 });
