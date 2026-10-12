@@ -1,0 +1,72 @@
+/* Orbit manager shell: existing view IDs, controls and status colors stay intact. */
+#appShell.sf-orbit{--orbit-canvas:#040d1d;--orbit-surface:#0a192c;--orbit-inset:#10233b;--orbit-text:#edf5ff;--orbit-muted:#aac0dc;--orbit-line:#284666;--orbit-accent:#18d2ef;--orbit-accent-ink:#002a38;--orbit-active:#0c3b53;--orbit-glow:#16d6f42b;--bg:var(--orbit-canvas);--bg2:var(--orbit-surface);--panel:var(--orbit-surface);--panel2:var(--orbit-inset);--text:var(--orbit-text);--muted:var(--orbit-muted);--line:var(--orbit-line);--teal:var(--orbit-accent);--teal2:var(--orbit-accent);--sf-ink:var(--orbit-text);--sf-ink-muted:var(--orbit-muted);--sf-border:var(--orbit-line);--sf-surface:var(--orbit-surface);--sf-surface-inset:var(--orbit-inset);--sf-field:var(--orbit-inset);grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr;position:relative;isolation:isolate;background:var(--orbit-canvas);color:var(--orbit-text)}
+html[data-sf-theme="light"] #appShell.sf-orbit{--orbit-canvas:#dce1ef;--orbit-surface:#edf0f7;--orbit-inset:#e2e7f3;--orbit-text:#17223e;--orbit-muted:#4c5b78;--orbit-line:#b4bfd5;--orbit-accent:#4638c7;--orbit-accent-ink:#fff;--orbit-active:#dddaf4;--orbit-glow:#6550cf26}
+#appShell.sf-orbit>.sidebar,#appShell.sf-orbit #sfMobileManagerNavToggle,#appShell.sf-orbit>.sf-mobile-nav-backdrop{display:none!important}
+#appShell.sf-orbit>.topbar{grid-column:1;grid-row:1;display:flex;flex-wrap:wrap;align-items:center;gap:16px;min-height:88px;height:auto;padding:16px 26px;background:var(--orbit-surface)!important;border-color:var(--orbit-line)!important;position:relative;z-index:25}
+#appShell.sf-orbit>.topbar:after{content:"";position:absolute;left:40%;top:-234px;width:620px;height:280px;border-radius:50%;border:1px solid var(--orbit-line);border-bottom:2px solid var(--orbit-accent);box-shadow:0 5px 20px var(--orbit-glow);transform:rotate(13deg);opacity:.55;pointer-events:none;z-index:-1}
+#appShell.sf-orbit .sf-orbit-brand{flex:none;width:180px;padding:0;border:0;background:transparent;box-shadow:none}
+#appShell.sf-orbit .sf-orbit-brand img{display:block;width:180px;height:54px;object-fit:contain}
+html[data-sf-theme="light"] #appShell.sf-orbit .sf-orbit-brand{background:#0a192c;border-radius:12px;padding:4px 8px;width:188px}
+#appShell.sf-orbit>.topbar .company-card{flex:0 1 210px;margin:0;padding:10px 12px;background:var(--orbit-inset)!important;border-color:var(--orbit-line)!important;border-radius:12px;text-align:left;min-width:160px}
+#appShell.sf-orbit .company-card :is(b,small){color:var(--orbit-text)!important}
+#appShell.sf-orbit .company-card small{color:var(--orbit-muted)!important}
+#appShell.sf-orbit>.topbar .search{flex:1 1 180px;width:auto;min-width:160px;background:var(--orbit-inset)!important;border-color:var(--orbit-line)!important;border-radius:12px}
+#appShell.sf-orbit>.topbar .search input{color:var(--orbit-text)!important;background:transparent!important;min-width:0}
+#appShell.sf-orbit .top-actions{flex-wrap:wrap;gap:9px}
+#appShell.sf-orbit .top-actions>.side-bottom{display:block;margin:0;padding:0;border:0}
+#appShell.sf-orbit .top-actions .side-bottom>.nav{display:none!important}
+#appShell.sf-orbit .top-actions .user-row{padding:0;gap:9px;min-width:0}
+#appShell.sf-orbit .top-actions .user-row>div:last-child{display:block;max-width:150px}
+#appShell.sf-orbit .top-actions .user-row b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--orbit-text)}
+#appShell.sf-orbit .top-actions .user-row small{color:var(--orbit-muted)}
+#appShell.sf-orbit .sf-orbit-current-label{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+#appShell.sf-orbit .sf-orbit-legal{display:flex;justify-content:flex-end;gap:16px;flex-wrap:wrap;margin-top:28px;font-size:12px;color:var(--orbit-muted)}
+#appShell.sf-orbit .sf-orbit-legal a{color:var(--orbit-muted)}
+#appShell.sf-orbit>.main{grid-column:1;grid-row:2;min-width:0;padding:28px 26px calc(132px + env(safe-area-inset-bottom));background:radial-gradient(ellipse at 60% 0%,var(--orbit-glow),transparent 50%),var(--orbit-canvas)!important}
+#appShell.sf-orbit>.main>.content{max-width:none;width:100%;min-width:0}
+#appShell.sf-orbit .page-head{margin-bottom:24px}
+#appShell.sf-orbit .page-head h1{letter-spacing:-.035em;color:var(--orbit-text)}
+#appShell.sf-orbit .eyebrow{color:var(--orbit-accent)}
+#appShell.sf-orbit :is(.card,.stat,.sf-set-card,.sf-set-panel,.sf-set-nav,.sf-sim-panel,.sf-wish-panel,.sf-ho-panel,.sf-disruption-panel){background:var(--orbit-surface)!important;border-color:var(--orbit-line)!important;border-radius:18px;box-shadow:0 6px 20px #0000000a}
+#appShell.sf-orbit :is(.card,.stat,.sf-set-panel) :is(h1,h2,h3,h4){color:var(--orbit-text)}
+#appShell.sf-orbit :is(.primary,.sf-set-save){background:var(--orbit-accent)!important;border-color:var(--orbit-accent)!important;color:var(--orbit-accent-ink)!important;border-radius:10px;box-shadow:0 3px 15px var(--orbit-glow)}
+#appShell.sf-orbit :is(input,select,textarea){border-radius:10px}
+#appShell.sf-orbit .sf-orbit-icon{display:inline-flex;flex:none;align-items:center;justify-content:center;width:20px;height:20px}
+#appShell.sf-orbit .sf-orbit-icon svg{display:block;width:100%;height:100%}
+#appShell.sf-orbit .sf-orbit-dock{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:1800;width:min(780px,calc(100% - 28px));padding:8px;display:grid;grid-template-columns:1fr 1fr 1.7fr 1.2fr;gap:7px;background:var(--orbit-surface);border:1px solid var(--orbit-line);border-radius:20px;box-shadow:0 12px 34px #0005}
+#appShell.sf-orbit .sf-orbit-category{min-height:60px;min-width:0;display:flex;align-items:center;justify-content:center;gap:9px;padding:10px 12px;background:transparent;color:var(--orbit-muted);border:1px solid transparent;border-radius:13px;font:inherit;font-size:14px;line-height:1.35;transition:background 160ms,border-color 160ms}
+#appShell.sf-orbit .sf-orbit-category-copy{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
+#appShell.sf-orbit .sf-orbit-category-copy small{font-size:12px;color:var(--orbit-muted);overflow-wrap:anywhere}
+#appShell.sf-orbit .sf-orbit-category.is-current{background:var(--orbit-active);color:var(--orbit-accent);border-color:var(--orbit-line)}
+#appShell.sf-orbit .sf-orbit-category[aria-expanded="true"]{background:var(--orbit-active);color:var(--orbit-text);border-color:var(--orbit-accent);box-shadow:inset 0 0 16px var(--orbit-glow),0 0 15px var(--orbit-glow)}
+#appShell.sf-orbit .sf-orbit-category[aria-expanded]:not([aria-expanded="true"])>.sf-orbit-icon:last-child{width:13px;height:13px;transform:rotate(-90deg)}
+#appShell.sf-orbit .sf-orbit-category[aria-expanded="true"]>.sf-orbit-icon:last-child{width:13px;height:13px;transform:rotate(90deg)}
+#appShell.sf-orbit .sf-orbit-category:disabled{opacity:.42;cursor:not-allowed}
+#appShell.sf-orbit .sf-orbit-popup{position:fixed;z-index:1801;left:12px;bottom:96px;visibility:hidden;pointer-events:none;opacity:0;transform:translateY(7px);transition:opacity 200ms ease,transform 200ms ease,visibility 200ms;background:var(--orbit-surface);border:1px solid var(--orbit-line);border-radius:14px;padding:10px;isolation:isolate;box-shadow:0 15px 40px #0005;overflow:auto;overscroll-behavior:contain}
+#appShell.sf-orbit .sf-orbit-popup.is-open{visibility:visible;pointer-events:auto;opacity:1;transform:none;transition:none}
+#appShell.sf-orbit .sf-orbit-motion-frame{position:absolute;inset:0;z-index:-1;background:linear-gradient(140deg,var(--orbit-active),var(--orbit-surface) 75%);border:1px solid var(--orbit-accent);border-radius:13px;box-shadow:0 0 15px var(--orbit-glow);pointer-events:none;transform-origin:var(--orbit-pointer,50%) bottom}
+#appShell.sf-orbit .sf-orbit-popup-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 4px 8px}
+#appShell.sf-orbit .sf-orbit-popup-head h2{font-size:15px;line-height:1.4;margin:0;color:var(--orbit-text)}
+#appShell.sf-orbit .sf-orbit-popup-head>button{width:34px;height:34px;display:grid;place-items:center;padding:5px;background:transparent;color:var(--orbit-muted);border:0;border-radius:8px}
+#appShell.sf-orbit .sf-orbit-entries{display:grid;gap:3px}
+#appShell.sf-orbit .sf-orbit-entry{display:flex;align-items:center;gap:10px;min-height:44px;width:100%;padding:10px;background:transparent;color:var(--orbit-text);border:1px solid transparent;border-radius:8px;text-align:left;font:inherit;font-size:14px;line-height:1.4}
+#appShell.sf-orbit .sf-orbit-entry>.sf-orbit-icon:first-child{width:18px;height:18px;color:var(--orbit-accent)}
+#appShell.sf-orbit .sf-orbit-entry>.sf-orbit-icon:last-child{margin-left:auto;width:14px;height:14px;color:var(--orbit-muted)}
+#appShell.sf-orbit .sf-orbit-entry[aria-current="page"],#appShell.sf-orbit .sf-orbit-entry:hover:not(:disabled){background:var(--orbit-active);border-color:var(--orbit-line)}
+#appShell.sf-orbit .sf-orbit-entry:disabled{opacity:.45;cursor:not-allowed}
+#appShell.sf-orbit .sf-orbit-entry-label{flex:1;overflow-wrap:anywhere}
+#appShell.sf-orbit .sf-orbit-badge{padding:2px 7px;border-radius:999px;background:var(--danger);color:#fff;font-size:12px}
+#appShell.sf-orbit .sf-orbit-shimmer{position:absolute;inset:0;border-radius:13px;pointer-events:none;opacity:0;background:repeating-linear-gradient(0deg,transparent 0px,transparent 5px,var(--orbit-glow) 6px,var(--orbit-glow) 7px);box-shadow:inset 0 0 30px var(--orbit-glow);transform-origin:bottom}
+#appShell.sf-orbit :is(.sf-orbit-category,.sf-orbit-entry,.sf-orbit-popup-head>button,.sf-orbit-brand):focus-visible{outline:3px solid var(--orbit-accent);outline-offset:3px}
+#appShell.sf-orbit .sf-orbit-motion-settings label{display:grid;gap:8px;max-width:320px;color:var(--orbit-text);font-size:14px}
+#appShell.sf-orbit .sf-orbit-motion-settings select{padding:10px;background:var(--orbit-inset)!important;color:var(--orbit-text)!important;border:1px solid var(--orbit-line)}
+#appShell.sf-orbit .sf-display-actions{bottom:calc(108px + env(safe-area-inset-bottom))!important}
+body.sf-orbit-manager .sf-chat-launcher{bottom:calc(110px + env(safe-area-inset-bottom))!important}
+body.sf-orbit-manager .sf-planning-chat{bottom:calc(172px + env(safe-area-inset-bottom))!important;max-height:calc(100dvh - 222px)!important}
+#appShell.sf-orbit[data-orbit-motion="off"] :is(.sf-orbit-popup,.sf-orbit-category){transition:none!important}
+html.sf-display-high-contrast #appShell.sf-orbit{--orbit-text:var(--sf-contrast-text);--orbit-muted:var(--sf-contrast-muted);--orbit-line:var(--sf-contrast-line);--orbit-surface:var(--sf-contrast-bg);--orbit-inset:var(--sf-contrast-bg);--orbit-active:var(--sf-contrast-bg);--orbit-accent:var(--sf-contrast-text)}
+@media(max-width:1100px){#appShell.sf-orbit .topbar{gap:12px;padding:14px 18px}#appShell.sf-orbit .sf-orbit-brand{width:150px}#appShell.sf-orbit .sf-orbit-brand img{width:150px}#appShell.sf-orbit .topbar>.search{flex-basis:220px}#appShell.sf-orbit .top-actions{margin-left:auto}#appShell.sf-orbit .top-actions .user-row>div:last-child{max-width:120px}}
+@media(max-width:650px){#appShell.sf-orbit>.topbar{gap:10px;padding:12px}#appShell.sf-orbit>.topbar .company-card{flex:1 1 150px;min-width:130px}#appShell.sf-orbit>.topbar .search{flex-basis:100%;order:4;min-width:0}#appShell.sf-orbit>.topbar .top-actions{flex:1 1 100%;order:3;margin:0;justify-content:flex-end}#appShell.sf-orbit .top-actions .user-row>div:last-child{max-width:130px}#appShell.sf-orbit>.main{padding:20px 12px calc(166px + env(safe-area-inset-bottom))}#appShell.sf-orbit .sf-orbit-dock{grid-template-columns:1fr 1fr;bottom:calc(8px + env(safe-area-inset-bottom));gap:4px;padding:6px;width:calc(100% - 16px);border-radius:16px}#appShell.sf-orbit .sf-orbit-category{min-height:52px;padding:8px;font-size:13px}#appShell.sf-orbit .sf-orbit-category-copy small{font-size:11px}#appShell.sf-orbit .sf-orbit-category>.sf-orbit-icon{width:17px;height:17px}#appShell.sf-orbit .page-head{gap:14px}#appShell.sf-orbit .sf-orbit-popup{border-radius:13px}}
+@media(prefers-reduced-motion:reduce){#appShell.sf-orbit :is(.sf-orbit-popup,.sf-orbit-category){transition:none!important}}
+@media print{#appShell.sf-orbit .sf-orbit-dock,#appShell.sf-orbit .sf-orbit-popup{display:none!important}#appShell.sf-orbit>.main{padding-bottom:0}}
+@media(max-width:650px){#appShell.sf-orbit .sf-display-actions{bottom:calc(150px + env(safe-area-inset-bottom))!important}body.sf-orbit-manager .sf-chat-launcher{bottom:calc(148px + env(safe-area-inset-bottom))!important}body.sf-orbit-manager .sf-planning-chat{bottom:calc(210px + env(safe-area-inset-bottom))!important;max-height:calc(100dvh - 250px)!important}}
