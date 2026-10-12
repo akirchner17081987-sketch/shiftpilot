@@ -927,6 +927,24 @@
         "assets/settings-management-v2.js",
         "supabase/migrations/20261012021422_company_planning_rule_settings.sql"
       ]
+    },
+    {
+      "category": "auto",
+      "question": "Läuft die Auto-Planung weiter, wenn ich den Browser verlasse?",
+      "sources": [
+        "assets/background-auto-plan-v1.js",
+        "assets/background-auto-plan-core-v1.js",
+        "supabase/migrations/20261012195421_background_auto_planning_jobs.sql"
+      ]
+    },
+    {
+      "category": "auto",
+      "question": "Wie öffne oder beende ich eine Hintergrundplanung?",
+      "sources": [
+        "assets/background-auto-plan-v1.js",
+        "assets/background-auto-plan-core-v1.js",
+        "supabase/migrations/20261012195421_background_auto_planning_jobs.sql"
+      ]
     }
   ],
   "moduleInventory": [
@@ -2097,6 +2115,24 @@
       "area": "Heute-Ansicht mit Pausen und Prüfhinweisen",
       "category": "overview",
       "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/background-auto-plan-v1.js",
+      "area": "Gespeicherte Hintergrundplanung und Wiederaufnahme",
+      "category": "auto",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/background-auto-plan-core-v1.js",
+      "area": "Gespeicherte Hintergrundplanung und Wiederaufnahme",
+      "category": "auto",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/solid-planning-resume-v1.js",
+      "area": "Gespeicherte Hintergrundplanung und Wiederaufnahme",
+      "category": "auto",
+      "kind": "feature-or-support"
     }
   ],
   "categoryCoverage": [
@@ -2211,6 +2247,8 @@
       "id": "auto",
       "name": "Auto-Planung",
       "questions": [
+        "Läuft die Auto-Planung weiter, wenn ich den Browser verlasse?",
+        "Wie öffne oder beende ich eine Hintergrundplanung?",
         "Welche Regeln nutzt die Auto-Planung?",
         "Werden Vorschläge sofort übernommen?",
         "Was prüfe ich nach der Übernahme?",

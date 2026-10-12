@@ -12,3 +12,7 @@ verify_jwt = true
 
 [functions.privacy-worker]
 verify_jwt = false
+
+[functions.background-auto-plan]
+# Per-job dispatcher capability, verified by the worker-only claim RPC.
+verify_jwt = false

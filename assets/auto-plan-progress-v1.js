@@ -28,7 +28,7 @@
   function finish(error){active=false;clearInterval(timer);timer=null;el('view-auto')?.removeAttribute('aria-busy');host()?.classList.toggle('is-error',!!error);host()?.classList.toggle('is-done',!error);draw(error?'Planung konnte nicht abgeschlossen werden':'Planung abgeschlossen',error||'Die Vorschläge sind bereit zur Prüfung. Eine Übernahme erfolgt erst nach deiner Bestätigung.',error?null:100);}
   function reset(){if(active)return;const node=el('sfAutoProgress');if(node)node.hidden=true;}
   // Let the browser show feedback before the synchronous day/week planner starts.
-  const paint=()=>new Promise(resolve=>{if(typeof requestAnimationFrame==='function'&&!document.hidden)requestAnimationFrame(()=>setTimeout(resolve,0));else setTimeout(resolve,0)});
+  const paint=()=>new Promise(resolve=>setTimeout(resolve,0));
   const generate=window.generateAutoPlanPreview;
   if(generate)window.generateAutoPlanPreview=async function(){
     if(active||window.SFMonthOptimizer?.isBusy?.()||typeof autoPlanApplying!=='undefined'&&autoPlanApplying)return;
@@ -39,5 +39,5 @@
     finally{controls.forEach(x=>x.node.disabled=x.disabled);window.renderAutoPlanning?.();}
   };
   for(const name of ['changeAutoPlanPeriod','clearAutoPlanPreview']){const old=window[name];if(old)window[name]=function(){if(active)return;reset();return old.apply(this,arguments)};}
-  window.SFAutoPlanProgress={start,phase,update,message,finish,reset,paint,isBusy:()=>active};
+  window.SFAutoPlanProgress={start,phase,update,message,finish,reset,paint,setStartedAt:value=>{const parsed=Date.parse(value);if(Number.isFinite(parsed)){started=parsed;elapsed();}},isBusy:()=>active};
 })();

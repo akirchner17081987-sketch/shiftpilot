@@ -1,0 +1,46 @@
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "npm:@supabase/supabase-js@2.116.0";
+import "../../../assets/solid-planning-core-v1.js";
+import "../../../assets/individual-month-planner-v1.js";
+import "../../../assets/month-optimizer-core-v1.js";
+import "../../../assets/wish-planning-core-v1.js";
+import "../../../assets/solid-planning-resume-v1.js";
+import "../../../assets/background-auto-plan-core-v1.js";
+
+const core = (globalThis as any).SFBackgroundAutoPlanCore;
+const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
+const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+Deno.serve(async req => {
+  if (req.method !== "POST") return json({ error: "METHOD_NOT_ALLOWED" }, 405);
+  // This is a server dispatcher, not a public user endpoint. The random per-job
+  // capability is checked in Postgres before any planning input is returned.
+  const token = req.headers.get("x-background-job-token") || "";
+  if (!uuid.test(token)) return json({ error: "UNAUTHENTICATED" }, 401);
+  let id: string;
+  try { id = (await req.json()).job_id; } catch { return json({ error: "INVALID_REQUEST" }, 400); }
+  if (!uuid.test(id)) return json({ error: "INVALID_REQUEST" }, 400);
+  const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false, autoRefreshToken: false } });
+  const claimed = await admin.rpc("claim_background_auto_plan", { p_job_id: id, p_worker_token: token });
+  if (claimed.error) return json({ error: "UNAUTHENTICATED" }, 401);
+  const job = claimed.data;
+  if (!job) return json({ status: "NOT_CLAIMED" });
+  const started = performance.now();
+  let checkpoint = job.checkpoint, output = null, failure = null, progress = null, steps = 0;
+  try {
+    checkpoint = checkpoint || core.start(job.payload);
+    const run = core.context(job.payload, checkpoint), slice = performance.now();
+    // Leave headroom for preparation, JSON, database calls and cold starts. Each
+    // saved call can be retried after a lease expires without losing prior work.
+    do { steps++; if (!run.step()) break; } while (checkpoint.stage !== "done" && performance.now() - slice < 400 && steps < 250);
+    progress = run.progress();
+    if (checkpoint.stage === "done") output = run.result();
+  } catch (error) {
+    failure = String((error as Error)?.message || "Die Planung konnte nicht abgeschlossen werden.").slice(0, 1000);
+    progress = { label: "Planung nicht abgeschlossen", detail: "Bitte den Auftrag prüfen und bei Bedarf neu starten." };
+  }
+  const saved = await admin.rpc("save_background_auto_plan_step", { p_job_id: id, p_lease: job.lease, p_revision: job.revision, p_checkpoint: checkpoint, p_progress: progress, p_result: output, p_error: failure });
+  if (saved.error) return json({ error: "CHECKPOINT_NOT_SAVED" }, 503);
+  console.info(JSON.stringify({ job_id: id, revision: job.revision, steps, stage: checkpoint?.stage, elapsed_ms: Math.round(performance.now() - started), region: Deno.env.get("SB_REGION"), committed: saved.data }));
+  return json({ committed: saved.data, finished: !!output, failed: !!failure });
+});
