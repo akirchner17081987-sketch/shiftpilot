@@ -22,3 +22,12 @@ Fest integrierte Schutzprüfungen wie mindestens 11 h Ruhe, Schichtwechsel O3 �
 - Bestehende Planungs-, OT-, Hilfecenter-, IONOS- und vollständige Regressionstests plus statischer Build.
 
 Ein neuer visueller Browserlauf ist in dieser Umgebung nicht verfügbar; kein visueller Live-Test wird behauptet.
+
+
+## Separater OT-Tagdienstbereich (12.10., Ergänzung)
+
+OT1 / OT2 / OT3 werden zusammen mit ihren tatsächlichen Zeiten, Dauer und Einsatztagen als eigener Bereich angezeigt. Separate Felder: Monatsmaximum, Kalenderwochenmaximum, Dienste am Stück, freie Kalendertage und Blockruhe. Die bedingte OT1-/OT3-Besetzung steht direkt darunter. 8h-Modelle stehen getrennt mit konkreten Modellnamen (bei SchichtFunk TR) und gelten nicht für die 10h-Tagdienstgruppe.
+
+Für SchichtFunk werden auf Grundlage der gewünschten Fünftagewoche eigene Obergrenzen 5 Dienste / 50 h pro Kalenderwoche ergänzt. Bestehende 220 h/Monat und Erholung 2 freie Tage / 48 h bleiben erhalten. Die Mitarbeitergruppe wird aus Vollzeit, Monatsziel mindestens 180 h und ausschließlich OT1/OT2/OT3-Freigaben ermittelt; normale OT, gemischte Freigaben und Teilzeit sind ausgeschlossen. Explizite persönliche niedrigere Wochenmaxima bleiben aktiv; das Vertrags-Wochen-SOLL wird nicht geändert. Andere Unternehmen erhalten keine neuen Werte automatisch.
+
+Clientprüfungen, manuelle Kandidatenprüfung, Datenbank-Erholungsprüfung und Auto-Planer nutzen die gleichen mitarbeiterspezifischen Grenzen. Fünf-Tage-Blöcke werden auch als Optimierungsoption angeboten. Die allgemeinen Grenzen bleiben erhalten. Obergrenzen garantieren keine Auslastung ohne tatsächlichen Bedarf. Tests prüfen fünften Dienst, sechsten Dienst, persönliche Grenzen, normale OT, Unternehmensabgrenzung, Rolle und Speicherwettlauf. Kein visueller Browsertest in dieser Umgebung verfügbar.
