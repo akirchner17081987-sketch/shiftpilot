@@ -68,8 +68,10 @@
   for(const a of rows){if(!active(a)||a.type!==rule.sourceShift||a.date!==source)continue;const d=duty(a,p);if(d.startMs<=from&&d.endMs>=to)seen.add(String(a.employeeId))}
   return seen.size>=rule.minimum?0:rule.fallbackCount;
  }
- function summary(p,types=[]){
-  if(!confirmed(p))return '';
+ function summary(p,types=[],companyPolicy={}){
+  if(!policy(p))return '';
+  if(!confirmed(p)){const month=Number(companyPolicy.monthlyPlanningMaxHours),count=Number(companyPolicy.monthlyPlanningMaxShifts);return `Verbindlich: ${month>0?`Monatsgrenze ${month} h; `:''}${count>0?`${count} automatische Dienste pro Monat; `:''}max. ${p.maxConsecutiveShifts??4} Dienste am Stück. Zwischen Blöcken ${p.minFreeStartDays??2} freie Starttage und ${p.minBlockRestHours??48} h Ruhe. Persönliche niedrigere Grenzen, Freigaben und Abwesenheiten bleiben maßgeblich.`;}
+
   const durations=types.map(t=>{const m=x=>Number(x.slice(0,2))*60+Number(x.slice(3,5));return(m(t.end)-m(t.start)+1440)%1440});
   const model=[];if(durations.some(m=>m>480))model.push(`über 8 h: ${p.tenHourMaxShifts??18} automatische Dienste`);if(durations.some(m=>m>0&&m<=480))model.push(`8 h: ${p.eightHourMaxShifts??23} automatische Dienste / ${Math.min(p.monthlyMaxHours??190,p.eightHourAutoMaxHours??184)} h`);
   if(p.otOnlyMonthlyMaxHours!=null&&types.some(t=>['OT1','OT2','OT3'].includes(t.id)))model.push(`reine OT-Tagdienstkräfte: ${p.otOnlyMonthlyMaxHours} h`);

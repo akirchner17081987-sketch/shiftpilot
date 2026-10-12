@@ -25,6 +25,8 @@ test('configured blocks, nights, recovery and monthly caps change actual client 
  assert.equal(core.errors(e,[rows[0],{...rows[0],date:'2027-01-04'}],{...p,minFreeCalendarDays:3}).some(r=>r.message.includes('Kalendertage')),true);
  const l=core.limits(e,[{id:'FD',start:'06:00',end:'14:00'}],{...p,monthlyMaxHours:175,eightHourAutoMaxHours:168,eightHourMaxShifts:21});assert.equal(l.monthLimit,168);assert.equal(l.calendarLimit,175);assert.equal(l.maxMonthlyShifts,21);
  assert.doesNotMatch(core.summary({...p,otOnlyMonthlyMaxHours:220},[{id:'O3',start:'22:00',end:'08:00'}]),/OT-Tagdienstkräfte|; 8 h:/);
+ assert.match(core.summary({enabled:true,minBlockRestHours:48,minFreeStartDays:2},[],{monthlyPlanningMaxHours:190,monthlyPlanningMaxShifts:18}),/190 h.*48 h/);
+ assert.doesNotMatch(core.summary({enabled:true,minBlockRestHours:48,minFreeStartDays:2}),/190|vollständig freie/);
 });
 test('database enforces configured limits, authorization, concurrency and company isolation atomically',async()=>{
  const db=new PGlite(),alpha='00000000-0000-0000-0000-000000000001',beta='00000000-0000-0000-0000-000000000002',owner='00000000-0000-0000-0000-000000000003';
