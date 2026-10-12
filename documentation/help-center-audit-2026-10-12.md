@@ -2,7 +2,7 @@
 
 Geprüfter Funktionsstand: Produktionsbranch codex/ionos-migration, Commit 1ab633a34363f39c256bd1b5a2ef3c23dbed2282.
 
-Die aktive Hilfe enthält jetzt **204 Artikel in 21 Kategorien**. **27 Artikel wurden ergänzt, zehn bestehende Antworten korrigiert**. Die vier vorhandenen Assistentenartikel sind in die eigene Kategorie „Planungsassistent“ umgezogen.
+Die aktive Hilfe enthält jetzt **204 Artikel in 21 Kategorien**. **27 Artikel wurden ergänzt, elf bestehende Antworten korrigiert**. Die vier vorhandenen Assistentenartikel sind in die eigene Kategorie „Planungsassistent“ umgezogen.
 
 ## Tatsächlich angezeigte Hilfe
 
@@ -47,7 +47,7 @@ Das Inventar enthält alle **192 JavaScript-Module unter assets** sowie drei ber
 
 ## Suche und Pflege
 
-Die Suche prüft mehrere Wörter unabhängig von ihrer Reihenfolge, vereinheitlicht Schreibweise und Akzente und erkennt 2FA/Zwei-Faktor/AAL2 als MFA. Sie verwendet weiterhin nur die für das aktuell angemeldete Unternehmen freigegebenen privaten Antworten. Beispiele sind allgemein gehalten. Die Cache-Versionen der aktiven Inhalts- und Rendererdatei sind erneuert.
+Die Suche prüft mehrere Wörter unabhängig von ihrer Reihenfolge, vereinheitlicht Schreibweise und Akzente und erkennt 2FA/Zwei-Faktor/AAL2 als MFA. Sie verwendet weiterhin nur die für das aktuell angemeldete Unternehmen freigegebenen privaten Antworten. Beispiele sind allgemein gehalten. Die Cache-Versionen der aktiven Inhalts- und Rendererdatei sind erneuert. Auf kleinen Bildschirmen bleibt die Hilfe über einen eigenen Knopf unter Einstellungen in der Seitenleiste erreichbar.
 
 ## Verifikation und Grenzen
 

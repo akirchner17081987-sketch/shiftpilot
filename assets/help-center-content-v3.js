@@ -127,7 +127,7 @@ window.SFHelpContent = {
       ],
       [
         "Wo finde ich Hilfe?",
-        "Öffnen Sie das Fragezeichen im Kopfbereich oder drücken Sie Strg/Cmd + K. Die Suche durchsucht alle Hilfekategorien."
+        "Öffnen Sie das Fragezeichen im Kopfbereich oder drücken Sie Strg/Cmd + K. Auf kleinen Bildschirmen finden Sie zusätzlich den Hilfe-Knopf unter Einstellungen in der seitlichen Navigation. Die Suche durchsucht alle Hilfekategorien und findet mehrere Suchwörter unabhängig von ihrer Reihenfolge. Auch „2FA“ wird als MFA erkannt."
       ],
       [
         "Was bedeuten die animierte Startseite und „3 von 4“?",

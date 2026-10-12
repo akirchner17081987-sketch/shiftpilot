@@ -2522,6 +2522,14 @@
         "assets/planning-assistant-core-v1.js",
         "assets/planning-assistant-insights-v1.js"
       ]
+    },
+    {
+      "category": "start",
+      "question": "Wo finde ich Hilfe?",
+      "sources": [
+        "assets/help-center-renderer-v2.js",
+        "index.html"
+      ]
     }
   ],
   "runtimeEntry": {
@@ -2534,7 +2542,7 @@
     "date": "2026-10-12",
     "baselineArticleCount": 177,
     "addedArticleCount": 27,
-    "correctedArticleCount": 10,
+    "correctedArticleCount": 11,
     "articleCount": 204,
     "categoryCount": 21,
     "assetJavaScriptCount": 192
