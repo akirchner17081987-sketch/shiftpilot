@@ -75,9 +75,11 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
    await page.locator('select[data-orbit-motion]').selectOption('full');
    for(const [theme,width] of [['dark',1440],['light',390],['dark',320]]){
      await page.setViewportSize({width,height:1000});await page.evaluate(t=>SFManagerTheme.apply(t,false),theme);
+     assert.equal(await page.locator('#appShell .topbar .company-card').isVisible(),true,'company switching stays available on mobile');
      await page.locator('[data-orbit-category="personal"]').click();
      const menu=await page.locator('#sfOrbitPopup').boundingBox();assert.ok(menu.x>=0&&menu.x+menu.width<=width+1,'menu fits viewport');
      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),true,'page fits viewport');
+     assert.equal(await page.evaluate(()=>{const b=document.querySelector('#sfOrbitPopup [data-orbit-target="time"]'),r=b.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return b.contains(hit);}),true,'assistant must not cover the last menu entry');
      await page.screenshot({path:path.join(out,'orbit-'+theme+'-'+width+'.png'),animations:'disabled'});
      await page.keyboard.press('Escape');
    }

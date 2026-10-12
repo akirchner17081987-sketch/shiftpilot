@@ -51,6 +51,7 @@
   function close(returnFocus = false) {
     const previous = openGroup;
     stopMotion(); openGroup = null;
+    document.body.classList.remove('sf-orbit-menu-open');
     popup.classList.remove('is-open'); popup.inert = true;
     popup.setAttribute('aria-hidden', 'true');
     buttons.forEach(button => { if (button.hasAttribute('aria-expanded')) button.setAttribute('aria-expanded', 'false'); });
@@ -83,6 +84,10 @@
     animate(buttons.get(group), [{ boxShadow: '0 0 0 0 transparent' }, { boxShadow: '0 0 0 4px var(--orbit-glow),0 0 22px var(--orbit-glow)', offset: .3 }, { boxShadow: '0 0 0 10px transparent' }], { duration: 950, easing: 'ease-out' });
     const shimmer = document.createElement('span'); shimmer.className = 'sf-orbit-shimmer'; shimmer.setAttribute('aria-hidden', 'true'); popup.append(shimmer); ornaments.push(shimmer);
     animate(shimmer, [{ opacity: 0, transform: 'scaleY(.1)' }, { opacity: .4, transform: 'scaleY(1)', offset: .35 }, { opacity: 0, transform: 'scaleY(1)' }], { duration: 1000, easing: 'ease-out' });
+    for (let index = 0; index < 4; index++) {
+      const spark = document.createElement('span'); spark.className = 'sf-orbit-spark'; spark.setAttribute('aria-hidden', 'true'); spark.style.left = (16 + index * 22) + '%'; popup.append(spark); ornaments.push(spark);
+      animate(spark, [{ opacity: 0, transform: 'translateY(0) scale(.4)' }, { opacity: .85, transform: 'translateY(-18px) scale(1)', offset: .35 }, { opacity: 0, transform: 'translateY(-65px) scale(.3)' }], { duration: 950, delay: index * 45, easing: 'ease-out' });
+    }
     entries.querySelectorAll('.sf-orbit-entry-label').forEach((label, index) => animate(label, [{ opacity: .72, filter: 'brightness(1.5)' }, { opacity: 1, filter: 'brightness(1)' }], { duration: 470, delay: index * 50, fill: 'backwards', easing: 'ease-out' }));
   }
   function activate(view) {
@@ -116,6 +121,7 @@
     if (!ready() || !availableItems(group).some(([view]) => allowed(source(view)))) return;
     stopMotion(); renderEntries(group);
     openGroup = group.id; popup.inert = false; popup.removeAttribute('aria-hidden');
+    document.body.classList.add('sf-orbit-menu-open');
     buttons.forEach((button, id) => { if (button.hasAttribute('aria-expanded')) button.setAttribute('aria-expanded', String(id === group.id)); });
     positionPopup(); popup.classList.add('is-open'); playOpening(group.id);
   }

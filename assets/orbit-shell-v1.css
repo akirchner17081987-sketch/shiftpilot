@@ -7,7 +7,7 @@ html[data-sf-theme="light"] #appShell.sf-orbit{--orbit-canvas:#dce1ef;--orbit-su
 #appShell.sf-orbit .sf-orbit-brand{flex:none;width:180px;padding:0;border:0;background:transparent;box-shadow:none}
 #appShell.sf-orbit .sf-orbit-brand img{display:block;width:180px;height:54px;object-fit:contain}
 html[data-sf-theme="light"] #appShell.sf-orbit .sf-orbit-brand{background:#0a192c;border-radius:12px;padding:4px 8px;width:188px}
-#appShell.sf-orbit>.topbar .company-card{flex:0 1 230px;margin:0;padding:10px 12px;background:var(--orbit-inset)!important;border-color:var(--orbit-line)!important;border-radius:12px;text-align:left;min-width:160px}
+#appShell.sf-orbit>.topbar .company-card{display:grid!important;flex:0 1 230px;margin:0;padding:10px 12px;background:var(--orbit-inset)!important;border-color:var(--orbit-line)!important;border-radius:12px;text-align:left;min-width:160px}
 #appShell.sf-orbit>.topbar .company-card>span:nth-child(2){min-width:0}
 #appShell.sf-orbit>.topbar .company-card b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #appShell.sf-orbit>.topbar .company-card small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -60,16 +60,19 @@ html[data-sf-theme="light"] #appShell.sf-orbit .sf-orbit-brand{background:#0a192
 #appShell.sf-orbit .sf-orbit-entry-label{flex:1;overflow-wrap:anywhere}
 #appShell.sf-orbit .sf-orbit-badge{padding:2px 7px;border-radius:999px;background:var(--danger);color:#fff;font-size:12px}
 #appShell.sf-orbit .sf-orbit-shimmer{position:absolute;inset:0;border-radius:13px;pointer-events:none;opacity:0;background:repeating-linear-gradient(0deg,transparent 0px,transparent 5px,var(--orbit-glow) 6px,var(--orbit-glow) 7px);box-shadow:inset 0 0 30px var(--orbit-glow);transform-origin:bottom}
+#appShell.sf-orbit .sf-orbit-spark{position:absolute;bottom:0;width:3px;height:3px;border-radius:50%;background:var(--orbit-accent);box-shadow:0 0 9px var(--orbit-glow);opacity:0;pointer-events:none}
 #appShell.sf-orbit :is(.sf-orbit-category,.sf-orbit-entry,.sf-orbit-popup-head>button,.sf-orbit-brand):focus-visible{outline:3px solid var(--orbit-accent);outline-offset:3px}
 #appShell.sf-orbit .sf-orbit-motion-settings label{display:grid;gap:8px;max-width:320px;color:var(--orbit-text);font-size:14px}
 #appShell.sf-orbit .sf-orbit-motion-settings select{padding:10px;background:var(--orbit-inset)!important;color:var(--orbit-text)!important;border:1px solid var(--orbit-line)}
 #appShell.sf-orbit .sf-display-actions{bottom:calc(108px + env(safe-area-inset-bottom))!important}
 body.sf-orbit-manager .sf-chat-launcher{bottom:calc(110px + env(safe-area-inset-bottom))!important}
 body.sf-orbit-manager .sf-planning-chat{bottom:calc(172px + env(safe-area-inset-bottom))!important;max-height:calc(100dvh - 222px)!important}
+body.sf-orbit-menu-open :is(.sf-chat-launcher,.sf-planning-chat){visibility:hidden!important;pointer-events:none!important}
 #appShell.sf-orbit[data-orbit-motion="off"] :is(.sf-orbit-popup,.sf-orbit-category){transition:none!important}
 html.sf-display-high-contrast #appShell.sf-orbit{--orbit-text:var(--sf-contrast-text);--orbit-muted:var(--sf-contrast-muted);--orbit-line:var(--sf-contrast-line);--orbit-surface:var(--sf-contrast-bg);--orbit-inset:var(--sf-contrast-bg);--orbit-active:var(--sf-contrast-bg);--orbit-accent:var(--sf-contrast-text)}
 @media(max-width:1100px){#appShell.sf-orbit .topbar{gap:12px;padding:14px 18px}#appShell.sf-orbit .sf-orbit-brand{width:150px}#appShell.sf-orbit .sf-orbit-brand img{width:150px}#appShell.sf-orbit .topbar>.search{flex-basis:220px}#appShell.sf-orbit .top-actions{margin-left:auto}#appShell.sf-orbit .top-actions .user-row>div:last-child{max-width:120px}}
 @media(max-width:650px){#appShell.sf-orbit>.topbar{gap:10px;padding:12px}#appShell.sf-orbit>.topbar .company-card{flex:1 1 150px;min-width:130px}#appShell.sf-orbit>.topbar .search{flex-basis:100%;order:4;min-width:0}#appShell.sf-orbit>.topbar .top-actions{flex:1 1 100%;order:3;margin:0;justify-content:flex-end}#appShell.sf-orbit .top-actions .user-row>div:last-child{max-width:130px}#appShell.sf-orbit>.main{padding:20px 12px calc(166px + env(safe-area-inset-bottom))}#appShell.sf-orbit .sf-orbit-dock{grid-template-columns:1fr 1fr;bottom:calc(8px + env(safe-area-inset-bottom));gap:4px;padding:6px;width:calc(100% - 16px);border-radius:16px}#appShell.sf-orbit .sf-orbit-category{min-height:52px;padding:8px;font-size:13px}#appShell.sf-orbit .sf-orbit-category-copy small{font-size:11px}#appShell.sf-orbit .sf-orbit-category>.sf-orbit-icon{width:17px;height:17px}#appShell.sf-orbit .page-head{gap:14px}#appShell.sf-orbit .sf-orbit-popup{border-radius:13px}}
 @media(prefers-reduced-motion:reduce){#appShell.sf-orbit :is(.sf-orbit-popup,.sf-orbit-category){transition:none!important}}
 @media print{#appShell.sf-orbit .sf-orbit-dock,#appShell.sf-orbit .sf-orbit-popup{display:none!important}#appShell.sf-orbit>.main{padding-bottom:0}}
+@media(max-width:900px){#appShell.sf-orbit .sf-set-nav button span:last-child{display:block!important}#appShell.sf-orbit .sf-set-nav{grid-template-columns:repeat(2,minmax(0,1fr))!important}#appShell.sf-orbit .sf-set-nav button{justify-content:flex-start;gap:9px;min-height:44px;white-space:normal;text-align:left}}
 @media(max-width:650px){#appShell.sf-orbit .sf-display-actions{bottom:calc(150px + env(safe-area-inset-bottom))!important}body.sf-orbit-manager .sf-chat-launcher{bottom:calc(148px + env(safe-area-inset-bottom))!important}body.sf-orbit-manager .sf-planning-chat{bottom:calc(210px + env(safe-area-inset-bottom))!important;max-height:calc(100dvh - 250px)!important}}
