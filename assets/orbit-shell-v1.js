@@ -4,13 +4,14 @@
   if (window.SFOrbit) return;
   const KEY = 'sf_orbit_motion_v1';
   const GROUPS = [
+    { id: 'overview', label: 'Tagesübersicht', icon: 'home', direct: true, items: [['overview', 'Tagesübersicht']] },
     { id: 'planning', label: 'Planung', icon: 'calendar', items: [['schedule', 'Dienstplan'], ['auto', 'Auto-Planung'], ['wishes', 'Wunschplanung'], ['disruptions', 'Störfallautopilot']] },
     { id: 'personal', label: 'Personal', icon: 'people', items: [['staffing', 'Personalsimulator'], ['handover', 'Schichtübergabe'], ['marketplace', 'Schicht-Marktplatz'], ['employees', 'Mitarbeiter'], ['absence', 'Abwesenheit'], ['time', 'Zeiterfassung']] },
     { id: 'analysis', label: 'Auswertung & Kontrolle', icon: 'chart', items: [['reports', 'Auswertung'], ['audit', 'Audit-Logs']] },
-    { id: 'settings', label: 'Einstellungen', icon: 'settings', items: [['settings', 'Einstellungen']] }
+    { id: 'settings', label: 'Einstellungen', icon: 'settings', direct: true, items: [['settings', 'Einstellungen']] }
   ];
   const LABELS = Object.fromEntries(GROUPS.flatMap(group => group.items));
-  LABELS.overview = 'Übersicht';
+  LABELS.overview = 'Tagesübersicht';
   const paths = {
     calendar: '<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v4m10-4v4M3 11h18m-13 4h2m4 0h2"/>',
     people: '<circle cx="9" cy="8" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0v2m2-16a3 3 0 0 1 0 6m1 4a5 5 0 0 1 3 4v2"/>',
@@ -334,13 +335,13 @@
   }
   function positionPopup() {
     if (!openGroup) return;
-    const trigger = buttons.get(openGroup), anchor = trigger.getBoundingClientRect();
+    const trigger = buttons.get(openGroup), anchor = trigger.getBoundingClientRect(), dockBounds = dock.getBoundingClientRect();
     const width = Math.min(296, window.innerWidth - 24);
     const left = Math.max(12, Math.min(anchor.left + anchor.width / 2 - width / 2, window.innerWidth - width - 12));
     popup.style.width = width + 'px'; popup.style.left = left + 'px';
-    popup.style.bottom = Math.max(12, window.innerHeight - anchor.top + 10) + 'px';
+    popup.style.bottom = Math.max(12, window.innerHeight - dockBounds.top + 10) + 'px';
     popup.style.setProperty('--orbit-pointer', Math.max(18, Math.min(anchor.left + anchor.width / 2 - left, width - 18)) + 'px');
-    popup.style.maxHeight = Math.max(80, anchor.top - 22) + 'px';
+    popup.style.maxHeight = Math.max(80, dockBounds.top - 22) + 'px';
   }
   function playOpening(group) {
     stopMotion();
@@ -432,7 +433,7 @@
       button.classList.toggle('is-current', isCurrent);
       if (isCurrent) button.setAttribute('aria-current', 'true'); else button.removeAttribute('aria-current');
       const detail = button.querySelector('small');
-      const label = isCurrent && group.id !== 'settings' ? LABELS[active] : '';
+      const label = isCurrent && !group.direct ? LABELS[active] : '';
       if (detail.textContent !== label) detail.textContent = label;
       detail.hidden = !label;
     });
@@ -477,8 +478,8 @@
     GROUPS.forEach(group => {
       const button = document.createElement('button'); button.type = 'button'; button.className = 'sf-orbit-category'; button.dataset.orbitCategory = group.id;
       const label = document.createElement('span'); label.className = 'sf-orbit-category-copy'; const name = document.createElement('span'); name.textContent = group.label; const detail = document.createElement('small'); detail.hidden = true; label.append(name, detail); button.append(icon(group.icon), label);
-      if (group.id !== 'settings') { button.setAttribute('aria-expanded', 'false'); button.setAttribute('aria-controls', 'sfOrbitPopup'); button.append(icon('arrow')); button.addEventListener('click', () => reveal(group)); }
-      else button.addEventListener('click', () => activate('settings'));
+      if (!group.direct) { button.setAttribute('aria-expanded', 'false'); button.setAttribute('aria-controls', 'sfOrbitPopup'); button.append(icon('arrow')); button.addEventListener('click', () => reveal(group)); }
+      else button.addEventListener('click', () => activate(group.items[0][0]));
       buttons.set(group.id, button); dock.append(button);
     });
     popup = document.createElement('section'); popup.id = 'sfOrbitPopup'; popup.className = 'sf-orbit-popup'; popup.setAttribute('aria-labelledby', 'sfOrbitPopupTitle'); popup.setAttribute('aria-hidden', 'true'); popup.inert = true;

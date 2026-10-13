@@ -44,7 +44,7 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
    if(role==='TIME_TRACKING') {
      await page.locator('[data-orbit-category="personal"]').click();
      assert.equal(await page.locator('#sfOrbitPopup [data-orbit-target="time"]').isEnabled(),true);
-     for(const category of ['planning','analysis','settings'])assert.equal(await page.locator('[data-orbit-category="'+category+'"]').isDisabled(),true);
+     for(const category of ['overview','planning','analysis','settings'])assert.equal(await page.locator('[data-orbit-category="'+category+'"]').isDisabled(),true);
      assert.equal(await page.locator('#sfOrbitPopup .sf-orbit-entry:not(:disabled)').count(),1,'time-only navigation must not widen permissions');
      await page.keyboard.press('Escape');
    }
@@ -53,6 +53,9 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
  if(extra){
  if(windowOrbit(data)) {
    await page.waitForFunction(()=>document.querySelectorAll('.sf-orbit-overview-metrics [data-td-kpi]').length===3);
+   const overviewButton=page.locator('[data-orbit-category="overview"]');
+   assert.deepEqual(await page.locator('#sfOrbitDock [data-orbit-category]').evaluateAll(nodes=>nodes.map(n=>n.dataset.orbitCategory)),['overview','planning','personal','analysis','settings']);
+   assert.equal(await overviewButton.getAttribute('aria-expanded'),null,'overview is a direct route, without a category submenu');
    const assistant=page.locator('#appShell .top-actions #sfPlanningAssistantButton');await assistant.waitFor({state:'visible'});
    await assistant.click();await page.locator('#sfPlanningChat').waitFor({state:'visible'});await assistant.click();await page.locator('#sfPlanningChat').waitFor({state:'hidden'});
    await page.evaluate(()=>{
@@ -118,10 +121,14 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
    const reducedFrame=await globe.evaluate(n=>n.toDataURL());await page.waitForTimeout(200);
    assert.equal(await globe.evaluate(n=>n.toDataURL()),reducedFrame,'system reduced motion also stops the canvas');
    await page.emulateMedia({reducedMotion:'no-preference'});await page.evaluate(()=>SFOrbit.setMotion('off'));
-   for(const [theme,width] of [['dark',1440],['light',1440],['dark',390],['light',390],['dark',320]]){
+   for(const [theme,width] of [['dark',1920],['dark',1440],['light',1440],['dark',390],['light',390],['dark',320]]){
      await page.setViewportSize({width,height:1000});await page.evaluate(t=>{SFManagerTheme.apply(t,false);document.activeElement?.blur?.();for(const el of [document.body,document.documentElement,document.getElementById('appShell'),document.querySelector('#appShell .main')])el.scrollTo({top:0,left:0,behavior:'instant'});window.scrollTo({top:0,left:0,behavior:'instant'})},theme);
      await page.waitForFunction(()=>document.body.scrollTop<1&&document.querySelector('#appShell .main').scrollTop<1&&window.scrollY<1);
      const hero=await page.locator('.sf-orbit-hero').boundingBox(),bar=await page.locator('#appShell>.topbar').boundingBox();assert.ok(bar.y>=-1&&hero.y>=bar.y+bar.height-1&&hero.y<bar.y+bar.height+50,'graphic hero and topbar are the first visible workspace content');
+     const workspace=await page.locator('#sfTodayWorkspace').boundingBox(),content=await page.locator('#appShell .main>.content').boundingBox(),dockRect=await page.locator('#sfOrbitDock').boundingBox();
+     assert.ok(Math.abs(workspace.width-content.width)<2,'daily overview uses full content width at '+width);
+     assert.ok(dockRect.width>=width-30&&dockRect.x>=0&&dockRect.x+dockRect.width<=width+1,'navigation uses available viewport width');
+     assert.equal(await overviewButton.isVisible(),true);assert.equal(await overviewButton.getAttribute('aria-current'),'true');
      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),true,'Orbit overview fits '+width);
      const emblem=await page.locator('.sf-orbit-emblem').boundingBox();assert.ok(emblem.x>=0&&emblem.x+emblem.width<=width+1,'graphic fits the viewport');
      for(const key of ['present','coverage','actions'])assert.equal(await page.locator('.sf-orbit-overview-metrics [data-td-kpi="'+key+'"]').isVisible(),true);
@@ -147,6 +154,8 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
    const inactiveFrame=await globe.evaluate(n=>n.toDataURL());await page.waitForTimeout(200);
    assert.equal(await globe.evaluate(n=>n.toDataURL()),inactiveFrame,'globe rendering pauses outside the overview');
    assert.equal(await page.locator('[data-orbit-category="planning"] small').innerText(),'Dienstplan');
+   await overviewButton.click();assert.equal(await page.locator('#view-overview').evaluate(n=>n.classList.contains('active')),true,'direct overview button activates the existing route');
+   assert.equal(await page.locator('#sfOrbitPopup').getAttribute('aria-hidden'),'true','overview navigation closes the category menu');
    await page.locator('[data-orbit-category="personal"]').click();await page.waitForFunction(()=>document.querySelectorAll('#sfOrbitPopup .sf-orbit-entry').length===6);assert.equal(await page.locator('#sfOrbitPopup .sf-orbit-entry').count(),6);
    await page.locator('[data-orbit-category="analysis"]').click();await page.waitForFunction(()=>document.querySelectorAll('#sfOrbitPopup .sf-orbit-entry').length===2);assert.equal(await page.locator('#sfOrbitPopup .sf-orbit-entry').count(),2);
    await page.keyboard.press('Escape');assert.equal(await page.locator('#sfOrbitPopup').getAttribute('aria-hidden'),'true');
@@ -176,6 +185,9 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
      assert.equal(await page.locator('#appShell .topbar .company-card').isVisible(),true,'company switching stays available on mobile');
      await page.locator('[data-orbit-category="personal"]').click();
      const menu=await page.locator('#sfOrbitPopup').boundingBox();assert.ok(menu.x>=0&&menu.x+menu.width<=width+1,'menu fits viewport');
+     const dockBounds=await page.locator('#sfOrbitDock').boundingBox();assert.ok(menu.y+menu.height<=dockBounds.y-8,'submenu stays above the entire navigation, including mobile rows');
+     const overviewBounds=await overviewButton.boundingBox(),planningBounds=await page.locator('[data-orbit-category="planning"]').boundingBox();
+     assert.ok(Math.abs(overviewBounds.y-planningBounds.y)<2&&overviewBounds.x+overviewBounds.width<=planningBounds.x+1,'daily overview is beside planning');
      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),true,'page fits viewport');
      assert.equal(await page.evaluate(()=>{const b=document.querySelector('#sfOrbitPopup [data-orbit-target="time"]'),r=b.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return b.contains(hit);}),true,'assistant must not cover the last menu entry');
      await page.screenshot({path:path.join(out,'orbit-'+theme+'-'+width+'.png'),animations:'disabled'});
