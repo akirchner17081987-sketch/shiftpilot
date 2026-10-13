@@ -52,6 +52,8 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
  if(extra){
  if(windowOrbit(data)) {
    await page.waitForFunction(()=>document.querySelectorAll('.sf-orbit-overview-metrics [data-td-kpi]').length===3);
+   const assistant=page.locator('#appShell .top-actions #sfPlanningAssistantButton');await assistant.waitFor({state:'visible'});
+   await assistant.click();await page.locator('#sfPlanningChat').waitFor({state:'visible'});await assistant.click();await page.locator('#sfPlanningChat').waitFor({state:'hidden'});
    await page.evaluate(()=>{
      const name=document.querySelector('#appShell .topbar .user-row b'),role=document.querySelector('#appShell .topbar .user-row small'),avatar=document.querySelector('#appShell .topbar .user-row .avatar'),company=document.querySelector('#appShell .topbar .company-card b');
      if(name)name.textContent='Designvorschau';if(role)role.textContent='Testkonto';if(avatar)avatar.textContent='SF';if(company)company.textContent='SchichtFunk';
@@ -84,6 +86,7 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),true,'Orbit overview fits '+width);
      const emblem=await page.locator('.sf-orbit-emblem').boundingBox();assert.ok(emblem.x>=0&&emblem.x+emblem.width<=width+1,'graphic fits the viewport');
      for(const key of ['present','coverage','actions'])assert.equal(await page.locator('.sf-orbit-overview-metrics [data-td-kpi="'+key+'"]').isVisible(),true);
+     assert.equal(await assistant.isVisible(),true,'planning assistant remains available in the header at '+width);
      await page.screenshot({path:path.join(out,'orbit-overview-'+theme+'-'+width+'.png'),animations:'disabled'});
    }
    await page.setViewportSize({width:1440,height:1000});await page.evaluate(()=>{SFManagerTheme.apply('dark',false);SFOrbit.setMotion('full')});

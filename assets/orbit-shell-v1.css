@@ -22,6 +22,10 @@ html[data-sf-theme="light"] #appShell.sf-orbit .sf-orbit-brand{background:#0a192
 #appShell.sf-orbit .top-actions .user-row>div:last-child{display:block;max-width:150px}
 #appShell.sf-orbit .top-actions .user-row b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--orbit-text)}
 #appShell.sf-orbit .top-actions .user-row small{color:var(--orbit-muted)}
+#appShell.sf-orbit .top-actions #sfPlanningAssistantButton{position:static;inset:auto!important;width:44px;height:44px;min-height:44px;padding:10px!important;border-radius:10px!important;box-shadow:none;background:transparent!important;color:var(--orbit-muted)!important;flex:none;z-index:auto}
+#appShell.sf-orbit .top-actions #sfPlanningAssistantButton>span{display:none}
+#appShell.sf-orbit .top-actions #sfPlanningAssistantButton:is(:hover,[aria-expanded="true"]){color:var(--orbit-accent)!important;border-color:var(--orbit-accent)!important}
+#appShell.sf-orbit .top-actions #sfPlanningAssistantButton:focus-visible{outline:3px solid var(--orbit-accent);outline-offset:3px}
 #appShell.sf-orbit .sf-orbit-current-label{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 #appShell.sf-orbit .sf-orbit-legal{display:flex;justify-content:flex-end;gap:16px;flex-wrap:wrap;margin-top:28px;font-size:12px;color:var(--orbit-muted)}
 #appShell.sf-orbit .sf-orbit-legal a{color:var(--orbit-muted)}
