@@ -280,7 +280,11 @@
     panel.querySelectorAll('[data-manual-employee]:not([disabled])').forEach(button=>button.onclick=()=>{
       const e=employees.find(x=>x.id===button.dataset.manualEmployee);if(!e||!target||!canPlan())return;
       // Use the existing save path, including fresh checks and published-plan approvals.
-      window.SFCompliance?.save?.(e,target.type,target.date,t.start,t.end);
+      const selection=target,fromInline=!!inlineAnchor;
+      if(fromInline)dismissInlinePicker(false);
+      window.SFCompliance?.save?.(e,selection.type,selection.date,t.start,t.end,{onSaved:()=>{
+        if(fromInline){const trigger=[...document.querySelectorAll('#sfWeekBoardV2 [data-open-assign]')].find(b=>{const shift=b.closest('.sf-week-shift');return shift?.dataset.date===selection.date&&shift.dataset.type===selection.type});trigger?.focus({preventScroll:true})}
+      }});
       renderCandidates();
     });
     if(inlineAnchor)positionInlinePicker();
