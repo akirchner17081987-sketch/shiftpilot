@@ -8,6 +8,8 @@
   const accent={teal:'#2ed9b8',cyan:'#38d7d4',violet:'#8f7dff',blue:'#62a0ff',amber:'#ffbd4f',pink:'#ff6f9d',red:'#ff6677'};
   let mode=sessionStorage.getItem(MODE_KEY)||'compact';
   let dragPayload=null,undoTimer=null;
+  let target=null,contextKey='',shiftFilter='',onlyOpen=false,showBlocked=false;
+  const collator=new Intl.Collator('de',{sensitivity:'base',numeric:true});
 
   const css=document.createElement('style');
   css.textContent=`
@@ -114,13 +116,13 @@
     const color=accent[t.cls]||'#62a0ff';
     const rows=list.map(a=>employeeRow(a,t)).join('');
     const sharedNote=shared?`<div class="sf-week-shared" style="padding:6px 10px;font-size:11px;line-height:1.4;color:var(--muted)">${esc(shared.label)}: ${shared.filled}/${shared.target} TL insgesamt · ${shared.target===0?'kein Pflichtbedarf':shared.missing?`gemeinsam ${shared.missing} offen`:shared.coveredCodes.includes(id)?'deckt beide Standorte ab':`mit abgedeckt durch ${esc(shared.coveredCodes.join(', '))}`}</div>`:'';
-    return `<section class="sf-week-shift ${st}" data-date="${esc(date)}" data-type="${esc(id)}" style="--sf-shift-accent:${color}"><header class="sf-week-shift-head"><div class="sf-week-shift-main"><strong>${esc(id)}</strong><small>${esc(t.start)} – ${esc(t.end)}</small></div><div class="sf-week-shift-count"><span class="sf-display-status-symbol" role="img" aria-label="${esc({complete:'Vollständig besetzt',under:'Unterbesetzt',empty:'Unbesetzt',over:'Über SOLL'}[symbolStatus])}">${{complete:'✓',under:'△',empty:'!',over:'+'}[symbolStatus]}</span><b title="IST / SOLL">${shared?`${ist} TL vor Ort`:`${ist} / ${soll}`}</b></div></header><div class="sf-week-employees">${rows}</div>${sharedNote}${open?`<button type="button" class="sf-week-open" data-open-assign>＋ ${open} Position${open===1?'':'en'} offen</button>`:''}${over&&!shared?`<div class="sf-week-over">＋ ${over} über SOLL</div>`:''}</section>`;
+    return `<section class="sf-week-shift ${st}" data-date="${esc(date)}" data-type="${esc(id)}" style="--sf-shift-accent:${color}"><header class="sf-week-shift-head"><div class="sf-week-shift-main"><strong>${esc(id)}</strong><small>${esc(t.start)} – ${esc(t.end)}</small></div><div class="sf-week-shift-count"><span class="sf-display-status-symbol" role="img" aria-label="${esc({complete:'Vollständig besetzt',under:'Unterbesetzt',empty:'Unbesetzt',over:'Über SOLL'}[symbolStatus])}">${{complete:'✓',under:'△',empty:'!',over:'+'}[symbolStatus]}</span><b title="IST / SOLL">${shared?`${ist} TL vor Ort`:`${ist} / ${soll}`}</b></div></header><div class="sf-week-employees">${rows}</div>${sharedNote}<button type="button" class="${open?'sf-week-open':'sf-week-add'}" data-open-assign aria-label="${esc(id+' am '+date+' '+(open?'besetzen':'ergänzen'))}">${open?`＋ ${open} Position${open===1?'':'en'} offen`:'＋ Ergänzen'}</button>${over&&!shared?`<div class="sf-week-over">＋ ${over} über SOLL</div>`:''}</section>`;
   }
   function dayHeader(d,index){
     const date=iso(d),today=date===iso(new Date()),weekend=index>4;
     const cov=dayCoverage(date),good=cov.open===0;
     const weekday=d.toLocaleDateString('de-DE',{weekday:'short'}).replace('.','');
-    return `<article class="sf-week-day ${today?'is-today':''} ${weekend?'is-weekend':''}" data-date="${esc(date)}"><header class="sf-week-day-head"><div class="sf-week-day-title"><span class="sf-week-day-date"><strong>${esc(weekday)}</strong><b>${d.getDate()}</b></span><span>${cov.filled}/${cov.soll}</span></div><div class="sf-week-day-coverage"><span class="sf-day-status ${good?'good':'warn'}">${good?'✓ vollständig':`${cov.open} offen`}</span><span>${cov.filled} von ${cov.soll} Positionen besetzt</span></div></header></article>`;
+    return `<article class="sf-week-day ${today?'is-today':''} ${weekend?'is-weekend':''}" data-date="${esc(date)}"><header class="sf-week-day-head"><div class="sf-week-day-title"><span class="sf-week-day-date"><strong>${esc(weekday)}</strong><b>${d.getDate()}</b></span><span>${cov.filled}/${cov.soll}</span></div><div class="sf-week-day-coverage"><span class="sf-day-status ${good?'good':'warn'}">${good?'✓ vollständig':`${cov.open} offen`}</span></div><button type="button" class="sf-week-day-add" data-plan-day="${esc(date)}" aria-label="Dienst am ${esc(date)} planen">＋ Dienst</button></header></article>`;
   }
   function shiftCell(d,index,id,rowIndex,rowCount){
     const date=iso(d),today=date===iso(new Date()),weekend=index>4;
@@ -168,9 +170,110 @@
       cell.ondragover=e=>{if(dragPayload){e.preventDefault();e.dataTransfer.dropEffect=dropCheck(cell)?.hard?.length?'none':dragPayload.kind==='assignment'?'move':'copy'}};
       cell.ondragleave=e=>{if(!cell.contains(e.relatedTarget))cell.classList.remove('is-drop-target','is-drop-warning','is-drop-blocked')};
       cell.ondrop=e=>{e.preventDefault();e.stopPropagation();const payload=dragPayload,check=dropCheck(cell);clearDropState(wrap);dragPayload=null;if(!payload||check?.hard?.length){if(check?.hard?.length&&typeof showSaveToast==='function')showSaveToast('Verschieben nicht möglich',check.hard.join(' '));return}const type=cell.dataset.shiftRow,date=cell.dataset.date;if(payload.kind==='assignment')moveAssignment(payload.id,type,date);else addEmployee(payload.id,type,date)};
-      cell.querySelector('[data-open-assign]')?.addEventListener('click',()=>window.openAssign?.(cell.dataset.shiftRow,cell.dataset.date));
+      cell.querySelector('[data-open-assign]')?.addEventListener('click',()=>selectTarget(cell.dataset.shiftRow,cell.dataset.date));
+    });
+    wrap.querySelectorAll('[data-plan-day]').forEach(b=>b.onclick=()=>{
+      const picker=document.getElementById('sfManualDay');if(picker)picker.value=b.dataset.planDay;
+      target=null;renderCandidates();document.getElementById('sfManualShift')?.focus();
+      revealSidebar();
     });
   }
+
+  function name(e){return [e.last,e.first].filter(Boolean).join(', ')}
+  function labelDate(date){return new Date(date+'T12:00:00').toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit'})}
+  function selectTarget(type,date){
+    if(!typeById(type))return;
+    if(!document.getElementById('sfManualPicker')){window.openAssign?.(type,date);return}
+    target={type,date};showBlocked=false;
+    document.getElementById('sfManualShift').value=type;
+    document.getElementById('sfManualDay').value=date;
+    document.getElementById('planEmployeeSearch').value='';
+    renderCandidates();markTarget();revealSidebar();
+  }
+  function revealSidebar(){
+    const panel=document.getElementById('sfManualPicker');
+    if(innerWidth<1280)panel?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});
+  }
+  function markTarget(){
+    document.querySelectorAll('#sfWeekBoardV2 .sf-week-shift').forEach(el=>el.classList.toggle('sf-manual-target',!!target&&el.dataset.date===target.date&&el.dataset.type===target.type));
+  }
+  function checkCandidate(e){
+    const t=typeById(target.type),C=window.SFCompliance;
+    if(!C?.check||!C?.save)return {hard:['Planungsprüfung wird noch geladen. Bitte kurz warten.'],soft:[]};
+    return C.check(e,target.type,target.date,t.start,t.end);
+  }
+  function renderCandidates(){
+    const panel=document.getElementById('sfManualCandidates'),context=document.getElementById('sfManualContext'),pool=document.getElementById('planEmployeePool');
+    if(!panel||!context)return;
+    pool.hidden=!!target;
+    document.getElementById('sfManualRosterOptions').hidden=!target;
+    document.querySelector('#view-schedule .employee-pool').classList.toggle('sf-target-active',!!target);
+    if(!target){context.innerHTML='<b>Welchen Dienst möchtest du besetzen?</b><small>Klicke im Plan auf eine offene Position oder wähle Tag und Schicht. Vorhandene Zuweisungen öffnest du durch Klick auf den Namen.</small>';panel.innerHTML='';return}
+    const t=typeById(target.type);if(!t){target=null;renderCandidates();return}
+    const count=assignmentsFor(target.date,target.type).length,soll=Number(getSoll(target.date,target.type)||0),shared=window.SFShiftModels?.coverageInfo?.(target.date,target.type);
+    const status=shared?`${shared.label}: ${shared.filled} / ${shared.target} gemeinsam besetzt`:`${count} / ${soll} besetzt${count>=soll?' · zusätzliche Besetzung':' · '+(soll-count)+' offen'}`;
+    context.innerHTML=`<div class="sf-manual-context-head"><b>${esc(target.type)} · ${esc(labelDate(target.date))}</b><button type="button" class="ghost" id="sfManualClear" aria-label="Dienstauswahl aufheben">✕</button></div><small>${esc(t.start)} – ${esc(t.end)} · ${esc(status)}</small><small>${window.SFCompliance?.isWeekPublished?.(target.date)?'Veröffentlicht: Zuweisung startet die Änderungsprüfung.':'Entwurf: Mitarbeiter anklicken, um den Dienst zuzuweisen.'}</small>`;
+    document.getElementById('sfManualClear').onclick=()=>{target=null;markTarget();renderCandidates();window.renderPlanEmployeePool?.()};
+    const query=(document.getElementById('planEmployeeSearch')?.value||'').trim().toLocaleLowerCase('de'),team=document.getElementById('sfManualTeam').value;
+    const rows=employees.filter(e=>e.status==='active'&&(!team||e.planningTeam===team)&&(`${name(e)} ${e.first} ${e.last} ${e.personnelNo||''}`).toLocaleLowerCase('de').includes(query)).map(e=>({e,check:checkCandidate(e)}));
+    rows.sort((a,b)=>Number(!!a.check.hard.length)-Number(!!b.check.hard.length)||collator.compare(a.e.last||'',b.e.last||'')||collator.compare(a.e.first||'',b.e.first||''));
+    const available=rows.filter(x=>!x.check.hard.length).length,blocked=rows.length-available;
+    document.getElementById('sfManualAvailability').textContent=`${available} einplanbar · ${blocked} gesperrt`;
+    const toggle=document.getElementById('sfManualShowBlocked');toggle.checked=showBlocked;
+    const visible=rows.filter(x=>showBlocked||!x.check.hard.length);
+    const number=n=>Number(n||0).toLocaleString('de-DE',{maximumFractionDigits:1});
+    panel.innerHTML=visible.map(({e,check:c})=>{
+      const week=window.SFCompliance?.weekHours?.(e.id,target.date)??plannedHoursForEmployee(e.id),month=typeof plannedMonthlyHoursForEmployee==='function'?plannedMonthlyHoursForEmployee(e.id,target.date):0,monthly=typeof employeeMonthlyTarget==='function'?employeeMonthlyTarget(e):0;
+      const duration=Number(c.duration)||((Number(t.end.slice(0,2))*60+Number(t.end.slice(3))-Number(t.start.slice(0,2))*60-Number(t.start.slice(3))+1440)%1440)/60;
+      return `<button type="button" class="sf-manual-person ${c.hard.length?'blocked':c.soft.length?'warn':'good'}" data-manual-employee="${esc(e.id)}" ${c.hard.length?'disabled':''}><span class="sf-manual-person-name">${esc(name(e))}<span>${e.planningTeam?'Team '+esc(e.planningTeam)+' · ':''}${esc(e.personnelNo||'')}</span></span><span class="sf-manual-hours"><span>Woche <b>${number(week)} / ${number(e.weeklyHours)} h</b></span><span>Monat <b>${number(month)} / ${number(monthly)} h</b></span></span><span class="sf-manual-person-status">${c.hard.length?'⛔ '+esc(c.hard.join(' ')):c.soft.length?'⚠ '+esc(c.soft.join(' ')):'✓ Einplanbar · +'+number(duration)+' h'}</span>${!c.hard.length?'<span class="sf-manual-person-action">'+(window.SFCompliance?.isWeekPublished?.(target.date)?'Änderung prüfen →':'Zuweisen →')+'</span>':''}</button>`;
+    }).join('')||`<div class="sf-manual-empty">${rows.length?'Kein Mitarbeiter ist für diesen Dienst einplanbar. Aktiviere „Gesperrte anzeigen“, um die Gründe zu sehen.':'Keine Mitarbeiter für diese Suche oder dieses Team gefunden.'}</div>`;
+    panel.querySelectorAll('[data-manual-employee]:not([disabled])').forEach(button=>button.onclick=()=>{
+      const e=employees.find(x=>x.id===button.dataset.manualEmployee);if(!e||!target)return;
+      // Use the existing save path, including fresh checks and published-plan approvals.
+      window.SFCompliance?.save?.(e,target.type,target.date,t.start,t.end);
+      renderCandidates();
+    });
+  }
+  function ensureManualUi(){
+    const view=document.getElementById('view-schedule'),calendar=view?.querySelector('.calendar'),pool=view?.querySelector('.employee-pool');
+    if(!calendar||!pool)return;
+    if(!document.getElementById('sfManualFilters')){
+      const filters=document.createElement('div');filters.id='sfManualFilters';filters.className='sf-manual-filters';
+      filters.innerHTML='<label>Schicht <select id="sfManualFilterShift" aria-label="Schichten im Wochenplan filtern"></select></label><label class="sf-manual-check"><input id="sfManualOnlyOpen" type="checkbox"> Nur offene Besetzungen</label><span id="sfManualFilterResult" role="status"></span><button type="button" class="ghost" id="sfManualFilterReset">Filter zurücksetzen</button>';
+      calendar.querySelector('.cal-toolbar').after(filters);
+      filters.querySelector('select').onchange=e=>{shiftFilter=e.target.value;renderBoard()};
+      filters.querySelector('input').onchange=e=>{onlyOpen=e.target.checked;renderBoard()};
+      filters.querySelector('button').onclick=()=>{shiftFilter='';onlyOpen=false;renderBoard()};
+    }
+    if(!document.getElementById('sfManualPicker')){
+      const picker=document.createElement('div');picker.id='sfManualPicker';picker.className='sf-manual-picker';
+      picker.innerHTML='<div class="eyebrow">DIENST BESETZEN</div><div class="sf-manual-picker-fields"><label>Tag<select id="sfManualDay" aria-label="Tag manuell planen"></select></label><label>Schicht<select id="sfManualShift" aria-label="Schicht manuell planen"></select></label></div><button type="button" class="primary" id="sfManualChoose">Mitarbeiter anzeigen →</button><div id="sfManualContext" class="sf-manual-context" aria-live="polite"></div>';
+      pool.prepend(picker);picker.querySelector('#sfManualChoose').onclick=()=>selectTarget(document.getElementById('sfManualShift').value,document.getElementById('sfManualDay').value);
+      ['sfManualDay','sfManualShift'].forEach(id=>document.getElementById(id).onchange=()=>{target=null;markTarget();renderCandidates()});
+      const options=document.createElement('div');options.id='sfManualRosterOptions';options.className='sf-manual-roster-options';options.hidden=true;
+      options.innerHTML='<label>Team<select id="sfManualTeam" aria-label="Mitarbeiter nach Team filtern"><option value="">Alle Teams</option>'+['A','B','C','D','E'].map(t=>`<option>${t}</option>`).join('')+'</select></label><span id="sfManualAvailability" role="status"></span><label class="sf-manual-check"><input type="checkbox" id="sfManualShowBlocked"> Gesperrte anzeigen</label>';
+      pool.querySelector('.employee-pool-head').after(options);
+      options.querySelector('select').onchange=renderCandidates;options.querySelector('input').onchange=e=>{showBlocked=e.target.checked;renderCandidates()};
+      const candidates=document.createElement('div');candidates.id='sfManualCandidates';candidates.className='sf-manual-candidates';options.after(candidates);
+      document.getElementById('planEmployeeSearch').addEventListener('input',renderCandidates);
+      const basePool=window.renderPlanEmployeePool;if(typeof basePool==='function')window.renderPlanEmployeePool=function(){const result=basePool.apply(this,arguments);renderCandidates();return result};
+      const manualButton=document.getElementById('sfManualPlanBtn');if(manualButton)manualButton.onclick=()=>{window.SchichtFunkCalendarView?.setMode?.('week');revealSidebar();document.getElementById('sfManualDay').focus()};
+    }
+    const ds=currentWeekDates().map(iso),key=(window.SFBackend?.companyId||'local')+'|'+ds[0];
+    if(contextKey!==key){contextKey=key;target=null;showBlocked=false;shiftFilter='';document.getElementById('sfManualTeam').value='';document.getElementById('planEmployeeSearch').value='';}
+    const day=document.getElementById('sfManualDay'),previousDay=day.value;
+    day.innerHTML=ds.map(d=>`<option value="${d}">${esc(labelDate(d))}</option>`).join('');if(ds.includes(previousDay))day.value=previousDay;
+    const availableTypes=TYPES.filter(t=>t.active!==false),select=document.getElementById('sfManualShift'),previousType=select.value;
+    select.innerHTML=availableTypes.map(t=>`<option value="${esc(t.id)}">${esc(t.id)} · ${esc(t.start)}–${esc(t.end)}</option>`).join('');if(availableTypes.some(t=>t.id===previousType))select.value=previousType;
+    if(!availableTypes.some(t=>t.id===shiftFilter))shiftFilter='';
+    const filter=document.getElementById('sfManualFilterShift');filter.innerHTML='<option value="">Alle Schichten</option>'+shiftOrder().map(id=>`<option value="${esc(id)}">${esc(id)}</option>`).join('');filter.value=shiftFilter;
+    document.getElementById('sfManualOnlyOpen').checked=onlyOpen;
+    document.getElementById('sfManualChoose').disabled=!availableTypes.length;
+    if(target&&!availableTypes.some(t=>t.id===target.type))target=null;
+    renderCandidates();
+  }
+  function visibleShift(date,id){return (!shiftFilter||id===shiftFilter)&&(!onlyOpen||Math.max(0,Number(getSoll(date,id)||0)-assignmentsFor(date,id).length)>0)}
+  window.SFManualWeek={syncPeriod(){const f=document.getElementById('sfManualFilters');if(f)f.hidden=window.SchichtFunkCalendarView?.getMode?.()==='month';},selectTarget};
 
   function ensureUi(){
     const grid=document.getElementById('calendarGrid');
@@ -201,19 +304,23 @@
   }
   function renderBoard(){
     const wrap=ensureUi();if(!wrap)return;
-    const ds=currentWeekDates(),ids=shiftOrder();
+    ensureManualUi();
+    const ds=currentWeekDates(),ids=shiftOrder().filter(id=>!shiftFilter||id===shiftFilter);
     if(mode==='compact'){
       const days=ds.map((d,i)=>{
-        const active=ids.filter(id=>getSoll(iso(d),id)>0||assignmentsFor(iso(d),id).length>0||window.SFShiftModels?.coverageGroup?.(id));
-        return `<div class="sf-week-compact-day ${iso(d)===iso(new Date())?'is-today':''} ${i>4?'is-weekend':''}">${dayHeader(d,i)}${active.length?active.map(id=>shiftCell(d,i,id,0,1)).join(''):'<div class="sf-week-compact-empty">Keine Schichten geplant</div>'}</div>`;
+        const active=ids.filter(id=>visibleShift(iso(d),id)&&(getSoll(iso(d),id)>0||assignmentsFor(iso(d),id).length>0||window.SFShiftModels?.coverageGroup?.(id)));
+        return `<div class="sf-week-compact-day ${iso(d)===iso(new Date())?'is-today':''} ${i>4?'is-weekend':''}">${dayHeader(d,i)}${active.length?active.map(id=>shiftCell(d,i,id,0,1)).join(''):`<div class="sf-week-compact-empty">${onlyOpen?'Keine offenen Besetzungen':shiftFilter?'Keine passende Schicht':'Keine Schichten geplant'}</div>`}</div>`;
       }).join('');
       wrap.innerHTML=`<div class="sf-week-board is-compact">${days}</div>`;
     }else{
       const headers=ds.map((d,i)=>dayHeader(d,i)).join('');
-      const rows=ids.map((id,rowIndex)=>ds.map((d,i)=>shiftCell(d,i,id,rowIndex,ids.length)).join('')).join('');
+      const rowIds=ids.filter(id=>ds.some(d=>visibleShift(iso(d),id)));
+      const rows=rowIds.map((id,rowIndex)=>ds.map((d,i)=>visibleShift(iso(d),id)?shiftCell(d,i,id,rowIndex,rowIds.length):'<div class="sf-week-filtered-cell"></div>').join('')).join('');
       wrap.innerHTML=`<div class="sf-week-board">${headers}${rows}</div>`;
     }
     installInteractions(wrap);
+    markTarget();
+    const result=document.getElementById('sfManualFilterResult');if(result)result.textContent=wrap.querySelectorAll('.sf-week-shift:not(.is-inactive)').length+' Dienste angezeigt';
     applyMode();
   }
 

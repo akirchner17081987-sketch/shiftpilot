@@ -105,6 +105,7 @@ button,input,select,textarea{font:inherit} button{cursor:pointer}
 <link rel="stylesheet" href="assets/auto-plan-period-v1.css?v=20261011-performance1&personnel=20261012-1&progress=20261011-1">
 <link rel="stylesheet" href="assets/secondary-text-readability-v1.css?v=20260906-1">
 <link rel="stylesheet" href="assets/manager-theme-v1.css?v=20261009-account-light1">
+<link rel="stylesheet" href="assets/manual-week-planning-v1.css?v=20261013-1">
 <link rel="stylesheet" href="assets/manager-kpi-layout-v1.css?v=20261006-1">
 <link rel="stylesheet" href="assets/manager-typography-v1.css?v=20261006-1">
 <link rel="stylesheet" href="assets/display-preferences-v1.css?v=20261009-display-compact1">
@@ -233,16 +234,22 @@ html[data-sf-theme="light"] #sfEmployeePortal{
   </header>
   <main class="main"><div class="content">
   <section id="view-schedule" class="view active">
-    <div class="page-head"><div><div class="eyebrow">DIENSTPLAN</div><h1>Wochenplanung</h1><p>Schichten planen, Mitarbeiter zuweisen und Besetzung kontrollieren.</p></div><button class="primary" id="autoPlanBtn">✦ Auto-Planung</button></div>
+    <div class="page-head"><div><div class="eyebrow">DIENSTPLAN</div><h1>Wochenplanung</h1><p>Schichten planen, Mitarbeiter zuweisen und Besetzung kontrollieren.</p></div><div class="sf-week-head-actions"><button type="button" class="primary" id="sfManualPlanBtn">＋ Manuell planen</button><button class="ghost" id="autoPlanBtn">✦ Auto-Planung</button></div></div>
     <div class="stats">
       <div class="stat"><div class="stat-icon">▣</div><div><small>Geplante Schichten</small><strong id="statShifts">0</strong><em>diese Woche</em></div></div>
       <div class="stat"><div class="stat-icon">♧</div><div><small>Eingeplante Mitarbeiter</small><strong id="statEmployees">0</strong><em id="availableTxt">von 24 verfügbar</em></div></div>
       <div class="stat"><div class="stat-icon">△</div><div><small>Offene Besetzungen</small><strong id="statOpen">0</strong><em style="color:var(--amber)">Mitarbeiter zuweisen</em></div></div>
       <div class="stat"><div class="stat-icon">◉</div><div><small>Abdeckung</small><strong id="statCoverage">0%</strong><em>nach SOLL-Stärke</em></div></div>
     </div>
-    <div class="card library"><div class="library-head"><div><h3>Schichtbibliothek</h3><p>Vorlage anklicken und einen Tag auswählen.</p></div><button class="ghost">Vorlagen verwalten</button></div><div class="shift-row" id="shiftLibrary"></div></div>
-    <div class="card employee-pool"><div class="employee-pool-head"><div><h3>Mitarbeiter-Pool</h3><small>Mitarbeiter direkt auf eine SOLL/IST-Schicht ziehen.</small></div><input id="planEmployeeSearch" placeholder="Mitarbeiter filtern ..."></div><div class="employee-pool-list" id="planEmployeePool"></div></div>
+    <div class="sf-manual-workspace">
     <div class="card calendar"><div class="cal-toolbar"><button class="ghost" id="prevWeek">‹</button><button class="ghost" id="nextWeek">›</button><button class="ghost" id="todayBtn">Heute</button><span class="date-label" id="weekLabel"></span><span class="toolbar-spacer"></span><button class="ghost">⌁ Standort</button><div class="seg"><button class="active">Woche</button><button>Monat</button></div></div><div id="calendarGrid" class="cal-grid"></div><div id="sollList" class="sollist"></div></div>
+      <aside class="sf-manual-sidebar" aria-label="Manuelle Planung">
+    <div class="card employee-pool"><div class="employee-pool-head"><div><h3>Mitarbeiter</h3><small>Dienst auswählen, passende Mitarbeiter sehen.</small></div><input id="planEmployeeSearch" type="search" aria-label="Mitarbeiter für die Planung suchen" placeholder="Mitarbeiter filtern ..."></div><div class="employee-pool-list" id="planEmployeePool"></div></div>
+        <details class="sf-week-library"><summary>Schichtvorlagen <span>anzeigen</span></summary>
+    <div class="card library"><div class="library-head"><div><h3>Schichtbibliothek</h3><p>Vorlage anklicken und einen Tag auswählen.</p></div><button class="ghost">Vorlagen verwalten</button></div><div class="shift-row" id="shiftLibrary"></div></div>
+        </details>
+      </aside>
+    </div>
   </section>
 
   <section id="view-employees" class="view">
@@ -999,7 +1006,7 @@ table th,table td{font-size:13px;line-height:1.35}
 <script defer src="assets/assignment-quick-delete-v1.js"></script>
 <script defer src="assets/solid-planning-core-v1.js?v=20261012-rule-settings2&otscope=20261012-1&otsettings=20261012-2&orbit=20261013-1"></script>
 <script defer src="assets/supabase-startup-v1.js?v=20261011-startup1"></script>
-<script defer src="assets/conflict-plausibility-v1.js?v=bg1-20261009-accessroles1&company=20261010-1&today=20261010-1&wishes=20261010-1&handover=20261010-1&absence=20261011-1&performance=20261011-1&loading=20261011-1&entry=20261011-1&logout=20261011-1&startup=20261011-1&privacy=20261011-1&personnel=20261012-1"></script>
+<script defer src="assets/conflict-plausibility-v1.js?v=bg1-20261009-accessroles1&company=20261010-1&today=20261010-1&wishes=20261010-1&handover=20261010-1&absence=20261011-1&performance=20261011-1&loading=20261011-1&entry=20261011-1&logout=20261011-1&startup=20261011-1&privacy=20261011-1&personnel=20261012-1&manual=20261013-1"></script>
 <script defer src="assets/employee-core-v1.js?v=20261001-removal1"></script>
 <script defer src="assets/shift-models-v1.js?v=20261009-critical-period1"></script>
 <script defer src="assets/employee-rhythm-v1.js?v=20261004-fd-split1"></script>

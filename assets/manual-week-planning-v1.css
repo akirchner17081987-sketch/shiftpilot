@@ -1,0 +1,93 @@
+/* Manual scheduling: calendar first, contextual assignment at its side. */
+html #appShell #view-schedule{--sf-manual-surface:#101f30;--sf-manual-line:#2a4157;--sf-manual-muted:#a7bbcf;--sf-manual-text:#eef6ff;--sf-manual-good:#78dfc3;--sf-manual-warn:#f4c27b}
+html[data-sf-theme="light"] #appShell #view-schedule{--sf-manual-surface:#e7edf2;--sf-manual-line:#b9c8d4;--sf-manual-muted:#4d6478;--sf-manual-text:#20384c;--sf-manual-good:#116b55;--sf-manual-warn:#805719}
+html #appShell #view-schedule .sf-week-head-actions{display:flex;flex-wrap:wrap;gap:8px}
+html #appShell #view-schedule .stats{gap:10px;margin-bottom:16px}
+html #appShell #view-schedule .stats .stat{min-height:72px;padding:12px 16px}
+html #appShell #view-schedule .sf-manual-workspace{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
+html #appShell #view-schedule .sf-manual-workspace>.calendar{min-width:0;margin:0;overflow:hidden}
+html #appShell #view-schedule .sf-manual-sidebar{position:sticky;top:18px;min-width:0;display:grid;gap:12px}
+html #appShell #view-schedule .sf-manual-sidebar .employee-pool{min-width:0;margin:0;padding:14px}
+html #appShell #view-schedule .sf-manual-sidebar .employee-pool-head{grid-template-columns:minmax(0,1fr);gap:8px;margin:16px 0 10px;padding:0}
+html #appShell #view-schedule .sf-manual-sidebar .employee-pool-head>div:first-child{grid-column:1;grid-row:1}
+html #appShell #view-schedule .sf-manual-sidebar .employee-pool-head input{grid-column:1;grid-row:2;min-width:0;width:100%;box-sizing:border-box}
+html #appShell #view-schedule .sf-manual-sidebar .sp-pool-toggle,
+html #appShell #view-schedule .sf-manual-sidebar .sp-dynpool-info{display:none}
+html #appShell #view-schedule .sf-manual-sidebar .employee-pool-list{grid-template-columns:minmax(0,1fr);max-height:45vh!important;padding:0!important;gap:8px!important}
+html #appShell #view-schedule .sf-manual-sidebar .employee-pool-list[hidden]{display:none!important}
+html #appShell #view-schedule .sf-manual-sidebar .employee-drag{padding:10px!important;grid-template-columns:28px minmax(0,1fr) 12px;gap:0 8px}
+html #appShell #view-schedule .sf-manual-sidebar .employee-drag .avatar{width:28px;height:28px;font-size:11px}
+html #appShell #view-schedule .sf-manual-sidebar .pool-detail-label{margin:8px 0 4px;padding:6px 0 0;font-size:11px!important}
+html #appShell #view-schedule .sf-manual-sidebar .pool-shift-tag{padding:2px 4px;font-size:11px!important}
+html #appShell #view-schedule .sf-manual-sidebar .sp-pool-meta{margin:8px -10px -10px;padding:6px 10px;font-size:11px!important}
+html #appShell #view-schedule .sf-manual-sidebar .pool-absence{font-size:11px!important}
+html #appShell #view-schedule .sf-manual-picker{color:var(--sf-manual-text)}
+html #appShell #view-schedule .sf-manual-picker-fields{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin:10px 0}
+html #appShell #view-schedule .sf-manual-picker label,html #appShell #view-schedule .sf-manual-filters label,html #appShell #view-schedule .sf-manual-roster-options label{display:flex;gap:6px;align-items:center;color:var(--sf-manual-muted);font-size:12px}
+html #appShell #view-schedule .sf-manual-picker label{display:grid;gap:4px}
+html #appShell #view-schedule :is(.sf-manual-picker,.sf-manual-filters,.sf-manual-roster-options) select{min-width:0;max-width:100%;min-height:38px;border:1px solid var(--sf-manual-line);border-radius:8px;padding:7px 9px;background:var(--sf-manual-surface);color:var(--sf-manual-text);font:inherit}
+html #appShell #view-schedule #sfManualChoose{width:100%}
+html #appShell #view-schedule .sf-manual-context{margin-top:12px;padding:12px;border:1px solid var(--sf-manual-line);border-radius:10px;background:var(--sf-manual-surface)}
+html #appShell #view-schedule .sf-manual-context b{font-size:13px;overflow-wrap:anywhere}
+html #appShell #view-schedule .sf-manual-context small{display:block;margin-top:6px;color:var(--sf-manual-muted);font-size:12px;line-height:1.5}
+html #appShell #view-schedule .sf-manual-context-head{display:flex;align-items:center;justify-content:space-between;gap:6px}
+html #appShell #view-schedule #sfManualClear{min-height:30px;padding:4px 9px}
+html #appShell #view-schedule .sf-manual-roster-options{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0;font-size:12px;color:var(--sf-manual-muted)}
+html #appShell #view-schedule .sf-manual-check{cursor:pointer}
+html #appShell #view-schedule .sf-manual-check input{width:16px;height:16px;min-height:0;margin:0;accent-color:var(--teal)}
+html #appShell #view-schedule .sf-manual-candidates{display:grid;gap:8px;max-height:44vh;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+html #appShell #view-schedule .sf-manual-person{display:grid;gap:8px;padding:12px;width:100%;text-align:left;border:1px solid var(--sf-manual-line);border-radius:10px;background:var(--sf-manual-surface);color:var(--sf-manual-text);box-sizing:border-box;font-size:13px;line-height:1.4}
+html #appShell #view-schedule .sf-manual-person:hover:not(:disabled){border-color:var(--teal)}
+html #appShell #view-schedule .sf-manual-person-name{font-weight:700;overflow-wrap:anywhere}
+html #appShell #view-schedule .sf-manual-person-name>span{display:block;margin-top:2px;font-weight:400;color:var(--sf-manual-muted);font-size:11px}
+html #appShell #view-schedule .sf-manual-hours{display:grid;gap:3px;font-size:11px;color:var(--sf-manual-muted)}
+html #appShell #view-schedule .sf-manual-hours>span{display:flex;justify-content:space-between;gap:8px}
+html #appShell #view-schedule .sf-manual-person-status{font-size:12px;color:var(--sf-manual-good);overflow-wrap:anywhere}
+html #appShell #view-schedule .sf-manual-person.warn .sf-manual-person-status{color:var(--sf-manual-warn)}
+html #appShell #view-schedule .sf-manual-person.blocked{opacity:1;cursor:default;border-style:dashed}
+html #appShell #view-schedule .sf-manual-person.blocked .sf-manual-person-status{color:var(--sf-manual-muted)}
+html #appShell #view-schedule .sf-manual-person-action{padding-top:6px;border-top:1px solid var(--sf-manual-line);color:var(--sf-manual-good);font-size:12px;font-weight:700}
+html #appShell #view-schedule .sf-manual-empty{padding:16px 10px;font-size:12px;color:var(--sf-manual-muted);line-height:1.5}
+html #appShell #view-schedule .sf-manual-filters{display:flex;align-items:center;flex-wrap:wrap;gap:10px 16px;padding:10px 14px;border-bottom:1px solid var(--sf-manual-line);background:var(--sf-manual-surface)}
+html #appShell #view-schedule #sfManualFilterResult{font-size:12px;color:var(--sf-manual-muted);margin-left:auto}
+html #appShell #view-schedule #sfManualFilterReset{font-size:12px;min-height:32px;padding:4px 8px}
+html #appShell #view-schedule :is(.sf-manual-roster-options,.sf-manual-filters)[hidden]{display:none}
+html #appShell #view-schedule .sf-week-library{border:1px solid var(--sf-manual-line);border-radius:12px;background:var(--sf-manual-surface);overflow:hidden}
+html #appShell #view-schedule .sf-week-library>summary{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer;font-size:13px;font-weight:700;color:var(--sf-manual-text);list-style:none}
+html #appShell #view-schedule .sf-week-library>summary span{font-size:11px;font-weight:400;color:var(--sf-manual-muted)}
+html #appShell #view-schedule .sf-week-library>summary:after{content:'＋';margin-left:6px}
+html #appShell #view-schedule .sf-week-library[open]>summary:after{content:'−'}
+html #appShell #view-schedule .sf-week-library .library{margin:0;padding:12px;border:0;border-top:1px solid var(--sf-manual-line);border-radius:0;box-shadow:none}
+html #appShell #view-schedule .sf-week-library .library-head{flex-wrap:wrap;gap:8px}
+html #appShell #view-schedule .sf-week-library .shift-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;overflow:visible}
+html #appShell #view-schedule .sf-week-library .shift-chip{min-width:0;width:auto;padding:10px;white-space:normal}
+html #appShell #view-schedule #sfWeekBoardV2{max-height:calc(100vh - 290px);min-height:350px;padding:10px}
+html #appShell #view-schedule #sfWeekBoardV2 .sf-week-board{grid-template-columns:repeat(7,minmax(155px,1fr));min-width:1133px;gap:8px}
+html #appShell #view-schedule #sfWeekBoardV2 .sf-week-compact-day{padding:6px}
+html #appShell #view-schedule #sfWeekBoardV2 .sf-week-day-head{padding:8px}
+html #appShell #view-schedule #sfWeekBoardV2 .sf-week-shift-head{padding:8px;gap:5px}
+html #appShell #view-schedule #sfWeekBoardV2 .sf-week-employee-info b{font-size:12px!important;white-space:normal;overflow-wrap:anywhere}
+html #appShell #view-schedule #sfWeekBoardV2 .sf-week-employee-info small{font-size:11px!important}
+html #appShell #view-schedule :is(.sf-week-add,.sf-week-day-add){display:block;background:transparent;color:var(--sf-manual-muted);border:1px dashed var(--sf-manual-line);border-radius:7px;min-height:32px;font-size:12px;padding:5px 8px}
+html #appShell #view-schedule .sf-week-add{width:calc(100% - 14px);margin:0 7px 7px}
+html #appShell #view-schedule .sf-week-day-add{width:100%;margin-top:8px}
+html #appShell #view-schedule #sfWeekBoardV2 .sf-week-open{font-size:12px!important;white-space:normal}
+html #appShell #view-schedule .sf-manual-target{outline:2px solid var(--teal);outline-offset:1px}
+html #appShell #view-schedule .sf-week-filtered-cell{min-height:40px}
+html #appShell #view-schedule button:focus-visible,html #appShell #view-schedule summary:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+@media(max-width:1279px){
+ html #appShell #view-schedule .sf-manual-workspace{grid-template-columns:minmax(0,1fr)}
+ html #appShell #view-schedule .sf-manual-sidebar{position:static;grid-template-columns:minmax(0,1fr)}
+ html #appShell #view-schedule .sf-manual-sidebar .employee-pool-list,html #appShell #view-schedule .sf-manual-candidates{grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));max-height:400px!important}
+ html #appShell #view-schedule .sf-manual-picker-fields{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+}
+@media(max-width:620px){
+ html #appShell #view-schedule .page-head{flex-wrap:wrap;gap:12px}
+ html #appShell #view-schedule .sf-manual-filters{gap:10px;padding:10px}
+ html #appShell #view-schedule #sfManualFilterResult{margin-left:0}
+ html #appShell #view-schedule .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+ html #appShell #view-schedule .stats .stat{min-width:0;padding:10px}
+ html #appShell #view-schedule .stats .stat-icon{display:none}
+ html #appShell #view-schedule #sfWeekBoardV2{max-height:65vh}
+ html #appShell #view-schedule .sf-manual-picker-fields{grid-template-columns:minmax(0,1fr)}
+}
