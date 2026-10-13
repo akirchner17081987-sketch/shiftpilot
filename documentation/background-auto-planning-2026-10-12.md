@@ -31,3 +31,11 @@ Die Oberfläche beobachtet nur den Auftrag. Nach einer Neuanmeldung oder einem F
 Der Aufrufbedarf hängt von Zeitraum, Personalbestand, Optionen und Wiederholungen ab. 100 vergleichbare Monatsläufe würden etwa 5.200 Worker-Aufrufe benötigen. Dies ist eine Hochrechnung aus dem Test und keine feste Obergrenze. Die tatsächliche gemeinsame Supabase-Kontingentauslastung wurde nicht über die Abrechnungsoberfläche eingesehen.
 
 Ein visueller Browser-Live-Test ist hier nicht enthalten. Die Oberfläche wurde über ihre tatsächlichen JavaScript-Module mit simuliertem DOM und API-Antworten geprüft; der echte Worker-/Datenbank-Ablauf wurde separat auf Supabase ausgeführt.
+
+## Laufzeitoptimierung am 13.10.2026
+
+Die Berechnung baut nur Dienste in den Planungsmonaten und den angrenzenden Erholungs- und Monatswechsel-Tagen auf. Veröffentlichte Historie bleibt für den Fairnessvergleich der vorherigen drei Monate erhalten; der vollständige Datenstand bleibt in den Ergebnis-Metadaten. Kandidatenzeitpunkte und lokale Kalendertage werden wiederverwendet. Innerhalb eines Rechenabschnitts bleibt der bereits aufgebaute Besetzungszustand erhalten. Serialisierte Checkpoints bleiben kompatibel.
+
+Neue Aufträge übertragen kompakte Eingaben, ohne bestätigte Wünsche, Rechte oder Freigabeprüfungen zu ändern. Der Worker berechnet bis zu 700 ms beziehungsweise 1.000 Einzelschritte pro Abschnitt und speichert anschließend einen Checkpoint; die Plattformgrenze von 2 CPU-Sekunden bleibt maßgeblich. Fortschritt enthält die geprüften Pflicht- beziehungsweise Schichtpositionen. Nach dem Serverabschluss zeigt die Oberfläche den abschließenden Datenabgleich gesondert an.
+
+Validierung: Vergleich des vollständigen Ergebnisses einschließlich Besetzungen und Qualitätswerten mit dem vorherigen Solver, Tests für Fairness-Historie, Nachtübertrag, Monatswechsel, Zeitzonen und Wiederaufnahme sowie ein Serverlauf mit tatsächlichem Monatsumfang. Die Übernahme in den Dienstplan erfolgt weiterhin ausschließlich nach Bestätigung.

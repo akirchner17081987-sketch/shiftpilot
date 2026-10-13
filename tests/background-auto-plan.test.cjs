@@ -18,3 +18,16 @@ test('worker applies server-confirmed wishes without copying or trusting client 
  const p=payload(),before=JSON.stringify(p),w={employee_id:'a',kind:'OFF',status:'PROMISED',priority:'NORMAL',start_date:'2027-01-04',end_date:'2027-01-08',starts_at:'2027-01-03T23:00:00Z',ends_at:'2027-01-08T23:00:00Z'};
  const hydrated=C.withServerWishes(p,[w]);assert.equal(JSON.stringify(p),before);assert.equal(hydrated.minimumInput.candidates,p.minimumInput.candidates);assert.equal(hydrated.monthInputs[0].candidates,p.monthInputs[0].candidates);assert.equal(finish(hydrated).result.preview.filter(a=>a.employeeId==='a').length,0);assert.equal(C.withServerWishes(p,null),p);assert.throws(()=>C.withServerWishes(p,{}),/Ungültige/);
 });
+test('compact jobs preserve published fairness history, adjacent night recovery and the exact plan',()=>{
+ const p=payload(),duty=(id,date,type='OT2',start='08:00',end='18:00',published=false)=>({employeeId:id,date,type,start,end,...(published?{status:'PUBLISHED',publishedAt:'2026-09-01T00:00:00Z'}:{status:'DRAFT'})});
+ const base=[duty('a','2026-08-01','O3','22:00','06:00',true),duty('a','2026-09-30','O3','22:00','06:00',true),duty('a','2026-11-06','O3','22:00','06:00',true),duty('b','2026-11-06','OT2','08:00','18:00',true),duty('a','2027-01-02','O3','22:00','06:00'),duty('b','2027-02-01'),duty('a','2027-06-01','O3','22:00','06:00',true)];
+ p.minimumInput.base=base;p.minimumInput.preferenceBase=base;p.monthInputs[0].base=base;p.monthInputs[0].preferenceBase=base;p.metadata.base=base;
+ const original=JSON.stringify(p),compact=C.compactPayload(p);
+ assert.deepEqual(compact.monthInputs[0].base.map(a=>a.date),['2027-01-02','2027-02-01']);assert.deepEqual(compact.monthInputs[0].preferenceBase.map(a=>a.date),['2026-09-30','2026-11-06','2026-11-06']);
+ assert.equal(compact.metadata,p.metadata);assert.equal(compact.monthInputs[0].groups,p.monthInputs[0].groups);assert.equal(JSON.stringify(p),original);assert.deepEqual(finish(compact).result,finish(p).result);
+});
+test('local dates remain correct across zones and daylight-saving transitions after memoization',()=>{
+ for(const iso of ['2027-03-27T23:30:00Z','2027-03-28T01:30:00Z','2027-10-31T01:30:00Z'])for(const timezone of ['Europe/Berlin','America/New_York','UTC']){
+  const expected=new Intl.DateTimeFormat('en-CA',{timeZone:timezone,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(iso));assert.equal(S.localDate(Date.parse(iso),{timezone}),expected);assert.equal(S.localDate(Date.parse(iso),{timezone}),expected);
+ }
+});

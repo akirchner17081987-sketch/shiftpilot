@@ -110,7 +110,7 @@
         if(signature()!==localSignature||B.companyId!==company)throw Error('Die Planungsdaten wurden geändert. Bitte erneut starten.');
         const originalValid=employees.every(e=>!solid.errors(e,original.map(a=>({...a,start:a.start||typeById(a.type)?.start,end:a.end||typeById(a.type)?.end})),solidRules(),movable.filter(a=>String(a.employeeId)===String(e.id)).map(a=>a.date)).length);
         const metadata={company,month,months,dates,fingerprint:snapshot.fingerprint,base:wire.pack({...solidBuild(base,months[0],[]),groups:[]}).base.filter(a=>base.some(b=>String(b.id)===String(a.id))),movable:movable.map(a=>({id:a.id,_dbId:a._dbId})),beforeOpen:withBase(original,()=>autoOpenSlots().length),originalValid,beforeHours:employees.map(e=>[String(e.id),original.filter(a=>String(a.employeeId)===String(e.id)&&months.includes(a.date.slice(0,7))).reduce((n,a)=>n+plannedAssignmentHours(a),0)]),demandHours:withBase([],()=>dates.reduce((n,date)=>n+TYPES.reduce((v,t)=>v+getSoll(date,t.id)*plannedAssignmentHours({date,type:t.id,start:t.start,end:t.end}),0),0))};
-        const payload={version:1,months,minimumInput,monthInputs,metadata};wire.check(payload);
+        const payload=wire.compactPayload({version:1,months,minimumInput,monthInputs,metadata});wire.check(payload);
         P()?.phase('Hintergrundauftrag auf dem Server speichern','Berechtigungen, Datenstand und geschützte Wunschplanungen werden abschließend geprüft.');
         const job=await window.SFBackgroundPlanning.start(payload);
         P()?.message('Hintergrundauftrag gespeichert','Du kannst jetzt andere Programme nutzen oder den Browser schließen. Die Berechnung läuft weiter.');
@@ -183,7 +183,7 @@
   async function restoreBackground(job,insideRun=false){
     if(!job?.result||B.companyId!==job.company_id||!window.SFBackgroundPlanning?.available()||(!insideRun&&busy))return;
     const company=B.companyId;try{
-      const stored=job.result,meta=stored.metadata;await B.hydrate();if(B.companyId!==company)throw Error('Das Unternehmen wurde gewechselt.');
+      const stored=job.result,meta=stored.metadata;P()?.phase('Berechnung fertig – Vorschlag wird geprüft','Gespeicherte Besetzung und aktueller Dienstplan werden abgeglichen.');await P()?.paint();await B.hydrate();if(B.companyId!==company)throw Error('Das Unternehmen wurde gewechselt.');
       const check=await B.client.rpc('preview_planning_period',{p_company_id:company,p_first_month:job.first_month,p_month_count:job.month_count});if(check.error)throw check.error;if(check.data.fingerprint!==meta.fingerprint)throw Error('Die Planungsdaten wurden inzwischen geändert. Bitte neu planen.');
       el('autoPlanPeriod').value='month';el('autoPlanMonth').value=meta.month;if(el('autoPlanMonthCount'))el('autoPlanMonthCount').value=String(meta.months.length);syncAutoPeriodControls();
       const proposed=stored.preview,base=meta.base,dates=autoPlanningDates();

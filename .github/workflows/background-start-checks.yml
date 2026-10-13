@@ -1,7 +1,7 @@
-name: Background planning start checks
+name: Background planning reliability checks
 on:
   push:
-    branches: [codex/background-start-fix-20261013]
+    branches: [codex/background-start-fix-20261013, codex/background-speed-20261013]
 permissions:
   contents: read
 jobs:

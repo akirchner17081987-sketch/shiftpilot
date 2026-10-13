@@ -33,7 +33,7 @@ Deno.serve(async req => {
     const run = core.context(input, checkpoint), slice = performance.now();
     // Leave headroom for preparation, JSON, database calls and cold starts. Each
     // saved call can be retried after a lease expires without losing prior work.
-    do { steps++; if (!run.step()) break; } while (checkpoint.stage !== "done" && performance.now() - slice < 400 && steps < 250);
+    do { steps++; if (!run.step()) break; } while (checkpoint.stage !== "done" && performance.now() - slice < 700 && steps < 1000);
     progress = run.progress();
     if (checkpoint.stage === "done") output = run.result();
   } catch (error) {

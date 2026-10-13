@@ -8,7 +8,8 @@
   function duty(a){const start=new Date(a.date+'T'+a.start.slice(0,5)+':00'),end=new Date(a.date+'T'+a.end.slice(0,5)+':00');if(end<=start)end.setDate(end.getDate()+1);return{...a,startMs:+start,endMs:+end,hours:(end-start)/hour,day:Math.floor(Date.parse(a.date+'T12:00:00Z')/86400000),week:week(a.date)}}
   function solidDuty(a,p){return {...solid.duty(a,p),week:week(a.date)}}
   function prepare(input){
-    const people=new Map(input.employees.map(e=>[String(e.id),e])),base=input.base.map(a=>input.solidRules?solidDuty(a,input.solidRules):duty(a)),capacity=new Map(input.capacities),groups=input.groups.map(g=>({...g,employee:people.get(String(g.employee.id)),options:g.options.map(o=>{const a=o.map(a=>input.solidRules?solidDuty(a,input.solidRules):duty(a));a.hours=a.reduce((n,x)=>n+x.hours,0);a.weeks=new Map();for(const x of a)a.weeks.set(x.week,(a.weeks.get(x.week)||0)+x.hours);return a})})),potential=new Map();
+    const dates=new WeakMap(),prepared=a=>{let v=dates.get(a);if(!v){v=input.solidRules?solidDuty(a,input.solidRules):duty(a);dates.set(a,v)}return v;};
+    const people=new Map(input.employees.map(e=>[String(e.id),e])),base=input.base.map(prepared),capacity=new Map(input.capacities),groups=input.groups.map(g=>({...g,employee:people.get(String(g.employee.id)),options:g.options.map(o=>{const a=o.map(prepared);a.hours=a.reduce((n,x)=>n+x.hours,0);a.weeks=new Map();for(const x of a)a.weeks.set(x.week,(a.weeks.get(x.week)||0)+x.hours);return a})})),potential=new Map();
     for(const g of groups)for(const o of g.options)for(const a of o){if(!potential.has(a.resource))potential.set(a.resource,new Set());potential.get(a.resource).add(String(g.employee.id))}
     const criticalCapacity=new Map(input.criticalCapacities??(input.criticalResources||[]).map(k=>[k,capacity.get(k)||0]));
     return{...input,people,base,capacity,groups,potential,criticalCapacity};

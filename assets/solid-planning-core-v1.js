@@ -1,6 +1,6 @@
 // Gemeinsame Erholungs- und Besetzungsregeln für freigeschaltete Unternehmen.
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.SFSolidPlanningCore=api})(typeof window!=='undefined'?window:globalThis,function(){
- const H=3600000,D=86400000,cache=new Map(),formats=new Map();
+ const H=3600000,D=86400000,cache=new Map(),formats=new Map(),localDates=new Map();
  const plus=(date,n)=>new Date(Date.parse(date+'T12:00:00Z')+n*D).toISOString().slice(0,10);
  const weekday=date=>new Date(date+'T12:00:00Z').getUTCDay()||7;
  function instant(date,time,zone='Europe/Berlin'){
@@ -15,7 +15,7 @@
  function duty(a,p){if(Number.isFinite(a.startMs)&&Number.isFinite(a.endMs))return a;const i=interval(a.date,a.start,a.end,p?.timezone);return {...a,startMs:i.start,endMs:i.end,hours:(i.end-i.start)/H,day:Math.floor(Date.parse(a.date+'T12:00:00Z')/D)}}
  const active=a=>a.status!=='CANCELLED'&&a._dbStatus!=='CANCELLED';
  function confirmed(p){return !!policy(p)&&Number(p.confirmedRulesVersion)>=2}
- function localDate(ms,p){const key=p.timezone||'Europe/Berlin';let f=formats.get('date|'+key);if(!f){f=new Intl.DateTimeFormat('en-CA',{timeZone:key,year:'numeric',month:'2-digit',day:'2-digit'});formats.set('date|'+key,f)}const v=Object.fromEntries(f.formatToParts(new Date(ms)).map(x=>[x.type,x.value]));return v.year+'-'+v.month+'-'+v.day}
+ function localDate(ms,p){const key=p.timezone||'Europe/Berlin',memo=ms+'|'+key;if(localDates.has(memo))return localDates.get(memo);let f=formats.get('date|'+key);if(!f){f=new Intl.DateTimeFormat('en-CA',{timeZone:key,year:'numeric',month:'2-digit',day:'2-digit'});formats.set('date|'+key,f)}const v=Object.fromEntries(f.formatToParts(new Date(ms)).map(x=>[x.type,x.value])),date=v.year+'-'+v.month+'-'+v.day;if(localDates.size>=8192)localDates.clear();localDates.set(memo,date);return date}
  const weekKey=date=>plus(date,1-weekday(date));
  const night=a=>/^(ND|O1|O2|O3|O1S|O2S|TL|TL-LE|TL-RE|TEAMLEITER|QA)$/i.test(a.type)||a.start>='18:00';
  const countsTowardCap=a=>!a._marketApproved;
