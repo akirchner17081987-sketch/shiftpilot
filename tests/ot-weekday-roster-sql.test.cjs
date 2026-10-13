@@ -27,6 +27,6 @@ test('final monthly apply guard accepts 210 OT hours with a 220 cap but preserve
  insert into company_compliance_policy values('11111111-1111-1111-1111-111111111111','{"otOnlyMonthlyMaxHours":220}');
  create function private.test_apply_cap(e_ public.employees,company_ uuid,target_ numeric,limit_ numeric) returns numeric language plpgsql as $f$ begin ${guard} return limit_;end $f$;`);
  const cap=async(employment,shifts,target=220,limit=190)=>(await db.query('select private.test_apply_cap(row($1,$2)::public.employees,$3,$4,$5) n',[employment,shifts,'11111111-1111-1111-1111-111111111111',target,limit])).rows[0].n;
- assert.equal(await cap('Vollzeit',['OT1','OT2','OT3']),220);assert.equal(await cap('Vollzeit',['OT2','OT']),190);assert.equal(await cap('Vollzeit',['O1']),190);assert.equal(await cap('Teilzeit',['OT2'],144,144),144);
+ assert.equal(Number(await cap('Vollzeit',['OT1','OT2','OT3'])),220);assert.equal(Number(await cap('Vollzeit',['OT2','OT'])),190);assert.equal(Number(await cap('Vollzeit',['O1'])),190);assert.equal(Number(await cap('Teilzeit',['OT2'],144,144)),144);
  }finally{await db.close();}
 });

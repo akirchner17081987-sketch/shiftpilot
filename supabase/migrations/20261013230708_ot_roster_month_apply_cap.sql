@@ -59,68 +59,7 @@ BEGIN
   target_:=coalesce(nullif(private.sf_month_meta(e_.qualifications,'monthlyHours'),'')::numeric,180);
   limit_:=CASE WHEN e_.employment~*'^Vollzeit(\s+180)?$' AND target_>=180 THEN coalesce((SELECT monthly_planning_max_hours FROM public.company_compliance_policy WHERE company_id=company_),220) ELSE least(180,target_) END;
   -- The confirmed OT-only limit also applies to this legacy final guard.
-  IF e_.employment ~* '^Vollzeit([[:space:]]+180)?
-  SELECT sum(extract(epoch FROM(ends_at-starts_at))/3600) INTO hours_ FROM public.shift_assignments
-   WHERE company_id=company_ AND employee_id=e_.id AND status<>'CANCELLED' AND starts_at>=month_::timestamp AT TIME ZONE tz_ AND starts_at<last_::timestamp AT TIME ZONE tz_;
-  IF hours_>limit_+.000001 THEN RAISE EXCEPTION 'Das persönliche Monatsmaximum wird überschritten (Personalnummer %).',e_.personnel_no; END IF;
-  weekly_:=coalesce(nullif(private.sf_month_meta(e_.qualifications,'maxWeekly'),'')::numeric,e_.weekly_hours);
-  IF respect_weekly_ AND weekly_>0 AND EXISTS(SELECT 1 FROM public.shift_assignments WHERE company_id=company_ AND employee_id=e_.id AND status<>'CANCELLED'
-   AND starts_at>=(month_-7)::timestamp AT TIME ZONE tz_ AND starts_at<(last_+7)::timestamp AT TIME ZONE tz_
-   AND date_trunc('week',starts_at AT TIME ZONE tz_) IN(SELECT date_trunc('week',starts_at AT TIME ZONE tz_) FROM public.shift_assignments WHERE id=ANY(ids_) AND employee_id=e_.id)
-   GROUP BY date_trunc('week',starts_at AT TIME ZONE tz_) HAVING sum(extract(epoch FROM(ends_at-starts_at))/3600)>weekly_+.000001)
-  THEN RAISE EXCEPTION 'Das persönliche Wochenmaximum wird überschritten.'; END IF;
-  maximum_:=coalesce(nullif(private.sf_month_meta(e_.qualifications,'maxConsecutive'),'')::int,0);
-  IF maximum_>0 AND EXISTS(WITH days AS (SELECT DISTINCT(starts_at AT TIME ZONE tz_)::date d FROM public.shift_assignments WHERE company_id=company_ AND employee_id=e_.id AND status<>'CANCELLED'
-    AND starts_at>=(month_-7)::timestamp AT TIME ZONE tz_ AND starts_at<(last_+7)::timestamp AT TIME ZONE tz_),islands AS (SELECT d,d-row_number() OVER(ORDER BY d)::int k FROM days)
-   SELECT 1 FROM islands GROUP BY k HAVING count(*)>maximum_ AND bool_or(d IN(SELECT(starts_at AT TIME ZONE tz_)::date FROM public.shift_assignments WHERE id=ANY(ids_) AND employee_id=e_.id))) THEN RAISE EXCEPTION 'Das Maximum aufeinanderfolgender Dienste wird überschritten.'; END IF;
-  -- Every used ALLE/FREI work block must be complete inside this month (approved absences excluded).
-  FOR day_ IN SELECT DISTINCT(starts_at AT TIME ZONE tz_)::date FROM public.shift_assignments WHERE id=ANY(ids_) AND company_id=company_ AND employee_id=e_.id AND status<>'CANCELLED'
-   AND starts_at>=month_::timestamp AT TIME ZONE tz_ AND starts_at<last_::timestamp AT TIME ZONE tz_ AND shift_code NOT IN('OT1','OT2','OT3') LOOP
-   rhythm_:=private.sf_month_rhythm(e_,day_);
-   SELECT array_agg(value) INTO pattern_ FROM jsonb_array_elements_text(coalesce(rhythm_->'pattern','[]'::jsonb));
-   IF rhythm_->>'mode'='required' AND rhythm_->>'expected'='ALLE' AND 'FREI'=ANY(pattern_) AND NOT EXISTS(SELECT 1 FROM unnest(pattern_) x WHERE trim(x) NOT IN('ALLE','FREI')) THEN
-    index_:=(rhythm_->>'index')::int;pattern_n_:=cardinality(pattern_);before_:=0;after_:=0;
-    WHILE before_<pattern_n_-1 AND trim(pattern_[((index_-before_-1+pattern_n_)%pattern_n_)+1])='ALLE' LOOP before_:=before_+1; END LOOP;
-    WHILE after_<pattern_n_-1 AND trim(pattern_[((index_+after_+1)%pattern_n_)+1])='ALLE' LOOP after_:=after_+1; END LOOP;
-    FOR d_ IN SELECT g::date FROM generate_series(greatest(month_,day_-before_),least(last_-1,day_+after_),interval '1 day') g LOOP
-     IF NOT EXISTS(SELECT 1 FROM public.absences WHERE company_id=company_ AND employee_id=e_.id AND status IN('Genehmigt','Erfasst') AND full_day AND start_date<=d_ AND end_date>=d_)
-      AND NOT EXISTS(SELECT 1 FROM public.shift_assignments WHERE company_id=company_ AND employee_id=e_.id AND status<>'CANCELLED'
-       AND (starts_at AT TIME ZONE tz_)::date=d_ AND shift_code NOT IN('OT1','OT2','OT3')) THEN RAISE EXCEPTION 'Ein Arbeitsblock ist unvollständig.'; END IF;
-    END LOOP;
-   END IF;
-  END LOOP;
- END LOOP;
- -- No generated duty may invent staffing beyond the real required/optional target.
- FOR row_ IN SELECT DISTINCT(starts_at AT TIME ZONE tz_)::date d,shift_code FROM public.shift_assignments WHERE id=ANY(ids_) LOOP
-  SELECT * INTO model_ FROM public.shift_templates WHERE company_id=company_ AND code=row_.shift_code;
-  IF model_.coverage_group IS NOT NULL THEN
-   SELECT coalesce(max(d.required_count),max(t.coverage_required)) INTO target_count_ FROM public.shift_templates t LEFT JOIN public.daily_staffing_overrides d
-    ON d.company_id=t.company_id AND d.shift_code=t.code AND d.work_date=row_.d WHERE t.company_id=company_ AND t.coverage_group=model_.coverage_group AND t.active;
-   SELECT count(*) INTO count_ FROM public.shift_assignments a JOIN public.shift_templates t ON t.company_id=a.company_id AND t.code=a.shift_code WHERE a.company_id=company_ AND a.status<>'CANCELLED'
-    AND (a.starts_at AT TIME ZONE tz_)::date=row_.d AND t.coverage_group=model_.coverage_group;
-  ELSE
-   SELECT required_count INTO target_count_ FROM public.daily_staffing_overrides WHERE company_id=company_ AND shift_code=row_.shift_code AND work_date=row_.d;
-   IF NOT FOUND THEN
-    IF model_.planning_mode='optional' THEN target_count_:=model_.optional_staffing;
-    ELSE SELECT coalesce(max(required_count),0) INTO target_count_ FROM public.global_staffing_requirements WHERE company_id=company_ AND shift_code=row_.shift_code; END IF;
-   END IF;
-   IF row_.shift_code='OT2' AND private.sf_morning_ot_switch(company_,row_.d,tz_) THEN
-    SELECT required_count INTO new_count_ FROM public.global_staffing_requirements WHERE company_id=company_ AND shift_code='OT1';
-    IF NOT EXISTS(SELECT 1 FROM public.shift_templates WHERE company_id=company_ AND code='OT1' AND extract(isodow FROM row_.d)::int=ANY(optional_weekdays)) THEN new_count_:=0; END IF;
-    SELECT count(*) INTO count_ FROM public.shift_assignments WHERE company_id=company_ AND status<>'CANCELLED' AND shift_code='OT1' AND (starts_at AT TIME ZONE tz_)::date=row_.d;
-    target_count_:=coalesce(target_count_,0)+greatest(0,coalesce(new_count_,0)-count_);
-   END IF;
-   SELECT count(*) INTO count_ FROM public.shift_assignments WHERE company_id=company_ AND status<>'CANCELLED' AND shift_code=row_.shift_code AND (starts_at AT TIME ZONE tz_)::date=row_.d;
-  END IF;
-  target_count_:=coalesce(private.sf_solid_conditional_required(company_,row_.d,row_.shift_code),target_count_);
-  IF count_>coalesce(target_count_,0) THEN RAISE EXCEPTION 'Der tatsächliche Besetzungsbedarf wird überschritten.'; END IF;
- END LOOP;
- PERFORM private.sf_assert_solid_critical_coverage(company_,month_);
- INSERT INTO public.audit_events(company_id,event_type,entity_type,actor_id,actor_role,metadata)
-  VALUES(company_,'MONTH_OPTIMIZED','schedule',actor_,role_,jsonb_build_object('month',month_,'replaced',cancelled_,'created',cardinality(ids_),'weeklyLimits',respect_weekly_));
- RETURN jsonb_build_object('replaced',cancelled_,'created',cardinality(ids_),'month',month_);
-END $function$
- AND target_>=180
+  IF e_.employment ~* '^Vollzeit([[:space:]]+180)?$' AND target_>=180
    AND cardinality(e_.shift_permissions)>0 AND e_.shift_permissions <@ ARRAY['OT1','OT2','OT3']::text[] THEN
    SELECT coalesce(nullif(solid_planning_rules->>'otOnlyMonthlyMaxHours','')::numeric,limit_) INTO limit_
     FROM public.company_compliance_policy WHERE company_id=company_;
