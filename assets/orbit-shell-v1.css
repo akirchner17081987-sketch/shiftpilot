@@ -86,7 +86,8 @@ body.sf-orbit-menu-open :is(.sf-chat-launcher,.sf-planning-chat){visibility:hidd
 #appShell.sf-orbit .sf-orbit-hero-copy [data-td-action="schedule"]{background:var(--orbit-accent);border-color:var(--orbit-accent);color:var(--orbit-accent-ink);padding:11px 18px;border-radius:10px}
 #appShell.sf-orbit .sf-orbit-hero-copy [data-td-action="refresh"]{border-color:transparent;background:transparent;color:var(--orbit-muted)}
 #appShell.sf-orbit .sf-orbit-emblem{grid-column:2;grid-row:1/3;align-self:center;justify-self:center;width:min(100%,390px);aspect-ratio:1;position:relative;color:var(--orbit-accent);pointer-events:none}
-#appShell.sf-orbit .sf-orbit-emblem svg{display:block;width:100%;height:100%;overflow:visible}
+#appShell.sf-orbit .sf-orbit-globe{position:absolute;inset:0;width:100%;height:100%;display:block}
+#appShell.sf-orbit .sf-orbit-emblem svg{position:relative;display:block;width:100%;height:100%;overflow:visible}
 #appShell.sf-orbit .sf-orbit-emblem>span{position:absolute;left:0;right:0;top:66%;text-align:center;font-size:10px;letter-spacing:.24em;opacity:.8}
 #appShell.sf-orbit .sf-orbit-orbit-track{transform-origin:210px 210px;animation:sfOrbitRevolve 64s linear infinite}
 #appShell.sf-orbit .sf-orbit-orbit-track-inner{animation-direction:reverse;animation-duration:96s}
