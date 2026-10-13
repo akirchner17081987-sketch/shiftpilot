@@ -85,6 +85,7 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
        const button=page.locator('#sfSettingsV2 [data-setting-tab="'+tab+'"]');await button.click();
        assert.equal(await button.evaluate(n=>n.classList.contains('active')),true,'original settings tab remains reachable: '+tab);
        assert.equal(await button.locator('span').last().isVisible(),true,'settings label stays readable');
+       await page.waitForFunction(tab=>{const b=document.querySelector('#sfSettingsV2 [data-setting-tab="'+tab+'"]'),r=b.getBoundingClientRect(),rail=b.parentElement.getBoundingClientRect();return r.left>=rail.left-1&&r.right<=rail.right+1;},tab);
      }
      await page.screenshot({path:path.join(out,'orbit-settings-'+theme+'-'+width+'.png'),animations:'disabled'});
      assert.equal(await page.locator('#appShell .topbar .company-card').isVisible(),true,'company switching stays available on mobile');
