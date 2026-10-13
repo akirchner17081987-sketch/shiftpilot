@@ -75,7 +75,7 @@
   // Search scarce minimum staffing before optional/general work can bind these people.
   // Components with disjoint employee pools can be planned independently.
   async function criticalSeed(p,byResource,allowed,yieldStep){
-    const pending=[...p.criticalCapacity].filter(([,n])=>n>0).map(([key])=>key),components=[];
+    const pending=[...p.criticalCapacity].filter(([key,n])=>n>0&&!key.endsWith('|OT-DAY')).map(([key])=>key),components=[];
     for(const key of pending){const ids=p.potential.get(key)||new Set(),matches=components.filter(c=>[...ids].some(id=>c.ids.has(id)));let c=matches.shift();if(!c){c={keys:[],ids:new Set()};components.push(c)}for(const other of matches){c.keys.push(...other.keys);for(const id of other.ids)c.ids.add(id);components.splice(components.indexOf(other),1)}c.keys.push(key);for(const id of ids)c.ids.add(id)}
     const selected=[];
     for(const component of components){
@@ -98,19 +98,29 @@
     return selected;
   }
   const solidBetter=(a,b)=>!b||a.critical<b.critical||a.critical===b.critical&&(a.open<b.open||a.open===b.open&&(a.penalty<b.penalty-1e-6||Math.abs(a.penalty-b.penalty)<1e-6&&a.deficit<b.deficit));
+  // Assign the entire three-person day together. Greedy individual picks can leave
+  // only an OT3 -> OT1 transition (10 hours rest) for the last available employee.
+  function rosterChoice(p,s,candidates,allowed){
+    const rows=candidates.filter(r=>r.option.length===1),best={records:[],score:-Infinity};
+    function search(current,at,selected,score){
+      if(selected.length>best.records.length||selected.length===best.records.length&&score>best.score){best.records=selected;best.score=score;}
+      for(let i=at;i<rows.length;i++){const r=rows[i];if(current.used.has(r.group.id)||!allowed(current,r))continue;const own=current.people.get(String(r.group.employee.id)),a=r.option[0],same=own.duties.filter(b=>b.type===a.type).length,last=own.duties.filter(b=>b.date<a.date).sort((a,b)=>a.date.localeCompare(b.date)).at(-1),next=state(p,current.records);commit(next,r,p.month);search(next,i+1,[...selected,r],score-same-(last&&last.start!==a.start?2:0));}
+    }
+    search(s,0,[],0);return best.records[0]||null;
+  }
   async function optimizeSolid(input,{iterations=12,yieldStep=()=>Promise.resolve(),progress=()=>{}}={}){
     const p=prepare(input),rng=random(20270101),byResource=new Map();for(const g of p.groups)for(const option of g.options)for(const key of new Set(option.map(a=>a.resource))){const list=byResource.get(key)||[];list.push({group:g,option});byResource.set(key,list)}
     let best=null,q=null;const seed=[];for(const bundle of input.seedBlocks||[]){const g=p.groups.find(g=>g.id===bundle.id);if(g){const option=g.options.find(o=>o.length===bundle.rows.length&&o.every((a,i)=>a.type===bundle.rows[i].type));if(option)seed.push({group:g,option})}}
     function allowed(s,r){if(!feasible(p,s,r.group,r.option))return false;const all=[...p.base,...s.records.flatMap(x=>x.option),...r.option];for(const a of r.option){const need=(p.required||((d,c,r)=>solid.required(d,c,r,p.solidRules)))(a.date,a.type,all);if(need!==null&&all.filter(b=>b.date===a.date&&b.type===a.type).length>need)return false}for(const rule of p.solidRules.conditionalStaffing||[])for(const a of r.option.filter(a=>a.type===rule.sourceShift)){const date=solid.plus(a.date,-rule.sourceDayOffset),count=all.filter(b=>b.date===date&&b.type===rule.shift).length;if(count>(p.required||((d,c,r)=>solid.required(d,c,r,p.solidRules)))(date,rule.shift,all))return false}return true}
-    function seeded(records){const s=state(p);for(const r of records)if(allowed(s,r))commit(s,r,p.month);return s}
+    function seeded(records){const s=state(p);for(const r of records)if(!r.option.some(a=>a.resource.endsWith('|OT-DAY'))&&allowed(s,r))commit(s,r,p.month);return s}
     const minimumSeed=await criticalSeed(p,byResource,allowed,yieldStep);
     if(input.criticalOnly){const s=seeded(minimumSeed);return{preview:s.records.flatMap(r=>r.option.map(a=>({...a,blockId:r.group.id}))),quality:solidQuality(p,s),records:s.records,remaining:[...s.remaining]};}
-    for(let i=0;i<iterations;i++){let s=seeded(i===0?minimumSeed:i===1?seed:i%4===0?minimumSeed:best.records.filter(r=>r.option.some(a=>p.criticalCapacity.has(a.resource))||rng()>.12+(i%3)*.08));
+    for(let i=0;i<iterations;i++){let s=seeded(i===0?minimumSeed:i===1?seed:i%4===0?minimumSeed:best.records.filter(r=>r.option.some(a=>(p.criticalCapacity.has(a.resource)&&!a.resource.endsWith('|OT-DAY')))||rng()>.12+(i%3)*.08));
       // Establish O1/O3 coverage before allocating their conditional OT fallback.
       // Additional OT2 above its confirmed minimum comes after those fallback duties.
-      const priority=key=>{if(criticalOpen(p,s,key)>0)return 0;const code=key.split('|')[1],rules=p.solidRules.conditionalStaffing||[];if(rules.some(r=>r.sourceShift===code))return 1;if(rules.some(r=>r.shift===code))return 3;return p.criticalCapacity.has(key)?4:2};
-      const order=[...p.capacity.keys()].sort((a,b)=>priority(a)-priority(b)||(p.potential.get(a)?.size||0)-(p.potential.get(b)?.size||0)||(a.localeCompare(b)));
-      let changed=true;while(changed){changed=false;for(const resource of order){if((s.remaining.get(resource)||0)<1)continue;let chosen=null,score=-Infinity;for(const r of byResource.get(resource)||[]){if(s.used.has(r.group.id)||!allowed(s,r))continue;const x=s.people.get(String(r.group.employee.id)),deficit=Math.max(0,r.group.employee.target-x.hours),same=r.option.every(a=>a.start===r.option[0].start),v=(p.preferenceScore?.(r.group.employee,x.duties,r.option)||0)+r.option.reduce((n,a)=>n+(criticalOpen(p,s,a.resource)>0?100:1),0)*10+Math.min(deficit,r.option.hours)*.15+(same?2:0)-(r.option.length===4&&r.option[0].start>='18:00'?4:0)-(r.option.length===1?4:0)+rng()*3;if(v>score){chosen=r;score=v}}
+      const priority=key=>{if(key.endsWith('|OT-DAY'))return 3;if(criticalOpen(p,s,key)>0)return 0;const code=key.split('|')[1],rules=p.solidRules.conditionalStaffing||[];if(rules.some(r=>r.sourceShift===code))return 1;if(rules.some(r=>r.shift===code))return 3;return p.criticalCapacity.has(key)?4:2};
+      const order=[...p.capacity.keys()].sort((a,b)=>priority(a)-priority(b)||(p.potential.get(a)?.size||0)-(p.potential.get(b)?.size||0)||(a.localeCompare(b))).flatMap(key=>key.endsWith('|OT-DAY')?Array(Math.max(0,p.capacity.get(key)||0)).fill(key):[key]);
+      let changed=true;while(changed){changed=false;for(const resource of order){if((s.remaining.get(resource)||0)<1)continue;let chosen=resource.endsWith('|OT-DAY')?rosterChoice(p,s,byResource.get(resource)||[],allowed):null,score=-Infinity;for(const r of resource.endsWith('|OT-DAY')?[]:byResource.get(resource)||[]){if(s.used.has(r.group.id)||!allowed(s,r))continue;const x=s.people.get(String(r.group.employee.id)),deficit=Math.max(0,r.group.employee.target-x.hours),same=r.option.every(a=>a.start===r.option[0].start),v=(p.preferenceScore?.(r.group.employee,x.duties,r.option)||0)+r.option.reduce((n,a)=>n+(criticalOpen(p,s,a.resource)>0?100:1),0)*10+Math.min(deficit,r.option.hours)*.15+(same?2:0)-(r.option.length===4&&r.option[0].start>='18:00'?4:0)-(r.option.length===1?4:0)+rng()*3;if(v>score){chosen=r;score=v}}
         if(chosen){commit(s,chosen,p.month);changed=true}}
       }
       const v=solidQuality(p,s);if(solidBetter(v,q)){best=s;q=v}progress({iteration:i+1,iterations,...q});await yieldStep();
@@ -131,6 +141,6 @@
     const open=input.capacities.reduce((n,[key,count])=>n+Math.max(0,count-(used.get(key)||0)),0);
     return{preview,individualInput:freeInput,quality:{...found.quality,open},rows:input.employees.map(e=>{const hours=all.filter(a=>String(a.employeeId)===String(e.id)&&a.date.startsWith(input.month)).reduce((n,a)=>n+duty(a).hours,0);return{employeeId:e.id,target:e.target,planned:hours,missing:Math.max(0,e.target-hours),extra:Math.max(0,hours-e.target)}})};
   }
-  return{optimize,prepare,feasible,state,quality,duty,week,checkpointPrimitives:{commit,solidQuality,solidBetter,criticalOpen}};
+  return{optimize,prepare,feasible,state,quality,duty,week,checkpointPrimitives:{rosterChoice,commit,solidQuality,solidBetter,criticalOpen}};
 });
 

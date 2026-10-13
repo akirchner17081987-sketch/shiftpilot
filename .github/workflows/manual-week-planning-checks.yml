@@ -1,7 +1,7 @@
 name: Manual week planning checks
 on:
   push:
-    branches: [codex/manual-week-planning-20261013, codex/compact-week-timetable-20261013, codex/inline-duty-picker-20261013, codex/inline-picker-roster-fix-20261013]
+    branches: [codex/manual-week-planning-20261013, codex/compact-week-timetable-20261013, codex/inline-duty-picker-20261013, codex/inline-picker-roster-fix-20261013, codex/ot-daily-roster-20261014]
 permissions:
   contents: read
 jobs:
