@@ -70,7 +70,9 @@
     observer?.disconnect();
     window.removeEventListener('load', onLoad);
     root.classList.add('sf-entry-out');
-    setTimeout(() => root.remove(), 500);
+    const exitMs = root.classList.contains('sf-entry-success') &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 1250 : 500;
+    setTimeout(() => root.remove(), exitMs);
   }
 
   function isVisible(el) {
