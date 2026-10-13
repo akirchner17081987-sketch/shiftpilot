@@ -51,6 +51,34 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
  }
  if(extra){
  if(windowOrbit(data)) {
+   await page.waitForFunction(()=>document.querySelectorAll('.sf-orbit-overview-metrics [data-td-kpi]').length===3);
+   assert.equal(await page.locator('#sfTodayWorkspace [data-td-kpi]').count(),6,'all original daily KPIs remain available');
+   assert.deepEqual(await page.locator('.sf-orbit-overview-metrics [data-td-kpi]').evaluateAll(nodes=>nodes.map(n=>n.dataset.tdKpi)),['present','coverage','actions']);
+   for(const key of ['figures','coverage','transitions','shortcuts','filters'])assert.equal(await page.locator('details[data-orbit-detail="'+key+'"]').evaluate(n=>n.open),false,'secondary information starts collapsed: '+key);
+   await page.locator('details[data-orbit-detail="figures"]>summary').click();
+   await page.evaluate(()=>SFToday.reload(true));
+   assert.equal(await page.locator('details[data-orbit-detail="figures"]').evaluate(n=>n.open),true,'expanded details survive automatic data refresh');
+   await page.locator('[data-td-kpi="planned"]').click();
+   assert.equal(await page.locator('#sfTodayPeopleFilter').inputValue(),'planned','existing secondary KPI keeps its real filter handler');
+   await page.locator('.sf-orbit-overview-metrics [data-td-kpi="coverage"]').click();
+   assert.equal(await page.locator('details[data-orbit-detail="coverage"]').evaluate(n=>n.open),true,'coverage KPI reveals the corresponding detail before scrolling');
+   await page.locator('details[data-orbit-detail="filters"]>summary').click();
+   await page.locator('#sfTodaySite').selectOption('east');
+   assert.equal(await page.locator('details[data-orbit-detail="filters"]>summary').innerText(),'Filter · Leipzig · Alle Schichten','active filter stays visible in the collapsed summary');
+   assert.equal(await page.evaluate(()=>{const s=SFToday.getResult().summary;return [...document.querySelectorAll('.sf-orbit-overview-metrics strong')].map(n=>n.textContent).join('|')===[s.present??'–',s.open,s.actions].join('|');}),true,'hero uses actual scoped daily values');
+   await page.locator('[data-td-action="reset"]').click();
+   await page.locator('details[data-orbit-detail="filters"]>summary').click();
+   for(const key of ['figures','coverage']){const d=page.locator('details[data-orbit-detail="'+key+'"]');if(await d.evaluate(n=>n.open))await d.locator('summary').click();}
+   await page.evaluate(()=>{window.scrollTo(0,0);SFOrbit.setMotion('off')});
+   assert.equal(await page.locator('.sf-orbit-emblem').evaluate(n=>n.getAnimations({subtree:true}).length),0,'motion off includes the decorative Orbit graphic');
+   for(const [theme,width] of [['dark',1440],['light',1440],['dark',390],['light',390],['dark',320]]){
+     await page.setViewportSize({width,height:1000});await page.evaluate(t=>{SFManagerTheme.apply(t,false);window.scrollTo(0,0)},theme);
+     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),true,'Orbit overview fits '+width);
+     const emblem=await page.locator('.sf-orbit-emblem').boundingBox();assert.ok(emblem.x>=0&&emblem.x+emblem.width<=width+1,'graphic fits the viewport');
+     for(const key of ['present','coverage','actions'])assert.equal(await page.locator('.sf-orbit-overview-metrics [data-td-kpi="'+key+'"]').isVisible(),true);
+     await page.screenshot({path:path.join(out,'orbit-overview-'+theme+'-'+width+'.png'),animations:'disabled'});
+   }
+   await page.setViewportSize({width:1440,height:1000});await page.evaluate(()=>{SFManagerTheme.apply('dark',false);SFOrbit.setMotion('full')});
    const mainBefore=await page.locator('#appShell .main').boundingBox();
    await page.locator('[data-orbit-category="planning"]').click();
    await page.waitForFunction(()=>document.querySelectorAll('#sfOrbitPopup .sf-orbit-entry').length===4);

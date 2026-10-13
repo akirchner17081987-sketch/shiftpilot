@@ -40,6 +40,58 @@
   const availableItems = group => group.items.filter(([view]) => visibleSource(source(view)));
   const activeView = () => shell?.querySelector('.main .view.active')?.id.replace(/^view-/, '') || '';
   const ready = () => !!backend().ready && backend().role !== 'EMPLOYEE' && !backend().companySwitching;
+  const overviewExpanded = new Map();
+  let overviewContext = '';
+  function rememberOverview() {
+    shell?.querySelectorAll('#sfTodayWorkspace details[data-orbit-detail]').forEach(detail => overviewExpanded.set(detail.dataset.orbitDetail, detail.open));
+  }
+  function overviewDetail(element, key, label) {
+    if (!element) return null;
+    if (element.parentElement.matches('details[data-orbit-detail]')) return element.parentElement;
+    const detail = document.createElement('details'); detail.className = 'sf-orbit-overview-details'; detail.dataset.orbitDetail = key;
+    const summary = document.createElement('summary'); summary.textContent = label;
+    detail.open = !!overviewExpanded.get(key); element.before(detail); detail.append(summary, element);
+    const companyContext = overviewContext;
+    detail.addEventListener('toggle', () => { if (detail.isConnected && companyContext === overviewContext) overviewExpanded.set(key, detail.open); });
+    return detail;
+  }
+  function refreshOverview() {
+    const root = shell?.querySelector('#sfTodayWorkspace');
+    if (!root) return;
+    const B = backend(), next = [B.companyId || '', B.user?.id || '', B.role || ''].join('|');
+    if (next !== overviewContext) { overviewContext = next; overviewExpanded.clear(); }
+    root.dataset.orbitOverviewActive = String(activeView() === 'overview' && !document.hidden && ready());
+    let hero = root.querySelector('.sf-orbit-hero');
+    if (!hero) {
+      const head = root.querySelector('.sf-td-head'); if (!head) return;
+      hero = document.createElement('section'); hero.className = 'sf-orbit-hero'; hero.setAttribute('aria-label', 'SchichtFunk Tagesübersicht');
+      head.before(hero); head.classList.add('sf-orbit-hero-copy'); hero.append(head);
+      const art = document.createElement('div'); art.className = 'sf-orbit-emblem'; art.setAttribute('aria-hidden', 'true');
+      art.innerHTML = '<svg viewBox="0 0 420 420" fill="none"><defs><radialGradient id="sfOrbitSphere"><stop stop-color="currentColor" stop-opacity=".17"/><stop offset="1" stop-color="currentColor" stop-opacity=".015"/></radialGradient><linearGradient id="sfOrbitArc" x1="0" y1="0" x2="420" y2="420" gradientUnits="userSpaceOnUse"><stop stop-color="currentColor" stop-opacity=".08"/><stop offset=".45" stop-color="currentColor"/><stop offset="1" stop-color="currentColor" stop-opacity=".1"/></linearGradient></defs><circle cx="210" cy="210" r="190" stroke="currentColor" opacity=".12"/><circle cx="210" cy="210" r="146" stroke="currentColor" opacity=".16" stroke-dasharray="2 12"/><circle cx="210" cy="210" r="94" fill="url(#sfOrbitSphere)" stroke="currentColor" stroke-opacity=".3"/><g class="sf-orbit-orbit-track"><ellipse cx="210" cy="210" rx="192" ry="116" transform="rotate(-32 210 210)" stroke="url(#sfOrbitArc)" stroke-width="1.5"/><circle cx="46" cy="306" r="5" fill="currentColor"/><circle cx="371" cy="112" r="3" fill="currentColor"/></g><g class="sf-orbit-orbit-track sf-orbit-orbit-track-inner"><ellipse cx="210" cy="210" rx="168" ry="128" transform="rotate(54 210 210)" stroke="currentColor" stroke-opacity=".25"/><circle cx="305" cy="348" r="4" fill="currentColor"/></g><g stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="173" y="167" width="74" height="76" rx="12"/><path d="M190 159v17m40-17v17m-57 13h74M190 204h5m15 0h5m15 0h5m-45 17h5m15 0h5"/></g><path d="M201 268h18" stroke="currentColor" stroke-opacity=".5"/></svg><span>SCHICHTFUNK</span>';
+      const metrics = document.createElement('div'); metrics.className = 'sf-orbit-overview-metrics'; metrics.setAttribute('aria-label', 'Zentrale Tageskennzahlen');
+      hero.append(art, metrics);
+    }
+    const metrics = hero.querySelector('.sf-orbit-overview-metrics');
+    if (!window.SFToday?.getResult?.()) { if (metrics.childElementCount) metrics.replaceChildren(); return; }
+    const filters = overviewDetail(root.querySelector('.sf-td-filters'), 'filters', 'Standort & Schicht');
+    if (filters) {
+      const site = root.querySelector('#sfTodaySite'), shift = root.querySelector('#sfTodayShift');
+      const text = 'Filter · ' + (site?.selectedOptions[0]?.textContent || 'Alle Standorte') + ' · ' + (shift?.value ? shift.selectedOptions[0]?.textContent : 'Alle Schichten');
+      if (filters.firstElementChild.textContent !== text) filters.firstElementChild.textContent = text;
+    }
+    const kpis = root.querySelector('.sf-td-kpis');
+    if (kpis && !kpis.dataset.orbitPrepared) {
+      metrics.replaceChildren(...['present', 'coverage', 'actions'].map(key => kpis.querySelector('[data-td-kpi="' + key + '"]')).filter(Boolean));
+      kpis.dataset.orbitPrepared = 'true'; const figures = overviewDetail(kpis, 'figures', 'Weitere Tageszahlen');
+      root.querySelector('.sf-td-layout')?.after(figures);
+    }
+    const aside = root.querySelector('.sf-td-aside'), actions = root.querySelector('#sfTodayActions');
+    if (aside && actions?.parentElement !== aside) aside.prepend(actions);
+    overviewDetail(root.querySelector('#sfTodayTransitions'), 'transitions', 'Schichtwechsel · nächste 2 Stunden');
+    const coverage = overviewDetail(root.querySelector('#sfTodayCoverage'), 'coverage', 'Besetzung je Schicht');
+    if (coverage && metrics.querySelector('[data-td-kpi="coverage"][aria-pressed="true"]')) coverage.open = true;
+    overviewDetail(root.querySelector('.sf-td-shortcuts')?.closest('.sf-td-panel'), 'shortcuts', 'Weitere Aktionen');
+  }
 
   function stopMotion() {
     animations.forEach(animation => animation.cancel()); animations = [];
@@ -141,6 +193,7 @@
     const B = backend(), nextContext = [B.user?.id || '', B.companyId || '', B.role || '', !!B.ready, !!B.companySwitching].join('|');
     if (nextContext !== context) { context = nextContext; close(); }
     const active = activeView();
+    refreshOverview();
     document.body.classList.toggle('sf-orbit-manager', ready() && shell.style.display !== 'none');
     GROUPS.forEach(group => {
       const button = buttons.get(group.id), isCurrent = group.items.some(([view]) => view === active);
@@ -218,6 +271,6 @@
     new MutationObserver(scheduleRefresh).observe(shell, { attributes: true, attributeFilter: ['style', 'aria-busy'] });
     window.addEventListener('schichtfunk:themechange', () => { stopMotion(); });
   }
-  window.SFOrbit = { setMotion, motion: () => motion, effectiveMotion, refresh: scheduleRefresh, close };
+  window.SFOrbit = { setMotion, motion: () => motion, effectiveMotion, refresh: scheduleRefresh, refreshOverview, rememberOverview, close };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true }); else init();
 })();
