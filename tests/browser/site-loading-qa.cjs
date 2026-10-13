@@ -131,7 +131,7 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
      assert.equal(await overviewButton.isVisible(),true);assert.equal(await overviewButton.getAttribute('aria-current'),'true');
      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),true,'Orbit overview fits '+width);
      const emblem=await page.locator('.sf-orbit-emblem').boundingBox();assert.ok(emblem.x>=0&&emblem.x+emblem.width<=width+1,'graphic fits the viewport');
-     if(width>=1440){assert.ok(emblem.width>=500,'Earth fills the desktop header');const copy=await page.locator('.sf-orbit-hero-content').boundingBox();assert.ok(Math.abs((copy.y+copy.height/2)-(emblem.y+emblem.height/2))<24,'heading and metrics form one centered group beside Earth');}
+     if(width>=1440){assert.ok(emblem.width>=500,'Earth fills the desktop header');const copy=await page.locator('.sf-orbit-hero-content').boundingBox();assert.ok(Math.abs((copy.y+copy.height/2)-(emblem.y+emblem.height/2))<24,'heading and metrics form one centered group beside Earth');const heading=await page.locator('.sf-orbit-hero-copy h1').boundingBox(),metrics=await page.locator('.sf-orbit-overview-metrics').boundingBox();assert.ok(Math.abs(heading.x-metrics.x)<2,'heading and key figures share the same left edge');}
      if(width===390)assert.ok(emblem.width>=240,'Earth is larger on mobile while fitting the header');
      for(const key of ['present','coverage','actions'])assert.equal(await page.locator('.sf-orbit-overview-metrics [data-td-kpi="'+key+'"]').isVisible(),true);
      assert.equal(await assistant.isVisible(),true,'planning assistant remains available in the header at '+width);

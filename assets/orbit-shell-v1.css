@@ -120,7 +120,7 @@ html[data-sf-theme="light"] #appShell.sf-orbit .sf-orbit-site-light{color:#fff}
 #appShell.sf-orbit .sf-orbit-site-info dt{color:var(--orbit-muted)}
 #appShell.sf-orbit .sf-orbit-site-info dd{margin:0;font-weight:700}
 #appShell.sf-orbit .sf-orbit-site-info small{color:var(--orbit-muted);font-size:11px}
-@media(min-width:761px){#appShell.sf-orbit .sf-orbit-site-info,#appShell.sf-orbit .sf-orbit-emblem:has(.sf-orbit-site-range:not([hidden])) .sf-orbit-site-info{left:0;top:50%;transform:translate(calc(-100% - 12px),-50%)}}
+@media(min-width:761px){#appShell.sf-orbit .sf-orbit-hero-content>:is(.sf-orbit-hero-copy,.sf-orbit-overview-metrics){align-self:stretch;width:100%}#appShell.sf-orbit .sf-orbit-site-info,#appShell.sf-orbit .sf-orbit-emblem:has(.sf-orbit-site-range:not([hidden])) .sf-orbit-site-info{left:0;top:50%;transform:translate(calc(-100% - 12px),-50%)}}
 #appShell.sf-orbit .sf-orbit-emblem svg{position:relative;display:block;width:100%;height:100%;overflow:visible}
 #appShell.sf-orbit .sf-orbit-emblem>span{position:absolute;left:0;right:0;top:66%;text-align:center;font-size:10px;letter-spacing:.24em;opacity:.8}
 #appShell.sf-orbit .sf-orbit-orbit-track{transform-origin:210px 210px;animation:sfOrbitRevolve 64s linear infinite}
