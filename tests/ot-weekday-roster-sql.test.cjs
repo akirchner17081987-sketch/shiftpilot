@@ -19,3 +19,14 @@ test('server OT targets match night coverage and reject an incomplete fixed week
  await assert.rejects(db.query("select private.sf_assert_solid_critical_coverage($1,'2027-01-01')",[company]),/OT-Tagdienstgruppe.*unvollständig/);
  }finally{await db.close()}
 });
+
+test('final monthly apply guard accepts 210 OT hours with a 220 cap but preserves other employee caps',async()=>{
+ const sql=fs.readFileSync('supabase/migrations/20261013230708_ot_roster_month_apply_cap.sql','utf8'),begin=sql.indexOf('  -- The confirmed OT-only limit'),end=sql.indexOf('  PERFORM private.sf_assert_month_planning_limits',begin),guard=sql.slice(begin,end);
+ assert.ok(begin>0&&end>begin);assert.match(sql,/IF actor_ IS NULL OR role_ IS NULL/);assert.match(sql,/PERFORM private.sf_assert_month_planning_limits/);
+ const db=new PGlite();try{await db.exec(`create schema private;create table public.employees(employment text,shift_permissions text[]);create table public.company_compliance_policy(company_id uuid,solid_planning_rules jsonb);
+ insert into company_compliance_policy values('11111111-1111-1111-1111-111111111111','{"otOnlyMonthlyMaxHours":220}');
+ create function private.test_apply_cap(e_ public.employees,company_ uuid,target_ numeric,limit_ numeric) returns numeric language plpgsql as $f$ begin ${guard} return limit_;end $f$;`);
+ const cap=async(employment,shifts,target=220,limit=190)=>(await db.query('select private.test_apply_cap(row($1,$2)::public.employees,$3,$4,$5) n',[employment,shifts,'11111111-1111-1111-1111-111111111111',target,limit])).rows[0].n;
+ assert.equal(await cap('Vollzeit',['OT1','OT2','OT3']),220);assert.equal(await cap('Vollzeit',['OT2','OT']),190);assert.equal(await cap('Vollzeit',['O1']),190);assert.equal(await cap('Teilzeit',['OT2'],144,144),144);
+ }finally{await db.close();}
+});
