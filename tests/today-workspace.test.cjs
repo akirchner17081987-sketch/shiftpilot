@@ -1,5 +1,23 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const C=require('../assets/today-workspace-core-v1.js'),{fixture,assignment,booking,rich}=require('./fixtures/today-data.cjs');
+test('site orbit uses all scoped locations and the same published demand and presence rules',()=>{
+ const d=fixture();d.assignments=[assignment('a1'),assignment('b1','b')];d.qr=[booking('q1'),booking('q2','b','2026-10-10T09:00Z')];
+ const overview=C.siteOverview(d,{site:'west'}),east=overview.sites.find(s=>s.id==='east'),west=overview.sites.find(s=>s.id==='west');
+ assert.equal(overview.selected,'west');assert.equal(east.status,'good');assert.equal(east.present,1);assert.equal(east.open,0);assert.equal(west.status,'attention');assert.equal(west.open,2);
+ for(const s of overview.sites){const r=C.analyze(d,{site:s.id});assert.equal(s.present,r.summary.present);assert.equal(s.open,r.summary.open);assert.equal(s.actions,r.summary.actions);}
+ assert.equal(JSON.stringify(overview).includes('employee_id'),false);assert.equal(JSON.stringify(overview).includes('Zweig'),false);
+});
+test('site orbit distinguishes urgent conflicts, unknown actuals and inactive demand',()=>{
+ const d=fixture();d.assignments=[assignment('a1')];d.incidents=[{id:'i1',assignment_id:'a1',status:'OPEN',site_id:'east',shift:'FD'}];
+ let r=C.siteOverview(d,{},{reliable:false});assert.equal(r.sites[0].status,'critical');assert.equal(r.sites[1].status,'unknown');assert.equal(r.sites[1].present,null);assert.equal(r.fresh,false);
+ d.incidents=[];r=C.siteOverview(d,{},{reliable:false});assert.equal(r.sites[0].status,'unknown');assert.equal(r.sites[0].label,'Datenstand prüfen');
+ d.can_time=false;r=C.siteOverview(d);assert.equal(r.sites[0].present,null);assert.equal(r.sites[0].status,'unknown');assert.equal(r.sites[0].label,'Anwesenheit unbekannt');
+ d.can_time=true;r=C.siteOverview(d,{shift:'FD'});assert.equal(r.sites[1].status,'neutral');assert.equal(r.sites[1].open,0);
+});
+test('site orbit preserves shared TL coverage across locations',()=>{
+ const d=fixture();d.models=['TLE','TLW'].map((code,i)=>({code,name:code,active:true,default_start:'06:00',default_end:'14:00',coverage_group:'TL',coverage_required:1,optional_weekdays:[1,2,3,4,5,6,7],site_id:i?'west':'east'}));d.global={};d.assignments=[{...assignment('a1','a','TLW'),site_id:'west'}];d.qr=[{...booking('q1'),site_id:'west'}];
+ const r=C.siteOverview(d);assert.ok(r.sites.every(s=>s.open===0&&s.status==='good'));assert.equal(r.sites[0].present,0);assert.equal(r.sites[1].present,1);
+});
 test('finished staff are excluded from current presence; employees counted once',()=>{const d=fixture();d.assignments=[assignment('a1'),assignment('b1','b')];d.qr=[booking('q1'),booking('q2','b','2026-10-10T09:00Z'),booking('q3')];const r=C.analyze(d);assert.equal(r.summary.present,1);assert.equal(r.summary.finished,1);assert.equal(r.summary.missing,0)});
 test('free QR shift and live paid break are included without a scheduled assignment',()=>{const d=fixture();d.qr=[{...booking('q1'),breaks:[{start:'2026-10-10T09:30Z',end:null}]}];const r=C.analyze(d),row=r.rows[0];assert.equal(row.shift,null);assert.equal(row.status,'pause');assert.equal(row.attendance,360);assert.equal(row.pauseMinutes,30);assert.equal(r.summary.present,1);assert.equal(r.summary.paused,1);assert.equal(r.summary.planned,0);assert.deepEqual(row.terminals,['Terminal Leipzig'])});
 test('duplicates cannot inflate published staffing; drafts do not fill demand',()=>{const d=fixture();d.assignments=[assignment('a1'),assignment('a2'),{...assignment('b1','b'),status:'DRAFT'}];const r=C.analyze(d),c=r.coverage.find(c=>c.code==='FD');assert.equal(c.filled,1);assert.equal(c.drafts,1);assert.equal(c.missing,1);assert.equal(r.summary.planned,1);assert.equal(r.rows.length,2);assert.equal(r.alerts.filter(a=>a.kind==='duplicate').length,1)});

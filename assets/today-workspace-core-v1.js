@@ -96,5 +96,16 @@
    missing:reliable?unique(rows.filter(r=>r.status==='missing').map(r=>r.employee_id)).length:null,open:todayCells.reduce((n,c)=>n+c.missing,0),actions:alerts.length,drafts:rows.filter(r=>r.status==='draft').length};
   return{date,now,tz,rows,allRows,coverage:todayCells,alerts,transitions,summary,reliable};
  }
- return{analyze,absenceOverlap,localDate,union,name,labels};
+ function siteOverview(data,filters={},options={}){
+  const fresh=options.reliable!==false,sites=(data.sites||[]).map(site=>{
+   const r=analyze(data,{site:site.id,shift:filters.shift||''},options),s=r.summary;
+   const urgent=r.alerts.filter(a=>a.priority===0).length;
+   const activity=r.coverage.some(c=>c.required>0)||s.planned>0||(s.present||0)>0;
+   const status=urgent?'critical':!r.reliable?'unknown':s.open||s.actions?'attention':activity&&site.is_active!==false?'good':'neutral';
+   const label={critical:'Dringend prüfen',unknown:fresh?'Anwesenheit unbekannt':'Datenstand prüfen',attention:'Handlungsbedarf',good:'Kein Handlungsbedarf',neutral:site.is_active===false?'Archivierter Standort':'Heute keine Pflichtbesetzung'}[status];
+   return{id:site.id,name:site.name,active:site.is_active!==false,status,label,present:s.present,open:s.open,actions:s.actions,urgent};
+  });
+  return{asOf:data.as_of,timezone:data.timezone||'Europe/Berlin',fresh,selected:filters.site||'',shift:filters.shift||'',sites};
+ }
+ return{analyze,siteOverview,absenceOverlap,localDate,union,name,labels};
 });

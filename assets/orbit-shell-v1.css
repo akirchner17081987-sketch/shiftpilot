@@ -87,6 +87,37 @@ body.sf-orbit-menu-open :is(.sf-chat-launcher,.sf-planning-chat){visibility:hidd
 #appShell.sf-orbit .sf-orbit-hero-copy [data-td-action="refresh"]{border-color:transparent;background:transparent;color:var(--orbit-muted)}
 #appShell.sf-orbit .sf-orbit-emblem{grid-column:2;grid-row:1/3;align-self:center;justify-self:center;width:min(100%,390px);aspect-ratio:1;position:relative;color:var(--orbit-accent);pointer-events:none}
 #appShell.sf-orbit .sf-orbit-globe{position:absolute;inset:0;width:100%;height:100%;display:block}
+#appShell.sf-orbit .sf-orbit-emblem{margin-bottom:32px}
+#appShell.sf-orbit .sf-orbit-sites{position:absolute;inset:0;pointer-events:none;color:var(--orbit-text)}
+#appShell.sf-orbit .sf-orbit-site-pin{position:absolute;transform:translate(-50%,-50%);width:44px;height:44px;display:grid;place-items:center;padding:0;border:0;border-radius:50%;background:transparent;pointer-events:auto;box-shadow:none}
+#appShell.sf-orbit .sf-orbit-sites [data-status]{--site-color:#9aacbf}
+#appShell.sf-orbit .sf-orbit-sites [data-status="good"]{--site-color:#2bd4a1}
+#appShell.sf-orbit .sf-orbit-sites [data-status="attention"]{--site-color:#ffbd5d}
+#appShell.sf-orbit .sf-orbit-sites [data-status="critical"]{--site-color:#ff7084}
+html[data-sf-theme="light"] #appShell.sf-orbit .sf-orbit-sites [data-status="good"]{--site-color:#087953}
+html[data-sf-theme="light"] #appShell.sf-orbit .sf-orbit-sites [data-status="attention"]{--site-color:#9a5800}
+html[data-sf-theme="light"] #appShell.sf-orbit .sf-orbit-sites [data-status="critical"]{--site-color:#bd274a}
+html[data-sf-theme="light"] #appShell.sf-orbit .sf-orbit-sites [data-status="unknown"],html[data-sf-theme="light"] #appShell.sf-orbit .sf-orbit-sites [data-status="neutral"]{--site-color:#647084}
+#appShell.sf-orbit .sf-orbit-site-light{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--site-color);color:#04101d;font-size:12px;font-weight:700;box-shadow:0 0 14px var(--site-color);border:2px solid var(--orbit-canvas)}
+html[data-sf-theme="light"] #appShell.sf-orbit .sf-orbit-site-light{color:#fff}
+#appShell.sf-orbit .sf-orbit-site-pin[aria-pressed="true"] .sf-orbit-site-light{outline:2px solid var(--orbit-text);outline-offset:4px}
+#appShell.sf-orbit .sf-orbit-site-pin:focus-visible{outline:3px solid var(--orbit-accent);outline-offset:0}
+#appShell.sf-orbit .sf-orbit-site-caption{position:absolute;top:100%;left:50%;transform:translateX(-50%);width:calc(100% + 20px);max-width:calc(100vw - 36px);display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 8px;font-size:12px;color:var(--orbit-muted)}
+#appShell.sf-orbit .sf-orbit-site-caption button{pointer-events:auto;min-height:44px;max-width:100%;padding:6px 8px;border:0;background:transparent;color:var(--orbit-text);border-radius:8px;font:inherit}
+#appShell.sf-orbit .sf-orbit-site-caption button:not(.sf-orbit-site-reset){min-width:44px;font-size:24px}
+#appShell.sf-orbit .sf-orbit-site-caption .sf-orbit-site-reset{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px;color:var(--orbit-accent)}
+#appShell.sf-orbit .sf-orbit-site-caption button:disabled{color:var(--orbit-muted);opacity:1;cursor:default}
+#appShell.sf-orbit .sf-orbit-site-caption button:focus-visible{outline:3px solid var(--orbit-accent);outline-offset:2px}
+#appShell.sf-orbit .sf-orbit-site-caption:has(.sf-orbit-site-range:not([hidden])){max-width:100%}
+#appShell.sf-orbit .sf-orbit-emblem:has(.sf-orbit-site-range:not([hidden])){margin-bottom:76px}
+#appShell.sf-orbit .sf-orbit-site-info{position:absolute;left:50%;bottom:32px;transform:translateX(-50%);width:280px;max-width:calc(100vw - 36px);box-sizing:border-box;padding:14px 16px;border:1px solid var(--orbit-line);border-radius:12px;background:var(--orbit-surface);box-shadow:0 8px 30px #0005;z-index:2;pointer-events:auto;color:var(--orbit-text);font-size:13px;line-height:1.4;text-align:left}
+#appShell.sf-orbit .sf-orbit-site-info[hidden],#appShell.sf-orbit .sf-orbit-site-caption [hidden]{display:none!important}
+#appShell.sf-orbit .sf-orbit-site-info>strong{display:block;font-size:15px;overflow-wrap:anywhere}
+#appShell.sf-orbit .sf-orbit-site-status{display:block;color:var(--site-color);margin:4px 0 10px}
+#appShell.sf-orbit .sf-orbit-site-info dl{display:grid;grid-template-columns:1fr auto;gap:5px 14px;margin:0 0 10px}
+#appShell.sf-orbit .sf-orbit-site-info dt{color:var(--orbit-muted)}
+#appShell.sf-orbit .sf-orbit-site-info dd{margin:0;font-weight:700}
+#appShell.sf-orbit .sf-orbit-site-info small{color:var(--orbit-muted);font-size:11px}
 #appShell.sf-orbit .sf-orbit-emblem svg{position:relative;display:block;width:100%;height:100%;overflow:visible}
 #appShell.sf-orbit .sf-orbit-emblem>span{position:absolute;left:0;right:0;top:66%;text-align:center;font-size:10px;letter-spacing:.24em;opacity:.8}
 #appShell.sf-orbit .sf-orbit-orbit-track{transform-origin:210px 210px;animation:sfOrbitRevolve 64s linear infinite}
