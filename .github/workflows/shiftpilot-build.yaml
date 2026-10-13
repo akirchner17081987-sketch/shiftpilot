@@ -55,6 +55,7 @@ jobs:
           npm run test:handover
           npm run test:performance
           npm run test:site-loading
+          node tests/browser/manual-week-planning-qa.cjs
 
 # Please do not touch the following action
       - name: Store deployment content

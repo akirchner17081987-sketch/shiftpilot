@@ -63,7 +63,7 @@ async function scheduleGeometry(page){
   const issues=[],measurements=[];
   for(const card of document.querySelectorAll('#sfWeekBoardV2 .sf-week-shift:not(.is-inactive)')){
    const head=card.querySelector('.sf-week-shift-head'),name=head.querySelector('strong'),time=head.querySelector('small'),badge=head.querySelector('.sf-week-shift-count b');
-   const box=head.getBoundingClientRect(),fields=[name,time,badge];let previousBottom=box.top;
+   const box=head.getBoundingClientRect(),fields=[name,time,badge].filter(el=>el.getBoundingClientRect().height>0);let previousBottom=box.top;
    for(const el of fields){const r=el.getBoundingClientRect(),css=getComputedStyle(el),range=document.createRange();range.selectNodeContents(el);
     if(css.textOverflow==='ellipsis'||css.whiteSpace==='nowrap')issues.push('shift field can be abbreviated: '+el.textContent);
     if(r.top<previousBottom-1)issues.push('shift fields overlap: '+card.dataset.type);previousBottom=r.bottom;
@@ -71,6 +71,7 @@ async function scheduleGeometry(page){
     for(const t of range.getClientRects())if(t.left<box.left-1||t.right>box.right+1||t.top<box.top-1||t.bottom>box.bottom+1)issues.push('shift text outside header: '+el.textContent);
    }
    if(name.textContent!==card.dataset.type)issues.push('shift name differs from complete code');
+   if(card.closest('.is-timetable')){const row=document.querySelector('.sf-week-row-label');if(!row||!row.querySelector('small').getBoundingClientRect().height)issues.push('timetable row time is missing');}
    measurements.push({name:name.textContent,time:time.textContent,staffing:badge.textContent,width:box.width});
   }
   return{issues,measurements};

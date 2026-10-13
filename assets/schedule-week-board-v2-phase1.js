@@ -3,7 +3,7 @@
   if(window.__sfWeekBoardV2Phase1)return;
   window.__sfWeekBoardV2Phase1=true;
 
-  const MODE_KEY='sf_schedule_week_view_v2';
+  const MODE_KEY='sf_schedule_week_timetable_v1';
   const ORDER=['OT1','OT2','OT3','OT','TR','O1','O1S','Teamleiter','O2','O2S','QA','O3'];
   const accent={teal:'#2ed9b8',cyan:'#38d7d4',violet:'#8f7dff',blue:'#62a0ff',amber:'#ffbd4f',pink:'#ff6f9d',red:'#ff6677'};
   let mode=sessionStorage.getItem(MODE_KEY)||'compact';
@@ -104,7 +104,7 @@
     const emp=employees.find(e=>e.id===a.employeeId);
     if(!emp)return'';
     const start=a.start||t.start,end=a.end||t.end;
-    return `<button type="button" class="sf-week-employee" style="${window.SFScheduleEmployeeDisplay?.style(emp)||''}" draggable="true" data-assignment-id="${esc(a.id)}" title="${esc(emp.first+' '+emp.last)} verschieben oder bearbeiten"><span class="sf-week-avatar">${esc(initials(emp))}</span><span class="sf-week-employee-info"><b>${esc([emp.last,emp.first].filter(Boolean).join(', '))}</b><small>${esc(start)} – ${esc(end)}</small>${window.SFDisplayPreferences?.hoursMarkup(emp,a.date)||''}</span></button>`;
+    return `<button type="button" class="sf-week-employee" style="${window.SFScheduleEmployeeDisplay?.style(emp)||''}" draggable="true" data-assignment-id="${esc(a.id)}" title="${esc([emp.last,emp.first].filter(Boolean).join(', '))} · ${esc(start)}–${esc(end)} · verschieben oder bearbeiten"><span class="sf-week-avatar">${esc(initials(emp))}</span><span class="sf-week-employee-info"><b>${esc([emp.last,emp.first].filter(Boolean).join(', '))}</b><small>${esc(start)} – ${esc(end)}</small>${window.SFDisplayPreferences?.hoursMarkup(emp,a.date)||''}</span></button>`;
   }
   function shiftBlock(date,id){
     const t=typeById(id);if(!t)return'';
@@ -192,6 +192,7 @@
     renderCandidates();markTarget();revealSidebar();
   }
   function revealSidebar(){
+    document.getElementById('view-schedule')?.classList.add('sf-week-picker-open');
     const panel=document.getElementById('sfManualPicker');
     if(innerWidth<1280)panel?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});
   }
@@ -210,7 +211,7 @@
     pool.hidden=!!target;
     document.getElementById('sfManualRosterOptions').hidden=!target;
     document.querySelector('#view-schedule .employee-pool').classList.toggle('sf-target-active',!!target);
-    if(!target){context.innerHTML='<b>Welchen Dienst möchtest du besetzen?</b><small>Klicke im Plan auf eine offene Position oder wähle Tag und Schicht. Vorhandene Zuweisungen öffnest du durch Klick auf den Namen.</small>';panel.innerHTML='';return}
+    if(!target){document.getElementById('view-schedule')?.classList.remove('sf-week-picker-open');context.innerHTML='<b>Welchen Dienst möchtest du besetzen?</b><small>Klicke im Plan auf eine offene Position oder wähle Tag und Schicht. Vorhandene Zuweisungen öffnest du durch Klick auf den Namen.</small>';panel.innerHTML='';return}
     const t=typeById(target.type);if(!t){target=null;renderCandidates();return}
     const count=assignmentsFor(target.date,target.type).length,soll=Number(getSoll(target.date,target.type)||0),shared=window.SFShiftModels?.coverageInfo?.(target.date,target.type);
     const status=shared?`${shared.label}: ${shared.filled} / ${shared.target} gemeinsam besetzt`:`${count} / ${soll} besetzt${count>=soll?' · zusätzliche Besetzung':' · '+(soll-count)+' offen'}`;
@@ -275,7 +276,7 @@
     renderCandidates();
   }
   function visibleShift(date,id){return (!shiftFilter||id===shiftFilter)&&(!onlyOpen||Math.max(0,Number(getSoll(date,id)||0)-assignmentsFor(date,id).length)>0)}
-  window.SFManualWeek={syncPeriod(){const f=document.getElementById('sfManualFilters');if(f)f.hidden=mode==='timeline'||window.SchichtFunkCalendarView?.getMode?.()==='month';},selectTarget};
+  window.SFManualWeek={syncPeriod(){document.getElementById('view-schedule')?.classList.toggle('sf-week-timetable',mode==='compact'&&window.SchichtFunkCalendarView?.getMode?.()!=='month');const f=document.getElementById('sfManualFilters');if(f)f.hidden=mode==='timeline'||window.SchichtFunkCalendarView?.getMode?.()==='month';},selectTarget};
 
   function ensureUi(){
     const grid=document.getElementById('calendarGrid');
@@ -288,7 +289,7 @@
     }
     if(!document.getElementById('sfWeekModeSeg')){
       const seg=document.createElement('div');seg.id='sfWeekModeSeg';seg.className='sf-week-mode-seg';
-      seg.innerHTML='<button type="button" data-sf-week-mode="compact">Übersicht</button><button type="button" data-sf-week-mode="board">Besetzung</button><button type="button" data-sf-week-mode="timeline">Zeitachse</button>';
+      seg.innerHTML='<button type="button" data-sf-week-mode="compact">Stundenplan</button><button type="button" data-sf-week-mode="board">Besetzung</button><button type="button" data-sf-week-mode="timeline">Zeitachse</button>';
       const oldSeg=toolbar.querySelector('.seg');
       toolbar.insertBefore(seg,oldSeg||null);
       seg.addEventListener('click',e=>{const b=e.target.closest('[data-sf-week-mode]');if(!b)return;mode=b.dataset.sfWeekMode;sessionStorage.setItem(MODE_KEY,mode);applyMode();if(mode!=='timeline')renderBoard()});
@@ -299,6 +300,7 @@
     const wrap=ensureUi(),grid=document.getElementById('calendarGrid'),soll=document.getElementById('sollList');
     if(!wrap||!grid)return;
     const board=mode!=='timeline';
+    document.getElementById('view-schedule')?.classList.toggle('sf-week-timetable',mode==='compact'&&window.SchichtFunkCalendarView?.getMode?.()!=='month');
     wrap.classList.toggle('active',board);
     grid.style.display=board?'none':'';
     if(soll)soll.style.display=board?'none':'';
@@ -310,11 +312,14 @@
     ensureManualUi();
     const ds=currentWeekDates(),ids=shiftOrder().filter(id=>!shiftFilter||id===shiftFilter);
     if(mode==='compact'){
-      const days=ds.map((d,i)=>{
-        const active=ids.filter(id=>visibleShift(iso(d),id)&&(getSoll(iso(d),id)>0||assignmentsFor(iso(d),id).length>0||window.SFShiftModels?.coverageGroup?.(id)));
-        return `<div class="sf-week-compact-day ${iso(d)===iso(new Date())?'is-today':''} ${i>4?'is-weekend':''}">${dayHeader(d,i)}${active.length?active.map(id=>shiftCell(d,i,id,0,1)).join(''):`<div class="sf-week-compact-empty">${onlyOpen?'Keine offenen Besetzungen':shiftFilter?'Keine passende Schicht':'Keine Schichten geplant'}</div>`}</div>`;
+      // Align each shift across all seven dates; hide rows without demand or assignments.
+      const rowIds=ids.filter(id=>ds.some(d=>visibleShift(iso(d),id)&&(getSoll(iso(d),id)>0||assignmentsFor(iso(d),id).length>0||window.SFShiftModels?.coverageGroup?.(id))));
+      const headers='<div class="sf-week-axis-head">Dienst</div>'+ds.map((d,i)=>dayHeader(d,i)).join('');
+      const rows=rowIds.map((id,rowIndex)=>{
+        const t=typeById(id);
+        return `<div class="sf-week-row-label"><b>${esc(id)}</b><small>${esc(t?.start||'')}–${esc(t?.end||'')}</small></div>`+ds.map((d,i)=>visibleShift(iso(d),id)?shiftCell(d,i,id,rowIndex,rowIds.length):'<div class="sf-week-filtered-cell"></div>').join('');
       }).join('');
-      wrap.innerHTML=`<div class="sf-week-board is-compact">${days}</div>`;
+      wrap.innerHTML=`<div class="sf-week-board is-compact is-timetable">${headers}${rows}</div>${rowIds.length?'':`<div class="sf-week-compact-empty">${onlyOpen?'Keine offenen Besetzungen':shiftFilter?'Keine passende Schicht':'Keine Schichten geplant'}</div>`}`;
     }else{
       const headers=ds.map((d,i)=>dayHeader(d,i)).join('');
       const rowIds=ids.filter(id=>ds.some(d=>visibleShift(iso(d),id)));

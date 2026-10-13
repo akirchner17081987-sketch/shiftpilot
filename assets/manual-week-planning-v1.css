@@ -94,3 +94,46 @@ html #appShell #view-schedule button:focus-visible,html #appShell #view-schedule
  html #appShell #view-schedule #sfWeekBoardV2{max-height:65vh}
  html #appShell #view-schedule .sf-manual-picker-fields{grid-template-columns:minmax(0,1fr)}
 }
+
+/* Compact timetable: aligned shift rows, all seven dates on desktop. */
+html #appShell #view-schedule.sf-week-timetable .sf-manual-workspace{grid-template-columns:minmax(0,1fr)}
+html #appShell #view-schedule.sf-week-timetable:not(.sf-week-picker-open) .sf-manual-sidebar{display:none}
+html #appShell #view-schedule.sf-week-timetable #sfWeekBoardV2{max-height:none;min-height:0;overflow:visible;padding:12px;background:var(--bg2)}
+html #appShell #view-schedule #sfWeekBoardV2 .sf-week-board.is-timetable{grid-template-columns:68px repeat(7,minmax(0,1fr));min-width:0;width:100%;gap:7px;align-items:stretch}
+html #appShell #view-schedule .is-timetable .sf-week-axis-head{align-self:center;color:var(--sf-manual-muted);font-size:var(--sf-text-secondary,.8125rem)}
+html #appShell #view-schedule .is-timetable .sf-week-row-label{display:flex;flex-direction:column;justify-content:center;gap:4px;min-width:0;overflow-wrap:anywhere;color:var(--sf-manual-text);font-size:var(--sf-text-secondary,.8125rem)}
+html #appShell #view-schedule .is-timetable .sf-week-row-label small{font-size:var(--sf-text-secondary,.8125rem);color:var(--sf-manual-muted)}
+html #appShell #view-schedule .is-timetable .sf-week-day{position:static;border:1px solid var(--sf-manual-line);border-radius:8px;box-shadow:none;background:var(--sf-manual-surface)}
+html #appShell #view-schedule .is-timetable .sf-week-day-head{background:transparent;padding:8px}
+html #appShell #view-schedule .is-timetable .sf-week-day-title{gap:4px;flex-wrap:wrap}
+html #appShell #view-schedule .is-timetable .sf-week-day-title strong{font-size:var(--sf-text-secondary,.8125rem);color:var(--sf-manual-text)}
+html #appShell #view-schedule .is-timetable .sf-week-day-title span{color:var(--sf-manual-muted)}
+html #appShell #view-schedule .is-timetable .sf-week-day-coverage{margin-top:4px;font-size:var(--sf-text-secondary,.8125rem)}
+html #appShell #view-schedule .is-timetable .sf-day-status{display:inline-block;background:transparent;border:0;padding:0;color:var(--sf-manual-good);font-size:var(--sf-text-secondary,.8125rem)}
+html #appShell #view-schedule .is-timetable .sf-day-status.warn{color:var(--sf-manual-warn)}
+html #appShell #view-schedule .is-timetable .sf-week-day-add{display:none}
+html #appShell #view-schedule .is-timetable .sf-week-shift-cell{padding:0;border:0;background:transparent;min-width:0}
+html #appShell #view-schedule .is-timetable .sf-week-shift{height:100%;border:1px solid var(--sf-manual-line);border-left:2px solid var(--sf-shift-accent);border-radius:8px;background:var(--sf-manual-surface)}
+html #appShell #view-schedule .is-timetable .sf-week-shift-head{padding:6px 7px;gap:4px;background:transparent}
+html #appShell #view-schedule .is-timetable .sf-week-shift-main strong{font-size:var(--sf-text-secondary,.8125rem);color:var(--sf-manual-text)}
+html #appShell #view-schedule .is-timetable .sf-week-shift-main small{display:none}
+html #appShell #view-schedule .is-timetable .sf-week-shift-count{display:flex;gap:3px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+html #appShell #view-schedule .is-timetable .sf-week-shift-count b{border:0;background:transparent;color:var(--sf-manual-muted);padding:0;font-size:var(--sf-text-secondary,.8125rem)}
+html #appShell #view-schedule .is-timetable .sf-week-shift:is(.under,.empty) .sf-week-shift-count b{color:var(--sf-manual-warn)}
+html #appShell #view-schedule .is-timetable .sf-week-employees{padding:0 5px 5px;gap:3px}
+html #appShell #view-schedule .is-timetable .sf-week-employee{display:block;min-height:26px;padding:4px 5px;border:0;border-radius:5px;background:var(--panel2);color:var(--sf-manual-text)}
+html #appShell #view-schedule .is-timetable .sf-week-avatar{display:none}
+html #appShell #view-schedule #sfWeekBoardV2 .is-timetable .sf-week-employee-info b{font-size:var(--sf-text-secondary,.8125rem)!important;font-weight:500;line-height:1.35;color:var(--sf-manual-text);white-space:normal;overflow-wrap:anywhere}
+html #appShell #view-schedule #sfWeekBoardV2 .is-timetable .sf-week-employee-info small{display:none}
+html #appShell #view-schedule .is-timetable .sf-week-employee .sf-display-hours{display:none}
+html #appShell #view-schedule .is-timetable :is(.sf-week-open,.sf-week-add){min-height:26px;width:calc(100% - 10px);margin:0 5px 5px;padding:3px 4px;font-size:var(--sf-text-secondary,.8125rem)!important;line-height:1.4;white-space:normal;overflow-wrap:anywhere;min-width:0;border-radius:5px;background:transparent}
+html #appShell #view-schedule .is-timetable .sf-week-open{color:var(--sf-manual-warn);border-color:var(--sf-manual-warn)}
+html #appShell #view-schedule .is-timetable .sf-week-shared{padding:3px 6px!important;font-size:var(--sf-text-secondary,.8125rem)!important}
+html #appShell #view-schedule .is-timetable .sf-week-over{padding:3px;margin:0 5px 5px;font-size:var(--sf-text-secondary,.8125rem);background:transparent;color:var(--sf-manual-muted);border:0}
+html #appShell #view-schedule .is-timetable .sf-week-shift.is-inactive{min-height:60px;background:var(--bg2);border-color:var(--sf-manual-line);border-left-color:var(--sf-manual-line)}
+@media(min-width:1500px){html #appShell #view-schedule.sf-week-timetable.sf-week-picker-open .sf-manual-workspace{grid-template-columns:minmax(0,1fr) 280px}}
+@media(max-width:1023px){
+ html #appShell #view-schedule.sf-week-timetable #sfWeekBoardV2{overflow-x:auto;padding:8px}
+ html #appShell #view-schedule #sfWeekBoardV2 .sf-week-board.is-timetable{grid-template-columns:60px repeat(7,minmax(110px,1fr));min-width:872px}
+}
+@media(pointer:coarse){html #appShell #view-schedule .is-timetable :is(.sf-week-employee,.sf-week-open,.sf-week-add){min-height:44px}}
