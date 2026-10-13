@@ -183,7 +183,7 @@ window.SFHelpContent = {
     "schedule": [
       [
         "Wie besetze oder ändere ich eine Schicht?",
-        "Wählen Sie einen passenden Mitarbeiter aus dem Pool oder öffnen Sie eine freie Position. Öffnen Sie eine vorhandene Zuordnung, um Beginn, Ende oder Mitarbeiter zu ändern oder die Zuordnung zu löschen."
+        "Der Wochenplan steht links, die manuelle Besetzung rechts. Klicken Sie auf eine offene Position oder wählen Sie über „Manuell planen“ Tag und Schicht. Die Mitarbeiterauswahl zeigt einplanbare Mitarbeiter als Nachname, Vorname mit Wochen- und Monatsstunden. Suche und Teamfilter grenzen die Liste ein; „Gesperrte anzeigen“ zeigt Konfliktgründe. Ein Klick auf einen Mitarbeiter startet die bestehende Zuweisungsprüfung. Hinweise müssen bestätigt werden, verbindliche Sperren bleiben wirksam. Bei veröffentlichten Diensten läuft die Änderungsprüfung. „Ergänzen“ erlaubt zusätzliche Besetzung; „＋ Dienst“ und die Schichtauswahl erlauben auch optionale Dienste ohne Pflichtbedarf. Filtern Sie die Übersicht bei Bedarf nach Schicht oder „Nur offene Besetzungen“. Öffnen Sie eine vorhandene Zuordnung durch Klick auf den Namen, um Zeit oder Mitarbeiter zu ändern oder die Zuordnung zu löschen."
       ],
       [
         "Was bedeutet SOLL / IST?",
@@ -203,7 +203,7 @@ window.SFHelpContent = {
       ],
       [
         "Wie nutze ich Schichtvorlagen?",
-        "Legen Sie Name, Zeiten und Standardbesetzung als Vorlage fest. Abweichende Tageswerte und individuell angepasste Zeiten können Sie separat pflegen."
+        "Die Schichtvorlagen stehen in der Wochenplanung rechts unter der einklappbaren Rubrik „Schichtvorlagen“. Legen Sie Name, Zeiten und Standardbesetzung als Vorlage fest. Abweichende Tageswerte und individuell angepasste Zeiten können Sie separat pflegen."
       ],
       [
         "Wie exportiere ich den Gesamtdienstplan eines Monats?",

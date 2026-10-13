@@ -86,7 +86,7 @@ html #appShell #view-schedule button:focus-visible,html #appShell #view-schedule
  html #appShell #view-schedule .sf-manual-filters{gap:10px;padding:10px}
  html #appShell #view-schedule #sfManualFilterResult{margin-left:0}
  html #appShell #view-schedule .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
- html #appShell #view-schedule .stats .stat{min-width:0;padding:10px}
+ html #appShell #view-schedule .stats .stat{display:block;min-width:0;padding:10px}
  html #appShell #view-schedule .stats .stat-icon{display:none}
  html #appShell #view-schedule #sfWeekBoardV2{max-height:65vh}
  html #appShell #view-schedule .sf-manual-picker-fields{grid-template-columns:minmax(0,1fr)}
