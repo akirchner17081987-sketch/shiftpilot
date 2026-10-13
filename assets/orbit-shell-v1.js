@@ -30,7 +30,7 @@
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let motion = 'full';
   try { const value = localStorage.getItem(KEY); if (['full', 'subtle', 'off'].includes(value)) motion = value; } catch (_) {}
-  let shell, dock, popup, entries, title, frame, live, openGroup = null, queue = false, animations = [], ornaments = [], context = '';
+  let shell, dock, popup, entries, title, frame, live, settingsSelection, openGroup = null, queue = false, animations = [], ornaments = [], context = '';
   const buttons = new Map();
   const effectiveMotion = () => reducedMotion.matches ? 'off' : motion;
   const backend = () => window.SFBackend || {};
@@ -158,6 +158,15 @@
     const label = LABELS[active] || '';
     if (live.textContent !== label) live.textContent = label;
     applySelectValues();
+    const selected = active === 'settings' ? shell.querySelector('#sfSettingsV2 .sf-set-nav button.active') : null;
+    if (selected && selected !== settingsSelection) {
+      settingsSelection = selected;
+      const nav = selected.parentElement, rail = nav.getBoundingClientRect(), item = selected.getBoundingClientRect();
+      // Scroll only the local rail; do not move the page or interrupt manual browsing.
+      if (item.right > rail.right - 8) nav.scrollLeft += item.right - rail.right + 8;
+      else if (item.left < rail.left + 8) nav.scrollLeft -= rail.left + 8 - item.left;
+    }
+    if (!selected) settingsSelection = null;
     if (openGroup) {
       const group = GROUPS.find(item => item.id === openGroup);
       const signature = availableItems(group).map(([view]) => [view, allowed(source(view)), source(view)?.querySelector('.badge')?.textContent || '', source(view)?.querySelector('.badge')?.style.display || ''].join(':')).join('|') + active;
@@ -200,6 +209,7 @@
     document.addEventListener('keydown', event => { if (event.key === 'Escape' && openGroup) { event.preventDefault(); close(true); } });
     document.addEventListener('change', event => { if (event.target.matches('select[data-orbit-motion]')) setMotion(event.target.value); });
     window.addEventListener('resize', positionPopup); window.visualViewport?.addEventListener('resize', positionPopup);
+    window.addEventListener('resize', () => { settingsSelection = null; scheduleRefresh(); });
     reducedMotion.addEventListener?.('change', applyMotion);
     document.addEventListener('visibilitychange', () => { if (document.hidden) close(); else scheduleRefresh(); });
     new MutationObserver(scheduleRefresh).observe(sidebar, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'disabled', 'aria-disabled', 'aria-hidden', 'class', 'style'] });
