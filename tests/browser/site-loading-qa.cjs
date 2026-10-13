@@ -39,6 +39,7 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
  if(role==='TIME_TRACKING'){assert.equal(await page.locator('#view-time').evaluate(n=>n.classList.contains('active')),true)}
  if(role==='OWNER'){assert.deepEqual(data.startup,{shellVisible:true,ready:false,shellReady:true,entryDismissed:true,viewInert:true,status:true});assert.equal(await page.locator('#sfStartupStatus').count(),0);assert.equal(await page.locator('#appShell').evaluate(n=>n.getAttribute('aria-busy')),null)}
  if(windowOrbit(data)) {
+   if(role!=='SIGNED_OUT'&&role!=='EMPLOYEE')assert.equal(await page.locator('#appShell>.sidebar').isVisible(),false,'legacy main navigation stays hidden for every manager role');
    if(role==='TIME_TRACKING') {
      await page.locator('[data-orbit-category="personal"]').click();
      assert.equal(await page.locator('#sfOrbitPopup [data-orbit-target="time"]').isEnabled(),true);
@@ -75,6 +76,17 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
    await page.locator('select[data-orbit-motion]').selectOption('full');
    for(const [theme,width] of [['dark',1440],['light',390],['dark',320]]){
      await page.setViewportSize({width,height:1000});await page.evaluate(t=>SFManagerTheme.apply(t,false),theme);
+     assert.equal(await page.locator('#appShell>.sidebar').isVisible(),false,'legacy main navigation stays hidden at every viewport');
+     const settingNav=page.locator('#sfSettingsV2 .sf-set-nav'),settingPanel=page.locator('#sfSettingsV2 .sf-set-panel');
+     const navBox=await settingNav.boundingBox(),panelBox=await settingPanel.boundingBox();
+     assert.ok(navBox.y+navBox.height<=panelBox.y+1,'settings navigation sits above the workspace, never on the left');
+     assert.equal(await settingNav.evaluate(n=>getComputedStyle(n).display),'flex','compact horizontal settings navigation');
+     for(const tab of ['account','planning','display']){
+       const button=page.locator('#sfSettingsV2 [data-setting-tab="'+tab+'"]');await button.click();
+       assert.equal(await button.evaluate(n=>n.classList.contains('active')),true,'original settings tab remains reachable: '+tab);
+       assert.equal(await button.locator('span').last().isVisible(),true,'settings label stays readable');
+     }
+     await page.screenshot({path:path.join(out,'orbit-settings-'+theme+'-'+width+'.png'),animations:'disabled'});
      assert.equal(await page.locator('#appShell .topbar .company-card').isVisible(),true,'company switching stays available on mobile');
      await page.locator('[data-orbit-category="personal"]').click();
      const menu=await page.locator('#sfOrbitPopup').boundingBox();assert.ok(menu.x>=0&&menu.x+menu.width<=width+1,'menu fits viewport');
@@ -85,7 +97,7 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
    }
    await page.setViewportSize({width:1440,height:1000});await page.evaluate(()=>SFManagerTheme.apply('dark',false));
  }
- for(const view of ['schedule','employees','absence','auto','time','reports','settings']){await page.evaluate(v=>showView(v),view);await page.locator('#view-'+view+'.active').waitFor({state:'visible'});assert.equal(await page.locator('#view-'+view).evaluate(n=>n.classList.contains('active')),true,view+' navigation')}
+ for(const view of ['schedule','employees','absence','auto','time','reports','settings']){await page.evaluate(v=>showView(v),view);await page.locator('#view-'+view+'.active').waitFor({state:'visible'});assert.equal(await page.locator('#view-'+view).evaluate(n=>n.classList.contains('active')),true,view+' navigation');if(windowOrbit(data))assert.equal(await page.locator('#appShell>.sidebar').isVisible(),false,'legacy navigation stays hidden in '+view)}
  await page.evaluate(()=>{employees=[{id:'qa-e',first:'Vorname',last:'Nachname',status:'active',employment:'Vollzeit',weeklyHours:40,shifts:TYPES.map(t=>t.id),qualifications:[]}];const t=TYPES[0];assignments=[{id:'qa-a',employeeId:'qa-e',type:t.id,date:iso(weekStart),start:t.start,end:t.end}];showView('schedule');editAssignment('qa-a')});await page.locator('#spAssignModal').waitFor();await page.evaluate(()=>spCloseAssignModal());
  await page.locator('#sfHelpButton').click();await page.locator('#sfHelpModal:not([hidden])').waitFor();assert.ok(await page.locator('#sfHelpResults .sf-help-article').count()>0);await page.locator('#sfHelpClose').click();
  for(const [theme,width]of[['dark',1440],['light',390]]){await page.setViewportSize({width,height:1000});await page.evaluate(t=>document.documentElement.dataset.sfTheme=t,theme);await page.evaluate(()=>showView('auto'));if(width<820)await page.waitForFunction(()=>document.querySelector('#appShell .sidebar').getBoundingClientRect().right<=1);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),true);await page.screenshot({path:path.join(out,'auto-'+theme+'-'+width+'.png'),animations:'disabled'})}
