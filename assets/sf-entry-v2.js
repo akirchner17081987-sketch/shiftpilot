@@ -20,6 +20,10 @@
   let activeAuth = null;
   let metricsWritten = false;
   let raf = 0;
+  let welcoming = false;
+  let welcomeTimer = 0;
+  const welcome = root.querySelector('#sfEntryWelcome');
+  const welcomeTitle = root.querySelector('#sfEntryWelcomeTitle');
 
   function mark(stage) {
     if (done[stage]) return;
@@ -63,6 +67,7 @@
     if (!done.ready) mark('ready');
     if (!metricsWritten) { measure(); metricsWritten = true; }
     clearTimeout(slowTimer);
+    clearTimeout(welcomeTimer);
     observer?.disconnect();
     window.removeEventListener('load', onLoad);
     root.classList.add('sf-entry-out');
@@ -72,6 +77,46 @@
   function isVisible(el) {
     return !!el && el.isConnected && getComputedStyle(el).display !== 'none' &&
       getComputedStyle(el).visibility !== 'hidden';
+  }
+
+  function cancelWelcome() {
+    if (!welcoming) return;
+    clearTimeout(welcomeTimer);
+    welcoming = false;
+    root.classList.toggle('sf-entry-success', false);
+    if (welcome) welcome.hidden = true;
+  }
+
+  function welcomeToWorkspace() {
+    if (welcoming || dismissed) return;
+    // Restored sessions open directly; the cinematic transition follows a real login.
+    if (!morphed || !welcome || document.hidden ||
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
+        root.classList.contains('sf-entry-skip-animation')) { dismiss(); return; }
+    welcoming = true;
+    clearTimeout(slowTimer);
+    const name = window.SFBackend?.user?.user_metadata?.full_name;
+    if (welcomeTitle) welcomeTitle.textContent = typeof name === 'string' && name.trim()
+      ? 'Willkommen, ' + name.trim().split(/\s+/)[0].slice(0,60) + '.'
+      : 'Willkommen bei SchichtFunk.';
+    const visual = root.querySelector('.sf-entry-visual');
+    if (visual) {
+      const a = root.getBoundingClientRect(), b = visual.getBoundingClientRect();
+      root.style.setProperty('--sf-entry-success-shift', (a.x + a.width / 2 - b.x - b.width / 2) + 'px');
+    }
+    root.scrollTop = 0;
+    welcome.hidden = false;
+    root.inert = true;
+    root.classList.add('sf-entry-success');
+    welcomeTimer = setTimeout(() => {
+      // Re-check the protected workspace before revealing it, even if the tab was suspended.
+      welcoming = false;
+      const B = window.SFBackend;
+      const valid = (isVisible(document.getElementById('appShell')) && (B?.ready || B?.shellReady)) ||
+        (isVisible(document.getElementById('sfEmployeePortal')) && B?.ready);
+      if (valid && !isVisible(document.getElementById('sfMfaModal'))) dismiss();
+      else { welcoming = true; cancelWelcome(); checkReady(); }
+    }, 4200);
   }
 
   function syncAuthLoading() {
@@ -114,8 +159,9 @@
     // Let the real security dialog stay above the decorative entry surface.
     const mfaReady = isVisible(document.getElementById('sfMfaModal'));
     root.classList.toggle('sf-entry-mfa-ready', mfaReady);
-    root.inert = mfaReady;
+    root.inert = mfaReady || welcoming;
     if (mfaReady) {
+      cancelWelcome();
       readyTarget = 'mfa';
       mark('ready');
       label.textContent = 'Sicherheitscode erforderlich';
@@ -131,9 +177,11 @@
     const employeeReady = isVisible(employee) && !!window.SFBackend?.ready;
     if (managerReady || employeeReady) {
       readyTarget = employeeReady ? 'employee' : 'manager';
-      dismiss();
+      welcomeToWorkspace();
       return;
     }
+    cancelWelcome();
+    root.inert = false;
     // The branded entry now *becomes* the login; background stays continuous.
     if (isVisible(auth) && !!window.SFBackend?.client) morphToLogin(auth);
     else syncAuthLoading();
@@ -200,3 +248,4 @@
   // An unchanged startup still warns after 20 seconds. Readiness clears the timer.
   checkReady();
 })();
+

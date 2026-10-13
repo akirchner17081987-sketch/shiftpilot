@@ -187,4 +187,37 @@ html:has(#sfEntryOverlay),body:has(#sfEntryOverlay){overflow:hidden}
  #sfEntryOverlay #sfAuthBackdrop .sf-auth-foot{padding:10px 22px 22px}
 }
 
+/* A calm 4.2-second welcome follows successful interactive authentication. */
+#sfEntryOverlay .sf-entry-visual{transition:transform 2s cubic-bezier(.22,.65,.25,1)}
+#sfEntryOverlay .sf-entry-access{transition:opacity 1.2s ease,transform 1.5s cubic-bezier(.22,.65,.25,1),filter 1.2s ease}
+#sfEntryOverlay .sf-entry-capabilities,#sfEntryOverlay .sf-entry-world-caption{transition:opacity 1s ease}
+#sfEntryOverlay.sf-entry-success{overflow:hidden}
+#sfEntryOverlay.sf-entry-success .sf-entry-access{opacity:0;transform:translateY(25px) scale(.95);filter:blur(5px);pointer-events:none}
+#sfEntryOverlay.sf-entry-success .sf-entry-visual{transform:translate(var(--sf-entry-success-shift,0px),-48px)}
+#sfEntryOverlay.sf-entry-success .sf-entry-capabilities,#sfEntryOverlay.sf-entry-success .sf-entry-world-caption{opacity:0}
+#sfEntryOverlay.sf-entry-success #sfEntryGlobe{animation:sf-entry-welcome-earth 4.2s ease-in-out both}
+#sfEntryOverlay.sf-entry-success .sf-entry-world-halo{animation:sf-entry-welcome-halo 3.8s .2s ease-out both}
+.sf-entry-welcome[hidden]{display:none!important}
+.sf-entry-welcome{position:absolute;z-index:2;left:20px;right:20px;bottom:clamp(28px,10vh,120px);text-align:center;pointer-events:none;animation:sf-entry-welcome-copy 4.2s ease both}
+.sf-entry-welcome-kicker{font-size:10px;font-weight:750;letter-spacing:.22em;color:#56ddc5}
+.sf-entry-welcome h2{font-size:clamp(24px,3vw,36px);font-weight:650;letter-spacing:-.035em;color:#f0fcf8;margin:14px 0 10px}
+.sf-entry-welcome p{font-size:14px;line-height:1.6;color:#a3c4cb;margin:0}
+.sf-entry-welcome-line{width:80px;height:1px;margin:24px auto 0;background:linear-gradient(90deg,transparent,#55e5c6,transparent);box-shadow:0 0 14px rgba(54,232,197,.4)}
+@keyframes sf-entry-welcome-copy{0%,12%{opacity:0;transform:translateY(18px)}38%,88%{opacity:1;transform:translateY(0)}100%{opacity:1;transform:translateY(-3px)}}
+@keyframes sf-entry-welcome-earth{0%{filter:brightness(1);transform:scale(1)}50%{filter:brightness(1.38);transform:scale(1.035)}100%{filter:brightness(1.08);transform:scale(1)}}
+@keyframes sf-entry-welcome-halo{0%{opacity:0;transform:scale(.9)}40%{opacity:.85}100%{opacity:0;transform:scale(1.6)}}
+@media(min-width:861px) and (max-height:760px){
+ #sfEntryOverlay.sf-entry-success .sf-entry-visual{transform:translate(var(--sf-entry-success-shift,0px),-62px)}
+ .sf-entry-welcome{bottom:24px}
+ .sf-entry-welcome h2{font-size:27px;margin:10px 0 6px}
+ .sf-entry-welcome-line{margin-top:14px}
+}
+@media(max-width:860px){
+ #sfEntryOverlay.sf-entry-success .sf-entry-inner{justify-content:center;height:100dvh;min-height:0;padding-bottom:190px}
+ #sfEntryOverlay.sf-entry-success .sf-entry-access{position:absolute;left:24px;right:24px;top:48%}
+ #sfEntryOverlay.sf-entry-success .sf-entry-visual{transform:translate(var(--sf-entry-success-shift,0px),-20px)}
+ #sfEntryOverlay.sf-entry-success .sf-entry-world{width:min(360px,85vw)}
+ .sf-entry-welcome{bottom:10vh}
+}
+
 

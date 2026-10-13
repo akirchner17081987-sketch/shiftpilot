@@ -13,8 +13,8 @@
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
 <link rel="manifest" href="/site.webmanifest" />
 <link rel="preload" href="assets/schichtfunk-logo-v2-entry.svg?v=20261011-days1" as="image" type="image/svg+xml">
-<link rel="stylesheet" href="assets/sf-entry-v2.css?v=20261013-globe1">
-<script defer src="assets/sf-entry-v2.js?v=20261011-5"></script>
+<link rel="stylesheet" href="assets/sf-entry-v2.css?v=20261013-welcome1">
+<script defer src="assets/sf-entry-v2.js?v=20261013-welcome1"></script>
 <script defer src="assets/sf-entry-globe-v1.js?v=20261013-globe1"></script>
 <title>SchichtFunk – Dienstplanung</title>
 <script>
@@ -192,6 +192,12 @@ html[data-sf-theme="light"] #sfEmployeePortal{
     </div>
     <div id="sfEntryLoginSlot" class="sf-entry-login-slot" aria-label="SchichtFunk Anmeldung"></div>
     </div>
+  </div>
+  <div id="sfEntryWelcome" class="sf-entry-welcome" role="status" aria-live="polite" hidden>
+    <span class="sf-entry-welcome-kicker">ANMELDUNG ERFOLGREICH</span>
+    <h2 id="sfEntryWelcomeTitle">Willkommen bei SchichtFunk.</h2>
+    <p>Dein Arbeitsbereich ist bereit.</p>
+    <div class="sf-entry-welcome-line" aria-hidden="true"></div>
   </div>
 </div>
 <script>try{performance.mark('sf-entry-visible')}catch(e){}</script>
