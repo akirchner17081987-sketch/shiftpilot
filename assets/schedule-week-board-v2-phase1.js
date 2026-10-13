@@ -174,12 +174,13 @@
     });
     wrap.querySelectorAll('[data-plan-day]').forEach(b=>b.onclick=()=>{
       const picker=document.getElementById('sfManualDay');if(picker)picker.value=b.dataset.planDay;
-      target=null;renderCandidates();document.getElementById('sfManualShift')?.focus();
+      target=null;markTarget();renderCandidates();document.getElementById('sfManualShift')?.focus();
       revealSidebar();
     });
   }
 
   function name(e){return [e.last,e.first].filter(Boolean).join(', ')}
+  function canPlan(){const B=window.SFBackend;if(!B?.ready)return true;return typeof B.can==='function'?B.can('plan'):['OWNER','ADMIN','PLANNER','DISPATCHER'].includes(B.role)}
   function labelDate(date){return new Date(date+'T12:00:00').toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit'})}
   function selectTarget(type,date){
     if(!typeById(type))return;
@@ -199,6 +200,7 @@
   }
   function checkCandidate(e){
     const t=typeById(target.type),C=window.SFCompliance;
+    if(!canPlan())return {hard:['Dieser Zugang darf den Dienstplan nur ansehen.'],soft:[]};
     if(!C?.check||!C?.save)return {hard:['Planungsprüfung wird noch geladen. Bitte kurz warten.'],soft:[]};
     return C.check(e,target.type,target.date,t.start,t.end);
   }
@@ -228,7 +230,7 @@
       return `<button type="button" class="sf-manual-person ${c.hard.length?'blocked':c.soft.length?'warn':'good'}" data-manual-employee="${esc(e.id)}" ${c.hard.length?'disabled':''}><span class="sf-manual-person-name">${esc(name(e))}<span>${e.planningTeam?'Team '+esc(e.planningTeam)+' · ':''}${esc(e.personnelNo||'')}</span></span><span class="sf-manual-hours"><span>Woche <b>${number(week)} / ${number(e.weeklyHours)} h</b></span><span>Monat <b>${number(month)} / ${number(monthly)} h</b></span></span><span class="sf-manual-person-status">${c.hard.length?'⛔ '+esc(c.hard.join(' ')):c.soft.length?'⚠ '+esc(c.soft.join(' ')):'✓ Einplanbar · +'+number(duration)+' h'}</span>${!c.hard.length?'<span class="sf-manual-person-action">'+(window.SFCompliance?.isWeekPublished?.(target.date)?'Änderung prüfen →':'Zuweisen →')+'</span>':''}</button>`;
     }).join('')||`<div class="sf-manual-empty">${rows.length?'Kein Mitarbeiter ist für diesen Dienst einplanbar. Aktiviere „Gesperrte anzeigen“, um die Gründe zu sehen.':'Keine Mitarbeiter für diese Suche oder dieses Team gefunden.'}</div>`;
     panel.querySelectorAll('[data-manual-employee]:not([disabled])').forEach(button=>button.onclick=()=>{
-      const e=employees.find(x=>x.id===button.dataset.manualEmployee);if(!e||!target)return;
+      const e=employees.find(x=>x.id===button.dataset.manualEmployee);if(!e||!target||!canPlan())return;
       // Use the existing save path, including fresh checks and published-plan approvals.
       window.SFCompliance?.save?.(e,target.type,target.date,t.start,t.end);
       renderCandidates();

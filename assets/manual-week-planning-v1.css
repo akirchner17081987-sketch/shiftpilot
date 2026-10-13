@@ -6,6 +6,9 @@ html #appShell #view-schedule .stats{gap:10px;margin-bottom:16px}
 html #appShell #view-schedule .stats .stat{min-height:72px;padding:12px 16px}
 html #appShell #view-schedule .sf-manual-workspace{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
 html #appShell #view-schedule .sf-manual-workspace>.calendar{min-width:0;margin:0;overflow:hidden}
+html #appShell #view-schedule .sf-manual-workspace>#sfPlanContext{grid-column:1/-1;margin:0}
+html #appShell #view-schedule.sf-schedule-readonly .sf-manual-workspace{grid-template-columns:minmax(0,1fr)}
+html #appShell #view-schedule.sf-schedule-readonly :is(.sf-manual-sidebar,#sfManualPlanBtn,.sf-week-day-add,.sf-week-add,.sf-week-open){display:none!important}
 html #appShell #view-schedule .sf-manual-sidebar{position:sticky;top:18px;min-width:0;display:grid;gap:12px}
 html #appShell #view-schedule .sf-manual-sidebar .employee-pool{min-width:0;margin:0;padding:14px}
 html #appShell #view-schedule .sf-manual-sidebar .employee-pool-head{grid-template-columns:minmax(0,1fr);gap:8px;margin:16px 0 10px;padding:0}
