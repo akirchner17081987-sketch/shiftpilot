@@ -17,7 +17,7 @@ html #appShell #view-schedule .sf-manual-sidebar .employee-pool-head input{grid-
 html #appShell #view-schedule .sf-manual-sidebar .sp-pool-toggle,
 html #appShell #view-schedule .sf-manual-sidebar .sp-dynpool-info{display:none}
 html #appShell #view-schedule .sf-manual-sidebar .employee-pool-list{grid-template-columns:minmax(0,1fr);max-height:45vh!important;padding:0!important;gap:8px!important}
-html #appShell #view-schedule .sf-manual-sidebar .employee-pool-list[hidden]{display:none!important}
+html #appShell #view-schedule :is(.sf-manual-sidebar,.sf-inline-duty-picker) .employee-pool-list[hidden]{display:none!important}
 html #appShell #view-schedule .sf-manual-sidebar .employee-drag{padding:10px!important;grid-template-columns:28px minmax(0,1fr) 12px;gap:0 8px}
 html #appShell #view-schedule .sf-manual-sidebar .employee-drag .avatar{width:28px;height:28px;font-size:var(--sf-text-secondary,.8125rem)}
 html #appShell #view-schedule .sf-manual-sidebar .pool-detail-label{margin:8px 0 4px;padding:6px 0 0;font-size:var(--sf-text-secondary,.8125rem)!important}
