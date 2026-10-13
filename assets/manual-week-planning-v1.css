@@ -113,7 +113,7 @@ html #appShell #view-schedule .is-timetable .sf-day-status{display:inline-block;
 html #appShell #view-schedule .is-timetable .sf-day-status.warn{color:var(--sf-manual-warn)}
 html #appShell #view-schedule .is-timetable .sf-week-day-add{display:none}
 html #appShell #view-schedule .is-timetable .sf-week-shift-cell{padding:0;border:0;background:transparent;min-width:0}
-html #appShell #view-schedule .is-timetable .sf-week-shift{height:100%;border:1px solid var(--sf-manual-line);border-left:2px solid var(--sf-shift-accent);border-radius:8px;background:var(--sf-manual-surface)}
+html #appShell #view-schedule .is-timetable .sf-week-shift{height:100%;padding:0!important;border:1px solid var(--sf-manual-line);border-left:2px solid var(--sf-shift-accent);border-radius:8px;background:var(--sf-manual-surface)}
 html #appShell #view-schedule .is-timetable .sf-week-shift-head{padding:6px 7px;gap:4px;background:transparent}
 html #appShell #view-schedule .is-timetable .sf-week-shift-main strong{font-size:var(--sf-text-secondary,.8125rem);color:var(--sf-manual-text)}
 html #appShell #view-schedule .is-timetable .sf-week-shift-main small{display:none}
