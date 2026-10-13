@@ -76,9 +76,9 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
    await page.evaluate(()=>{document.querySelector('#appShell .main').scrollTop=0;window.scrollTo(0,0);SFOrbit.setMotion('off')});
    assert.equal(await page.locator('.sf-orbit-emblem').evaluate(n=>n.getAnimations({subtree:true}).length),0,'motion off includes the decorative Orbit graphic');
    for(const [theme,width] of [['dark',1440],['light',1440],['dark',390],['light',390],['dark',320]]){
-     await page.setViewportSize({width,height:1000});await page.evaluate(t=>{SFManagerTheme.apply(t,false);document.querySelector('#appShell .main').scrollTop=0;window.scrollTo(0,0)},theme);
-     await page.waitForFunction(()=>document.querySelector('#appShell .main').scrollTop<1);
-     const hero=await page.locator('.sf-orbit-hero').boundingBox(),bar=await page.locator('#appShell>.topbar').boundingBox();assert.ok(hero.y>=bar.y+bar.height-1&&hero.y<bar.y+bar.height+50,'graphic hero is the first visible workspace content');
+     await page.setViewportSize({width,height:1000});await page.evaluate(t=>{SFManagerTheme.apply(t,false);document.activeElement?.blur?.();document.querySelector('#appShell .main').scrollTo({top:0,left:0,behavior:'instant'});window.scrollTo({top:0,left:0,behavior:'instant'})},theme);
+     await page.waitForFunction(()=>document.querySelector('#appShell .main').scrollTop<1&&window.scrollY<1);
+     const hero=await page.locator('.sf-orbit-hero').boundingBox(),bar=await page.locator('#appShell>.topbar').boundingBox();assert.ok(bar.y>=-1&&hero.y>=bar.y+bar.height-1&&hero.y<bar.y+bar.height+50,'graphic hero and topbar are the first visible workspace content');
      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),true,'Orbit overview fits '+width);
      const emblem=await page.locator('.sf-orbit-emblem').boundingBox();assert.ok(emblem.x>=0&&emblem.x+emblem.width<=width+1,'graphic fits the viewport');
      for(const key of ['present','coverage','actions'])assert.equal(await page.locator('.sf-orbit-overview-metrics [data-td-kpi="'+key+'"]').isVisible(),true);
