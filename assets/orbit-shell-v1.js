@@ -271,7 +271,8 @@
       const art = document.createElement('div'); art.className = 'sf-orbit-emblem';
       art.innerHTML = '<svg viewBox="0 0 420 420" fill="none"><defs><linearGradient id="sfOrbitArc" x1="0" y1="0" x2="420" y2="420" gradientUnits="userSpaceOnUse"><stop stop-color="currentColor" stop-opacity=".08"/><stop offset=".45" stop-color="currentColor"/><stop offset="1" stop-color="currentColor" stop-opacity=".1"/></linearGradient></defs><circle cx="210" cy="210" r="190" stroke="currentColor" opacity=".1" stroke-dasharray="1 10"/><g class="sf-orbit-orbit-track"><ellipse cx="210" cy="210" rx="192" ry="166" transform="rotate(-32 210 210)" stroke="url(#sfOrbitArc)" stroke-width="1"/><circle cx="48" cy="311" r="3" fill="currentColor"/><circle cx="371" cy="109" r="2" fill="currentColor"/></g></svg>';
       const metrics = document.createElement('div'); metrics.className = 'sf-orbit-overview-metrics'; metrics.setAttribute('aria-label', 'Zentrale Tageskennzahlen');
-      hero.append(art, metrics);
+      const content = document.createElement('div'); content.className = 'sf-orbit-hero-content'; content.append(head, metrics);
+      hero.append(content, art);
       globe = createGlobe(art);
       art.querySelector('svg').setAttribute('aria-hidden', 'true');
       siteOrbit = createSiteOrbit(art);
