@@ -43,9 +43,87 @@
   const overviewExpanded = new Map();
   let overviewContext = '';
   let globe = null;
+  let siteOrbit = null;
+  function createSiteOrbit(art) {
+    const host = document.createElement('div'); host.className = 'sf-orbit-sites'; host.setAttribute('role', 'group'); host.setAttribute('aria-label', 'Standorte · Tagesstatus');
+    const pins = document.createElement('div'); pins.className = 'sf-orbit-site-pins';
+    const info = document.createElement('div'); info.className = 'sf-orbit-site-info'; info.id = 'sfOrbitSiteInfo'; info.hidden = true; info.setAttribute('role', 'tooltip');
+    const caption = document.createElement('div'); caption.className = 'sf-orbit-site-caption';
+    const label = document.createElement('span'); label.textContent = 'Standorte';
+    const reset = document.createElement('button'); reset.type = 'button'; reset.className = 'sf-orbit-site-reset'; reset.setAttribute('aria-label', 'Standortfilter zurücksetzen');
+    const previous = document.createElement('button'), next = document.createElement('button'), range = document.createElement('span');
+    previous.type = next.type = 'button'; previous.textContent = '‹'; next.textContent = '›'; previous.setAttribute('aria-label', 'Vorherige Standorte'); next.setAttribute('aria-label', 'Weitere Standorte');
+    range.className = 'sf-orbit-site-range';
+    caption.append(label, reset, previous, range, next); host.append(pins, info, caption); art.append(host);
+    let page = 0, signature = '', selected = '', data = null, hovered = '';
+    const buttons = new Map();
+    function hideInfo() { info.hidden = true; hovered = ''; buttons.forEach(b => b.removeAttribute('aria-describedby')); }
+    function showInfo(id) {
+      const current = window.SFToday?.getSiteOverview?.(), site = current?.sites.find(s => s.id === id);
+      if (!site) { hideInfo(); return; }
+      hovered = id; info.replaceChildren();
+      const name = document.createElement('strong'); name.textContent = site.name;
+      const status = document.createElement('span'); status.className = 'sf-orbit-site-status'; status.dataset.status = site.status; status.textContent = site.label;
+      const values = document.createElement('dl');
+      for (const [text, value] of [['Jetzt anwesend', site.present ?? '–'], ['Offene Planpositionen', site.open], ['Hinweise', site.actions]]) {
+        const term = document.createElement('dt'), number = document.createElement('dd'); term.textContent = text; number.textContent = String(value); values.append(term, number);
+      }
+      const stamp = document.createElement('small');
+      stamp.textContent = 'Datenstand ' + new Intl.DateTimeFormat('de-DE', { timeZone: current.timezone, hour: '2-digit', minute: '2-digit' }).format(new Date(current.asOf)) + ' Uhr' + (!current.fresh ? ' · veraltet' : '') + (current.shift ? ' · ' + current.shift : ' · alle Schichten');
+      info.append(name, status, values, stamp); info.hidden = false;
+      buttons.forEach((b, key) => { if (key === id) b.setAttribute('aria-describedby', info.id); else b.removeAttribute('aria-describedby'); });
+    }
+    function select(id) {
+      const current = window.SFToday?.getSiteOverview?.(), control = document.getElementById('sfTodaySite');
+      if (!current || !control || id && !current.sites.some(s => s.id === id)) { sync(); return; }
+      control.value = id; control.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    reset.addEventListener('click', () => { hideInfo(); select(''); });
+    previous.addEventListener('click', () => { page = Math.max(0, page - 1); signature = ''; hideInfo(); sync(); });
+    next.addEventListener('click', () => { page++; signature = ''; hideInfo(); sync(); });
+    host.addEventListener('keydown', event => { if (event.key === 'Escape') { hideInfo(); event.stopPropagation(); } });
+    function sync() {
+      const current = window.SFToday?.getSiteOverview?.();
+      if (!current) {
+        if (signature === 'unavailable') return;
+        data = null; signature = 'unavailable'; pins.replaceChildren(); buttons.clear(); hideInfo();
+        reset.textContent = 'Standortdaten fehlen'; reset.disabled = true;
+        previous.hidden = next.hidden = range.hidden = true; return;
+      }
+      const nextSignature = JSON.stringify(current);
+      if (signature === nextSignature) return;
+      data = current; signature = nextSignature;
+      if (selected !== data.selected) { const index = data.sites.findIndex(s => s.id === data.selected); if (index >= 0) page = Math.floor(index / 6); selected = data.selected; }
+      page = Math.min(page, Math.max(0, Math.ceil(data.sites.length / 6) - 1));
+      const shown = data.sites.slice(page * 6, page * 6 + 6), keep = new Set(shown.map(s => s.id));
+      buttons.forEach((button, id) => { if (!keep.has(id)) { button.remove(); buttons.delete(id); } });
+      shown.forEach((site, index) => {
+        let button = buttons.get(site.id);
+        if (!button) {
+          button = document.createElement('button'); button.type = 'button'; button.className = 'sf-orbit-site-pin'; button.dataset.orbitSite = site.id;
+          const dot = document.createElement('span'); dot.className = 'sf-orbit-site-light'; dot.setAttribute('aria-hidden', 'true'); button.append(dot);
+          button.addEventListener('pointerenter', () => showInfo(site.id)); button.addEventListener('focus', () => showInfo(site.id));
+          button.addEventListener('pointerleave', () => { if (document.activeElement !== button) hideInfo(); });
+          button.addEventListener('blur', () => hideInfo()); button.addEventListener('click', () => { select(site.id); showInfo(site.id); });
+          buttons.set(site.id, button); pins.append(button);
+        }
+        const angle = (-135 + index * 360 / Math.max(2, shown.length)) * Math.PI / 180;
+        button.style.left = (50 + Math.cos(angle) * 42) + '%'; button.style.top = (50 + Math.sin(angle) * 42) + '%';
+        button.dataset.status = site.status; button.firstElementChild.textContent = String(page * 6 + index + 1);
+        button.setAttribute('aria-label', site.name + ' · ' + site.label + ' · Tagesübersicht filtern'); button.setAttribute('aria-pressed', String(site.id === data.selected));
+      });
+      const active = data.sites.find(s => s.id === data.selected);
+      reset.textContent = active ? active.name : data.selected === 'unassigned' ? 'Ohne Zuordnung' : data.sites.length ? 'Alle Standorte' : 'Keine Standorte';
+      reset.title = data.selected ? 'Standortfilter zurücksetzen' : 'Lichtpunkt auswählen'; reset.disabled = !data.selected;
+      previous.hidden = next.hidden = range.hidden = data.sites.length <= 6; previous.disabled = page === 0; next.disabled = (page + 1) * 6 >= data.sites.length;
+      range.textContent = (page * 6 + 1) + '–' + Math.min((page + 1) * 6, data.sites.length) + ' / ' + data.sites.length;
+      if (hovered && keep.has(hovered)) showInfo(hovered); else hideInfo();
+    }
+    return { sync, dismissOutside(target) { if (!host.contains(target)) hideInfo(); }, reset() { page = 0; selected = ''; signature = ''; hideInfo(); } };
+  }
   function createGlobe(art) {
     globe?.dispose();
-    const canvas = document.createElement('canvas'); canvas.className = 'sf-orbit-globe';
+    const canvas = document.createElement('canvas'); canvas.className = 'sf-orbit-globe'; canvas.setAttribute('aria-hidden', 'true');
     art.prepend(canvas);
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
@@ -182,20 +260,23 @@
     const root = shell?.querySelector('#sfTodayWorkspace');
     if (!root) return;
     const B = backend(), next = [B.companyId || '', B.user?.id || '', B.role || ''].join('|');
-    if (next !== overviewContext) { overviewContext = next; overviewExpanded.clear(); }
+    if (next !== overviewContext) { overviewContext = next; overviewExpanded.clear(); siteOrbit?.reset(); }
     root.dataset.orbitOverviewActive = String(activeView() === 'overview' && !document.hidden && ready());
     let hero = root.querySelector('.sf-orbit-hero');
     if (!hero) {
       const head = root.querySelector('.sf-td-head'); if (!head) return;
       hero = document.createElement('section'); hero.className = 'sf-orbit-hero'; hero.setAttribute('aria-label', 'SchichtFunk Tagesübersicht');
       head.before(hero); head.classList.add('sf-orbit-hero-copy'); hero.append(head);
-      const art = document.createElement('div'); art.className = 'sf-orbit-emblem'; art.setAttribute('aria-hidden', 'true');
+      const art = document.createElement('div'); art.className = 'sf-orbit-emblem';
       art.innerHTML = '<svg viewBox="0 0 420 420" fill="none"><defs><linearGradient id="sfOrbitArc" x1="0" y1="0" x2="420" y2="420" gradientUnits="userSpaceOnUse"><stop stop-color="currentColor" stop-opacity=".08"/><stop offset=".45" stop-color="currentColor"/><stop offset="1" stop-color="currentColor" stop-opacity=".1"/></linearGradient></defs><circle cx="210" cy="210" r="190" stroke="currentColor" opacity=".1" stroke-dasharray="1 10"/><g class="sf-orbit-orbit-track"><ellipse cx="210" cy="210" rx="192" ry="166" transform="rotate(-32 210 210)" stroke="url(#sfOrbitArc)" stroke-width="1"/><circle cx="48" cy="311" r="3" fill="currentColor"/><circle cx="371" cy="109" r="2" fill="currentColor"/></g></svg>';
       const metrics = document.createElement('div'); metrics.className = 'sf-orbit-overview-metrics'; metrics.setAttribute('aria-label', 'Zentrale Tageskennzahlen');
       hero.append(art, metrics);
       globe = createGlobe(art);
+      art.querySelector('svg').setAttribute('aria-hidden', 'true');
+      siteOrbit = createSiteOrbit(art);
     }
     globe?.sync();
+    siteOrbit?.sync();
     const metrics = hero.querySelector('.sf-orbit-overview-metrics');
     if (!window.SFToday?.getResult?.()) { if (metrics.childElementCount) metrics.replaceChildren(); return; }
     const view = root.closest('#view-overview');
@@ -408,6 +489,7 @@
     live = document.createElement('span'); live.id = 'sfOrbitCurrent'; live.className = 'sf-orbit-current-label'; live.setAttribute('aria-live', 'polite'); topbar.append(live);
     shell.append(popup, dock); shell.classList.add('sf-orbit'); applyMotion(); refresh();
     document.addEventListener('click', event => { if (openGroup && !dock.contains(event.target) && !popup.contains(event.target)) close(); });
+    document.addEventListener('pointerdown', event => siteOrbit?.dismissOutside(event.target));
     document.addEventListener('keydown', event => { if (event.key === 'Escape' && openGroup) { event.preventDefault(); close(true); } });
     document.addEventListener('change', event => { if (event.target.matches('select[data-orbit-motion]')) setMotion(event.target.value); });
     window.addEventListener('resize', positionPopup); window.visualViewport?.addEventListener('resize', positionPopup);

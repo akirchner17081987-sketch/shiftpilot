@@ -1,6 +1,6 @@
 {
   "reviewedAt": "2026-10-13",
-  "sourceCommit": "1ab633a34363f39c256bd1b5a2ef3c23dbed2282",
+  "sourceCommit": "e5656be512583e47794e5803215b9f564f3a76a8",
   "addedArticles": [
     {
       "category": "wishes",
@@ -960,6 +960,24 @@
       "sources": [
         "assets/orbit-shell-v1.js",
         "assets/settings-management-v2.js"
+      ]
+    },
+    {
+      "category": "overview",
+      "question": "Was zeigen die Standortpunkte an der Erde?",
+      "sources": [
+        "assets/orbit-shell-v1.js",
+        "assets/today-workspace-v3.js",
+        "assets/today-workspace-core-v1.js"
+      ]
+    },
+    {
+      "category": "overview",
+      "question": "Was bedeuten die Farben der Standortpunkte?",
+      "sources": [
+        "assets/orbit-shell-v1.js",
+        "assets/today-workspace-v3.js",
+        "assets/today-workspace-core-v1.js"
       ]
     }
   ],
@@ -2177,6 +2195,8 @@
       "id": "overview",
       "name": "Heute & Übersicht",
       "questions": [
+        "Was zeigen die Standortpunkte an der Erde?",
+        "Was bedeuten die Farben der Standortpunkte?",
         "Warum steht dort „Check-in fehlt – bitte prüfen“?",
         "Wie zeigt „Heute“ Pausen und offene Buchungen?",
         "Was zeigt „Heute“?",

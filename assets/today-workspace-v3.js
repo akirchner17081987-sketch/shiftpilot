@@ -4,7 +4,7 @@
  if(window.SFToday||sessionStorage.getItem('sf_demo_session_v1')==='active')return;
  const B=window.SFBackend=window.SFBackend||{},C=window.SFTodayCore,R=window.SFReportsCore,T=window.SFToday={},roles=new Set(['OWNER','ADMIN','PLANNER','DISPATCHER']);
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- let current=null,result=null,seq=0,pending=null,loaded=0,contextKey='',failed=false,lastCheck=0;
+ let current=null,result=null,siteResult=null,seq=0,pending=null,loaded=0,contextKey='',failed=false,lastCheck=0;
  let state={site:'',shift:'',status:'all',alert:'all',people:20,alerts:10,transitions:10,coverage:'all'};
  const context=()=>({company:B.companyId,user:B.user?.id||'',role:B.role,access:B.accessRole||'',permissions:(B.accessPermissions||[]).slice().sort().join('|'),client:B.client});
  const key=c=>[c.company,c.user,c.role,c.access,c.permissions].join('|');
@@ -16,7 +16,7 @@
  const now=()=>current?Date.parse(current.as_of)+Math.max(0,Date.now()-loaded):Date.now();
  const reliable=()=>!!current&&!failed&&Date.now()-loaded<65000;
  function status(text,error=false){const el=document.getElementById('sfTodayStatus');if(el){el.textContent=text;el.className='sf-td-status'+(error?' error':'');el.setAttribute('role',error?'alert':'status')}}
- function invalidate(){seq++;pending=null;current=result=null;loaded=0;failed=false;state={...state,site:'',shift:'',status:'all',alert:'all',people:20,alerts:10,coverage:'all'};document.getElementById('sfTodayContent')?.replaceChildren();controls();}
+ function invalidate(){seq++;pending=null;current=result=siteResult=null;loaded=0;failed=false;state={...state,site:'',shift:'',status:'all',alert:'all',people:20,alerts:10,coverage:'all'};document.getElementById('sfTodayContent')?.replaceChildren();controls();window.SFOrbit?.refreshOverview?.();}
  function guard(){const c=context(),next=key(c);if(contextKey!==next||!allowed(c)){invalidate();contextKey=next;status(!B.ready||B.companySwitching?'Unternehmensdaten werden geladen …':'Für diesen Zugang ist die Tagesübersicht nicht freigegeben.');return false}return true}
  function mount(){const host=document.getElementById('view-overview');if(!host)return false;if(root())return true;
   host.classList.remove('sf-today-v2');host.replaceChildren();const el=document.createElement('div');el.id='sfTodayWorkspace';el.className='sf-today';host.append(el);
@@ -38,7 +38,7 @@
    }finally{if(request===seq)pending=null}})();pending=task;return task;
  }
  const kpi=(label,value,note,filter,disabled=false)=>`<button type="button" class="sf-td-kpi" data-td-kpi="${filter}" aria-pressed="${state.status===filter||filter==='coverage'&&state.coverage==='open'}" ${disabled?'disabled':''}><span>${label}</span><strong>${value??'–'}</strong><small>${note}</small></button>`;
- function paint(){if(!current||!allowed(context()))return;const focus=document.activeElement,id=focus?.id,selection=focus&&root().contains(focus)?Array.from(focus.attributes).find(a=>a.name.startsWith('data-td-')):null,expanded=root().querySelector('.sf-td-explain')?.open;window.SFOrbit?.rememberOverview?.();result=C.analyze(current,state,{now:now(),reliable:reliable()});const r=result,s=r.summary;
+ function paint(){if(!current||!allowed(context()))return;const focus=document.activeElement,id=focus?.id,selection=focus&&root().contains(focus)?Array.from(focus.attributes).find(a=>a.name.startsWith('data-td-')):null,expanded=root().querySelector('.sf-td-explain')?.open;window.SFOrbit?.rememberOverview?.();result=C.analyze(current,state,{now:now(),reliable:reliable()});const r=result,s=r.summary;siteResult=C.siteOverview(current,state,{now:r.now,reliable:reliable()});
   document.getElementById('sfTodayDate').textContent=new Intl.DateTimeFormat('de-DE',{timeZone:r.tz,weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(new Date(r.now))+' · '+current.company_name;
   status((reliable()?'Aktuell · ':'Datenstand veraltet · ')+clock(current.as_of)+' Uhr · '+r.tz+' · '+(current.can_time?'Aktualisierung alle 20 Sekunden':'Planungsansicht · keine Berechtigung für Anwesenheitsdaten'),!reliable());
   document.getElementById('sfTodayContent').innerHTML=`<div class="sf-td-kpis" aria-label="Kennzahlen – zum Filtern auswählen">
@@ -73,6 +73,7 @@
   switch(b.dataset.tdAction){case'refresh':await reload(true);break;case'reset':state={...state,site:'',shift:'',status:'all',alert:'all',coverage:'all',people:20,alerts:10,transitions:10};controls();if(current)paint();break;case'allCoverage':state.coverage='all';paint();break;case'schedule':schedule();break;case'time':await time();break;case'incident':window.SFDisruptionAutopilot?.open?.();break;case'absence':window.switchView?.('absence');break;case'auto':window.switchView?.('auto');break}
  }catch(error){status('Ansicht konnte nicht geöffnet werden. Bitte erneut versuchen.',true)}}
  T.reload=()=>reload(true);T.render=()=>reload(false);T.getResult=()=>allowed(context())&&contextKey===key(context())?result:null;window.renderTodayDashboard=T.render;window.renderOverview=T.render;
+ T.getSiteOverview=()=>{if(!current||!allowed(context())||contextKey!==key(context()))return null;if(!siteResult||siteResult.fresh!==reliable())siteResult=C.siteOverview(current,state,{now:now(),reliable:reliable()});return siteResult;};
  function installGuard(){if(typeof B.updateState==='function'&&!B.updateState.__todayGuard){const base=B.updateState,fn=function(){const out=base.apply(this,arguments);mount();const changed=!guard();if(changed&&active()&&allowed(context()))reload(true);return out};fn.__todayGuard=true;B.updateState=fn}}
  document.addEventListener('click',e=>{if(e.target.closest?.('[data-view="overview"]'))setTimeout(()=>reload(false),0)});document.addEventListener('sf:backend-hydrated',()=>{if(active())reload(true)});document.addEventListener('visibilitychange',()=>{if(!document.hidden&&active())reload(true)});window.addEventListener('sf:company-timezone-change',()=>{invalidate();if(active())reload(true)});
  setInterval(()=>{installGuard();const c=context();if(key(c)!==contextKey||!allowed(c)){guard();if(active()&&allowed(c))reload(true)}if(active()&&!document.hidden){if(!pending&&Date.now()-lastCheck>=20000)reload(true);else if(current&&!reliable()&&result?.reliable)paint()}},1000);

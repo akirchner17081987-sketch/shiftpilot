@@ -39,6 +39,7 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
  if(role==='TIME_TRACKING'){assert.equal(await page.locator('#view-time').evaluate(n=>n.classList.contains('active')),true)}
  if(role==='OWNER'){assert.deepEqual(data.startup,{shellVisible:true,ready:false,shellReady:true,entryDismissed:true,viewInert:true,status:true});assert.equal(await page.locator('#sfStartupStatus').count(),0);assert.equal(await page.locator('#appShell').evaluate(n=>n.getAttribute('aria-busy')),null)}
  if(windowOrbit(data)) {
+   if(['SIGNED_OUT','EMPLOYEE','TIME_TRACKING','VIEWER'].includes(role)){assert.equal(await page.locator('[data-orbit-site]').count(),0,'restricted roles receive no site summaries');assert.equal(await page.evaluate(()=>SFToday?.getSiteOverview?.()??null),null);}
    if(role!=='SIGNED_OUT'&&role!=='EMPLOYEE')assert.equal(await page.locator('#appShell>.sidebar').isVisible(),false,'legacy main navigation stays hidden for every manager role');
    if(role==='TIME_TRACKING') {
      await page.locator('[data-orbit-category="personal"]').click();
@@ -60,6 +61,30 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
    });
    assert.equal(await page.locator('#sfTodayWorkspace [data-td-kpi]').count(),6,'all original daily KPIs remain available');
    assert.deepEqual(await page.locator('.sf-orbit-overview-metrics [data-td-kpi]').evaluateAll(nodes=>nodes.map(n=>n.dataset.tdKpi)),['present','coverage','actions']);
+   const sitePin=id=>page.locator('[data-orbit-site="'+id+'"]');
+   await sitePin('east').waitFor();assert.equal(await sitePin('east').getAttribute('data-status'),'good');assert.equal(await sitePin('west').getAttribute('data-status'),'attention');
+   assert.equal(await sitePin('east').evaluate(n=>n.closest('[aria-hidden="true"]')),null,'interactive site controls are exposed to assistive technology');
+   await sitePin('east').focus();assert.match(await page.locator('#sfOrbitSiteInfo').innerText(),/Leipzig/);assert.match(await page.locator('#sfOrbitSiteInfo').innerText(),/Jetzt anwesend\s+1/);
+   await page.keyboard.press('Enter');assert.equal(await page.locator('#sfTodaySite').inputValue(),'east');assert.equal(await sitePin('east').getAttribute('aria-pressed'),'true');
+   assert.match(await page.locator('details[data-orbit-detail="filters"]>summary').innerText(),/Leipzig/);
+   await page.keyboard.press('Escape');assert.equal(await page.locator('#sfOrbitSiteInfo').isVisible(),false);
+   await page.evaluate(()=>SFToday.reload(true));assert.equal(await page.locator('#sfTodaySite').inputValue(),'east','site selection survives normal refresh');
+   await sitePin('west').click();assert.equal(await page.locator('#sfTodaySite').inputValue(),'west');assert.equal(await page.evaluate(()=>SFToday.getResult().summary.present),0);
+   assert.equal(await sitePin('east').getAttribute('data-status'),'good','other site status remains available while a site is filtered');
+   await page.getByRole('button',{name:'Standortfilter zurücksetzen',exact:true}).click();assert.equal(await page.locator('#sfTodaySite').inputValue(),'');
+   await page.evaluate(()=>{const B=SFBackend;B.companySwitching=true;SFOrbit.refreshOverview()});assert.equal(await page.locator('[data-orbit-site]').count(),0,'company switch clears previous location names and cards synchronously');
+   assert.equal(await page.locator('#sfOrbitSiteInfo').isVisible(),false);assert.equal(await page.evaluate(()=>SFToday.getSiteOverview()),null);
+   await page.evaluate(async()=>{SFBackend.companySwitching=false;await SFToday.reload(true);SFOrbit.refreshOverview()});await sitePin('east').waitFor();
+   await page.evaluate(async()=>{window.__originalQaSites=qa.today.sites.slice();for(let i=0;i<7;i++)qa.today.sites.push({id:'extra-'+i,name:'Teststandort '+i,is_active:true});await SFToday.reload(true)});
+   assert.equal(await page.locator('[data-orbit-site]').count(),6,'large location lists retain compact pages');
+   await page.getByRole('button',{name:'Weitere Standorte',exact:true}).click();assert.equal(await page.locator('[data-orbit-site]').count(),3);
+   await sitePin('extra-6').click();assert.equal(await page.locator('#sfTodaySite').inputValue(),'extra-6');
+   await page.getByRole('button',{name:'Vorherige Standorte',exact:true}).click();assert.equal(await page.locator('[data-orbit-site]').count(),6);
+   await page.getByRole('button',{name:'Standortfilter zurücksetzen',exact:true}).click();
+   await page.evaluate(async()=>{qa.today.sites=window.__originalQaSites;delete window.__originalQaSites;await SFToday.reload(true)});await sitePin('east').waitFor();
+   await page.evaluate(()=>document.activeElement?.blur?.());await sitePin('east').hover();
+   await page.waitForTimeout(200);assert.equal(await page.locator('#sfOrbitSiteInfo').isVisible(),true,'hover card does not cover its own trigger');
+   await page.locator('.sf-orbit-hero-copy h1').hover();assert.equal(await page.locator('#sfOrbitSiteInfo').isVisible(),false);
    for(const key of ['figures','coverage','transitions','shortcuts','filters'])assert.equal(await page.locator('details[data-orbit-detail="'+key+'"]').evaluate(n=>n.open),false,'secondary information starts collapsed: '+key);
    await page.locator('details[data-orbit-detail="figures"]>summary').click();
    await page.evaluate(()=>SFToday.reload(true));
@@ -102,6 +127,10 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
      for(const key of ['present','coverage','actions'])assert.equal(await page.locator('.sf-orbit-overview-metrics [data-td-kpi="'+key+'"]').isVisible(),true);
      assert.equal(await assistant.isVisible(),true,'planning assistant remains available in the header at '+width);
      await page.screenshot({path:path.join(out,'orbit-overview-'+theme+'-'+width+'.png'),animations:'disabled'});
+     await sitePin('east').click();assert.equal(await page.locator('#sfTodaySite').inputValue(),'east','site tap works at '+width);
+     const tooltip=await page.locator('#sfOrbitSiteInfo').boundingBox();assert.ok(tooltip.x>=0&&tooltip.x+tooltip.width<=width+1,'site info fits '+width);
+     await page.screenshot({path:path.join(out,'orbit-site-info-'+theme+'-'+width+'.png'),animations:'disabled'});
+     await page.getByRole('button',{name:'Standortfilter zurücksetzen',exact:true}).click();await page.evaluate(()=>document.activeElement?.blur?.());
    }
    await page.setViewportSize({width:1440,height:1000});await page.evaluate(()=>{SFManagerTheme.apply('dark',false);SFOrbit.setMotion('full')});
    for(let i=0;i<30;i++){await globe.screenshot({path:path.join(out,'orbit-globe-frame-'+String(i).padStart(2,'0')+'.png')});await page.waitForTimeout(150);}

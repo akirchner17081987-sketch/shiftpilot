@@ -148,6 +148,14 @@ window.SFHelpContent = {
     ],
     "overview": [
       [
+        "Was zeigen die Standortpunkte an der Erde?",
+        "Die nummerierten Lichtpunkte auf der Umlaufbahn stehen für die Standorte des ausgewählten Unternehmens, nicht für geografische Positionen. Darüberfahren oder Tastaturfokus zeigt Standortname, aktuelle Anwesenheit, offene Planpositionen, Hinweise und Datenstand. Auf dem Handy genügt Antippen. Ein Klick filtert die Tagesübersicht; die Schichtauswahl bleibt erhalten. Unter der Erde setzen Sie den Standortfilter zurück. Bei mehr als sechs Standorten blättern Sie mit den Pfeilen. Die Punkte bleiben bei ausgeschalteter Animation bedienbar."
+      ],
+      [
+        "Was bedeuten die Farben der Standortpunkte?",
+        "Grün bedeutet: veröffentlichter Planbedarf gedeckt und kein Handlungsbedarf im aktuellen Tages- und Schichtumfang. Orange markiert offene Planpositionen oder weitere Prüfhinweise. Rot weist auf dringende Konflikte oder offene Störfälle hin. Grau steht für unbekannte Anwesenheit, veraltete Daten, archivierte Standorte oder fehlenden Pflichtbedarf; die Infokarte nennt den Grund. Fehlende Check-ins sind Prüfhinweise, kein Nachweis des Nichterscheinens. Standortzahlen verwenden dieselben Besetzungsregeln wie die Tagesübersicht, einschließlich gemeinsamer Teamleiter-Besetzung. Die vielen kleinen Lichter auf den Kontinenten sind dekorativ."
+      ],
+      [
         "Warum steht dort „Check-in fehlt – bitte prüfen“?",
         "15 Minuten nach dem geplanten Beginn fehlt eine passende Zeitbuchung. Das ist kein Nachweis des Nichterscheinens. Bei fehlenden Zeitrechten oder veralteten Daten wird kein solcher Verdacht angezeigt. Der Datenstand und fehlgeschlagene Aktualisierungen sind sichtbar. „Zeit prüfen“ öffnet die betreffende Meldung beziehungsweise QR-Buchung."
       ],
