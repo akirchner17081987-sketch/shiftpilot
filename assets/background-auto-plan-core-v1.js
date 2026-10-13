@@ -4,7 +4,7 @@
  const version=1;
  const rowKey=a=>[a.employeeId,a.date,a.type,a.start,a.end].join('|');
  const unique=rows=>[...new Map(rows.map(a=>[rowKey(a),a])).values()];
- const employeeKeys=['id','personnelNo','employment','monthlyHours','weeklyHours','maxWeeklyHours','shifts','target','monthLimit','calendarLimit','maxMonthlyShifts','weeklyLimit','maxConsecutive','permissions'];
+ const employeeKeys=['_dbId','id','personnelNo','employment','monthlyHours','weeklyHours','maxWeeklyHours','shifts','target','monthLimit','calendarLimit','maxMonthlyShifts','weeklyLimit','maxConsecutive','permissions'];
  const rowKeys=['id','_dbId','_dbStatus','status','publishedAt','employeeId','date','type','start','end','resource','coverageGroup','coverageLabel','optional','_marketApproved'];
  const pick=(obj,keys)=>Object.fromEntries(keys.filter(k=>obj[k]!==undefined).map(k=>[k,obj[k]]));
  function pack(input){

@@ -40,3 +40,12 @@ test('movable next-month drafts do not block a valid cross-month replacement',as
  const preview=run('autoPlanPreview');for(const employee of c.employees)assert.equal(c.SFSolidPlanningCore.errors(employee,preview,c.SFCompliance.policy.solidPlanningRules).length,0);
 });
 
+
+test('fixed OT crew is prepared as three shared daily positions and reaches 210 hours each in January',async()=>{
+ const {c,el,run}=harness();el('autoPlanMonthCount').value='1';c.document.querySelector=()=>null;c.getSoll=()=>0;
+ c.employees=['a','b','c'].map(id=>({id,_dbId:'db-'+id,personnelNo:id,status:'active',shifts:['OT1','OT2','OT3'],first:id,last:id,employment:'Vollzeit',monthlyHours:220,weeklyHours:50,maxWeeklyHours:50,maxConsecutiveShifts:5}));
+ c.TYPES=[{id:'OT1',start:'06:00',end:'16:00'},{id:'OT2',start:'08:00',end:'18:00'},{id:'OT3',start:'10:00',end:'20:00'}];
+ const rules=c.SFCompliance.policy.solidPlanningRules;Object.assign(rules,{confirmedRulesVersion:2,otOnlyMonthlyMaxHours:220,otOnlyMaxCalendarWeekHours:50,otOnlyMaxConsecutiveShifts:5,otOnlyMinFreeCalendarDays:2,otOnlyMinBlockRestHours:48,otWeekdayRoster:{employeeIds:['db-a','db-b','db-c'],weekdays:[1,2,3,4,5]},conditionalStaffing:[{shift:'OT1',sourceShift:'O3',sourceDayOffset:-1,coverageStart:'06:00',coverageEnd:'08:00',minimum:3,fallbackCount:1},{shift:'OT3',sourceShift:'O1',sourceDayOffset:0,coverageStart:'18:00',coverageEnd:'20:00',minimum:3,fallbackCount:1}]});
+ for(const date of c.autoPlanningDates().filter(d=>c.SFSolidPlanningCore.weekday(d)<=5))for(let n=0;n<3;n++){c.assignments.push({id:date+'o3'+n,employeeId:'night'+n,date:c.SFSolidPlanningCore.plus(date,-1),type:'O3',start:'22:00',end:'08:00',_dbStatus:'PUBLISHED',publishedAt:'2026-10-01'});c.assignments.push({id:date+'o1'+n,employeeId:'early'+n,date,type:'O1',start:'18:00',end:'04:00',_dbStatus:'PUBLISHED',publishedAt:'2026-10-01'});}
+ await c.SFMonthOptimizer.optimize();assert.ok(c.SFMonthOptimizer.getResult(),c.toast?.copy);const preview=run('autoPlanPreview');for(const e of c.employees)assert.equal(preview.filter(a=>a.employeeId===e.id).length,21);assert.ok(preview.every(a=>a.type==='OT2'));assert.equal(c.SFMonthOptimizer.getResult().criticalOpen,0);assert.equal(preview.length,63);
+});

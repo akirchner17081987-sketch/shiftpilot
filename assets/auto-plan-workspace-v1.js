@@ -17,6 +17,7 @@
   }
   function explain(slot,simulated=[]){
     const {type,date}=slot;
+    if(slot.coverageGroup==='OT-DAY')return 'Die feste OT-Tagdienstgruppe ist unvollständig. Abwesenheiten, persönliche Stundenlimits und Ruhezeiten der hinterlegten Mitarbeiter prüfen.';
     if(slot.coverageGroup){const alternatives=slot.alternatives||[type];return `Gemeinsame Leitung ${slot.coverageLabel}: kein verfügbarer TL unter den aktuellen Regeln. `+alternatives.map(code=>`${code}: ${explain({type:code,date},simulated)}`).join(' ')}
     let pool=employees.filter(e=>e.status==='active');
     if(!pool.length)return'Keine aktiven Mitarbeiter vorhanden. Prüfe die Mitarbeiterprofile.';

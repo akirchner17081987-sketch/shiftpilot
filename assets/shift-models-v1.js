@@ -24,6 +24,7 @@
     const entry=employee.startDate||employee.start_date,finish=employee.contractEnd||employee.contract_end;
     if(date&&entry&&date<entry)return 'Der Dienst liegt vor dem Eintrittsdatum.';
     if(date&&finish&&date>finish)return 'Der Dienst liegt nach dem Vertragsende.';
+    const rules=window.SFCompliance?.policy?.solidPlanningRules,solid=window.SFSolidPlanningCore;if(solid?.otRoster(rules)&&solid.otCodes.includes(code)&&!solid.rosterEmployee(employee,rules))return 'Diese OT-Tagdienste sind der festen Tagdienstgruppe vorbehalten.';
     const t=M.find(code),no=String(employee.personnelNo??employee.personnel_no??''),exclusive=M.models.find(x=>x.active&&x.exclusiveEmployees&&x.allowedPersonnelNos?.map(String).includes(no));
     if(exclusive&&exclusive.id!==code)return `Personalnummer ${no} ist ausschließlich für ${exclusive.id} freigegeben.`;
     if(!t)return null;
@@ -56,7 +57,7 @@
     return seen.size>=minimum;
   };
   M.rawRequired=(date,code,fallback)=>{const override=typeof dailySoll==='undefined'?null:dailySoll[date]?.[code],t=M.find(code);if(code==='OT'&&window.SFOtPolicy?.configured()){if(!window.SFOtPolicy.applies(date))return 0;return override!=null?Number(override):t?.planningMode==='optional'?0:Number(fallback)||0;}if(t?.strictWeekdays&&!t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7))return 0;return override!=null?Number(override):t&&(t.planningMode==='optional'||!t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7))?0:fallback};
-  M.requiredSoll=(date,code,fallback)=>{const rules=window.SFCompliance?.policy?.solidPlanningRules;if(rules?.enabled&&window.SFSolidPlanningCore){const rule=(rules.conditionalStaffing||[]).find(r=>r.shift===code),rows=rule?(typeof assignments==='undefined'?[]:assignments).filter(a=>a.type===rule.sourceShift&&a.date===window.SFSolidPlanningCore.plus(date,rule.sourceDayOffset)).map(a=>({...a,start:a.start||M.find(a.type)?.start,end:a.end||M.find(a.type)?.end})):[],need=window.SFSolidPlanningCore.required(date,code,rows,rules);if(need!==null)return need;}const g=M.coverageInfo(date,code);if(g){const own=typeof assignments==='undefined'?0:assignments.filter(a=>a.date===date&&a.type===code&&a.status!=='CANCELLED').length;return own+(g.representative===code?g.missing:0)}
+  M.requiredSoll=(date,code,fallback)=>{const rules=window.SFCompliance?.policy?.solidPlanningRules;if(rules?.enabled&&window.SFSolidPlanningCore){const rule=(rules.conditionalStaffing||[]).find(r=>r.shift===code),rows=(rule||code==='OT2'&&window.SFSolidPlanningCore.otRoster(rules))?(typeof assignments==='undefined'?[]:assignments).map(a=>({...a,start:a.start||M.find(a.type)?.start,end:a.end||M.find(a.type)?.end})):[],need=window.SFSolidPlanningCore.required(date,code,rows,rules);if(need!==null)return need;}const g=M.coverageInfo(date,code);if(g){const own=typeof assignments==='undefined'?0:assignments.filter(a=>a.date===date&&a.type===code&&a.status!=='CANCELLED').length;return own+(g.representative===code?g.missing:0)}
     const raw=M.rawRequired(date,code,fallback);
     if(['OT1','OT2'].includes(code)&&M.morningOtSwitch(date)){
       const own=typeof assignments==='undefined'?0:assignments.filter(a=>a.date===date&&a.type==='OT1'&&a.status!=='CANCELLED').length;
