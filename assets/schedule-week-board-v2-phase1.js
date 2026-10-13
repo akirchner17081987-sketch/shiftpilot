@@ -9,6 +9,7 @@
   let mode=sessionStorage.getItem(MODE_KEY)||'compact';
   let dragPayload=null,undoTimer=null;
   let target=null,contextKey='',shiftFilter='',onlyOpen=false,showBlocked=false;
+  let inlineAnchor=null,inlineHome=null,inlineNext=null;
   const collator=new Intl.Collator('de',{sensitivity:'base',numeric:true});
 
   const css=document.createElement('style');
@@ -170,7 +171,9 @@
       cell.ondragover=e=>{if(dragPayload){e.preventDefault();e.dataTransfer.dropEffect=dropCheck(cell)?.hard?.length?'none':dragPayload.kind==='assignment'?'move':'copy'}};
       cell.ondragleave=e=>{if(!cell.contains(e.relatedTarget))cell.classList.remove('is-drop-target','is-drop-warning','is-drop-blocked')};
       cell.ondrop=e=>{e.preventDefault();e.stopPropagation();const payload=dragPayload,check=dropCheck(cell);clearDropState(wrap);dragPayload=null;if(!payload||check?.hard?.length){if(check?.hard?.length&&typeof showSaveToast==='function')showSaveToast('Verschieben nicht möglich',check.hard.join(' '));return}const type=cell.dataset.shiftRow,date=cell.dataset.date;if(payload.kind==='assignment')moveAssignment(payload.id,type,date);else addEmployee(payload.id,type,date)};
-      cell.querySelector('[data-open-assign]')?.addEventListener('click',()=>selectTarget(cell.dataset.shiftRow,cell.dataset.date));
+      const trigger=cell.querySelector('[data-open-assign]');
+      trigger?.setAttribute('aria-haspopup','dialog');
+      trigger?.addEventListener('click',e=>selectTarget(cell.dataset.shiftRow,cell.dataset.date,e.currentTarget));
     });
     wrap.querySelectorAll('[data-plan-day]').forEach(b=>b.onclick=()=>{
       const picker=document.getElementById('sfManualDay');if(picker)picker.value=b.dataset.planDay;
@@ -182,16 +185,59 @@
   function name(e){return [e.last,e.first].filter(Boolean).join(', ')}
   function canPlan(){const B=window.SFBackend;if(!B?.ready)return true;return typeof B.can==='function'?B.can('plan'):['OWNER','ADMIN','PLANNER','DISPATCHER'].includes(B.role)}
   function labelDate(date){return new Date(date+'T12:00:00').toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit'})}
-  function selectTarget(type,date){
-    if(!typeById(type))return;
+  function selectTarget(type,date,anchor){
+    if(!typeById(type)||!canPlan())return;
     if(!document.getElementById('sfManualPicker')){window.openAssign?.(type,date);return}
+    if(anchor)openInlinePicker(anchor);else closeInlinePicker(true,false);
     target={type,date};showBlocked=false;
     document.getElementById('sfManualShift').value=type;
     document.getElementById('sfManualDay').value=date;
     document.getElementById('planEmployeeSearch').value='';
-    renderCandidates();markTarget();revealSidebar();
+    if(anchor)document.getElementById('sfManualTeam').value='';
+    renderCandidates();markTarget();
+    if(inlineAnchor){positionInlinePicker();document.getElementById('planEmployeeSearch')?.focus({preventScroll:true})}else revealSidebar();
   }
+  function openInlinePicker(anchor){
+    const view=document.getElementById('view-schedule'),pool=view.querySelector('.employee-pool');
+    let popup=document.getElementById('sfInlineDutyPicker');
+    if(!popup){
+      popup=document.createElement('div');popup.id='sfInlineDutyPicker';popup.className='sf-inline-duty-picker';
+      popup.setAttribute('role','dialog');popup.setAttribute('aria-labelledby','sfInlineDutyTitle');
+      popup.innerHTML='<div class="sf-inline-picker-head"><h3 id="sfInlineDutyTitle">Mitarbeiter auswählen</h3><button type="button" aria-label="Mitarbeiterauswahl schließen">✕</button></div>';
+      view.appendChild(popup);popup.querySelector('button').onclick=()=>dismissInlinePicker();
+    }
+    if(!inlineHome){inlineHome=pool.parentNode;inlineNext=pool.nextSibling;}
+    if(inlineAnchor&&inlineAnchor!==anchor)inlineAnchor.setAttribute('aria-expanded','false');
+    popup.appendChild(pool);popup.hidden=false;inlineAnchor=anchor;
+    view.classList.remove('sf-week-picker-open');
+    anchor.setAttribute('aria-expanded','true');anchor.setAttribute('aria-controls',popup.id);
+  }
+  function closeInlinePicker(keepTarget=false,restoreFocus=true){
+    const popup=document.getElementById('sfInlineDutyPicker'),previous=inlineAnchor;
+    if(popup){popup.hidden=true;const pool=popup.querySelector('.employee-pool');if(pool&&inlineHome)inlineHome.insertBefore(pool,inlineNext?.parentNode===inlineHome?inlineNext:null)}
+    inlineHome=null;inlineNext=null;inlineAnchor=null;
+    previous?.setAttribute('aria-expanded','false');
+    if(!keepTarget)target=null;
+    if(restoreFocus&&previous?.isConnected)previous.focus({preventScroll:true});
+  }
+  function dismissInlinePicker(restoreFocus=true){closeInlinePicker(false,restoreFocus);markTarget();renderCandidates();}
+  function positionInlinePicker(){
+    const popup=document.getElementById('sfInlineDutyPicker');if(!popup||popup.hidden||!inlineAnchor?.isConnected)return;
+    const margin=12,dock=document.getElementById('sfOrbitDock'),dockRect=dock?.getBoundingClientRect();
+    const bottom=dockRect&&dockRect.height&&dockRect.top>0?Math.min(innerHeight-margin,dockRect.top-margin):innerHeight-margin;
+    popup.style.width=Math.min(380,innerWidth-margin*2)+'px';popup.style.maxHeight=Math.max(120,Math.min(560,bottom-margin))+'px';
+    const r=inlineAnchor.getBoundingClientRect(),p=popup.getBoundingClientRect();
+    const left=Math.max(margin,Math.min(r.left,innerWidth-p.width-margin));
+    const preferredTop=r.bottom+8+p.height<=bottom?r.bottom+8:r.top-8-p.height>=margin?r.top-8-p.height:r.top;
+    const top=Math.max(margin,Math.min(preferredTop,bottom-p.height));
+    popup.style.left=left+'px';popup.style.top=top+'px';
+  }
+  document.addEventListener('pointerdown',e=>{const popup=document.getElementById('sfInlineDutyPicker');if(inlineAnchor&&!popup?.contains(e.target)&&!e.target.closest?.('[data-open-assign]'))dismissInlinePicker(false)});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&inlineAnchor&&(document.getElementById('sfInlineDutyPicker')?.contains(document.activeElement)||document.activeElement===inlineAnchor)){e.preventDefault();e.stopPropagation();dismissInlinePicker()}});
+  window.addEventListener('resize',positionInlinePicker);
+  document.addEventListener('scroll',e=>{if(!document.getElementById('sfInlineDutyPicker')?.contains(e.target))positionInlinePicker()},true);
   function revealSidebar(){
+    if(inlineAnchor)return;
     document.getElementById('view-schedule')?.classList.add('sf-week-picker-open');
     const panel=document.getElementById('sfManualPicker');
     if(innerWidth<1280)panel?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});
@@ -206,6 +252,7 @@
     return C.check(e,target.type,target.date,t.start,t.end);
   }
   function renderCandidates(){
+    if(!target&&inlineAnchor)closeInlinePicker(true);
     const panel=document.getElementById('sfManualCandidates'),context=document.getElementById('sfManualContext'),pool=document.getElementById('planEmployeePool');
     if(!panel||!context)return;
     pool.hidden=!!target;
@@ -218,7 +265,7 @@
     context.innerHTML=`<div class="sf-manual-context-head"><b>${esc(target.type)} · ${esc(labelDate(target.date))}</b><button type="button" class="ghost" id="sfManualClear" aria-label="Dienstauswahl aufheben">✕</button></div><small>${esc(t.start)} – ${esc(t.end)} · ${esc(status)}</small><small>${window.SFCompliance?.isWeekPublished?.(target.date)?'Veröffentlicht: Zuweisung startet die Änderungsprüfung.':'Entwurf: Mitarbeiter anklicken, um den Dienst zuzuweisen.'}</small>`;
     document.getElementById('sfManualClear').onclick=()=>{target=null;markTarget();renderCandidates();window.renderPlanEmployeePool?.()};
     const query=(document.getElementById('planEmployeeSearch')?.value||'').trim().toLocaleLowerCase('de'),team=document.getElementById('sfManualTeam').value;
-    const rows=employees.filter(e=>e.status==='active'&&(!team||e.planningTeam===team)&&(`${name(e)} ${e.first} ${e.last} ${e.personnelNo||''}`).toLocaleLowerCase('de').includes(query)).map(e=>({e,check:checkCandidate(e)}));
+    const rows=employees.filter(e=>e.status==='active'&&(!inlineAnchor||((e.shifts||[]).includes(target.type)&&window.SFShiftModels?.allowsEmployee?.(target.type,e,target.date)!==false))&&(!team||e.planningTeam===team)&&(`${name(e)} ${e.first} ${e.last} ${e.personnelNo||''}`).toLocaleLowerCase('de').includes(query)).map(e=>({e,check:checkCandidate(e)}));
     rows.sort((a,b)=>Number(!!a.check.hard.length)-Number(!!b.check.hard.length)||collator.compare(a.e.last||'',b.e.last||'')||collator.compare(a.e.first||'',b.e.first||''));
     const available=rows.filter(x=>!x.check.hard.length).length,blocked=rows.length-available;
     document.getElementById('sfManualAvailability').textContent=`${available} einplanbar · ${blocked} gesperrt`;
@@ -233,9 +280,14 @@
     panel.querySelectorAll('[data-manual-employee]:not([disabled])').forEach(button=>button.onclick=()=>{
       const e=employees.find(x=>x.id===button.dataset.manualEmployee);if(!e||!target||!canPlan())return;
       // Use the existing save path, including fresh checks and published-plan approvals.
-      window.SFCompliance?.save?.(e,target.type,target.date,t.start,t.end);
+      const selection=target,fromInline=!!inlineAnchor;
+      if(fromInline)dismissInlinePicker(false);
+      window.SFCompliance?.save?.(e,selection.type,selection.date,t.start,t.end,{onSaved:()=>{
+        if(fromInline){const trigger=[...document.querySelectorAll('#sfWeekBoardV2 [data-open-assign]')].find(b=>{const shift=b.closest('.sf-week-shift');return shift?.dataset.date===selection.date&&shift.dataset.type===selection.type});trigger?.focus({preventScroll:true})}
+      }});
       renderCandidates();
     });
+    if(inlineAnchor)positionInlinePicker();
   }
   function ensureManualUi(){
     const view=document.getElementById('view-schedule'),calendar=view?.querySelector('.calendar'),pool=view?.querySelector('.employee-pool');
@@ -276,7 +328,7 @@
     renderCandidates();
   }
   function visibleShift(date,id){return (!shiftFilter||id===shiftFilter)&&(!onlyOpen||Math.max(0,Number(getSoll(date,id)||0)-assignmentsFor(date,id).length)>0)}
-  window.SFManualWeek={syncPeriod(){document.getElementById('view-schedule')?.classList.toggle('sf-week-timetable',mode==='compact'&&window.SchichtFunkCalendarView?.getMode?.()!=='month');const f=document.getElementById('sfManualFilters');if(f)f.hidden=mode==='timeline'||window.SchichtFunkCalendarView?.getMode?.()==='month';},selectTarget};
+  window.SFManualWeek={syncPeriod(){if(inlineAnchor&&(mode==='timeline'||window.SchichtFunkCalendarView?.getMode?.()==='month'))dismissInlinePicker(false);document.getElementById('view-schedule')?.classList.toggle('sf-week-timetable',mode==='compact'&&window.SchichtFunkCalendarView?.getMode?.()!=='month');const f=document.getElementById('sfManualFilters');if(f)f.hidden=mode==='timeline'||window.SchichtFunkCalendarView?.getMode?.()==='month';},selectTarget};
 
   function ensureUi(){
     const grid=document.getElementById('calendarGrid');
@@ -327,6 +379,10 @@
       wrap.innerHTML=`<div class="sf-week-board">${headers}${rows}</div>`;
     }
     installInteractions(wrap);
+    if(inlineAnchor&&target){
+      inlineAnchor=[...wrap.querySelectorAll('[data-open-assign]')].find(b=>{const shift=b.closest('.sf-week-shift');return shift?.dataset.date===target.date&&shift.dataset.type===target.type})||null;
+      if(!inlineAnchor||!canPlan())dismissInlinePicker(false);else{inlineAnchor.setAttribute('aria-expanded','true');inlineAnchor.setAttribute('aria-controls','sfInlineDutyPicker');positionInlinePicker()}
+    }
     markTarget();
     const result=document.getElementById('sfManualFilterResult');if(result)result.textContent=wrap.querySelectorAll('.sf-week-shift:not(.is-inactive)').length+' Dienste angezeigt';
     applyMode();
