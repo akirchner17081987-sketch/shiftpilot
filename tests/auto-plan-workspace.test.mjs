@@ -12,6 +12,23 @@ function harness(){
  vm.runInNewContext(planning,c);vm.runInNewContext(read('assets/auto-plan-workspace-v1.js'),c);c.window.SFAutoPlanWorkspace.confirmApply=async()=>true;
  return{c,id,api:c.window.SFAutoPlanWorkspace,run:code=>vm.runInNewContext(code,c)};
 }
+test('general return preserves the selected calendar week despite different auto-planning dates',()=>{
+ for(const planningPeriod of ['date','week','month']){
+  const {c,id,api}=harness();id('autoPlanPeriod').value=planningPeriod;
+  c.weekStart=new Date(2027,0,4);const before=c.weekStart.getTime();let view='',calendarChanges=0;
+  c.window.showView=v=>{view=v};
+  c.window.SchichtFunkCalendarView={setMonth(){calendarChanges++},setMode(){calendarChanges++}};
+  api.openSchedule();
+  assert.equal(view,'schedule');assert.equal(c.weekStart.getTime(),before);assert.equal(calendarChanges,0);assert.equal(c.saved,undefined);
+ }
+});
+test('general return keeps a selected month view while an explicit issue date opens its own week',()=>{
+ const {c,api}=harness();let mode='month',month='2027-01',view='';
+ c.weekStart=new Date(2027,0,4);c.window.showView=v=>{view=v};
+ c.window.SchichtFunkCalendarView={setMode(v){mode=v},setMonth(v){month=v}};
+ api.openSchedule();assert.equal(mode,'month');assert.equal(month,'2027-01');assert.equal(c.iso(c.weekStart),'2027-01-04');
+ api.openSchedule('2027-02-03');assert.equal(mode,'week');assert.equal(c.iso(c.weekStart),'2027-02-01');assert.equal(view,'schedule');assert.equal(c.saved,undefined);
+});
 test('before analysis: only one date field is enabled for display, result counts are unknown and no success is claimed',()=>{
  const {c,id}=harness();c.renderAutoPlanning();assert.equal(id('autoPlanWeekField').hidden,true);assert.equal(id('autoPlanMonthField').hidden,true);assert.equal(id('autoPlanDateField').hidden,false);assert.equal(id('autoResults').hidden,true);assert.match(id('autoStats').innerHTML,/Analyse noch nicht gestartet/);assert.doesNotMatch(id('autoAnalysis').innerHTML,/is-good|Keine Auffälligkeiten|vollständig/);
 });

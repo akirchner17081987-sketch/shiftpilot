@@ -103,7 +103,7 @@
   }
   function openSchedule(date){
     if(date){weekStart=autoMonday(date);window.SchichtFunkCalendarView?.setMode?.('week')}
-    else{const dates=autoPlanningDates();if(el('autoPlanPeriod')?.value==='month')window.SchichtFunkCalendarView?.setMonth?.(dates[0].slice(0,7));else{weekStart=autoMonday(dates[0]);window.SchichtFunkCalendarView?.setMode?.('week')}}
+    // General return preserves the current calendar period; explicit issue dates still navigate.
     if(window.showView)window.showView('schedule');else switchView('schedule');
   }
   function confirmApply(count){
