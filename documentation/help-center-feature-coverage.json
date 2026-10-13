@@ -2127,6 +2127,12 @@
       "kind": "feature-or-support"
     },
     {
+      "source": "assets/sf-entry-globe-v1.js",
+      "area": "Dekorativer animierter Globus im Einstieg; pausiert bei inaktivem Tab und reduzierter Bewegung",
+      "category": "start",
+      "kind": "feature-or-support"
+    },
+    {
       "source": "assets/sf-entry-v2.js",
       "area": "Animierter Einstieg und Anmeldevorbereitung",
       "category": "start",
