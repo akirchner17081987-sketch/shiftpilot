@@ -182,7 +182,11 @@ test('entry overlay is created before the protected application shell', () => {
   assert.ok(page.indexOf('id="sfEntryOverlay"') < page.indexOf('id="appShell"'));
   assert.ok(page.includes('assets/sf-entry-v2.css'));
   assert.ok(page.includes('assets/sf-entry-v2.js'));
-  assert.ok(page.includes('assets/schichtfunk-logo-v2-entry.svg'));
+  assert.ok(page.includes('assets/sf-entry-globe-v1.js'));
+  const entry=page.slice(page.indexOf('id="sfEntryOverlay"'),page.indexOf("performance.mark('sf-entry-visible')"));
+  assert.match(entry,/id="sfEntryGlobe"/);
+  assert.doesNotMatch(entry,/sfEntryLogoImage|sf-entry-access-heading|sf-entry-capabilities/);
+  assert.match(entry,/sf-entry-brand-note/);
   assert.match(page, /class="sf-login-only"/);
   assert.match(page, /id="sfEntryLoginSlot"/);
 });
@@ -234,3 +238,5 @@ test('entry preserves the production page-ready and role-gated loader', () => {
   assert.match(loader, /const result=await baseBoot\.apply\(this,arguments\)/);
   assert.match(page, /rel="preconnect" href="https:\/\/zbvloohfjleadjnqhbbh\.supabase\.co"/);
 });
+
+

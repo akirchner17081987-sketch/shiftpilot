@@ -8,7 +8,6 @@
   const counter = root.querySelector('#sfEntryCounter');
   const warning = root.querySelector('#sfEntryWarning');
   const skip = root.querySelector('#sfEntrySkip');
-  const image = root.querySelector('#sfEntryLogoImage');
   const slot = root.querySelector('#sfEntryLoginSlot');
   const startedAt = performance.now();
   const times = { startedAt, brand: null, document: null, resources: null, ready: null };
@@ -32,7 +31,7 @@
     const count = Object.values(done).filter(Boolean).length;
     progress.style.width = Math.round((count / 4) * 100) + '%';
     counter.textContent = count + ' / 4';
-    if (stage === 'brand') label.textContent = 'Logo 2.0 geladen';
+    if (stage === 'brand') label.textContent = 'Ansicht geladen';
     if (stage === 'document') label.textContent = 'Anwendung wird vorbereitet';
     if (stage === 'resources') label.textContent = 'Anmeldung wird initialisiert';
     if (stage === 'ready') label.textContent = 'SchichtFunk ist bereit';
@@ -193,34 +192,8 @@
   if (document.readyState !== 'loading') mark('document');
   else document.addEventListener('DOMContentLoaded', () => { mark('document'); checkReady(); }, {once:true});
 
-  image?.addEventListener('load', () => mark('brand'), {once:true});
-  if (image?.complete && image.naturalWidth) mark('brand');
-  image?.addEventListener('error', () => {
-    mark('brand');
-    warning.textContent = 'Das Logo konnte nicht vollständig geladen werden. Die Anmeldung wird trotzdem vorbereitet.';
-    warning.hidden = false;
-  }, {once:true});
-
-  // Inline the exact saved SVG so calendar, clock, waves, wordmark can animate separately.
-  fetch('assets/schichtfunk-logo-v2-entry.svg?v=20261011-days1', {cache:'force-cache'})
-    .then(response => { if (!response.ok) throw new Error('Brand asset failed'); return response.text(); })
-    .then(source => {
-      if (dismissed) return;
-      const doc = new DOMParser().parseFromString(source, 'image/svg+xml');
-      if (doc.querySelector('parsererror')) throw new Error('Invalid logo SVG');
-      const svg = doc.documentElement;
-      if (svg.localName !== 'svg' || !svg.querySelector('#calendar') || !svg.querySelector('#clock')) throw new Error('Missing logo groups');
-      const wrapper = document.createElement('div');
-      wrapper.className = 'sf-entry-logo';
-      wrapper.id = 'sfEntryLogoAnimated';
-      wrapper.setAttribute('role','img');
-      wrapper.setAttribute('aria-label','SchichtFunk 2.0 – Klar geplant. Stark besetzt.');
-      svg.removeAttribute('width');
-      svg.removeAttribute('height');
-      wrapper.appendChild(document.importNode(svg, true));
-      image?.replaceWith(wrapper);
-      mark('brand');
-    }).catch(() => { if (image?.complete) mark('brand'); });
+  // The minimal entry is already in the document; no decorative logo request is needed.
+  mark('brand');
 
   observer = new MutationObserver(() => {
     if (raf || dismissed) return;
