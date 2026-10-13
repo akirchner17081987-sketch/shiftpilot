@@ -17,9 +17,10 @@
     if(detail!==undefined)el('sfAutoProgressDetail').textContent=detail;
     if(value!==undefined)percent=value;
     const bar=el('sfAutoProgressBar');node.classList.toggle('is-indeterminate',percent===null);
-    el('sfAutoProgressPercent').textContent=percent===null?'In Arbeit':percent+' %';
+    const failed=node.classList.contains('is-error');
+    el('sfAutoProgressPercent').textContent=failed?'Abgebrochen':percent===null?'In Arbeit':percent+' %';
     if(percent===null)bar.removeAttribute('aria-valuenow');else bar.setAttribute('aria-valuenow',String(percent));
-    bar.setAttribute('aria-valuetext',percent===null?'Fortschritt noch nicht messbar':percent+' Prozent');bar.firstElementChild.style.width=percent===null?'35%':percent+'%';elapsed();
+    bar.setAttribute('aria-valuetext',failed?'Planung abgebrochen':percent===null?'Fortschritt noch nicht messbar':percent+' Prozent');bar.firstElementChild.style.width=percent===null?'35%':percent+'%';elapsed();
   }
   function start(){if(active)return false;active=true;started=Date.now();percent=null;clearInterval(timer);host()?.classList.remove('is-error','is-done');el('view-auto')?.setAttribute('aria-busy','true');draw('Auto-Planung wird vorbereitet','Daten, Wünsche und geschützte Dienste werden geprüft.',null);timer=setInterval(elapsed,1000);return true;}
   function phase(label,detail=''){draw(label,detail,null);}

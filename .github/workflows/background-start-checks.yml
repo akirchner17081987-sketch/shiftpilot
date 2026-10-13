@@ -1,0 +1,28 @@
+name: Background planning start checks
+on:
+  push:
+    branches: [codex/background-start-fix-20261013]
+permissions:
+  contents: read
+jobs:
+  background-start:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: npm run test:ionos
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/browser/site-loading-qa.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: background-start-qa
+          path: test-results
+          retention-days: 7

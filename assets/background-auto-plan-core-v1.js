@@ -14,6 +14,11 @@
   return {version,month:input.month,employees,candidates,base:input.base.map(a=>pick(a,rowKeys)),preferenceBase:(input.preferenceBase||input.base).map(a=>pick(a,rowKeys)),reserved:(input.reserved||[]).map(a=>pick(a,rowKeys)),groups,capacities:input.capacities,criticalCapacities:input.criticalCapacities||[],seedBlocks:(input.seedBlocks||[]).map(b=>({id:b.id,rows:b.rows.map(a=>pick(a,rowKeys))})),wishes:input.wishes||[],respectHours:true,solidRules:input.solidRules,criticalPeriod:!!input.criticalPeriod,criticalOnly:!!input.criticalOnly};
  }
  function unpack(input){const people=new Map(input.employees.map(e=>[String(e.id),e]));return {...input,groups:input.groups.map(g=>({...g,employee:people.get(String(g.employeeId)),options:g.options.map(o=>o.map(i=>input.candidates[i]))}))};}
+ function withServerWishes(payload,wishes){
+  if(wishes==null)return payload; // Older stored jobs already contain their confirmed wishes.
+  if(!Array.isArray(wishes))throw Error('Ungültige gespeicherte Wunschplanung.');
+  return {...payload,minimumInput:{...payload.minimumInput,wishes},monthInputs:payload.monthInputs.map(input=>({...input,wishes}))};
+ }
  function check(payload){
   if(payload?.version!==version||!Array.isArray(payload.months)||payload.months.length<1||payload.months.length>12||!Array.isArray(payload.monthInputs)||payload.monthInputs.length!==payload.months.length)throw Error('Ungültiger Planungsauftrag.');
   if(!payload.minimumInput?.solidRules?.enabled)throw Error('Die Hintergrundplanung benötigt die aktiven Planungsregeln.');
@@ -56,5 +61,5 @@
   return {percent:Math.min(99,15+Math.floor((cp.monthIndex+fraction)/payload.months.length*84)),label:'Monat '+(cp.monthIndex+1)+' von '+payload.months.length+' planen',detail:payload.months[cp.monthIndex]+' · '+(cp.solver?.iteration||0)+'/12 Verteilungen geprüft'};
  }
  function result(payload,cp){if(cp.stage!=='done')throw Error('Der Auftrag ist noch nicht abgeschlossen.');return {version,preview:cp.proposed,quality:cp.quality,months:payload.months,metadata:payload.metadata};}
- return {version,pack,unpack,check,start,context,progress,result,unique,rowKey};
+ return {version,pack,unpack,withServerWishes,check,start,context,progress,result,unique,rowKey};
 });

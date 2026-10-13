@@ -111,6 +111,7 @@
         const originalValid=employees.every(e=>!solid.errors(e,original.map(a=>({...a,start:a.start||typeById(a.type)?.start,end:a.end||typeById(a.type)?.end})),solidRules(),movable.filter(a=>String(a.employeeId)===String(e.id)).map(a=>a.date)).length);
         const metadata={company,month,months,dates,fingerprint:snapshot.fingerprint,base:wire.pack({...solidBuild(base,months[0],[]),groups:[]}).base.filter(a=>base.some(b=>String(b.id)===String(a.id))),movable:movable.map(a=>({id:a.id,_dbId:a._dbId})),beforeOpen:withBase(original,()=>autoOpenSlots().length),originalValid,beforeHours:employees.map(e=>[String(e.id),original.filter(a=>String(a.employeeId)===String(e.id)&&months.includes(a.date.slice(0,7))).reduce((n,a)=>n+plannedAssignmentHours(a),0)]),demandHours:withBase([],()=>dates.reduce((n,date)=>n+TYPES.reduce((v,t)=>v+getSoll(date,t.id)*plannedAssignmentHours({date,type:t.id,start:t.start,end:t.end}),0),0))};
         const payload={version:1,months,minimumInput,monthInputs,metadata};wire.check(payload);
+        P()?.phase('Hintergrundauftrag auf dem Server speichern','Berechtigungen, Datenstand und geschützte Wunschplanungen werden abschließend geprüft.');
         const job=await window.SFBackgroundPlanning.start(payload);
         P()?.message('Hintergrundauftrag gespeichert','Du kannst jetzt andere Programme nutzen oder den Browser schließen. Die Berechnung läuft weiter.');
         const completed=await window.SFBackgroundPlanning.wait(job);await restoreBackground(completed,true);return;
