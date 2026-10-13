@@ -129,6 +129,9 @@ html #appShell #view-schedule .is-timetable .sf-week-employee .sf-display-hours{
 html #appShell #view-schedule .is-timetable :is(.sf-week-open,.sf-week-add){min-height:26px;width:calc(100% - 10px);margin:0 5px 5px;padding:3px 4px;font-size:var(--sf-text-secondary,.8125rem)!important;line-height:1.4;white-space:normal;overflow-wrap:anywhere;min-width:0;border-radius:5px;background:transparent}
 html #appShell #view-schedule .is-timetable .sf-week-open{color:var(--sf-manual-warn);border-color:var(--sf-manual-warn)}
 html #appShell #view-schedule .is-timetable .sf-week-shared{padding:3px 6px!important;font-size:var(--sf-text-secondary,.8125rem)!important}
+html #appShell #view-schedule .is-timetable .sf-week-shift-head{position:relative;gap:3px!important;padding:6px 32px 6px 6px!important}
+html #appShell #view-schedule .is-timetable .sf-chat-service-open{position:absolute;top:4px;right:4px;width:24px!important;height:24px!important;min-height:24px!important;margin:0!important;padding:0!important}
+html #appShell #view-schedule .is-timetable .sf-chat-service-open svg{width:14px;height:14px}
 html #appShell #view-schedule .is-timetable .sf-week-over{padding:3px;margin:0 5px 5px;font-size:var(--sf-text-secondary,.8125rem);background:transparent;color:var(--sf-manual-muted);border:0}
 html #appShell #view-schedule .is-timetable .sf-week-shift.is-inactive{min-height:60px;background:var(--bg2);border-color:var(--sf-manual-line);border-left-color:var(--sf-manual-line)}
 @media(min-width:1500px){html #appShell #view-schedule.sf-week-timetable.sf-week-picker-open .sf-manual-workspace{grid-template-columns:minmax(0,1fr) 280px}}
@@ -137,3 +140,7 @@ html #appShell #view-schedule .is-timetable .sf-week-shift.is-inactive{min-heigh
  html #appShell #view-schedule #sfWeekBoardV2 .sf-week-board.is-timetable{grid-template-columns:60px repeat(7,minmax(110px,1fr));min-width:872px}
 }
 @media(pointer:coarse){html #appShell #view-schedule .is-timetable :is(.sf-week-employee,.sf-week-open,.sf-week-add){min-height:44px}}
+@media(pointer:coarse){
+ html #appShell #view-schedule .is-timetable .sf-week-shift-head{padding-right:52px!important;min-height:56px}
+ html #appShell #view-schedule .is-timetable .sf-chat-service-open{width:44px!important;height:44px!important;min-height:44px!important}
+}
