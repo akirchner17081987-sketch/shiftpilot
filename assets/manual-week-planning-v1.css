@@ -126,13 +126,13 @@ html #appShell #view-schedule .is-timetable .sf-week-avatar{display:none}
 html #appShell #view-schedule #sfWeekBoardV2 .is-timetable .sf-week-employee-info b{font-size:var(--sf-text-secondary,.8125rem)!important;font-weight:500;line-height:1.35;color:var(--sf-manual-text);white-space:normal;overflow-wrap:anywhere}
 html #appShell #view-schedule #sfWeekBoardV2 .is-timetable .sf-week-employee-info small{display:none}
 html #appShell #view-schedule .is-timetable .sf-week-employee .sf-display-hours{display:none}
-html #appShell #view-schedule .is-timetable :is(.sf-week-open,.sf-week-add){min-height:26px;width:calc(100% - 10px);margin:0 5px 5px;padding:3px 4px;font-size:var(--sf-text-secondary,.8125rem)!important;border-radius:5px;background:transparent}
+html #appShell #view-schedule .is-timetable :is(.sf-week-open,.sf-week-add){min-height:26px;width:calc(100% - 10px);margin:0 5px 5px;padding:3px 4px;font-size:var(--sf-text-secondary,.8125rem)!important;line-height:1.4;white-space:normal;overflow-wrap:anywhere;min-width:0;border-radius:5px;background:transparent}
 html #appShell #view-schedule .is-timetable .sf-week-open{color:var(--sf-manual-warn);border-color:var(--sf-manual-warn)}
 html #appShell #view-schedule .is-timetable .sf-week-shared{padding:3px 6px!important;font-size:var(--sf-text-secondary,.8125rem)!important}
 html #appShell #view-schedule .is-timetable .sf-week-over{padding:3px;margin:0 5px 5px;font-size:var(--sf-text-secondary,.8125rem);background:transparent;color:var(--sf-manual-muted);border:0}
 html #appShell #view-schedule .is-timetable .sf-week-shift.is-inactive{min-height:60px;background:var(--bg2);border-color:var(--sf-manual-line);border-left-color:var(--sf-manual-line)}
 @media(min-width:1500px){html #appShell #view-schedule.sf-week-timetable.sf-week-picker-open .sf-manual-workspace{grid-template-columns:minmax(0,1fr) 280px}}
-@media(max-width:760px){
+@media(max-width:1023px){
  html #appShell #view-schedule.sf-week-timetable #sfWeekBoardV2{overflow-x:auto;padding:8px}
  html #appShell #view-schedule #sfWeekBoardV2 .sf-week-board.is-timetable{grid-template-columns:60px repeat(7,minmax(110px,1fr));min-width:872px}
 }
