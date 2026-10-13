@@ -2,11 +2,20 @@
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory(require('./month-optimizer-core-v1.js'),require('./solid-planning-core-v1.js'),require('./wish-planning-core-v1.js'));else root.SFSolidPlanningResume=factory(root.SFMonthOptimizerCore,root.SFSolidPlanningCore,root.SFWishCore)})(typeof window==='undefined'?globalThis:window,function(core,S,W){
 'use strict';
 const C={...core,...core.checkpointPrimitives};
+function planningBase(input){
+ const months=[input.month,...input.capacities.map(([key])=>key.slice(0,7))].filter(m=>/^\d{4}-\d{2}$/.test(m)).sort();
+ if(!months.length)return input.base;
+ const margin=Math.max(8,...input.employees.map(e=>Number(e.maxConsecutive)||0))+1,first=S.plus(months[0]+'-01',-margin),end=new Date(months.at(-1)+'-01T12:00:00Z');end.setUTCMonth(end.getUTCMonth()+1);const last=S.plus(end.toISOString().slice(0,10),margin);
+ return input.base.filter(a=>a.date>=first&&a.date<last);
+}
 function start(input,iterations=12){return {version:1,inputKey:input._checkpointKey||input.month,phase:'critical',iterations,iteration:0,rng:20270101,component:0,key:0,minimum:[],beam:[{records:[],missing:0}],best:null,quality:null};}
 function context(input,cp){
   if(cp.version!==1||(input._checkpointKey||input.month)!==cp.inputKey)throw Error('Checkpoint does not match input snapshot');
   input={...input,...(W?.optimizer?W.optimizer(input.wishes||[],input.employees,input.preferenceBase||input.base,input.month,input.solidRules.timezone):{})};
-  const p=C.prepare(input),byResource=new Map(),refMap=new WeakMap();
+  // History remains available to fairness; conflict checks need the planned months
+  // and adjacent recovery days, including duties carried across month boundaries.
+  input={...input,base:planningBase(input)};
+  const p=C.prepare(input),byResource=new Map(),refMap=new WeakMap();let fillState=null;
   p.groups.forEach((group,gi)=>group.options.forEach((option,oi)=>{const r={group,option},ref=[gi,oi];refMap.set(option,ref);for(const key of new Set(option.map(a=>a.resource))){const list=byResource.get(key)||[];list.push(r);byResource.set(key,list)}}));
   const encode=records=>records.map(r=>refMap.get(r.option));
   const decode=records=>records.map(([gi,oi])=>({group:p.groups[gi],option:p.groups[gi].options[oi]}));
@@ -37,20 +46,20 @@ function context(input,cp){
       const i=cp.iteration,seed=[];for(const bundle of input.seedBlocks||[]){const group=p.groups.find(g=>g.id===bundle.id);if(group){const option=group.options.find(o=>o.length===bundle.rows.length&&o.every((a,n)=>a.type===bundle.rows[n].type));if(option)seed.push({group,option});}}
       const records=i===0?cp.minimum:i===1?encode(seed):i%4===0?cp.minimum:encode(decode(cp.best).filter(r=>r.option.some(a=>p.criticalCapacity.has(a.resource))||random()>.12+(i%3)*.08));
       const s=seeded(records),priority=key=>{if(C.criticalOpen(p,s,key)>0)return 0;const code=key.split('|')[1],rules=p.solidRules.conditionalStaffing||[];if(rules.some(r=>r.sourceShift===code))return 1;if(rules.some(r=>r.shift===code))return 3;return p.criticalCapacity.has(key)?4:2;};
-      cp.records=encode(s.records);cp.order=[...p.capacity.keys()].sort((a,b)=>priority(a)-priority(b)||(p.potential.get(a)?.size||0)-(p.potential.get(b)?.size||0)||a.localeCompare(b));cp.cursor=0;cp.changed=false;cp.phase='fill';return true;
+      cp.records=encode(s.records);fillState=s;cp.order=[...p.capacity.keys()].sort((a,b)=>priority(a)-priority(b)||(p.potential.get(a)?.size||0)-(p.potential.get(b)?.size||0)||a.localeCompare(b));cp.cursor=0;cp.changed=false;cp.phase='fill';return true;
     }
     if(cp.phase==='fill'){
       if(cp.cursor===cp.order.length){if(cp.changed){cp.cursor=0;cp.changed=false;}else cp.phase='iteration-end';return true;}
-      const resource=cp.order[cp.cursor++],s=C.state(p,decode(cp.records));
+      const resource=cp.order[cp.cursor++],s=fillState||(fillState=C.state(p,decode(cp.records)));
       if((s.remaining.get(resource)||0)<1)return true;let chosen=null,score=-Infinity;
       for(const r of byResource.get(resource)||[]){if(s.used.has(r.group.id)||!allowed(s,r))continue;const x=s.people.get(String(r.group.employee.id)),deficit=Math.max(0,r.group.employee.target-x.hours),same=r.option.every(a=>a.start===r.option[0].start),v=(p.preferenceScore?.(r.group.employee,x.duties,r.option)||0)+r.option.reduce((n,a)=>n+(C.criticalOpen(p,s,a.resource)>0?100:1),0)*10+Math.min(deficit,r.option.hours)*.15+(same?2:0)-(r.option.length===4&&r.option[0].start>='18:00'?4:0)-(r.option.length===1?4:0)+random()*3;if(v>score){chosen=r;score=v}}
       if(chosen){C.commit(s,chosen,p.month);cp.records=encode(s.records);cp.changed=true;}return true;
     }
-    if(cp.phase==='iteration-end'){const s=C.state(p,decode(cp.records)),v=C.solidQuality(p,s);if(C.solidBetter(v,cp.quality)){cp.best=cp.records.map(ref=>[...ref]);cp.quality=v;}cp.iteration++;cp.phase='iteration-start';return true;}
+    if(cp.phase==='iteration-end'){const s=fillState||C.state(p,decode(cp.records)),v=C.solidQuality(p,s);if(C.solidBetter(v,cp.quality)){cp.best=cp.records.map(ref=>[...ref]);cp.quality=v;}fillState=null;cp.iteration++;cp.phase='iteration-start';return true;}
     throw Error('Unknown checkpoint phase');
   }
   function result(){if(cp.phase!=='done')throw Error('Job not complete');const records=decode(cp.best||[]);return {preview:records.flatMap(r=>r.option.map(a=>({...a,blockId:r.group.id}))),quality:cp.quality,remaining:[...C.state(p,records).remaining]};}
   return{step,result};
 }
-return{start,context};
+return{start,context,planningBase};
 });

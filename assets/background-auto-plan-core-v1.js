@@ -19,6 +19,12 @@
   if(!Array.isArray(wishes))throw Error('Ungültige gespeicherte Wunschplanung.');
   return {...payload,minimumInput:{...payload.minimumInput,wishes},monthInputs:payload.monthInputs.map(input=>({...input,wishes}))};
  }
+ function compactPayload(payload){
+  const compact=input=>{const first=input.month.slice(0,7)+'-01',from=new Date(Date.UTC(+first.slice(0,4),+first.slice(5,7)-4,1)).toISOString().slice(0,10),zone=input.solidRules.timezone||'Europe/Berlin',begin=S.instant(from,'00:00',zone),end=S.instant(first,'00:00',zone);
+   const preferenceBase=(input.preferenceBase||input.base).filter(a=>{if(!(a.status==='PUBLISHED'||a._dbStatus==='PUBLISHED')||!(a.publishedAt||a.published_at))return false;const d=S.duty(a,input.solidRules);return d.startMs<end&&d.endMs>begin;});
+   return {...input,base:R.planningBase(input),preferenceBase};};
+  return {...payload,minimumInput:compact(payload.minimumInput),monthInputs:payload.monthInputs.map(compact)};
+ }
  function check(payload){
   if(payload?.version!==version||!Array.isArray(payload.months)||payload.months.length<1||payload.months.length>12||!Array.isArray(payload.monthInputs)||payload.monthInputs.length!==payload.months.length)throw Error('Ungültiger Planungsauftrag.');
   if(!payload.minimumInput?.solidRules?.enabled)throw Error('Die Hintergrundplanung benötigt die aktiven Planungsregeln.');
@@ -56,10 +62,10 @@
  }
  function progress(payload,cp){
   if(cp.stage==='done')return {percent:100,label:'Planung abgeschlossen',detail:'Die Vorschläge sind zur Prüfung bereit.'};
-  if(cp.stage==='minimum'){const total=cp.solver?.components?.reduce((n,c)=>n+c.keys.length,0)||1,done=cp.solver?.components?.slice(0,cp.solver.component).reduce((n,c)=>n+c.keys.length,0)+(cp.solver?.key||0);return {percent:Math.min(15,Math.floor((done||0)/total*15)),label:'Pflichtbesetzung verteilen',detail:'OT2 und Leitung werden über den gesamten Zeitraum vorbereitet.'};}
+  if(cp.stage==='minimum'){const total=cp.solver?.components?.reduce((n,c)=>n+c.keys.length,0)||1,done=cp.solver?.components?.slice(0,cp.solver.component).reduce((n,c)=>n+c.keys.length,0)+(cp.solver?.key||0);return {percent:Math.min(15,Math.floor((done||0)/total*15)),label:'Pflichtbesetzung verteilen',detail:'OT2 und Leitung · '+(done||0)+'/'+total+' Pflichtpositionen geprüft'};}
   const fraction=(cp.solver?.iteration||0)/12;
-  return {percent:Math.min(99,15+Math.floor((cp.monthIndex+fraction)/payload.months.length*84)),label:'Monat '+(cp.monthIndex+1)+' von '+payload.months.length+' planen',detail:payload.months[cp.monthIndex]+' · '+(cp.solver?.iteration||0)+'/12 Verteilungen geprüft'};
+  return {percent:Math.min(99,15+Math.floor((cp.monthIndex+fraction)/payload.months.length*84)),label:'Monat '+(cp.monthIndex+1)+' von '+payload.months.length+' planen',detail:payload.months[cp.monthIndex]+' · '+(cp.solver?.iteration||0)+'/12 Verteilungen geprüft'+(cp.solver?.phase==='fill'?' · '+cp.solver.cursor+'/'+cp.solver.order.length+' Schichtpositionen':'' )};
  }
  function result(payload,cp){if(cp.stage!=='done')throw Error('Der Auftrag ist noch nicht abgeschlossen.');return {version,preview:cp.proposed,quality:cp.quality,months:payload.months,metadata:payload.metadata};}
- return {version,pack,unpack,withServerWishes,check,start,context,progress,result,unique,rowKey};
+ return {version,pack,unpack,withServerWishes,compactPayload,check,start,context,progress,result,unique,rowKey};
 });
