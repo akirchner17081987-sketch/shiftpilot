@@ -228,7 +228,8 @@
     popup.style.width=Math.min(380,innerWidth-margin*2)+'px';popup.style.maxHeight=Math.max(120,Math.min(560,bottom-margin))+'px';
     const r=inlineAnchor.getBoundingClientRect(),p=popup.getBoundingClientRect();
     const left=Math.max(margin,Math.min(r.left,innerWidth-p.width-margin));
-    const top=r.bottom+8+p.height<=bottom?r.bottom+8:r.top-8-p.height>=margin?r.top-8-p.height:Math.max(margin,Math.min(r.top,bottom-p.height));
+    const preferredTop=r.bottom+8+p.height<=bottom?r.bottom+8:r.top-8-p.height>=margin?r.top-8-p.height:r.top;
+    const top=Math.max(margin,Math.min(preferredTop,bottom-p.height));
     popup.style.left=left+'px';popup.style.top=top+'px';
   }
   document.addEventListener('pointerdown',e=>{const popup=document.getElementById('sfInlineDutyPicker');if(inlineAnchor&&!popup?.contains(e.target)&&!e.target.closest?.('[data-open-assign]'))dismissInlinePicker(false)});
