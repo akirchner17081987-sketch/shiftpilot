@@ -166,7 +166,13 @@
     if (!ready() || !allowed(button)) { refresh(); return; }
     close(true);
     /* Click through existing hooks, loaders, workspace persistence and access checks. */
-    button.click(); scheduleRefresh();
+    button.click();
+    if (activeView() === view) {
+      // Mobile guardrails make body a separate scroll container, alongside main.
+      [shell, shell.querySelector('.main'), document.body, document.documentElement].forEach(element => element?.scrollTo({ top: 0, left: 0, behavior: 'instant' }));
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    }
+    scheduleRefresh();
   }
   function renderEntries(group) {
     const current = activeView();

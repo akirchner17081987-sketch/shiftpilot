@@ -73,11 +73,13 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
    await page.locator('[data-td-action="reset"]').click();
    await page.locator('details[data-orbit-detail="filters"]>summary').click();
    for(const key of ['figures','coverage']){const d=page.locator('details[data-orbit-detail="'+key+'"]');if(await d.evaluate(n=>n.open))await d.locator('summary').click();}
+   await page.evaluate(()=>{document.body.scrollTop=400;document.getElementById('sfOrbitHome').click()});
+   await page.waitForFunction(()=>document.body.scrollTop<1&&document.querySelector('#appShell .main').scrollTop<1,'Orbit home resets all actual scroll containers');
    await page.evaluate(()=>{document.querySelector('#appShell .main').scrollTop=0;window.scrollTo(0,0);SFOrbit.setMotion('off')});
    assert.equal(await page.locator('.sf-orbit-emblem').evaluate(n=>n.getAnimations({subtree:true}).length),0,'motion off includes the decorative Orbit graphic');
    for(const [theme,width] of [['dark',1440],['light',1440],['dark',390],['light',390],['dark',320]]){
-     await page.setViewportSize({width,height:1000});await page.evaluate(t=>{SFManagerTheme.apply(t,false);document.activeElement?.blur?.();document.querySelector('#appShell .main').scrollTo({top:0,left:0,behavior:'instant'});window.scrollTo({top:0,left:0,behavior:'instant'})},theme);
-     await page.waitForFunction(()=>document.querySelector('#appShell .main').scrollTop<1&&window.scrollY<1);
+     await page.setViewportSize({width,height:1000});await page.evaluate(t=>{SFManagerTheme.apply(t,false);document.activeElement?.blur?.();for(const el of [document.body,document.documentElement,document.getElementById('appShell'),document.querySelector('#appShell .main')])el.scrollTo({top:0,left:0,behavior:'instant'});window.scrollTo({top:0,left:0,behavior:'instant'})},theme);
+     await page.waitForFunction(()=>document.body.scrollTop<1&&document.querySelector('#appShell .main').scrollTop<1&&window.scrollY<1);
      const hero=await page.locator('.sf-orbit-hero').boundingBox(),bar=await page.locator('#appShell>.topbar').boundingBox();assert.ok(bar.y>=-1&&hero.y>=bar.y+bar.height-1&&hero.y<bar.y+bar.height+50,'graphic hero and topbar are the first visible workspace content');
      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),true,'Orbit overview fits '+width);
      const emblem=await page.locator('.sf-orbit-emblem').boundingBox();assert.ok(emblem.x>=0&&emblem.x+emblem.width<=width+1,'graphic fits the viewport');
