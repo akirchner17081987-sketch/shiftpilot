@@ -13,7 +13,7 @@ B.client=client;B.ensureCompany=async()=>{B.role=qa.role;B.accessRole=({PLANNER:
 B.hydrate=B.hydrateTimeOnly=async()=>{employees=[];assignments=[];absences=[];globalSoll={};dailySoll={};if(B.beginStartup){await new Promise(r=>setTimeout(r,250));qa.startup={shellVisible:getComputedStyle(document.getElementById('appShell')).display!=='none',ready:B.ready,shellReady:B.shellReady,entryDismissed:document.getElementById('sfEntryOverlay')?.classList.contains('sf-entry-out')||!document.getElementById('sfEntryOverlay'),viewInert:document.querySelector('#appShell .view').inert,status:!!document.getElementById('sfStartupStatus')};}};B.hydrateEmployee=async()=>{B.employeeDbId='qa-employee';B.employeePortalData=emptyEmployee()};await B.boot({user:{id:'qa-user',email:'qa@example.invalid'}});if(qa.role!=='EMPLOYEE')B.baseOpenApp(qa.role==='TIME_TRACKING'?'time':'overview');qa.done=true;};
 })();`;
 let server,browser,qaPage;
-async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(),today=require('../fixtures/today-data.cjs').fixture();today.company_id='qa';
+async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(),fixtures=require('../fixtures/today-data.cjs'),today=fixtures.fixture();today.company_id='qa';today.company_name='SchichtFunk · Designvorschau';today.assignments=[fixtures.assignment('qa-aa','a'),fixtures.assignment('qa-ab','b')];today.qr=[fixtures.booking('qa-qa','a'),fixtures.booking('qa-qb','b','2026-10-10T09:00:00Z')];
  server=http.createServer((req,res)=>{const url=new URL(req.url,'http://localhost'),referer=new URL(req.headers.referer||'http://localhost/?variant=current'),variant=url.searchParams.get('variant')||referer.searchParams.get('variant')||'current';
  if(url.pathname==='/'||url.pathname==='/index.html'){
  const role=url.searchParams.get('role')||'SIGNED_OUT';let html=source(variant,'index.html');const prep='<script>window.qa={role:'+JSON.stringify(role)+',start:performance.now(),rpcs:[],writes:[],today:'+JSON.stringify(today)+'};document.addEventListener("DOMContentLoaded",()=>qa.dclMs=performance.now()-qa.start,{once:true});</script>';
@@ -52,6 +52,10 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
  if(extra){
  if(windowOrbit(data)) {
    await page.waitForFunction(()=>document.querySelectorAll('.sf-orbit-overview-metrics [data-td-kpi]').length===3);
+   await page.evaluate(()=>{
+     const name=document.querySelector('#appShell .topbar .user-row b'),role=document.querySelector('#appShell .topbar .user-row small'),avatar=document.querySelector('#appShell .topbar .user-row .avatar'),company=document.querySelector('#appShell .topbar .company-card b');
+     if(name)name.textContent='Designvorschau';if(role)role.textContent='Testkonto';if(avatar)avatar.textContent='SF';if(company)company.textContent='SchichtFunk';
+   });
    assert.equal(await page.locator('#sfTodayWorkspace [data-td-kpi]').count(),6,'all original daily KPIs remain available');
    assert.deepEqual(await page.locator('.sf-orbit-overview-metrics [data-td-kpi]').evaluateAll(nodes=>nodes.map(n=>n.dataset.tdKpi)),['present','coverage','actions']);
    for(const key of ['figures','coverage','transitions','shortcuts','filters'])assert.equal(await page.locator('details[data-orbit-detail="'+key+'"]').evaluate(n=>n.open),false,'secondary information starts collapsed: '+key);
@@ -69,10 +73,12 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
    await page.locator('[data-td-action="reset"]').click();
    await page.locator('details[data-orbit-detail="filters"]>summary').click();
    for(const key of ['figures','coverage']){const d=page.locator('details[data-orbit-detail="'+key+'"]');if(await d.evaluate(n=>n.open))await d.locator('summary').click();}
-   await page.evaluate(()=>{window.scrollTo(0,0);SFOrbit.setMotion('off')});
+   await page.evaluate(()=>{document.querySelector('#appShell .main').scrollTop=0;window.scrollTo(0,0);SFOrbit.setMotion('off')});
    assert.equal(await page.locator('.sf-orbit-emblem').evaluate(n=>n.getAnimations({subtree:true}).length),0,'motion off includes the decorative Orbit graphic');
    for(const [theme,width] of [['dark',1440],['light',1440],['dark',390],['light',390],['dark',320]]){
-     await page.setViewportSize({width,height:1000});await page.evaluate(t=>{SFManagerTheme.apply(t,false);window.scrollTo(0,0)},theme);
+     await page.setViewportSize({width,height:1000});await page.evaluate(t=>{SFManagerTheme.apply(t,false);document.querySelector('#appShell .main').scrollTop=0;window.scrollTo(0,0)},theme);
+     await page.waitForFunction(()=>document.querySelector('#appShell .main').scrollTop<1);
+     const hero=await page.locator('.sf-orbit-hero').boundingBox(),bar=await page.locator('#appShell>.topbar').boundingBox();assert.ok(hero.y>=bar.y+bar.height-1&&hero.y<bar.y+bar.height+50,'graphic hero is the first visible workspace content');
      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),true,'Orbit overview fits '+width);
      const emblem=await page.locator('.sf-orbit-emblem').boundingBox();assert.ok(emblem.x>=0&&emblem.x+emblem.width<=width+1,'graphic fits the viewport');
      for(const key of ['present','coverage','actions'])assert.equal(await page.locator('.sf-orbit-overview-metrics [data-td-kpi="'+key+'"]').isVisible(),true);

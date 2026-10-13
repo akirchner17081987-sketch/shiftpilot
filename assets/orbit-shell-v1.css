@@ -70,6 +70,8 @@ body.sf-orbit-manager .sf-planning-chat{bottom:calc(172px + env(safe-area-inset-
 body.sf-orbit-menu-open :is(.sf-chat-launcher,.sf-planning-chat){visibility:hidden!important;pointer-events:none!important}
 /* A single graphic focal point, with quiet operational content below it. */
 #appShell.sf-orbit #sfTodayWorkspace{max-width:1320px;margin:0 auto}
+#appShell.sf-orbit #view-overview>.sf-orbit-overview-details{max-width:1320px;margin:0 auto 16px}
+#appShell.sf-orbit #view-overview>.sf-orbit-overview-details>:not(summary){background:transparent!important;border:0!important;border-radius:0;box-shadow:none!important;margin:0!important;padding:8px 0 20px}
 #appShell.sf-orbit .sf-orbit-hero{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(280px,.9fr);grid-template-rows:auto auto;column-gap:56px;row-gap:28px;position:relative;padding:24px 12px 30px;margin-bottom:22px;isolation:isolate;border-bottom:1px solid var(--orbit-line)}
 #appShell.sf-orbit .sf-orbit-hero:before{content:"";position:absolute;inset:-28px 0 0;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at 78% 45%,var(--orbit-glow),transparent 58%)}
 #appShell.sf-orbit .sf-orbit-hero-copy{grid-column:1;grid-row:1;align-self:center;display:block;margin:0;min-width:0}

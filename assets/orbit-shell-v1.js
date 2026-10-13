@@ -43,11 +43,13 @@
   const overviewExpanded = new Map();
   let overviewContext = '';
   function rememberOverview() {
-    shell?.querySelectorAll('#sfTodayWorkspace details[data-orbit-detail]').forEach(detail => overviewExpanded.set(detail.dataset.orbitDetail, detail.open));
+    shell?.querySelectorAll('#view-overview details[data-orbit-detail]').forEach(detail => overviewExpanded.set(detail.dataset.orbitDetail, detail.open));
   }
   function overviewDetail(element, key, label) {
     if (!element) return null;
     if (element.parentElement.matches('details[data-orbit-detail]')) return element.parentElement;
+    const existing = element.closest('#view-overview')?.querySelector('details[data-orbit-detail="' + key + '"]');
+    if (existing) { existing.append(element); return existing; }
     const detail = document.createElement('details'); detail.className = 'sf-orbit-overview-details'; detail.dataset.orbitDetail = key;
     const summary = document.createElement('summary'); summary.textContent = label;
     detail.open = !!overviewExpanded.get(key); element.before(detail); detail.append(summary, element);
@@ -73,6 +75,23 @@
     }
     const metrics = hero.querySelector('.sf-orbit-overview-metrics');
     if (!window.SFToday?.getResult?.()) { if (metrics.childElementCount) metrics.replaceChildren(); return; }
+    const view = root.closest('#view-overview');
+    const legacy = view.querySelector('#sfLegacyReviewCard'), legacyCount = legacy?.querySelector('.badge')?.textContent.trim() || '0';
+    const legacyDetail = overviewDetail(legacy, 'legacy', 'Altbestand prüfen · ' + legacyCount);
+    if (legacyDetail) {
+      const text = 'Altbestand prüfen · ' + legacyCount;
+      if (legacyDetail.firstElementChild.textContent !== text) legacyDetail.firstElementChild.textContent = text;
+      if (Number(legacyCount) > 0) legacyDetail.open = true;
+    }
+    const market = view.querySelector('#sfMarketManager');
+    const marketDetail = overviewDetail(market, 'market', 'Schicht-Marktplatz');
+    if (marketDetail) {
+      const text = 'Schicht-Marktplatz · ' + (market?.querySelector('.sf-market-count')?.textContent.trim() || 'Übersicht');
+      if (marketDetail.firstElementChild.textContent !== text) marketDetail.firstElementChild.textContent = text;
+    }
+    const handover = view.querySelector('#sfHandoverToday');
+    const handoverDetail = overviewDetail(handover, 'handover', 'Schichtübergabe');
+    if (handoverDetail && Number(handover?.querySelector('p')?.textContent.match(/(\d+) kritisch/)?.[1]) > 0) handoverDetail.open = true;
     const filters = overviewDetail(root.querySelector('.sf-td-filters'), 'filters', 'Standort & Schicht');
     if (filters) {
       const site = root.querySelector('#sfTodaySite'), shift = root.querySelector('#sfTodayShift');
