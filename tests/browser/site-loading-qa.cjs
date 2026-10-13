@@ -75,6 +75,16 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
    await page.evaluate(()=>{const B=SFBackend;B.companySwitching=true;SFOrbit.refreshOverview()});assert.equal(await page.locator('[data-orbit-site]').count(),0,'company switch clears previous location names and cards synchronously');
    assert.equal(await page.locator('#sfOrbitSiteInfo').isVisible(),false);assert.equal(await page.evaluate(()=>SFToday.getSiteOverview()),null);
    await page.evaluate(async()=>{SFBackend.companySwitching=false;await SFToday.reload(true);SFOrbit.refreshOverview()});await sitePin('east').waitFor();
+   await page.evaluate(async()=>{window.__originalQaSites=qa.today.sites.slice();for(let i=0;i<7;i++)qa.today.sites.push({id:'extra-'+i,name:'Teststandort '+i,is_active:true});await SFToday.reload(true)});
+   assert.equal(await page.locator('[data-orbit-site]').count(),6,'large location lists retain compact pages');
+   await page.getByRole('button',{name:'Weitere Standorte',exact:true}).click();assert.equal(await page.locator('[data-orbit-site]').count(),3);
+   await sitePin('extra-6').click();assert.equal(await page.locator('#sfTodaySite').inputValue(),'extra-6');
+   await page.getByRole('button',{name:'Vorherige Standorte',exact:true}).click();assert.equal(await page.locator('[data-orbit-site]').count(),6);
+   await page.getByRole('button',{name:'Standortfilter zurücksetzen',exact:true}).click();
+   await page.evaluate(async()=>{qa.today.sites=window.__originalQaSites;delete window.__originalQaSites;await SFToday.reload(true)});await sitePin('east').waitFor();
+   await page.evaluate(()=>document.activeElement?.blur?.());await sitePin('east').hover();
+   await page.waitForTimeout(200);assert.equal(await page.locator('#sfOrbitSiteInfo').isVisible(),true,'hover card does not cover its own trigger');
+   await page.locator('.sf-orbit-hero-copy h1').hover();assert.equal(await page.locator('#sfOrbitSiteInfo').isVisible(),false);
    for(const key of ['figures','coverage','transitions','shortcuts','filters'])assert.equal(await page.locator('details[data-orbit-detail="'+key+'"]').evaluate(n=>n.open),false,'secondary information starts collapsed: '+key);
    await page.locator('details[data-orbit-detail="figures"]>summary').click();
    await page.evaluate(()=>SFToday.reload(true));
