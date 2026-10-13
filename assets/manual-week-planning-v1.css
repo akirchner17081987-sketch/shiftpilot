@@ -96,6 +96,25 @@ html #appShell #view-schedule button:focus-visible,html #appShell #view-schedule
 }
 
 /* Compact timetable: aligned shift rows, all seven dates on desktop. */
+html #appShell #view-schedule .sf-inline-duty-picker{position:fixed;z-index:11000;box-sizing:border-box;overflow:auto;padding:12px;border:1px solid var(--sf-manual-line);border-radius:12px;background:var(--sf-manual-surface);color:var(--sf-manual-text);box-shadow:0 16px 48px #0005;overscroll-behavior:contain;scrollbar-width:thin}
+html #appShell #view-schedule .sf-inline-duty-picker[hidden]{display:none!important}
+html #appShell #view-schedule .sf-inline-picker-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+html #appShell #view-schedule .sf-inline-picker-head h3{font-size:1rem;margin:0;font-weight:600}
+html #appShell #view-schedule .sf-inline-picker-head>button{width:32px;min-height:32px;border:1px solid var(--sf-manual-line);border-radius:7px;background:var(--panel2);color:var(--sf-manual-text)}
+html #appShell #view-schedule .sf-inline-duty-picker .employee-pool{margin:0;padding:0;border:0;background:transparent;box-shadow:none;min-width:0}
+html #appShell #view-schedule .sf-inline-duty-picker :is(.sf-manual-picker-fields,#sfManualChoose,#sfManualClear,.sf-manual-picker>.eyebrow,.sp-pool-toggle,.sp-dynpool-info,.sp-dynpool-count){display:none!important}
+html #appShell #view-schedule .sf-inline-duty-picker .sf-manual-context{margin:8px 0;padding:0;border:0;background:transparent}
+html #appShell #view-schedule .sf-inline-duty-picker .sf-manual-context small{margin-top:3px}
+html #appShell #view-schedule .sf-inline-duty-picker .employee-pool-head{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;padding:0;margin:12px 0 8px}
+html #appShell #view-schedule .sf-inline-duty-picker .employee-pool-head>div:first-child{display:none}
+html #appShell #view-schedule .sf-inline-duty-picker .employee-pool-head input{grid-column:1;grid-row:auto;min-width:0;width:100%;margin:0;box-sizing:border-box}
+html #appShell #view-schedule .sf-inline-duty-picker .sf-manual-roster-options{gap:8px;margin:8px 0}
+html #appShell #view-schedule .sf-inline-duty-picker .sf-manual-candidates{max-height:none;overflow:visible;gap:6px}
+html #appShell #view-schedule .sf-inline-duty-picker .sf-manual-person{padding:9px;gap:4px;border-radius:8px}
+html #appShell #view-schedule .sf-inline-duty-picker .sf-manual-hours{display:flex;flex-wrap:wrap;gap:8px;font-size:var(--sf-text-secondary,.8125rem)}
+html #appShell #view-schedule .sf-inline-duty-picker .sf-manual-hours>span{gap:4px}
+html #appShell #view-schedule .sf-inline-duty-picker :is(.sf-manual-person-action,.sf-manual-person.good .sf-manual-person-status){display:none}
+@media(pointer:coarse){html #appShell #view-schedule .sf-inline-picker-head>button{width:44px;min-height:44px}}
 html #appShell #view-schedule.sf-week-timetable .sf-manual-workspace{grid-template-columns:minmax(0,1fr)}
 html #appShell #view-schedule.sf-week-timetable:not(.sf-week-picker-open) .sf-manual-sidebar{display:none}
 html #appShell #view-schedule.sf-week-timetable #sfWeekBoardV2{max-height:none;min-height:0;overflow:visible;padding:12px;background:var(--bg2)}
