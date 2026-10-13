@@ -77,8 +77,22 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
    for(const key of ['figures','coverage']){const d=page.locator('details[data-orbit-detail="'+key+'"]');if(await d.evaluate(n=>n.open))await d.locator('summary').click();}
    await page.evaluate(()=>{document.body.scrollTop=400;document.getElementById('sfOrbitHome').click()});
    await page.waitForFunction(()=>document.body.scrollTop<1&&document.querySelector('#appShell .main').scrollTop<1,'Orbit home resets all actual scroll containers');
+   const globe=page.locator('.sf-orbit-globe');
+   assert.equal(await globe.count(),1,'overview has one native globe, without external graphics requests');
+   assert.equal(await globe.evaluate(n=>n.getContext('2d').getImageData(n.width/2,n.height/2,1,1).data[3]),255,'Earth is rendered even without animation');
+   await page.evaluate(()=>{SFOrbit.setMotion('full');window.__orbitGlobeSnapshot=document.querySelector('.sf-orbit-globe').toDataURL()});
+   await page.waitForFunction(()=>document.querySelector('.sf-orbit-globe').toDataURL()!==window.__orbitGlobeSnapshot);
+   await page.evaluate(()=>SFOrbit.setMotion('subtle'));
+   const subtleFrame=await globe.evaluate(n=>n.toDataURL());
+   await page.waitForFunction(previous=>document.querySelector('.sf-orbit-globe').toDataURL()!==previous,subtleFrame);
    await page.evaluate(()=>{document.querySelector('#appShell .main').scrollTop=0;window.scrollTo(0,0);SFOrbit.setMotion('off')});
    assert.equal(await page.locator('.sf-orbit-emblem').evaluate(n=>n.getAnimations({subtree:true}).length),0,'motion off includes the decorative Orbit graphic');
+   const stillFrame=await globe.evaluate(n=>n.toDataURL());await page.waitForTimeout(200);
+   assert.equal(await globe.evaluate(n=>n.toDataURL()),stillFrame,'motion off stops globe rotation and blinking');
+   await page.emulateMedia({reducedMotion:'reduce'});await page.evaluate(()=>SFOrbit.setMotion('full'));
+   const reducedFrame=await globe.evaluate(n=>n.toDataURL());await page.waitForTimeout(200);
+   assert.equal(await globe.evaluate(n=>n.toDataURL()),reducedFrame,'system reduced motion also stops the canvas');
+   await page.emulateMedia({reducedMotion:'no-preference'});await page.evaluate(()=>SFOrbit.setMotion('off'));
    for(const [theme,width] of [['dark',1440],['light',1440],['dark',390],['light',390],['dark',320]]){
      await page.setViewportSize({width,height:1000});await page.evaluate(t=>{SFManagerTheme.apply(t,false);document.activeElement?.blur?.();for(const el of [document.body,document.documentElement,document.getElementById('appShell'),document.querySelector('#appShell .main')])el.scrollTo({top:0,left:0,behavior:'instant'});window.scrollTo({top:0,left:0,behavior:'instant'})},theme);
      await page.waitForFunction(()=>document.body.scrollTop<1&&document.querySelector('#appShell .main').scrollTop<1&&window.scrollY<1);
@@ -90,6 +104,7 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
      await page.screenshot({path:path.join(out,'orbit-overview-'+theme+'-'+width+'.png'),animations:'disabled'});
    }
    await page.setViewportSize({width:1440,height:1000});await page.evaluate(()=>{SFManagerTheme.apply('dark',false);SFOrbit.setMotion('full')});
+   for(let i=0;i<30;i++){await globe.screenshot({path:path.join(out,'orbit-globe-frame-'+String(i).padStart(2,'0')+'.png')});await page.waitForTimeout(150);}
    const mainBefore=await page.locator('#appShell .main').boundingBox();
    await page.locator('[data-orbit-category="planning"]').click();
    await page.waitForFunction(()=>document.querySelectorAll('#sfOrbitPopup .sf-orbit-entry').length===4);
@@ -100,6 +115,8 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
    assert.equal(await page.locator('#sfOrbitPopup').evaluate(n=>getComputedStyle(n).position),'fixed','menu is outside the document flow; background data may change content height');
    await page.locator('#sfOrbitPopup [data-orbit-target="schedule"]').click();
    assert.equal(await page.locator('#view-schedule').evaluate(n=>n.classList.contains('active')),true,'proxy must activate original route');
+   const inactiveFrame=await globe.evaluate(n=>n.toDataURL());await page.waitForTimeout(200);
+   assert.equal(await globe.evaluate(n=>n.toDataURL()),inactiveFrame,'globe rendering pauses outside the overview');
    assert.equal(await page.locator('[data-orbit-category="planning"] small').innerText(),'Dienstplan');
    await page.locator('[data-orbit-category="personal"]').click();await page.waitForFunction(()=>document.querySelectorAll('#sfOrbitPopup .sf-orbit-entry').length===6);assert.equal(await page.locator('#sfOrbitPopup .sf-orbit-entry').count(),6);
    await page.locator('[data-orbit-category="analysis"]').click();await page.waitForFunction(()=>document.querySelectorAll('#sfOrbitPopup .sf-orbit-entry').length===2);assert.equal(await page.locator('#sfOrbitPopup .sf-orbit-entry').count(),2);

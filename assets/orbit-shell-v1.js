@@ -42,6 +42,127 @@
   const ready = () => !!backend().ready && backend().role !== 'EMPLOYEE' && !backend().companySwitching;
   const overviewExpanded = new Map();
   let overviewContext = '';
+  let globe = null;
+  function createGlobe(art) {
+    globe?.dispose();
+    const canvas = document.createElement('canvas'); canvas.className = 'sf-orbit-globe';
+    art.prepend(canvas);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    // Original, deliberately simplified continent silhouettes for a decorative globe.
+    // Coordinates are longitude/latitude, independent of company or employee data.
+    const continents = [
+      [[-168,71],[-145,70],[-130,58],[-124,49],[-123,39],[-115,30],[-105,23],[-97,17],[-89,16],[-83,9],[-77,8],[-86,22],[-81,25],[-80,32],[-70,45],[-59,49],[-65,58],[-81,63],[-94,71],[-111,73],[-133,69]],
+      [[-81,12],[-70,11],[-61,7],[-51,4],[-35,-6],[-39,-17],[-46,-24],[-53,-34],[-66,-55],[-73,-49],[-75,-30],[-70,-18],[-81,-5]],
+      [[-53,60],[-43,60],[-23,72],[-20,81],[-42,84],[-61,77]],
+      [[-17,36],[-5,36],[10,37],[24,32],[33,31],[36,22],[44,12],[51,11],[43,0],[40,-12],[32,-27],[18,-35],[11,-28],[8,-8],[-1,5],[-15,11],[-17,23]],
+      [[-10,36],[-9,43],[-1,46],[-5,50],[7,54],[5,59],[11,71],[25,71],[31,61],[43,68],[61,69],[80,73],[109,77],[140,72],[178,66],[174,52],[151,59],[140,48],[130,42],[124,32],[120,23],[108,19],[105,9],[100,1],[96,7],[92,22],[81,8],[74,18],[66,24],[58,25],[51,30],[43,12],[35,17],[34,30],[27,41],[24,37],[19,40],[16,46],[9,44],[4,43]],
+      [[-8,50],[-6,58],[0,59],[2,52]], [[-11,51],[-8,55],[-6,54],[-6,51]],
+      [[47,-13],[50,-17],[48,-25],[44,-25],[43,-17]],
+      [[113,-22],[115,-34],[130,-35],[138,-38],[151,-33],[154,-24],[146,-16],[135,-12],[126,-15],[122,-18]],
+      [[130,31],[135,34],[141,41],[145,44],[143,37],[138,34]],
+      [[95,5],[104,-2],[106,-6],[101,-4]], [[106,-6],[115,-8],[114,-9],[106,-8]],
+      [[119,0],[125,2],[127,-4],[120,-5]], [[131,-3],[141,-3],[151,-7],[145,-10],[136,-8]],
+      [[166,-34],[179,-38],[173,-47],[167,-46],[172,-40]]
+    ];
+    function onLand(x, y) {
+      return continents.some(polygon => {
+        let inside = false;
+        for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+          const a = polygon[i], b = polygon[j];
+          if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) inside = !inside;
+        }
+        return inside;
+      });
+    }
+    const rad = Math.PI / 180, points = [];
+    for (let lat = -57; lat <= 82; lat += 2.3) {
+      const step = 2.3 / Math.max(.24, Math.cos(lat * rad));
+      for (let lon = -180; lon < 180; lon += step) {
+        if (!onLand(lon, lat)) continue;
+        const seed = (Math.sin(lon * 12.9898 + lat * 78.233) * 43758.5453) % 1;
+        points.push({ lon: lon * rad, sin: Math.sin(lat * rad), cos: Math.cos(lat * rad), phase: Math.abs(seed) * Math.PI * 2, lit: Math.abs(seed) > .76 });
+      }
+    }
+    let raf = 0, previous = 0, elapsed = 0, angle = -14 * rad, inView = true, disposed = false, light = false;
+    const tilt = 18 * rad, sinTilt = Math.sin(tilt), cosTilt = Math.cos(tilt);
+    function project(lon, sin, cos) {
+      const delta = lon - angle, z = cos * Math.cos(delta);
+      return { x: 210 + 151 * cos * Math.sin(delta), y: 210 - 151 * (sin * cosTilt - z * sinTilt), z: sin * sinTilt + z * cosTilt };
+    }
+    function draw() {
+      ctx.clearRect(0, 0, 420, 420);
+      const atmosphere = ctx.createRadialGradient(210, 210, 142, 210, 210, 177);
+      atmosphere.addColorStop(0, 'transparent'); atmosphere.addColorStop(.28, light ? '#6254cb26' : '#39dfff26'); atmosphere.addColorStop(1, 'transparent');
+      ctx.fillStyle = atmosphere; ctx.fillRect(0, 0, 420, 420);
+      const ocean = ctx.createRadialGradient(165, 145, 12, 235, 225, 176);
+      ocean.addColorStop(0, light ? '#253b70' : '#124960'); ocean.addColorStop(.65, light ? '#102244' : '#082b40'); ocean.addColorStop(1, '#020b1a');
+      ctx.fillStyle = ocean; ctx.beginPath(); ctx.arc(210, 210, 151, 0, Math.PI * 2); ctx.fill();
+      ctx.save(); ctx.clip();
+      // Project latitude and longitude guides onto the same sphere as the lights.
+      ctx.strokeStyle = light ? '#8e96e918' : '#5bcae21a'; ctx.lineWidth = .65;
+      for (let lat = -60; lat <= 60; lat += 30) {
+        ctx.beginPath(); let connected = false;
+        for (let lon = -180; lon <= 180; lon += 3) {
+          const p = project(lon * rad, Math.sin(lat * rad), Math.cos(lat * rad));
+          if (p.z <= 0) { connected = false; continue; }
+          if (connected) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); connected = true;
+        }
+        ctx.stroke();
+      }
+      for (let lon = -180; lon < 180; lon += 30) {
+        ctx.beginPath(); let connected = false;
+        for (let lat = -90; lat <= 90; lat += 3) {
+          const p = project(lon * rad, Math.sin(lat * rad), Math.cos(lat * rad));
+          if (p.z <= 0) { connected = false; continue; }
+          if (connected) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); connected = true;
+        }
+        ctx.stroke();
+      }
+      for (const point of points) {
+        const p = project(point.lon, point.sin, point.cos); if (p.z <= .015) continue;
+        const pulse = .55 + .45 * Math.sin(elapsed / 1700 + point.phase);
+        const alpha = Math.min(1, p.z * 3) * (point.lit ? .45 + .55 * pulse : .42);
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = point.lit ? '#c8f7ff' : light ? '#899adc' : '#38bfd4';
+        ctx.beginPath(); ctx.arc(p.x, p.y, point.lit ? 1.15 : .82, 0, Math.PI * 2); ctx.fill();
+        if (point.lit) {
+          ctx.globalAlpha = alpha * .2; ctx.fillStyle = light ? '#c7c0ff' : '#67e8ff';
+          ctx.beginPath(); ctx.arc(p.x, p.y, 3.6, 0, Math.PI * 2); ctx.fill();
+        }
+      }
+      ctx.globalAlpha = 1;
+      const shade = ctx.createLinearGradient(65, 110, 365, 300);
+      shade.addColorStop(0, 'transparent'); shade.addColorStop(.6, '#01061308'); shade.addColorStop(1, '#010613ad');
+      ctx.fillStyle = shade; ctx.fillRect(0, 0, 420, 420); ctx.restore();
+      ctx.strokeStyle = light ? '#a4a6ed99' : '#6ae5f38c'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(210, 210, 151, 0, Math.PI * 2); ctx.stroke();
+    }
+    function running() { return !disposed && art.isConnected && inView && !document.hidden && ready() && activeView() === 'overview' && effectiveMotion() !== 'off'; }
+    function tick(time) {
+      raf = 0; if (!running()) { previous = 0; return; }
+      const interval = effectiveMotion() === 'subtle' ? 80 : 40;
+      if (!previous) previous = time;
+      if (time - previous >= interval) {
+        const delta = Math.min(time - previous, 100); previous = time; elapsed += delta;
+        if (effectiveMotion() === 'full') angle += delta * Math.PI * 2 / 160000;
+        draw();
+      }
+      raf = requestAnimationFrame(tick);
+    }
+    function sync() {
+      if (disposed) return;
+      light = document.documentElement.dataset.sfTheme === 'light';
+      const size = Math.max(1, Math.round(art.getBoundingClientRect().width * Math.min(window.devicePixelRatio || 1, 2)));
+      if (canvas.width !== size) { canvas.width = size; canvas.height = size; ctx.setTransform(size / 420, 0, 0, size / 420, 0, 0); }
+      draw();
+      if (running()) { if (!raf) { previous = 0; raf = requestAnimationFrame(tick); } }
+      else { cancelAnimationFrame(raf); raf = 0; previous = 0; }
+    }
+    const resize = typeof ResizeObserver === 'function' ? new ResizeObserver(sync) : null; resize?.observe(art);
+    const intersection = typeof IntersectionObserver === 'function' ? new IntersectionObserver(items => { inView = items[0].isIntersecting; sync(); }) : null; intersection?.observe(art);
+    return { sync, dispose() { disposed = true; cancelAnimationFrame(raf); resize?.disconnect(); intersection?.disconnect(); } };
+  }
   function rememberOverview() {
     shell?.querySelectorAll('#view-overview details[data-orbit-detail]').forEach(detail => overviewExpanded.set(detail.dataset.orbitDetail, detail.open));
   }
@@ -69,10 +190,12 @@
       hero = document.createElement('section'); hero.className = 'sf-orbit-hero'; hero.setAttribute('aria-label', 'SchichtFunk Tagesübersicht');
       head.before(hero); head.classList.add('sf-orbit-hero-copy'); hero.append(head);
       const art = document.createElement('div'); art.className = 'sf-orbit-emblem'; art.setAttribute('aria-hidden', 'true');
-      art.innerHTML = '<svg viewBox="0 0 420 420" fill="none"><defs><radialGradient id="sfOrbitSphere"><stop stop-color="currentColor" stop-opacity=".17"/><stop offset="1" stop-color="currentColor" stop-opacity=".015"/></radialGradient><linearGradient id="sfOrbitArc" x1="0" y1="0" x2="420" y2="420" gradientUnits="userSpaceOnUse"><stop stop-color="currentColor" stop-opacity=".08"/><stop offset=".45" stop-color="currentColor"/><stop offset="1" stop-color="currentColor" stop-opacity=".1"/></linearGradient></defs><circle cx="210" cy="210" r="190" stroke="currentColor" opacity=".12"/><circle cx="210" cy="210" r="146" stroke="currentColor" opacity=".16" stroke-dasharray="2 12"/><circle cx="210" cy="210" r="94" fill="url(#sfOrbitSphere)" stroke="currentColor" stroke-opacity=".3"/><g class="sf-orbit-orbit-track"><ellipse cx="210" cy="210" rx="192" ry="116" transform="rotate(-32 210 210)" stroke="url(#sfOrbitArc)" stroke-width="1.5"/><circle cx="46" cy="306" r="5" fill="currentColor"/><circle cx="371" cy="112" r="3" fill="currentColor"/></g><g class="sf-orbit-orbit-track sf-orbit-orbit-track-inner"><ellipse cx="210" cy="210" rx="168" ry="128" transform="rotate(54 210 210)" stroke="currentColor" stroke-opacity=".25"/><circle cx="305" cy="348" r="4" fill="currentColor"/></g><g stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="173" y="167" width="74" height="76" rx="12"/><path d="M190 159v17m40-17v17m-57 13h74M190 204h5m15 0h5m15 0h5m-45 17h5m15 0h5"/></g><path d="M201 268h18" stroke="currentColor" stroke-opacity=".5"/></svg><span>SCHICHTFUNK</span>';
+      art.innerHTML = '<svg viewBox="0 0 420 420" fill="none"><defs><linearGradient id="sfOrbitArc" x1="0" y1="0" x2="420" y2="420" gradientUnits="userSpaceOnUse"><stop stop-color="currentColor" stop-opacity=".08"/><stop offset=".45" stop-color="currentColor"/><stop offset="1" stop-color="currentColor" stop-opacity=".1"/></linearGradient></defs><circle cx="210" cy="210" r="190" stroke="currentColor" opacity=".1" stroke-dasharray="1 10"/><g class="sf-orbit-orbit-track"><ellipse cx="210" cy="210" rx="192" ry="166" transform="rotate(-32 210 210)" stroke="url(#sfOrbitArc)" stroke-width="1"/><circle cx="48" cy="311" r="3" fill="currentColor"/><circle cx="371" cy="109" r="2" fill="currentColor"/></g></svg>';
       const metrics = document.createElement('div'); metrics.className = 'sf-orbit-overview-metrics'; metrics.setAttribute('aria-label', 'Zentrale Tageskennzahlen');
       hero.append(art, metrics);
+      globe = createGlobe(art);
     }
+    globe?.sync();
     const metrics = hero.querySelector('.sf-orbit-overview-metrics');
     if (!window.SFToday?.getResult?.()) { if (metrics.childElementCount) metrics.replaceChildren(); return; }
     const view = root.closest('#view-overview');
@@ -205,6 +328,7 @@
   function applyMotion() {
     stopMotion();
     if (shell) shell.dataset.orbitMotion = effectiveMotion();
+    globe?.sync();
     document.querySelectorAll('select[data-orbit-motion]').forEach(select => { if (select.value !== motion) select.value = motion; });
   }
   function setMotion(value) {
@@ -289,12 +413,12 @@
     window.addEventListener('resize', positionPopup); window.visualViewport?.addEventListener('resize', positionPopup);
     window.addEventListener('resize', () => { settingsSelection = null; scheduleRefresh(); });
     reducedMotion.addEventListener?.('change', applyMotion);
-    document.addEventListener('visibilitychange', () => { if (document.hidden) close(); else scheduleRefresh(); });
+    document.addEventListener('visibilitychange', () => { globe?.sync(); if (document.hidden) close(); else scheduleRefresh(); });
     new MutationObserver(scheduleRefresh).observe(sidebar, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'disabled', 'aria-disabled', 'aria-hidden', 'class', 'style'] });
     if (account) new MutationObserver(scheduleRefresh).observe(account, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled', 'aria-disabled', 'class', 'style'] });
     new MutationObserver(scheduleRefresh).observe(shell.querySelector('.main'), { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
     new MutationObserver(scheduleRefresh).observe(shell, { attributes: true, attributeFilter: ['style', 'aria-busy'] });
-    window.addEventListener('schichtfunk:themechange', () => { stopMotion(); });
+    window.addEventListener('schichtfunk:themechange', () => { stopMotion(); globe?.sync(); });
   }
   window.SFOrbit = { setMotion, motion: () => motion, effectiveMotion, refresh: scheduleRefresh, refreshOverview, rememberOverview, close };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true }); else init();
