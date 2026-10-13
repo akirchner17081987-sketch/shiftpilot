@@ -143,7 +143,7 @@ window.SFHelpContent = {
       ],
       [
         "Wie bediene ich die neue Orbit-Navigation?",
-        "Die Hauptnavigation steht am unteren Bildschirmrand. Planung öffnet Dienstplan, Auto-Planung, Wunschplanung und Störfallautopilot. Personal enthält Personalsimulator, Schichtübergabe, Schicht-Marktplatz, Mitarbeiter, Abwesenheit und Zeiterfassung. Auswertung & Kontrolle enthält Auswertung und Audit-Logs. Einstellungen öffnet sich direkt; das SchichtFunk-Logo führt zur Übersicht. Sichtbarkeit und Verfügbarkeit richten sich weiterhin nach Ihrem Zugang. Die aktive Kategorie zeigt den ausgewählten Unterpunkt. Ein erneuter Klick, ein Klick außerhalb oder Escape schließt das Auswahlmenü."
+        "Die Hauptnavigation steht am unteren Bildschirmrand und nutzt die verfügbare Breite. Tagesübersicht öffnet direkt die Übersicht neben dem Button Planung. Die Tagesübersicht nutzt ebenfalls die volle Inhaltsbreite. Planung öffnet Dienstplan, Auto-Planung, Wunschplanung und Störfallautopilot. Personal enthält Personalsimulator, Schichtübergabe, Schicht-Marktplatz, Mitarbeiter, Abwesenheit und Zeiterfassung. Auswertung & Kontrolle enthält Auswertung und Audit-Logs. Einstellungen öffnet sich direkt; das SchichtFunk-Logo führt zur Übersicht. Sichtbarkeit und Verfügbarkeit richten sich weiterhin nach Ihrem Zugang. Die aktive Kategorie zeigt den ausgewählten Unterpunkt. Ein erneuter Klick, ein Klick außerhalb oder Escape schließt das Auswahlmenü."
       ]
     ],
     "overview": [
