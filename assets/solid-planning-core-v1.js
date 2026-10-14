@@ -24,7 +24,7 @@
   return /^Vollzeit(?:\s+180)?$/i.test(String(e.employment||'').trim())&&target>=180&&(e.shifts||[]).length>0&&e.shifts.every(code=>['OT1','OT2','OT3'].includes(code));
  }
  function employeeRules(e,p){
-  if(e.role==='Teamleiter'){
+  if(e.role==='Teamleiter'&&['teamLeaderMaxConsecutiveNightShifts','teamLeaderMinNightRecoveryCalendarDays','teamLeaderPreferredNightBlockLength'].some(key=>p[key]!=null)){
    const result={...p};for(const [source,target] of [['teamLeaderMaxConsecutiveNightShifts','maxConsecutiveNightShifts'],['teamLeaderMinNightRecoveryCalendarDays','minNightRecoveryCalendarDays'],['teamLeaderPreferredNightBlockLength','preferredNightBlockLength']])if(p[source]!=null)result[target]=p[source];
    return result;
   }

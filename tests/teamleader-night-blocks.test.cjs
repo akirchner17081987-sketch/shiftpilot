@@ -26,6 +26,7 @@ test('leader two full recovery days allow Monday restart, Sunday stays blocked a
  const e={...lead,maxWeeklyHours:55};assert.deepEqual(S.errors(e,[...rows,{...rows[0],date:'2027-01-11'}],tlRules),[]);
  assert.ok(S.errors(e,[...rows,{...rows[0],date:'2027-01-10'}],tlRules).length);
  assert.equal(S.employeeRules({...e,role:'Sicherheitsmitarbeiter'},tlRules).minNightRecoveryCalendarDays,3);
+ assert.equal(S.employeeRules({...e,employment:'Vollzeit',monthlyHours:180,shifts:['OT1','OT2','OT3']},{enabled:true,confirmedRulesVersion:2,otOnlyMonthlyMaxHours:220,otOnlyMaxCalendarWeekHours:50}).maxCalendarWeekHours,50);
  assert.equal(S.metrics([e],rows,tlRules,['2027-01']).nightBlocksOverPreferred,0);
  assert.equal(core.checkpointPrimitives.teamLeaderTarget({...e,target:180},{solidRules:tlRules}),170);
  assert.equal(core.checkpointPrimitives.teamLeaderTarget({...e,target:162},{solidRules:tlRules}),160);
