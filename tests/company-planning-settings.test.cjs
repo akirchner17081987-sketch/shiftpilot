@@ -56,14 +56,15 @@ test('database enforces configured limits, authorization, concurrency and compan
  await db.exec(fs.readFileSync('supabase/migrations/20261012021422_company_planning_rule_settings.sql','utf8'));
  await db.exec(fs.readFileSync('supabase/migrations/20261012022626_company_planning_rule_audit_trigger.sql','utf8'));
  await db.exec(fs.readFileSync('supabase/migrations/20261012144728_ot_day_separate_planning_settings.sql','utf8'));
+ await db.exec(fs.readFileSync('supabase/migrations/20261014003638_weekly_planning_maximum_55_hours.sql','utf8'));
  const policy={enabled:true,confirmedRulesVersion:2,timezone:'Europe/Berlin',otOnlyMonthlyMaxHours:220};
  await db.query('INSERT INTO company_compliance_policy VALUES($1,$2,190,18,now()),($3,$2,190,23,now())',[alpha,policy,beta]);await db.query("INSERT INTO company_members VALUES($1,$2,'ACTIVE','OWNER')",[alpha,owner]);await db.query("SELECT set_config('test.uid',$1,false)",[owner]);
  const save=(company,patch,expected)=>db.query('SELECT manager_save_planning_rules($1,$2,$3,$4) result',[company,patch,expected,'fixture']);
  await assert.rejects(save(beta,{maxConsecutiveShifts:3},policy),/dieses Unternehmens/);
  await assert.rejects(save(alpha,{enabled:false},policy),/nicht direkt bearbeitbar/);
  await assert.rejects(save(alpha,{otOnlyMonthlyMaxHours:221},policy),/zwischen/);
- await assert.rejects(save(alpha,{maxCalendarWeekHours:41},policy),/zwischen/);
- await assert.rejects(save(alpha,{otOnlyMaxCalendarWeekHours:51},policy),/zwischen/);
+ await assert.rejects(save(alpha,{maxCalendarWeekHours:56},policy),/zwischen/);
+ await assert.rejects(save(alpha,{otOnlyMaxCalendarWeekHours:56},policy),/zwischen/);
  await assert.rejects(save(alpha,{otOnlyMaxConsecutiveShifts:6},policy),/zwischen/);
  await assert.rejects(save(alpha,{maxConsecutiveShifts:2.5},policy),/ganzzahlig/);
  await assert.rejects(save(alpha,{conditionalStaffing:[{shift:'foreign',sourceShift:'other'}]},policy),/aktive unterschiedliche/);
@@ -102,5 +103,9 @@ test('database enforces configured limits, authorization, concurrency and compan
  assert.ok((await candidate()).rows[0].err,'part-time contract remains protected');
  assert.deepEqual((await db.query('SELECT solid_planning_rules FROM company_compliance_policy WHERE company_id=$1',[beta])).rows[0].solid_planning_rules,policy);
  assert.equal(updated.maxCalendarWeekHours,32);
+ const baseline55=(await db.query('SELECT solid_planning_rules r FROM company_compliance_policy WHERE company_id=$1',[alpha])).rows[0].r;
+ const caps55=(await save(alpha,{maxCalendarWeekHours:55,otOnlyMaxCalendarWeekHours:55},baseline55)).rows[0].result.solid_planning_rules;
+ assert.equal(caps55.maxCalendarWeekHours,55);assert.equal(caps55.otOnlyMaxCalendarWeekHours,55);
+ assert.deepEqual((await db.query('SELECT solid_planning_rules FROM company_compliance_policy WHERE company_id=$1',[beta])).rows[0].solid_planning_rules,policy);
  }finally{await db.close()}
 });
