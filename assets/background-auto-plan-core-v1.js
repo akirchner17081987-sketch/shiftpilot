@@ -39,7 +39,7 @@
    input.groups=input.groups.map(g=>({...g,options:g.options.filter(o=>o.length===1&&critical.has(o[0].resource))})).filter(g=>g.options.length);
    return {...input,criticalOnly:true,_checkpointKey:'minimum'};
   }
-  const source=unpack(payload.monthInputs[cp.monthIndex]),month=payload.months[cp.monthIndex],minimum=cp.minimum.filter(a=>a.date.slice(0,7)>=month),baseKeys=new Set(source.base.map(rowKey)),extra=unique([...cp.proposed,...minimum]).filter(a=>!baseKeys.has(rowKey(a))),capacities=new Map(source.capacities);
+  const source=unpack(payload.monthInputs[cp.monthIndex]),month=payload.months[cp.monthIndex],flexibleLeaders=source.solidRules.teamLeaderMinimumMonthlyHours!=null,minimum=flexibleLeaders?[]:cp.minimum.filter(a=>a.date.slice(0,7)>=month),baseKeys=new Set(source.base.map(rowKey)),extra=unique([...cp.proposed,...minimum]).filter(a=>!baseKeys.has(rowKey(a))),capacities=new Map(source.capacities);
   for(const a of extra.filter(a=>a.date.startsWith(month)))capacities.set(a.resource,Math.max(0,(capacities.get(a.resource)||0)-1));
   const base=unique([...source.base,...extra]),criticalCapacities=source.criticalCapacities.map(([key,n])=>[key,Math.max(0,n-extra.filter(a=>a.resource===key).length)]);
   return {...source,base,capacities:[...capacities],criticalCapacities,_checkpointKey:'month:'+month};
@@ -47,14 +47,14 @@
  function context(payload,cp){
   if(cp.version!==version)throw Error('Der gespeicherte Auftrag verwendet eine andere Version. Bitte neu starten.');
   if(cp.stage==='done')return {step:()=>false,progress:()=>progress(payload,cp),result:()=>result(payload,cp)};
-  const input=materialize(payload,cp);cp.solver=cp.solver||R.start(input,12);let runner=R.context(input,cp.solver);
+  const input=materialize(payload,cp);cp.solver=cp.solver||R.start(input,input.solidRules.teamLeaderMinimumMonthlyHours!=null&&!input.criticalOnly?24:12);let runner=R.context(input,cp.solver);
   function step(){
    if(cp.stage==='done')return false;
    runner.step();cp.steps++;
    if(cp.solver.phase==='done'){
     const found=runner.result();
     if(cp.stage==='minimum'){cp.minimum=unique([...(payload.minimumInput.reserved||[]),...found.preview]);cp.stage='month';}
-    else{const month=payload.months[cp.monthIndex];cp.proposed=unique([...cp.proposed,...cp.minimum.filter(a=>a.date.startsWith(month)),...(payload.monthInputs[cp.monthIndex].reserved||[]),...found.preview]);cp.quality.push(found.quality);if(++cp.monthIndex===payload.months.length){cp.stage='done';cp.solver=null;return true;}}
+    else{const month=payload.months[cp.monthIndex];cp.proposed=unique([...cp.proposed,...(payload.monthInputs[cp.monthIndex].solidRules.teamLeaderMinimumMonthlyHours!=null?[]:cp.minimum.filter(a=>a.date.startsWith(month))),...(payload.monthInputs[cp.monthIndex].reserved||[]),...found.preview]);cp.quality.push(found.quality);if(++cp.monthIndex===payload.months.length){cp.stage='done';cp.solver=null;return true;}}
     cp.solver=null;return false; // Rebuild only at the next invocation, with the new immutable stage input.
    }return true;
   }
@@ -63,8 +63,8 @@
  function progress(payload,cp){
   if(cp.stage==='done')return {percent:100,label:'Planung abgeschlossen',detail:'Die Vorschläge sind zur Prüfung bereit.'};
   if(cp.stage==='minimum'){const total=cp.solver?.components?.reduce((n,c)=>n+c.keys.length,0)||1,done=cp.solver?.components?.slice(0,cp.solver.component).reduce((n,c)=>n+c.keys.length,0)+(cp.solver?.key||0);return {percent:Math.min(15,Math.floor((done||0)/total*15)),label:'Pflichtbesetzung verteilen',detail:'OT2 und Leitung · '+(done||0)+'/'+total+' Pflichtpositionen geprüft'};}
-  const fraction=(cp.solver?.iteration||0)/12;
-  return {percent:Math.min(99,15+Math.floor((cp.monthIndex+fraction)/payload.months.length*84)),label:'Monat '+(cp.monthIndex+1)+' von '+payload.months.length+' planen',detail:payload.months[cp.monthIndex]+' · '+(cp.solver?.iteration||0)+'/12 Verteilungen geprüft'+(cp.solver?.phase==='fill'?' · '+cp.solver.cursor+'/'+cp.solver.order.length+' Schichtpositionen':'' )};
+  const iterations=cp.solver?.iterations||12,fraction=(cp.solver?.iteration||0)/iterations;
+  return {percent:Math.min(99,15+Math.floor((cp.monthIndex+fraction)/payload.months.length*84)),label:'Monat '+(cp.monthIndex+1)+' von '+payload.months.length+' planen',detail:payload.months[cp.monthIndex]+' · '+(cp.solver?.iteration||0)+'/'+iterations+' Verteilungen geprüft'+(cp.solver?.phase==='fill'?' · '+cp.solver.cursor+'/'+cp.solver.order.length+' Schichtpositionen':'' )};
  }
  function result(payload,cp){if(cp.stage!=='done')throw Error('Der Auftrag ist noch nicht abgeschlossen.');return {version,preview:cp.proposed,quality:cp.quality,months:payload.months,metadata:payload.metadata};}
  return {version,pack,unpack,withServerWishes,compactPayload,check,start,context,progress,result,unique,rowKey};
