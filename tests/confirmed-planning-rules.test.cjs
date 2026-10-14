@@ -2,6 +2,16 @@ const test=require('node:test'),assert=require('node:assert/strict'),s=require('
 const p={enabled:true,confirmedRulesVersion:2,timezone:'Europe/Berlin',shortBlockRecoveryPersonnelNos:['2001'],shortBlockMaximum:2};
 const e={id:'a',personnelNo:'2001',employment:'Vollzeit',weeklyHours:40,monthlyHours:180};
 const a=(date,type='FD',start='06:00',end='14:00')=>({date,type,start,end,employeeId:'a'});
+test('four-night rule permits sleep day plus two full free days and rejects an earlier restart or fifth night',()=>{
+ const rules={...p,maxCalendarWeekHours:55,maxConsecutiveNightShifts:4,minNightRecoveryCalendarDays:2},person={...e,weeklyHours:55,maxWeeklyHours:55};
+ const nights=[7,8,9,10].map(d=>a('2027-01-'+String(d).padStart(2,'0'),'O3','22:00','08:00'));
+ assert.deepEqual(s.errors(person,[...nights,a('2027-01-14','O3','22:00','08:00')],rules),[]);
+ assert.ok(s.errors(person,[...nights,a('2027-01-13','O3','22:00','08:00')],rules).some(x=>/freie Kalendertage/.test(x.message)));
+ assert.ok(s.errors(person,[...nights,a('2027-01-11','O3','22:00','08:00')],rules).some(x=>/vier Dienste|4 Nachtdienste/.test(x.message)));
+ const boundary=['2027-01-28','2027-01-29','2027-01-30','2027-01-31'].map(d=>a(d,'O3','22:00','08:00'));
+ assert.deepEqual(s.errors(person,[...boundary,a('2027-02-04','O3','22:00','08:00')],rules),[]);
+ assert.ok(s.errors(person,[...boundary,a('2027-02-03','O3','22:00','08:00')],rules).length);
+});
 test('OT-only monthly extension is scoped and preserves weekly and recovery rules',()=>{
  const rules={...p,otOnlyMonthlyMaxHours:220},types=[{id:'OT2',start:'08:00',end:'18:00'},{id:'O1',start:'18:00',end:'04:00'}],ot={...e,shifts:['OT2']};
  assert.equal(s.limits(ot,types,rules).monthLimit,220);
