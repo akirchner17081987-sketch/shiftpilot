@@ -759,7 +759,7 @@ window.SFHelpContent = {
       ],
       [
         "Dürfen Mitarbeiter zusätzliche Dienste übernehmen?",
-        "Mitarbeiter dürfen freiwillige Zusatzdienste über die automatische Schichtanzahl hinaus anfragen. Jede Übernahme benötigt eine Planerfreigabe. Die Anfrage allein ändert den Dienstplan nicht. Die Grenzen von 190 Monatsstunden, 40 Stunden je Kalenderwoche, niedrigeren persönlichen Stundenlimits sowie alle Erholungs- und Wechselregeln bleiben verbindlich. Eine genehmigte Marktplatzübernahme wird bei der automatischen Schichtanzahl gesondert berücksichtigt."
+        "Mitarbeiter dürfen freiwillige Zusatzdienste über die automatische Schichtanzahl hinaus anfragen. Jede Übernahme benötigt eine Planerfreigabe. Die Anfrage allein ändert den Dienstplan nicht. Die für das Unternehmen und Mitarbeiterprofil hinterlegten Monats- und Kalenderwochengrenzen, niedrigere persönliche Stundenlimits sowie alle Erholungs- und Wechselregeln bleiben verbindlich. Eine genehmigte Marktplatzübernahme wird bei der automatischen Schichtanzahl gesondert berücksichtigt."
       ],
       [
         "Was bewirkt „Alle Angebote zurückziehen“?",
