@@ -30,7 +30,7 @@ function context(input,cp){
       const component=cp.components[cp.component];
       if(!component){if(input.criticalOnly){const s=seeded(cp.minimum);cp.best=encode(s.records);cp.quality=C.solidQuality(p,s);cp.phase='done'}else cp.phase='iteration-start';return true;}
       const key=component.keys[cp.key],candidates=[],seen=new Set();
-      for(const r of byResource.get(key)||[]){if(r.option.length!==1)continue;const a=r.option[0],id=String(a.employeeId)+'|'+a.start+'|'+a.end;if(seen.has(id))continue;seen.add(id);candidates.push(r)}
+      for(const r of byResource.get(key)||[]){if(r.option.length!==1&&!r.group.fullWorkRest)continue;const a=r.option[0],id=String(a.employeeId)+'|'+a.start+'|'+a.end;if(seen.has(id))continue;seen.add(id);candidates.push(r)}
       if(p.preferenceScore)candidates.sort((a,b)=>p.preferenceScore(b.group.employee,[],b.option)-p.preferenceScore(a.group.employee,[],a.option));
       const next=[];for(const b of cp.beam){const s=C.state(p,decode(b.records)),need=C.criticalOpen(p,s,key);
         function choose(s,at,left){if(!left||at===candidates.length){next.push({records:encode(s.records),missing:b.missing+left});return}for(let i=at;i<candidates.length;i++){const r=candidates[i];if(s.used.has(r.group.id)||!allowed(s,r))continue;const n=C.state(p,s.records);C.commit(n,r,p.month);choose(n,i+1,left-1)}next.push({records:encode(s.records),missing:b.missing+left});}

@@ -56,12 +56,13 @@
   for(const a of own){const b=blocks.at(-1);if(b&&(b.at(-1).date===a.date||plus(b.at(-1).date,1)===a.date))b.push(a);else blocks.push([a])}
   for(let i=0;i<blocks.length;i++){const b=blocks[i],prev=blocks[i-1];if(touch(b)&&b.length>maxBlock)push(b[0].date,maxBlock===4?'Höchstens vier Dienste am Stück.':`Höchstens ${maxBlock} Dienste am Stück.`);
    if(prev&&(touch(b)||touch(prev))){const last=prev.at(-1),free=Math.round((Date.parse(b[0].date)-Date.parse(localDate(last.endMs-1,p)))/D)-1,rest=(b[0].startMs-last.endMs)/H;
-    if(free<freeDays||rest<restHours-1e-6)push(b[0].date,freeDays===2&&restHours===48?'Zwischen Arbeitsblöcken mindestens zwei vollständig freie Kalendertage und 48 Stunden Ruhe.':`Zwischen Arbeitsblöcken mindestens ${freeDays} vollständig freie Kalendertage und ${restHours} Stunden Ruhe.`);
+    const requiredFree=prev.length===3&&prev.every(night)&&p.threeNightBlockRecoveryFullCalendarDays!=null?Math.min(freeDays,Number(p.threeNightBlockRecoveryFullCalendarDays)):freeDays;
+    if(free<requiredFree||rest<restHours-1e-6)push(b[0].date,requiredFree===2&&restHours===48?'Zwischen Arbeitsblöcken mindestens zwei vollständig freie Kalendertage und 48 Stunden Ruhe.':`Zwischen Arbeitsblöcken mindestens ${requiredFree} vollständig freie Kalendertage und ${restHours} Stunden Ruhe.`);
    }
   }
   const nights=[];for(const a of own.filter(night)){const b=nights.at(-1);if(b&&plus(b.at(-1).date,1)===a.date)b.push(a);else nights.push([a])}
   for(const b of nights){if(touch(b)&&b.length>maxNight)push(b[0].date,maxNight===3?'Höchstens drei Nachtdienste am Stück.':`Höchstens ${maxNight} Nachtdienste am Stück.`);const last=b.at(-1),next=own.find(a=>a.startMs>=last.endMs&&a.date>last.date);
-   if(next&&(touch(b)||!wanted||wanted.has(next.date))){const free=Math.round((Date.parse(next.date)-Date.parse(localDate(last.endMs-1,p)))/D)-1;if(free<nightFree)push(next.date,nightFree===3?'Nach einem Nachtblock mindestens drei vollständig freie Kalendertage.':`Nach einem Nachtblock mindestens ${nightFree} vollständig freie Kalendertage.`);}
+   if(next&&(touch(b)||!wanted||wanted.has(next.date))){const free=Math.round((Date.parse(next.date)-Date.parse(localDate(last.endMs-1,p)))/D)-1;const requiredNightFree=b.length===3&&p.threeNightBlockRecoveryFullCalendarDays!=null?Math.min(nightFree,Number(p.threeNightBlockRecoveryFullCalendarDays)):nightFree;if(free<requiredNightFree)push(next.date,requiredNightFree===3?'Nach einem Nachtblock mindestens drei vollständig freie Kalendertage.':`Nach einem Nachtblock mindestens ${requiredNightFree} vollständig freie Kalendertage.`);}
   }
   for(let i=1;i<own.length;i++){const a=own[i-1],b=own[i];if(wanted&&!wanted.has(a.date)&&!wanted.has(b.date))continue;if(b.startMs-a.endMs<11*H-1e-6)push(b.date,'Mindestens 11 Stunden Ruhezeit.');if(plus(a.date,1)===b.date&&a.type==='O3'&&['O1','O2','TL','TL-LE','TL-RE','TEAMLEITER'].includes(b.type))push(b.date,'Nach O3 kein früherer Nachtdienst am Folgetag.');}
   const weeks=new Set();for(const a of own){if(wanted&&!wanted.has(a.date))continue;weeks.add(weekKey(a.date));weeks.add(weekKey(localDate(a.endMs-1,p)))}if(wanted)for(const d of wanted)weeks.add(weekKey(d));
@@ -83,6 +84,21 @@
   }return out;
  }
  function canAdd(e,byDay,option,p){if(!policy(p))return true;const values=new Map();for(const a of option){for(let n=-8;n<=8;n++){const b=byDay.get(a.day+n);if(b)values.set(b.date,b)}}for(const a of option)values.set(a.date,a);return !errors(e,[...values.values()],p,option.map(a=>a.date)).length}
+ function workRestOptions(e,date,choices,dates,base=[],excluded=()=>false){
+  const meta=k=>String((e.qualifications||[]).find(q=>String(q).startsWith('__sp:'+k+'='))||'').split('=').slice(1).join('=');
+  const mode=e.rhythmMode||meta('rhythmMode'),pattern=String(e.rhythmPattern||meta('rhythmPattern')).split(/[,;\n]/).map(v=>v.trim().toUpperCase()).filter(Boolean),anchor=e.rhythmStart||meta('rhythmStart');
+  if(mode!=='required'||(e.planningTeam||meta('planningTeam'))||!pattern.includes('FREI')||!pattern.includes('ALLE')||pattern.some(v=>!['ALLE','FREI'].includes(v))||!/^\d{4}-\d{2}-\d{2}$/.test(anchor))return null;
+  const n=pattern.length,index=((Math.round((Date.parse(date)-Date.parse(anchor))/D)%n)+n)%n;if(pattern[index]!=='ALLE')return {options:[]};
+  let before=0,after=0;while(before<n-1&&pattern[(index-before-1+n)%n]==='ALLE')before++;while(after<n-1&&pattern[(index+after+1)%n]==='ALLE')after++;
+  const selected=new Set(dates),wanted=Array.from({length:before+after+1},(_,i)=>plus(date,i-before)).filter(d=>selected.has(d)&&!excluded(d)&&!base.some(a=>active(a)&&String(a.employeeId)===String(e.id)&&a.date===d&&!['OT1','OT2','OT3'].includes(a.type)));
+  if(wanted[0]!==date)return {options:[]};
+  const lists=wanted.map(d=>(choices.get(d)||[]).filter(a=>!['OT1','OT2','OT3'].includes(a.type))),options=[],seen=new Set();
+  const add=rows=>{if(rows.some(a=>!a))return;const key=rows.map(a=>a.type+'|'+a.resource).join(';');if(!seen.has(key)){seen.add(key);options.push(rows)}};
+  for(const first of lists[0]||[])add(lists.map(list=>list.find(a=>a.type===first.type)));
+  function visit(at,rows){if(options.length>=64)return;if(at===lists.length){add(rows);return}for(const a of lists[at]){const last=rows.at(-1);if(last&&last.type==='O3'&&['O1','O2','TL','TL-LE','TL-RE','TEAMLEITER'].includes(a.type))continue;visit(at+1,[...rows,a]);if(options.length>=64)break}}
+  if(lists.length&&lists.every(list=>list.length))visit(0,[]);
+  return {options};
+ }
  const otCodes=['OT1','OT2','OT3'];
  function otRoster(p){return policy(p)&&Array.isArray(p.otWeekdayRoster?.employeeIds)&&p.otWeekdayRoster.employeeIds.length?p.otWeekdayRoster:null}
  function rosterEmployee(e,p){return !!otRoster(p)?.employeeIds.map(String).includes(String(e._dbId||e.id))}
@@ -101,6 +117,7 @@
   const model=[];if(durations.some(m=>m>480))model.push(`über 8 h: ${p.tenHourMaxShifts??18} automatische Dienste`);if(durations.some(m=>m>0&&m<=480))model.push(`8 h: ${p.eightHourMaxShifts??23} automatische Dienste / ${Math.min(p.monthlyMaxHours??190,p.eightHourAutoMaxHours??184)} h`);
   if(p.otOnlyMonthlyMaxHours!=null&&types.some(t=>['OT1','OT2','OT3'].includes(t.id)))model.push(`Tagdienst OT1 / OT2 / OT3 · 10 h je Dienst: ${p.otOnlyMonthlyMaxHours} h/Monat, ${p.otOnlyMaxCalendarWeekHours??p.maxCalendarWeekHours??40} h/Woche, ${p.otOnlyMaxConsecutiveShifts??p.maxConsecutiveShifts??4} Dienste am Stück, ${p.otOnlyMinFreeCalendarDays??p.minFreeCalendarDays??2} freie Tage und ${p.otOnlyMinBlockRestHours??p.minBlockRestHours??48} h zwischen Blöcken (normale OT ausgenommen)`);
   if(p.teamLeaderMaxConsecutiveNightShifts!=null)model.push(`Teamleiter: höchstens ${p.teamLeaderMaxConsecutiveNightShifts} Nächte am Stück${p.teamLeaderPreferredNightBlockLength!=null?`, bevorzugt ${p.teamLeaderPreferredNightBlockLength}`:''}${p.teamLeaderMinNightRecoveryCalendarDays!=null?`; danach ${p.teamLeaderMinNightRecoveryCalendarDays} vollständig freie Kalendertage und mindestens ${p.minBlockRestHours??48} h Ruhe`:''}${p.teamLeaderMinimumMonthlyHours!=null?`; Monatsziel zuerst ${p.teamLeaderMinimumMonthlyHours} h, anschließend Vertrags-SOLL (persönliche niedrigere Grenzen bleiben verbindlich)`:''}; Wochenmaximum bleibt verbindlich`);
+  if(p.threeNightBlockRecoveryFullCalendarDays!=null)model.push(`Fester 4 Arbeit / 3 frei / 3 Arbeit / 2 frei: nach genau drei Nächten Schlaftag plus ${p.threeNightBlockRecoveryFullCalendarDays} voller freier Tag; nach vier Nächten Schlaftag plus ${p.minNightRecoveryCalendarDays??2} volle freie Tage; mindestens ${p.minBlockRestHours??48} h Ruhe`);
   if(p.otDayHolidayExclusion)model.push('Feiertage Deutschland / Sachsen / Nordrhein-Westfalen: keine Pflichtbesetzung OT1 / OT2 / OT3; normale OT nach hinterlegtem Bedarf und Einsatzort');
   if(otRoster(p))model.push('Feste OT-Tagdienstgruppe: jeder Mitarbeiter Montag–Freitag; OT1/OT3 nur bei fehlender Nachtabdeckung, alle übrigen auf OT2; Wochenende und konfigurierte Feiertage frei');
   return `Verbindlich: max. ${p.monthlyMaxHours??190} h pro Kalendermonat${model.length?'; '+model.join('; '):''}. Allgemeine Regeln für andere Mitarbeiter: max. ${p.maxConsecutiveShifts??4} Dienste und ${p.maxConsecutiveNightShifts??3} Nächte am Stück. Zwischen Blöcken ${p.minFreeCalendarDays??2} vollständig freie Kalendertage und ${p.minBlockRestHours??48} h Ruhe; nach Nachtblöcken ${p.minNightRecoveryCalendarDays??3} freie Kalendertage. Max. ${p.maxCalendarWeekHours??40} h pro Kalenderwoche einschließlich Nachtübertrag. Persönliche niedrigere Grenzen, Freigaben und Abwesenheiten bleiben maßgeblich.`;
@@ -113,5 +130,5 @@
   }return out;
  }
  const penalty=m=>m.nightBlocksOverPreferred*8+m.missingFreeWeekends*35+m.rollingWeekExcessHours*.3+m.startTimeChanges*3+m.isolatedDuties*4;
- return{otDayHoliday,otCodes,otRoster,rosterEmployee,rosterDay,employeeRules,otDayEmployee,weeklyLimit,summary,plus,weekday,instant,interval,duty,errors,canAdd,required,metrics,penalty,confirmed,limits,countsTowardCap,night,localDate,weekKey};
+ return{workRestOptions,otDayHoliday,otCodes,otRoster,rosterEmployee,rosterDay,employeeRules,otDayEmployee,weeklyLimit,summary,plus,weekday,instant,interval,duty,errors,canAdd,required,metrics,penalty,confirmed,limits,countsTowardCap,night,localDate,weekKey};
 });

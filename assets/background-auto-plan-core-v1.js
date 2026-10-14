@@ -10,7 +10,7 @@
  function pack(input){
   const employees=input.employees.map(e=>({...pick(e,employeeKeys),qualifications:(e.qualifications||[]).filter(q=>/^__sp:(monthlyHours|maxWeekly|maxConsecutive)=/.test(q))}));
   const candidates=[],index=new Map(),reference=a=>{const key=rowKey(a);if(!index.has(key)){index.set(key,candidates.length);candidates.push(pick(a,rowKeys));}return index.get(key);};
-  const groups=input.groups.map(g=>({id:g.id,employeeId:g.employee.id,block:!!g.block,options:g.options.map(o=>o.map(reference))}));
+  const groups=input.groups.map(g=>({id:g.id,employeeId:g.employee.id,block:!!g.block,fullWorkRest:!!g.fullWorkRest,options:g.options.map(o=>o.map(reference))}));
   return {version,month:input.month,employees,candidates,base:input.base.map(a=>pick(a,rowKeys)),preferenceBase:(input.preferenceBase||input.base).map(a=>pick(a,rowKeys)),reserved:(input.reserved||[]).map(a=>pick(a,rowKeys)),groups,capacities:input.capacities,criticalCapacities:input.criticalCapacities||[],seedBlocks:(input.seedBlocks||[]).map(b=>({id:b.id,rows:b.rows.map(a=>pick(a,rowKeys))})),wishes:input.wishes||[],respectHours:true,solidRules:input.solidRules,criticalPeriod:!!input.criticalPeriod,criticalOnly:!!input.criticalOnly};
  }
  function unpack(input){const people=new Map(input.employees.map(e=>[String(e.id),e]));return {...input,groups:input.groups.map(g=>({...g,employee:people.get(String(g.employeeId)),options:g.options.map(o=>o.map(i=>input.candidates[i]))}))};}
@@ -36,7 +36,7 @@
  function materialize(payload,cp){
   if(cp.stage==='minimum'){
    const input=unpack(payload.minimumInput),critical=new Set(input.criticalCapacities.map(([key])=>key));
-   input.groups=input.groups.map(g=>({...g,options:g.options.filter(o=>o.length===1&&critical.has(o[0].resource))})).filter(g=>g.options.length);
+   input.groups=input.groups.map(g=>({...g,options:g.options.filter(o=>(o.length===1||g.fullWorkRest)&&o.some(a=>critical.has(a.resource)))})).filter(g=>g.options.length);
    return {...input,criticalOnly:true,_checkpointKey:'minimum'};
   }
   const source=unpack(payload.monthInputs[cp.monthIndex]),month=payload.months[cp.monthIndex],flexibleLeaders=source.solidRules.teamLeaderMinimumMonthlyHours!=null,minimum=flexibleLeaders?[]:cp.minimum.filter(a=>a.date.slice(0,7)>=month),baseKeys=new Set(source.base.map(rowKey)),extra=unique([...cp.proposed,...minimum]).filter(a=>!baseKeys.has(rowKey(a))),capacities=new Map(source.capacities);

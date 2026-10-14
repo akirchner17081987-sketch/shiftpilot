@@ -80,7 +80,7 @@
     const selected=[];
     for(const component of components){
       let beam=[{s:state(p),missing:0}];const keys=component.keys.sort();
-      for(const key of keys){const candidates=[],seen=new Set();for(const r of byResource.get(key)||[]){if(r.option.length!==1)continue;const a=r.option[0],id=String(a.employeeId)+'|'+a.start+'|'+a.end;if(seen.has(id))continue;seen.add(id);candidates.push(r)}
+      for(const key of keys){const candidates=[],seen=new Set();for(const r of byResource.get(key)||[]){if(r.option.length!==1&&!r.group.fullWorkRest)continue;const a=r.option[0],id=String(a.employeeId)+'|'+a.start+'|'+a.end;if(seen.has(id))continue;seen.add(id);candidates.push(r)}
         if(p.preferenceScore)candidates.sort((a,b)=>p.preferenceScore(b.group.employee,[],b.option)-p.preferenceScore(a.group.employee,[],a.option));
         const nextStates=[];for(const b of beam){const need=criticalOpen(p,b.s,key);
           function choose(s,at,left){if(!left||at===candidates.length){nextStates.push({s,missing:b.missing+left});return}
