@@ -21,9 +21,13 @@
   if(D.busy||!D.validConfirmation(snapshot,name,ack))throw Error('Bitte den vollständigen Namen eingeben und die Löschung bestätigen.');
   D.busy=true;B.employeeRemovalBusy=true;
   try{
-   const q=await B.client.functions.invoke('employee-erasure',{body:{companyId:snapshot.companyId,employeeId:snapshot.employee_id,
+   let q;
+   do{
+   q=await B.client.functions.invoke('employee-erasure',{body:{companyId:snapshot.companyId,employeeId:snapshot.employee_id,
     operationId:snapshot.operationId,confirmation:name.trim(),acknowledged:true,fingerprint:snapshot.fingerprint}});
    if(q.error){let detail;try{detail=await q.error.context?.json();}catch{}throw Error(detail?.error||q.error.message||'Die Löschung wurde nicht abgeschlossen. Bitte erneut versuchen.');}
+   if(q.data?.pending===true)snapshot.onProgress?.(q.data);
+   }while(q.data?.pending===true);
    if(q.data?.complete!==true||q.data?.verified!==true)throw Error(q.data?.error||'Die abschließende Löschprüfung ist noch nicht abgeschlossen.');
    B.clearLegacy?.();B.legacy={};B.hasLegacy=false;
    if(typeof selectedEmployeeId!=='undefined')selectedEmployeeId=null;
@@ -85,6 +89,7 @@
      const update=()=>button.disabled=D.busy||!D.validConfirmation(snapshot,name.value,ack.checked);name.oninput=update;ack.onchange=update;
      button.onclick=async()=>{
       if(!D.validConfirmation(snapshot,name.value,ack.checked)||D.busy)return;
+      snapshot.onProgress=progress=>{button.textContent=progress.phase==='AUDIT'?'Protokolle werden bereinigt …':'Verknüpfte Daten werden bereinigt …';};
       shade.querySelectorAll('input,select,button').forEach(control=>control.disabled=true);error.textContent='';button.textContent='Dateien, Daten und Restbestand werden geprüft …';
       try{const result=await D.commit(snapshot,name.value,ack.checked);close();window.showSaveToast?.('Vollständig gelöscht',result.reloadNeeded?'Die Löschung wurde bestätigt. Bitte die Seite neu laden.':'Alle zugehörigen Daten wurden entfernt und der Restbestand geprüft.');}
       catch(failure){error.textContent=failure.message||String(failure);shade.querySelectorAll('input,select,button').forEach(control=>control.disabled=false);button.textContent='Löschung erneut versuchen';update();}

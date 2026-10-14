@@ -32,3 +32,24 @@ test('an interrupted external phase resumes without repeating committed database
  const b=backend({databaseDone:true});assert.equal((await runEmployeeErasure(b,request,'actor')).verified,true);
  assert.deepEqual(b.calls,['server_stage_employee_erasure','delete-login','server_finish_employee_erasure']);
 });
+test('pending database batches never delete the login or report verified completion',async()=>{
+ const b=backend(),original=b.rpc;
+ b.rpc=async(name,args)=>{
+  if(name==='server_commit_employee_erasure'){b.calls.push(name);return{data:{database_done:false,phase:'AUDIT',processed:500}};}
+  return original(name,args);
+ };
+ assert.deepEqual(await runEmployeeErasure(b,request,'actor'),{complete:false,pending:true,phase:'AUDIT',processed:500});
+ assert.equal(b.calls.filter(x=>x==='server_commit_employee_erasure').length,6);
+ assert(!b.calls.includes('delete-login'));
+ assert(!b.calls.includes('server_finish_employee_erasure'));
+});
+test('database batches resume and finish only after database_done is explicitly true',async()=>{
+ const b=backend(),original=b.rpc;let batches=0;
+ b.rpc=async(name,args)=>{
+  if(name==='server_commit_employee_erasure'&&++batches<3){b.calls.push(name);return{data:{database_done:false,phase:'SHARED_DATA'}};}
+  return original(name,args);
+ };
+ assert.equal((await runEmployeeErasure(b,request,'actor')).verified,true);
+ assert.equal(b.calls.filter(x=>x==='server_commit_employee_erasure').length,3);
+ assert.equal(b.calls.at(-1),'server_finish_employee_erasure');
+});
