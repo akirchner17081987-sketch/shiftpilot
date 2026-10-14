@@ -1,5 +1,15 @@
 -- Entirely fictitious companies, staff and bookings.
 create function public.assert_erasure(ok boolean,message text) returns void language plpgsql as $$begin if not coalesce(ok,false) then raise exception 'ASSERTION: %',message;end if;end$$;
+create function public.finish_database_erasure_for_test(job_id uuid,actor_id uuid) returns jsonb language plpgsql as $$
+declare result_ jsonb; attempts_ integer:=0;
+begin
+ loop
+  result_:=public.server_commit_employee_erasure(job_id,actor_id);attempts_:=attempts_+1;
+  if (result_->>'database_done')::boolean then return result_;end if;
+  if attempts_>1000 then raise exception 'ASSERTION: database erasure does not converge';end if;
+  perform public.assert_erasure(not exists(select 1 from private.employee_erasure_context),'pending batch clears transaction context');
+ end loop;
+end$$;
 insert into auth.users(id,email) values('10000000-0000-0000-0000-000000000001','owner@example.invalid'),('10000000-0000-0000-0000-000000000002','planner@example.invalid');
 insert into public.companies(id,name,created_by) values('20000000-0000-0000-0000-000000000001','Erasure fixture','10000000-0000-0000-0000-000000000001'),('20000000-0000-0000-0000-000000000002','Other fixture','10000000-0000-0000-0000-000000000001');
 insert into public.company_members(company_id,user_id,role,status) values('20000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001','OWNER','ACTIVE'),('20000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000002','PLANNER','ACTIVE');
@@ -62,14 +72,14 @@ begin
  begin perform public.server_stage_employee_erasure('20000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001','50000000-0000-0000-0000-000000000001','Fixture Employee',true,repeat('0',32));raise exception 'ASSERTION: stale preview accepted';
  exception when others then if sqlerrm like 'ASSERTION:%' then raise;end if;end;
  job:=public.server_stage_employee_erasure('20000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001','50000000-0000-0000-0000-000000000001','Fixture Employee',true,preview->>'fingerprint');
- begin perform public.server_commit_employee_erasure((job->>'job_id')::uuid,'10000000-0000-0000-0000-000000000001');raise exception 'ASSERTION: remaining file accepted';
+ begin perform public.finish_database_erasure_for_test((job->>'job_id')::uuid,'10000000-0000-0000-0000-000000000001');raise exception 'ASSERTION: remaining file accepted';
  exception when others then if sqlerrm like 'ASSERTION:%' then raise;end if;end;
  perform public.assert_erasure(exists(select 1 from public.time_entries where assignment_id='40000000-0000-0000-0000-000000000001'),'failed commit rolls back accounting deletion');
  begin update public.employees set note='late write' where id='30000000-0000-0000-0000-000000000001';raise exception 'ASSERTION: pending erasure accepts edits';
  exception when others then if sqlerrm like 'ASSERTION:%' then raise;end if;end;
  -- Only schema-fixture metadata exists; no real storage service or object is used.
  delete from storage.objects where name='20000000-0000-0000-0000-000000000001/30000000-0000-0000-0000-000000000001/fixture.pdf';
- perform public.server_commit_employee_erasure((job->>'job_id')::uuid,'10000000-0000-0000-0000-000000000001');
+ perform public.finish_database_erasure_for_test((job->>'job_id')::uuid,'10000000-0000-0000-0000-000000000001');
  perform public.assert_erasure((public.server_finish_employee_erasure((job->>'job_id')::uuid,'10000000-0000-0000-0000-000000000001')->>'complete')::boolean,'verified completion');
 end$$;
 select public.assert_erasure(not exists(select 1 from public.employees where id='30000000-0000-0000-0000-000000000001'),'profile removed');
@@ -114,7 +124,7 @@ do $$declare preview jsonb;job jsonb;target uuid;begin
  perform public.assert_erasure((preview->>'delete_auth')::boolean,'dedicated employee login included');
  job:=public.server_stage_employee_erasure('20000000-0000-0000-0000-000000000001',target,'10000000-0000-0000-0000-000000000001','50000000-0000-0000-0000-000000000002','Auth Fixture',true,preview->>'fingerprint');
  perform public.assert_erasure(not exists(select 1 from auth.sessions where user_id='10000000-0000-0000-0000-000000000003'),'employee sessions revoked before deletion');
- perform public.server_commit_employee_erasure((job->>'job_id')::uuid,'10000000-0000-0000-0000-000000000001');
+ perform public.finish_database_erasure_for_test((job->>'job_id')::uuid,'10000000-0000-0000-0000-000000000001');
  begin perform public.server_finish_employee_erasure((job->>'job_id')::uuid,'10000000-0000-0000-0000-000000000001');raise exception 'ASSERTION: remaining auth account accepted';exception when others then if sqlerrm like 'ASSERTION:%' then raise;end if;end;
  -- Auth schema fixture only; production exclusively calls auth.admin.deleteUser.
  delete from auth.users where id='10000000-0000-0000-0000-000000000003';

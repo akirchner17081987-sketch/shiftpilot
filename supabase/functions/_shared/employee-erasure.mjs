@@ -20,7 +20,12 @@ export async function runEmployeeErasure(admin,request,actor){
   }
   // The database independently verifies absence of metadata and unlisted orphan files
   // before removing any personnel, planning or accounting records.
-  await rpc(admin,'server_commit_employee_erasure',{p_job_id:staged.job_id,p_actor:actor});
+  const started=Date.now();
+  for(let batch=0;batch<6;batch++){
+   const committed=await rpc(admin,'server_commit_employee_erasure',{p_job_id:staged.job_id,p_actor:actor});
+   if(committed?.database_done===true)break;
+   if(batch===5||Date.now()-started>=12000)return{complete:false,pending:true,phase:committed?.phase,processed:committed?.processed};
+  }
  }
  if(plan.delete_auth&&plan.auth_user_id){
   const lookup=await admin.auth.admin.getUserById(plan.auth_user_id);
