@@ -44,7 +44,7 @@ test('database enforces configured limits, authorization, concurrency and compan
  CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT nullif(current_setting('test.uid',true),'')::uuid $$;
  CREATE TABLE company_members(company_id uuid,user_id uuid,status text,role text);
  CREATE TABLE company_compliance_policy(company_id uuid primary key,solid_planning_rules jsonb,monthly_planning_max_hours numeric,monthly_planning_max_shifts int,updated_at timestamptz);
- CREATE TABLE employees(id uuid,company_id uuid,qualifications text[],employment text,weekly_hours numeric,shift_permissions text[],personnel_no text);
+ CREATE TABLE employees(id uuid,company_id uuid,qualifications text[],role text,employment text,weekly_hours numeric,shift_permissions text[],personnel_no text);
  CREATE TABLE companies(id uuid,name text,timezone text);CREATE TABLE shift_templates(company_id uuid,active boolean,code text,default_start time,default_end time);
  CREATE TABLE shift_assignments(id uuid,company_id uuid,employee_id uuid,status text,starts_at timestamptz,ends_at timestamptz,shift_code text);
  CREATE TABLE open_shift_market_claims(assignment_id uuid,employee_id uuid,company_id uuid,status text);
@@ -57,6 +57,7 @@ test('database enforces configured limits, authorization, concurrency and compan
  await db.exec(fs.readFileSync('supabase/migrations/20261012022626_company_planning_rule_audit_trigger.sql','utf8'));
  await db.exec(fs.readFileSync('supabase/migrations/20261012144728_ot_day_separate_planning_settings.sql','utf8'));
  await db.exec(fs.readFileSync('supabase/migrations/20261014003638_weekly_planning_maximum_55_hours.sql','utf8'));
+ await db.exec(fs.readFileSync('supabase/migrations/20261014010135_teamleader_recovery_and_month_targets.sql','utf8'));
  const policy={enabled:true,confirmedRulesVersion:2,timezone:'Europe/Berlin',otOnlyMonthlyMaxHours:220};
  await db.query('INSERT INTO company_compliance_policy VALUES($1,$2,190,18,now()),($3,$2,190,23,now())',[alpha,policy,beta]);await db.query("INSERT INTO company_members VALUES($1,$2,'ACTIVE','OWNER')",[alpha,owner]);await db.query("SELECT set_config('test.uid',$1,false)",[owner]);
  const save=(company,patch,expected)=>db.query('SELECT manager_save_planning_rules($1,$2,$3,$4) result',[company,patch,expected,'fixture']);
@@ -87,7 +88,7 @@ test('database enforces configured limits, authorization, concurrency and compan
  const updated=(await save(alpha,{otOnlyMaxCalendarWeekHours:50,otOnlyMaxConsecutiveShifts:5,otOnlyMinFreeCalendarDays:2,otOnlyMinBlockRestHours:48},baseline)).rows[0].result.solid_planning_rules;
  const employee='00000000-0000-0000-0000-000000000004';
  await db.query("INSERT INTO companies VALUES($1,'Fixture','Europe/Berlin');",[alpha]);
- await db.query("INSERT INTO employees VALUES($1,$2,ARRAY[]::text[],'Vollzeit',40,ARRAY['OT1','OT2','OT3'],'fixture');",[employee,alpha]);
+ await db.query("INSERT INTO employees VALUES($1,$2,ARRAY[]::text[],'Sicherheitsmitarbeiter','Vollzeit',40,ARRAY['OT1','OT2','OT3'],'fixture');",[employee,alpha]);
  await db.query("INSERT INTO shift_templates VALUES($1,true,'OT1','06:00','16:00')",[alpha]);
  for(const d of [4,5,6,7])await db.query("INSERT INTO shift_assignments VALUES(null,$1,$2,'DRAFT',$3,$4,'OT1')",[alpha,employee,`2027-01-0${d}T05:00Z`,`2027-01-0${d}T15:00Z`]);
  const candidate=()=>db.query("SELECT private.sf_confirmed_candidate_error($1,$2,'2027-01-08T05:00Z','2027-01-08T15:00Z','OT1') err",[alpha,employee]);
@@ -105,6 +106,9 @@ test('database enforces configured limits, authorization, concurrency and compan
  assert.equal(updated.maxCalendarWeekHours,32);
  const baseline55=(await db.query('SELECT solid_planning_rules r FROM company_compliance_policy WHERE company_id=$1',[alpha])).rows[0].r;
  const caps55=(await save(alpha,{maxCalendarWeekHours:55,otOnlyMaxCalendarWeekHours:55},baseline55)).rows[0].result.solid_planning_rules;
+ await assert.rejects(save(alpha,{teamLeaderMinNightRecoveryCalendarDays:1},caps55),/zwischen/);
+ await assert.rejects(save(alpha,{teamLeaderMaxConsecutiveNightShifts:3,teamLeaderPreferredNightBlockLength:4},caps55),/Bevorzugter/);
+ const tl=(await save(alpha,{teamLeaderMaxConsecutiveNightShifts:4,teamLeaderPreferredNightBlockLength:4,teamLeaderMinNightRecoveryCalendarDays:2,teamLeaderMinimumMonthlyHours:170},caps55)).rows[0].result.solid_planning_rules;assert.equal(tl.teamLeaderMinNightRecoveryCalendarDays,2);
  assert.equal(caps55.maxCalendarWeekHours,55);assert.equal(caps55.otOnlyMaxCalendarWeekHours,55);
  assert.deepEqual((await db.query('SELECT solid_planning_rules FROM company_compliance_policy WHERE company_id=$1',[beta])).rows[0].solid_planning_rules,policy);
  }finally{await db.close()}
