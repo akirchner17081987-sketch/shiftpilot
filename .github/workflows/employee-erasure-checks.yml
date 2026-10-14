@@ -25,6 +25,7 @@ jobs:
       node-version: '22'
    - run: node --test tests/employee-erasure.test.mjs
    - run: npm ci
+   - run: node --test tests/employee-erasure-catalog.test.mjs
    - run: npx playwright install --with-deps chromium
    - name: Desktop and mobile deletion dialog with fictitious responses
      run: node tests/browser/employee-erasure-qa.cjs
@@ -37,6 +38,7 @@ jobs:
       psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261006164615_employee_erasure_fast_preview.sql
       psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261006165313_employee_erasure_audit_ownership_and_freshness.sql
       psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261006172757_employee_erasure_auth_audit_json_compatibility.sql
+      psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261014025029_employee_erasure_catalog_lookup.sql
       psql -v ON_ERROR_STOP=1 -f tests/sql/employee-erasure-integration.sql
      env:
       PGHOST: localhost
