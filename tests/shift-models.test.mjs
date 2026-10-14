@@ -93,3 +93,8 @@ test('manual compliance treats staff and shift time restrictions as hard conflic
  assert.ok(c.window.SFCompliance.check(day,'SD','2027-01-04').hard.some(x=>x.includes('ausschließlich')));
  assert.equal(c.window.SFCompliance.check(day,'FD','2027-01-04').hard.length,0);
 });
+
+ test('staffing preview recalculates morning OT demand from proposals without writing assignments',()=>{
+ const {c,M}=harness();M.apply([{...row('O3'),default_start:'22:00:00',default_end:'08:00:00'},{...row('OT1'),default_start:'06:00:00',default_end:'14:00:00'},{...row('OT2'),default_start:'08:00:00',default_end:'16:00:00',morning_ot_switch_min:3}],'a');c.assignments=[];c.globalSoll={OT1:1,OT2:1};
+ const preview=['a','b','c'].map(employeeId=>({employeeId,date:'2026-12-01',type:'O3'}));assert.equal(M.requiredSoll('2026-12-02','OT1',1,preview),0);assert.equal(M.requiredSoll('2026-12-02','OT2',1,preview),2);assert.equal(M.requiredSoll('2026-12-02','OT1',1),1);assert.equal(c.assignments.length,0);
+ });

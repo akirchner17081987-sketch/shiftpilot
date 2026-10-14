@@ -261,3 +261,16 @@ test('render aggregation visits each selected duty once instead of scanning the 
  c.employees=Array.from({length:50},(_,i)=>({id:'e'+i,first:'Test',last:String(i),status:'active',weeklyHours:40}));c.assignments=c.employees.map(e=>({employeeId:e.id,date:'2026-12-01',type:'FD'}));
  run('autoPlanAnalyzed=true;renderAutoPlanning()');assert.equal(visits,50);assert.match(id('autoStaircase').innerHTML,/400 h/);
 });
+
+ test('daily staffing counts distinct employees, existing plus proposed, ignores cancellation and updates after removal',()=>{
+ const {c,id,run}=harness();c.getSoll=()=>3;c.assignments=[{employeeId:'e',date:'2026-12-01',type:'FD'},{employeeId:'e',date:'2026-12-01',type:'FD'},{employeeId:'cancel',date:'2026-12-01',type:'FD',status:'CANCELLED'},{employeeId:'cancel-db',date:'2026-12-01',type:'FD',_dbStatus:'CANCELLED'}];
+ run("autoPlanPreview=[{employeeId:'new',date:'2026-12-01',type:'FD'}];autoPlanAnalyzed=true;renderAutoPlanning()");
+ assert.match(id('autoStaircase').innerHTML,/data-staffing-shift="FD"[\s\S]*?class="sf-auto-staffing-cell is-short"[\s\S]*?<b>IST 2<\/b><small>SOLL 3<\/small>/);
+ c.removeAutoSuggestion(0);assert.match(id('autoStaircase').innerHTML,/<b>IST 1<\/b><small>SOLL 3<\/small>/);assert.equal(c.assignments.length,4);
+ });
+ test('shared alternatives expose a single combined target while retaining individual shift counts',()=>{
+ const {c,id,run}=harness();c.TYPES=[{id:'TL-L',name:'Links'},{id:'TL-R',name:'Rechts'}];let simulated;
+ c.window.SFShiftModels={coverageGroup:()=>({key:'Leitung',label:'Leitung'}),coverageInfo:(date,code,preview)=>{simulated=preview;return{filled:1,target:1}}};
+ run("autoPlanPreview=[{employeeId:'e',date:'2026-12-01',type:'TL-R'}];autoPlanAnalyzed=true;renderAutoPlanning()");
+ const html=id('autoStaircase').innerHTML;assert.match(html,/data-staffing-shift="TL-L"[\s\S]*?<b>IST 0<\/b><small>SOLL gemeinsam/);assert.match(html,/data-staffing-shift="TL-R"[\s\S]*?<b>IST 1<\/b><small>SOLL gemeinsam/);assert.match(html,/data-staffing-group="Leitung"[\s\S]*?<b>IST 1<\/b><small>SOLL 1/);assert.equal(simulated.length,1);
+ });

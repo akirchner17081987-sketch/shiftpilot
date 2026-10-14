@@ -129,3 +129,5 @@ html[data-sf-theme="light"] .sf-auto-progress small{color:#3e6167}
 @keyframes sfAutoProgressMove{0%{transform:translateX(-100%)}100%{transform:translateX(300%)}}
 @media(max-width:600px){.sf-auto-progress{padding:15px}.sf-auto-progress-head{align-items:flex-start;font-size:14px}}
 @media(prefers-reduced-motion:reduce){.sf-auto-progress-track i{animation:none!important;transition:none}}
+
+.sf-auto-staffing-head th{border-top:3px solid var(--line);padding-top:14px;padding-bottom:14px}.sf-auto-staffing-cell b,.sf-auto-staffing-cell small{display:block}.sf-auto-staffing-cell small{margin-top:3px;color:var(--muted)}.sf-auto-staffing-cell.is-short{background:color-mix(in srgb,var(--amber) 14%,var(--panel));color:var(--amber)}.sf-auto-staffing-cell.is-balanced{background:color-mix(in srgb,var(--teal) 12%,var(--panel))}.sf-auto-staffing-cell.is-extra{background:var(--panel2)}.sf-auto-staffing-shared th{font-weight:800}
