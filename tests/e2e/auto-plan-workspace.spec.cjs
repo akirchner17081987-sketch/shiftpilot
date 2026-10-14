@@ -48,6 +48,21 @@ for(const theme of ['dark','light'])test(`reserve Monday to Thursday O3 first, r
  await expect(page.locator('.sf-auto-protection')).toContainText('Ziel 180, maximal 220');await expect(page.locator('#autoSuggestions')).toContainText('Feste Schichtvorgabe');await expect(page.locator('#autoSuggestions')).toContainText('Monats-SOLL 180.0');await page.screenshot({path:test.info().outputPath(`fixed-O3-190h-${theme}.png`),fullPage:true});
  await page.locator('#applyAutoPlanBtn').click();await page.getByRole('dialog').getByRole('button',{name:'Als Entwurf übernehmen',exact:true}).click();expect(await page.evaluate(()=>assignments.filter(a=>a.employeeId==='115').length)).toBe(19);expect(await page.evaluate(()=>saveCalls)).toBe(1);expect(errors).toEqual([]);
 });
+test('confirmed fixed weekly priority reserves all nineteen O3 duties despite stale cycle metadata',async({page})=>{
+ await fixture(page);
+ await page.evaluate(()=>{
+  TYPES=[{id:'O3',name:'O3',start:'22:00',end:'08:00'},{id:'SD',name:'SD',start:'14:00',end:'22:00'}];
+  employees=[{id:'bound',first:'Feste',last:'O3',status:'active',employment:'Vollzeit',shifts:['O3','SD'],weeklyHours:40,maxWeeklyHours:55,monthlyHours:180,rhythmMode:'required',rhythmStart:'2026-10-07',rhythmPattern:'ALLE,ALLE,ALLE,ALLE,FREI,FREI,FREI,ALLE,ALLE,ALLE,FREI,FREI'}];
+  SFCompliance={policy:{solidPlanningRules:{enabled:true,confirmedRulesVersion:2,timezone:'Europe/Berlin',maxConsecutiveShifts:4,maxConsecutiveNightShifts:4,minFreeCalendarDays:2,minNightRecoveryCalendarDays:2,minBlockRestHours:48,maxCalendarWeekHours:55,fixedWeeklyRoster:{employeeIds:['bound'],code:'O3',weekdays:[1,2,3,4],monthlyMaxHours:190,maxMonthlyShifts:19}}}};
+  getSoll=()=>1;employeeMonthlyTarget=e=>e.monthlyHours;plannedAssignmentHours=a=>a.type==='O3'?10:8;
+  plannedMonthlyHoursForEmployee=(id,date,sim=[])=>[...assignments,...sim].filter(a=>a.employeeId===id&&a.date.startsWith(date.slice(0,7))).reduce((n,a)=>n+plannedAssignmentHours(a),0);
+ });
+ await generatePreview(page);
+ const fixed=await page.evaluate(()=>autoPlanPreview.filter(a=>a.employeeId==='bound'));
+ expect(fixed).toHaveLength(19);expect(fixed.every(a=>a.type==='O3'&&[1,2,3,4].includes(new Date(a.date+'T12:00:00').getDay()))).toBe(true);
+ await page.locator('#applyAutoPlanBtn').click();await page.getByRole('dialog').getByRole('button',{name:'Als Entwurf übernehmen',exact:true}).click();
+ expect(await page.evaluate(()=>assignments.filter(a=>a.employeeId==='bound').length)).toBe(19);
+});
 for(const theme of ['dark','light'])test(`staircase shows staggered workrest blocks and protects free days in ${theme}`,async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));await fixture(page,theme);
  await page.evaluate(()=>{const pattern='ALLE, ALLE, ALLE, ALLE, FREI, FREI, FREI, ALLE, ALLE, ALLE, FREI, FREI';employees=Array.from({length:3},(_,i)=>({id:'cycle'+i,personnelNo:String(i+1),first:'Fiktive',last:'Person '+i,status:'active',employment:'Vollzeit',shifts:['FD'],weeklyHours:40,maxWeeklyHours:50,monthlyHours:180,rhythmMode:'required',rhythmStart:'2026-12-'+String(i+1).padStart(2,'0'),rhythmPattern:pattern}));});

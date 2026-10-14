@@ -15,6 +15,8 @@
   const teamOffset=(team,length)=>teams.includes(team)?Math.floor(teams.indexOf(team)*length/teams.length):0;
   const utcDay=value=>{const match=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return match?Date.UTC(Number(match[1]),Number(match[2])-1,Number(match[3])):NaN};
   function config(employee){
+    const fixed=window.SFSolidPlanningCore?.fixedWeeklyRoster(employee,window.SFCompliance?.policy?.solidPlanningRules);
+    if(fixed)return{mode:'required',start:'2026-10-12',pattern:Array.from({length:7},(_,n)=>fixed.weekdays.includes(n+1)?fixed.code:'FREI'),team:'',offset:0,exemptOt:false};
     const rawMode=employee?.rhythmMode||readMeta(employee,'rhythmMode')||'off';
     const mode=['preferred','required'].includes(rawMode)?rawMode:'off';
     const selected=employee?.planningTeam??readMeta(employee,'planningTeam'),team=teams.includes(selected)?selected:'',pattern=parsePattern(employee?.rhythmPattern||readMeta(employee,'rhythmPattern'));

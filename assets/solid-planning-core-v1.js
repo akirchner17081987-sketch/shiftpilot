@@ -19,6 +19,10 @@
  const weekKey=date=>plus(date,1-weekday(date));
  const night=a=>/^(ND|O1|O2|O3|O1S|O2S|TL|TL-LE|TL-RE|TEAMLEITER|QA)$/i.test(a.type)||a.start>='18:00';
  const countsTowardCap=a=>!a._marketApproved;
+ function fixedWeeklyRoster(e,p){
+  const rule=p?.fixedWeeklyRoster;
+  return rule&&Array.isArray(rule.employeeIds)&&rule.employeeIds.map(String).includes(String(e._dbId||e.id))?rule:null;
+ }
  function otDayEmployee(e){
   const target=Number(e.monthlyHours??String((e.qualifications||[]).find(q=>String(q).startsWith('__sp:monthlyHours='))||'').split('=')[1])||180;
   return /^Vollzeit(?:\s+180)?$/i.test(String(e.employment||'').trim())&&target>=180&&(e.shifts||[]).length>0&&e.shifts.every(code=>['OT1','OT2','OT3'].includes(code));
@@ -47,7 +51,8 @@
   const full=/^Vollzeit(?:\s+180)?$/i.test(String(e.employment||'').trim())&&target>=180,configured=Number(e.weeklyLimit??e.maxWeeklyHours??meta('maxWeekly'))||Number(e.weeklyHours)||40;
   const otMaximum=Number(p.otOnlyMonthlyMaxHours),otOnly=full&&(e.shifts||[]).length>0&&e.shifts.every(code=>['OT1','OT2','OT3'].includes(code))&&Number.isFinite(otMaximum)&&otMaximum>0&&otMaximum<=220;
   const monthMax=Number(p.monthlyMaxHours)||190,eightMax=Math.min(monthMax,Number(p.eightHourAutoMaxHours)||184),eightCount=Number(p.eightHourMaxShifts)||23,tenCount=Number(p.tenHourMaxShifts)||18;
-  return{eightHourModel:eight,monthLimit:otOnly?otMaximum:full?(eight?eightMax:monthMax):Math.min(monthMax,target),calendarLimit:otOnly?otMaximum:full?monthMax:Math.min(monthMax,target),maxMonthlyShifts:otOnly?Math.floor(otMaximum/10):eight?eightCount:tenCount,weeklyLimit:weeklyLimit(e,p)};
+  const fixed=fixedWeeklyRoster(e,p);
+  return{eightHourModel:eight,monthLimit:fixed?fixed.monthlyMaxHours:otOnly?otMaximum:full?(eight?eightMax:monthMax):Math.min(monthMax,target),calendarLimit:fixed?fixed.monthlyMaxHours:otOnly?otMaximum:full?monthMax:Math.min(monthMax,target),maxMonthlyShifts:fixed?fixed.maxMonthlyShifts:otOnly?Math.floor(otMaximum/10):eight?eightCount:tenCount,weeklyLimit:weeklyLimit(e,p)};
  }
  function confirmedErrors(e,rows,p,affected){
   const weekCap=weeklyLimit(e,p);p=employeeRules(e,p);
@@ -130,5 +135,5 @@
   }return out;
  }
  const penalty=m=>m.nightBlocksOverPreferred*8+m.missingFreeWeekends*35+m.rollingWeekExcessHours*.3+m.startTimeChanges*3+m.isolatedDuties*4;
- return{workRestOptions,otDayHoliday,otCodes,otRoster,rosterEmployee,rosterDay,employeeRules,otDayEmployee,weeklyLimit,summary,plus,weekday,instant,interval,duty,errors,canAdd,required,metrics,penalty,confirmed,limits,countsTowardCap,night,localDate,weekKey};
+ return{fixedWeeklyRoster,workRestOptions,otDayHoliday,otCodes,otRoster,rosterEmployee,rosterDay,employeeRules,otDayEmployee,weeklyLimit,summary,plus,weekday,instant,interval,duty,errors,canAdd,required,metrics,penalty,confirmed,limits,countsTowardCap,night,localDate,weekKey};
 });
