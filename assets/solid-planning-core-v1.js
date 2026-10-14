@@ -24,6 +24,7 @@
   return /^Vollzeit(?:\s+180)?$/i.test(String(e.employment||'').trim())&&target>=180&&(e.shifts||[]).length>0&&e.shifts.every(code=>['OT1','OT2','OT3'].includes(code));
  }
  function employeeRules(e,p){
+  if(e.role==='Teamleiter'&&p.teamLeaderMaxConsecutiveNightShifts!=null)return {...p,maxConsecutiveNightShifts:p.teamLeaderMaxConsecutiveNightShifts};
   if(!otDayEmployee(e))return p;
   const result={...p};for(const [source,target] of [['otOnlyMaxConsecutiveShifts','maxConsecutiveShifts'],['otOnlyMaxCalendarWeekHours','maxCalendarWeekHours'],['otOnlyMinFreeCalendarDays','minFreeCalendarDays'],['otOnlyMinBlockRestHours','minBlockRestHours']])if(p[source]!=null)result[target]=p[source];
   return result;
@@ -95,6 +96,7 @@
   const durations=types.filter(t=>!['OT1','OT2','OT3'].includes(t.id)).map(t=>{const m=x=>Number(x.slice(0,2))*60+Number(x.slice(3,5));return(m(t.end)-m(t.start)+1440)%1440});
   const model=[];if(durations.some(m=>m>480))model.push(`über 8 h: ${p.tenHourMaxShifts??18} automatische Dienste`);if(durations.some(m=>m>0&&m<=480))model.push(`8 h: ${p.eightHourMaxShifts??23} automatische Dienste / ${Math.min(p.monthlyMaxHours??190,p.eightHourAutoMaxHours??184)} h`);
   if(p.otOnlyMonthlyMaxHours!=null&&types.some(t=>['OT1','OT2','OT3'].includes(t.id)))model.push(`Tagdienst OT1 / OT2 / OT3 · 10 h je Dienst: ${p.otOnlyMonthlyMaxHours} h/Monat, ${p.otOnlyMaxCalendarWeekHours??p.maxCalendarWeekHours??40} h/Woche, ${p.otOnlyMaxConsecutiveShifts??p.maxConsecutiveShifts??4} Dienste am Stück, ${p.otOnlyMinFreeCalendarDays??p.minFreeCalendarDays??2} freie Tage und ${p.otOnlyMinBlockRestHours??p.minBlockRestHours??48} h zwischen Blöcken (normale OT ausgenommen)`);
+  if(p.teamLeaderMaxConsecutiveNightShifts!=null)model.push(`Teamleiter: höchstens ${p.teamLeaderMaxConsecutiveNightShifts} Nächte am Stück; persönliche Monatsgrenzen, Wochenmaximum und Erholung bleiben verbindlich`);
   if(otRoster(p))model.push('Feste OT-Tagdienstgruppe: jeder Mitarbeiter Montag–Freitag; OT1/OT3 nur bei fehlender Nachtabdeckung, alle übrigen auf OT2; Wochenende frei');
   return `Verbindlich: max. ${p.monthlyMaxHours??190} h pro Kalendermonat${model.length?'; '+model.join('; '):''}. Allgemeine Regeln für andere Mitarbeiter: max. ${p.maxConsecutiveShifts??4} Dienste und ${p.maxConsecutiveNightShifts??3} Nächte am Stück. Zwischen Blöcken ${p.minFreeCalendarDays??2} vollständig freie Kalendertage und ${p.minBlockRestHours??48} h Ruhe; nach Nachtblöcken ${p.minNightRecoveryCalendarDays??3} freie Kalendertage. Max. ${p.maxCalendarWeekHours??40} h pro Kalenderwoche einschließlich Nachtübertrag. Persönliche niedrigere Grenzen, Freigaben und Abwesenheiten bleiben maßgeblich.`;
  }
