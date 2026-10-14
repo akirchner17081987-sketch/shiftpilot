@@ -28,6 +28,7 @@
     const t=M.find(code),no=String(employee.personnelNo??employee.personnel_no??''),exclusive=M.models.find(x=>x.active&&x.exclusiveEmployees&&x.allowedPersonnelNos?.map(String).includes(no));
     if(exclusive&&exclusive.id!==code)return `Personalnummer ${no} ist ausschließlich für ${exclusive.id} freigegeben.`;
     if(!t)return null;
+    if(['OT1','OT2','OT3'].includes(code)&&date&&solid?.otDayHoliday(date,rules))return 'An Feiertagen entfällt OT1 / OT2 / OT3; bitte die normale OT-Schicht prüfen.';
     if(code==='OT'&&date&&window.SFOtPolicy?.configured()&&!window.SFOtPolicy.applies(date,employee))return 'OT ist nur am Wochenende oder an einem Feiertag am Einsatzort zulässig.';
     if(t.allowedPersonnelNos&&!t.allowedPersonnelNos.map(String).includes(no))return `${code} ist nur für Personalnummern ${t.allowedPersonnelNos.join(', ')} freigegeben.`;
     const team=employee.planningTeam??String((employee.qualifications||[]).find(x=>String(x).startsWith('__sp:planningTeam='))||'').slice(18);
@@ -56,7 +57,7 @@
     for(const a of all){if(a.type!=='O3'||a.date!==day||a.status==='CANCELLED')continue;const t=M.find(a.type),s=new Date(a.date+'T'+(a.start||t?.start||'22:00')+':00'),e=new Date(a.date+'T'+(a.end||t?.end||'08:00')+':00');if(e<=s)e.setDate(e.getDate()+1);if(s<=start&&e>=end)seen.add(String(a.employeeId))}
     return seen.size>=minimum;
   };
-  M.rawRequired=(date,code,fallback)=>{const override=typeof dailySoll==='undefined'?null:dailySoll[date]?.[code],t=M.find(code);if(code==='OT'&&window.SFOtPolicy?.configured()){if(!window.SFOtPolicy.applies(date))return 0;return override!=null?Number(override):t?.planningMode==='optional'?0:Number(fallback)||0;}if(t?.strictWeekdays&&!t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7))return 0;return override!=null?Number(override):t&&(t.planningMode==='optional'||!t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7))?0:fallback};
+  M.rawRequired=(date,code,fallback)=>{if(['OT1','OT2','OT3'].includes(code)&&window.SFSolidPlanningCore?.otDayHoliday(date,window.SFCompliance?.policy?.solidPlanningRules))return 0;const override=typeof dailySoll==='undefined'?null:dailySoll[date]?.[code],t=M.find(code);if(code==='OT'&&window.SFOtPolicy?.configured()){if(!window.SFOtPolicy.applies(date))return 0;return override!=null?Number(override):t?.planningMode==='optional'?0:Number(fallback)||0;}if(t?.strictWeekdays&&!t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7))return 0;return override!=null?Number(override):t&&(t.planningMode==='optional'||!t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7))?0:fallback};
   M.requiredSoll=(date,code,fallback,simulated=[])=>{let all;const current=()=>all??(all=[...(typeof assignments==='undefined'?[]:assignments),...simulated].filter(a=>a.status!=='CANCELLED'&&a._dbStatus!=='CANCELLED'));const rules=window.SFCompliance?.policy?.solidPlanningRules;if(rules?.enabled&&window.SFSolidPlanningCore){const rule=(rules.conditionalStaffing||[]).find(r=>r.shift===code),rows=(rule||code==='OT2'&&window.SFSolidPlanningCore.otRoster(rules))?current().map(a=>({...a,start:a.start||M.find(a.type)?.start,end:a.end||M.find(a.type)?.end})):[],need=window.SFSolidPlanningCore.required(date,code,rows,rules);if(need!==null)return need;}const g=M.coverageInfo(date,code,simulated);if(g){const own=current().filter(a=>a.date===date&&a.type===code&&a.status!=='CANCELLED').length;return own+(g.representative===code?g.missing:0)}
     const raw=M.rawRequired(date,code,fallback);
     if(['OT1','OT2'].includes(code)&&M.find('OT2')?.morningOtMinimum&&M.morningOtSwitch(date,current())){
@@ -73,7 +74,7 @@
     }return proposed;
   };
 
-  M.optionalTarget=(date,code)=>{const t=M.find(code);if(!t?.active||t.planningMode!=='optional'||(typeof dailySoll!=='undefined'&&dailySoll[date]?.[code]!=null))return 0;return t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7)?t.optionalStaffing:0};
+  M.optionalTarget=(date,code)=>{if(['OT1','OT2','OT3'].includes(code)&&window.SFSolidPlanningCore?.otDayHoliday(date,window.SFCompliance?.policy?.solidPlanningRules))return 0;const t=M.find(code);if(!t?.active||t.planningMode!=='optional'||(typeof dailySoll!=='undefined'&&dailySoll[date]?.[code]!=null))return 0;return t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7)?t.optionalStaffing:0};
   M.reservePenalty=(employee,date,type)=>M.models.some(t=>t.active&&t.id!==type&&t.responsibleOnly&&String(t.responsibleEmployeeId)===String(employee._dbId||employee.id)&&M.optionalTarget(date,t.id)>0)?1:0;
   M.invalidate=()=>{if(typeof autoPlanPreview!=='undefined'){autoPlanPreview=[];autoPlanUnresolved=[];autoPlanOptionalSkipped=[];autoPlanAnalyzed=false;autoPlanApplied=0;}window.renderAutoPlanning?.()};
   M.validate=model=>{

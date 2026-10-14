@@ -78,7 +78,7 @@
   function criticalNeeds(base,dates){return withBase(base,()=>{
     const out=new Map(),rules=solidRules(),active=base.filter(a=>a.status!=='CANCELLED'&&a._dbStatus!=='CANCELLED');
     for(const date of dates){
-      for(const rule of rules.criticalShifts||[]){if(rule.weekdays?.length&&!rule.weekdays.includes(solid.weekday(date)))continue;const filled=new Set(active.filter(a=>a.date===date&&a.type===rule.code).map(a=>String(a.employeeId))).size;out.set(date+'|'+rule.code,Math.max(0,Number(rule.minimum||0)-filled));}
+      for(const rule of rules.criticalShifts||[]){if(solid.otCodes.includes(rule.code)&&solid.otDayHoliday(date,rules))continue;if(rule.weekdays?.length&&!rule.weekdays.includes(solid.weekday(date)))continue;const filled=new Set(active.filter(a=>a.date===date&&a.type===rule.code).map(a=>String(a.employeeId))).size;out.set(date+'|'+rule.code,Math.max(0,Number(rule.minimum||0)-filled));}
       for(const group of rules.criticalCoverageGroups||[]){const members=TYPES.filter(t=>window.SFShiftModels?.coverageGroup(t.id)?.key===group),required=Math.max(0,...members.map(t=>Number(window.SFShiftModels.coverageGroup(t.id).required)||0)),info=members.length&&window.SFShiftModels.coverageInfo(date,members[0].id);out.set(date+'|'+group,Math.max(0,required-(info?.filled||0)));}
     }
     if(solid.otRoster(rules))for(const date of dates){if(!solid.rosterDay(date,rules))continue;const filled=new Set(active.filter(a=>a.date===date&&solid.otCodes.includes(a.type)&&employees.some(e=>String(e.id)===String(a.employeeId)&&solid.rosterEmployee(e,rules))).map(a=>String(a.employeeId))).size;out.set(date+'|OT-DAY',Math.max(0,solid.otRoster(rules).employeeIds.length-filled));}

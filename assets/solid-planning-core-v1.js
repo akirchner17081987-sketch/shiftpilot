@@ -1,5 +1,5 @@
 // Gemeinsame Erholungs- und Besetzungsregeln für freigeschaltete Unternehmen.
-(function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.SFSolidPlanningCore=api})(typeof window!=='undefined'?window:globalThis,function(){
+(function(root,factory){const api=factory(typeof module==='object'&&module.exports?require('./ot-weekend-holiday-policy.js'):()=>root.SFOtPolicy);if(typeof module==='object'&&module.exports)module.exports=api;else root.SFSolidPlanningCore=api})(typeof window!=='undefined'?window:globalThis,function(OT){
  const H=3600000,D=86400000,cache=new Map(),formats=new Map(),localDates=new Map();
  const plus=(date,n)=>new Date(Date.parse(date+'T12:00:00Z')+n*D).toISOString().slice(0,10);
  const weekday=date=>new Date(date+'T12:00:00Z').getUTCDay()||7;
@@ -86,8 +86,9 @@
  const otCodes=['OT1','OT2','OT3'];
  function otRoster(p){return policy(p)&&Array.isArray(p.otWeekdayRoster?.employeeIds)&&p.otWeekdayRoster.employeeIds.length?p.otWeekdayRoster:null}
  function rosterEmployee(e,p){return !!otRoster(p)?.employeeIds.map(String).includes(String(e._dbId||e.id))}
- function rosterDay(date,p){return !!otRoster(p)&&(p.otWeekdayRoster.weekdays||[1,2,3,4,5]).includes(weekday(date))}
- function required(date,code,rows,p){if(!policy(p))return null;if(otRoster(p)&&code==='OT2'){if(!rosterDay(date,p))return 0;return Math.max(0,otRoster(p).employeeIds.length-(required(date,'OT1',rows,p)||0)-(required(date,'OT3',rows,p)||0))}const rule=(p.conditionalStaffing||[]).find(r=>r.shift===code);if(!rule)return null;if(weekday(date)>5)return 0;
+ function otDayHoliday(date,p){if(!p?.otDayHolidayExclusion)return false;const api=typeof OT==='function'?OT():OT;if(!api?.isHoliday)throw Error('Feiertagskalender konnte nicht geladen werden. Bitte die Seite neu laden.');return api.isHoliday(date,p.otDayHolidayStates||['DE','SN','NW']);}
+ function rosterDay(date,p){return !!otRoster(p)&&!otDayHoliday(date,p)&&(p.otWeekdayRoster.weekdays||[1,2,3,4,5]).includes(weekday(date))}
+ function required(date,code,rows,p){if(otCodes.includes(code)&&otDayHoliday(date,p))return 0;if(!policy(p))return null;if(otRoster(p)&&code==='OT2'){if(!rosterDay(date,p))return 0;return Math.max(0,otRoster(p).employeeIds.length-(required(date,'OT1',rows,p)||0)-(required(date,'OT3',rows,p)||0))}const rule=(p.conditionalStaffing||[]).find(r=>r.shift===code);if(!rule)return null;if(weekday(date)>5)return 0;
   const from=instant(date,rule.coverageStart,p.timezone),to=instant(date,rule.coverageEnd,p.timezone),source=plus(date,rule.sourceDayOffset),seen=new Set();
   for(const a of rows){if(!active(a)||a.type!==rule.sourceShift||a.date!==source)continue;const d=duty(a,p);if(d.startMs<=from&&d.endMs>=to)seen.add(String(a.employeeId))}
   return seen.size>=rule.minimum?0:rule.fallbackCount;
@@ -100,7 +101,8 @@
   const model=[];if(durations.some(m=>m>480))model.push(`über 8 h: ${p.tenHourMaxShifts??18} automatische Dienste`);if(durations.some(m=>m>0&&m<=480))model.push(`8 h: ${p.eightHourMaxShifts??23} automatische Dienste / ${Math.min(p.monthlyMaxHours??190,p.eightHourAutoMaxHours??184)} h`);
   if(p.otOnlyMonthlyMaxHours!=null&&types.some(t=>['OT1','OT2','OT3'].includes(t.id)))model.push(`Tagdienst OT1 / OT2 / OT3 · 10 h je Dienst: ${p.otOnlyMonthlyMaxHours} h/Monat, ${p.otOnlyMaxCalendarWeekHours??p.maxCalendarWeekHours??40} h/Woche, ${p.otOnlyMaxConsecutiveShifts??p.maxConsecutiveShifts??4} Dienste am Stück, ${p.otOnlyMinFreeCalendarDays??p.minFreeCalendarDays??2} freie Tage und ${p.otOnlyMinBlockRestHours??p.minBlockRestHours??48} h zwischen Blöcken (normale OT ausgenommen)`);
   if(p.teamLeaderMaxConsecutiveNightShifts!=null)model.push(`Teamleiter: höchstens ${p.teamLeaderMaxConsecutiveNightShifts} Nächte am Stück${p.teamLeaderPreferredNightBlockLength!=null?`, bevorzugt ${p.teamLeaderPreferredNightBlockLength}`:''}${p.teamLeaderMinNightRecoveryCalendarDays!=null?`; danach ${p.teamLeaderMinNightRecoveryCalendarDays} vollständig freie Kalendertage und mindestens ${p.minBlockRestHours??48} h Ruhe`:''}${p.teamLeaderMinimumMonthlyHours!=null?`; Monatsziel zuerst ${p.teamLeaderMinimumMonthlyHours} h, anschließend Vertrags-SOLL (persönliche niedrigere Grenzen bleiben verbindlich)`:''}; Wochenmaximum bleibt verbindlich`);
-  if(otRoster(p))model.push('Feste OT-Tagdienstgruppe: jeder Mitarbeiter Montag–Freitag; OT1/OT3 nur bei fehlender Nachtabdeckung, alle übrigen auf OT2; Wochenende frei');
+  if(p.otDayHolidayExclusion)model.push('Feiertage Deutschland / Sachsen / Nordrhein-Westfalen: keine Pflichtbesetzung OT1 / OT2 / OT3; normale OT nach hinterlegtem Bedarf und Einsatzort');
+  if(otRoster(p))model.push('Feste OT-Tagdienstgruppe: jeder Mitarbeiter Montag–Freitag; OT1/OT3 nur bei fehlender Nachtabdeckung, alle übrigen auf OT2; Wochenende und konfigurierte Feiertage frei');
   return `Verbindlich: max. ${p.monthlyMaxHours??190} h pro Kalendermonat${model.length?'; '+model.join('; '):''}. Allgemeine Regeln für andere Mitarbeiter: max. ${p.maxConsecutiveShifts??4} Dienste und ${p.maxConsecutiveNightShifts??3} Nächte am Stück. Zwischen Blöcken ${p.minFreeCalendarDays??2} vollständig freie Kalendertage und ${p.minBlockRestHours??48} h Ruhe; nach Nachtblöcken ${p.minNightRecoveryCalendarDays??3} freie Kalendertage. Max. ${p.maxCalendarWeekHours??40} h pro Kalenderwoche einschließlich Nachtübertrag. Persönliche niedrigere Grenzen, Freigaben und Abwesenheiten bleiben maßgeblich.`;
  }
  function metrics(people,rows,p,months){const all=rows.filter(active).map(a=>duty(a,p)),out={nightBlocksOverPreferred:0,missingFreeWeekends:0,rollingWeekExcessHours:0,rollingWeekOverTargetWindows:0,startTimeChanges:0,isolatedDuties:0};
@@ -111,5 +113,5 @@
   }return out;
  }
  const penalty=m=>m.nightBlocksOverPreferred*8+m.missingFreeWeekends*35+m.rollingWeekExcessHours*.3+m.startTimeChanges*3+m.isolatedDuties*4;
- return{otCodes,otRoster,rosterEmployee,rosterDay,employeeRules,otDayEmployee,weeklyLimit,summary,plus,weekday,instant,interval,duty,errors,canAdd,required,metrics,penalty,confirmed,limits,countsTowardCap,night,localDate,weekKey};
+ return{otDayHoliday,otCodes,otRoster,rosterEmployee,rosterDay,employeeRules,otDayEmployee,weeklyLimit,summary,plus,weekday,instant,interval,duty,errors,canAdd,required,metrics,penalty,confirmed,limits,countsTowardCap,night,localDate,weekKey};
 });

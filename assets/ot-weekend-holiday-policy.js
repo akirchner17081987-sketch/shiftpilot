@@ -16,6 +16,7 @@
   function installPolicy(){
     if(typeof root.getSoll!=='function'||root.getSoll.__otPolicy)return false;
     const original=root.getSoll,wrapped=function(date,type){
+      if(['OT1','OT2','OT3'].includes(String(type).toUpperCase())&&root.SFSolidPlanningCore?.otDayHoliday(date,root.SFCompliance?.policy?.solidPlanningRules))return 0;
       if(String(type).toUpperCase()==='OT'&&!applies(date))return 0;
       return original.apply(this,arguments);
     };
@@ -25,7 +26,7 @@
     const settings=document.getElementById('view-settings');if(!settings)return;
     let note=settings.querySelector('.sp-ot-policy-hint');
     if(!note){const target=[...settings.querySelectorAll('input[data-soll], label, .setting-row, .section-box, .card')].find(el=>/\bOT\b/.test(el.textContent||''));if(!target)return;note=document.createElement('div');note.className='sp-ot-policy-hint';target.insertAdjacentElement('afterend',note);}
-    note.innerHTML=rules()?'<b>OT-Regel</b><span>OT gilt samstags, sonntags und an gesetzlichen Feiertagen am hinterlegten Einsatzort: Leipzig (Sachsen), Recklinghausen (NRW). Reguläre OT1/OT2/OT3 sind den freigegebenen Tagdienstmitarbeitern vorbehalten.</span>':'<b>OT-Regel</b><span>OT gilt samstags, sonntags und an den für dieses Unternehmen hinterlegten Feiertagen.</span>';
+    note.innerHTML=rules()?'<b>OT-Regel</b><span>OT gilt samstags, sonntags und an gesetzlichen Feiertagen am hinterlegten Einsatzort: Leipzig (Sachsen), Recklinghausen (NRW). An bundesweiten Feiertagen sowie Feiertagen in Sachsen oder NRW entfällt der Pflichtbedarf für OT1/OT2/OT3; stattdessen gilt die normale OT-Besetzung.</span>':'<b>OT-Regel</b><span>OT gilt samstags, sonntags und an den für dieses Unternehmen hinterlegten Feiertagen.</span>';
   }
   function init(){
     let tries=0;const timer=setInterval(()=>{tries++;const ok=installPolicy();addSettingsHint();if(ok||tries>30){clearInterval(timer);root.renderCalendar?.();root.updateStats?.();}},100);
@@ -46,5 +47,6 @@
   }
   function siteState(site,mapping={Leipzig:'SN',Recklinghausen:'NW'}){const key=String(site||'').trim().toLocaleLowerCase('de-DE');return Object.entries(mapping).find(([name])=>name.toLocaleLowerCase('de-DE')===key)?.[1]||'DE';}
   function applies(value,states=['DE']){const d=date(value);if(!d)return false;if([0,6].includes(d.getUTCDay()))return true;return (Array.isArray(states)?states:[states]).some(state=>holidays(d.getUTCFullYear(),state).has(iso(d)));}
-  return {holidays,siteState,applies};
+  function isHoliday(value,states=['DE']){const d=date(value);if(!d)return false;return (Array.isArray(states)?states:[states]).some(state=>holidays(d.getUTCFullYear(),state).has(iso(d)));}
+  return {holidays,siteState,applies,isHoliday};
 });

@@ -35,3 +35,10 @@ test('planning respects entry and contract dates including inclusive boundary da
  assert.equal(m.allowsEmployee('FD',{contractEnd:'2027-06-30'},'2027-06-30'),true);
  assert.equal(m.allowsEmployee('FD',{start_date:'2027-01-01',contract_end:'2027-06-30'},'2026-12-31'),false);
 });
+
+test('holiday exclusion wins over explicit day demand and distinguishes a normal weekday from a holiday',()=>{
+ const c=browser();c.window.SFBackend={companyId:'co'};c.sessionStorage={getItem:()=>null};c.TYPES=[];c.selectedType=null;c.globalSoll={OT:3};c.dailySoll={'2027-01-01':{OT2:5}};c.document.getElementById=()=>null;
+ vm.runInNewContext(fs.readFileSync(require.resolve('../assets/solid-planning-core-v1.js'),'utf8'),c);c.window.SFCompliance.policy.solidPlanningRules={...c.window.SFCompliance.policy.solidPlanningRules,enabled:true,otDayHolidayExclusion:true,otDayHolidayStates:['DE','SN','NW']};
+ vm.runInNewContext(fs.readFileSync(require.resolve('../assets/shift-models-v1.js'),'utf8'),c);const m=c.window.SFShiftModels;m.apply(['OT1','OT2','OT3','OT'].map(code=>({code,active:true,default_start:'08:00',default_end:'18:00',optional_weekdays:code==='OT'?[6,7]:[1,2,3,4,5]})),'co');
+ for(const code of ['OT1','OT2','OT3']){assert.equal(m.requiredSoll('2027-01-01',code,5),0);assert.equal(m.allowsEmployee(code,{team:'Leipzig'},'2027-01-01'),false);}assert.equal(m.requiredSoll('2027-01-01','OT',3),3);assert.equal(m.rawRequired('2027-01-04','OT2',1),1);assert.equal(api.isHoliday('2027-01-02',['DE']),false);assert.equal(api.isHoliday('2027-03-08',['DE','SN','NW']),false);
+});

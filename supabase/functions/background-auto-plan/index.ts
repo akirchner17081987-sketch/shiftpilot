@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.116.0";
+import "../../../assets/ot-weekend-holiday-policy.js";
 import "../../../assets/solid-planning-core-v1.js";
 import "../../../assets/individual-month-planner-v1.js";
 import "../../../assets/month-optimizer-core-v1.js";

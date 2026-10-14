@@ -36,6 +36,7 @@
   if(t.requires_planning_team&&!['A','B','C','D','E'].includes(meta(e,'planningTeam')))return 'Planungsteam fehlt';
   if(t.strict_weekdays&&!t.optional_weekdays.includes(S.weekday(date)))return 'Einsatztag passt nicht';
   if(t.code.toLowerCase()==='teamleiter'&&!/teamleiter|schichtleiter/i.test(e.role||''))return 'Leitungsrolle fehlt';
+  if(S.otCodes.includes(t.code)&&S.otDayHoliday(date,data.rules))return 'Feiertag: reguläre OT statt OT1 / OT2 / OT3';
   const mapping=data.rules.otHolidayStatesBySite;if(t.code==='OT'&&mapping&&!OT.applies(date,[OT.siteState(meta(e,'team'),mapping)]))return 'Kein OT-Tag am Einsatzort';
   const r=e.rhythms?.[date];if(r?.mode==='required'&&!(r.exemptOt&&['OT1','OT2','OT3'].includes(t.code))&&r.expected!=='ALLE'&&r.expected!==t.code.toUpperCase())return 'Verbindlicher Rhythmus';
   const iv=S.interval(date,t.default_start,t.default_end,data.timezone);if((iv.end-iv.start)/H>10+.000001)return 'Schicht länger als 10 Stunden';
@@ -50,7 +51,8 @@
    else{const override=overrides.get(date+'|'+t.code);required=t.strict_weekdays&&!possible.length?0:override??(t.planning_mode==='optional'||!alternatives.length?0:Number(data.global[t.code])||0);const conditional=S.required(date,t.code,rows,data.rules);if(conditional!==null)required=conditional;}
    if(t.code==='OT'&&data.rules.otHolidayStatesBySite&&!OT.applies(date,Object.values(data.rules.otHolidayStatesBySite)))required=0;
    const minimum=(data.rules.criticalShifts||[]).find(r=>r.code===t.code&&(!r.weekdays?.length||r.weekdays.includes(S.weekday(date))));if(minimum)required=Math.max(required,Number(minimum.minimum)||0);if(group&&(data.rules.criticalCoverageGroups||[]).includes(group))required=Math.max(required,...members.map(v=>Number(v.coverage_required)||0));
-   const extra=config.extraCount&&members.some(v=>v.code===config.extraShift)&&alternatives.length?config.extraCount:0;required+=extra;
+   const otHoliday=S.otCodes.includes(t.code)&&S.otDayHoliday(date,data.rules);if(otHoliday)required=0;
+   const extra=!otHoliday&&config.extraCount&&members.some(v=>v.code===config.extraShift)&&alternatives.length?config.extraCount:0;required+=extra;
    const iv=S.interval(date,t.default_start,t.default_end,data.timezone),covered=new Set(rows.filter(a=>a.date===date&&members.some(v=>v.code===a.type)&&a.startMs<=iv.start&&a.endMs>=iv.end).map(a=>a.employeeId)).size;
    out.push({date,key,type:t.code,alternatives:alternatives.map(v=>v.code),required,missing:Math.max(0,required-covered),hours:(iv.end-iv.start)/H,group:group||null,extra});
   }}return out;
