@@ -370,7 +370,6 @@
     if (aside && actions?.parentElement !== aside) aside.prepend(actions);
     overviewDetail(root.querySelector('#sfTodayTransitions'), 'transitions', 'Schichtwechsel · nächste 2 Stunden');
     const coverage = overviewDetail(root.querySelector('#sfTodayCoverage'), 'coverage', 'Besetzung je Schicht');
-    if (coverage && metrics.querySelector('[data-td-kpi="coverage"][aria-pressed="true"]')) coverage.open = true;
     overviewDetail(root.querySelector('.sf-td-shortcuts')?.closest('.sf-td-panel'), 'shortcuts', 'Weitere Aktionen');
     syncStatusHub();
   }
