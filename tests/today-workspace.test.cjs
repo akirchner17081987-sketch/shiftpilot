@@ -33,3 +33,20 @@ test('calendar day rollover uses company timezone, including DST',()=>{const d=f
 test('overlapping bookings are unioned and do not deduct paid pauses',()=>{const d=fixture();d.assignments=[assignment('a1')];d.times=[booking('a1')];d.qr=[{...booking('q1'),start:'2026-10-10T05:00Z',breaks:[{start:'2026-10-10T09:00Z',end:'2026-10-10T09:30Z'}]}];const r=C.analyze(d);assert.equal(r.rows[0].attendance,360);assert.equal(r.rows[0].pauseMinutes,30)});
 test('distinct overlapping duties warn but shared TL does not create a conflict',()=>{const d=fixture();d.assignments=[assignment('a1'),{...assignment('a2'),end:'2026-10-10T13:00Z'}];assert.ok(C.analyze(d).alerts.some(a=>a.kind==='overlap'));d.models[0].coverage_group='TL';assert.ok(!C.analyze(d).alerts.some(a=>a.kind==='overlap'))});
 test('SQL protects tenant and time data and does not expose terminal secrets',()=>{const file=fs.readdirSync(path.join(__dirname,'../supabase/migrations')).find(p=>p.endsWith('_today_workspace.sql'));const sql=fs.readFileSync(path.join(__dirname,'../supabase/migrations',file),'utf8');assert.match(sql,/auth\.uid\(\) is null or not private\.sf_is_manager/);assert.match(sql,/if can_time_ then/);assert.match(sql,/security invoker set search_path=''/);assert.match(sql,/from public,anon/);assert.doesNotMatch(sql,/token_hash|vault_secret_id/);assert.doesNotMatch(sql,/desc limit 100;/);assert.match(sql,/h.status<>'OPEN'.*limit 100/)});
+test('all-site alerts retain explicit locations and site selection scopes every metric',()=>{
+ const d=fixture();d.assignments=[assignment('e1','a'),assignment('w1','b','SD')];
+ d.incidents=[{id:'ie',assignment_id:'e1',employee_id:'a',status:'OPEN',shift:'FD',site_id:'east',start:d.assignments[0].start},{id:'iw',assignment_id:'w1',employee_id:'b',status:'OPEN',shift:'SD',site_id:'west',start:d.assignments[1].start}];
+ const all=C.analyze(d),east=C.analyze(d,{site:'east'}),west=C.analyze(d,{site:'west'});
+ assert.deepEqual(new Set(all.alerts.map(a=>a.site_id)),new Set(['east','west']));
+ assert.ok(east.alerts.every(a=>a.site_id==='east'));assert.ok(west.alerts.every(a=>a.site_id==='west'));
+ assert.ok(east.alerts.some(a=>a.incident==='ie'));assert.ok(!east.alerts.some(a=>a.incident==='iw'));
+ assert.ok(west.alerts.some(a=>a.incident==='iw'));assert.equal(east.summary.companyActions,0);
+ assert.equal(all.summary.actions,east.summary.actions+west.summary.actions);
+ for(const id of ['east','west']){const r=C.analyze(d,{site:id}),s=C.siteOverview(d).sites.find(s=>s.id===id);assert.equal(s.actions,r.summary.actions);assert.equal(s.open,r.summary.open);assert.equal(s.present,r.summary.present);}
+});
+test('shared coverage is labelled company-wide while unassigned bookings remain unassigned',()=>{
+ const d=fixture();d.models=['TLE','TLW'].map((code,i)=>({code,name:code,active:true,default_start:'06:00',default_end:'14:00',coverage_group:'TL',coverage_required:1,optional_weekdays:[1,2,3,4,5,6,7],site_id:i?'west':'east'}));d.global={};
+ for(const id of ['', 'east','west']){const r=C.analyze(d,{site:id});assert.ok(r.alerts.length);assert.ok(r.alerts.every(a=>a.scope==='company'));assert.equal(r.summary.companyActions,r.summary.actions);}
+ d.qr=[{...booking('unassigned'),site_id:null,start:'2026-10-08T04:00Z'}];
+ const r=C.analyze(d,{site:'unassigned'}),warning=r.alerts.find(a=>a.kind==='stale');assert.ok(warning);assert.equal(warning.scope,'site');assert.equal(warning.site_id,null);assert.equal(r.summary.companyActions,0);
+});

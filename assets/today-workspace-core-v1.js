@@ -69,7 +69,7 @@
    return{...c,start:cs,end:ce,running,drafts,present};
   });
   const todayCells=cells.filter(c=>c.date===date||c.running),alerts=[];
-  const add=(kind,priority,title,detail,ref={})=>alerts.push({kind,priority,title,detail,...ref});
+  const add=(kind,priority,title,detail,ref={})=>alerts.push({kind,priority,title,detail,scope:'site',site_id:null,...ref});
   for(const r of rows){
    const ref={rowId:r.id,employee_id:r.employee_id,date:r.date,assignment:r.assignment?.id,site_id:r.site_id,shift:r.shift};
    if(['missing','stale','checkout'].includes(r.status))add(r.status,r.status==='missing'?1:2,r.name+' · '+r.label,r.shift||'Freier QR-Dienst',{...ref,action:'time'});
@@ -77,14 +77,14 @@
    if(r.status==='draft')add('draft',3,r.name+' · Dienst noch im Entwurf',r.shift,{...ref,action:'schedule'});
    if(r.assignment?.duplicates.length)add('duplicate',1,r.name+' · Doppelte Zuweisung',r.shift+' wird nur einmal als besetzt gezählt.',{...ref,action:'schedule'});
   }
-  for(const c of todayCells.filter(c=>c.missing))add('coverage',1,c.label+' · '+c.missing+' Positionen offen','Veröffentlicht '+c.filled+' / Bedarf '+c.required+(c.drafts?' · '+c.drafts+' Entwürfe':''),{date:c.date,shift:c.code,site_id:c.site_id,action:'schedule'});
+  for(const c of todayCells.filter(c=>c.missing))add('coverage',1,c.label+' · '+c.missing+' Positionen offen','Veröffentlicht '+c.filled+' / Bedarf '+c.required+(c.drafts?' · '+c.drafts+' Entwürfe':''),{date:c.date,shift:c.code,site_id:c.site_id,scope:c.shared?'company':'site',action:'schedule'});
   for(const id of unique(rows.map(r=>r.employee_id))){const own=rows.filter(r=>r.employee_id===id),duties=own.filter(r=>r.planned);let conflict=false;
    for(let i=0;i<duties.length;i++)for(let j=i+1;j<duties.length;j++){const a=duties[i],b=duties[j],ga=models.get(a.shift)?.coverage_group,gb=models.get(b.shift)?.coverage_group;if(overlaps(ms(a.start),ms(a.end),ms(b.start),ms(b.end))&&!(ga&&ga===gb))conflict=true;}
-   if(conflict)add('overlap',0,name(people.get(id))+' · Dienste überschneiden sich','Zeitliche Doppelbelegung prüfen.',{rowId:own[0].id,date,action:'schedule',employee_id:id});
-   if(reliable){const minutes=union(allBookings.filter(b=>b.employee_id===id).map(b=>[Math.max(ms(b.start),start),Math.min(b.end?ms(b.end):now,now,end)]));if(minutes>600)add('duration',2,name(people.get(id))+' · Lange Anwesenheit',Math.round(minutes/60*10)/10+' Std. seit Tagesbeginn · Pausen bleiben bezahlt; Arbeitszeit prüfen.',{rowId:own[0].id,date,action:'time',employee_id:id});}
+   if(conflict)add('overlap',0,name(people.get(id))+' · Dienste überschneiden sich','Zeitliche Doppelbelegung prüfen.',{rowId:own[0].id,date,action:'schedule',employee_id:id,site_id:own[0].site_id});
+   if(reliable){const minutes=union(allBookings.filter(b=>b.employee_id===id).map(b=>[Math.max(ms(b.start),start),Math.min(b.end?ms(b.end):now,now,end)]));if(minutes>600)add('duration',2,name(people.get(id))+' · Lange Anwesenheit',Math.round(minutes/60*10)/10+' Std. seit Tagesbeginn · Pausen bleiben bezahlt; Arbeitszeit prüfen.',{rowId:own[0].id,date,action:'time',employee_id:id,site_id:own[0].site_id});}
   }
   for(const i of data.incidents||[]){const a=assignments.find(a=>a.id===i.assignment_id);if(i.status!=='OPEN'||!eligible({site_id:a?.site_id||i.site_id,shift:a?.shift||i.shift}))continue;
-   add('incident',0,'Offener Störfall · '+(i.shift||a?.shift||'Dienst'),name(people.get(i.employee_id))+(i.pending_count?' · '+i.pending_count+' offene Ersatzanfragen':''),{incident:i.id,assignment:i.assignment_id,date:a?.date||localDate(ms(i.start),tz),action:'incident'});
+   add('incident',0,'Offener Störfall · '+(i.shift||a?.shift||'Dienst'),name(people.get(i.employee_id))+(i.pending_count?' · '+i.pending_count+' offene Ersatzanfragen':''),{incident:i.id,assignment:i.assignment_id,date:a?.date||localDate(ms(i.start),tz),site_id:a?.site_id||i.site_id||null,action:'incident'});
   }
   alerts.sort((a,b)=>a.priority-b.priority||collator.compare(a.title,b.title));
   const transitions=[];
@@ -93,7 +93,7 @@
   transitions.sort((a,b)=>a.at-b.at||collator.compare(a.row?.name||a.cell?.label,b.row?.name||b.cell?.label));
   const summary={planned:unique(rows.filter(r=>r.planned).map(r=>r.employee_id)).length,present:reliable?unique(rows.filter(r=>r.present).map(r=>r.employee_id)).length:null,
    paused:reliable?unique(rows.filter(r=>r.onBreak).map(r=>r.employee_id)).length:null,finished:reliable?unique(rows.filter(r=>r.status==='finished'&&!rows.some(x=>x.employee_id===r.employee_id&&x.present)).map(r=>r.employee_id)).length:null,
-   missing:reliable?unique(rows.filter(r=>r.status==='missing').map(r=>r.employee_id)).length:null,open:todayCells.reduce((n,c)=>n+c.missing,0),actions:alerts.length,drafts:rows.filter(r=>r.status==='draft').length};
+   missing:reliable?unique(rows.filter(r=>r.status==='missing').map(r=>r.employee_id)).length:null,open:todayCells.reduce((n,c)=>n+c.missing,0),actions:alerts.length,companyActions:alerts.filter(a=>a.scope==='company').length,drafts:rows.filter(r=>r.status==='draft').length};
   return{date,now,tz,rows,allRows,coverage:todayCells,alerts,transitions,summary,reliable};
  }
  function siteOverview(data,filters={},options={}){

@@ -45,6 +45,51 @@
   let overviewContext = '';
   let globe = null;
   let siteOrbit = null;
+  let statusSelection = 'coverage';
+  function selectStatus(key) {
+    if (!['present', 'coverage', 'actions'].includes(key)) return;
+    statusSelection = key;
+    syncStatusHub();
+  }
+  function syncStatusHub() {
+    const root = shell?.querySelector('#sfTodayWorkspace'), hero = root?.querySelector('.sf-orbit-hero');
+    if (!hero) return;
+    const r = window.SFToday?.getResult?.(), detail = hero.querySelector('.sf-orbit-status-detail');
+    const title = hero.querySelector('.sf-orbit-status-title'), description = hero.querySelector('.sf-orbit-status-description'), action = hero.querySelector('[data-orbit-status-open]');
+    detail.hidden = !r;
+    if (!r) {
+      if (title.textContent) title.textContent = '';
+      if (description.textContent) description.textContent = '';
+      action.disabled = true;
+      const control = root.querySelector('#sfTodaySite');
+      if (control) {
+        control.disabled = true;
+        if (control.options.length !== 1 || control.options[0].textContent !== 'Standortdaten nicht verfügbar') control.replaceChildren(new Option('Standortdaten nicht verfügbar', ''));
+      }
+      return;
+    }
+    const control = root.querySelector('#sfTodaySite'), shift = root.querySelector('#sfTodayShift');
+    if (control) control.disabled = false;
+    const scope = control?.selectedOptions[0]?.textContent || 'Alle Standorte';
+    const summary = r.summary, values = {
+      present: [summary.present == null ? 'Anwesenheit derzeit unbekannt' : summary.present + ' Personen jetzt im Dienst', summary.paused == null ? 'Aktuelle Anwesenheitsdaten sind nicht verfügbar.' : summary.paused + ' davon in Pause · laufende Buchungen einschließlich freier QR-Dienste.', 'Anwesenheit ansehen'],
+      coverage: [summary.open + ' offene Planpositionen', 'Veröffentlichte Besetzung gegen Pflichtbedarf · gemeinsame Besetzungen werden standortübergreifend berücksichtigt.', 'Offene Positionen prüfen'],
+      actions: [summary.actions + ' Hinweise mit Handlungsbedarf', summary.companyActions ? summary.companyActions + ' davon unternehmensweit · gemeinsame Besetzung separat gekennzeichnet.' : 'Hinweise für die gewählte Standortauswahl · dringende zuerst.', 'Hinweise ansehen']
+    };
+    const value = values[statusSelection];
+    hero.dataset.orbitStatus = statusSelection;
+    hero.querySelectorAll('.sf-orbit-overview-metrics [data-td-kpi]').forEach(button => {
+      const selected = button.dataset.tdKpi === statusSelection;
+      if (button.getAttribute('aria-pressed') !== String(selected)) button.setAttribute('aria-pressed', String(selected));
+      button.setAttribute('aria-controls', 'sfOrbitStatusDetail');
+    });
+    const text = value[0] + ' · ' + scope;
+    if (title.textContent !== text) title.textContent = text;
+    const note = value[1] + (shift?.value ? ' Schichtfilter: ' + shift.selectedOptions[0].textContent + '.' : '');
+    if (description.textContent !== note) description.textContent = note;
+    if (action.textContent !== value[2]) action.textContent = value[2];
+    action.disabled = statusSelection === 'present' && !r.reliable;
+  }
   function createSiteOrbit(art) {
     const host = document.createElement('div'); host.className = 'sf-orbit-sites'; host.setAttribute('role', 'group'); host.setAttribute('aria-label', 'Standorte · Tagesstatus');
     const pins = document.createElement('div'); pins.className = 'sf-orbit-site-pins';
@@ -261,7 +306,7 @@
     const root = shell?.querySelector('#sfTodayWorkspace');
     if (!root) return;
     const B = backend(), next = [B.companyId || '', B.user?.id || '', B.role || ''].join('|');
-    if (next !== overviewContext) { overviewContext = next; overviewExpanded.clear(); siteOrbit?.reset(); }
+    if (next !== overviewContext) { overviewContext = next; overviewExpanded.clear(); siteOrbit?.reset(); statusSelection = 'coverage'; }
     root.dataset.orbitOverviewActive = String(activeView() === 'overview' && !document.hidden && ready());
     let hero = root.querySelector('.sf-orbit-hero');
     if (!hero) {
@@ -272,15 +317,26 @@
       art.innerHTML = '<svg viewBox="0 0 420 420" fill="none"><defs><linearGradient id="sfOrbitArc" x1="0" y1="0" x2="420" y2="420" gradientUnits="userSpaceOnUse"><stop stop-color="currentColor" stop-opacity=".08"/><stop offset=".45" stop-color="currentColor"/><stop offset="1" stop-color="currentColor" stop-opacity=".1"/></linearGradient></defs><circle cx="210" cy="210" r="190" stroke="currentColor" opacity=".1" stroke-dasharray="1 10"/><g class="sf-orbit-orbit-track"><ellipse cx="210" cy="210" rx="192" ry="166" transform="rotate(-32 210 210)" stroke="url(#sfOrbitArc)" stroke-width="1"/><circle cx="48" cy="311" r="3" fill="currentColor"/><circle cx="371" cy="109" r="2" fill="currentColor"/></g></svg>';
       const metrics = document.createElement('div'); metrics.className = 'sf-orbit-overview-metrics'; metrics.setAttribute('aria-label', 'Zentrale Tageskennzahlen');
       const content = document.createElement('div'); content.className = 'sf-orbit-hero-content'; content.append(head, metrics);
-      hero.append(content, art);
+      const scope = document.createElement('div'); scope.className = 'sf-orbit-status-scope';
+      const hub = document.createElement('div'); hub.className = 'sf-orbit-status-hub'; hub.append(art, metrics);
+      const floor = document.createElement('div'); floor.className = 'sf-orbit-status-floor'; floor.setAttribute('aria-hidden', 'true'); hub.append(floor);
+      const detail = document.createElement('div'); detail.id = 'sfOrbitStatusDetail'; detail.className = 'sf-orbit-status-detail'; detail.hidden = true;
+      const copy = document.createElement('div'); copy.setAttribute('aria-live', 'polite');
+      const heading = document.createElement('h2'); heading.className = 'sf-orbit-status-title';
+      const description = document.createElement('p'); description.className = 'sf-orbit-status-description'; copy.append(heading, description);
+      const action = document.createElement('button'); action.type = 'button'; action.dataset.orbitStatusOpen = '';
+      action.addEventListener('click', () => window.SFToday?.openMetric?.(statusSelection)); detail.append(copy, action);
+      hero.append(content, scope, hub, detail);
       globe = createGlobe(art);
       art.querySelector('svg').setAttribute('aria-hidden', 'true');
       siteOrbit = createSiteOrbit(art);
     }
+    const siteLabel = root.querySelector('#sfTodaySite')?.closest('label'), scope = hero.querySelector('.sf-orbit-status-scope');
+    if (siteLabel && siteLabel.parentElement !== scope) scope.append(siteLabel);
     globe?.sync();
     siteOrbit?.sync();
     const metrics = hero.querySelector('.sf-orbit-overview-metrics');
-    if (!window.SFToday?.getResult?.()) { if (metrics.childElementCount) metrics.replaceChildren(); return; }
+    if (!window.SFToday?.getResult?.()) { if (metrics.childElementCount) metrics.replaceChildren(); syncStatusHub(); return; }
     const view = root.closest('#view-overview');
     const legacy = view.querySelector('#sfLegacyReviewCard'), legacyCount = legacy?.querySelector('.badge')?.textContent.trim() || '0';
     const legacyDetail = overviewDetail(legacy, 'legacy', 'Altbestand prüfen · ' + legacyCount);
@@ -316,6 +372,7 @@
     const coverage = overviewDetail(root.querySelector('#sfTodayCoverage'), 'coverage', 'Besetzung je Schicht');
     if (coverage && metrics.querySelector('[data-td-kpi="coverage"][aria-pressed="true"]')) coverage.open = true;
     overviewDetail(root.querySelector('.sf-td-shortcuts')?.closest('.sf-td-panel'), 'shortcuts', 'Weitere Aktionen');
+    syncStatusHub();
   }
 
   function stopMotion() {
@@ -504,6 +561,6 @@
     new MutationObserver(scheduleRefresh).observe(shell, { attributes: true, attributeFilter: ['style', 'aria-busy'] });
     window.addEventListener('schichtfunk:themechange', () => { stopMotion(); globe?.sync(); });
   }
-  window.SFOrbit = { setMotion, motion: () => motion, effectiveMotion, refresh: scheduleRefresh, refreshOverview, rememberOverview, close };
+  window.SFOrbit = { setMotion, motion: () => motion, effectiveMotion, refresh: scheduleRefresh, refreshOverview, rememberOverview, selectStatus, close };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true }); else init();
 })();

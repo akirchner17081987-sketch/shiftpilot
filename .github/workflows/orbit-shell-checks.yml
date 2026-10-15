@@ -1,7 +1,7 @@
 name: Orbit shell and navigation
 on:
   push:
-    branches: [codex/orbit-redesign-20261013]
+    branches: [codex/orbit-redesign-20261013, codex/statusglobus-standorte]
   pull_request:
     paths: [index.html, 'assets/orbit-shell-*', assets/settings-management-v2.js, assets/help-center-content-v3.js, tests/browser/site-loading-qa.cjs, .github/workflows/orbit-shell-checks.yml]
 permissions:

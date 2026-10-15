@@ -95,11 +95,22 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
    await page.locator('[data-td-kpi="planned"]').click();
    assert.equal(await page.locator('#sfTodayPeopleFilter').inputValue(),'planned','existing secondary KPI keeps its real filter handler');
    await page.locator('.sf-orbit-overview-metrics [data-td-kpi="coverage"]').click();
-   assert.equal(await page.locator('details[data-orbit-detail="coverage"]').evaluate(n=>n.open),true,'coverage KPI reveals the corresponding detail before scrolling');
+   assert.match(await page.locator('.sf-orbit-status-title').innerText(),/offene Planpositionen/);
+   await page.locator('[data-orbit-status-open]').click();
+   assert.equal(await page.locator('details[data-orbit-detail="coverage"]').evaluate(n=>n.open),true,'status action opens the corresponding detail before scrolling');
    await page.locator('details[data-orbit-detail="filters"]>summary').click();
    await page.locator('#sfTodaySite').selectOption('east');
    assert.equal(await page.locator('details[data-orbit-detail="filters"]>summary').innerText(),'Filter · Leipzig · Alle Schichten','active filter stays visible in the collapsed summary');
    assert.equal(await page.evaluate(()=>{const s=SFToday.getResult().summary;return [...document.querySelectorAll('.sf-orbit-overview-metrics strong')].map(n=>n.textContent).join('|')===[s.present??'–',s.open,s.actions].join('|');}),true,'hero uses actual scoped daily values');
+   assert.equal(await page.locator('.sf-orbit-status-scope #sfTodaySite').isVisible(),true,'standort selection is visible above the globe');
+   await page.locator('.sf-orbit-overview-metrics [data-td-kpi="actions"]').click();
+   assert.match(await page.locator('.sf-orbit-status-title').innerText(),/Hinweise.*Leipzig/);
+   await page.locator('[data-orbit-status-open]').click();
+   assert.match(await page.locator('#sfTodayActions .sf-td-section-head p').innerText(),/Leipzig/);
+   for(const label of await page.locator('.sf-td-alert-scope').allTextContents())assert.ok(label==='Leipzig'||label.startsWith('Unternehmensweit'),'every visible alert belongs to the selected location or shared coverage');
+   await page.locator('#sfTodaySite').selectOption('west');
+   assert.match(await page.locator('.sf-orbit-status-title').innerText(),/Recklinghausen/);
+   assert.equal(await page.locator('.sf-orbit-overview-metrics [data-td-kpi="present"] strong').innerText(),'0');
    await page.locator('[data-td-action="reset"]').click();
    await page.locator('details[data-orbit-detail="filters"]>summary').click();
    for(const key of ['figures','coverage']){const d=page.locator('details[data-orbit-detail="'+key+'"]');if(await d.evaluate(n=>n.open))await d.locator('summary').click();}
@@ -131,13 +142,13 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
      assert.equal(await overviewButton.isVisible(),true);assert.equal(await overviewButton.getAttribute('aria-current'),'true');
      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),true,'Orbit overview fits '+width);
      const emblem=await page.locator('.sf-orbit-emblem').boundingBox();assert.ok(emblem.x>=0&&emblem.x+emblem.width<=width+1,'graphic fits the viewport');
-     if(width>=1440){assert.ok(emblem.width>=500,'Earth fills the desktop header');const copy=await page.locator('.sf-orbit-hero-content').boundingBox();assert.ok(Math.abs((copy.y+copy.height/2)-(emblem.y+emblem.height/2))<24,'heading and metrics form one centered group beside Earth');const heading=await page.locator('.sf-orbit-hero-copy h1').boundingBox(),metrics=await page.locator('.sf-orbit-overview-metrics').boundingBox();assert.ok(Math.abs(heading.x-metrics.x)<2,'heading and key figures share the same left edge');}
+     if(width>=1440){assert.ok(emblem.width>=500,'Earth remains the desktop focal point');const hub=await page.locator('.sf-orbit-status-hub').boundingBox();assert.ok(Math.abs((hub.x+hub.width/2)-(emblem.x+emblem.width/2))<2,'Earth is centered within the status hub');for(const key of ['present','coverage','actions']){const node=await page.locator('.sf-orbit-overview-metrics [data-td-kpi="'+key+'"]').boundingBox();assert.ok(node.x+node.width<=emblem.x+12||node.x>=emblem.x+emblem.width-12,'status cards surround the globe without covering it');}}
      if(width===390)assert.ok(emblem.width>=240,'Earth is larger on mobile while fitting the header');
      for(const key of ['present','coverage','actions'])assert.equal(await page.locator('.sf-orbit-overview-metrics [data-td-kpi="'+key+'"]').isVisible(),true);
      assert.equal(await assistant.isVisible(),true,'planning assistant remains available in the header at '+width);
      await page.screenshot({path:path.join(out,'orbit-overview-'+theme+'-'+width+'.png'),animations:'disabled'});
      await sitePin('east').click();assert.equal(await page.locator('#sfTodaySite').inputValue(),'east','site tap works at '+width);
-     const tooltip=await page.locator('#sfOrbitSiteInfo').boundingBox();assert.ok(tooltip.x>=0&&tooltip.x+tooltip.width<=width+1,'site info fits '+width);
+     await page.locator('#sfOrbitSiteInfo').scrollIntoViewIfNeeded();const tooltip=await page.locator('#sfOrbitSiteInfo').boundingBox();assert.ok(tooltip.x>=0&&tooltip.x+tooltip.width<=width+1,'site info fits '+width);
      assert.ok(tooltip.y>=0&&tooltip.y+tooltip.height<=dockRect.y+1,'location details stay above fixed navigation');
      await page.screenshot({path:path.join(out,'orbit-site-info-'+theme+'-'+width+'.png'),animations:'disabled'});
      await page.getByRole('button',{name:'Standortfilter zurücksetzen',exact:true}).click();await page.evaluate(()=>document.activeElement?.blur?.());
