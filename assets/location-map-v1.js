@@ -103,7 +103,10 @@ function paintMap(){
   if(popup.hidden)return;const site=sites.find(s=>s.id===opened);if(!site)return;
   const bounds=scene.getBoundingClientRect(),anchor=site.button.getBoundingClientRect(),popupWidth=bounds.width<=520?Math.min(244,bounds.width-84):244;popup.style.width=Math.max(180,popupWidth)+'px';
   const size=popup.getBoundingClientRect(),preferred=site.side==='left'?anchor.right-bounds.left+10:anchor.left-bounds.left-size.width-10;
-  popup.style.left=Math.max(12,Math.min(bounds.width-size.width-12,preferred))+'px';popup.style.top=Math.max(56,Math.min(bounds.height-size.height-12,anchor.top-bounds.top-4))+'px';
+  const dockTop=document.getElementById('sfOrbitDock')?.getBoundingClientRect().top||window.innerHeight;
+  const headerBottom=document.querySelector('#appShell>.topbar')?.getBoundingClientRect().bottom||0;
+  const minTop=Math.max(12,headerBottom+8-bounds.top),maxTop=Math.min(bounds.height-size.height-12,dockTop-12-bounds.top-size.height,window.innerHeight-12-bounds.top-size.height);
+  popup.style.left=Math.max(12,Math.min(bounds.width-size.width-12,preferred))+'px';popup.style.top=Math.max(minTop,Math.min(maxTop,anchor.top-bounds.top-4))+'px';
  }
  function renderPopup(){
   const site=sites.find(s=>s.id===opened);popup.hidden=!site;buttons.forEach((button,id)=>button.setAttribute('aria-expanded',String(id===opened)));
