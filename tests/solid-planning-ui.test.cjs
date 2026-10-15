@@ -49,3 +49,41 @@ test('fixed OT crew is prepared as three shared daily positions and reaches 210 
  for(const date of c.autoPlanningDates().filter(d=>c.SFSolidPlanningCore.weekday(d)<=5))for(let n=0;n<3;n++){c.assignments.push({id:date+'o3'+n,employeeId:'night'+n,date:c.SFSolidPlanningCore.plus(date,-1),type:'O3',start:'22:00',end:'08:00',_dbStatus:'PUBLISHED',publishedAt:'2026-10-01'});c.assignments.push({id:date+'o1'+n,employeeId:'early'+n,date,type:'O1',start:'18:00',end:'04:00',_dbStatus:'PUBLISHED',publishedAt:'2026-10-01'});}
  await c.SFMonthOptimizer.optimize();assert.ok(c.SFMonthOptimizer.getResult(),c.toast?.copy);const preview=run('autoPlanPreview');for(const e of c.employees)assert.equal(preview.filter(a=>a.employeeId===e.id).length,21);assert.ok(preview.every(a=>a.type==='OT2'));assert.equal(c.SFMonthOptimizer.getResult().criticalOpen,0);assert.equal(preview.length,63);
 });
+
+function recoveryFixture(){
+ const h=harness(),{c,el}=h;el('autoPlanMonthCount').value='1';c.document.querySelector=()=>null;
+ c.employees=[{id:'a',_dbId:'db-a',personnelNo:'2037',first:'Test',last:'Person',status:'active',shifts:['O2','O3'],employment:'Vollzeit',monthlyHours:180,weeklyHours:40,maxWeeklyHours:55,maxConsecutiveShifts:4,rhythmMode:'required',rhythmStart:'2027-01-21',rhythmPattern:'ALLE,ALLE,ALLE,ALLE,FREI,FREI,FREI,ALLE,ALLE,ALLE,FREI,FREI'}];
+ c.TYPES=[{id:'O2',start:'20:00',end:'06:00'},{id:'O3',start:'22:00',end:'08:00'}];c.globalSoll={O2:1,O3:0};
+ c.getSoll=(d,t)=>Number(t==='O2'&&d>='2027-01-28'&&d<='2027-01-30');
+ Object.assign(c.SFCompliance.policy.solidPlanningRules,{confirmedRulesVersion:2,maxConsecutiveNightShifts:4,minFreeCalendarDays:2,minNightRecoveryCalendarDays:2,threeNightBlockRecoveryFullCalendarDays:1,maxCalendarWeekHours:55,monthlyMaxHours:190,tenHourMaxShifts:18});
+ c.assignments=[...['21','22','23','24'].map(n=>({date:'2027-01-'+n,type:'O3'})),{date:'2027-02-02',type:'O2'},{date:'2027-02-03',type:'O3'},{date:'2027-02-04',type:'O3'}].map((a,i)=>({...a,id:'base-'+i,employeeId:'a',start:c.typeById(a.type).start,end:c.typeById(a.type).end,_dbStatus:'PUBLISHED',publishedAt:'2026-10-01'}));
+ vm.runInContext(read('assets/employee-rhythm-v1.js'),c);
+ return h;
+}
+test('candidate collection retains the complete three-night block despite the last night failing alone',async()=>{
+ const {c,run,el}=recoveryFixture(),before=JSON.stringify(c.assignments);
+ assert.equal(c.SFAutoPlanGuard.passesTimeRules('a','O2','2027-01-30'),false);
+ const input=c.SFMonthOptimizer.solidBuild(c.assignments,'2027-01',[]),group=input.groups.find(g=>g.id==='a|2027-01-28');
+ assert.ok(group?.options.some(o=>o.length===3&&o.every(a=>a.type==='O2')));
+ assert.equal(c.SFAutoPlanGuard.passesTimeRules('a','O2','2027-01-30'),false,'candidate mode never leaks into final/manual checks');
+ await c.SFMonthOptimizer.optimize();assert.ok(c.SFMonthOptimizer.getResult(),c.toast?.copy);
+ assert.deepEqual(Array.from(run('autoPlanPreview'),a=>a.date),['2027-01-28','2027-01-29','2027-01-30']);
+ assert.equal(JSON.stringify(c.assignments),before);
+ assert.match(el('autoMonthHours').innerHTML,/vollständigen Arbeitsblock/);
+ const B=require('../assets/background-auto-plan-core-v1.js'),packed=B.pack(input),payload={version:1,months:['2027-01'],minimumInput:{...packed,groups:[],reserved:[],criticalCapacities:[]},monthInputs:[packed],metadata:{}};
+ let cp=B.start(payload);for(let i=0;i<5000&&cp.stage!=='done';i++){const runner=B.context(payload,cp);for(let n=0;n<20&&cp.stage!=='done';n++)if(!runner.step())break;cp=JSON.parse(JSON.stringify(cp));}
+ assert.equal(cp.stage,'done');const planned=B.result(payload,cp).preview;assert.equal(planned.length,3);
+ assert.equal(c.SFSolidPlanningCore.errors(c.employees[0],[...c.assignments,...planned],c.SFCompliance.policy.solidPlanningRules,planned.map(a=>a.date)).length,0);
+});
+test('deferring candidate recovery never permits a complete block with insufficient rest',()=>{
+ const {c}=recoveryFixture();c.assignments.find(a=>a.date==='2027-02-02').date='2027-02-01';
+ const input=c.SFMonthOptimizer.solidBuild(c.assignments,'2027-01',[]);assert.equal(input.groups.some(g=>g.options.length),false);
+});
+test('candidate mode keeps immediate rest checks and restores normal recovery checks after an exception',()=>{
+ const {c}=recoveryFixture();
+ assert.throws(()=>c.SFAutoPlanGuard.withBlockCandidates(()=>{throw Error('test failure')}),/test failure/);
+ assert.equal(c.SFAutoPlanGuard.passesTimeRules('a','O2','2027-01-30'),false);
+ c.assignments.push({id:'near',employeeId:'a',date:'2027-01-27',type:'O3',start:'22:00',end:'08:00'});
+ assert.equal(c.SFAutoPlanGuard.withBlockCandidates(()=>c.SFAutoPlanGuard.passesTimeRules('a','O2','2027-01-28')),false,'O3 to earlier night remains blocked');
+ assert.equal(c.SFAutoPlanGuard.withBlockCandidates(()=>c.SFAutoPlanGuard.passesTimeRules('a','O2','2027-01-27')),false,'overlap remains blocked');
+});

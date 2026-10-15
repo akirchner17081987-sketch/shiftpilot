@@ -3,6 +3,10 @@
   const HOUR=60*60*1000;
   const MIN_REST_HOURS=11;
   const MAX_SHIFT_HOURS=10;
+  let blockCandidateDepth=0;
+  // Recovery depends on the complete night block. Only synchronous candidate
+  // collection may defer it; the solver and confirmation check complete rows.
+  function withBlockCandidates(collect){blockCandidateDepth++;try{return collect()}finally{blockCandidateDepth--}}
   const nextDay=date=>{const d=new Date(date+'T12:00:00');d.setDate(d.getDate()+1);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
   const earlyNight=type=>['O1','O2','TL','TL-LE','TL-RE','TEAMLEITER'].includes(String(type).toUpperCase());
   const allowsTransition=(from,to)=>!(String(from).toUpperCase()==='O3'&&earlyNight(to));
@@ -39,7 +43,7 @@
       if(count>maximum)return false;
     }
 
-    const confirmedRules=window.SFCompliance?.policy?.solidPlanningRules;if(employee&&window.SFSolidPlanningCore?.confirmed(confirmedRules)){const rows=[...existing,{employeeId,date,type,start:t.start,end:t.end}].map(a=>{const model=typeById(a.type);return{...a,start:a.start||model?.start,end:a.end||model?.end}});if(window.SFSolidPlanningCore.errors(employee,rows,confirmedRules,[date]).length)return false;}
+    const confirmedRules=window.SFCompliance?.policy?.solidPlanningRules;if(!blockCandidateDepth&&employee&&window.SFSolidPlanningCore?.confirmed(confirmedRules)){const rows=[...existing,{employeeId,date,type,start:t.start,end:t.end}].map(a=>{const model=typeById(a.type);return{...a,start:a.start||model?.start,end:a.end||model?.end}});if(window.SFSolidPlanningCore.errors(employee,rows,confirmedRules,[date]).length)return false;}
     for(const a of existing){
       if(nextDay(a.date)===date&&!allowsTransition(a.type,type)||nextDay(date)===a.date&&!allowsTransition(type,a.type))return false;
       const other=intervalForAssignment(a);
@@ -85,5 +89,5 @@
     };
   }
 
-  window.SFAutoPlanGuard={passesTimeRules,allowsTransition,passesShiftTransitions};
+  window.SFAutoPlanGuard={passesTimeRules,allowsTransition,passesShiftTransitions,withBlockCandidates};
 })();

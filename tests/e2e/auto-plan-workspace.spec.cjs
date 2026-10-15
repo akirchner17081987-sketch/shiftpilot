@@ -66,6 +66,19 @@ test('preview editor validates a three-night range as a whole before adding and 
  expect(await page.evaluate(()=>autoPlanPreview.length)).toBe(3);await expect(page.locator('#applyAutoPlanBtn')).toBeEnabled();
  await page.locator('#applyAutoPlanBtn').click();await page.getByRole('button',{name:'Als Entwurf übernehmen',exact:true}).click();expect(await page.evaluate(()=>assignments.length)).toBe(4);
 });
+test('automatic planning finds the complete three-night block and applies it with boundary recovery',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));await fixture(page);
+ await page.locator('#autoPlanMonth').fill('2027-01');await page.locator('#autoPlanMonth').dispatchEvent('change');
+ await page.evaluate(()=>{
+  employees=[{id:'e',first:'Block',last:'Nacht',status:'active',employment:'Vollzeit',shifts:['O2'],weeklyHours:40,maxWeeklyHours:55,monthlyHours:180,rhythmMode:'required',rhythmStart:'2027-01-28',rhythmPattern:'ALLE,ALLE,ALLE,FREI,FREI'}];
+  TYPES=[{id:'O2',name:'O2',start:'20:00',end:'06:00'}];getSoll=date=>Number(date>='2027-01-28'&&date<='2027-01-30');plannedAssignmentHours=()=>10;plannedMonthlyHoursForEmployee=(id,date,sim=[])=>[...assignments,...sim].filter(a=>a.employeeId===id&&a.date.startsWith(date.slice(0,7))).length*10;
+  assignments=[{id:'next',employeeId:'e',date:'2027-02-02',type:'O2',start:'20:00',end:'06:00'}];SFCompliance={policy:{solidPlanningRules:{enabled:true,confirmedRulesVersion:2,timezone:'Europe/Berlin',maxConsecutiveShifts:4,maxConsecutiveNightShifts:4,minFreeCalendarDays:2,minNightRecoveryCalendarDays:2,minBlockRestHours:48,maxCalendarWeekHours:55,threeNightBlockRecoveryFullCalendarDays:1}}};renderAutoPlanning();
+ });
+ expect(await page.evaluate(()=>SFAutoPlanGuard.passesTimeRules('e','O2','2027-01-30'))).toBe(false);
+ await generatePreview(page);expect(await page.evaluate(()=>autoPlanPreview.map(a=>a.date))).toEqual(['2027-01-28','2027-01-29','2027-01-30']);
+ expect(await page.evaluate(()=>assignments.length)).toBe(1);await expect(page.locator('#autoMonthHours')).toContainText('vollständigen Arbeitsblock');
+ await page.locator('#applyAutoPlanBtn').click();await page.getByRole('button',{name:'Als Entwurf übernehmen',exact:true}).click();expect(await page.evaluate(()=>assignments.length)).toBe(4);expect(errors).toEqual([]);
+});
 test('preview editor recalculates mandatory vacancies after removing and refilling a duty',async({page})=>{
  await fixture(page);await page.evaluate(()=>{employees=[{id:'leader',first:'Leitung',last:'Test',role:'Teamleiter',status:'active',employment:'Vollzeit',shifts:['TL-LE'],weeklyHours:40,maxWeeklyHours:55,monthlyHours:180}];TYPES=[{id:'TL-LE',name:'TL-LE',start:'20:00',end:'06:00'}];SFCompliance={policy:{solidPlanningRules:{enabled:true,confirmedRulesVersion:2,timezone:'Europe/Berlin',maxConsecutiveNightShifts:4,minNightRecoveryCalendarDays:2,maxCalendarWeekHours:55,criticalShifts:[{code:'TL-LE',minimum:1,weekdays:[1]}]}}};getSoll=date=>Number(new Date(date+'T12:00:00').getDay()===1);plannedAssignmentHours=()=>10;plannedMonthlyHoursForEmployee=(id,date,sim=[])=>[...assignments,...sim].filter(a=>a.employeeId===id&&a.date.startsWith(date.slice(0,7))).length*10;});
  await generatePreview(page);await previewEditor(page);expect(await page.evaluate(()=>SFMonthOptimizer.getResult().criticalOpen)).toBe(0);

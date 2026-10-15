@@ -89,7 +89,7 @@
   }return out;
  }
  function canAdd(e,byDay,option,p){if(!policy(p))return true;const values=new Map();for(const a of option){for(let n=-8;n<=8;n++){const b=byDay.get(a.day+n);if(b)values.set(b.date,b)}}for(const a of option)values.set(a.date,a);return !errors(e,[...values.values()],p,option.map(a=>a.date)).length}
- function workRestOptions(e,date,choices,dates,base=[],excluded=()=>false){
+ function workRestOptions(e,date,choices,dates,base=[],excluded=()=>false,accept=()=>true){
   const meta=k=>String((e.qualifications||[]).find(q=>String(q).startsWith('__sp:'+k+'='))||'').split('=').slice(1).join('=');
   const mode=e.rhythmMode||meta('rhythmMode'),pattern=String(e.rhythmPattern||meta('rhythmPattern')).split(/[,;\n]/).map(v=>v.trim().toUpperCase()).filter(Boolean),anchor=e.rhythmStart||meta('rhythmStart');
   if(mode!=='required'||(e.planningTeam||meta('planningTeam'))||!pattern.includes('FREI')||!pattern.includes('ALLE')||pattern.some(v=>!['ALLE','FREI'].includes(v))||!/^\d{4}-\d{2}-\d{2}$/.test(anchor))return null;
@@ -98,7 +98,7 @@
   const selected=new Set(dates),wanted=Array.from({length:before+after+1},(_,i)=>plus(date,i-before)).filter(d=>selected.has(d)&&!excluded(d)&&!base.some(a=>active(a)&&String(a.employeeId)===String(e.id)&&a.date===d&&!['OT1','OT2','OT3'].includes(a.type)));
   if(wanted[0]!==date)return {options:[]};
   const lists=wanted.map(d=>(choices.get(d)||[]).filter(a=>!['OT1','OT2','OT3'].includes(a.type))),options=[],seen=new Set();
-  const add=rows=>{if(rows.some(a=>!a))return;const key=rows.map(a=>a.type+'|'+a.resource).join(';');if(!seen.has(key)){seen.add(key);options.push(rows)}};
+  const add=rows=>{if(rows.some(a=>!a))return;const key=rows.map(a=>a.type+'|'+a.resource).join(';');if(!seen.has(key)){seen.add(key);if(accept(rows))options.push(rows)}};
   for(const first of lists[0]||[])add(lists.map(list=>list.find(a=>a.type===first.type)));
   function visit(at,rows){if(options.length>=64)return;if(at===lists.length){add(rows);return}for(const a of lists[at]){const last=rows.at(-1);if(last&&last.type==='O3'&&['O1','O2','TL','TL-LE','TL-RE','TEAMLEITER'].includes(a.type))continue;visit(at+1,[...rows,a]);if(options.length>=64)break}}
   if(lists.length&&lists.every(list=>list.length))visit(0,[]);
