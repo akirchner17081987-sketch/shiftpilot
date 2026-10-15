@@ -14,7 +14,7 @@
  function contextChanged(){const next=key();if(context&&context!==next){history=[];revision=0;}context=next;}
  function range(from,to){const selected=new Set(autoPlanningDates()),dates=[];if(!selected.has(from)||!selected.has(to)||to<from)throw Error('Bitte Tage innerhalb des gewählten Planungszeitraums auswählen.');for(let d=from;d<=to;d=plus(d,1)){if(!selected.has(d)||dates.length===31)throw Error('Bitte höchstens 31 zusammenhängende Planungstage wählen.');dates.push(d);}return dates;}
  function normalize(rows){const before=new Map(rows.map(a=>[a.id,[a.type,a.date,a.start,a.end].join('|')]));withRows(base(),()=>window.SFShiftModels?.normalizeMorningOt?.(rows,base()));for(const a of rows)if(before.get(a.id)!==[a.type,a.date,a.start,a.end].join('|'))for(const k of ['startMs','endMs','hours','day','week'])delete a[k];return rows;}
- function check(rows,changed){
+ function check(rows,changed,staffingDates=changed.flatMap(a=>[a.date,plus(a.date,1)])){
   const all=[...base(),...rows].filter(active),issues=[],C=window.SFCompliance,S=window.SFSolidPlanningCore;
   for(const a of changed){
    const e=employees.find(e=>same(e.id,a.employeeId)),t=typeById(a.type);
@@ -38,7 +38,7 @@
    if(!S?.confirmed(policy())&&$('autoRespectHours')?.checked!==false&&limits.weeklyLimit>0&&withRows(others,()=>autoPlannedHours(e.id,[],a.date))+plannedAssignmentHours(a)>limits.weeklyLimit+.000001)issues.push(prefix+'Persönliches Wochenmaximum überschritten.');
   }
   withRows(all,()=>{
-   for(const date of new Set(changed.flatMap(a=>[a.date,plus(a.date,1)]))){
+   for(const date of new Set(staffingDates)){
     const seen=new Set();
     for(const t of TYPES){const group=window.SFShiftModels?.coverageInfo?.(date,t.id),k=group?.key||t.id;if(seen.has(k))continue;seen.add(k);
      const required=group?group.target:window.SFShiftModels?.requiredSoll?.(date,t.id,getSoll(date,t.id))??getSoll(date,t.id),optional=window.SFShiftModels?.optionalTarget?.(date,t.id)||0;
@@ -52,6 +52,7 @@
  function reviewIssues(){
   if(!autoPlanAnalyzed||autoPlanApplied)return[];
   const rows=[...base(),...autoPlanPreview].filter(active),dates=autoPlanningDates(),selected=new Set(dates),out=[],S=window.SFSolidPlanningCore;
+  if(revision)out.push(...check(autoPlanPreview,[],dates));
   if(prepared()?.solid&&prepared().criticalOpen)out.push('Verbindliche Pflichtbesetzung: noch '+prepared().criticalOpen+' Positionen offen.');
   for(const e of employees.filter(e=>e.status==='active'&&!e.deletedAt)){
    if(revision&&policy()?.enabled)out.push(...(S?.errors(e,rows,policy(),dates)||[]).map(v=>label(e)+': '+v.message));
