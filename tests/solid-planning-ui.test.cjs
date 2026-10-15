@@ -98,3 +98,29 @@ test('candidate mode keeps immediate rest checks and restores normal recovery ch
  assert.equal(c.SFAutoPlanGuard.withBlockCandidates(()=>c.SFAutoPlanGuard.passesTimeRules('a','O2','2027-01-28')),false,'O3 to earlier night remains blocked');
  assert.equal(c.SFAutoPlanGuard.withBlockCandidates(()=>c.SFAutoPlanGuard.passesTimeRules('a','O2','2027-01-27')),false,'overlap remains blocked');
 });
+
+test('apply reports pending save separately from a failed refresh and prevents duplicate RPCs',async()=>{
+ const {c,calls}=harness();await c.SFMonthOptimizer.optimize();const phases=[],finished=[];let save,refresh;
+ c.SFAutoPlanWorkspace.startApply=()=>({phase:n=>phases.push(n),update(){},paint:async()=>{},finish:x=>finished.push(x)});
+ const oldRpc=c.SFBackend.client.rpc;c.SFBackend.client.rpc=async(name,args)=>{if(name==='apply_planning_period'){calls.push({name,args});return new Promise(resolve=>save=resolve)}return oldRpc(name,args)};
+ c.SFBackend.hydrate=()=>new Promise((resolve,reject)=>refresh=reject);
+ const pending=c.applyAutoPlanPreview();while(!save)await new Promise(r=>setTimeout(r,1));
+ assert.equal(c.SFBackend.autoPlanApplying,true);assert.equal(phases.at(-1),1);assert.equal(finished.length,0);await c.applyAutoPlanPreview();assert.equal(calls.filter(x=>x.name==='apply_planning_period').length,1);
+ save({data:{},error:null});while(!refresh)await new Promise(r=>setTimeout(r,1));assert.equal(phases.at(-1),2);assert.equal(finished.length,0);
+ refresh(Error('Test: Ansicht nicht erreichbar'));await pending;assert.equal(finished[0].saved,true);assert.match(finished[0].copy,/gespeichert.*Ansicht/);assert.equal(c.SFBackend.autoPlanApplying,undefined);assert.equal(c.SFMonthOptimizer.getResult(),null);
+});
+test('a rejected apply retains the proposal and presents the server error without success',async()=>{
+ const {c}=harness();await c.SFMonthOptimizer.optimize();let outcome;
+ c.SFAutoPlanWorkspace.startApply=()=>({phase(){},update(){},paint:async()=>{},finish:x=>outcome=x});c.SFBackend.client.rpc=async()=>({error:{message:'Test: Entwurf nicht gespeichert'}});
+ await c.applyAutoPlanPreview();assert.equal(outcome.saved,false);assert.match(outcome.error,/nicht gespeichert/);assert.ok(c.SFMonthOptimizer.getResult());assert.equal(c.SFMonthOptimizer.isBusy(),false);
+});
+test('data changed during yielding validation is rejected before saving',async()=>{
+ const {c,calls}=harness();await c.SFMonthOptimizer.optimize();let paints=0,outcome;
+ c.SFAutoPlanWorkspace.startApply=()=>({phase(){},update(){},paint:async()=>{if(++paints===2)c.employees[0].last='Extern geändert'},finish:x=>outcome=x});
+ await c.applyAutoPlanPreview();assert.equal(calls.filter(x=>x.name==='apply_planning_period').length,0);assert.match(outcome.error,/Daten haben sich geändert/);
+});
+test('a change during the last paint before saving cannot bypass the final data check',async()=>{
+ const {c,calls}=harness();await c.SFMonthOptimizer.optimize();let stage=0,outcome;
+ c.SFAutoPlanWorkspace.startApply=()=>({phase:n=>stage=n,update(){},paint:async()=>{if(stage===1)c.employees[0].last='Zwischenzeitlich geändert'},finish:x=>outcome=x});
+ await c.applyAutoPlanPreview();assert.equal(calls.filter(x=>x.name==='apply_planning_period').length,0);assert.match(outcome.error,/Daten haben sich geändert/);
+});

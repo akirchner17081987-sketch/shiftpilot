@@ -102,7 +102,7 @@ button,input,select,textarea{font:inherit} button{cursor:pointer}
 <link rel="stylesheet" href="assets/employee-core-v1.css">
 <link rel="stylesheet" href="assets/mobile-responsive-v1.css?v=20260917-compact-manager1">
 <link rel="stylesheet" href="assets/mobile-manager-navigation-v1.css?v=20260918-static-brand">
-<link rel="stylesheet" href="assets/auto-plan-period-v1.css?edit=20261015-1&v=20261015-vacancy-picker1&personnel=20261012-1&progress=20261011-1">
+<link rel="stylesheet" href="assets/auto-plan-period-v1.css?edit=20261015-1&v=20261015-apply-feedback1&personnel=20261012-1&progress=20261011-1">
 <link rel="stylesheet" href="assets/secondary-text-readability-v1.css?v=20260906-1">
 <link rel="stylesheet" href="assets/manager-theme-v1.css?v=20261009-account-light1">
 <link rel="stylesheet" href="assets/manual-week-planning-v1.css?v=20261013-inline-picker2">
@@ -562,21 +562,31 @@ function removeAutoSuggestion(i){if(autoPlanApplying)return;const target=autoPla
 function clearAutoPlanPreview(){if(autoPlanApplying)return;autoPlanApplied=0;autoPlanPreview=[];autoPlanUnresolved=[];autoPlanOptionalSkipped=[];autoPlanAnalyzed=false;renderAutoPlanning()}
 async function applyAutoPlanPreview(){
   if(!autoPlanPreview.length||autoPlanApplying)return;
-  const preview=autoPlanPreview.map(x=>({...x})),companyId=window.SFBackend?.companyId;
+  const preview=autoPlanPreview.map(x=>({...x})),B=window.SFBackend,companyId=B?.companyId;
   const published=()=>preview.some(x=>window.SFCompliance?.isWeekPublished?.(x.date));
   if(published()){showSaveToast('Bereits veröffentlichter Zeitraum','Änderungen an freigegebenen Wochen bitte einzeln im Dienstplan prüfen.');return}
-  autoPlanApplying=true;if(window.SFBackend)window.SFBackend.autoPlanApplying=true;
+  autoPlanApplying=true;if(B)B.autoPlanApplying=true;
+  let feedback,outcome,wrote=false,saved=false;
   try{
     const accepted=window.SFAutoPlanWorkspace?await window.SFAutoPlanWorkspace.confirmApply(preview.length):confirm(`${preview.length} vorgeschlagene Besetzungen in den Dienstplan übernehmen?`);
     if(!accepted)return;
     if(published()){showSaveToast('Plan inzwischen veröffentlicht','Bitte prüfe Änderungen einzeln im Dienstplan.');return}
-    if(window.SFBackend?.companyId!==companyId||JSON.stringify(preview)!==JSON.stringify(autoPlanPreview)){showSaveToast('Vorschläge erneut prüfen','Die Planungsdaten haben sich geändert. Bitte erstelle die Vorschläge erneut.');return}
-    for(const x of preview){const checked=preview.filter(a=>a!==x);const g=window.SFShiftModels?.coverageInfo?.(x.date,x.type,checked);if(x.coverageGroup&&(!g||g.key!==x.coverageGroup||!g.missing||!g.alternatives.includes(x.type))){showSaveToast('Vorschläge erneut prüfen','Die gemeinsame TL-Besetzung ist inzwischen abgedeckt oder wurde geändert. Bitte erstelle die Vorschläge erneut.');return}if(x.optional&&!(window.SFShiftModels?.optionalTarget?.(x.date,x.type)>0)){showSaveToast('Vorschläge erneut prüfen','Die optionale Planungsregel wurde inzwischen geändert. Bitte erstelle die Vorschläge erneut.');return}if(!autoEligibleEmployees(x.type,x.date,checked).some(c=>String(c.e.id)===String(x.employeeId))){showSaveToast('Vorschläge erneut prüfen','Ein Mitarbeiter ist inzwischen nicht mehr verfügbar. Bitte erstelle die Vorschläge erneut.');return}}
-    preview.forEach(x=>assignments.push({id:'as'+Date.now()+Math.random(),date:x.date,type:x.type,employeeId:x.employeeId,start:x.start,end:x.end}));
+    if(B?.companyId!==companyId||JSON.stringify(preview)!==JSON.stringify(autoPlanPreview)){showSaveToast('Vorschläge erneut prüfen','Die Planungsdaten haben sich geändert. Bitte erstelle die Vorschläge erneut.');return}
+    const current=()=>JSON.stringify([employees,assignments,TYPES,typeof absences==='undefined'?[]:absences,typeof globalSoll==='undefined'?{}:globalSoll,typeof dailySoll==='undefined'?{}:dailySoll,window.SFCompliance?.policy]),baseline=current();
+    const assertCurrent=()=>{if(B?.companyId!==companyId||current()!==baseline||JSON.stringify(preview)!==JSON.stringify(autoPlanPreview)||published())throw Error('Die Planungsdaten haben sich geändert. Bitte prüfe die Vorschläge erneut.');};
+    feedback=window.SFAutoPlanWorkspace?.startApply?.(preview.length);await feedback?.paint();
+    for(let i=0;i<preview.length;i++){const x=preview[i],checked=preview.filter(a=>a!==x),g=window.SFShiftModels?.coverageInfo?.(x.date,x.type,checked);if(x.coverageGroup&&(!g||g.key!==x.coverageGroup||!g.missing||!g.alternatives.includes(x.type)))throw Error('Die gemeinsame TL-Besetzung ist inzwischen abgedeckt oder wurde geändert. Bitte erstelle die Vorschläge erneut.');if(x.optional&&!(window.SFShiftModels?.optionalTarget?.(x.date,x.type)>0))throw Error('Die optionale Planungsregel wurde inzwischen geändert. Bitte erstelle die Vorschläge erneut.');if(!autoEligibleEmployees(x.type,x.date,checked).some(c=>String(c.e.id)===String(x.employeeId)))throw Error('Ein Mitarbeiter ist inzwischen nicht mehr verfügbar. Bitte erstelle die Vorschläge erneut.');if((i+1)%8===0||i===preview.length-1){feedback?.update(i+1);await feedback?.paint();}}
+    assertCurrent();
+    feedback?.phase(1,'Die geprüften Besetzungen werden als Entwurf gespeichert.');await feedback?.paint();assertCurrent();
+    if(B?.ready&&(B.syncing||B.suppressSync))throw Error('Eine Speicherung läuft noch. Bitte anschließend erneut bestätigen.');
+    preview.forEach(x=>assignments.push({id:'as'+Date.now()+Math.random(),date:x.date,type:x.type,employeeId:x.employeeId,start:x.start,end:x.end}));wrote=true;
+    saveAll();if(B?.ready&&typeof B.sync==='function'){clearTimeout(B.syncTimer);B.syncTimer=null;await B.sync();if(B.lastSyncError)throw B.lastSyncError;}saved=true;
+    feedback?.phase(2,'Entwurf gespeichert. Die Ansicht des Dienstplans wird aktualisiert.');await feedback?.paint();
     const n=preview.length,plannedDates=autoPlanningDates(),plannedMode=document.getElementById('autoPlanPeriod')?.value||'week';
     if(plannedDates.length){if(plannedMode==='month')window.SchichtFunkCalendarView?.setMonth?.(plannedDates[0].slice(0,7));else{weekStart=autoMonday(plannedDates[0]);window.SchichtFunkCalendarView?.setMode?.('week')}}
-    autoPlanPreview=[];autoPlanUnresolved=[];autoPlanAnalyzed=true;autoPlanApplied=n;saveAll();renderCalendar();showSaveToast('Auto-Planung übernommen',`${n} Besetzungen wurden als Entwurf in den Dienstplan eingetragen.`)
-  }finally{autoPlanApplying=false;if(window.SFBackend)window.SFBackend.autoPlanApplying=false;renderAutoPlanning()}
+    autoPlanPreview=[];autoPlanUnresolved=[];autoPlanAnalyzed=true;autoPlanApplied=n;renderCalendar();showSaveToast('Auto-Planung übernommen',`${n} Besetzungen wurden als Entwurf in den Dienstplan eingetragen.`)
+  }catch(e){const copy=saved?'Der Entwurf wurde gespeichert, aber die Ansicht konnte nicht aktualisiert werden. Bitte lade die Seite neu.':wrote?'Die Speicherung konnte nicht bestätigt werden. Bitte prüfe den Dienstplan vor einer erneuten Übernahme. '+(e.message||String(e)):e.message||String(e);outcome={error:e.message||String(e),saved,copy};if(wrote){autoPlanPreview=[];autoPlanUnresolved=[];autoPlanAnalyzed=false;}showSaveToast(saved?'Entwurf gespeichert – Ansicht prüfen':'Übernahme nicht abgeschlossen',copy)}
+  finally{autoPlanApplying=false;if(B)B.autoPlanApplying=false;feedback?.finish(outcome);renderAutoPlanning()}
 }
 function runAutoPlan(){generateAutoPlanPreview();if(document.getElementById('view-auto')&&!document.getElementById('view-auto').classList.contains('active'))switchView('auto')}
 
@@ -1020,7 +1030,7 @@ table th,table td{font-size:13px;line-height:1.35}
 <script defer src="assets/assignment-quick-delete-v1.js"></script>
 <script defer src="assets/solid-planning-core-v1.js?v=20261015-forward-order1&otscope=20261012-1&otsettings=20261012-2&orbit=20261013-1"></script>
 <script defer src="assets/supabase-startup-v1.js?v=20261011-startup1"></script>
-<script defer src="assets/conflict-plausibility-v1.js?v=20261015-forward-order1&company=20261010-1&today=20261010-1&wishes=20261010-1&handover=20261010-1&absence=20261011-1&performance=20261011-1&loading=20261011-1&entry=20261011-1&logout=20261011-1&startup=20261011-1&privacy=20261011-1&personnel=20261012-1&manual=20261013-timetable3&returnweek=20261013-1&inlinepicker=20261013-1&otroster=20261014-1&tlnights=20261014-1&week55=20261014-1&tltargets=20261014-1&staffing=20261014-order1&otholidays=20261014-1&previewedit=20261015-3&fixedweek=20261014-1&fixedcycle=20261014-1&startfix=20261013-1&speed=20261013-1"></script>
+<script defer src="assets/conflict-plausibility-v1.js?v=20261015-apply-feedback1&company=20261010-1&today=20261010-1&wishes=20261010-1&handover=20261010-1&absence=20261011-1&performance=20261011-1&loading=20261011-1&entry=20261011-1&logout=20261011-1&startup=20261011-1&privacy=20261011-1&personnel=20261012-1&manual=20261013-timetable3&returnweek=20261013-1&inlinepicker=20261013-1&otroster=20261014-1&tlnights=20261014-1&week55=20261014-1&tltargets=20261014-1&staffing=20261014-order1&otholidays=20261014-1&previewedit=20261015-3&fixedweek=20261014-1&fixedcycle=20261014-1&startfix=20261013-1&speed=20261013-1"></script>
 <script defer src="assets/employee-core-v1.js?v=20261001-removal1"></script>
 <script defer src="assets/shift-models-v1.js?v=20261014-ot-holidays1"></script>
 <script defer src="assets/employee-rhythm-v1.js?fixed=20261014-fixed-week1&v=20261004-fd-split1"></script>
@@ -1029,11 +1039,11 @@ table th,table td{font-size:13px;line-height:1.35}
 <script defer src="assets/open-shift-marketplace-v1.js?v=20261002-sharedtl2"></script>
 <script defer src="assets/individual-month-planner-v1.js?v=20261008-solid-auto3"></script>
 <script defer src="assets/month-optimizer-core-v1.js?v=20261015-forward-order1&wish=20261010-1&personnel=20261012-1&progress=20261011-1"></script>
-<script defer src="assets/auto-plan-workspace-v1.js?v=20261015-preview-edit1&personnel=20261012-1&progress=20261011-1"></script>
+<script defer src="assets/auto-plan-workspace-v1.js?v=20261015-apply-feedback1&personnel=20261012-1&progress=20261011-1"></script>
 <script defer src="assets/auto-plan-progress-v1.js?v=bg1-20261013-startfix1"></script>
 <script defer src="assets/solid-planning-resume-v1.js?v=20261015-ot200-1"></script>
 <script defer src="assets/background-auto-plan-core-v1.js?v=20261014-fixed-cycle1"></script>
-<script defer src="assets/month-optimizer-v1.js?v=20261015-tl-forward1&otsettings=20261012-2&preplan=20261012-1"></script>
+<script defer src="assets/month-optimizer-v1.js?v=20261015-apply-feedback1&otsettings=20261012-2&preplan=20261012-1"></script>
 <script defer src="assets/auto-plan-preview-editor-v1.js?v=20261015-vacancy-picker1"></script>
 <script defer src="assets/background-auto-plan-v1.js?v=20261012-background1"></script>
 <script defer src="assets/planning-assistant-insights-v1.js?v=20261009-1"></script>
@@ -1132,7 +1142,7 @@ table th,table td{font-size:13px;line-height:1.35}
 }
 </style>
 <div class="sf-help-backdrop" id="sfHelpModal" hidden><section class="sf-help" role="dialog" aria-modal="true" aria-labelledby="sfHelpTitle"><header class="sf-help-head"><div><div class="sf-help-kicker">SCHICHTFUNK HILFE-CENTER</div><h2 id="sfHelpTitle">Wie können wir helfen?</h2></div><div class="sf-help-search"><input id="sfHelpSearch" type="search" placeholder="Problem oder Funktion suchen ..." aria-label="Hilfe durchsuchen"><button class="sf-help-clear" id="sfHelpClear" type="button" aria-label="Suche leeren">×</button></div><button class="sf-help-close" id="sfHelpClose" type="button" aria-label="Hilfe schließen">×</button></header><nav class="sf-help-nav" id="sfHelpNav" aria-label="Hilfekategorien"></nav><main class="sf-help-main"><h3 id="sfHelpCategoryTitle"></h3><p id="sfHelpCategoryIntro"></p><div class="sf-help-results" id="sfHelpResults"></div></main><footer class="sf-help-foot"><span>Die Hilfe verändert keine Daten.</span><span><strong>ESC</strong> schließen · <strong>Strg/Cmd + K</strong> Suche</span></footer></section></div>
-<script defer src="assets/help-center-content-v3.js?v=bg1-20261012-help-audit1&forwardorder=20261015-1&vacancy=20261015-1&tlforward=20261015-1&ot200=20261015-1&blockcontext=20261015-1&previewedit=20261015-1&inlinepicker=20261013-1&otroster=20261014-1&tlnights=20261014-1&week55=20261014-1&tltargets=20261014-1&manual=20261013-timetable3&returnweek=20261013-1&inlinepicker=20261013-1&otroster=20261014-1&tlnights=20261014-1&week55=20261014-1&tltargets=20261014-1&rules=20261012-1&otscope=20261012-1&otsettings=20261012-2&preplan=20261012-1&orbit=20261013-6"></script>
+<script defer src="assets/help-center-content-v3.js?v=bg1-20261012-help-audit1&applyfeedback=20261015-1&forwardorder=20261015-1&vacancy=20261015-1&tlforward=20261015-1&ot200=20261015-1&blockcontext=20261015-1&previewedit=20261015-1&inlinepicker=20261013-1&otroster=20261014-1&tlnights=20261014-1&week55=20261014-1&tltargets=20261014-1&manual=20261013-timetable3&returnweek=20261013-1&inlinepicker=20261013-1&otroster=20261014-1&tlnights=20261014-1&week55=20261014-1&tltargets=20261014-1&rules=20261012-1&otscope=20261012-1&otsettings=20261012-2&preplan=20261012-1&orbit=20261013-6"></script>
 <link rel="stylesheet" href="assets/help-center-guides-v1.css?v=20260930-1">
 <script defer src="assets/help-center-guides-v1.js?v=20261009-qrperiods1&company=20261010-1"></script>
 <script defer id="schichtfunk-help-center-v2-js" src="assets/help-center-renderer-v2.js?v=20261012-help-audit1"></script>

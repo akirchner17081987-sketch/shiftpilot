@@ -116,6 +116,24 @@
     // General return preserves the current calendar period; explicit issue dates still navigate.
     if(window.showView)window.showView('schedule');else switchView('schedule');
   }
+  function startApply(count){
+    const paint=()=>new Promise(resolve=>setTimeout(resolve,24));
+    if(!document.createElement)return {paint,phase(){},update(){},finish(){}};
+    const focused=document.activeElement,locked=[...document.querySelectorAll('#appShell button,#appShell input,#appShell select,#appShell textarea')].map(node=>({node,disabled:node.disabled}));
+    locked.forEach(x=>x.node.disabled=true);
+    const back=document.createElement('div');back.className='sf-auto-confirm-back';
+    back.innerHTML='<section class="sf-auto-confirm sf-auto-apply" role="dialog" aria-modal="true" aria-labelledby="sfAutoApplyTitle" aria-busy="true"><div class="eyebrow">SCHICHTFUNK · ENTWURF</div><h2 id="sfAutoApplyTitle" tabindex="-1">Vorschläge werden übernommen</h2><ol class="sf-auto-apply-steps"><li>Vorschläge prüfen</li><li>Entwurf speichern</li><li>Dienstplan aktualisieren</li></ol><div class="sf-auto-apply-track" role="progressbar" aria-label="Übernahme läuft"><i></i></div><p id="sfAutoApplyDetail" role="status" aria-live="polite"></p><small id="sfAutoApplyTime"></small><p id="sfAutoApplyWait">Bitte warten und diese Seite geöffnet lassen.</p><footer hidden><button type="button" class="ghost" data-close>Schließen</button><button type="button" class="primary" data-schedule>Dienstplan öffnen</button></footer></section>';
+    document.body.appendChild(back);
+    const panel=back.firstElementChild,title=back.querySelector('h2'),detail=back.querySelector('#sfAutoApplyDetail'),track=back.querySelector('[role="progressbar"]'),steps=[...back.querySelectorAll('li')],footer=back.querySelector('footer'),close=back.querySelector('[data-close]'),schedule=back.querySelector('[data-schedule]'),started=Date.now();let done=false;
+    const elapsed=()=>{const s=Math.floor((Date.now()-started)/1000);back.querySelector('#sfAutoApplyTime').textContent='Vergangen: '+(s<60?s+' s':Math.floor(s/60)+' min '+s%60+' s');};
+    const timer=setInterval(elapsed,1000);
+    const dismiss=()=>{document.removeEventListener('keydown',key);back.remove();if(focused?.isConnected&&!focused.disabled)focused.focus();else el('autoOpenScheduleBtn')?.focus();};
+    const key=e=>{if(!back.isConnected)return;if(e.key==='Escape'){e.preventDefault();if(done)dismiss()}else if(e.key==='Tab'){if(!done){e.preventDefault();title.focus()}else if(e.shiftKey&&document.activeElement===close){e.preventDefault();(schedule.hidden?close:schedule).focus()}else if(!e.shiftKey&&document.activeElement===(schedule.hidden?close:schedule)){e.preventDefault();close.focus()}}};
+    document.addEventListener('keydown',key);close.onclick=dismiss;schedule.onclick=()=>{dismiss();openSchedule()};title.focus();
+    const phase=(stage,copy)=>{steps.forEach((node,i)=>{node.classList.toggle('is-current',i===stage);node.classList.toggle('is-done',i<stage);if(i===stage)node.setAttribute('aria-current','step');else node.removeAttribute('aria-current')});detail.textContent=copy;};
+    phase(0,count+' Vorschläge werden auf Verfügbarkeit, Stunden und Schichtregeln geprüft.');elapsed();
+    return {paint,phase,update:n=>{detail.textContent=n+' von '+count+' Vorschlägen geprüft.';},finish:({error,saved=false,copy}={})=>{if(done)return;done=true;clearInterval(timer);elapsed();locked.forEach(x=>x.node.disabled=x.disabled);panel.removeAttribute('aria-busy');panel.classList.toggle('is-error',!!error);track.hidden=true;back.querySelector('#sfAutoApplyWait').hidden=true;footer.hidden=false;schedule.hidden=!!error&&!saved;title.textContent=error?(saved?'Entwurf gespeichert – Ansicht prüfen':'Übernahme nicht abgeschlossen'):'Entwurf übernommen';if(!error)phase(3,count+' Besetzungen wurden als Entwurf übernommen. Die Veröffentlichung erfolgt gesondert im Dienstplan.');if(copy||error)detail.textContent=copy||error;close.focus();}};
+  }
   function confirmApply(count){
     const monthly=window.SFMonthOptimizer?.getResult?.(),focused=document.activeElement,locked=[...document.querySelectorAll('#view-auto button,#view-auto input,#view-auto select')].map(node=>({node,disabled:node.disabled}));locked.forEach(x=>x.node.disabled=true);
     return new Promise(resolve=>{
@@ -126,6 +144,6 @@
       cancel.onclick=()=>done(false);accept.onclick=()=>done(true);back.onclick=e=>{if(e.target===back)done(false)};document.addEventListener('keydown',key);cancel.focus();
     });
   }
-  window.SFAutoPlanWorkspace={render,explain,remainingSlots,openSchedule,confirmApply,stairMonth:value=>{stairMonth=value;renderAutoPlanning()},unresolvedPage:delta=>{unresolvedPage+=delta;renderAutoPlanning()},expandDays:open=>document.querySelectorAll('#autoSuggestions details').forEach(x=>{if(open)x.sfAutoFill?.();x.open=open})};
+  window.SFAutoPlanWorkspace={render,explain,remainingSlots,openSchedule,confirmApply,startApply,stairMonth:value=>{stairMonth=value;renderAutoPlanning()},unresolvedPage:delta=>{unresolvedPage+=delta;renderAutoPlanning()},expandDays:open=>document.querySelectorAll('#autoSuggestions details').forEach(x=>{if(open)x.sfAutoFill?.();x.open=open})};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',render,{once:true});else render();
 })();
