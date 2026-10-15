@@ -142,7 +142,11 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
      assert.equal(await overviewButton.isVisible(),true);assert.equal(await overviewButton.getAttribute('aria-current'),'true');
      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),true,'Orbit overview fits '+width);
      const emblem=await page.locator('.sf-orbit-emblem').boundingBox();assert.ok(emblem.x>=0&&emblem.x+emblem.width<=width+1,'graphic fits the viewport');
-     if(width>=1440){assert.ok(emblem.width>=500,'Earth remains the desktop focal point');const hub=await page.locator('.sf-orbit-status-hub').boundingBox();assert.ok(Math.abs((hub.x+hub.width/2)-(emblem.x+emblem.width/2))<2,'Earth is centered within the status hub');for(const key of ['present','coverage','actions']){const node=await page.locator('.sf-orbit-overview-metrics [data-td-kpi="'+key+'"]').boundingBox();assert.ok(node.x+node.width<=emblem.x+12||node.x>=emblem.x+emblem.width-12,'status cards surround the globe without covering it');}}
+     const stage=await page.locator('.sf-orbit-earth-stage').boundingBox();
+     const nodes=await page.locator('.sf-orbit-overview-metrics [data-td-kpi]').evaluateAll(elements=>elements.map(el=>{const r=el.getBoundingClientRect();return{x:r.x,y:r.y,width:r.width}}));
+     assert.ok(nodes.every(n=>n.y>=stage.y+stage.height-1),'status figures sit below the Earth view');
+     assert.ok(nodes.every(n=>Math.abs(n.y-nodes[0].y)<2),'status figures share one orderly row');
+     if(width>=1440){assert.ok(emblem.width>=1050,'Earth fills the desktop region at roughly twice the previous diameter');const hub=await page.locator('.sf-orbit-status-hub').boundingBox();assert.ok(Math.abs((hub.x+hub.width/2)-(emblem.x+emblem.width/2))<2,'Earth remains centered');assert.ok(stage.height<=820,'close view crops the globe instead of stretching the entire page');}
      if(width===390)assert.ok(emblem.width>=240,'Earth is larger on mobile while fitting the header');
      for(const key of ['present','coverage','actions'])assert.equal(await page.locator('.sf-orbit-overview-metrics [data-td-kpi="'+key+'"]').isVisible(),true);
      assert.equal(await assistant.isVisible(),true,'planning assistant remains available in the header at '+width);

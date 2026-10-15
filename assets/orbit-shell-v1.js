@@ -167,6 +167,7 @@
         if (!button) {
           button = document.createElement('button'); button.type = 'button'; button.className = 'sf-orbit-site-pin'; button.dataset.orbitSite = site.id;
           const dot = document.createElement('span'); dot.className = 'sf-orbit-site-light'; dot.setAttribute('aria-hidden', 'true'); button.append(dot);
+          const name = document.createElement('span'); name.className = 'sf-orbit-site-name'; name.textContent = site.name; button.append(name);
           button.addEventListener('pointerenter', () => showInfo(site.id)); button.addEventListener('focus', () => showInfo(site.id));
           button.addEventListener('pointerleave', () => { if (document.activeElement !== button) hideInfo(); });
           button.addEventListener('blur', () => hideInfo()); button.addEventListener('click', () => { select(site.id); showInfo(site.id); });
@@ -174,11 +175,12 @@
         }
         const angle = (-135 + index * 360 / Math.max(2, shown.length)) * Math.PI / 180;
         button.style.left = (50 + Math.cos(angle) * 42) + '%'; button.style.top = (50 + Math.sin(angle) * 42) + '%';
-        button.dataset.status = site.status; button.firstElementChild.textContent = String(page * 6 + index + 1);
+        button.dataset.status = site.status; button.firstElementChild.textContent = '';
+        if (button.lastElementChild.textContent !== site.name) button.lastElementChild.textContent = site.name;
         button.setAttribute('aria-label', site.name + ' · ' + site.label + ' · Tagesübersicht filtern'); button.setAttribute('aria-pressed', String(site.id === data.selected));
       });
       const active = data.sites.find(s => s.id === data.selected);
-      reset.textContent = active ? active.name : data.selected === 'unassigned' ? 'Ohne Zuordnung' : data.sites.length ? 'Alle Standorte' : 'Keine Standorte';
+      reset.textContent = data.selected ? 'Alle Standorte' : data.sites.length ? 'Gesamtübersicht' : 'Keine Standorte';
       reset.title = data.selected ? 'Standortfilter zurücksetzen' : 'Lichtpunkt auswählen'; reset.disabled = !data.selected;
       previous.hidden = next.hidden = range.hidden = data.sites.length <= 6; previous.disabled = page === 0; next.disabled = (page + 1) * 6 >= data.sites.length;
       range.textContent = (page * 6 + 1) + '–' + Math.min((page + 1) * 6, data.sites.length) + ' / ' + data.sites.length;
@@ -236,14 +238,14 @@
     function draw() {
       ctx.clearRect(0, 0, 420, 420);
       const atmosphere = ctx.createRadialGradient(210, 210, 142, 210, 210, 177);
-      atmosphere.addColorStop(0, 'transparent'); atmosphere.addColorStop(.28, light ? '#6254cb26' : '#39dfff26'); atmosphere.addColorStop(1, 'transparent');
+      atmosphere.addColorStop(0, 'transparent'); atmosphere.addColorStop(.2, light ? '#6b85e955' : '#43cfff66'); atmosphere.addColorStop(.45, light ? '#6254cb18' : '#39dfff18'); atmosphere.addColorStop(1, 'transparent');
       ctx.fillStyle = atmosphere; ctx.fillRect(0, 0, 420, 420);
       const ocean = ctx.createRadialGradient(165, 145, 12, 235, 225, 176);
       ocean.addColorStop(0, light ? '#253b70' : '#124960'); ocean.addColorStop(.65, light ? '#102244' : '#082b40'); ocean.addColorStop(1, '#020b1a');
       ctx.fillStyle = ocean; ctx.beginPath(); ctx.arc(210, 210, 151, 0, Math.PI * 2); ctx.fill();
       ctx.save(); ctx.clip();
       // Project latitude and longitude guides onto the same sphere as the lights.
-      ctx.strokeStyle = light ? '#8e96e918' : '#5bcae21a'; ctx.lineWidth = .65;
+      ctx.strokeStyle = light ? '#8e96e90b' : '#5bcae20b'; ctx.lineWidth = .45;
       for (let lat = -60; lat <= 60; lat += 30) {
         ctx.beginPath(); let connected = false;
         for (let lon = -180; lon <= 180; lon += 3) {
@@ -337,8 +339,9 @@
       const metrics = document.createElement('div'); metrics.className = 'sf-orbit-overview-metrics'; metrics.setAttribute('aria-label', 'Zentrale Tageskennzahlen');
       const content = document.createElement('div'); content.className = 'sf-orbit-hero-content'; content.append(head, metrics);
       const scope = document.createElement('div'); scope.className = 'sf-orbit-status-scope';
-      const hub = document.createElement('div'); hub.className = 'sf-orbit-status-hub'; hub.append(art, metrics);
-      const floor = document.createElement('div'); floor.className = 'sf-orbit-status-floor'; floor.setAttribute('aria-hidden', 'true'); hub.append(floor);
+      const hub = document.createElement('div'); hub.className = 'sf-orbit-status-hub';
+      const stage = document.createElement('div'); stage.className = 'sf-orbit-earth-stage'; stage.setAttribute('role', 'img'); stage.setAttribute('aria-label', 'Große animierte Erdansicht mit leuchtender Atmosphäre'); stage.append(art); hub.append(stage, metrics);
+      const locations = document.createElement('div'); locations.className = 'sf-orbit-location-strip'; scope.append(locations);
       const detail = document.createElement('div'); detail.id = 'sfOrbitStatusDetail'; detail.className = 'sf-orbit-status-detail'; detail.hidden = true;
       const copy = document.createElement('div'); copy.setAttribute('aria-live', 'polite');
       const heading = document.createElement('h2'); heading.className = 'sf-orbit-status-title';
@@ -348,10 +351,10 @@
       hero.append(content, scope, hub, detail);
       globe = createGlobe(art);
       art.querySelector('svg').setAttribute('aria-hidden', 'true');
-      siteOrbit = createSiteOrbit(art);
+      siteOrbit = createSiteOrbit(locations);
     }
     const siteLabel = root.querySelector('#sfTodaySite')?.closest('label'), scope = hero.querySelector('.sf-orbit-status-scope');
-    if (siteLabel && siteLabel.parentElement !== scope) scope.append(siteLabel);
+    if (siteLabel && siteLabel.parentElement !== scope) scope.prepend(siteLabel);
     globe?.sync();
     siteOrbit?.sync();
     const metrics = hero.querySelector('.sf-orbit-overview-metrics');

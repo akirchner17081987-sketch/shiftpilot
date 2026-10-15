@@ -183,43 +183,49 @@ html.sf-display-high-contrast #appShell.sf-orbit{--orbit-text:var(--sf-contrast-
 @media(max-width:650px){#appShell.sf-orbit .sf-display-actions{bottom:calc(208px + env(safe-area-inset-bottom))!important}body.sf-orbit-manager .sf-chat-launcher{bottom:calc(206px + env(safe-area-inset-bottom))!important}body.sf-orbit-manager .sf-planning-chat{bottom:calc(268px + env(safe-area-inset-bottom))!important;max-height:calc(100dvh - 308px)!important}}
 
 @media(max-width:650px){#appShell.sf-orbit .sf-orbit-category{grid-column:span 2}#appShell.sf-orbit .sf-orbit-category:nth-child(-n+2){grid-column:span 3}#appShell.sf-orbit .sf-orbit-category:nth-child(n+3){flex-direction:column;gap:4px;padding:6px 4px}#appShell.sf-orbit .sf-orbit-category:nth-child(n+3) .sf-orbit-category-copy{width:100%}#appShell.sf-orbit .sf-orbit-category:nth-child(n+3)[aria-expanded]>.sf-orbit-icon:last-child{display:none}}
-/* Interactive status globe: a central focal point with one scope for every metric. */
+/* Earth close view: one dominant horizon and orderly controls around it. */
 #appShell.sf-orbit .sf-orbit-hero{display:flex;flex-direction:column;align-items:stretch;gap:0;padding:20px 12px 24px}
-#appShell.sf-orbit .sf-orbit-hero:before{background:radial-gradient(ellipse at 50% 42%,var(--orbit-glow),transparent 61%)}
+#appShell.sf-orbit .sf-orbit-hero:before{background:radial-gradient(ellipse at 50% 38%,var(--orbit-glow),transparent 68%)}
 #appShell.sf-orbit .sf-orbit-hero-content{display:block;align-self:stretch}
 #appShell.sf-orbit .sf-orbit-hero-copy{display:flex;justify-content:space-between;gap:20px;align-items:center}
 #appShell.sf-orbit .sf-orbit-hero-copy h1{font-size:clamp(30px,3vw,48px);margin:8px 0 10px}
 #appShell.sf-orbit .sf-orbit-hero-copy p{max-width:none;margin:0}
 #appShell.sf-orbit .sf-orbit-hero-copy .sf-td-buttons{margin-top:0;flex-direction:row;flex-wrap:wrap}
-#appShell.sf-orbit .sf-orbit-status-scope{display:flex;justify-content:center;margin:12px 0 0;position:relative;z-index:3}
-#appShell.sf-orbit .sf-orbit-status-scope label{display:flex;align-items:center;justify-content:center;gap:10px;max-width:100%;color:var(--orbit-muted);font-size:12px}
-#appShell.sf-orbit .sf-orbit-status-scope select{min-height:44px;width:min(320px,65vw);min-width:0;padding:8px 32px 8px 12px;background:var(--orbit-surface);border:1px solid var(--orbit-line);color:var(--orbit-text);border-radius:10px;font:inherit;font-size:14px}
-#appShell.sf-orbit .sf-orbit-status-hub{width:min(100%,1000px);position:relative;align-self:center;isolation:isolate;padding:0 170px 42px}
-#appShell.sf-orbit .sf-orbit-status-hub:before{content:"";position:absolute;inset:10% 15% 12%;border-radius:50%;background:radial-gradient(ellipse,var(--orbit-glow),transparent 67%);filter:blur(18px);pointer-events:none;z-index:-1}
-#appShell.sf-orbit .sf-orbit-status-hub .sf-orbit-emblem{width:100%;max-width:580px;margin:0 auto 44px;aspect-ratio:1}
-#appShell.sf-orbit .sf-orbit-status-hub .sf-orbit-emblem:has(.sf-orbit-site-range:not([hidden])){margin-bottom:84px}
-#appShell.sf-orbit .sf-orbit-status-hub .sf-orbit-overview-metrics{display:contents}
-#appShell.sf-orbit .sf-orbit-status-hub .sf-td-kpi{position:absolute;width:178px;min-height:90px;top:29%;left:0;padding:14px 17px;background:var(--orbit-surface);border:1px solid var(--orbit-line);border-radius:14px;text-align:left;box-shadow:0 8px 30px #0002;z-index:2;transition:border-color .25s,box-shadow .25s}
-#appShell.sf-orbit .sf-orbit-status-hub .sf-td-kpi[data-td-kpi="coverage"]{left:auto;right:0;top:16%}
-#appShell.sf-orbit .sf-orbit-status-hub .sf-td-kpi[data-td-kpi="actions"]{left:auto;right:0;top:58%}
+#appShell.sf-orbit .sf-orbit-status-scope{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px 24px;margin:20px 0 0;padding-bottom:16px;border-bottom:1px solid var(--orbit-line);position:relative;z-index:3}
+#appShell.sf-orbit .sf-orbit-status-scope label{display:flex;align-items:center;gap:10px;max-width:100%;color:var(--orbit-muted);font-size:12px}
+#appShell.sf-orbit .sf-orbit-status-scope label>span{margin:0}
+#appShell.sf-orbit .sf-orbit-status-scope select{min-height:44px;width:min(280px,65vw);min-width:0;padding:8px 32px 8px 12px;background:var(--orbit-surface);border:1px solid var(--orbit-line);color:var(--orbit-text);border-radius:10px;font:inherit;font-size:14px}
+#appShell.sf-orbit .sf-orbit-location-strip{min-width:0;max-width:100%}
+#appShell.sf-orbit .sf-orbit-location-strip .sf-orbit-sites{position:relative;inset:auto;display:flex;align-items:center;flex-wrap:wrap;justify-content:flex-end;gap:6px 12px;pointer-events:auto}
+#appShell.sf-orbit .sf-orbit-location-strip .sf-orbit-site-pins{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+#appShell.sf-orbit .sf-orbit-location-strip .sf-orbit-site-pin{position:static;transform:none;width:auto;height:auto;min-height:44px;max-width:220px;padding:7px 10px;display:flex;gap:8px;align-items:center;border:1px solid transparent;border-radius:8px;color:var(--orbit-muted)}
+#appShell.sf-orbit .sf-orbit-location-strip .sf-orbit-site-pin[aria-pressed="true"]{background:var(--orbit-active);border-color:var(--orbit-line);color:var(--orbit-text)}
+#appShell.sf-orbit .sf-orbit-location-strip .sf-orbit-site-light{width:8px;height:8px;flex:none;border:0;box-shadow:0 0 9px var(--site-color)}
+#appShell.sf-orbit .sf-orbit-location-strip .sf-orbit-site-pin[aria-pressed="true"] .sf-orbit-site-light{outline:0}
+#appShell.sf-orbit .sf-orbit-location-strip .sf-orbit-site-name{font-size:12px;overflow-wrap:anywhere;text-align:left}
+#appShell.sf-orbit .sf-orbit-location-strip .sf-orbit-site-caption{position:static;transform:none;width:auto;max-width:100%;gap:4px}
+#appShell.sf-orbit .sf-orbit-location-strip .sf-orbit-site-caption>span:first-child{display:none}
+#appShell.sf-orbit .sf-orbit-location-strip .sf-orbit-site-caption .sf-orbit-site-reset{max-width:none}
+#appShell.sf-orbit .sf-orbit-status-hub{width:100%;min-width:0;position:relative;align-self:stretch;isolation:isolate;padding:0}
+#appShell.sf-orbit .sf-orbit-earth-stage{height:clamp(380px,58vw,800px);width:100%;position:relative;overflow:hidden;isolation:isolate;background:radial-gradient(ellipse at 50% 65%,var(--orbit-glow),transparent 65%)}
+#appShell.sf-orbit .sf-orbit-earth-stage:after{content:"";position:absolute;inset:auto 0 0;height:80px;background:linear-gradient(transparent,var(--orbit-canvas));pointer-events:none}
+#appShell.sf-orbit .sf-orbit-status-hub .sf-orbit-emblem{position:absolute;left:50%;top:64%;transform:translate(-50%,-50%);width:min(100%,1200px);max-width:none;margin:0;aspect-ratio:1;pointer-events:none}
+#appShell.sf-orbit .sf-orbit-status-hub .sf-orbit-globe{transform:scale(1.17);transform-origin:center}
+#appShell.sf-orbit .sf-orbit-status-hub .sf-orbit-emblem>svg{opacity:.12}
+#appShell.sf-orbit .sf-orbit-status-hub .sf-orbit-overview-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;grid-column:auto;grid-row:auto;align-self:stretch;border-top:1px solid var(--orbit-line);border-bottom:1px solid var(--orbit-line);position:relative}
+#appShell.sf-orbit .sf-orbit-status-hub .sf-td-kpi{position:static;width:auto;min-width:0;min-height:112px;margin:0;padding:18px 24px;background:transparent;border:0;border-top:2px solid transparent;border-radius:0;box-shadow:none;text-align:left;transition:background .25s,border-color .25s}
+#appShell.sf-orbit .sf-orbit-status-hub .sf-td-kpi+.sf-td-kpi{border-left:1px solid var(--orbit-line)}
 #appShell.sf-orbit .sf-orbit-status-hub .sf-td-kpi small{display:none}
-#appShell.sf-orbit .sf-orbit-status-hub .sf-td-kpi strong{font-size:clamp(30px,3vw,44px);margin:5px 0 0}
-#appShell.sf-orbit .sf-orbit-status-hub .sf-td-kpi>span{font-size:13px;line-height:1.4}
-#appShell.sf-orbit .sf-orbit-status-hub .sf-td-kpi[aria-pressed="true"]{border-color:var(--orbit-accent);box-shadow:0 0 26px var(--orbit-glow)}
-#appShell.sf-orbit .sf-orbit-status-floor{position:absolute;pointer-events:none;left:33%;right:33%;bottom:65px;height:32px;border:1px solid var(--orbit-line);border-radius:50%;background:radial-gradient(ellipse,var(--orbit-glow),transparent 69%);box-shadow:0 0 22px var(--orbit-glow);z-index:-1}
-#appShell.sf-orbit .sf-orbit-status-hub .sf-orbit-emblem:after{content:"";position:absolute;inset:11%;border-radius:50%;border:1px solid var(--orbit-accent);border-left-color:transparent;border-bottom-color:transparent;opacity:.25;box-shadow:0 0 22px var(--orbit-glow);pointer-events:none;animation:sfStatusScan 90s linear infinite}
-#appShell.sf-orbit .sf-orbit-status-detail{display:flex;justify-content:space-between;align-items:center;gap:20px;width:min(100%,1000px);align-self:center;border-top:1px solid var(--orbit-line);padding:18px 0 0}
+#appShell.sf-orbit .sf-orbit-status-hub .sf-td-kpi strong{font-size:clamp(30px,3vw,42px);margin:5px 0 0}
+#appShell.sf-orbit .sf-orbit-status-hub .sf-td-kpi>span{font-size:13px;line-height:1.4;overflow-wrap:anywhere}
+#appShell.sf-orbit .sf-orbit-status-hub .sf-td-kpi[aria-pressed="true"]{border-top-color:var(--orbit-accent);background:var(--orbit-active);box-shadow:none}
+#appShell.sf-orbit .sf-orbit-status-detail{display:flex;justify-content:space-between;align-items:center;gap:20px;width:100%;align-self:stretch;padding:18px 0 0}
 #appShell.sf-orbit .sf-orbit-status-detail[hidden]{display:none}
 #appShell.sf-orbit .sf-orbit-status-title{font-size:18px;line-height:1.4;margin:0 0 6px;overflow-wrap:anywhere}
 #appShell.sf-orbit .sf-orbit-status-description{font-size:13px;color:var(--orbit-muted);line-height:1.6;margin:0;max-width:68ch}
 #appShell.sf-orbit [data-orbit-status-open]{flex:none;min-height:44px;padding:10px 16px;border:1px solid var(--orbit-accent);border-radius:10px;background:var(--orbit-accent);color:var(--orbit-accent-ink);font-size:13px}
 #appShell.sf-orbit .sf-td-alert-scope{color:var(--orbit-accent);margin:4px 0}
-#appShell.sf-orbit .sf-orbit-status-hub .sf-orbit-site-info{left:50%;top:calc(100% + 46px);transform:translateX(-50%);z-index:5}
-#appShell.sf-orbit .sf-orbit-status-hub .sf-orbit-emblem:has(.sf-orbit-site-range:not([hidden])) .sf-orbit-site-info{top:calc(100% + 95px)}
-#appShell.sf-orbit :is([data-orbit-overview-active="false"]) .sf-orbit-emblem:after{animation-play-state:paused}
-#appShell.sf-orbit[data-orbit-motion="off"] .sf-orbit-status-hub .sf-orbit-emblem:after,#appShell.sf-orbit[data-orbit-motion="subtle"] .sf-orbit-status-hub .sf-orbit-emblem:after{animation:none}
-@keyframes sfStatusScan{to{transform:rotate(360deg)}}
-@media(min-width:1600px){#appShell.sf-orbit .sf-orbit-status-hub{width:1100px;max-width:100%;padding-left:210px;padding-right:210px}}
-@media(max-width:760px){#appShell.sf-orbit .sf-orbit-hero{padding:12px 0 22px}#appShell.sf-orbit .sf-orbit-hero-copy{align-items:flex-start;flex-wrap:wrap}#appShell.sf-orbit .sf-orbit-hero-copy .sf-td-buttons{margin:0}#appShell.sf-orbit .sf-orbit-status-hub{padding:0 0 12px;max-width:520px}#appShell.sf-orbit .sf-orbit-status-hub .sf-orbit-emblem{width:min(85%,430px);max-width:none;margin:0 auto 48px}#appShell.sf-orbit .sf-orbit-status-hub .sf-orbit-overview-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}#appShell.sf-orbit .sf-orbit-status-hub .sf-td-kpi{position:static;width:auto;min-height:100px;padding:12px 10px}#appShell.sf-orbit .sf-orbit-status-hub .sf-td-kpi>span{font-size:12px}#appShell.sf-orbit .sf-orbit-status-hub .sf-td-kpi strong{font-size:30px}#appShell.sf-orbit .sf-orbit-status-floor{bottom:180px}#appShell.sf-orbit .sf-orbit-status-detail{align-items:flex-start;flex-direction:column;gap:12px}#appShell.sf-orbit .sf-orbit-status-title{font-size:17px}}
-@media(prefers-reduced-motion:reduce){#appShell.sf-orbit .sf-orbit-status-hub .sf-orbit-emblem:after{animation:none}#appShell.sf-orbit .sf-orbit-status-hub .sf-td-kpi{transition:none}}
-@media print{#appShell.sf-orbit .sf-orbit-status-hub{padding:0}#appShell.sf-orbit .sf-orbit-status-hub .sf-orbit-overview-metrics{display:flex}#appShell.sf-orbit .sf-orbit-status-hub .sf-td-kpi{position:static}#appShell.sf-orbit .sf-orbit-status-floor,#appShell.sf-orbit [data-orbit-status-open]{display:none}}
+#appShell.sf-orbit .sf-orbit-location-strip .sf-orbit-site-info{z-index:5}
+@media(max-width:760px){#appShell.sf-orbit .sf-orbit-hero{padding:12px 0 22px}#appShell.sf-orbit .sf-orbit-hero-copy{align-items:flex-start;flex-wrap:wrap}#appShell.sf-orbit .sf-orbit-hero-copy .sf-td-buttons{margin:0}#appShell.sf-orbit .sf-orbit-status-scope{gap:8px;margin-top:16px}#appShell.sf-orbit .sf-orbit-location-strip .sf-orbit-sites{justify-content:flex-start}#appShell.sf-orbit .sf-orbit-earth-stage{height:clamp(300px,74vw,560px)}#appShell.sf-orbit .sf-orbit-status-hub .sf-orbit-emblem{top:50%;width:100%;max-width:none;margin:0}#appShell.sf-orbit .sf-orbit-status-hub .sf-td-kpi{min-height:96px;padding:12px 10px}#appShell.sf-orbit .sf-orbit-status-hub .sf-td-kpi>span{font-size:12px}#appShell.sf-orbit .sf-orbit-status-hub .sf-td-kpi strong{font-size:30px}#appShell.sf-orbit .sf-orbit-status-detail{align-items:flex-start;flex-direction:column;gap:12px}#appShell.sf-orbit .sf-orbit-status-title{font-size:17px}}
+@media(prefers-reduced-motion:reduce){#appShell.sf-orbit .sf-orbit-status-hub .sf-td-kpi{transition:none}}
+@media print{#appShell.sf-orbit .sf-orbit-earth-stage{display:none}#appShell.sf-orbit .sf-orbit-status-hub{padding:0}#appShell.sf-orbit [data-orbit-status-open]{display:none}}
