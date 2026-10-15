@@ -82,7 +82,7 @@
     const wrapped=function(employeeId,type,date){
       const t=typeFor(type),emp=listEmployees().find(e=>String(e.id)===String(employeeId));
       if(t&&emp){
-        if(window.SFAutoPlanGuard?.passesShiftTransitions?.(employeeId,type,date)===false){if(typeof showSaveToast==='function')showSaveToast('Schichtwechsel gesperrt','Nach O3 ist O1, O2 oder TL am Folgetag nicht zulässig.');return false;}
+        if(window.SFAutoPlanGuard?.passesShiftTransitions?.(employeeId,type,date)===false){if(typeof showSaveToast==='function')showSaveToast('Schichtwechsel gesperrt',window.SFAutoPlanGuard.transitionConflict?.(employeeId,type,date)||'Dieser Schichtwechsel ist nach den Planungsregeln nicht zulässig.');return false;}
         const c=findConflict(employeeId,date,t.start,t.end);
         if(c){
           const from=c.startDate||c.start_date||c.date,to=c.endDate||c.end_date||c.date||from;

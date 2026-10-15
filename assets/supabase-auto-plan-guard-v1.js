@@ -9,11 +9,20 @@
   function withBlockCandidates(collect){blockCandidateDepth++;try{return collect()}finally{blockCandidateDepth--}}
   const nextDay=date=>{const d=new Date(date+'T12:00:00');d.setDate(d.getDate()+1);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
   const earlyNight=type=>['O1','O2','TL','TL-LE','TL-RE','TEAMLEITER'].includes(String(type).toUpperCase());
-  const allowsTransition=(from,to)=>!(String(from).toUpperCase()==='O3'&&earlyNight(to));
-  function passesShiftTransitions(employeeId,type,date,simulated=[]){
-    const all=[...(typeof assignments==='undefined'?[]:assignments),...simulated].filter(a=>String(a.employeeId)===String(employeeId));
-    return all.every(a=>!(nextDay(a.date)===date&&!allowsTransition(a.type,type)||nextDay(date)===a.date&&!allowsTransition(type,a.type)));
+  function transitionMessage(from,to){
+    const rules=window.SFCompliance?.policy?.solidPlanningRules;
+    if(window.SFSolidPlanningCore?.transitionError)return window.SFSolidPlanningCore.transitionError(from,to,rules);
+    if(String(from).toUpperCase()==='O3'&&earlyNight(to))return 'Nach O3 kein früherer Nachtdienst am Folgetag.';
+    if(rules?.enabled&&rules.preventLeaderToO1&&['TL-LE','TL-RE'].includes(String(from).toUpperCase())&&String(to).toUpperCase()==='O1')return 'Nach TL-LE oder TL-RE ist O1 am Folgetag nicht zulässig.';
+    return null;
   }
+  const allowsTransition=(from,to)=>!transitionMessage(from,to);
+  function transitionConflict(employeeId,type,date,simulated=[]){
+    const all=[...(typeof assignments==='undefined'?[]:assignments),...simulated].filter(a=>String(a.employeeId)===String(employeeId));
+    for(const a of all){const message=nextDay(a.date)===date?transitionMessage(a.type,type):nextDay(date)===a.date?transitionMessage(type,a.type):null;if(message)return message;}
+    return null;
+  }
+  const passesShiftTransitions=(employeeId,type,date,simulated=[])=>!transitionConflict(employeeId,type,date,simulated);
 
   const interval=(date,start,end)=>{
     const rules=window.SFCompliance?.policy?.solidPlanningRules;if(rules?.enabled&&window.SFSolidPlanningCore){const i=window.SFSolidPlanningCore.interval(date,start,end,rules.timezone);return {start:new Date(i.start),end:new Date(i.end)}}
@@ -89,5 +98,5 @@
     };
   }
 
-  window.SFAutoPlanGuard={passesTimeRules,allowsTransition,passesShiftTransitions,withBlockCandidates};
+  window.SFAutoPlanGuard={passesTimeRules,allowsTransition,passesShiftTransitions,transitionConflict,withBlockCandidates};
 })();

@@ -18,6 +18,13 @@
  function localDate(ms,p){const key=p.timezone||'Europe/Berlin',memo=ms+'|'+key;if(localDates.has(memo))return localDates.get(memo);let f=formats.get('date|'+key);if(!f){f=new Intl.DateTimeFormat('en-CA',{timeZone:key,year:'numeric',month:'2-digit',day:'2-digit'});formats.set('date|'+key,f)}const v=Object.fromEntries(f.formatToParts(new Date(ms)).map(x=>[x.type,x.value])),date=v.year+'-'+v.month+'-'+v.day;if(localDates.size>=8192)localDates.clear();localDates.set(memo,date);return date}
  const weekKey=date=>plus(date,1-weekday(date));
  const night=a=>/^(ND|O1|O2|O3|O1S|O2S|TL|TL-LE|TL-RE|TEAMLEITER|QA)$/i.test(a.type)||a.start>='18:00';
+ function transitionError(from,to,p){
+  from=String(from).toUpperCase();to=String(to).toUpperCase();
+  if(from==='O3'&&['O1','O2','TL','TL-LE','TL-RE','TEAMLEITER'].includes(to))return 'Nach O3 kein früherer Nachtdienst am Folgetag.';
+  if(policy(p)?.preventLeaderToO1&&['TL-LE','TL-RE'].includes(from)&&to==='O1')return 'Nach TL-LE oder TL-RE ist O1 am Folgetag nicht zulässig.';
+  return null;
+ }
+ const allowsTransition=(from,to,p)=>!transitionError(from,to,p);
  const countsTowardCap=a=>!a._marketApproved;
  function fixedWeeklyRoster(e,p){
   const rule=p?.fixedWeeklyRoster;
@@ -69,7 +76,7 @@
   for(const b of nights){if(touch(b)&&b.length>maxNight)push(b[0].date,maxNight===3?'Höchstens drei Nachtdienste am Stück.':`Höchstens ${maxNight} Nachtdienste am Stück.`);const last=b.at(-1),next=own.find(a=>a.startMs>=last.endMs&&a.date>last.date);
    if(next&&(touch(b)||!wanted||wanted.has(next.date))){const free=Math.round((Date.parse(next.date)-Date.parse(localDate(last.endMs-1,p)))/D)-1;const requiredNightFree=b.length===3&&p.threeNightBlockRecoveryFullCalendarDays!=null?Math.min(nightFree,Number(p.threeNightBlockRecoveryFullCalendarDays)):nightFree;if(free<requiredNightFree)push(next.date,requiredNightFree===3?'Nach einem Nachtblock mindestens drei vollständig freie Kalendertage.':`Nach einem Nachtblock mindestens ${requiredNightFree} vollständig freie Kalendertage.`);}
   }
-  for(let i=1;i<own.length;i++){const a=own[i-1],b=own[i];if(wanted&&!wanted.has(a.date)&&!wanted.has(b.date))continue;if(b.startMs-a.endMs<11*H-1e-6)push(b.date,'Mindestens 11 Stunden Ruhezeit.');if(plus(a.date,1)===b.date&&a.type==='O3'&&['O1','O2','TL','TL-LE','TL-RE','TEAMLEITER'].includes(b.type))push(b.date,'Nach O3 kein früherer Nachtdienst am Folgetag.');}
+  for(let i=1;i<own.length;i++){const a=own[i-1],b=own[i];if(wanted&&!wanted.has(a.date)&&!wanted.has(b.date))continue;if(b.startMs-a.endMs<11*H-1e-6)push(b.date,'Mindestens 11 Stunden Ruhezeit.');if(plus(a.date,1)===b.date){const message=transitionError(a.type,b.type,p);if(message)push(b.date,message);}}
   const weeks=new Set();for(const a of own){if(wanted&&!wanted.has(a.date))continue;weeks.add(weekKey(a.date));weeks.add(weekKey(localDate(a.endMs-1,p)))}if(wanted)for(const d of wanted)weeks.add(weekKey(d));
   const cap=weekCap;
   for(const w of weeks){const start=instant(w,'00:00',p.timezone),end=instant(plus(w,7),'00:00',p.timezone),hours=own.reduce((sum,a)=>sum+Math.max(0,Math.min(a.endMs,end)-Math.max(a.startMs,start))/H,0);if(hours>cap+1e-6)push(w,'Höchstens '+cap+' Stunden pro Kalenderwoche; Nachtdienste zählen zeitanteilig.')}
@@ -85,11 +92,11 @@
    if(previous&&(touch(b)||touch(previous))){const left=previous.at(-1),free=Math.round((Date.parse(first.date)-Date.parse(left.date))/D)-1,rest=(first.startMs-left.endMs)/H,short=(p.shortBlockRecoveryPersonnelNos||[]).includes(String(e.personnelNo))&&previous.length<=(p.shortBlockMaximum||2)&&previous.every(a=>['OT1','OT2','OT3'].includes(a.type));
     if(free<(short?1:p.minFreeStartDays||2)||rest<(short?11:p.minBlockRestHours||48)-1e-6)out.push({date:first.date,employeeId:e.id,message:short?'Nach kurzen OT-Blöcken mindestens ein freier Tag und 11 Stunden Ruhe.':'Zwischen Arbeitsblöcken mindestens zwei freie Starttage und 48 Stunden Ruhe.'});
    }
-   if(touch(b))for(let j=1;j<b.length;j++){const a=b[j-1],c=b[j];if(c.startMs-a.endMs<11*H)out.push({date:c.date,employeeId:e.id,message:'Mindestens 11 Stunden Ruhezeit.'});if(a.type==='O3'&&['O1','O2','TL','TL-LE','TL-RE','TEAMLEITER'].includes(c.type))out.push({date:c.date,employeeId:e.id,message:'Nach O3 kein früherer Nachtdienst am Folgetag.'})}
+   if(touch(b))for(let j=1;j<b.length;j++){const a=b[j-1],c=b[j];if(c.startMs-a.endMs<11*H)out.push({date:c.date,employeeId:e.id,message:'Mindestens 11 Stunden Ruhezeit.'});const message=transitionError(a.type,c.type,p);if(message)out.push({date:c.date,employeeId:e.id,message})}
   }return out;
  }
  function canAdd(e,byDay,option,p){if(!policy(p))return true;const values=new Map();for(const a of option){for(let n=-8;n<=8;n++){const b=byDay.get(a.day+n);if(b)values.set(b.date,b)}}for(const a of option)values.set(a.date,a);return !errors(e,[...values.values()],p,option.map(a=>a.date)).length}
- function workRestOptions(e,date,choices,dates,base=[],excluded=()=>false,accept=()=>true){
+ function workRestOptions(e,date,choices,dates,base=[],excluded=()=>false,accept=()=>true,p){
   const meta=k=>String((e.qualifications||[]).find(q=>String(q).startsWith('__sp:'+k+'='))||'').split('=').slice(1).join('=');
   const mode=e.rhythmMode||meta('rhythmMode'),pattern=String(e.rhythmPattern||meta('rhythmPattern')).split(/[,;\n]/).map(v=>v.trim().toUpperCase()).filter(Boolean),anchor=e.rhythmStart||meta('rhythmStart');
   if(mode!=='required'||(e.planningTeam||meta('planningTeam'))||!pattern.includes('FREI')||!pattern.includes('ALLE')||pattern.some(v=>!['ALLE','FREI'].includes(v))||!/^\d{4}-\d{2}-\d{2}$/.test(anchor))return null;
@@ -100,7 +107,7 @@
   const lists=wanted.map(d=>(choices.get(d)||[]).filter(a=>!['OT1','OT2','OT3'].includes(a.type))),options=[],seen=new Set();
   const add=rows=>{if(rows.some(a=>!a))return;const key=rows.map(a=>a.type+'|'+a.resource).join(';');if(!seen.has(key)){seen.add(key);if(accept(rows))options.push(rows)}};
   for(const first of lists[0]||[])add(lists.map(list=>list.find(a=>a.type===first.type)));
-  function visit(at,rows){if(options.length>=64)return;if(at===lists.length){add(rows);return}for(const a of lists[at]){const last=rows.at(-1);if(last&&last.type==='O3'&&['O1','O2','TL','TL-LE','TL-RE','TEAMLEITER'].includes(a.type))continue;visit(at+1,[...rows,a]);if(options.length>=64)break}}
+  function visit(at,rows){if(options.length>=64)return;if(at===lists.length){add(rows);return}for(const a of lists[at]){const last=rows.at(-1);if(last&&!allowsTransition(last.type,a.type,p))continue;visit(at+1,[...rows,a]);if(options.length>=64)break}}
   if(lists.length&&lists.every(list=>list.length))visit(0,[]);
   return {options};
  }
@@ -156,6 +163,7 @@
   if(p.teamLeaderMaxConsecutiveNightShifts!=null)model.push(`Teamleiter: höchstens ${p.teamLeaderMaxConsecutiveNightShifts} Nächte am Stück${p.teamLeaderPreferredNightBlockLength!=null?`, bevorzugt ${p.teamLeaderPreferredNightBlockLength}`:''}${p.teamLeaderMinNightRecoveryCalendarDays!=null?`; danach ${p.teamLeaderMinNightRecoveryCalendarDays} vollständig freie Kalendertage und mindestens ${p.minBlockRestHours??48} h Ruhe`:''}${p.teamLeaderMinimumMonthlyHours!=null?`; Monatsziel zuerst ${p.teamLeaderMinimumMonthlyHours} h, anschließend Vertrags-SOLL (persönliche niedrigere Grenzen bleiben verbindlich)`:''}; Wochenmaximum bleibt verbindlich`);
   if(p.threeNightBlockRecoveryFullCalendarDays!=null)model.push(`Fester 4 Arbeit / 3 frei / 3 Arbeit / 2 frei: nach genau drei Nächten Schlaftag plus ${p.threeNightBlockRecoveryFullCalendarDays} voller freier Tag; nach vier Nächten Schlaftag plus ${p.minNightRecoveryCalendarDays??2} volle freie Tage; mindestens ${p.minBlockRestHours??48} h Ruhe`);
   if(p.otDayHolidayExclusion)model.push('Feiertage Deutschland / Sachsen / Nordrhein-Westfalen: keine Pflichtbesetzung OT1 / OT2 / OT3; normale OT nach hinterlegtem Bedarf und Einsatzort');
+  if(p.preventLeaderToO1)model.push('TL-LE / TL-RE → O1 am Folgetag gesperrt; O1 → TL bleibt zulässig');
   if(otRoster(p))model.push(otRoster(p).allowDaysOff?`Feste OT-Tagdienstgruppe: höchstens ${p.otOnlyMonthlyMaxHours} h je Mitarbeiter; zusätzliche freie Tage versetzt bei ausreichender Nachtabdeckung, mindestens ${rosterMinimum(p)} Mitarbeiter pro Werktag; OT1/OT3 nach Nachtabdeckung, übrige OT2; Wochenende und konfigurierte Feiertage frei`:'Feste OT-Tagdienstgruppe: jeder Mitarbeiter Montag–Freitag; OT1/OT3 nur bei fehlender Nachtabdeckung, alle übrigen auf OT2; Wochenende und konfigurierte Feiertage frei');
   return `Verbindlich: max. ${p.monthlyMaxHours??190} h pro Kalendermonat${model.length?'; '+model.join('; '):''}. Allgemeine Regeln für andere Mitarbeiter: max. ${p.maxConsecutiveShifts??4} Dienste und ${p.maxConsecutiveNightShifts??3} Nächte am Stück. Zwischen Blöcken ${p.minFreeCalendarDays??2} vollständig freie Kalendertage und ${p.minBlockRestHours??48} h Ruhe; nach Nachtblöcken ${p.minNightRecoveryCalendarDays??3} freie Kalendertage. Max. ${p.maxCalendarWeekHours??40} h pro Kalenderwoche einschließlich Nachtübertrag. Persönliche niedrigere Grenzen, Freigaben und Abwesenheiten bleiben maßgeblich.`;
  }
@@ -167,5 +175,5 @@
   }return out;
  }
  const penalty=m=>m.nightBlocksOverPreferred*8+m.missingFreeWeekends*35+m.rollingWeekExcessHours*.3+m.startTimeChanges*3+m.isolatedDuties*4;
- return{fixedWeeklyRoster,workRestOptions,otDayHoliday,otCodes,otRoster,rosterEmployee,rosterMinimum,rosterMissing,rosterDaysOff,rosterDay,employeeRules,otDayEmployee,weeklyLimit,summary,plus,weekday,instant,interval,duty,errors,canAdd,required,metrics,penalty,confirmed,limits,countsTowardCap,night,localDate,weekKey};
+ return{transitionError,allowsTransition,fixedWeeklyRoster,workRestOptions,otDayHoliday,otCodes,otRoster,rosterEmployee,rosterMinimum,rosterMissing,rosterDaysOff,rosterDay,employeeRules,otDayEmployee,weeklyLimit,summary,plus,weekday,instant,interval,duty,errors,canAdd,required,metrics,penalty,confirmed,limits,countsTowardCap,night,localDate,weekKey};
 });
