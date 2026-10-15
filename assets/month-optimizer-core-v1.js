@@ -71,7 +71,7 @@
 
   function solidQuality(p,s){const all=[...p.base,...s.records.flatMap(r=>r.option)],remaining=new Map(s.remaining);for(const [key]of remaining){const [date,code]=key.split('|'),need=(p.required||((d,c,r)=>solid.required(d,c,r,p.solidRules)))(date,code,all);if(need!==null){const base=p.base.filter(a=>a.date===date&&a.type===code).length,used=all.filter(a=>a.date===date&&a.type===code).length;remaining.set(key,Math.max(0,need-used))}}
     const q=quality(p,s),critical=[...p.criticalCapacity.keys()].reduce((n,k)=>n+criticalOpen(p,s,k),0),metrics=solid.metrics([...p.people.values()],all,p.solidRules,[p.month]);return {...q,teamLeaderDeficit:teamLeaderDeficit(p,s),open:[...remaining.values()].reduce((n,v)=>n+Math.max(0,v),0),critical,metrics,penalty:solid.penalty(metrics)+q.squared*.15+q.preferencePenalty};}
-  const criticalOpen=(p,s,key)=>Math.max(0,(p.criticalCapacity.get(key)||0)-((p.capacity.get(key)||0)-(s.remaining.get(key)||0)));
+  const criticalOpen=(p,s,key)=>key.endsWith('|OT-DAY')&&solid.otRoster(p.solidRules)?.allowDaysOff?solid.rosterMissing(key.slice(0,10),[...p.base,...s.records.flatMap(r=>r.option)],p.solidRules):Math.max(0,(p.criticalCapacity.get(key)||0)-((p.capacity.get(key)||0)-(s.remaining.get(key)||0)));
   // Search scarce minimum staffing before optional/general work can bind these people.
   // Components with disjoint employee pools can be planned independently.
   async function criticalSeed(p,byResource,allowed,yieldStep){
@@ -126,10 +126,20 @@
   // Assign the entire three-person day together. Greedy individual picks can leave
   // only an OT3 -> OT1 transition (10 hours rest) for the last available employee.
   function rosterChoice(p,s,candidates,allowed){
-    const rows=candidates.filter(r=>r.option.length===1),best={records:[],score:-Infinity};
+    let daysOff=new Map();
+    if(solid.otRoster(p.solidRules)?.allowDaysOff){
+      const coverage=s.records.flatMap(r=>r.option).filter(a=>!solid.otCodes.includes(a.type)),signature=coverage.map(a=>[a.employeeId,a.date,a.type,a.start,a.end].join('|')).sort().join(';');
+      if(p._rosterOffSignature!==signature){
+        const choices=new Map();for(const e of p.people.values())choices.set(String(e.id),new Map());
+        for(const g of p.groups)for(const o of g.options)if(o.length===1&&solid.otCodes.includes(o[0].type)){const a=o[0],own=choices.get(String(g.employee.id));if(!own.has(a.date))own.set(a.date,[]);own.get(a.date).push(a)}
+        p._rosterOff=solid.rosterDaysOff([...p.people.values()],choices,[...new Set([...p.capacity.keys()].map(k=>k.slice(0,10)))],[...p.base,...coverage],p.solidRules);p._rosterOffSignature=signature;
+      }
+      daysOff=p._rosterOff;
+    }
+    const rows=candidates.filter(r=>r.option.length===1&&!daysOff.get(String(r.group.employee.id))?.has(r.option[0].date)),best={records:[],score:-Infinity};
     function search(current,at,selected,score){
       if(selected.length>best.records.length||selected.length===best.records.length&&score>best.score){best.records=selected;best.score=score;}
-      for(let i=at;i<rows.length;i++){const r=rows[i];if(current.used.has(r.group.id)||!allowed(current,r))continue;const own=current.people.get(String(r.group.employee.id)),a=r.option[0],same=own.duties.filter(b=>b.type===a.type).length,last=own.duties.filter(b=>b.date<a.date).sort((a,b)=>a.date.localeCompare(b.date)).at(-1),next=state(p,current.records);commit(next,r,p.month);search(next,i+1,[...selected,r],score-same-(last&&last.start!==a.start?2:0));}
+      for(let i=at;i<rows.length;i++){const r=rows[i];if(current.used.has(r.group.id)||!allowed(current,r))continue;const own=current.people.get(String(r.group.employee.id)),a=r.option[0],same=own.duties.filter(b=>b.type===a.type).length,last=own.duties.filter(b=>b.date<a.date).sort((a,b)=>a.date.localeCompare(b.date)).at(-1),next=state(p,current.records);commit(next,r,p.month);search(next,i+1,[...selected,r],score-same-(last&&last.start!==a.start?2:0)+(solid.otRoster(p.solidRules)?.allowDaysOff&&(p.solidRules.conditionalStaffing||[]).some(rule=>rule.shift===a.type)?100:0));}
     }
     search(s,0,[],0);return best.records[0]||null;
   }
@@ -145,7 +155,7 @@
       // Establish O1/O3 coverage before allocating their conditional OT fallback.
       // Additional OT2 above its confirmed minimum comes after those fallback duties.
       const priority=key=>{if(key.endsWith('|OT-DAY'))return 3;if(criticalOpen(p,s,key)>0)return 0;const code=key.split('|')[1],rules=p.solidRules.conditionalStaffing||[];if(rules.some(r=>r.sourceShift===code))return 1;if(rules.some(r=>r.shift===code))return 3;return p.criticalCapacity.has(key)?4:2};
-      const order=[...p.capacity.keys()].sort((a,b)=>priority(a)-priority(b)||(p.potential.get(a)?.size||0)-(p.potential.get(b)?.size||0)||(a.localeCompare(b))).flatMap(key=>key.endsWith('|OT-DAY')?Array(Math.max(0,p.capacity.get(key)||0)).fill(key):[key]);
+      const order=[...p.capacity.keys()].sort((a,b)=>priority(a)-priority(b)||Number(a.endsWith('|OT-DAY'))-Number(b.endsWith('|OT-DAY'))||(a.endsWith('|OT-DAY')?0:(p.potential.get(a)?.size||0)-(p.potential.get(b)?.size||0))||(a.localeCompare(b))).flatMap(key=>key.endsWith('|OT-DAY')?Array(Math.max(0,p.capacity.get(key)||0)).fill(key):[key]);
       let changed=true;while(changed){changed=false;for(const resource of order){if((s.remaining.get(resource)||0)<1)continue;let chosen=resource.endsWith('|OT-DAY')?rosterChoice(p,s,byResource.get(resource)||[],allowed):null,score=-Infinity;for(const r of resource.endsWith('|OT-DAY')?[]:byResource.get(resource)||[]){if(s.used.has(r.group.id)||!allowed(s,r))continue;const x=s.people.get(String(r.group.employee.id)),deficit=Math.max(0,r.group.employee.target-x.hours),same=r.option.every(a=>a.start===r.option[0].start),v=teamLeaderOptionScore(p,s,r)+(p.preferenceScore?.(r.group.employee,x.duties,r.option)||0)+r.option.reduce((n,a)=>n+(criticalOpen(p,s,a.resource)>0?100:1),0)*10+Math.min(deficit,r.option.hours)*.15+(same?2:0)-(r.option.length===4&&r.option[0].start>='18:00'&&solid.employeeRules(r.group.employee,p.solidRules).preferredNightBlockLength!==4?4:0)-(r.option.length===1?4:0)+rng()*3;if(v>score){chosen=r;score=v}}
         if(chosen){commit(s,chosen,p.month);changed=true}}
       }

@@ -17,6 +17,19 @@ test('server OT targets match night coverage and reject an incomplete fixed week
  await db.query("select private.sf_assert_solid_critical_coverage($1,'2027-01-01')",[company]);
  await db.query("delete from shift_assignments where employee_id=$1 and (starts_at at time zone 'Europe/Berlin')::date='2027-01-07'",[crew[1]]);
  await assert.rejects(db.query("select private.sf_assert_solid_critical_coverage($1,'2027-01-01')",[company]),/OT-Tagdienstgruppe.*unvollständig/);
+ await db.exec(`alter table companies add column name text;alter table company_compliance_policy add column updated_at timestamptz;create table employees(id uuid,company_id uuid,personnel_no text,status text,deleted_at timestamptz);create function private.sf_ot_day_holiday(uuid,date) returns boolean language sql as 'select false';`);
+ await db.exec(fs.readFileSync('supabase/migrations/20261015131802_ot_crew_200_hours_and_days_off.sql','utf8'));
+ await db.exec(fs.readFileSync('supabase/migrations/20261015133013_ot_days_off_preserve_conditional_coverage.sql','utf8'));
+ await db.query('update company_compliance_policy set solid_planning_rules=$1',[{...rules,otOnlyMonthlyMaxHours:200,otWeekdayRoster:{...rules.otWeekdayRoster,allowDaysOff:true,minimumDailyStaff:2}}]);
+ await db.query("select private.sf_assert_solid_critical_coverage($1,'2027-01-01')",[company]);
+ await db.query("delete from shift_assignments where employee_id=$1 and (starts_at at time zone 'Europe/Berlin')::date='2027-01-07'",[crew[0]]);
+ await assert.rejects(db.query("select private.sf_assert_solid_critical_coverage($1,'2027-01-01')",[company]),/OT-Tagdienstgruppe.*unvollständig/,'one person cannot meet the minimum of two');
+ await db.query("insert into shift_assignments values($1,$2,'DRAFT','OT2','2027-01-07T07:00Z','2027-01-07T17:00Z')",[company,crew[0]]);
+ await db.query("delete from shift_assignments where shift_code='O3' and (starts_at at time zone 'Europe/Berlin')::date='2027-01-06' or shift_code='O1' and (starts_at at time zone 'Europe/Berlin')::date='2027-01-07'");
+ await assert.rejects(db.query("select private.sf_assert_solid_critical_coverage($1,'2027-01-01')",[company]),/OT-Verteilung/,'needed morning/evening coverage cannot be replaced by two OT2');
+ await db.query("update shift_assignments set shift_code='OT1',starts_at='2027-01-07T05:00Z',ends_at='2027-01-07T15:00Z' where employee_id=$1 and (starts_at at time zone 'Europe/Berlin')::date='2027-01-07'",[crew[0]]);
+ await db.query("update shift_assignments set shift_code='OT3',starts_at='2027-01-07T09:00Z',ends_at='2027-01-07T19:00Z' where employee_id=$1 and (starts_at at time zone 'Europe/Berlin')::date='2027-01-07'",[crew[2]]);
+ await assert.rejects(db.query("select private.sf_assert_solid_critical_coverage($1,'2027-01-01')",[company]),/OT-Verteilung/,'conditional OT2 minimum remains binding when edge coverage is needed');
  }finally{await db.close()}
 });
 
@@ -28,5 +41,6 @@ test('final monthly apply guard accepts 210 OT hours with a 220 cap but preserve
  create function private.test_apply_cap(e_ public.employees,company_ uuid,target_ numeric,limit_ numeric) returns numeric language plpgsql as $f$ begin ${guard} return limit_;end $f$;`);
  const cap=async(employment,shifts,target=220,limit=190)=>(await db.query('select private.test_apply_cap(row($1,$2)::public.employees,$3,$4,$5) n',[employment,shifts,'11111111-1111-1111-1111-111111111111',target,limit])).rows[0].n;
  assert.equal(Number(await cap('Vollzeit',['OT1','OT2','OT3'])),220);assert.equal(Number(await cap('Vollzeit',['OT2','OT'])),190);assert.equal(Number(await cap('Vollzeit',['O1'])),190);assert.equal(Number(await cap('Teilzeit',['OT2'],144,144)),144);
+ await db.exec(`update company_compliance_policy set solid_planning_rules='{"otOnlyMonthlyMaxHours":200}'`);assert.equal(Number(await cap('Vollzeit',['OT1','OT2','OT3'])),200);assert.equal(Number(await cap('Vollzeit',['O1'])),190);
  }finally{await db.close();}
 });

@@ -60,6 +60,17 @@ function recoveryFixture(){
  vm.runInContext(read('assets/employee-rhythm-v1.js'),c);
  return h;
 }
+test('200-hour OT preview staggers days off and allows confirming the two-person minimum',async()=>{
+ const {c,el,run,calls}=harness();el('autoPlanMonth').value='2028-03';el('autoPlanMonthCount').value='1';c.document.querySelector=()=>null;c.getSoll=()=>0;
+ c.employees=['a','b','c'].map(id=>({id,_dbId:'db-'+id,first:id,last:id,status:'active',shifts:['OT1','OT2','OT3'],employment:'Vollzeit',monthlyHours:220,weeklyHours:40,maxWeeklyHours:55,maxConsecutiveShifts:5}));
+ c.TYPES=[{id:'OT1',start:'06:00',end:'16:00'},{id:'OT2',start:'08:00',end:'18:00'},{id:'OT3',start:'10:00',end:'20:00'}];
+ Object.assign(c.SFCompliance.policy.solidPlanningRules,{confirmedRulesVersion:2,otOnlyMonthlyMaxHours:200,otOnlyMaxCalendarWeekHours:55,otOnlyMaxConsecutiveShifts:5,otOnlyMinFreeCalendarDays:2,otOnlyMinBlockRestHours:48,otWeekdayRoster:{employeeIds:['db-a','db-b','db-c'],weekdays:[1,2,3,4,5],allowDaysOff:true,minimumDailyStaff:2},conditionalStaffing:[{shift:'OT1',sourceShift:'O3',sourceDayOffset:-1,coverageStart:'06:00',coverageEnd:'08:00',minimum:3,fallbackCount:1},{shift:'OT3',sourceShift:'O1',sourceDayOffset:0,coverageStart:'18:00',coverageEnd:'20:00',minimum:3,fallbackCount:1}]});
+ for(const date of c.autoPlanningDates().filter(d=>c.SFSolidPlanningCore.weekday(d)<=5))for(let n=0;n<3;n++){c.assignments.push({id:date+'night'+n,employeeId:'night'+n,date:c.SFSolidPlanningCore.plus(date,-1),type:'O3',start:'22:00',end:'08:00',_dbStatus:'PUBLISHED',publishedAt:'2026-10-01'});c.assignments.push({id:date+'early'+n,employeeId:'early'+n,date,type:'O1',start:'18:00',end:'04:00',_dbStatus:'PUBLISHED',publishedAt:'2026-10-01'});}
+ await c.SFMonthOptimizer.optimize();assert.ok(c.SFMonthOptimizer.getResult(),c.toast?.copy);const preview=run('autoPlanPreview');
+ for(const e of c.employees)assert.equal(preview.filter(a=>a.employeeId===e.id).length,20);
+ assert.equal(c.SFMonthOptimizer.getResult().criticalOpen,0);assert.equal(run('autoPlanUnresolved.length'),9);
+ await c.applyAutoPlanPreview();assert.equal(calls.at(-1).name,'apply_planning_period');assert.equal(calls.at(-1).args.p_assignments.length,60);
+});
 test('candidate collection retains the complete three-night block despite the last night failing alone',async()=>{
  const {c,run,el}=recoveryFixture(),before=JSON.stringify(c.assignments);
  assert.equal(c.SFAutoPlanGuard.passesTimeRules('a','O2','2027-01-30'),false);

@@ -23,3 +23,34 @@ test('holiday exclusion removes January 1 from ordinary and checkpointed fixed O
  const wire=B.pack(input),unpacked=B.unpack(wire);let cp=R.start(unpacked,3);for(let n=0;n<10000&&cp.phase!=='done';n++){const runner=R.context(unpacked,cp);runner.step();cp=JSON.parse(JSON.stringify(cp));}assert.equal(cp.phase,'done');assertFull(input,R.context(unpacked,cp).result(),20);
  for(const date of ['2027-01-01','2027-05-27','2027-11-01','2027-11-17']){assert.equal(S.rosterDay(date,input.solidRules),false);for(const code of S.otCodes)assert.equal(S.required(date,code,[],input.solidRules),0);}assert.equal(S.rosterDay('2027-01-04',input.solidRules),true);
 });
+
+function cappedFixture(month,covered=true){
+ const input=fixture({covered}),rules={...input.solidRules,otOnlyMonthlyMaxHours:200,otDayHolidayExclusion:true,otDayHolidayStates:['DE','SN','NW'],otWeekdayRoster:{...input.solidRules.otWeekdayRoster,allowDaysOff:true,minimumDailyStaff:2}};
+ const begin=month+'-01',dates=Array.from({length:31},(_,i)=>S.plus(begin,i)).filter(d=>d.startsWith(month)&&S.rosterDay(d,rules));
+ input.month=month;input.solidRules=rules;input.base=[];
+ if(covered)for(const date of dates)for(let n=0;n<3;n++){input.base.push({employeeId:'night'+n,date:S.plus(date,-1),type:'O3',start:'22:00',end:'08:00'});input.base.push({employeeId:'early'+n,date,type:'O1',start:'18:00',end:'04:00'});}
+ const types=S.otCodes.map(id=>({id,start:{OT1:'06:00',OT2:'08:00',OT3:'10:00'}[id],end:{OT1:'16:00',OT2:'18:00',OT3:'20:00'}[id]}));
+ input.employees=input.employees.map(e=>({...e,...S.limits(e,types,rules)}));
+ const choices=new Map(input.employees.map(e=>[e.id,new Map(dates.map(date=>[date,types.map(t=>({employeeId:e.id,date,type:t.id,start:t.start,end:t.end,resource:date+'|OT-DAY'}))]))]));
+ const off=S.rosterDaysOff(input.employees,choices,dates,input.base,rules);
+ input.groups=input.employees.flatMap(employee=>dates.map(date=>({id:employee.id+'|'+date,employee,options:choices.get(employee.id).get(date).map(a=>[a])})));
+ input.capacities=dates.map(d=>[d+'|OT-DAY',3]);input.criticalCapacities=dates.map(d=>[d+'|OT-DAY',2]);return {input,dates,off};
+}
+test('200-hour cap staggers extra days off in months with twenty, twenty-one and twenty-three workdays',async()=>{
+ for(const [month,count]of [['2027-01',20],['2028-02',21],['2028-03',23]]){
+  const {input,dates,off}=cappedFixture(month);assert.equal(dates.length,count);const result=await run(input);assertFull(input,result,20);
+  for(const e of input.employees){assert.equal(off.get(e.id)?.size||0,count-20);const hours=result.preview.filter(a=>a.employeeId===e.id).reduce((n,a)=>n+S.duty(a,input.solidRules).hours,0);assert.equal(hours,200);}
+  for(const date of dates)assert.ok(result.preview.filter(a=>a.date===date).length>=2,'minimum crew retained on '+date);
+  assert.equal(result.quality.open,(count-20)*3,'third preferred staff positions stay visible');
+  const packed=B.pack(input),unpacked=B.unpack(packed);let cp=R.start(unpacked,3);
+  for(let n=0;n<10000&&cp.phase!=='done';n++){const runner=R.context(unpacked,cp);for(let step=0;step<20&&cp.phase!=='done';step++)runner.step();cp=JSON.parse(JSON.stringify(cp));}
+  assert.equal(cp.phase,'done');assertFull(input,R.context(unpacked,cp).result(),20);
+ }
+});
+test('hours cap never waives required OT coverage when no night staffing permits a day off',async()=>{
+ const {input,off}=cappedFixture('2028-02',false),result=await run(input);assert.equal(off.size,0);assert.ok(result.quality.critical>0);
+ for(const e of input.employees)assert.ok(result.preview.filter(a=>a.employeeId===e.id).length<=20);
+ const wire=B.pack(input),unpacked=B.unpack(wire);let cp=R.start(unpacked,3);
+ for(let n=0;n<10000&&cp.phase!=='done';n++){const runner=R.context(unpacked,cp);runner.step();cp=JSON.parse(JSON.stringify(cp));}
+ assert.equal(cp.phase,'done');assert.ok(R.context(unpacked,cp).result().quality.critical>0);
+});

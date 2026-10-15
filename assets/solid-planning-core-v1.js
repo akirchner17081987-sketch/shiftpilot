@@ -107,6 +107,38 @@
  const otCodes=['OT1','OT2','OT3'];
  function otRoster(p){return policy(p)&&Array.isArray(p.otWeekdayRoster?.employeeIds)&&p.otWeekdayRoster.employeeIds.length?p.otWeekdayRoster:null}
  function rosterEmployee(e,p){return !!otRoster(p)?.employeeIds.map(String).includes(String(e._dbId||e.id))}
+ function rosterMinimum(p){const r=otRoster(p);return r?Math.max(1,Math.min(r.employeeIds.length,r.allowDaysOff?Number(r.minimumDailyStaff)||r.employeeIds.length:r.employeeIds.length)):0}
+ function rosterMissing(date,rows,p){
+  const needs=Object.fromEntries(otCodes.map(code=>[code,required(date,code,rows,p)||0]));
+  if(otRoster(p)?.allowDaysOff&&!needs.OT1&&!needs.OT3)needs.OT2=Math.min(needs.OT2,rosterMinimum(p));
+  return otCodes.reduce((n,code)=>n+Math.max(0,needs[code]-rows.filter(a=>active(a)&&a.date===date&&a.type===code).length),0);
+ }
+ // Reserve staggered days off before the daily solver spends every employee's
+ // monthly budget on the same first twenty weekdays. Extend weekends so the
+ // existing two-day recovery rule remains binding.
+ function rosterDaysOff(people,choices,dates,base,p){
+  const result=new Map(),roster=otRoster(p);if(!roster?.allowDaysOff)return result;
+  const crew=people.filter(e=>rosterEmployee(e,p));
+  for(const month of new Set(dates.map(d=>d.slice(0,7)))){
+   const days=dates.filter(d=>d.startsWith(month)&&rosterDay(d,p)),capacity=new Map();
+   for(const d of days){const available=crew.filter(e=>choices.get(String(e.id))?.get(d)?.some(a=>otCodes.includes(a.type))).length,filled=new Set(base.filter(a=>active(a)&&a.date===d&&otCodes.includes(a.type)&&crew.some(e=>String(e.id)===String(a.employeeId))).map(a=>String(a.employeeId))).size;capacity.set(d,Math.max(0,available+filled-rosterMinimum(p)))}
+   const tasks=crew.map(e=>{
+    const own=base.filter(a=>active(a)&&String(a.employeeId)===String(e.id)).map(a=>duty(a,p)),started=own.filter(a=>a.date.startsWith(month)),begin=instant(month+'-01','00:00',p.timezone),endDate=new Date(month+'-01T12:00Z');endDate.setUTCMonth(endDate.getUTCMonth()+1);const end=instant(endDate.toISOString().slice(0,10),'00:00',p.timezone);
+    const calendar=own.reduce((n,a)=>n+Math.max(0,Math.min(a.endMs,end)-Math.max(a.startMs,begin))/H,0),slots=Math.max(0,Math.min((e.maxMonthlyShifts??Infinity)-started.filter(countsTowardCap).length,Math.floor(((e.monthLimit??Infinity)-started.reduce((n,a)=>n+a.hours,0)+1e-6)/10),Math.floor(((e.calendarLimit??Infinity)-calendar+1e-6)/10)));
+    const available=days.filter(d=>choices.get(String(e.id))?.get(d)?.some(a=>otCodes.includes(a.type)));
+    return {id:String(e.id),left:Math.max(0,available.length-slots),candidates:available.filter(d=>[1,5].includes(weekday(d))&&capacity.get(d)>0&&!(required(d,'OT1',base,p)||required(d,'OT3',base,p))),off:new Set(),weeks:new Set()};
+   }).filter(t=>t.left>0);
+   const used=new Map();let visits=0;
+   function assign(){
+    if(++visits>20000)return false;
+    const pending=tasks.filter(t=>t.left>0).map(t=>({t,dates:t.candidates.filter(d=>!t.off.has(d)&&!t.weeks.has(weekKey(d))&&(used.get(d)||0)<capacity.get(d))})).sort((a,b)=>a.dates.length-b.dates.length||b.t.left-a.t.left||a.t.id.localeCompare(b.t.id));
+    if(!pending.length)return true;const {t,dates:options}=pending[0];if(options.length<t.left)return false;
+    for(const d of options){t.left--;t.off.add(d);t.weeks.add(weekKey(d));used.set(d,(used.get(d)||0)+1);if(assign())return true;used.set(d,used.get(d)-1);t.weeks.delete(weekKey(d));t.off.delete(d);t.left++}return false;
+   }
+   if(assign())for(const t of tasks){if(!result.has(t.id))result.set(t.id,new Set());for(const d of t.off)result.get(t.id).add(d)}
+  }
+  return result;
+ }
  function otDayHoliday(date,p){if(!p?.otDayHolidayExclusion)return false;const api=typeof OT==='function'?OT():OT;if(!api?.isHoliday)throw Error('Feiertagskalender konnte nicht geladen werden. Bitte die Seite neu laden.');return api.isHoliday(date,p.otDayHolidayStates||['DE','SN','NW']);}
  function rosterDay(date,p){return !!otRoster(p)&&!otDayHoliday(date,p)&&(p.otWeekdayRoster.weekdays||[1,2,3,4,5]).includes(weekday(date))}
  function required(date,code,rows,p){if(otCodes.includes(code)&&otDayHoliday(date,p))return 0;if(!policy(p))return null;if(otRoster(p)&&code==='OT2'){if(!rosterDay(date,p))return 0;return Math.max(0,otRoster(p).employeeIds.length-(required(date,'OT1',rows,p)||0)-(required(date,'OT3',rows,p)||0))}const rule=(p.conditionalStaffing||[]).find(r=>r.shift===code);if(!rule)return null;if(weekday(date)>5)return 0;
@@ -124,7 +156,7 @@
   if(p.teamLeaderMaxConsecutiveNightShifts!=null)model.push(`Teamleiter: höchstens ${p.teamLeaderMaxConsecutiveNightShifts} Nächte am Stück${p.teamLeaderPreferredNightBlockLength!=null?`, bevorzugt ${p.teamLeaderPreferredNightBlockLength}`:''}${p.teamLeaderMinNightRecoveryCalendarDays!=null?`; danach ${p.teamLeaderMinNightRecoveryCalendarDays} vollständig freie Kalendertage und mindestens ${p.minBlockRestHours??48} h Ruhe`:''}${p.teamLeaderMinimumMonthlyHours!=null?`; Monatsziel zuerst ${p.teamLeaderMinimumMonthlyHours} h, anschließend Vertrags-SOLL (persönliche niedrigere Grenzen bleiben verbindlich)`:''}; Wochenmaximum bleibt verbindlich`);
   if(p.threeNightBlockRecoveryFullCalendarDays!=null)model.push(`Fester 4 Arbeit / 3 frei / 3 Arbeit / 2 frei: nach genau drei Nächten Schlaftag plus ${p.threeNightBlockRecoveryFullCalendarDays} voller freier Tag; nach vier Nächten Schlaftag plus ${p.minNightRecoveryCalendarDays??2} volle freie Tage; mindestens ${p.minBlockRestHours??48} h Ruhe`);
   if(p.otDayHolidayExclusion)model.push('Feiertage Deutschland / Sachsen / Nordrhein-Westfalen: keine Pflichtbesetzung OT1 / OT2 / OT3; normale OT nach hinterlegtem Bedarf und Einsatzort');
-  if(otRoster(p))model.push('Feste OT-Tagdienstgruppe: jeder Mitarbeiter Montag–Freitag; OT1/OT3 nur bei fehlender Nachtabdeckung, alle übrigen auf OT2; Wochenende und konfigurierte Feiertage frei');
+  if(otRoster(p))model.push(otRoster(p).allowDaysOff?`Feste OT-Tagdienstgruppe: höchstens ${p.otOnlyMonthlyMaxHours} h je Mitarbeiter; zusätzliche freie Tage versetzt bei ausreichender Nachtabdeckung, mindestens ${rosterMinimum(p)} Mitarbeiter pro Werktag; OT1/OT3 nach Nachtabdeckung, übrige OT2; Wochenende und konfigurierte Feiertage frei`:'Feste OT-Tagdienstgruppe: jeder Mitarbeiter Montag–Freitag; OT1/OT3 nur bei fehlender Nachtabdeckung, alle übrigen auf OT2; Wochenende und konfigurierte Feiertage frei');
   return `Verbindlich: max. ${p.monthlyMaxHours??190} h pro Kalendermonat${model.length?'; '+model.join('; '):''}. Allgemeine Regeln für andere Mitarbeiter: max. ${p.maxConsecutiveShifts??4} Dienste und ${p.maxConsecutiveNightShifts??3} Nächte am Stück. Zwischen Blöcken ${p.minFreeCalendarDays??2} vollständig freie Kalendertage und ${p.minBlockRestHours??48} h Ruhe; nach Nachtblöcken ${p.minNightRecoveryCalendarDays??3} freie Kalendertage. Max. ${p.maxCalendarWeekHours??40} h pro Kalenderwoche einschließlich Nachtübertrag. Persönliche niedrigere Grenzen, Freigaben und Abwesenheiten bleiben maßgeblich.`;
  }
  function metrics(people,rows,p,months){const all=rows.filter(active).map(a=>duty(a,p)),out={nightBlocksOverPreferred:0,missingFreeWeekends:0,rollingWeekExcessHours:0,rollingWeekOverTargetWindows:0,startTimeChanges:0,isolatedDuties:0};
@@ -135,5 +167,5 @@
   }return out;
  }
  const penalty=m=>m.nightBlocksOverPreferred*8+m.missingFreeWeekends*35+m.rollingWeekExcessHours*.3+m.startTimeChanges*3+m.isolatedDuties*4;
- return{fixedWeeklyRoster,workRestOptions,otDayHoliday,otCodes,otRoster,rosterEmployee,rosterDay,employeeRules,otDayEmployee,weeklyLimit,summary,plus,weekday,instant,interval,duty,errors,canAdd,required,metrics,penalty,confirmed,limits,countsTowardCap,night,localDate,weekKey};
+ return{fixedWeeklyRoster,workRestOptions,otDayHoliday,otCodes,otRoster,rosterEmployee,rosterMinimum,rosterMissing,rosterDaysOff,rosterDay,employeeRules,otDayEmployee,weeklyLimit,summary,plus,weekday,instant,interval,duty,errors,canAdd,required,metrics,penalty,confirmed,limits,countsTowardCap,night,localDate,weekKey};
 });
