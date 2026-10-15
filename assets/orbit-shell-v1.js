@@ -117,6 +117,25 @@
       const stamp = document.createElement('small');
       stamp.textContent = 'Datenstand ' + new Intl.DateTimeFormat('de-DE', { timeZone: current.timezone, hour: '2-digit', minute: '2-digit' }).format(new Date(current.asOf)) + ' Uhr' + (!current.fresh ? ' · veraltet' : '') + (current.shift ? ' · ' + current.shift : ' · alle Schichten');
       info.append(name, status, values, stamp); info.hidden = false;
+      // Keep the location card beside its trigger and above the fixed navigation.
+      const trigger = buttons.get(id)?.getBoundingClientRect();
+      if (trigger) {
+        info.style.position = 'fixed'; info.style.transform = 'none';
+        const size = info.getBoundingClientRect(), gap = 12, lower = (dock?.getBoundingClientRect().top || window.innerHeight) - gap;
+        const upper = Math.max(gap, shell?.querySelector('.topbar')?.getBoundingClientRect().bottom || 0);
+        const clamp = (value, min, max) => Math.max(min, Math.min(value, Math.max(min, max)));
+        let left, top;
+        if (trigger.left - size.width - gap >= gap) {
+          left = trigger.left - size.width - gap; top = clamp(trigger.top, upper, lower - size.height);
+        } else if (trigger.right + size.width + 2 * gap <= window.innerWidth) {
+          left = trigger.right + gap; top = clamp(trigger.top, upper, lower - size.height);
+        } else {
+          left = clamp(trigger.left + trigger.width / 2 - size.width / 2, gap, window.innerWidth - size.width - gap);
+          top = trigger.bottom + gap + size.height <= lower ? trigger.bottom + gap : trigger.top - size.height - gap;
+          top = clamp(top, upper, lower - size.height);
+        }
+        info.style.left = left + 'px'; info.style.top = top + 'px';
+      }
       buttons.forEach((b, key) => { if (key === id) b.setAttribute('aria-describedby', info.id); else b.removeAttribute('aria-describedby'); });
     }
     function select(id) {
