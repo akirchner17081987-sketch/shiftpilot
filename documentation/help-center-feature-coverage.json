@@ -2185,6 +2185,24 @@
       "area": "Planungsassistent und Optimierung",
       "category": "auto",
       "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/location-map-core-v1.js",
+      "area": "Orbit-Navigation und Hologramm-Darstellung",
+      "category": "start",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/location-map-v1.js",
+      "area": "Orbit-Navigation und Hologramm-Darstellung",
+      "category": "start",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/location-map-engine-v1.js",
+      "area": "Orbit-Navigation und Hologramm-Darstellung",
+      "category": "start",
+      "kind": "feature-or-support"
     }
   ],
   "categoryCoverage": [
