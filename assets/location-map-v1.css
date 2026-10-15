@@ -133,3 +133,6 @@
 .sf-location-map .sf-scene{height:490px}
 @media(max-width:520px){.sf-location-map .sf-map-footer{padding:12px}.sf-location-map .sf-point .sf-alert-icon{flex:none}}
 .sf-location-map[data-motion="off"] .sf-select-pulse,.sf-location-map[data-motion="off"] .sf-popup{animation:none!important}
+/* The location dialog stays dark in both manager themes. */
+#appShell.sf-orbit .sf-location-map .sf-pop-header h3{color:#edf9ff!important}
+#appShell.sf-orbit .sf-location-map .sf-anchors circle.sf-select-pulse{fill:none}

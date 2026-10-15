@@ -83,6 +83,7 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
      await page.setViewportSize({width,height:1000});await page.evaluate(t=>SFManagerTheme.apply(t,false),theme);
      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),true,'map fits '+width);
      await sitePin('east').click();await card.scrollIntoViewIfNeeded();const rect=await card.boundingBox();assert.ok(rect.x>=0&&rect.x+rect.width<=width+1,'location dialog fits '+width);
+     const contrast=await card.evaluate(el=>{const heading=el.querySelector('h3'),background=el.querySelector('.sf-pop-header');const luminance=value=>{const rgb=value.match(/[\d.]+/g).slice(0,3).map(Number).map(x=>{x/=255;return x<=.04045?x/12.92:((x+.055)/1.055)**2.4;});return .2126*rgb[0]+.7152*rgb[1]+.0722*rgb[2];};const a=luminance(getComputedStyle(heading).color),b=luminance(getComputedStyle(background).backgroundColor);return(Math.max(a,b)+.05)/(Math.min(a,b)+.05);});assert.ok(contrast>=4.5,'location heading contrast in '+theme+' at '+width);
      await page.screenshot({path:path.join(out,'orbit-site-info-'+theme+'-'+width+'.png'),animations:'disabled'});
      await card.locator('.sf-close').click();assert.equal(await card.isVisible(),false);
    }

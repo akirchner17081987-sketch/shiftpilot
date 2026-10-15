@@ -29,7 +29,7 @@ host.append(root);
  function createButton(site){
   const button=document.createElement('button');button.type='button';button.className='sf-point';button.dataset.orbitSite=site.id;button.setAttribute('aria-haspopup','dialog');button.setAttribute('aria-controls','sfOrbitSiteInfo');
   const code=document.createElement('span'),name=document.createElement('span'),alert=document.createElement('span');code.className='sf-code';name.className='sf-location-name';alert.className='sf-alert-icon';alert.setAttribute('aria-hidden','true');alert.textContent='!';button.append(code,name,alert);
-  button.addEventListener('click',event=>{showSite(site.id);if(event.detail===0&&!popup.hidden)root.querySelector('[data-kind="present"]').focus();});buttons.set(site.id,button);root.querySelector('.sf-points').append(button);return button;
+  button.addEventListener('click',event=>{showSite(site.id);if(event.detail===0&&!popup.hidden)root.querySelector('.sf-category:not(:disabled)')?.focus();});buttons.set(site.id,button);root.querySelector('.sf-points').append(button);return button;
  }
  function renderSites(){
   const keep=new Set(data.sites.map(s=>s.id));buttons.forEach((button,id)=>{if(!keep.has(id)){button.remove();buttons.delete(id);}});anchors.replaceChildren();labelLines.replaceChildren();
