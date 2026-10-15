@@ -14,6 +14,8 @@
     if(window.SFSolidPlanningCore?.transitionError)return window.SFSolidPlanningCore.transitionError(from,to,rules);
     if(String(from).toUpperCase()==='O3'&&earlyNight(to))return 'Nach O3 kein früherer Nachtdienst am Folgetag.';
     if(rules?.enabled&&rules.preventLeaderToO1&&['TL-LE','TL-RE'].includes(String(from).toUpperCase())&&String(to).toUpperCase()==='O1')return 'Nach TL-LE oder TL-RE ist O1 am Folgetag nicht zulässig.';
+    const order={OT:0,O1:1,O2:2,TL:2,'TL-LE':2,'TL-RE':2,TEAMLEITER:2,O3:3},a=String(from).toUpperCase(),b=String(to).toUpperCase();
+    if(rules?.enabled&&rules.preventDescendingShifts&&order[a]!=null&&order[b]!=null&&order[a]>order[b])return `Absteigender Schichtwechsel ${a} → ${b} am Folgetag ist nicht zulässig.`;
     return null;
   }
   const allowsTransition=(from,to)=>!transitionMessage(from,to);

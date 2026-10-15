@@ -18,10 +18,12 @@
  function localDate(ms,p){const key=p.timezone||'Europe/Berlin',memo=ms+'|'+key;if(localDates.has(memo))return localDates.get(memo);let f=formats.get('date|'+key);if(!f){f=new Intl.DateTimeFormat('en-CA',{timeZone:key,year:'numeric',month:'2-digit',day:'2-digit'});formats.set('date|'+key,f)}const v=Object.fromEntries(f.formatToParts(new Date(ms)).map(x=>[x.type,x.value])),date=v.year+'-'+v.month+'-'+v.day;if(localDates.size>=8192)localDates.clear();localDates.set(memo,date);return date}
  const weekKey=date=>plus(date,1-weekday(date));
  const night=a=>/^(ND|O1|O2|O3|O1S|O2S|TL|TL-LE|TL-RE|TEAMLEITER|QA)$/i.test(a.type)||a.start>='18:00';
+ const shiftOrder={OT:0,O1:1,O2:2,TL:2,'TL-LE':2,'TL-RE':2,TEAMLEITER:2,O3:3};
  function transitionError(from,to,p){
   from=String(from).toUpperCase();to=String(to).toUpperCase();
   if(from==='O3'&&['O1','O2','TL','TL-LE','TL-RE','TEAMLEITER'].includes(to))return 'Nach O3 kein früherer Nachtdienst am Folgetag.';
   if(policy(p)?.preventLeaderToO1&&['TL-LE','TL-RE'].includes(from)&&to==='O1')return 'Nach TL-LE oder TL-RE ist O1 am Folgetag nicht zulässig.';
+  if(policy(p)?.preventDescendingShifts&&shiftOrder[from]!=null&&shiftOrder[to]!=null&&shiftOrder[from]>shiftOrder[to])return `Absteigender Schichtwechsel ${from} → ${to} am Folgetag ist nicht zulässig.`;
   return null;
  }
  const allowsTransition=(from,to,p)=>!transitionError(from,to,p);
@@ -163,7 +165,8 @@
   if(p.teamLeaderMaxConsecutiveNightShifts!=null)model.push(`Teamleiter: höchstens ${p.teamLeaderMaxConsecutiveNightShifts} Nächte am Stück${p.teamLeaderPreferredNightBlockLength!=null?`, bevorzugt ${p.teamLeaderPreferredNightBlockLength}`:''}${p.teamLeaderMinNightRecoveryCalendarDays!=null?`; danach ${p.teamLeaderMinNightRecoveryCalendarDays} vollständig freie Kalendertage und mindestens ${p.minBlockRestHours??48} h Ruhe`:''}${p.teamLeaderMinimumMonthlyHours!=null?`; Monatsziel zuerst ${p.teamLeaderMinimumMonthlyHours} h, anschließend Vertrags-SOLL (persönliche niedrigere Grenzen bleiben verbindlich)`:''}; Wochenmaximum bleibt verbindlich`);
   if(p.threeNightBlockRecoveryFullCalendarDays!=null)model.push(`Fester 4 Arbeit / 3 frei / 3 Arbeit / 2 frei: nach genau drei Nächten Schlaftag plus ${p.threeNightBlockRecoveryFullCalendarDays} voller freier Tag; nach vier Nächten Schlaftag plus ${p.minNightRecoveryCalendarDays??2} volle freie Tage; mindestens ${p.minBlockRestHours??48} h Ruhe`);
   if(p.otDayHolidayExclusion)model.push('Feiertage Deutschland / Sachsen / Nordrhein-Westfalen: keine Pflichtbesetzung OT1 / OT2 / OT3; normale OT nach hinterlegtem Bedarf und Einsatzort');
-  if(p.preventLeaderToO1)model.push('TL-LE / TL-RE → O1 am Folgetag gesperrt; O1 → TL bleibt zulässig');
+  if(p.preventDescendingShifts)model.push('Innerhalb eines Arbeitsblocks nur gleiche oder aufsteigende Dienste: OT → O1 → O2 / TL-LE / TL-RE → O3; absteigende Wechsel am Folgetag gesperrt');
+  else if(p.preventLeaderToO1)model.push('TL-LE / TL-RE → O1 am Folgetag gesperrt; O1 → TL bleibt zulässig');
   if(otRoster(p))model.push(otRoster(p).allowDaysOff?`Feste OT-Tagdienstgruppe: höchstens ${p.otOnlyMonthlyMaxHours} h je Mitarbeiter; zusätzliche freie Tage versetzt bei ausreichender Nachtabdeckung, mindestens ${rosterMinimum(p)} Mitarbeiter pro Werktag; OT1/OT3 nach Nachtabdeckung, übrige OT2; Wochenende und konfigurierte Feiertage frei`:'Feste OT-Tagdienstgruppe: jeder Mitarbeiter Montag–Freitag; OT1/OT3 nur bei fehlender Nachtabdeckung, alle übrigen auf OT2; Wochenende und konfigurierte Feiertage frei');
   return `Verbindlich: max. ${p.monthlyMaxHours??190} h pro Kalendermonat${model.length?'; '+model.join('; '):''}. Allgemeine Regeln für andere Mitarbeiter: max. ${p.maxConsecutiveShifts??4} Dienste und ${p.maxConsecutiveNightShifts??3} Nächte am Stück. Zwischen Blöcken ${p.minFreeCalendarDays??2} vollständig freie Kalendertage und ${p.minBlockRestHours??48} h Ruhe; nach Nachtblöcken ${p.minNightRecoveryCalendarDays??3} freie Kalendertage. Max. ${p.maxCalendarWeekHours??40} h pro Kalenderwoche einschließlich Nachtübertrag. Persönliche niedrigere Grenzen, Freigaben und Abwesenheiten bleiben maßgeblich.`;
  }

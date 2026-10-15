@@ -4,7 +4,14 @@
   const next=date=>{const d=new Date(date+'T12:00:00');d.setDate(d.getDate()+1);return iso(d)};
   const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   const week=date=>{const d=new Date(date+'T12:00:00');d.setDate(d.getDate()-(d.getDay()+6)%7);return iso(d)};
-  const transition=(a,b,p)=>solid?.allowsTransition?solid.allowsTransition(a,b,p):!(a==='O3'&&['O1','O2','TL','TL-LE','TL-RE','TEAMLEITER'].includes(String(b).toUpperCase()))&&!(p?.enabled&&p.preventLeaderToO1&&['TL-LE','TL-RE'].includes(String(a).toUpperCase())&&String(b).toUpperCase()==='O1');
+  function transition(a,b,p){
+    if(solid?.allowsTransition)return solid.allowsTransition(a,b,p);
+    a=String(a).toUpperCase();b=String(b).toUpperCase();
+    if(a==='O3'&&['O1','O2','TL','TL-LE','TL-RE','TEAMLEITER'].includes(b))return false;
+    if(p?.enabled&&p.preventLeaderToO1&&['TL-LE','TL-RE'].includes(a)&&b==='O1')return false;
+    const order={OT:0,O1:1,O2:2,TL:2,'TL-LE':2,'TL-RE':2,TEAMLEITER:2,O3:3};
+    return !(p?.enabled&&p.preventDescendingShifts&&order[a]!=null&&order[b]!=null&&order[a]>order[b]);
+  }
   function duty(a){const start=new Date(a.date+'T'+a.start.slice(0,5)+':00'),end=new Date(a.date+'T'+a.end.slice(0,5)+':00');if(end<=start)end.setDate(end.getDate()+1);return{...a,startMs:+start,endMs:+end,hours:(end-start)/hour,day:Math.floor(Date.parse(a.date+'T12:00:00Z')/86400000),week:week(a.date)}}
   function solidDuty(a,p){return {...solid.duty(a,p),week:week(a.date)}}
   function prepare(input){
