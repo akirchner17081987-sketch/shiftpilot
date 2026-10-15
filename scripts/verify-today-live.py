@@ -6,7 +6,7 @@ import urllib.request
 from pathlib import Path
 
 root = Path(__file__).resolve().parent.parent
-assets = ["assets/today-workspace-core-v1.js", "assets/today-workspace-v3.js", "assets/today-workspace-v3.css"]
+assets = ["assets/today-workspace-core-v1.js", "assets/today-workspace-v3.js", "assets/today-workspace-v3.css", "assets/orbit-shell-v1.js", "assets/orbit-shell-v1.css"]
 expected = {name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in assets}
 revision = os.environ.get("GITHUB_SHA", "today-check")
 deadline = time.monotonic() + 600
