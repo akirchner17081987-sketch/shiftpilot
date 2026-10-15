@@ -221,8 +221,8 @@
       });
     }
     const rad = Math.PI / 180, points = [];
-    for (let lat = -57; lat <= 82; lat += 2.3) {
-      const step = 2.3 / Math.max(.24, Math.cos(lat * rad));
+    for (let lat = -57; lat <= 82; lat += 1.4) {
+      const step = 1.4 / Math.max(.24, Math.cos(lat * rad));
       for (let lon = -180; lon < 180; lon += step) {
         if (!onLand(lon, lat)) continue;
         const seed = (Math.sin(lon * 12.9898 + lat * 78.233) * 43758.5453) % 1;
@@ -270,10 +270,10 @@
         const alpha = Math.min(1, p.z * 3) * (point.lit ? .45 + .55 * pulse : .42);
         ctx.globalAlpha = alpha;
         ctx.fillStyle = point.lit ? '#c8f7ff' : light ? '#899adc' : '#38bfd4';
-        ctx.beginPath(); ctx.arc(p.x, p.y, point.lit ? 1.15 : .82, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(p.x, p.y, point.lit ? .56 : .38, 0, Math.PI * 2); ctx.fill();
         if (point.lit) {
           ctx.globalAlpha = alpha * .2; ctx.fillStyle = light ? '#c7c0ff' : '#67e8ff';
-          ctx.beginPath(); ctx.arc(p.x, p.y, 3.6, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(p.x, p.y, 1.5, 0, Math.PI * 2); ctx.fill();
         }
       }
       ctx.globalAlpha = 1;
