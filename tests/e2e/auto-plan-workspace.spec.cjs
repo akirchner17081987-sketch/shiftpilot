@@ -13,6 +13,77 @@ async function fixture(page,theme='dark'){
  await page.locator('#autoPlanPeriod').selectOption('month');await page.locator('#autoPlanMonth').fill('2026-12');await page.locator('#autoPlanMonth').dispatchEvent('change');
 }
 async function generatePreview(page){await page.locator('#generateAutoPlanBtn').click();await expect(page.locator('#sfAutoProgressLabel')).toHaveText('Planung abgeschlossen',{timeout:100000});await expect(page.locator('#generateAutoPlanBtn')).toBeEnabled();}
+async function previewEditor(page){await page.addScriptTag({content:read('assets/auto-plan-preview-editor-v1.js')});await page.evaluate(()=>renderAutoPlanning());}
+for(const theme of ['dark','light'])test(`preview editor changes, removes, restores and adds duties before the confirmed save in ${theme}`,async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));await fixture(page,theme);
+ await page.evaluate(()=>{employees.push({...employees[0],id:'second',first:'Zweite',last:'Person'});getSoll=date=>Number(date==='2026-12-01'||date==='2026-12-02');});
+ await generatePreview(page);await previewEditor(page);
+ const original=await page.evaluate(()=>JSON.stringify(autoPlanPreview)),first=await page.evaluate(()=>autoPlanPreview[0]),other=first.employeeId==='test'?'second':'test';
+ await page.getByRole('button',{name:'Dienst hinzufügen',exact:true}).click();
+ await page.locator('#sfPreviewFrom').fill('2026-12-03');await page.locator('#sfPreviewFrom').dispatchEvent('change');
+ await expect(page.locator('#sfPreviewEmployee option:not(:disabled)')).toHaveCount(1);await page.keyboard.press('Escape');
+ await page.getByRole('button',{name:new RegExp(first.date+' · Dienst ändern')}).click();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);if(theme==='light')expect(await page.locator('#sfPreviewTo').evaluate(e=>{const s=getComputedStyle(e);return s.color===s.webkitTextFillColor})).toBe(true);await page.screenshot({path:test.info().outputPath('preview-dialog-'+theme+'.png'),fullPage:true});
+ await page.locator('#sfPreviewEmployee').selectOption(other);await page.getByRole('button',{name:'In Vorplanung übernehmen',exact:true}).click();
+ expect(await page.evaluate(()=>assignments.length)).toBe(0);expect(await page.evaluate(date=>autoPlanPreview.find(a=>a.date===date).employeeId,first.date)).toBe(other);
+ await page.getByRole('button',{name:new RegExp(first.date+' · Dienst ändern')}).click();await page.getByRole('button',{name:'Nur diesen Dienst entfernen',exact:true}).click();
+ await expect(page.locator('#autoUnresolvedCount')).toHaveText('1');expect(await page.evaluate(()=>autoPlanPreview.length)).toBe(1);
+ await page.getByRole('button',{name:'Rückgängig',exact:true}).click();expect(await page.evaluate(()=>autoPlanPreview.length)).toBe(2);
+ await page.getByRole('button',{name:'Rückgängig',exact:true}).click();expect(await page.evaluate(()=>JSON.stringify(autoPlanPreview))).toBe(original);
+ await page.getByRole('button',{name:new RegExp(first.date+' · Dienst ändern')}).click();await page.getByRole('button',{name:'Nur diesen Dienst entfernen',exact:true}).click();
+ await page.getByRole('button',{name:'Dienst hinzufügen',exact:true}).click();await page.locator('#sfPreviewFrom').fill(first.date);await page.locator('#sfPreviewTo').fill(first.date);await page.locator('#sfPreviewTo').dispatchEvent('change');await page.locator('#sfPreviewEmployee').selectOption(first.employeeId);await page.getByRole('button',{name:'In Vorplanung übernehmen',exact:true}).click();
+ await expect(page.locator('#autoUnresolvedCount')).toHaveText('0');expect(await page.evaluate(()=>assignments.length)).toBe(0);
+ await page.screenshot({path:test.info().outputPath('preview-edited-'+theme+'.png'),fullPage:true});
+ await page.locator('#applyAutoPlanBtn').click();await page.getByRole('button',{name:'Als Entwurf übernehmen',exact:true}).click();
+ expect(await page.evaluate(()=>assignments.length)).toBe(2);expect(await page.evaluate(()=>saveCalls)).toBe(1);expect(await page.evaluate(()=>assignments.every(a=>!a.publishedAt))).toBe(true);expect(errors).toEqual([]);
+});
+test('preview editor retains a partial work block for correction and accepts a complete range with whole-block recovery',async({page})=>{
+ await fixture(page);await page.evaluate(()=>{employees=[{id:'e',first:'Block',last:'Person',status:'active',employment:'Vollzeit',shifts:['O1'],weeklyHours:40,maxWeeklyHours:55,monthlyHours:180,rhythmMode:'required',rhythmStart:'2026-12-01',rhythmPattern:'ALLE,ALLE,ALLE,FREI,FREI'}];TYPES=[{id:'O1',name:'O1',start:'18:00',end:'04:00'}];getSoll=date=>Number(date<='2026-12-03');plannedAssignmentHours=()=>10;autoPlanPreview=[1,2,3].map(n=>({id:'p'+n,date:'2026-12-0'+n,type:'O1',start:'18:00',end:'04:00',employeeId:'e',blockId:'whole'}));autoPlanAnalyzed=true;renderAutoPlanning();});await previewEditor(page);
+ await page.evaluate(()=>removeAutoSuggestion(1));expect(await page.evaluate(()=>autoPlanPreview.length)).toBe(2);await expect(page.locator('#sfAutoPreviewTools')).toContainText('unvollständig (2/3 Dienste)');await expect(page.locator('#applyAutoPlanBtn')).toBeDisabled();
+ await page.getByRole('button',{name:'Rückgängig',exact:true}).click();await expect(page.locator('#applyAutoPlanBtn')).toBeEnabled();
+ await page.evaluate(()=>{autoPlanPreview=[];renderAutoPlanning();});
+ await page.getByRole('button',{name:'Dienst hinzufügen',exact:true}).click();await page.locator('#sfPreviewFrom').fill('2026-12-01');await page.locator('#sfPreviewTo').fill('2026-12-03');await page.locator('#sfPreviewTo').dispatchEvent('change');await page.locator('#sfPreviewEmployee').selectOption('e');await page.getByRole('button',{name:'In Vorplanung übernehmen',exact:true}).click();
+ expect(await page.evaluate(()=>autoPlanPreview.length)).toBe(3);expect(await page.evaluate(()=>assignments.length)).toBe(0);await expect(page.locator('#applyAutoPlanBtn')).toBeEnabled();
+});
+test('preview editor edits a monthly replacement without counting the old draft twice',async({page})=>{
+ await fixture(page);await page.evaluate(()=>{employees=['a','b'].map(id=>({id,first:'Test',last:id,status:'active',employment:'Teilzeit',shifts:['FD'],weeklyHours:40,monthlyHours:16}));employeeMonthlyTarget=e=>e.monthlyHours;getSoll=date=>Number(date==='2026-12-01'||date==='2026-12-02');assignments=[1,2].map(n=>({id:'old'+n,date:'2026-12-0'+n,type:'FD',employeeId:'a',start:'06:00',end:'14:00'}));});
+ await page.locator('#optimizeAutoMonthBtn').click();await expect(page.locator('#autoSuggestionCount')).toHaveText('2');await previewEditor(page);
+ const first=await page.evaluate(()=>autoPlanPreview[0]);await page.evaluate(id=>SFAutoPlanPreviewEditor.open({id}),first.id);
+ const newEmployee=first.employeeId==='a'?'b':'a';await page.locator('#sfPreviewEmployee').selectOption(newEmployee);await page.getByRole('button',{name:'In Vorplanung übernehmen',exact:true}).click();
+ expect(await page.evaluate(()=>assignments.every(a=>a.id.startsWith('old')))).toBe(true);
+ await page.locator('#applyAutoPlanBtn').click();await page.getByRole('button',{name:'Als Entwurf übernehmen',exact:true}).click();
+ expect(await page.evaluate(()=>assignments.length)).toBe(2);expect(await page.evaluate(date=>assignments.find(a=>a.date===date).employeeId,first.date)).toBe(newEmployee);expect(await page.evaluate(()=>saveCalls)).toBe(1);
+});
+test('preview editor validates a three-night range as a whole before adding and applying',async({page})=>{
+ await fixture(page);await page.locator('#autoPlanMonth').fill('2027-01');await page.locator('#autoPlanMonth').dispatchEvent('change');
+ await page.evaluate(()=>{
+  employees=[{id:'e',first:'Block',last:'Nacht',status:'active',employment:'Vollzeit',shifts:['O2'],weeklyHours:40,maxWeeklyHours:55,monthlyHours:180,rhythmMode:'required',rhythmStart:'2027-01-28',rhythmPattern:'ALLE,ALLE,ALLE,FREI,FREI'}];
+  TYPES=[{id:'O2',name:'O2',start:'20:00',end:'06:00'}];getSoll=date=>Number(date>='2027-01-28'&&date<='2027-02-02');plannedAssignmentHours=()=>10;plannedMonthlyHoursForEmployee=(id,date,sim=[])=>[...assignments,...sim].filter(a=>a.employeeId===id&&a.date.startsWith(date.slice(0,7))).length*10;
+  assignments=[{id:'next',employeeId:'e',date:'2027-02-02',type:'O2',start:'20:00',end:'06:00'}];SFCompliance={policy:{solidPlanningRules:{enabled:true,confirmedRulesVersion:2,timezone:'Europe/Berlin',maxConsecutiveShifts:4,maxConsecutiveNightShifts:4,minFreeCalendarDays:2,minNightRecoveryCalendarDays:2,minBlockRestHours:48,maxCalendarWeekHours:55,threeNightBlockRecoveryFullCalendarDays:1}}};autoPlanAnalyzed=true;renderAutoPlanning();
+ });
+ await page.addScriptTag({content:read('assets/compliance-core-v2.js')});await previewEditor(page);
+ await page.getByRole('button',{name:'Dienst hinzufügen',exact:true}).click();await page.locator('#sfPreviewFrom').fill('2027-01-28');await page.locator('#sfPreviewTo').fill('2027-01-30');await page.locator('#sfPreviewTo').dispatchEvent('change');await page.locator('#sfPreviewEmployee').selectOption('e');await page.getByRole('button',{name:'In Vorplanung übernehmen',exact:true}).click();
+ expect(await page.evaluate(()=>autoPlanPreview.length)).toBe(3);await expect(page.locator('#applyAutoPlanBtn')).toBeEnabled();
+ await page.locator('#applyAutoPlanBtn').click();await page.getByRole('button',{name:'Als Entwurf übernehmen',exact:true}).click();expect(await page.evaluate(()=>assignments.length)).toBe(4);
+});
+test('preview editor recalculates mandatory vacancies after removing and refilling a duty',async({page})=>{
+ await fixture(page);await page.evaluate(()=>{employees=[{id:'leader',first:'Leitung',last:'Test',role:'Teamleiter',status:'active',employment:'Vollzeit',shifts:['TL-LE'],weeklyHours:40,maxWeeklyHours:55,monthlyHours:180}];TYPES=[{id:'TL-LE',name:'TL-LE',start:'20:00',end:'06:00'}];SFCompliance={policy:{solidPlanningRules:{enabled:true,confirmedRulesVersion:2,timezone:'Europe/Berlin',maxConsecutiveNightShifts:4,minNightRecoveryCalendarDays:2,maxCalendarWeekHours:55,criticalShifts:[{code:'TL-LE',minimum:1,weekdays:[1]}]}}};getSoll=date=>Number(new Date(date+'T12:00:00').getDay()===1);plannedAssignmentHours=()=>10;plannedMonthlyHoursForEmployee=(id,date,sim=[])=>[...assignments,...sim].filter(a=>a.employeeId===id&&a.date.startsWith(date.slice(0,7))).length*10;});
+ await generatePreview(page);await previewEditor(page);expect(await page.evaluate(()=>SFMonthOptimizer.getResult().criticalOpen)).toBe(0);
+ const removed=await page.evaluate(()=>autoPlanPreview[0]);await page.evaluate(()=>removeAutoSuggestion(0));expect(await page.evaluate(()=>SFMonthOptimizer.getResult().criticalOpen)).toBe(1);await expect(page.locator('#applyAutoPlanBtn')).toBeDisabled();
+ await page.getByRole('button',{name:'Dienst hinzufügen',exact:true}).click();await page.locator('#sfPreviewFrom').fill(removed.date);await page.locator('#sfPreviewTo').fill(removed.date);await page.locator('#sfPreviewTo').dispatchEvent('change');await page.locator('#sfPreviewEmployee').selectOption('leader');await page.getByRole('button',{name:'In Vorplanung übernehmen',exact:true}).click();
+ expect(await page.evaluate(()=>SFMonthOptimizer.getResult().criticalOpen)).toBe(0);await expect(page.locator('#applyAutoPlanBtn')).toBeEnabled();expect(await page.evaluate(()=>assignments.length)).toBe(0);
+});
+test('preview editor counts a manually restored OT crew member in the shared staffing group',async({page})=>{
+ await fixture(page);await page.evaluate(()=>{TYPES=['OT1','OT2','OT3'].map((id,i)=>({id,name:id,start:['06:00','08:00','10:00'][i],end:['16:00','18:00','20:00'][i]}));employees=['one','two','three'].map(id=>({id,first:'Tag',last:id,status:'active',employment:'Vollzeit',shifts:['OT1','OT2','OT3'],weeklyHours:50,maxWeeklyHours:55,monthlyHours:180}));SFCompliance={policy:{solidPlanningRules:{enabled:true,confirmedRulesVersion:2,timezone:'Europe/Berlin',maxCalendarWeekHours:55,otOnlyMonthlyMaxHours:220,otOnlyMaxCalendarWeekHours:55,otWeekdayRoster:{employeeIds:['one','two','three'],weekdays:[1]}}}};getSoll=(date,type)=>Number(date==='2026-12-07');plannedAssignmentHours=()=>10;autoPlanPreview=employees.map((e,i)=>({id:'crew'+i,employeeId:e.id,date:'2026-12-07',type:TYPES[i].id,start:TYPES[i].start,end:TYPES[i].end,coverageGroup:'OT-DAY'}));autoPlanAnalyzed=true;renderAutoPlanning();});await previewEditor(page);
+ await page.evaluate(()=>removeAutoSuggestion(1));await expect(page.locator('#autoUnresolvedCount')).toHaveText('10');
+ await page.getByRole('button',{name:'Dienst hinzufügen',exact:true}).click();await page.locator('#sfPreviewFrom').fill('2026-12-07');await page.locator('#sfPreviewTo').fill('2026-12-07');await page.locator('#sfPreviewShift').selectOption('OT2');await page.locator('#sfPreviewEmployee').selectOption('two');await page.getByRole('button',{name:'In Vorplanung übernehmen',exact:true}).click();
+ await expect(page.locator('#autoUnresolvedCount')).toHaveText('9');expect(await page.evaluate(()=>autoPlanPreview.find(a=>a.employeeId==='two').coverageGroup)).toBe('OT-DAY');expect(await page.evaluate(()=>assignments.length)).toBe(0);
+});
+test('preview editor preserves the fixed weekly rule and shows why an employee is unavailable',async({page})=>{
+ await fixture(page);await page.evaluate(()=>{employees=[{id:'fixed',first:'Fest',last:'Person',status:'active',employment:'Vollzeit',shifts:['O3','FD'],weeklyHours:40,monthlyHours:180,rhythmMode:'required',rhythmStart:'2026-11-30',rhythmPattern:'O3,O3,O3,O3,FREI,FREI,FREI'}];TYPES.push({id:'O3',name:'O3',start:'22:00',end:'08:00'});getSoll=()=>1;autoPlanAnalyzed=true;renderAutoPlanning();});await previewEditor(page);
+ await page.getByRole('button',{name:'Dienst hinzufügen',exact:true}).click();await page.locator('#sfPreviewFrom').fill('2026-12-04');await page.locator('#sfPreviewTo').fill('2026-12-04');await page.locator('#sfPreviewTo').dispatchEvent('change');
+ await expect(page.locator('#sfPreviewEmployee option[value="fixed"]')).toHaveJSProperty('disabled',true);await expect(page.locator('#sfPreviewEmployee option[value="fixed"]')).toContainText('freien Tag');await page.keyboard.press('Escape');
+});
 for(const theme of ['dark','light'])test(`clear month selection, preview review and confirmed draft in ${theme} theme`,async({page})=>{
  await fixture(page,theme);await expect(page.locator('#autoPlanWeekField')).toBeHidden();await expect(page.locator('#autoPlanDateField')).toBeHidden();await expect(page.locator('#autoPlanMonthField')).toBeVisible();await expect(page.locator('#autoPeriodRange')).toHaveText('Dezember 2026');await expect(page.locator('#autoPeriodDates')).toContainText('1.12.2026 bis 31.12.2026');await expect(page.locator('#autoStats')).toContainText('Analyse noch nicht gestartet');await expect(page.locator('#autoResults')).toBeHidden();const monthImage=await page.locator('#autoPlanMonth').evaluate(e=>getComputedStyle(e).backgroundImage);expect(monthImage).toContain('Dez.');if(theme==='light')expect(monthImage).toContain('%23172434');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);await page.screenshot({path:test.info().outputPath(`auto-ready-${theme}.png`),fullPage:true});

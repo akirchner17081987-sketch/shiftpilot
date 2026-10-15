@@ -1,5 +1,5 @@
 {
-  "reviewedAt": "2026-10-13",
+  "reviewedAt": "2026-10-15",
   "sourceCommit": "e5656be512583e47794e5803215b9f564f3a76a8",
   "addedArticles": [
     {
@@ -2179,6 +2179,12 @@
       "area": "Orbit-Navigation und Hologramm-Darstellung",
       "category": "start",
       "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/auto-plan-preview-editor-v1.js",
+      "area": "Planungsassistent und Optimierung",
+      "category": "auto",
+      "kind": "feature-or-support"
     }
   ],
   "categoryCoverage": [
@@ -2626,6 +2632,14 @@
       "sources": [
         "assets/help-center-renderer-v2.js",
         "index.html"
+      ]
+    },
+    {
+      "category": "auto",
+      "question": "Wie erstelle und übernehme ich Auto-Planungsvorschläge?",
+      "sources": [
+        "assets/auto-plan-preview-editor-v1.js",
+        "assets/month-optimizer-v1.js"
       ]
     }
   ],

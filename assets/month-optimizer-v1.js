@@ -177,7 +177,7 @@
       const accepted=await window.SFAutoPlanWorkspace.confirmApply(preview.length);if(!accepted)return;
       if(result!==prepared||signature()!==prepared.localSignature||B.companyId!==prepared.company||JSON.stringify(preview)!==JSON.stringify(autoPlanPreview))throw Error('Die Daten haben sich geändert. Bitte den Monat erneut optimieren.');
       if(autoPlanningDates().some(d=>window.SFCompliance?.isWeekPublished?.(d)))throw Error('Der Monat wurde inzwischen veröffentlicht.');
-      withBase(prepared.base,()=>{const checked=[];for(const a of preview){if(!autoEligibleEmployees(a.type,a.date,checked).some(c=>String(c.e.id)===String(a.employeeId)))throw Error('Die Vorschläge sind nicht mehr gültig. Bitte erneut optimieren.');checked.push(a)}});
+      withBase(prepared.base,()=>{for(const a of preview){const other=preview.filter(b=>b!==a);if(!autoEligibleEmployees(a.type,a.date,other).some(c=>String(c.e.id)===String(a.employeeId)))throw Error('Die Vorschläge sind nicht mehr gültig. Bitte erneut optimieren.');}});
       validateIndividual(prepared,preview);
       if(prepared.solid){validateSolid(prepared.base,preview,prepared.months);if(prepared.criticalOpen)throw Error('Leitungs- oder OT2-Pflichtpositionen fehlen. Bitte zuerst diese Lücken schließen.');}
       if(B.ready&&B.client){appControls=[...document.querySelectorAll('#appShell button,#appShell input,#appShell select,#appShell textarea')].map(node=>({node,disabled:node.disabled}));appControls.forEach(x=>x.node.disabled=true);B.suppressSync=true;clearTimeout(B.syncTimer);B.syncTimer=null;if(B.syncing)throw Error('Eine Speicherung läuft noch. Bitte anschließend erneut bestätigen.');
@@ -207,7 +207,14 @@
     try{const completed=await window.SFBackgroundPlanning.wait(job);await restoreBackground(completed,true);}catch(e){if(B.companyId===company){P()?.finish(e.message||String(e));showSaveToast('Hintergrundplanung prüfen',e.message||String(e));}}finally{busy=false;controls.forEach(x=>x.node.disabled=x.disabled);renderAutoPlanning();}
   }
   const originalApply=window.applyAutoPlanPreview;if(originalApply)window.applyAutoPlanPreview=function(){return result?apply():originalApply.apply(this,arguments)};
-  window.SFMonthOptimizer={optimize,apply,buildInput,solidBuild,restoreBackground,resumeBackground,changeIndividualBlocks,getResult:()=>result,isBusy:()=>busy};
+  function refreshPreview(){
+    if(!result||busy||autoPlanApplying)return;
+    const all=[...result.base,...autoPlanPreview],dates=autoPlanningDates();
+    autoPlanUnresolved=withBase(all,()=>autoOpenSlots().map(slot=>({...slot,reason:unresolvedReason(slot)})));
+    if(result.solid){result.metrics=solid.metrics(employees,all,solidRules(),result.months);result.criticalOpen=criticalNeeds(all,dates).reduce((n,[,v])=>n+v,0);}
+    renderHours();
+  }
+  window.SFMonthOptimizer={optimize,apply,buildInput,solidBuild,restoreBackground,resumeBackground,changeIndividualBlocks,refreshPreview,getResult:()=>result,isBusy:()=>busy};
 })();
 
 
