@@ -46,7 +46,7 @@ async function fixture(page, initial, failAction, clockSkew = 0) {
   });
   await page.goto('http://qr-pause.test/qr-time.html?t=' + 'e'.repeat(64));
   await page.locator('#personnel').fill('FIKTIVER-TEST');
-  await page.locator('#startDate').fill('15012020');
+  await page.locator('#pin').fill('739281');
   await page.locator('#loginButton').click();
   await expect(page.locator('#clock')).toBeVisible();
   return { calls, errors, external };
@@ -65,7 +65,7 @@ test('existing running booking shows sum of completed pauses', async ({ page }) 
   await expect(page.locator('#pauseTotal')).toHaveText('30 Min. 0 Sek.');
   expect(check.calls).toEqual(['LOGIN', 'STATUS']);
   expect(check.errors).toEqual([]); expect(check.external).toEqual([]);
-  await expect(page.locator('#startDate')).toHaveValue('');
+  await expect(page.locator('#pin')).toHaveValue('');
 });
 
 test('ongoing pause is added and updates across minute boundary without requests', async ({ page }) => {

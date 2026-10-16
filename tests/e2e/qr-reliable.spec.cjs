@@ -28,7 +28,7 @@ async function qr(page,state='READY'){
     const stored=saved.get(input.requestId);
     return respond({...status,as_of:new Date(baseline).toISOString(),punched_at:stored?.stamp,request_processed:!!stored,processed_action:stored?.action,processed_at:stored?.stamp});
   });
-  await page.goto('http://qr-pause.test/qr-time.html?t='+'e'.repeat(64));await page.locator('#personnel').fill('FIKTIV');await page.locator('#startDate').fill('15012020');await page.locator('#loginButton').click();await expect(page.locator('#clock')).toBeVisible();
+  await page.goto('http://qr-pause.test/qr-time.html?t='+'e'.repeat(64));await page.locator('#personnel').fill('FIKTIV');await page.locator('#pin').fill('739281');await page.locator('#loginButton').click();await expect(page.locator('#clock')).toBeVisible();
   return{behavior,calls,saved,errors};
 }
 test('lost clock-in reply recovers its stored request in Chromium',async({page})=>{
@@ -53,7 +53,7 @@ async function manager(page,{width=390,theme='light',lost=false,stale=false,role
   await page.goto('http://qr-pause.test/manager');
   await page.evaluate(({lost,stale,role})=>{
     let record={id:'fictitious-shift',revision:'before',timezone:'Europe/Berlin',employee_name:'Fiktive Testperson mit sehr langem Namen',terminal_name:'Fiktiver Standort mit vollständiger Bezeichnung',started_at:'2026-10-03T04:00:00.123456Z',ended_at:null,breaks:[{number:1,started_at:'2026-10-03T06:00:00Z',ended_at:null}],history:[]};
-    window.qaCalls=[];window.SFBackend={role,companyId:'fictitious-company',client:{rpc(name,args){
+    window.qaCalls=[];window.SFBackend={role,companyId:'fictitious-company',client:{auth:{mfa:{getAuthenticatorAssuranceLevel:async()=>({data:{currentLevel:'aal2',nextLevel:'aal2'}})}},rpc(name,args){
       window.qaCalls.push({name,args});let output;
       if(name==='manager_qr_independent_detail')output=Promise.resolve({data:structuredClone(record)});
       else if(stale)output=Promise.resolve({error:{message:'Die Buchung wurde inzwischen geändert. Bitte schließen und erneut öffnen'}});

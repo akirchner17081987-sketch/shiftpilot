@@ -6,7 +6,7 @@ window.SFHelpGuides = {
   },
   'Wie erfasst ein Mitarbeiter seine Zeit per QR?': {
     image: 'assets/help/qr-booking.svg', alt: 'Vereinfachte mobile QR-Buchung: Anmeldung, Arbeitszeit beginnen, Pause beginnen, Pause beenden und Arbeitszeit beenden.',
-    steps: ['Den aktuellen QR-Code am Standort scannen und mit Personalnummer sowie Eintrittsdatum im Format TTMMJJJJ anmelden.', '„Arbeitszeit beginnen“ tippen. Jede Pause mit „Pause beginnen“ starten und mit „Pause beenden“ abschließen.', 'Am Ende „Arbeitszeit beenden“ tippen. Bis zu zehn Pausen werden einzeln dokumentiert.']
+    steps: ['Den aktuellen QR-Code am Standort scannen und mit Personalnummer sowie persönlicher PIN anmelden. Für die Ersteinrichtung einen einmaligen Code bei der Leitung anfordern und „PIN mit Einrichtungscode einrichten“ wählen.', '„Arbeitszeit beginnen“ tippen. Jede Pause mit „Pause beginnen“ starten und mit „Pause beenden“ abschließen.', 'Am Ende „Arbeitszeit beenden“ tippen. Bis zu zehn Pausen werden einzeln dokumentiert.']
   },
   'Wie richte ich einen wiederkehrenden Tagesrhythmus ein?': {
     image: 'assets/help/day-rhythm.svg', alt: 'Vereinfachte feste Schichtregel mit Tagesrhythmus, Starttag, Vorlage 4 Arbeiten, 3 Frei, 3 Arbeiten, 2 Frei und Speichern.',

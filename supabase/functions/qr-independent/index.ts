@@ -41,24 +41,45 @@ Deno.serve(async(req:Request)=>{
   if(req.method!=='POST')return reply({ok:false,error:'Methode nicht erlaubt'},405,origin);
   if(Number(req.headers.get('content-length')||0)>2048)return reply({ok:false,error:'Anfrage zu groß'},413,origin);
   let input:Record<string,unknown>;
-  try{input=await req.json()}catch{return reply({ok:false,error:'Ungültige Anfrage'},400,origin)}
+  try{
+    const reader=req.body?.getReader(),chunks:Uint8Array[]=[];let size=0;
+    if(reader)while(true){
+      const part=await reader.read();if(part.done)break;
+      size+=part.value.byteLength;
+      if(size>2048){await reader.cancel();return reply({ok:false,error:'Anfrage zu groß'},413,origin)}
+      chunks.push(part.value);
+    }
+    const bytes=new Uint8Array(size);let offset=0;
+    for(const part of chunks){bytes.set(part,offset);offset+=part.byteLength}
+    input=JSON.parse(new TextDecoder().decode(bytes));
+    if(!input||typeof input!=='object'||Array.isArray(input))throw new Error('invalid_body');
+  }catch{return reply({ok:false,error:'Ungültige Anfrage'},400,origin)}
   const action=String(input.action||'').toUpperCase();
   const qrToken=String(input.qrToken||'');
   if(!tokenPattern.test(qrToken))return reply({ok:false,error:'Ungültiger QR-Code'},400,origin);
   try{
-    if(action==='LOGIN'){
+    if(action==='LOGIN'||action==='SET_PIN'){
       const personnelNo=String(input.personnelNo||'').trim();
+      const pin=typeof input.pin==='string'?input.pin:'';
       const startDate=String(input.startDate||'');
-      if(!personnelPattern.test(personnelNo)||!datePattern.test(startDate))
-        return reply({ok:false,error:'Personalnummer oder Eintrittsdatum stimmt nicht'},401,origin);
-      const bytes=new Uint8Array(32);
-      crypto.getRandomValues(bytes);
-      const sessionToken=hex(bytes);
-      const result=await rpc('qr_independent_login',{
-        p_terminal_token:qrToken,p_personnel_no:personnelNo,
-        p_start_date:startDate,p_session_token:sessionToken
-      });
-      if(!result?.ok)return reply({ok:false,error:'Personalnummer oder Eintrittsdatum stimmt nicht'},401,origin);
+      const setupCode=typeof input.setupCode==='string'?input.setupCode:'';
+      if(!personnelPattern.test(personnelNo))return reply({ok:false,error:'Anmeldung nicht möglich. Bitte Angaben prüfen.'},401,origin);
+      const bytes=new Uint8Array(32);crypto.getRandomValues(bytes);const sessionToken=hex(bytes);
+      let result;
+      if(action==='SET_PIN'||Object.hasOwn(input,'pin')){
+        if(!/^[0-9]{6,8}$/.test(pin)||(action==='SET_PIN'&&!/^[0-9]{12}$/.test(setupCode)))
+          return reply({ok:false,error:'PIN oder Einrichtungscode hat ein ungültiges Format.'},400,origin);
+        result=await rpc('qr_independent_pin_login',{
+          p_terminal_token:qrToken,p_personnel_no:personnelNo,p_pin:pin,
+          p_session_token:sessionToken,p_setup_code:action==='SET_PIN'?setupCode:null
+        });
+      }else{
+        if(!datePattern.test(startDate))return reply({ok:false,error:'Anmeldung nicht möglich. Bitte Angaben prüfen.'},401,origin);
+        result=await rpc('qr_independent_login',{
+          p_terminal_token:qrToken,p_personnel_no:personnelNo,p_start_date:startDate,p_session_token:sessionToken
+        });
+      }
+      if(!result?.ok)return reply({ok:false,error:result?.error||'Anmeldung nicht möglich.',retry_after_seconds:result?.retry_after_seconds},result?.rate_limited?429:401,origin);
       return reply({...result,sessionToken},200,origin);
     }
     if(!['STATUS','CLOCK_IN','BREAK_START','BREAK_END','CLOCK_OUT'].includes(action))
