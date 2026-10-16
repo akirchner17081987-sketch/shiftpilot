@@ -11,7 +11,7 @@
     {title:'Dienstplan und Besetzung',eyebrow:'PLANUNG',body:'Im Dienstplan sehen Sie Schichten, SOLL-/IST-Besetzung und verfügbare Mitarbeitende. Der vorbereitete Referenzmonat ist August 2026.',view:'schedule',selector:'#view-schedule .page-head'},
     {title:'Auf Ausfälle sofort reagieren',eyebrow:'STÖRFALL-AUTOPILOT',body:'Der Störfall-Autopilot priorisiert bei kurzfristigen Ausfällen passende Ersatzkräfte und dokumentiert den Ablauf nachvollziehbar.',view:'disruptions',selector:'#view-disruptions .page-head'},
     {title:'Zeiten prüfen und freigeben',eyebrow:'ZEITERFASSUNG',body:'Planzeiten und erfasste Arbeitszeiten werden gegenübergestellt. Abweichungen können geprüft, korrigiert und für die Abrechnung vorbereitet werden.',view:'time',selector:'#view-time .page-head'},
-    {title:'DATEV-LODAS vorbereiten',eyebrow:'ABRECHNUNG',body:'In der Zeiterfassung wählen Sie für DATEV-LODAS August 2026 und nutzen zuerst die Vorprüfung. Erst ein korrekter Monatsstand wird für den Export an die Lohnbuchhaltung freigegeben.',view:'time',selector:'#sfDatevPanel'}
+    {title:'DATEV-LODAS vorbereiten',eyebrow:'ABRECHNUNG',body:'Unter Personal → Abrechnung wählen Sie für DATEV-LODAS August 2026 und nutzen zuerst die Vorprüfung. Erst ein korrekter Monatsstand wird für den Export an die Lohnbuchhaltung freigegeben.',view:'billing',selector:'#sfDatevPanel'}
   ];
   let index=0;
   let active=false;

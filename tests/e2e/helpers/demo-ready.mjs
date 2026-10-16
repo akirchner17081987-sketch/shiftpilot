@@ -88,6 +88,17 @@ export async function waitForDemoReady(page, options = {}) {
 }
 
 export async function openManagerArea(page, view, timeout = 15_000) {
+  if (await page.locator('#sfOrbitDock').isVisible().catch(() => false)) {
+    const group = {overview:'overview',schedule:'planning',auto:'planning',wishes:'planning',disruptions:'planning',staffing:'personal',handover:'personal',marketplace:'personal',employees:'personal',absence:'personal',time:'personal',billing:'personal',reports:'analysis',audit:'analysis',settings:'settings'}[view];
+    if (!group) throw new Error('Unknown manager view: '+view);
+    const category=page.locator(`[data-orbit-category="${group}"]`);
+    if(await category.isDisabled())throw new Error('Manager view unavailable: '+view);
+    // The demo toolbar can cover the bottom dock; real hit targets are verified by site-loading QA.
+    await category.evaluate(button=>button.click());
+    if (!['overview','settings'].includes(group)) await page.locator(`#sfOrbitPopup [data-orbit-target="${view}"]`).click();
+    await page.locator(`#view-${view}.active`).waitFor({state:'visible',timeout});
+    return;
+  }
   const mobileToggle = page.locator('#sfMobileManagerNavToggle');
   if (await mobileToggle.isVisible().catch(() => false)) {
     const expanded = await mobileToggle.getAttribute('aria-expanded');

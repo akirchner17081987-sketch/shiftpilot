@@ -41,14 +41,6 @@
     document.head.appendChild(s);
   }
 
-  function syncDatevMonth(month){
-    const datev=document.getElementById('sfDatevMonth');
-    if(datev&&datev.value!==month){
-      datev.value=month;
-      datev.dispatchEvent(new Event('change',{bubbles:true}));
-    }
-  }
-
   function ensureControls(){
     const view=document.getElementById('view-time');
     const select=document.getElementById('timePeriod');
@@ -103,7 +95,7 @@
       select.addEventListener('change',()=>{
         ensureControls();
         if(select.value==='month'){
-          const m=selectedMonth();saveMonth(m);syncDatevMonth(m);
+          const m=selectedMonth();saveMonth(m);
         }
       });
     }
@@ -115,7 +107,6 @@
         saveMonth(picker.value);
         select.value='month';
         ensureControls();
-        syncDatevMonth(picker.value);
         const refresh=B.timeTracking?.refreshManager;
         if(typeof refresh==='function')await refresh(picker.value);
         else await window.renderTimeTracking?.(picker.value);

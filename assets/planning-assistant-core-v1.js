@@ -159,7 +159,7 @@
       [/schichtuebergabe/,'handover','Wie starte ich'],
       [/stoerfall|akute[nr]? ausfall/,'disruptions','Wie melde ich'],
       [/monatsbericht|zeiterfassung.*(?:excel|pdf|export)|(?:excel|pdf|export).*zeiterfassung/,'reports','Wie exportiere ich Monatsberichte'],
-      [/datev|lodas/,'reports','DATEV-LODAS'],
+      [/datev|lodas|abrechnung/,'reports','DATEV-LODAS'],
       [/qr.*(?:anzeigen|finden|ausdruck|nachdruc|drucken|code.*wo)|(?:wo|wie).*qr.?code/,'trouble','aktuelle QR-Code'],
       [/(?:zehn|10|viele).*paus|paus.*(?:zehn|10|viele)/,'qr','Wie viele Pausen'],
       [/qr.*paus.*bezahlt|paus.*(?:abzug|bezahlt)/,'qr','QR-Pausen bezahlt'],

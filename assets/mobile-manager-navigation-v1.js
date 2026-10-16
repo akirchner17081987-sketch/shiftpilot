@@ -8,7 +8,7 @@
   const labels={
     overview:'Heute',schedule:'Dienstplan',auto:'Auto-Planung',disruptions:'Störfall-Autopilot',
     marketplace:'Schicht-Marktplatz',employees:'Mitarbeiter',absence:'Abwesenheiten',time:'Zeiterfassung',
-    reports:'Auswertungen',audit:'Audit-Logs',settings:'Einstellungen'
+    billing:'Abrechnung',reports:'Auswertungen',audit:'Audit-Logs',settings:'Einstellungen'
   };
 
   function init(){

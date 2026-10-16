@@ -19,7 +19,7 @@ test('tour covers six core demo stations',()=>{
   assert.match(tour,/Auf Ausfälle sofort reagieren/);
   assert.match(tour,/Zeiten prüfen und freigeben/);
   assert.match(tour,/DATEV-LODAS vorbereiten/);
-  assert.match(tour,/view:'time',selector:'#sfDatevPanel'/);
+  assert.match(tour,/view:'billing',selector:'#sfDatevPanel'/);
   assert.match(tour,/steps:steps\.length/);
 });
 

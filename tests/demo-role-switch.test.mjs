@@ -96,12 +96,11 @@ test('demo time entries persist and monthly accounts use compatible data',()=>{
 });
 
 test('time account month selection stays separate from DATEV month selection',()=>{
-  assert.match(brand,/id="sfDatevMonth"/);
-  assert.doesNotMatch(brand,/id="sfTaMonth" type="month"/);
-  assert.match(brand,/data-sf-ta-tab="account"/);
-  assert.match(brand,/data-sf-ta-tab="datev"/);
-  assert.match(brand,/sf-ta-account-pane/);
-  assert.match(brand,/sf-ta-datev-pane/);
+  const billing=fs.readFileSync(new URL('../assets/datev-lodas-export-v1.js',import.meta.url),'utf8');
+  assert.match(billing,/id="sfDatevMonth"/);
+  assert.match(billing,/sfBillingContent/);
+  assert.doesNotMatch(brand,/data-sf-ta-tab="datev"/);
+  assert.doesNotMatch(billing,/getElementById\('sfTaMonth'\)/);
   assert.match(holidays,/B\.employeeFinanceMonth\|\|new Date/);
   assert.match(holidays,/sf:employee-finance-month-change/);
 });
