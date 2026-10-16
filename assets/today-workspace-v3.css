@@ -23,3 +23,7 @@
 .sf-td-alert-pager>div{display:flex;gap:6px}
 .sf-today .sf-td-alert-pager button{min-height:40px;padding:7px 11px;font-size:12px}
 @media(max-width:520px){.sf-td-alert-summary{gap:6px}.sf-today .sf-td-alert-summary button{padding:10px 7px}.sf-td-alert-summary strong{font-size:20px}.sf-td-alert-summary span{font-size:10px}.sf-td-alert-rows .sf-td-alert{grid-template-columns:minmax(0,1fr);gap:10px}.sf-td-alert-rows .sf-td-alert>button{justify-self:start}.sf-td-alert-pager>div{margin-left:auto}.sf-today .sf-td-alert-pager button{min-height:44px}}
+
+.sf-td-alert-meta{display:flex;flex-wrap:wrap;gap:3px 10px;margin-top:4px}
+.sf-td-alert-rows .sf-td-alert-meta small{margin-top:0}
+.sf-td-alert-meta small+small:before{content:"·";margin-right:10px}

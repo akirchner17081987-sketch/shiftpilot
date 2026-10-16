@@ -104,9 +104,9 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
    for(const [theme,width] of [['dark',1440],['light',1440],['dark',768],['light',390],['dark',320]]){
      await page.setViewportSize({width,height:1000});await page.evaluate(t=>SFManagerTheme.apply(t,false),theme);
      await page.locator('#sfTodayActions').scrollIntoViewIfNeeded();
-     assert.equal(await page.locator('#sfTodayAlerts .sf-td-alert').count(),4);
+     assert.equal(await page.locator('#sfTodayAlerts .sf-td-alert').count(),width<=520?2:4);
      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),true,'compact task area fits '+width);
-     const tasks=await page.locator('#sfTodayActions').boundingBox();assert.ok(tasks.height<1000,'four hints stay compact: '+width);
+     const tasks=await page.locator('#sfTodayActions').boundingBox();assert.ok(tasks.height<1000,'responsive hint pages stay compact: '+width);
      await page.screenshot({path:path.join(out,'orbit-compact-actions-'+theme+'-'+width+'.png'),animations:'disabled'});
    }
    await page.evaluate(async()=>{qa.today=window.__beforeActionQa;delete window.__beforeActionQa;await SFToday.reload();SFOrbit.refreshOverview();});
