@@ -1,0 +1,10 @@
+[Unit]
+Description=Hourly freshness check for SchichtFunk Storage backup
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+Unit=schichtfunk-storage-backup-health.service
+
+[Install]
+WantedBy=timers.target

@@ -21,6 +21,21 @@ permissions:
   contents: read
 
 jobs:
+  storage-backup-drill:
+    name: Encrypted Storage restore drill (fictitious data only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+      - name: Install backup tool from the signed OS package repository
+        run: sudo apt-get update -qq && sudo apt-get install -y restic rclone
+      - name: Require a real encrypted backup and restore
+        env:
+          SF_BACKUP_REQUIRE_DRILL: '1'
+        run: node --test tests/storage-backup.test.mjs
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 20

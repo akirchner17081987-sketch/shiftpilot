@@ -1,0 +1,13 @@
+[Unit]
+Description=Check age and result of verified SchichtFunk Storage backup
+
+[Service]
+Type=oneshot
+User=schichtfunk-backup
+Group=schichtfunk-backup
+EnvironmentFile=/etc/schichtfunk/storage-backup.env
+ExecStart=/usr/bin/node /opt/schichtfunk/scripts/storage-backup.mjs health
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true

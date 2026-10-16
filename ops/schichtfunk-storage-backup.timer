@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily SchichtFunk Storage backup
+
+[Timer]
+OnCalendar=*-*-* 02:40:00 UTC
+Persistent=true
+Unit=schichtfunk-storage-backup.service
+
+[Install]
+WantedBy=timers.target
