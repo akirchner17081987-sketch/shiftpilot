@@ -8,6 +8,11 @@ const manifest=JSON.parse(read('documentation/help-center-feature-coverage.json'
 test('all audited features resolve to existing help and implementation sources',()=>{
  const {window:{SFHelpContent:h,SFHelpGuides:g}}=content();const ids=h.categories.map(c=>c[0]);assert.equal(new Set(ids).size,ids.length);
  const questions=Object.values(h.articles).flat().map(a=>a[0]);assert.equal(new Set(questions).size,questions.length);
+ assert.equal(manifest.reviewedAt,manifest.currentAudit.date);
+ assert.equal(manifest.currentAudit.articleCount,questions.length);
+ assert.equal(manifest.currentAudit.categoryCount,ids.length);
+ assert.equal(manifest.currentAudit.baselineArticleCount+manifest.currentAudit.addedArticleCount,questions.length);
+ assert.equal(manifest.currentAudit.assetJavaScriptCount,fs.readdirSync(new URL('../assets/',import.meta.url)).filter(f=>f.endsWith('.js')).length);
  assert.deepEqual(Object.keys(h.articles).sort(),[...ids].sort());
  for(const [id] of h.categories)for(const [q,a] of h.articles[id]){assert.ok(q.trim()&&a.trim());assert.ok(!/<script|javascript:/i.test(q+a));}
  for(const row of [...manifest.addedArticles,...(manifest.correctedArticles||[])]){assert.ok(h.articles[row.category].some(a=>a[0]===row.question));for(const source of row.sources)assert.ok(read(source));}
@@ -26,7 +31,7 @@ test('production help renderer displays each category and finds every added arti
  for(const [query,question] of [['TEAMLEITER 2FA','Wie erhalten Teamleiter Zugriff auf Personalgespräche?'],['krankheitsgrunde abwesenheit','Wer darf Abwesenheitsanträge und Krankheitsgründe sehen?'],['nacht lohnvorschau','Was berechnet die Lohnvorschau?'],['fortschritt autoplanung','Was bedeutet der Fortschrittsbalken der Auto-Planung?']]){node('sfHelpSearch').value=query;node('sfHelpSearch').input();assert.ok(node('sfHelpResults').innerHTML.includes(question),query);}
  node('sfHelpSearch').value='zzzzkeinartikelzzzz';node('sfHelpSearch').input();assert.ok(node('sfHelpResults').innerHTML.includes('Kein passender Artikel'));
  node('sfHelpClose').click();assert.equal(node('sfHelpModal').hidden,true);
- assert.match(html,/help-center-content-v3\.js\?v=bg1-20261012-help-audit1/);assert.match(html,/help-center-renderer-v2\.js\?v=20261012-help-audit1/);
+ assert.match(html,/help-center-content-v3\.js\?v=20261016-help-audit1/);assert.match(html,/help-center-renderer-v2\.js\?v=20261012-help-audit1/);
 });
 
 test('visible help reflects automatic team-leader scope and the chosen private-data separation',()=>{const {window:{SFHelpContent:h}}=content();const answer=q=>Object.values(h.articles).flat().find(a=>a[0]===q)?.[1];assert.match(answer('Wie erhalten Teamleiter Zugriff auf Personalgespräche?'),/automatisch/);assert.doesNotMatch(answer('Wie erhalten Teamleiter Zugriff auf Personalgespräche?'),/ausdrücklich aus|neu gewählt/);assert.match(answer('Wer kann die Personalakte öffnen?'),/Private Dokumente.*Krankheitsgründe.*gesperrt/);assert.match(answer('Warum kann ein Teamleiter die Akte eines anderen Teamleiters nicht öffnen?'),/ausgeschlossen/);assert.match(answer('Was finde ich im Mitarbeiterportal?'),/Wunschplanung.*Schichtübergabe/);assert.match(answer('Was berechnet die Lohnvorschau?'),/22:00.*06:00/);});

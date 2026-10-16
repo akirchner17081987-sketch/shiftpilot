@@ -1,6 +1,6 @@
 {
-  "reviewedAt": "2026-10-15",
-  "sourceCommit": "e5656be512583e47794e5803215b9f564f3a76a8",
+  "reviewedAt": "2026-10-16",
+  "sourceCommit": "80485ff3eb6e003ab4cd1f329f118118d0d103bc",
   "addedArticles": [
     {
       "category": "wishes",
@@ -978,6 +978,92 @@
         "assets/orbit-shell-v1.js",
         "assets/today-workspace-v3.js",
         "assets/today-workspace-core-v1.js"
+      ]
+    },
+    {
+      "category": "overview",
+      "question": "Wie filtere und blättere ich im Handlungsbedarf?",
+      "sources": [
+        "assets/today-workspace-v3.js"
+      ]
+    },
+    {
+      "category": "overview",
+      "question": "Warum fehlt ein Standortpunkt auf der Karte?",
+      "sources": [
+        "assets/location-map-v1.js",
+        "assets/location-map-core-v1.js",
+        "assets/company-profile-v1.js"
+      ]
+    },
+    {
+      "category": "auto",
+      "question": "Wie bearbeite ich die Auto-Planungsvorschau und offene IST/SOLL-Felder?",
+      "sources": [
+        "assets/auto-plan-preview-editor-v1.js",
+        "assets/auto-plan-workspace-v1.js",
+        "assets/month-optimizer-v1.js"
+      ]
+    },
+    {
+      "category": "auto",
+      "question": "Was zeigt der Status bei „Als Entwurf übernehmen“?",
+      "sources": [
+        "assets/auto-plan-workspace-v1.js",
+        "assets/month-optimizer-v1.js"
+      ]
+    },
+    {
+      "category": "auto",
+      "question": "Welche aufsteigenden und absteigenden Schichtwechsel sind erlaubt?",
+      "sources": [
+        "assets/solid-planning-core-v1.js",
+        "assets/supabase-auto-plan-guard-v1.js",
+        "tests/forward-only-shift-transitions.test.cjs"
+      ]
+    },
+    {
+      "category": "auto",
+      "question": "Welche bestehenden Dienste berücksichtigt ein neu geplanter Monat?",
+      "sources": [
+        "assets/solid-planning-resume-v1.js",
+        "assets/month-optimizer-v1.js",
+        "assets/employee-rhythm-v1.js"
+      ]
+    },
+    {
+      "category": "settings",
+      "question": "Wie unterscheiden sich Vertrags-SOLL und Planungsobergrenze?",
+      "sources": [
+        "assets/solid-planning-core-v1.js",
+        "assets/month-optimizer-v1.js"
+      ]
+    },
+    {
+      "category": "settings",
+      "question": "Wie werden OT1, OT2 und OT3 getrennt von der normalen OT geplant?",
+      "sources": [
+        "assets/solid-planning-core-v1.js",
+        "assets/month-optimizer-core-v1.js",
+        "tests/ot-weekday-roster.test.cjs"
+      ]
+    },
+    {
+      "category": "settings",
+      "question": "Wie plant das System Teamleiter bis zum Monatsziel?",
+      "sources": [
+        "assets/solid-planning-core-v1.js",
+        "assets/month-optimizer-core-v1.js",
+        "assets/month-optimizer-v1.js"
+      ]
+    },
+    {
+      "category": "employees",
+      "question": "Welche Rhythmusregel hat bei einer festen Arbeitswoche Vorrang?",
+      "sources": [
+        "assets/employee-rhythm-v1.js",
+        "assets/solid-planning-core-v1.js",
+        "tests/fixed-weekly-priority.test.cjs"
       ]
     }
   ],
@@ -2188,20 +2274,20 @@
     },
     {
       "source": "assets/location-map-core-v1.js",
-      "area": "Orbit-Navigation und Hologramm-Darstellung",
-      "category": "start",
+      "area": "Geografische Standortkarte und gefilterte Tagesübersicht",
+      "category": "overview",
       "kind": "feature-or-support"
     },
     {
       "source": "assets/location-map-v1.js",
-      "area": "Orbit-Navigation und Hologramm-Darstellung",
-      "category": "start",
+      "area": "Geografische Standortkarte und gefilterte Tagesübersicht",
+      "category": "overview",
       "kind": "feature-or-support"
     },
     {
       "source": "assets/location-map-engine-v1.js",
-      "area": "Orbit-Navigation und Hologramm-Darstellung",
-      "category": "start",
+      "area": "Geografische Standortkarte und gefilterte Tagesübersicht",
+      "category": "overview",
       "kind": "feature-or-support"
     }
   ],
@@ -2232,7 +2318,9 @@
         "Was zeigt „Heute“?",
         "Was bedeutet die Einsatzbereitschafts-Ampel?",
         "Kann ein Mitarbeiter die Einsatzbereitschaft bestätigen?",
-        "Warum fehlen Kennzahlen?"
+        "Warum fehlen Kennzahlen?",
+        "Wie filtere und blättere ich im Handlungsbedarf?",
+        "Warum fehlt ein Standortpunkt auf der Karte?"
       ]
     },
     {
@@ -2265,7 +2353,8 @@
         "Wie ordne ich einen Mitarbeiter einem Planungsteam zu?",
         "Braucht jeder Mitarbeiter ein Planungsteam?",
         "Was passiert beim normalen Löschen eines Mitarbeiters?",
-        "Was unterscheidet Inaktivsetzen vom Entfernen eines Mitarbeiters?"
+        "Was unterscheidet Inaktivsetzen vom Entfernen eines Mitarbeiters?",
+        "Welche Rhythmusregel hat bei einer festen Arbeitswoche Vorrang?"
       ]
     },
     {
@@ -2337,7 +2426,11 @@
         "Welche Feiertage gelten für OT-Dienste?",
         "Was macht die individuelle Monatsplanung?",
         "Was bedeutet der Fortschrittsbalken der Auto-Planung?",
-        "Was tue ich, wenn eine Auto-Planung fehlschlägt?"
+        "Was tue ich, wenn eine Auto-Planung fehlschlägt?",
+        "Wie bearbeite ich die Auto-Planungsvorschau und offene IST/SOLL-Felder?",
+        "Was zeigt der Status bei „Als Entwurf übernehmen“?",
+        "Welche aufsteigenden und absteigenden Schichtwechsel sind erlaubt?",
+        "Welche bestehenden Dienste berücksichtigt ein neu geplanter Monat?"
       ]
     },
     {
@@ -2423,7 +2516,10 @@
         "Warum beginnt der Teamrhythmus erst am Startdatum?",
         "Was bedeuten Pflichtbesetzung, optionale Dienste und gemeinsame Deckung?",
         "Wo finde ich die Informationen zu Arbeitszeitgrenzen und Ausgleich?",
-        "Wie pflege ich Schichtmodelle und ihre Besetzungsregeln?"
+        "Wie pflege ich Schichtmodelle und ihre Besetzungsregeln?",
+        "Wie unterscheiden sich Vertrags-SOLL und Planungsobergrenze?",
+        "Wie werden OT1, OT2 und OT3 getrennt von der normalen OT geplant?",
+        "Wie plant das System Teamleiter bis zum Monatsziel?"
       ]
     },
     {
@@ -2648,8 +2744,22 @@
       "category": "start",
       "question": "Wo finde ich Hilfe?",
       "sources": [
-        "assets/help-center-renderer-v2.js",
-        "index.html"
+        "assets/help-center-renderer-v2.js"
+      ]
+    },
+    {
+      "category": "start",
+      "question": "Was bedeuten die animierte Startseite und „3 von 4“?",
+      "sources": [
+        "assets/sf-entry-v2.js",
+        "assets/sf-entry-globe-v1.js"
+      ]
+    },
+    {
+      "category": "overview",
+      "question": "Wie zeigt „Heute“ Pausen und offene Buchungen?",
+      "sources": [
+        "assets/today-workspace-v3.js"
       ]
     },
     {
@@ -2657,7 +2767,46 @@
       "question": "Wie erstelle und übernehme ich Auto-Planungsvorschläge?",
       "sources": [
         "assets/auto-plan-preview-editor-v1.js",
-        "assets/month-optimizer-v1.js"
+        "assets/auto-plan-workspace-v1.js",
+        "assets/solid-planning-core-v1.js",
+        "assets/month-optimizer-v1.js",
+        "assets/background-auto-plan-v1.js"
+      ]
+    },
+    {
+      "category": "auto",
+      "question": "Wie werden freie Tage nach einer Nachtschicht gezählt?",
+      "sources": [
+        "assets/solid-planning-core-v1.js",
+        "tests/fixed-work-rest-cycle.test.cjs"
+      ]
+    },
+    {
+      "category": "auto",
+      "question": "Welche Feiertage gelten für OT-Dienste?",
+      "sources": [
+        "assets/ot-weekend-holiday-policy.js",
+        "assets/solid-planning-core-v1.js",
+        "tests/ot-day-holiday-sql.test.cjs"
+      ]
+    },
+    {
+      "category": "settings",
+      "question": "Wo sehe und ändere ich die aktuell geltenden Planungsregeln?",
+      "sources": [
+        "index.html",
+        "assets/solid-planning-core-v1.js",
+        "tests/company-planning-settings.test.cjs"
+      ]
+    },
+    {
+      "category": "auto",
+      "question": "Warum bleiben trotz verfügbarer Mitarbeiter Dienste offen?",
+      "sources": [
+        "assets/solid-planning-core-v1.js",
+        "assets/month-optimizer-v1.js",
+        "assets/auto-plan-preview-editor-v1.js",
+        "assets/auto-plan-workspace-v1.js"
       ]
     }
   ],
@@ -2668,12 +2817,12 @@
     "entry": "index.html"
   },
   "currentAudit": {
-    "date": "2026-10-13",
-    "baselineArticleCount": 177,
-    "addedArticleCount": 29,
-    "correctedArticleCount": 11,
-    "articleCount": 209,
+    "date": "2026-10-16",
+    "baselineArticleCount": 211,
+    "addedArticleCount": 10,
+    "correctedArticleCount": 8,
+    "articleCount": 221,
     "categoryCount": 21,
-    "assetJavaScriptCount": 196
+    "assetJavaScriptCount": 201
   }
 }

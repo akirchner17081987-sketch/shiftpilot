@@ -1,4 +1,4 @@
-// Aktive SchichtFunk-Hilfe: Orbit-Navigation ergänzt · 13.10.2026.
+// Aktive SchichtFunk-Hilfe: Funktionsabgleich · 16.10.2026.
 window.SFHelpContent = {
   "categories": [
     [
@@ -127,11 +127,11 @@ window.SFHelpContent = {
       ],
       [
         "Wo finde ich Hilfe?",
-        "Öffnen Sie das Fragezeichen im Kopfbereich. Die Suche durchsucht alle Hilfekategorien und findet mehrere Suchwörter unabhängig von ihrer Reihenfolge. Auch „2FA“ wird als MFA erkannt. Die globale Mitarbeitersuche erreichen Sie weiterhin mit Strg/Cmd + K."
+        "Öffnen Sie das Fragezeichen im Kopfbereich oder den Hilfe-Knopf in der mobilen Navigation. Strg/Cmd + K öffnet ebenfalls das Hilfe-Center und setzt den Fokus in die Hilfesuche. Diese durchsucht alle Kategorien und findet mehrere Suchwörter unabhängig von ihrer Reihenfolge; „2FA“ wird als MFA erkannt. Escape schließt das Hilfe-Center. Die Hilfe verändert keine Daten."
       ],
       [
         "Was bedeuten die animierte Startseite und „3 von 4“?",
-        "Die animierte SchichtFunk-Startseite bereitet die Anmeldung vor. Logo, Anwendungsdokument, Ressourcen und bereitgestellte Anmeldung beziehungsweise Oberfläche bilden vier Startschritte. „3 von 4“ bezeichnet den Start der Anwendung, keine Dienstplanberechnung. Die Logoanimation kann während der Anmeldung weiterlaufen. Ein sichtbarer Rahmen nach dem Login bedeutet noch nicht, dass alle Unternehmensdaten bereitstehen."
+        "Die dezente Startseite zeigt einen animierten Globus und bereitet die Anmeldung vor. Die Anzeige zählt vier technische Startschritte; „3 von 4“ bezeichnet den Anwendungsstart, keine Dienstplanberechnung. „Animation überspringen“ verkürzt die Animation, ersetzt aber weder Anmeldung noch Datenladen. Nach einer erfolgreichen neuen Anmeldung geht der Globus langsam in die Oberfläche über. Wiederhergestellte Sitzungen und reduzierte Bewegung verkürzen diesen Übergang. Ein sichtbarer Anwendungsrahmen bedeutet noch nicht, dass alle Unternehmensdaten bereitstehen."
       ],
       [
         "Warum sehe ich nach der Anmeldung zunächst eine Ladeanzeige?",
@@ -161,7 +161,7 @@ window.SFHelpContent = {
       ],
       [
         "Wie zeigt „Heute“ Pausen und offene Buchungen?",
-        "„Jetzt im Dienst“ zählt laufende Buchungen einschließlich Pausen, je Person einmal. Beginn, Anwesenheitsdauer, bezahlte Pausen und QR-Terminal werden angezeigt. Pausen werden nicht von der Anwesenheitsdauer abgezogen. Buchungen über 24 Stunden werden zur Prüfung markiert und nicht als aktuelle Anwesenheit gezählt. „Handlungsbedarf“ zeigt die vollständige Anzahl in einem kompakten Aufgabenbereich. Bis zu vier Hinweise pro Seite, auf schmalen Mobilgeräten zwei, bleiben über Zurück und Weiter vollständig erreichbar. Die Prioritätsfilter Alle, Dringend, Prüfen und Weitere zeigen jeweils ihre Anzahl; zusätzlich können Sie nach Hinweisart filtern. Dringende Hinweise stehen zuerst. Standort- oder Filterwechsel beginnen wieder auf der ersten Seite. Eine normale Aktualisierung behält die ausgewählte Seite bei, sofern sie noch vorhanden ist."
+        "„Jetzt im Dienst“ zählt laufende Buchungen einschließlich Pausen, je Person einmal. Beginn, Anwesenheitsdauer, bezahlte Pausen und QR-Terminal werden angezeigt. Pausen werden nicht von der Anwesenheitsdauer abgezogen. Buchungen über 24 Stunden werden zur Prüfung markiert und nicht als aktuelle Anwesenheit gezählt. Offene Prüfhinweise finden Sie im kompakten Bereich „Handlungsbedarf“; dessen Filter und Seiten zeigen auch längere Aufgabenlisten vollständig an."
       ],
       [
         "Was zeigt „Heute“?",
@@ -178,6 +178,14 @@ window.SFHelpContent = {
       [
         "Warum fehlen Kennzahlen?",
         "Prüfen Sie Zeitraum und Cloud-Verbindung sowie die erfassten Mitarbeiter, Schichten und SOLL-Stärken. In der Demo sehen Sie Beispieldaten des Demo-Mandanten."
+      ],
+      [
+        "Wie filtere und blättere ich im Handlungsbedarf?",
+        "„Handlungsbedarf“ zeigt bis zu vier Hinweise pro Seite, auf schmalen Mobilgeräten zwei. Über „Zurück“ und „Weiter“ erreichen Sie alle Hinweise. „Alle“, „Dringend“, „Prüfen“ und „Weitere“ filtern nach Priorität und zeigen ihre jeweilige Anzahl; zusätzlich lässt sich die Hinweisart auswählen. Dringende Hinweise stehen zuerst. Standort- und Filterwechsel beginnen auf der ersten Seite. Eine normale Aktualisierung behält die ausgewählte Seite bei, soweit sie noch vorhanden ist. Öffnen Sie die passende Aktion am Hinweis, um den betroffenen Vorgang zu prüfen."
+      ],
+      [
+        "Warum fehlt ein Standortpunkt auf der Karte?",
+        "Die Karte zeigt nur die Standorte des ausgewählten Unternehmens und setzt Punkte ausschließlich an verifizierte Adresspositionen. Nicht verortete Standorte bleiben als Auswahl mit „Kartenposition nicht verifiziert“ erreichbar. Prüfen Sie das Unternehmen sowie Adresse und Standortstatus unter Einstellungen → Unternehmen → Standorte. Eine gespeicherte Adresse allein garantiert noch keinen verifizierten Kartenpunkt. „Alle Standorte“ setzt den Standortfilter zurück. Unbekannte oder veraltete Anwesenheitsdaten sind kein Nachweis, dass dort niemand arbeitet."
       ]
     ],
     "schedule": [
@@ -266,6 +274,10 @@ window.SFHelpContent = {
       [
         "Was unterscheidet Inaktivsetzen vom Entfernen eines Mitarbeiters?",
         "Ein inaktives Profil bleibt im Mitarbeiterbestand und kann über den Status wieder aktiviert werden. Inaktive Mitarbeiter werden nicht neu eingeplant; vorhandene Dienste müssen gesondert geprüft werden. Die bestätigte Mitarbeiterentfernung ist ein eigener Ablauf mit einer Folgenübersicht und erhält relevante Zeit- und Abrechnungshistorie. Die vollständige Datenlöschung ist eine weitere, gesonderte Inhaberaktion."
+      ],
+      [
+        "Welche Rhythmusregel hat bei einer festen Arbeitswoche Vorrang?",
+        "Eine ausdrücklich im Unternehmen hinterlegte feste Wochenvorgabe für bestimmte Mitarbeiter kann einen allgemeinen Tagesrhythmus oder eine Teamfolge ersetzen. Maßgeblich ist die tatsächlich angezeigte verbindliche Vorgabe; sie erlaubt nur die dort genannten Dienste und Tage. Eine normale individuelle Arbeitswoche allein ist keine allgemeine Ausnahme von Team- oder Belastungsregeln. Prüfen Sie Mitarbeiterprofil, Teamzuordnung und Planungsregeln gemeinsam. Die feste OT1/OT2/OT3-Tagdienstgruppe hat eine eigene Regelung. Abwesenheiten, Freizeitzusagen, Schichtfreigaben und Stunden-/Erholungsgrenzen werden zusätzlich geprüft; nach Änderungen erstellen Sie eine neue Vorschau."
       ]
     ],
     "time": [
@@ -475,7 +487,7 @@ window.SFHelpContent = {
       ],
       [
         "Wie erstelle und übernehme ich Auto-Planungsvorschläge?",
-        "Wähle Tag, Woche oder Monat, prüfe die Stunden- und Verteilungsregeln und klicke Vorschläge erstellen. Während der Berechnung zeigt ein Ladebalken den aktuellen Arbeitsschritt und die vergangene Zeit. Bei der Monatsplanung zählt die Prozentanzeige die tatsächlich geprüften Verteilungen; sie umfasst bei mehreren Monaten den gesamten Zeitraum. Datenladen und Vorbereitungen haben noch keinen messbaren Prozentwert. 100 % erscheint erst nach erfolgreicher Abschlussprüfung und bedeutet eine fertige Vorschau, keine Übernahme oder Veröffentlichung. Die automatische Monatsplanung bewertet Erholung und Wochenbelastung gemeinsam für den vollständigen Arbeitsblock, einschließlich vorhandener Dienste vor und nach dem Zeitraum. Ein einzelner Tag wird nicht vorab wegen einer Erholungsregel ausgeschlossen, die erst im vollständigen Nachtblock richtig bewertet werden kann. Die Stundenübersicht zeigt zusätzlich, wenn der Bedarf über der Summe der Mitarbeiterziele liegt. Persönliches Monats-SOLL und maximale Planungsstunden sind getrennte Einstellungen; eine höhere Obergrenze erzeugt kein zusätzliches Vertrags-SOLL. Feste freie Tage und Monatsgrenzen können die vollständige SOLL-Erfüllung verhindern. Nach Änderungen an der Planung neu berechnen; gespeicherte ältere Vorschauen werden nicht automatisch nachoptimiert. Prüfe Vorschläge und offene Positionen. Im Treppenmuster kannst du eine Zelle anklicken, um einen Dienst hinzuzufügen, zu ändern oder einzeln zu entfernen. Orange IST/SOLL-Felder unter dem Treppenmuster lassen sich direkt anklicken: Tag und Schicht sind vorbelegt, die Namenssuche zeigt regelkonform einsetzbare Mitarbeiter. Nicht einsetzbare Kollegen stehen mit Begründung im aufklappbaren Bereich. Bei gemeinsamem TL-Bedarf wird die passende freigegebene TL-LE- oder TL-RE-Schicht je Mitarbeiter gewählt. Dienst hinzufügen öffnet die Auswahl von Mitarbeiter, Schicht und Von/Bis für einen ganzen Arbeitsblock. Rückgängig stellt die vorherige Änderung wieder her. Stunden und offene Positionen aktualisieren sich direkt. Unzulässige Besetzungen werden mit Gründen angezeigt; unvollständige Arbeitsblöcke und fehlende feste Dienste müssen vor der Übernahme korrigiert werden. Manuelle Änderungen bleiben bis zur bestätigten Übernahme nur in dieser geöffneten Vorschau; vor einem Neuladen als Entwurf übernehmen. Bei längeren Zeiträumen wählst du den angezeigten Monat direkt in der Planvorschau. Die Gesamtstunden gelten weiterhin für den vollständigen Planungszeitraum. Tagesdetails werden beim Aufklappen angezeigt; mit Alle Tage öffnen siehst du sämtliche Vorschläge. Lange Listen offener Positionen blätterst du mit Zurück und Weiter durch. Übernehmen benötigt eine Bestätigung und speichert einen Entwurf. Nach der Bestätigung zeigt ein Statusfenster die Schritte Vorschläge prüfen, Entwurf speichern und Dienstplan aktualisieren, die bereits geprüfte Anzahl und die vergangene Zeit. Währenddessen die Seite geöffnet lassen. Eine erfolgreiche Übernahme wird erst nach der Speicherung bestätigt; Probleme beim anschließenden Laden werden gesondert angezeigt. Die Veröffentlichung erfolgt danach gesondert im Dienstplan."
+        "Wählen Sie Tag, Woche oder Monat und prüfen Sie Unternehmen, Zeitraum und Planungsregeln. „Vorschläge erstellen“ berechnet eine Vorschau. Bei einer verfügbaren Hintergrundplanung dürfen Sie den Browser erst nach „Hintergrundauftrag gespeichert“ schließen. Prüfen Sie anschließend Stunden, vollständige Arbeitsblöcke, Schichtwechsel und offene Positionen. In der Vorschau können Sie Dienste ändern und Lücken besetzen; diese Änderungen sind zunächst ungespeichert. „Als Entwurf übernehmen“ verlangt eine Bestätigung. Bei der Monatsoptimierung zeigt diese auch, welche flexiblen Entwürfe ersetzt werden; feste und geschützte Dienste bleiben erhalten. Während der Übernahme zeigt das Statusfenster Prüfung, Speicherung und Aktualisierung. Lassen Sie dafür die Seite geöffnet. Erst die Erfolgsmeldung bestätigt den gespeicherten Entwurf. Prüfen und veröffentlichen Sie ihn danach gesondert im Dienstplan."
       ],
       [
         "Warum muss ich Vorschläge nach Änderungen neu erstellen?",
@@ -483,7 +495,7 @@ window.SFHelpContent = {
       ],
       [
         "Warum bleiben trotz verfügbarer Mitarbeiter Dienste offen?",
-        "Eine Person muss gleichzeitig Schichtfreigabe, gegebenenfalls verbindlichen Rhythmus, Abwesenheitsprüfung, Zeitregeln und die aktivierten Stundenlimits erfüllen. Eine freie Position und eine freie Person allein garantieren keine passende Besetzung. Prüfe den konkreten Tag und die Schichtart mit dem Planungsassistenten."
+        "Eine freie Person muss gleichzeitig Schichtfreigabe, Qualifikation, verbindlichen Rhythmus, Abwesenheits- und Freizeitzusagenprüfung, zulässige Schichtwechsel, Erholung und Stundenobergrenzen erfüllen. Die Auto-Planung bewertet bei festen Rhythmen ganze Arbeitsblöcke und berücksichtigt vorhandene Dienste an den Monatsgrenzen. Fehlende Stunden bedeuten deshalb nicht, dass jeder offene Dienst passt. Prüfen Sie die Gründe am konkreten IST/SOLL-Feld oder mit dem Planungsassistenten. Vergleichen Sie außerdem Pflichtbedarf und persönliche Stundenziele: Mehrstundenbedarf und Unterstunden können gleichzeitig auftreten. Der Planungslauf garantiert keine mathematisch optimale Verteilung."
       ],
       [
         "Welche Stunden- und Schichtgrenzen gelten?",
@@ -495,7 +507,7 @@ window.SFHelpContent = {
       ],
       [
         "Wie werden freie Tage nach einer Nachtschicht gezählt?",
-        "Ein vollständig freier Kalendertag enthält keine Arbeitszeit. Der Tag, an dem eine Nachtschicht endet, kann deshalb noch als Arbeitstag zählen. Die erforderliche Zahl freier Tage wird aus den Unternehmensregeln geladen; die Prüfung berücksichtigt Monatsgrenzen und Zeitumstellungen."
+        "Ein vollständig freier Kalendertag enthält keine Arbeitszeit. Der Tag, an dem die letzte Nacht morgens endet, ist deshalb ein Schlaftag und kein vollständig freier Tag. Verlangt die konfigurierte Regel nach vier Nächten zwei volle freie Tage, bedeutet Montag- bis Donnerstagnacht: Ende am Freitagmorgen, Samstag und Sonntag vollständig frei, neuer Block frühestens Montag und erst nach der zusätzlichen Mindestruhe. Im freigegebenen 4/3/3/2-Modell kann nach genau drei Nächten eine gesonderte kürzere Erholung gelten; sie gilt nicht automatisch nach vier Nächten. Entscheidend sind die angezeigten Unternehmens- und Mitarbeiterregeln. Zeitumstellungen und Monatsgrenzen werden mitgeprüft."
       ],
       [
         "Was passiert bei nicht erreichbarem Monats-SOLL?",
@@ -511,7 +523,7 @@ window.SFHelpContent = {
       ],
       [
         "Welche Feiertage gelten für OT-Dienste?",
-        "Für standortabhängige Schichtmodelle gelten die Feiertage des hinterlegten Einsatzortes. Maßgeblich ist die geschützte Standortzuordnung im Mitarbeiterprofil. Persönliche Schichtfreigaben bleiben erforderlich; bei unbekanntem Einsatzort wird kein örtlicher Feiertag unterstellt."
+        "Prüfen Sie Feiertagsregion und Einsatzort des Schichtmodells sowie die aktiven Unternehmensregeln. Bei aktivierter Feiertagssperre für OT1/OT2/OT3 entfallen diese Tagdienste auch an einem Feiertag von Montag bis Freitag. Die feste Tagdienstgruppe arbeitet dann nicht automatisch; Wochenenden bleiben ebenfalls ausgenommen. Die normale OT ist ein eigenes Schichtmodell für den freigegebenen Wochenend- oder Feiertagsbedarf und fällt nicht unter die Tagdienstregeln. Bei unbekanntem Einsatzort wird kein örtlicher Feiertag unterstellt. Freigaben und Besetzungsbedarf bleiben maßgeblich; ändern Sie eine Feiertagsregel, erstellen Sie die Vorschau neu."
       ],
       [
         "Was macht die individuelle Monatsplanung?",
@@ -524,6 +536,22 @@ window.SFHelpContent = {
       [
         "Was tue ich, wenn eine Auto-Planung fehlschlägt?",
         "Lesen Sie den angezeigten Fehler und prüfen Sie Verbindung, Unternehmen, Zeitraum und Regeln. Während einer laufenden Berechnung sind die betroffenen Bedienelemente gesperrt, damit keine parallelen Läufe starten. Bei einem Fehler wird die Berechnung nicht als erfolgreich mit 100 % bestätigt. Prüfen Sie zuerst, ob eine Vorschau oder ein Entwurf tatsächlich gespeichert wurde, bevor Sie den Lauf wiederholen."
+      ],
+      [
+        "Wie bearbeite ich die Auto-Planungsvorschau und offene IST/SOLL-Felder?",
+        "Klicken Sie im Treppenmuster auf eine Zelle, um einen Dienst hinzuzufügen, zu ändern oder einzeln zu entfernen. Ein orangefarbenes IST/SOLL-Feld öffnet die Mitarbeiterauswahl mit vorbelegtem Tag und Dienst. Suchen Sie nach Name oder Personalnummer; nicht einsetzbare Mitarbeiter werden mit Gründen gesondert aufgeführt. Gemeinsamer Teamleiterbedarf wählt je Mitarbeiter die passende freigegebene TL-LE- oder TL-RE-Schicht. „Dienst hinzufügen“ erlaubt über Von/Bis einen ganzen Arbeitsblock. „Rückgängig“ stellt die vorherige Vorschauänderung wieder her. Stunden und offene Positionen werden neu berechnet, auch bedingter OT-Bedarf. Unvollständige Blöcke und verbindliche Konflikte müssen vor der Übernahme korrigiert werden. Manuelle Vorschauänderungen bleiben nur in der geöffneten Ansicht, bis Sie sie bestätigt als Entwurf übernehmen; ein Neuladen kann sie verwerfen."
+      ],
+      [
+        "Was zeigt der Status bei „Als Entwurf übernehmen“?",
+        "Nach der Bestätigung zeigt das Statusfenster „Vorschläge prüfen“, „Entwurf speichern“ und „Dienstplan aktualisieren“, dazu die geprüfte Anzahl und die vergangene Zeit. Lassen Sie die Seite geöffnet und starten Sie keine zweite Übernahme. Eine gespeicherte Hintergrundberechnung bedeutet noch keine gespeicherte Übernahme. „Entwurf übernommen“ bestätigt den Abschluss. Bei „Entwurf gespeichert – Ansicht prüfen“ war das Speichern erfolgreich, aber das Nachladen der Anzeige hat ein Problem; prüfen Sie zuerst den Dienstplan. Bei „Übernahme nicht abgeschlossen“ lesen Sie den Fehler und kontrollieren ebenfalls den gespeicherten Stand, bevor Sie erneut übernehmen. Veröffentlicht wird erst durch die gesonderte Freigabe im Dienstplan."
+      ],
+      [
+        "Welche aufsteigenden und absteigenden Schichtwechsel sind erlaubt?",
+        "Bei aktivierter Sperre absteigender Dienste gilt an aufeinanderfolgenden Arbeitstagen die Reihenfolge OT → O1 → O2 / TL-LE / TL-RE → O3. Gleiche und aufsteigende Wechsel sind möglich, zum Beispiel O1 → O2, O2 → O3, TL → O2/O3 oder OT → O1/O2/O3. O2 → O1, TL → O1 sowie O3 → O1/O2/TL sind gesperrt; O3 → normaler OT ist ebenfalls absteigend. O2 und Teamleiterdienste liegen auf derselben Stufe. Nach ausreichender Erholung darf ein neuer Arbeitsblock früher beginnen. Die separate O3-Folgetagssperre und eine gegebenenfalls aktivierte TL→O1-Sperre bleiben zu beachten. OT1/OT2/OT3 gehören zur getrennten Tagdienstregelung. Freigaben, Ruhezeiten und Stundenlimits werden zusätzlich geprüft, auch bei manuellen Änderungen und Monatsübergängen. Maßgeblich sind die aktivierten Regeln Ihres Unternehmens."
+      ],
+      [
+        "Welche bestehenden Dienste berücksichtigt ein neu geplanter Monat?",
+        "Die Prüfung berücksichtigt vorhandene Dienste vor und nach dem gewählten Zeitraum, soweit sie für Arbeitsblöcke, Erholung, Wochenstunden und Monatsüberträge relevant sind. Ein Monatswechsel setzt diese Regeln nicht zurück. Ein gelöschter Vormonatsplan erzeugt keine fiktiven Dienste oder fortgesetzten Arbeitsblöcke. Die Planung nutzt aber weiterhin gespeicherte persönliche Startdaten, verbindliche Rhythmen, Abwesenheiten und geschützte Freizeitzusagen. Erstellen Sie nach einer Löschung oder Regeländerung eine neue Vorschau. Für zusammenhängende Monatsübergänge kann eine gemeinsame Zeitraumplanung sinnvoll sein."
       ]
     ],
     "reports": [
@@ -579,7 +607,7 @@ window.SFHelpContent = {
       ],
       [
         "Wo sehe und ändere ich die aktuell geltenden Planungsregeln?",
-        "Unter Einstellungen → Planungsregeln stehen ausschließlich die Regeln des ausgewählten Unternehmens: Monats- und Wochenstunden, Dienste am Stück, Nachtblöcke, Erholung, Optimierungsziele, bedingte Besetzung, Schichtfreigaben, Teamrhythmen und Mitarbeitervorgaben. Der eigene Bereich OT1 / OT2 / OT3 · 10 Stunden enthält separate Monats- und Wochenobergrenzen, maximale Dienste am Stück sowie freie Tage und Ruhe zwischen Arbeitsblöcken. Er gilt für Vollzeitkräfte mit ausschließlich OT1, OT2 und OT3 als Schichtfreigaben. Fünf 10-Stunden-Dienste benötigen 5 Dienste am Stück und eine Planungsobergrenze von 50 Stunden pro Kalenderwoche; 220 Monatsstunden erlauben maximal 22 volle Dienste. Diese Obergrenzen erzeugen keinen zusätzlichen Bedarf. Bei einer Grenze von 200 Stunden sind höchstens 20 volle 10-Stunden-Dienste je Mitarbeiter möglich. Ist die feste Tagdienstgruppe für zusätzliche freie Tage freigegeben, werden diese bei ausreichender Nachtabdeckung in längeren Monaten versetzt eingeplant, vorzugsweise angrenzend an das Wochenende. Die hinterlegte Mindestgruppe und benötigte OT1-/OT3-Abdeckung bleiben verbindlich; eine zusätzliche dritte Wunschposition bleibt gegebenenfalls offen sichtbar. Freie Tage können bereits in der Vorplanung geändert werden, soweit Ruhezeiten und Mindestbesetzung erfüllt bleiben. Ohne diese Freigabe gilt die vollständige feste Gruppe an jedem Arbeitstag. Bei einer festen OT-Tagdienstgruppe ohne zusätzliche freie Tage werden alle Gruppenmitarbeiter Montag–Freitag eingeplant: OT1 bei fehlender O3-Abdeckung morgens, OT3 bei fehlender O1-Abdeckung abends, alle übrigen auf OT2. Sind beide Zeiträume ausreichend abgedeckt, arbeiten alle auf OT2. Das Wochenende bleibt frei. Die gemeinsame Verteilung berücksichtigt elf Stunden Ruhezeit, Abwesenheiten und niedrigere persönliche Grenzen; verhinderte Dienste erscheinen mit Gründen unter den offenen Positionen. Die 8-Stunden-Einstellungen stehen in einem separaten Bereich mit den betroffenen Schichtmodellen, beispielsweise TR; sie gelten nicht für die OT-Tagdienstgruppe. Die normale OT am Wochenende ist davon ausgenommen und folgt den allgemeinen Planungsregeln. Der Bereich Teamleiter · Arbeitsblöcke und Monatsziele gilt ausschließlich für Mitarbeiter mit der Rolle Teamleiter. Er enthält das Nachtmaximum, die bevorzugte Blocklänge, vollständig freie Tage nach Nächten und das vorrangige Monatsziel. Bei der Variante 4 Nächte / 2 freie Tage endet die Donnerstagsnacht am Freitagmorgen; Samstag und Sonntag sind vollständig frei, Montag kann der nächste Block beginnen. Mindestens 48 Stunden Ruhe sowie persönliche Monats- und Wochenobergrenzen bleiben verbindlich. Bei aktivierter Wechselsperre ist TL-LE oder TL-RE mit O1 am unmittelbar folgenden Kalendertag unzulässig. O1 vor einem Teamleiterdienst sowie TL vor O2, O3 oder einem weiteren Teamleiterdienst bleiben im Rahmen der übrigen Regeln möglich. Die Sperre gilt auch bei manuellen Änderungen, rückwirkend eingefügten Diensten und Monatsübergängen. Ist die vollständige Sperre absteigender Dienste aktiviert, gilt innerhalb zusammenhängender Arbeitstage die Reihenfolge OT → O1 → O2 / TL-LE / TL-RE → O3. O2 vor O1, Teamleiter vor O1 sowie O3 vor O2, O1 oder Teamleiter sind dann gesperrt. O2 und Teamleiter liegen auf derselben Stufe. Gleiche Dienste und aufsteigende Wechsel bleiben zulässig, beispielsweise OT vor O1/O2/O3, O1 vor O2/O3/TL und TL vor O2/O3. Nacht- vor normalem OT-Dienst am Folgetag ist ebenfalls gesperrt. Nach ausreichenden freien Tagen kann ein neuer Block wieder früher beginnen. Die getrennten OT1-/OT2-/OT3-Regeln bleiben erhalten. Bereits gespeicherte Vorschauen müssen nach einer Regeländerung neu berechnet werden. Die Mindestleitung wird zuerst gesichert, zusätzliche Teamleiter werden auf freigegebene Schichten verteilt und bis zum persönlichen Monatsziel bevorzugt. Ein Ziel von 170 Stunden bedeutet bei 10-Stunden-Diensten 17 Dienste; eine niedrigere Grenze von 162 Stunden wird mit höchstens 160 vollen Dienststunden angestrebt. Ziele sind keine Garantie: Abwesenheiten, geschützte Dienste und tatsächlicher Bedarf können sie verhindern. Für Monatsübergänge empfiehlt sich eine gemeinsame Planung der betroffenen Monate. Inhaber und Administratoren können die angebotenen allgemeinen Werte ändern und speichern. Der Änderungsgrund ist optional; vorherige und neue Werte werden im Audit-Verlauf dokumentiert. Schichtmodelle, SOLL-Besetzung und Teamrhythmen bearbeiten Sie über die Schaltflächen unter Planung, persönliche Vorgaben im Mitarbeiterprofil. Änderungen gelten nur für dieses Unternehmen, verwerfen veraltete Vorschauen und wirken bei neuen Planungen und Regelprüfungen. Bestehende Dienste werden nicht automatisch verändert. Bei gleichzeitigen Änderungen müssen Sie die gespeicherten Werte neu laden. Gesetzliche Schutzprüfungen und verbindliche Freigabesperren bleiben bestehen."
+        "Öffnen Sie Einstellungen → Planungsregeln und prüfen Sie zuerst das ausgewählte Unternehmen. Dort stehen die allgemeinen Stunden-, Block- und Erholungsgrenzen sowie getrennte Bereiche für OT1 / OT2 / OT3 · 10 Stunden, Acht-Stunden-Modelle und Teamleiter · Arbeitsblöcke und Monatsziele. Die konkreten Grenzen und personengebundenen Vorgaben werden für das angemeldete Unternehmen geladen. Inhaber und Administratoren können die angebotenen Werte speichern; Änderungen werden mit Vorher/Nachher im Audit-Verlauf dokumentiert. Schichtmodelle, SOLL-Besetzung und Teamrhythmen öffnen Sie über die zugehörigen Planungseinstellungen, persönliche Vorgaben im Mitarbeiterprofil. Eine Regeländerung gilt bei neuen Planungen und Prüfungen, verändert vorhandene Dienste aber nicht automatisch. Erstellen Sie veraltete Vorschauen neu. Bei gleichzeitiger Bearbeitung laden Sie zuerst die aktuelle gespeicherte Fassung."
       ],
       [
         "Wo ändere ich SOLL-Stärken?",
@@ -624,6 +652,18 @@ window.SFHelpContent = {
       [
         "Wie pflege ich Schichtmodelle und ihre Besetzungsregeln?",
         "In der Verwaltung können berechtigte Benutzer Schichtmodelle anlegen, bearbeiten oder löschen. Prüfen Sie Kürzel, Zeiten, Wochentage, Standort, Mitarbeiterfreigaben sowie Pflichtbedarf, optionale Besetzung und gemeinsame Deckung. Bestehende Zuordnungen und Folgen einer Löschung müssen im angezeigten Ablauf geprüft werden. Geänderte Regeln erfordern eine neue Auto-Planungsvorschau; bereits gespeicherte Dienste werden nicht stillschweigend neu geplant."
+      ],
+      [
+        "Wie unterscheiden sich Vertrags-SOLL und Planungsobergrenze?",
+        "Das persönliche Monats-SOLL ist das hinterlegte Stundenziel. Monats- und Kalenderwochenobergrenzen begrenzen die zulässige Verteilung; eine höhere Obergrenze erhöht weder Vertrags-SOLL noch Besetzungsbedarf. Niedrigere persönliche Grenzen bleiben maßgeblich. Nachtdienste werden für Kalenderwochen- und Kalendermonatsgrenzen mit ihren tatsächlichen Zeitanteilen gezählt. Ein Beispiel: 200 Stunden erlauben höchstens 20 volle 10-Stunden-Dienste, 220 Stunden höchstens 22, soweit die übrigen Regeln es zulassen. Diese Beispiele sind keine Aussage über die aktuell eingestellte Grenze Ihres Unternehmens. Prüfen Sie Planungsregeln und Mitarbeiterprofil gemeinsam."
+      ],
+      [
+        "Wie werden OT1, OT2 und OT3 getrennt von der normalen OT geplant?",
+        "Der eigene Bereich „OT1 / OT2 / OT3 · 10 Stunden“ steuert Monats- und Wochenobergrenzen, Dienste am Stück sowie Erholung für die dafür vorgesehenen Vollzeitprofile mit ausschließlich OT1/OT2/OT3-Freigaben. Bei einer konfigurierten festen Tagdienstgruppe werden diese Dienste Montag–Freitag nach der Nachtabdeckung verteilt: OT1 bei fehlender morgendlicher O3-Abdeckung, OT3 bei fehlender abendlicher O1-Abdeckung, sonst bevorzugt OT2. Konfigurierte Feiertage und Wochenenden sind ausgenommen. Zusätzliche freie Tage werden nur bei entsprechender Freigabe und ausreichender Mindestbesetzung versetzt eingeplant. Ohne diese Freigabe gilt die vollständige feste Gruppe an den vorgesehenen Arbeitstagen. Fünf volle 10-Stunden-Dienste benötigen unter anderem eine passende Fünf-Tage-Blockgrenze und mindestens 50 zulässige Wochenstunden. Die normale OT am Wochenende oder Feiertag folgt ihren eigenen Modell- und allgemeinen Planungsregeln."
+      ],
+      [
+        "Wie plant das System Teamleiter bis zum Monatsziel?",
+        "Im Bereich „Teamleiter · Arbeitsblöcke und Monatsziele“ stehen Nachtmaximum, bevorzugte Blocklänge, Erholung und vorrangiges Monatsziel. Die Automatik sichert zunächst den verbindlichen Leitungsbedarf und bevorzugt Teamleiter danach auf weiteren freigegebenen, benötigten Diensten bis zum persönlichen Ziel. Niedrigere persönliche Monats- und Wochenobergrenzen bleiben wirksam. Ein Ziel von 170 Stunden entspricht bei vollen 10-Stunden-Diensten 17 Diensten; eine Grenze von 162 Stunden erlaubt höchstens 160 Stunden aus solchen vollständigen Diensten. Reststunden erfordern passende kürzere Einsätze oder vorgesehene Gutschriften. Fehlende Freigaben, Abwesenheiten und unpassende Rhythmen können das Ziel verhindern; offene Stunden stehen in der Vorschau. Gemeinsamer TL-LE/TL-RE-Bedarf ist eine gemeinsame Deckungsanforderung und darf nicht doppelt gezählt werden."
       ]
     ],
     "portal": [
