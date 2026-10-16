@@ -26,7 +26,7 @@ Der Assistent zeigt Dienste einzelner Mitarbeiter und Planungsteams, Überbesetz
 
 Die persönliche Besetzungsprüfung verwendet die vorhandenen Kandidatenprüfungen und nennt den ersten aktuellen Ausschlussgrund, ohne Krankheitskategorien oder private Notizen offenzulegen. Für Namen mit mehreren Treffern fragt der Chat nach vollständigem Namen oder Personalnummer. Mitarbeiter- und Teambezüge werden bei Rückfragen weitergeführt; ein neues Team löst den bisherigen Mitarbeiterfilter ab.
 
-Eine Teamvorgabe für einen Tag wird aus der geladenen zentralen Tagesfolge, Startdatum und tatsächlicher Einstiegsposition ermittelt. Sie ist keine Aussage über die tatsächliche Besetzung. Die Wissensdatenbank nutzt sämtliche 17 Hilfekategorien und zwölf zusätzliche Anleitungen zu Teams, Auto-Planung, Export und Stunden. Themenzuordnungen unterscheiden unter anderem DATEV, tatsächliche Zeitberichte und Gesamtdienstplan. Die Antwort nennt das Hilfe-Center als Quelle und kann die passende Suche dort öffnen. Alle Artikel stehen auch im vorhandenen Hilfe-Center.
+Eine Teamvorgabe für einen Tag wird aus der geladenen zentralen Tagesfolge, Startdatum und tatsächlicher Einstiegsposition ermittelt. Sie ist keine Aussage über die tatsächliche Besetzung. Die Wissensdatenbank nutzt sämtliche aktuell geladenen Hilfekategorien und zwölf zusätzliche Anleitungen zu Teams, Auto-Planung, Export und Stunden. Themenzuordnungen unterscheiden unter anderem DATEV, tatsächliche Zeitberichte und Gesamtdienstplan. Die Antwort nennt das Hilfe-Center als Quelle und kann die passende Suche dort öffnen. Alle Artikel stehen auch im vorhandenen Hilfe-Center.
 
 ## Erweiterung vom 09.10.2026
 
@@ -38,3 +38,11 @@ Eine Teamvorgabe für einen Tag wird aus der geladenen zentralen Tagesfolge, Sta
 - Übernahmen sind aktive Entwurfsänderungen mit eigener Bestätigung. Persönliche Grenzen, geschützte Dienste, veröffentlichte Wochen, lokale Signatur und serverseitiger Fingerprint werden erneut geprüft. Vorschauen verfallen nach 15 Minuten. Die vorhandene atomare RPC `apply_planning_period` übernimmt die Speicherung; deren vollständige Prüfungen einschließlich Pflichtbesetzung bleiben verbindlich.
 - Journalzugriff und Vorschauen stehen nur den bestehenden aktiven Planungsrollen zur Verfügung. Bei Logout, Rollen- oder Unternehmenswechsel wird der sichtbare Gesprächszustand entfernt.
 
+
+## Abgleich vom 16.10.2026
+
+- Die Antworten verwenden die aktuellen Hilfeartikel aller 21 Kategorien. Eindeutige Bedienfragen werden vor allgemeinen Auswertungsbegriffen zugeordnet: Hintergrundauftrag, Übernahmestatus, Fortschritt, auf- und absteigende Schichtwechsel, OT-Feiertage, getrennte OT1/OT2/OT3-Regeln, Vorplanung trotz offener Wünsche, Monatsneustart, Erholung im 4/3/3/2-Modell und Teamleiterstunden. Personenbezogene Auswertungen, offene Dienste, Ersatzsuche und Rückfragen bleiben Datenanalysen.
+- „Welche Planungsregeln gelten?“ zeigt die geladenen allgemeinen Blockregeln und die effektiven persönlichen Wochen-, Monats- und Schichtobergrenzen aus `autoHourLimits`. Das Vertrags-SOLL wird getrennt angezeigt. Fehlende Regeln werden ausdrücklich als nicht bereit beziehungsweise nicht hinterlegt bezeichnet. Es werden keine Unternehmenswerte in öffentlichen Dateien hinterlegt.
+- Ausschlussdiagnosen unterscheiden Schichtwechsel, Feiertags-/Wochentagsregeln, geschützte Freizeit, Wochen-/Monatsobergrenzen und Blockerholung. Die Texte bleiben zusammengefasste Kategorien ohne private Notizen oder Krankheitsgründe.
+- Geplante Stunden und die Zusatzstunden einer Ersatzschicht verwenden dieselbe datums- und zeitzonenabhängige Berechnung wie die Anwendung, einschließlich Zeitumstellungen. Die Übersicht nach Startdatum bleibt von zeitanteiligen Kalenderobergrenzen getrennt.
+- Zusätzliche Beispielfragen führen zu Regeln, Schichtwechseln, OT-Tagdienst und Hintergrundplanung. Die Hauptauswahl bleibt kompakt. Artikel werden aus dem aktuellen Hilfe-Center gelesen; es gibt keine zweite Kopie der Bedienanleitungen im Assistenten.

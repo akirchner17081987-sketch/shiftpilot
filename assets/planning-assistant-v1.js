@@ -71,6 +71,12 @@
       else if(check.hard.some(x=>/nicht einplanbar|inaktiv/.test(x)))reason='Profil aktuell nicht einplanbar';
       else if(check.hard.some(x=>/Abwesenheit/.test(x)))reason='Abwesenheit überschneidet sich mit dem Dienst';
       else if(assignments.some(a=>String(a.employeeId)===String(e.id)&&a.date===date))reason='An diesem Tag bereits eingeplant';
+      else if(check.hard.some(x=>/Freizeitzusage|zugesagte Freizeit|geschuetzte Freizeit|geschützte Freizeit/i.test(x)))reason='Geschützte Freizeitzusage überschneidet sich mit dem Dienst';
+      else if(check.hard.some(x=>/absteigend|Nach O3|Nach TL-LE|Folgetag/i.test(x)))reason='Schichtwechsel am Folgetag nicht zulässig';
+      else if(check.hard.some(x=>/Feiertag|Wochenende|Montag.*Freitag/i.test(x)))reason='Schichtmodell ist an diesem Wochentag oder Feiertag nicht zulässig';
+      else if(check.hard.some(x=>/Kalenderwoche|Wochen.*(?:grenze|stunden|limit)/i.test(x)))reason='Persönliche Wochenobergrenze würde überschritten';
+      else if(check.hard.some(x=>/Monatsgrenze|Monats.*(?:obergrenze|limit)|Schichtanzahl/i.test(x)))reason='Persönliche Monats- oder Schichtobergrenze würde überschritten';
+      else if(check.hard.some(x=>/Arbeitsblock|Arbeitsblöck|Nachtblock|Nachtdienste am Stück|Dienste am Stück|freie.*Kalendertage/i.test(x)))reason='Arbeitsblock oder anschließende Erholung passt nicht';
       else if(check.hard.some(x=>/Schichtregel/.test(x)))reason='Verbindlicher Rhythmus passt nicht';
       else if(check.hard.some(x=>/Teamleiter/.test(x)))reason='Erforderliche Leitungsrolle fehlt';
       else if(check.hard.some(x=>/überschneidung|Ruhezeit|Schichtdauer|unterschiedlich/.test(x)))reason='Schichtzeit, Ruhezeit oder Überschneidung';
@@ -208,7 +214,8 @@
       focusTarget(target||el('calendarGrid'));
     }
     if(action.view==='settings')setTimeout(()=>{
-      const card=action.section==='soll'?document.querySelector('#view-settings .sf-set-grid'):el('sfPlanningTeams');
+      if(action.section==='rules')document.querySelector('#sfSettingsV2 [data-setting-tab="rules"]')?.click();
+      const card=action.section==='rules'?document.querySelector('#view-settings .sf-rule-view'):action.section==='soll'?document.querySelector('#view-settings .sf-set-grid'):el('sfPlanningTeams');
       const button=action.team&&[...document.querySelectorAll('#sfPlanningTeams [data-edit-team]')].find(n=>n.dataset.editTeam===action.team);
       if(button&&!button.disabled)button.click();focusTarget(button||card);
     },50);
@@ -343,6 +350,10 @@
       'Wie stelle ich den Rhythmus von Team E ein?',
       'Wie viele Stunden sind im gewählten Zeitraum geplant?',
       'Welche Dienste hat Team E im gewählten Zeitraum?',
+      'Welche Planungsregeln gelten?',
+      'Welche Schichtwechsel sind erlaubt?',
+      'Wie werden OT1 OT2 OT3 geplant?',
+      'Läuft die Auto-Planung im Hintergrund?',
       'Gespeicherte Planungsgründe anzeigen'
     ]);details.appendChild(additional);welcome.appendChild(details);log.appendChild(welcome);
   }
