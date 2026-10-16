@@ -15,10 +15,11 @@ host.append(root);
  const scene=root.querySelector('.sf-scene'),canvas=root.querySelector('canvas'),ctx=canvas.getContext('2d');
  const svg=root.querySelector('.sf-routes'),routes=root.querySelector('.sf-route-group'),anchors=root.querySelector('.sf-anchors'),labelLines=root.querySelector('.sf-label-lines'),signals=root.querySelector('.sf-signals'),popup=root.querySelector('.sf-popup');
  root.querySelector('.sf-leader').remove();
+ const floating=document.createElement('div');floating.className='sf-location-map sf-location-floating';floating.append(popup);(document.getElementById('appShell')||document.body).append(floating);
  const unmapped=document.createElement('div');unmapped.className='sf-unmapped-sites';unmapped.setAttribute('aria-label','Standorte ohne verifizierte Kartenposition');scene.append(unmapped);
  const definitions={present:'Jetzt im Dienst',coverage:'Offene Positionen',actions:'Handlungsbedarf'};
  // Preview control names map to the existing production KPI identifiers.
- root.querySelector('[data-kind="open"]').dataset.kind='coverage';root.querySelector('[data-kind="hints"]').dataset.kind='actions';
+ popup.querySelector('[data-kind="open"]').dataset.kind='coverage';popup.querySelector('[data-kind="hints"]').dataset.kind='actions';
  let loadingEngine=false,engine=null,d3=null,countries=null,projection=null,data=null,signature='',sites=[],selected='',opened='',fullGlobe=false,elapsed=0,last=0,raf=0,geometry=[],width=0,height=0,disposed=false,inView=true;
  const buttons=new Map(),reduced=window.matchMedia('(prefers-reduced-motion: reduce)');
  const makeSvg=tag=>document.createElementNS('http://www.w3.org/2000/svg',tag);
@@ -29,7 +30,7 @@ host.append(root);
  function createButton(site){
   const button=document.createElement('button');button.type='button';button.className='sf-point';button.dataset.orbitSite=site.id;button.setAttribute('aria-haspopup','dialog');button.setAttribute('aria-controls','sfOrbitSiteInfo');
   const code=document.createElement('span'),name=document.createElement('span'),alert=document.createElement('span');code.className='sf-code';name.className='sf-location-name';alert.className='sf-alert-icon';alert.setAttribute('aria-hidden','true');alert.textContent='!';button.append(code,name,alert);
-  button.addEventListener('click',event=>{showSite(site.id);if(event.detail===0&&!popup.hidden)root.querySelector('.sf-category:not(:disabled)')?.focus();});buttons.set(site.id,button);root.querySelector('.sf-points').append(button);return button;
+  button.addEventListener('click',event=>{showSite(site.id);if(event.detail===0&&!popup.hidden)popup.querySelector('.sf-category:not(:disabled)')?.focus();});buttons.set(site.id,button);root.querySelector('.sf-points').append(button);return button;
  }
  function renderSites(){
   const keep=new Set(data.sites.map(s=>s.id));buttons.forEach((button,id)=>{if(!keep.has(id)){button.remove();buttons.delete(id);}});anchors.replaceChildren();labelLines.replaceChildren();
@@ -101,18 +102,21 @@ function paintMap(){
  function updateSignals(){for(const route of geometry){const t=(elapsed/6500+route.offset)%1,u=1-t;route.dot.setAttribute('cx',u*u*route.start.x+2*u*t*route.control.x+t*t*route.end.x);route.dot.setAttribute('cy',u*u*route.start.y+2*u*t*route.control.y+t*t*route.end.y);route.dot.style.opacity=options.motion?.()==='off'||reduced.matches?'0':String(Math.sin(t*Math.PI)*.75);}}
  function positionPopup(){
   if(popup.hidden)return;const site=sites.find(s=>s.id===opened);if(!site)return;
-  const bounds=scene.getBoundingClientRect(),anchor=site.button.getBoundingClientRect(),popupWidth=bounds.width<=520?Math.min(244,bounds.width-84):244;popup.style.width=Math.max(180,popupWidth)+'px';
-  const size=popup.getBoundingClientRect(),preferred=site.side==='left'?anchor.right-bounds.left+10:anchor.left-bounds.left-size.width-10;
-  const dockTop=document.getElementById('sfOrbitDock')?.getBoundingClientRect().top||window.innerHeight;
-  const headerBottom=document.querySelector('#appShell>.topbar')?.getBoundingClientRect().bottom||0;
-  const minTop=Math.max(12,headerBottom+8-bounds.top),maxTop=Math.min(bounds.height-size.height-12,dockTop-12-bounds.top-size.height,window.innerHeight-12-bounds.top-size.height);
-  popup.style.left=Math.max(12,Math.min(bounds.width-size.width-12,preferred))+'px';popup.style.top=Math.max(minTop,Math.min(maxTop,anchor.top-bounds.top-4))+'px';
+  const anchor=site.button.getBoundingClientRect(),popupWidth=window.innerWidth<=520?Math.min(244,window.innerWidth-96):244;popup.style.width=Math.max(180,popupWidth)+'px';
+  const dockTop=Math.min(window.innerHeight,document.getElementById('sfOrbitDock')?.getBoundingClientRect().top||window.innerHeight);
+  const headerBottom=Math.max(0,document.querySelector('#appShell>.topbar')?.getBoundingClientRect().bottom||0);
+  const upper=headerBottom+8,lower=dockTop-12;
+  popup.style.maxHeight=Math.max(120,lower-upper)+'px';
+  const size=popup.getBoundingClientRect(),gap=10;
+  const preferred=site.side==='left'?anchor.right+gap:anchor.left-size.width-gap;
+  popup.style.left=Math.max(12,Math.min(window.innerWidth-size.width-12,preferred))+'px';
+  popup.style.top=Math.max(upper,Math.min(lower-size.height,anchor.top-4))+'px';
  }
  function renderPopup(){
   const site=sites.find(s=>s.id===opened);popup.hidden=!site;buttons.forEach((button,id)=>button.setAttribute('aria-expanded',String(id===opened)));
-  if(!site)return;root.querySelector('#sfLocationPopupTitle').textContent=site.name;
-  root.querySelectorAll('[data-kind]').forEach(button=>{const key=button.dataset.kind,value=key==='coverage'?site.open:key==='actions'?site.actions:site.present;button.querySelector('.sf-pop-value').textContent=value==null?'–':String(value);button.disabled=key==='present'&&site.present==null;button.setAttribute('aria-label',definitions[key]+' · '+site.name+' · '+(value==null?'derzeit unbekannt':value));});
-  root.querySelector('.sf-popup-note').textContent='Datenstand '+new Intl.DateTimeFormat('de-DE',{timeZone:data.timezone,hour:'2-digit',minute:'2-digit'}).format(new Date(data.asOf))+' Uhr'+(!data.fresh?' · veraltet':'')+(site.coords?'':' · Kartenposition nicht verifiziert');positionPopup();
+  if(!site)return;popup.querySelector('#sfLocationPopupTitle').textContent=site.name;
+  popup.querySelectorAll('[data-kind]').forEach(button=>{const key=button.dataset.kind,value=key==='coverage'?site.open:key==='actions'?site.actions:site.present;button.querySelector('.sf-pop-value').textContent=value==null?'–':String(value);button.disabled=key==='present'&&site.present==null;button.setAttribute('aria-label',definitions[key]+' · '+site.name+' · '+(value==null?'derzeit unbekannt':value));});
+  popup.querySelector('.sf-popup-note').textContent='Datenstand '+new Intl.DateTimeFormat('de-DE',{timeZone:data.timezone,hour:'2-digit',minute:'2-digit'}).format(new Date(data.asOf))+' Uhr'+(!data.fresh?' · veraltet':'')+(site.coords?'':' · Kartenposition nicht verifiziert');positionPopup();
  }
  function sync(force=false){
   if(disposed)return;const current=getData();if(!current){reset();return;}
@@ -124,16 +128,17 @@ function paintMap(){
  function reset(){if(!data&&signature==='unavailable'){syncMotion();return;}data=null;signature='unavailable';selected=opened='';sites=[];buttons.forEach(button=>button.remove());buttons.clear();for(const el of [anchors,routes,signals,labelLines])el.replaceChildren();geometry=[];popup.hidden=true;root.querySelector('.sf-current').textContent='Standortdaten nicht verfügbar';root.querySelector('.sf-map-selection').textContent='Standortdaten werden geladen …';ctx?.clearRect(0,0,canvas.width,canvas.height);syncMotion();}
  function running(){return !disposed&&root.isConnected&&inView&&!document.hidden&&!!data&&!!geometry.length&&!reduced.matches&&options.motion?.()!=='off'&&options.active?.()!==false;}
  function frame(time){raf=0;if(!running())return;if(!last)last=time;if(time-last>=50){elapsed+=Math.min(time-last,100);last=time;updateSignals();}raf=requestAnimationFrame(frame);}
- function syncMotion(){root.dataset.motion=options.motion?.()||'subtle';if(!running()){cancelAnimationFrame(raf);raf=0;last=0;}else if(!raf)raf=requestAnimationFrame(frame);}
- root.querySelector('.sf-close').addEventListener('click',()=>hidePopup(true));
- root.querySelectorAll('[data-kind]').forEach(button=>button.addEventListener('click',()=>{const id=opened;if(id&&options.open?.(id,button.dataset.kind)!==false)hidePopup();}));
+ function syncMotion(){root.dataset.motion=floating.dataset.motion=options.motion?.()||'subtle';if(!running()){cancelAnimationFrame(raf);raf=0;last=0;}else if(!raf)raf=requestAnimationFrame(frame);}
+ popup.querySelector('.sf-close').addEventListener('click',()=>hidePopup(true));
+ popup.querySelectorAll('[data-kind]').forEach(button=>button.addEventListener('click',()=>{const id=opened;if(id&&options.open?.(id,button.dataset.kind)!==false)hidePopup();}));
  root.querySelector('.sf-view').addEventListener('click',()=>{fullGlobe=!fullGlobe;root.querySelector('.sf-view').textContent=fullGlobe?'Region vergrößern':'Globus ansehen';root.querySelector('.sf-view').setAttribute('aria-pressed',String(fullGlobe));layout();});
- root.addEventListener('keydown',event=>{if(event.key==='Escape'&&!popup.hidden){event.preventDefault();event.stopPropagation();hidePopup(true);}});
+ const onKey=event=>{if(event.key==='Escape'&&!popup.hidden){event.preventDefault();event.stopPropagation();hidePopup(true);}};root.addEventListener('keydown',onKey);floating.addEventListener('keydown',onKey);
  canvas.addEventListener('click',event=>{const b=canvas.getBoundingClientRect(),x=event.clientX-b.left,y=event.clientY-b.top;const site=sites.filter(s=>s.position).sort((a,b)=>Math.hypot(a.position.x-x,a.position.y-y)-Math.hypot(b.position.x-x,b.position.y-y))[0];if(site&&Math.hypot(site.position.x-x,site.position.y-y)<22)showSite(site.id);else hidePopup();});
  const resize=new ResizeObserver(layout);resize.observe(scene);const observer=typeof IntersectionObserver==='function'?new IntersectionObserver(entries=>{inView=entries[0].isIntersecting;syncMotion();}):null;observer?.observe(root);
+ const onScroll=()=>{if(!popup.hidden)positionPopup();};document.addEventListener('scroll',onScroll,true);
  const onVisibility=()=>syncMotion();document.addEventListener('visibilitychange',onVisibility);reduced.addEventListener?.('change',onVisibility);
  function ensureEngine(){if(engine||loadingEngine)return;loadingEngine=true;loadEngine().then(value=>{if(disposed)return;engine=value;d3=value.d3;countries=value.countries;projection=d3.geoOrthographic().rotate([-10.1,-50.15]).precision(.15);sync(true);}).catch(error=>{loadingEngine=false;if(!disposed)root.querySelector('.sf-map-selection').textContent=error.message;});}
- return{sync,reset,dismissOutside(target){if(!root.contains(target))hidePopup();},dispose(){disposed=true;cancelAnimationFrame(raf);resize.disconnect();observer?.disconnect();document.removeEventListener('visibilitychange',onVisibility);reduced.removeEventListener?.('change',onVisibility);root.remove();}};
+ return{sync,reset,dismissOutside(target){if(!root.contains(target)&&!popup.contains(target))hidePopup();},dispose(){disposed=true;cancelAnimationFrame(raf);resize.disconnect();observer?.disconnect();document.removeEventListener('visibilitychange',onVisibility);reduced.removeEventListener?.('change',onVisibility);document.removeEventListener('scroll',onScroll,true);floating.remove();root.remove();}};
  }
  window.SFLocationMap={create};
 })();

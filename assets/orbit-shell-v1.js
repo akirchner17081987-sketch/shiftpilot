@@ -252,6 +252,7 @@
     root.dataset.orbitOverviewActive = String(activeView() === 'overview' && !document.hidden && ready());
     let hero = root.querySelector('.sf-orbit-hero');
     if (!hero) {
+      siteOrbit?.dispose?.();
       const head = root.querySelector('.sf-td-head'); if (!head) return;
       hero = document.createElement('section'); hero.className = 'sf-orbit-hero'; hero.dataset.locationMap = 'true'; hero.setAttribute('aria-label', 'SchichtFunk Tagesübersicht');
       head.before(hero); head.classList.add('sf-orbit-hero-copy'); hero.append(head);

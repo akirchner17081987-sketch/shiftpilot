@@ -136,3 +136,6 @@
 /* The location dialog stays dark in both manager themes. */
 #appShell.sf-orbit .sf-location-map .sf-pop-header h3{color:#edf9ff!important}
 #appShell.sf-orbit .sf-location-map .sf-anchors circle.sf-select-pulse{fill:none}
+/* Portal escapes the map's clipping and remains clear of the fixed app navigation. */
+#appShell.sf-orbit>.sf-location-floating{position:fixed;inset:0;pointer-events:none;z-index:1100;padding:0;background:transparent;overflow:visible}
+#appShell.sf-orbit>.sf-location-floating .sf-popup{position:fixed;pointer-events:auto;overflow-y:auto;overscroll-behavior:contain}
