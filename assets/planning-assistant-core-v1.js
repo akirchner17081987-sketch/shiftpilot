@@ -210,7 +210,7 @@
     // A named person or a pending service diagnosis keeps the actual data analysis.
     const explanatory=/^(?:bitte\s+)?(?:wie(?! viele| viel)|wo\b|was\b|warum|weshalb|wieso|welche.*(?:regeln|grenzen|schichtwechsel|feiertage|obergrenze)|kann ich|laeuft|darf ich)/.test(q);
     const topic=explanatory&&intent!=='write'&&intent!=='rules'&&!['replacement','outage','improvements','loadCheck','runReasons','planningCheck','employeePlan'].includes(intent)&&!employeeMatches(q,staff).length&&!previous.pending?findHelp(q,s.helpArticles,true):null;
-    if(topic)return response(topic.title,topic.text,{notes:['Quelle: SchichtFunk Hilfe-Center. Maßgeblich sind die geladenen Regeln des ausgewählten Unternehmens.'],actions:[{help:true,query:topic.title,label:'Anleitung im Hilfe-Center öffnen'}],context:{}});
+    if(topic)return response(topic.title,topic.text,{notes:['Quelle: SchichtFunk Hilfe-Center. Maßgeblich sind die geladenen Regeln des ausgewählten Unternehmens.'],actions:[...(intent==='rhythmHelp'?[{view:'settings',team:requestedTeam,label:requestedTeam?'Team '+requestedTeam+' bearbeiten':'Teamrhythmen öffnen'}]:[]),{help:true,query:topic.title,label:'Anleitung im Hilfe-Center öffnen'}],context:{}});
     if(intent==='rules'){
       if(!s.rulesReady||!s.solidRules?.enabled||!s.hourLimits)return response('Planungsregeln noch nicht bereit','Die aktuellen Unternehmensregeln müssen vollständig geladen sein. Öffne Einstellungen → Planungsregeln und prüfe das ausgewählte Unternehmen.',{actions:[{view:'settings',section:'rules',label:'Planungsregeln öffnen'}],context:{}});
       const number=v=>Number.isFinite(Number(v))&&v!=null?hours(v):'Nicht hinterlegt';

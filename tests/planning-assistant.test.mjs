@@ -107,6 +107,7 @@ test('procedural questions select the correct knowledge topic instead of plannin
  assert.match(Core.answer('Wo finde ich meinen QR-Code?',s).text,/QR anzeigen/);
  assert.match(Core.answer('Warum kann ich mich nicht anmelden?',s).text,/Passwort/);
  assert.match(Core.answer('Wie stelle ich den Rhythmus von Team E ein?',s).text,/Einstellungen/);
+ const rhythm=Core.answer('Wie stelle ich den Rhythmus von Team E ein?',s);assert.equal(rhythm.actions[0].view,'settings');assert.equal(rhythm.actions[0].team,'E');
  const catalog=Core.answer('Welche Hilfethemen kennst du?',s);assert.equal(catalog.rows.length,s.helpCategories.length);assert.match(JSON.stringify(catalog.rows),/Personalakte/);assert.match(JSON.stringify(catalog.rows),/Benutzer & Sicherheit/);assert.match(JSON.stringify(catalog.rows),/Schicht-Marktplatz/);assert.match(JSON.stringify(catalog.rows),/Störfall-Autopilot/);
  assert.match(Core.answer('Wie viele Pausen kann ich beim QR Scan machen?',s).text,/zehn/);
 });
