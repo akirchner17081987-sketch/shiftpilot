@@ -47,7 +47,7 @@ const root=path.resolve(__dirname,'../..');
    }}};
   });
   await page.addScriptTag({path:path.join(root,'assets/supabase-qr-terminal-admin-v1.js')});
-  await page.evaluate(()=>window.SFBackend.qrTerminalAdmin.refresh());await page.locator('#sfQrPinAdminOpen').click();await page.locator('#sfQrPinAdminModal').waitFor();assert.equal(await page.locator('#sfQrPinEnable').isDisabled(),true);assert.ok(await page.evaluate(()=>window.syntheticMfa>0));passed++;
+  await page.evaluate(()=>window.SFBackend.qrTerminalAdmin.refresh());assert.equal(await page.locator('#sfQrTerminalAdmin > :first-child').getAttribute('id'),'sfQrPinAccess');assert.equal(await page.locator('#sfQrPinAdminOpen').isVisible(),true);await page.locator('#sfQrPinAdminOpen').click();await page.locator('#sfQrPinAdminModal').waitFor();assert.equal(await page.locator('#sfQrPinEnable').isDisabled(),true);assert.ok(await page.evaluate(()=>window.syntheticMfa>0));passed++;
   page.on('dialog',d=>d.accept());await page.locator('[data-pin-code]').click();await page.locator('#sfQrPinSetupCode').waitFor();assert.equal(await page.locator('#sfQrPinSetupCode').textContent(),'482719530618');assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);passed++;
   await page.evaluate(()=>window.SFBackend.companyId='different');await page.locator('#sfQrPinAdminModal').waitFor({state:'detached'});assert.equal(await page.locator('#sfQrPinSetupCode').count(),0);passed++;
   await context.close();

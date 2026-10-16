@@ -142,7 +142,7 @@ for(const role of ['OWNER','TIME_TRACKING'])test(`time tabs respect ${role} acce
  const entries=page.locator('[data-time-mode="entries"]'),account=page.locator('[data-time-mode="account"]'),qr=page.locator('[data-time-mode="qr"]');
  if(role==='TIME_TRACKING'){
   await expect(account).toBeDisabled();await expect(qr).toHaveText('QR-Erfassung');await entries.focus();await page.keyboard.press('Tab');await expect(qr).toBeFocused();
- }else{await expect(account).toBeEnabled();await expect(qr).toHaveText('QR-Terminals');await qr.focus();}
+ }else{await expect(account).toBeEnabled();await expect(qr).toHaveText('QR-Terminals & PINs');await qr.focus();}
  await page.keyboard.press('Enter');await expect(qr).toHaveAttribute('aria-selected','true');expect((await tabsGeometry(page)).issues).toEqual([]);
  const calls=await page.evaluate(()=>__refreshes);expect(calls).toContain('qr-report');expect(calls.includes('terminals')).toBe(role!=='TIME_TRACKING');
  expect(errors).toEqual([]);expect(requests).toEqual(['http://workspace-layout.test/','http://workspace-layout.test/'+layoutScriptPath]);expect(await page.evaluate(()=>__writes)).toBe(0);
