@@ -153,9 +153,10 @@
 #appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] [data-td-action="refresh"]{color:#bad8e8!important;background:#0b2231b8;border-color:#507b8c60}
 #appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] .sf-orbit-status-scope{margin:20px 0 0;padding:0;border:0;pointer-events:none}
 #appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] .sf-orbit-status-scope label{pointer-events:auto;color:#aec7d8}
-#appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] .sf-orbit-status-scope select{background:#0b2231e8;color:#edf7ff;border-color:#507b8c80}
+#appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] .sf-orbit-status-scope label>span{color:#aec7d8!important}
+#appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] .sf-orbit-status-scope select{background:#0b2231!important;color:#edf7ff!important;border-color:#507b8c80!important}
 #appShell.sf-orbit .sf-orbit-status-hub .sf-location-map{border-radius:0;background:#040d17}
-#appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] .sf-scene{height:clamp(660px,calc(100svh - 190px),800px)}
+#appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] .sf-scene{height:clamp(620px,calc(100svh - 280px),800px)}
 #appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] .sf-current{top:var(--sf-map-controls-top,208px);left:30px;min-height:36px;color:#bad8e8}
 #appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] .sf-view{top:var(--sf-map-controls-top,208px);right:30px;min-height:36px}
 #appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] .sf-map-footer{color:#aec7d8;background:#06131f;border-top:1px solid #88c9dc1a}
