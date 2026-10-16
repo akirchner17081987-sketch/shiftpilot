@@ -337,7 +337,7 @@ window.SFHelpContent = {
       ],
       [
         "Wie erfasst ein Mitarbeiter seine Zeit per QR?",
-        "Scannen Sie den aktuellen Code am Standort mit der Smartphone-Kamera oder dem Scanner im Mitarbeiterportal. Auf der Buchungsseite melden Sie sich mit Personalnummer und Eintrittsdatum im Format TTMMJJJJ an. Tippen Sie auf „Arbeitszeit beginnen“, für jede Pause auf „Pause beginnen“ und „Pause beenden“ und am Schluss auf „Arbeitszeit beenden“."
+        "Scannen Sie den aktuellen Code am Standort mit der Smartphone-Kamera oder dem Scanner im Mitarbeiterportal. Auf der Buchungsseite melden Sie sich mit Personalnummer und persönlicher PIN an. Für die Ersteinrichtung erhalten Sie von der Leitung einen einmaligen Einrichtungscode. Wählen Sie damit „PIN mit Einrichtungscode einrichten“. Während der Umstellung bleibt die bisherige Anmeldung nur für Personen ohne aktivierte PIN möglich. Tippen Sie auf „Arbeitszeit beginnen“, für jede Pause auf „Pause beginnen“ und „Pause beenden“ und am Schluss auf „Arbeitszeit beenden“."
       ],
       [
         "Wie viele Pausen sind möglich?",

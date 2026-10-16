@@ -58,13 +58,14 @@
     loadQrLib().then(async QR=>{
       const canvas=back.querySelector('#sfQrtCanvas');await QR.toCanvas(canvas,url,{width:320,margin:2,errorCorrectionLevel:'M'});
       back.querySelector('#sfQrtSave').onclick=()=>{const a=document.createElement('a');a.href=canvas.toDataURL('image/png');a.download=`schichtfunk-qr-${String(terminal.name||'terminal').toLowerCase().replace(/[^a-z0-9äöüß]+/gi,'-').replace(/^-|-$/g,'')||'terminal'}.png`;a.click()};
-      back.querySelector('#sfQrtPrint').onclick=()=>{const data=canvas.toDataURL('image/png'),w=window.open('','_blank','width=620,height=760');if(!w)return;w.document.write(`<!doctype html><html lang="de"><head><title>SchichtFunk QR – ${esc(terminal.name)}</title><style>body{font-family:Arial,sans-serif;text-align:center;padding:36px;color:#10202d}img{width:360px;max-width:90vw}p{color:#526675}</style></head><body><h1>SchichtFunk</h1><h2>${esc(terminal.name)}</h2><p>${esc(terminal.location_note||'QR-Zeiterfassung')}</p><img src="${data}" alt="QR-Code"><p>Mit der Handy-Kamera scannen und mit Personalnummer und Eintrittsdatum anmelden.</p><script>onload=()=>{print();setTimeout(()=>close(),300)}<\/script></body></html>`);w.document.close()};
+      back.querySelector('#sfQrtPrint').onclick=()=>{const data=canvas.toDataURL('image/png'),w=window.open('','_blank','width=620,height=760');if(!w)return;w.document.write(`<!doctype html><html lang="de"><head><title>SchichtFunk QR – ${esc(terminal.name)}</title><style>body{font-family:Arial,sans-serif;text-align:center;padding:36px;color:#10202d}img{width:360px;max-width:90vw}p{color:#526675}</style></head><body><h1>SchichtFunk</h1><h2>${esc(terminal.name)}</h2><p>${esc(terminal.location_note||'QR-Zeiterfassung')}</p><img src="${data}" alt="QR-Code"><p>Mit der Handy-Kamera scannen und mit Personalnummer und persönlicher PIN anmelden.</p><script>onload=()=>{print();setTimeout(()=>close(),300)}<\/script></body></html>`);w.document.close()};
     }).catch(e=>{back.querySelector('.sf-qrt-canvas').innerHTML=`<div style="color:#8b2637">${esc(e.message||String(e))}</div>`;back.querySelector('#sfQrtSave').disabled=true;back.querySelector('#sfQrtPrint').disabled=true});
   }
 
   function render(card,error=''){
     const rows=terminals.map(t=>`<div class="sf-qrt-row" data-qrt-id="${esc(t.id)}"><div class="sf-qrt-main"><b>${esc(t.name)} <span class="sf-qrt-state ${t.is_active?'':'off'}">${t.is_active?'● Aktiv':'○ Deaktiviert'}</span></b><label class="sf-qrt-site-control">Unternehmensstandort<select data-qrt-site ${window.SFCompanyProfile?.current()?.can_edit?'':'disabled'}>${window.SFCompanyProfile?.siteOptions(t.site_id)||'<option value="">Kein Standort zugeordnet</option>'}</select><button type="button" class="ghost" data-qrt-site-save ${window.SFCompanyProfile?.current()?.can_edit?'':'hidden disabled'}>Standort speichern</button></label><small>${esc(t.location_note||'Kein Standort-Hinweis')}<br>Zuletzt geändert: ${esc(fmt(t.updated_at))}</small></div><div class="sf-qrt-actions"><button class="primary" data-qrt-show>QR anzeigen</button><button class="ghost" data-qrt-rotate>QR erneuern</button><button class="ghost" data-qrt-toggle>${t.is_active?'Deaktivieren':'Aktivieren'}</button>${t.is_active?'':'<button class="ghost" data-qrt-delete>Löschen</button>'}</div></div>`).join('');
-    card.innerHTML=`<div class="sf-qrt-head"><div class="sf-qrt-icon">▦</div><div class="sf-qrt-copy"><div class="eyebrow">QR-STEMPELSTATIONEN</div><h3>Beginn, Pausen & Ende per QR-Code</h3><p>Der QR-Code identifiziert den Standort. Mitarbeiter melden sich mit Personalnummer und Eintrittsdatum an; Beginn, Ende und bis zu zehn Pausen werden ohne Schichtbindung erfasst.</p></div><div class="sf-qrt-create"><input id="sfQrtName" maxlength="120" placeholder="Name, z. B. Objekt A"><input id="sfQrtLocation" maxlength="300" placeholder="Standort, z. B. Haupteingang"><label class="sf-qrt-site-control">Unternehmensstandort<select id="sfQrtSite">${window.SFCompanyProfile?.siteOptions()||'<option value="">Kein Standort zugeordnet</option>'}</select></label><button class="primary" id="sfQrtCreate">＋ Anlegen</button></div></div>${error?`<div class="sf-qrt-empty">${esc(error)}</div>`:`<div class="sf-qrt-list">${rows||'<div class="sf-qrt-empty">Noch kein QR-Terminal angelegt.</div>'}</div><div class="sf-qrt-note"><b>QR anzeigen</b> lädt den aktuellen Code aus dem sicheren Serverspeicher. Bei deaktivierten Terminals lässt er sich drucken, wird aber erst nach Aktivierung beim Scannen akzeptiert. <b>QR erneuern</b> macht den bisherigen Ausdruck sofort ungültig.</div>`}`;
+    card.innerHTML=`<div class="sf-qrt-head"><div class="sf-qrt-icon">▦</div><div class="sf-qrt-copy"><div class="eyebrow">QR-STEMPELSTATIONEN</div><h3>Beginn, Pausen & Ende per QR-Code</h3><p>Der QR-Code identifiziert den Standort. Mitarbeiter melden sich mit Personalnummer und persönlicher PIN an; Beginn, Ende und bis zu zehn Pausen werden ohne Schichtbindung erfasst.</p></div><div class="sf-qrt-create"><input id="sfQrtName" maxlength="120" placeholder="Name, z. B. Objekt A"><input id="sfQrtLocation" maxlength="300" placeholder="Standort, z. B. Haupteingang"><label class="sf-qrt-site-control">Unternehmensstandort<select id="sfQrtSite">${window.SFCompanyProfile?.siteOptions()||'<option value="">Kein Standort zugeordnet</option>'}</select></label><button class="primary" id="sfQrtCreate">＋ Anlegen</button></div></div>${error?`<div class="sf-qrt-empty">${esc(error)}</div>`:`<div class="sf-qrt-list">${rows||'<div class="sf-qrt-empty">Noch kein QR-Terminal angelegt.</div>'}</div><div class="sf-qrt-note"><b>QR anzeigen</b> lädt den aktuellen Code aus dem sicheren Serverspeicher. Bei deaktivierten Terminals lässt er sich drucken, wird aber erst nach Aktivierung beim Scannen akzeptiert. <b>QR erneuern</b> macht den bisherigen Ausdruck sofort ungültig.</div>`}`;
+    if(['OWNER','ADMIN'].includes(B.role)&&!B.client?.__sfDemoLocalClientV1){const button=document.createElement('button');button.type='button';button.className='ghost';button.style.marginTop='12px';button.textContent='Persönliche QR-PINs verwalten';button.id='sfQrPinAdminOpen';button.onclick=openPinAdmin;card.appendChild(button)}
     const create=card.querySelector('#sfQrtCreate');if(create)create.onclick=()=>createTerminal(card.querySelector('#sfQrtName')?.value,card.querySelector('#sfQrtLocation')?.value,card.querySelector('#sfQrtSite')?.value||null);
     card.querySelectorAll('[data-qrt-id]').forEach(row=>{const t=terminals.find(x=>String(x.id)===row.dataset.qrtId);if(!t)return;row.querySelector('[data-qrt-site-save]')?.addEventListener('click',()=>saveTerminalSite(t,row));row.querySelector('[data-qrt-show]')?.addEventListener('click',()=>showTerminalQr(t));row.querySelector('[data-qrt-rotate]')?.addEventListener('click',()=>rotateTerminal(t));row.querySelector('[data-qrt-toggle]')?.addEventListener('click',()=>toggleTerminal(t));row.querySelector('[data-qrt-delete]')?.addEventListener('click',()=>deleteTerminal(t))});
   }
@@ -123,6 +124,64 @@
       await refresh();
       if(typeof showSaveToast==='function')showSaveToast('QR-Terminal gelöscht',t.name);
     }catch(e){alert(rpcError(e))}finally{B.hideLoading?.()}
+  }
+
+  async function openPinAdmin(){
+    const companyId=B.companyId,userId=B.user?.id;
+    if(!['OWNER','ADMIN'].includes(B.role)||!companyId||B.companySwitching)return;
+    try{
+      await B.requireSensitiveMfa?.();
+      if(companyId!==B.companyId||userId!==B.user?.id||B.companySwitching)return;
+      const q=await B.client.rpc('manager_qr_pin_admin',{p_company_id:companyId,p_action:'STATUS',p_employee_id:null});
+      if(q.error)throw q.error;
+      if(companyId!==B.companyId||userId!==B.user?.id||B.companySwitching)return;
+      showPinAdmin(q.data,companyId,userId);
+    }catch(e){alert(rpcError(e))}
+  }
+  function showPinAdmin(data,companyId,userId){
+    css();document.getElementById('sfQrPinAdminModal')?.remove();
+    const rows=Array.isArray(data.employees)?data.employees:[],ready=rows.filter(e=>e.pin_ready).length;
+    const unique=new Set(rows.map(e=>String(e.personnel_no||'').trim().toLowerCase()));
+    const canEnable=rows.length>0&&ready===rows.length&&unique.size===rows.length&&rows.every(e=>String(e.personnel_no||'').trim());
+    const back=document.createElement('div');back.id='sfQrPinAdminModal';back.className='sf-qrt-modal-back';
+    back.innerHTML=`<div class="sf-qrt-modal" role="dialog" aria-modal="true" aria-labelledby="sfQrPinTitle" tabindex="-1"><div class="sf-qrt-modal-head"><div class="eyebrow">SICHERE QR-ANMELDUNG</div><h2 id="sfQrPinTitle">Persönliche PINs</h2><p>${data.pin_required?'PIN-Pflicht aktiv. Das Eintrittsdatum wird nicht mehr akzeptiert.':'Umstellung läuft. Das Eintrittsdatum bleibt nur für Personen ohne aktivierte PIN verfügbar.'}</p></div><div class="sf-qrt-modal-body"><p>${ready} von ${rows.length} aktiven Mitarbeitenden haben ihre PIN eingerichtet.</p><p style="font-size:12px;color:#9db1c2;line-height:1.5">1. Persönlichen Einrichtungscode erzeugen und vertraulich übergeben.<br>2. Mitarbeitende scannen den Standort-QR-Code und wählen „PIN mit Einrichtungscode einrichten“.<br>3. Sobald alle bereit sind, PIN-Pflicht aktivieren. Neue Mitarbeitende benötigen dann ebenfalls einen Einrichtungscode.</p><div class="sf-qrt-list" style="margin-top:14px">${rows.map(e=>`<div class="sf-qrt-row" data-pin-employee="${esc(e.employee_id)}" style="grid-template-columns:minmax(0,1fr) auto"><div class="sf-qrt-main"><b>${esc(e.name)}</b><small>Personalnummer: ${esc(e.personnel_no||'fehlt')} · ${e.pin_ready?'PIN eingerichtet':e.setup_pending?'Einrichtungscode ausgestellt':e.legacy_allowed?'PIN fehlt · Eintrittsdatum noch aktiv':'PIN fehlt · Einrichtung erforderlich'}</small></div><button type="button" class="ghost" data-pin-code ${e.personnel_no?'':'disabled'}>${e.pin_ready?'PIN zurücksetzen':'Einrichtungscode'}</button></div>`).join('')||'<p>Keine aktiven Mitarbeitenden.</p>'}</div><div id="sfQrPinResult" role="status" aria-live="polite" style="margin-top:12px;overflow-wrap:anywhere"></div></div><div class="sf-qrt-modal-foot"><button class="ghost" id="sfQrPinClose">Schließen</button>${data.pin_required?'':`<button class="primary" id="sfQrPinEnable" ${canEnable?'':'disabled'}>PIN-Pflicht für alle aktivieren</button>`}</div></div>`;
+    document.body.appendChild(back);
+    const close=B.bindAccessibleModal?.(back,{initialFocus:'#sfQrPinClose'})||(()=>back.remove());
+    back.querySelector('#sfQrPinClose').onclick=close;
+    back.addEventListener('click',e=>{if(e.target===back)close()});
+    const valid=()=>companyId===B.companyId&&userId===B.user?.id&&!B.companySwitching&&back.isConnected;
+    const result=back.querySelector('#sfQrPinResult');
+    async function perform(action,employeeId=null){
+      if(!valid())return;
+      back.querySelectorAll('button').forEach(b=>b.disabled=true);result.textContent='Wird gespeichert …';
+      try{
+        await B.requireSensitiveMfa?.();if(!valid())return;
+        const q=await B.client.rpc('manager_qr_pin_admin',{p_company_id:companyId,p_action:action,p_employee_id:employeeId});
+        if(q.error)throw q.error;if(!valid())return;
+        if(action==='ISSUE_CODE'){
+          result.replaceChildren();
+          const name=rows.find(e=>e.employee_id===employeeId)?.name||'';
+          const title=document.createElement('p');title.textContent='Einmaliger Einrichtungscode für '+name+':';
+          const code=document.createElement('strong');code.id='sfQrPinSetupCode';code.textContent=q.data.setup_code;code.style.cssText='display:block;font-size:26px;letter-spacing:.12em;margin:10px 0';
+          const note=document.createElement('p');note.textContent='24 Stunden gültig, einmal verwendbar. Jetzt vertraulich übergeben. Beim Schließen verschwindet der Code; er kann später nicht erneut angezeigt werden.';
+          result.append(title,code,note);
+          const row=back.querySelector(`[data-pin-employee="${employeeId}"]`);if(row)row.querySelector('small').textContent='Neuer Einrichtungscode ausgestellt · PIN-Einrichtung erforderlich';
+          const enable=back.querySelector('#sfQrPinEnable');if(enable)enable.dataset.stale='1';
+        }else{close();showPinAdmin(q.data,companyId,userId)}
+      }catch(e){if(valid())result.textContent=rpcError(e)}
+      finally{if(valid())back.querySelectorAll('button').forEach(b=>{b.disabled=b.id==='sfQrPinEnable'?(!canEnable||b.dataset.stale==='1'):b.hasAttribute('data-pin-code')&&!rows.find(e=>e.employee_id===b.closest('[data-pin-employee]')?.dataset.pinEmployee)?.personnel_no})}
+    }
+    back.querySelectorAll('[data-pin-code]').forEach(button=>button.onclick=()=>{
+      const employeeId=button.closest('[data-pin-employee]').dataset.pinEmployee;
+      const person=rows.find(e=>e.employee_id===employeeId);
+      if(!confirm(`Einrichtungscode für ${person?.name||'diese Person'} erzeugen? Ein bisheriger Code und bestehende QR-Anmeldungen werden ungültig. Eine bestehende PIN wird zurückgesetzt.`))return;
+      perform('ISSUE_CODE',employeeId);
+    });
+    back.querySelector('#sfQrPinEnable')?.addEventListener('click',()=>{
+      if(confirm('PIN-Pflicht für alle aktivieren? Ab dann ist keine Anmeldung mit Eintrittsdatum mehr möglich. Auch neue Mitarbeitende benötigen zuerst einen persönlichen Einrichtungscode.'))perform('ENABLE_REQUIRED');
+    });
+    // Remove a displayed code immediately on company/account change, including hidden tabs.
+    const watcher=setInterval(()=>{if(!valid()){clearInterval(watcher);back.remove()}},250);
   }
 
   const baseRender=window.renderTimeTracking;

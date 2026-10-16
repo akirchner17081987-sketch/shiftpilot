@@ -49,6 +49,7 @@ jobs:
         run: |
           npx playwright install --with-deps chromium
           node tests/browser/access-mfa-matrix-qa.cjs
+          node tests/browser/qr-pin-qa.cjs
           npm run test:reports
           npm run test:today
           npm run test:staffing

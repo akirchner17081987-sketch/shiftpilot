@@ -35,7 +35,7 @@ function fixture(initial='READY'){
     }});
   vm.runInContext(helper+'\n'+script,context);
   return{get,requests,punches:()=>punches,loss:x=>fail=x,hang:x=>hang=x,offline:x=>statusOffline=x,expire:()=>rejectAction=true,
-    async click(id){await get(id).handlers.click();await flush()},async login(){get('personnel').value='FIKTIV';get('startDate').value='15012020';await get('login').handlers.submit({preventDefault(){}})},
+    async click(id){await get(id).handlers.click();await flush()},async login(){get('personnel').value='FIKTIV';get('pin').value='739281';await get('login').handlers.submit({preventDefault(){}})},
     async advance(ms){now+=ms;for(const [id,t] of timeouts)if(t.at<=now){timeouts.delete(id);t.fn()}for(const fn of intervals.values())fn();await flush()},
     externalClose(){server={...server,state:'READY',ended_at:new Date(now).toISOString()}},async foreground(){events.visibilitychange();await flush()}};
 }

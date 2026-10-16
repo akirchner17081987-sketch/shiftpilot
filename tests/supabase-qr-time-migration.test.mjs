@@ -54,7 +54,8 @@ test('QR booking protects closed months and duplicate/stale submissions',()=>{
 test('mobile QR page does not accept employee id or timestamp from the browser',()=>{
   assert.match(html,/functions\/v1\/qr-independent/,'independent QR function is used by scan page');
   assert.match(html,/personnelNo:/,'personnel number is supplied for the separate login');
-  assert.match(html,/startDate:/,'entry date is supplied for the separate login');
+  assert.match(html,/extra\.startDate=iso/,'entry date is only supplied for the explicit transition login');
+  assert.match(html,/extra\.pin=/,'personal PIN is supported');
   assert.doesNotMatch(html,/p_employee_id\s*:/i,'browser must never supply employee id');
   assert.doesNotMatch(html,/p_actual_(start|end)\s*:/i,'browser must never supply actual timestamps');
   assert.match(html,/Arbeitszeit beginnen/,'clock-in confirmation missing');
@@ -69,29 +70,29 @@ function qrLoginHarness(status={state:'READY',name:'Fiktiver Mitarbeiter',breaks
   const helper=fs.readFileSync(new URL('../assets/qr-pause-total-v1.js',import.meta.url),'utf8').replace(/^export /gm,'');
   const script=html.match(/<script type="module">([\s\S]*?)<\/script>/)[1].replace(/^import .*;$/gm,'');
   vm.runInNewContext(helper+'\n'+script,{document:{getElementById:get,querySelectorAll:()=>[],createElement:()=>({append(){}}),addEventListener(){}},performance:{now:()=>0},AbortController,setTimeout,clearTimeout,setInterval:()=>0,clearInterval(){},location:{search:'?t='+'0'.repeat(64)},URLSearchParams,Intl,Date,Number,fetch:async(_url,options)=>{const body=JSON.parse(options.body);requests.push(body);return{ok:true,json:async()=>body.action==='LOGIN'?{ok:true,sessionToken:'test-session'}:{ok:true,...status}}}});
-  return{get,requests,submit:()=>get('login').submit({preventDefault(){}})};
+  return{get,requests,legacy(){get('loginMode').value='LEGACY';get('loginMode').change()},submit:()=>get('login').submit({preventDefault(){}})};
 }
 test('QR login accepts the eight-digit joining date and sends its original ISO date',async()=>{
-  const h=qrLoginHarness();h.get('personnel').value='TEST-1001';h.get('startDate').value='16102024';await h.submit();
+  const h=qrLoginHarness();h.legacy();h.get('personnel').value='TEST-1001';h.get('startDate').value='16102024';await h.submit();
   assert.equal(h.requests[0].action,'LOGIN');assert.equal(h.requests[0].startDate,'2024-10-16');assert.equal(h.requests[0].personnelNo,'TEST-1001');
   assert.equal(h.requests[1].action,'STATUS');assert.equal(h.get('startDate').value,'');assert.equal(h.get('login').hidden,true);
   assert.match(html,/inputmode="numeric"[^>]*placeholder="TTMMJJJJ"[^>]*pattern="\[0-9\]\{8\}"[^>]*maxlength="8"/);
 });
 test('QR login validates calendar dates without any requests for invalid entries',async()=>{
   for(const entered of ['161024','16.10.2024','31042024','29022023','00000000']){
-    const h=qrLoginHarness();h.get('startDate').value=entered;await h.submit();assert.equal(h.requests.length,0,entered);assert.ok(h.get('message').textContent);
+    const h=qrLoginHarness();h.legacy();h.get('startDate').value=entered;await h.submit();assert.equal(h.requests.length,0,entered);assert.ok(h.get('message').textContent);
   }
-  const h=qrLoginHarness();h.get('startDate').value='29022024';await h.submit();assert.equal(h.requests[0].startDate,'2024-02-29');
+  const h=qrLoginHarness();h.legacy();h.get('startDate').value='29022024';await h.submit();assert.equal(h.requests[0].startDate,'2024-02-29');
 });
 
 test('QR pause controls allow pauses six through ten and stop after ten',async()=>{
   for(const count of [5,6,9,10]){
     const status={state:'RUNNING',name:'Fixture',breaks:Array.from({length:count},(_,i)=>({number:i+1}))};
-    const h=qrLoginHarness(status);h.get('startDate').value='16102024';await h.submit();
+    const h=qrLoginHarness(status);h.get('pin').value='739281';await h.submit();
     assert.equal(h.get('pauseStart').hidden,count===10);assert.equal(h.get('end').hidden,false);
   }
   const h=qrLoginHarness({state:'BREAK',breaks:Array.from({length:10},(_,i)=>({number:i+1}))});
-  h.get('startDate').value='16102024';await h.submit();assert.equal(h.get('pauseEnd').hidden,false);assert.equal(h.get('end').hidden,false);
+  h.get('pin').value='739281';await h.submit();assert.equal(h.get('pauseEnd').hidden,false);assert.equal(h.get('end').hidden,false);
 });
 
 test('time-only QR report renders all ten pause pairs',async()=>{
