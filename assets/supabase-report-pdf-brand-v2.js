@@ -2,7 +2,7 @@
 (function(){
   const B=window.SFBackend=window.SFBackend||{};
   if(B.__reportPdfBrandV2)return;B.__reportPdfBrandV2=true;
-  const MANAGER=new Set(['OWNER','ADMIN','DISPATCHER','PLANNER']);
+  const MANAGER=new Set(['OWNER','ADMIN']);
   const monthValue=()=>document.getElementById('sfTaMonth')?.value||new Date().toISOString().slice(0,7);
   const monthDate=()=>monthValue()+'-01';
   const h=m=>(Number(m||0)/60).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -17,7 +17,7 @@
   function monthLabel(data){return new Date(String(data.month_start)+'T12:00:00').toLocaleDateString('de-DE',{month:'long',year:'numeric'})}
   function script(src,test){return new Promise((resolve,reject)=>{if(test())return resolve();const old=[...document.scripts].find(x=>x.src===src);if(old){if(test())return resolve();old.addEventListener('load',resolve,{once:true});old.addEventListener('error',reject,{once:true});return}const s=document.createElement('script');s.src=src;s.async=true;s.onload=resolve;s.onerror=()=>reject(new Error('PDF-Bibliothek konnte nicht geladen werden'));document.head.appendChild(s)})}
   async function needPdf(){await script('https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js',()=>!!window.jspdf?.jsPDF);await script('https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js',()=>!!window.jspdf?.jsPDF?.API?.autoTable)}
-  async function bundle(employeeId=null){const q=await B.client.rpc('manager_time_report_bundle',{p_company_id:B.companyId,p_month:monthDate(),p_employee_id:employeeId||null});if(q.error)throw q.error;return typeof q.data==='string'?JSON.parse(q.data):q.data}
+  async function bundle(employeeId=null){if(!MANAGER.has(B.role))throw new Error('Nur Inhaber und Administratoren dürfen personenbezogene Monatsberichte exportieren.');const q=await B.client.rpc('manager_time_report_bundle',{p_company_id:B.companyId,p_month:monthDate(),p_employee_id:employeeId||null});if(q.error)throw q.error;return typeof q.data==='string'?JSON.parse(q.data):q.data}
 
   async function loadLogo(){
     if(logoDataUrl)return logoDataUrl;

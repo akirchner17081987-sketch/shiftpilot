@@ -52,6 +52,8 @@
   if(qrOpen)B.qrCorrection.open=function(){if(!B.can('manageTime')){window.showSaveToast?.('Korrektur gesperrt','Das Zusatzrecht Zeiten verwalten fehlt.');return}return qrOpen.apply(this,arguments)};
   function apply(){
     if(!B.accessRole)return;
+    document.querySelectorAll('#sfCreateEmployeeAccess,#sfCreateEmployeeAccessFix').forEach(el=>{el.hidden=!B.can('manageUsers');el.disabled=!B.can('manageUsers')});
+    document.querySelectorAll('#sfReportExport,.sf-exp-mini').forEach(el=>el.hidden=!admin());
     document.body.classList.toggle('sf-access-read-only',!!readOnly());
     const role=document.querySelector('.side-bottom .user-row small'),label=labels[B.accessRole]+(readOnly()?' · Nur lesen':B.role==='TIME_TRACKING'?' · Zeitverwaltung':'');
     if(role&&role.textContent!==label)role.textContent=label;

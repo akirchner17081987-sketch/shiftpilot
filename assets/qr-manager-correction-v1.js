@@ -22,6 +22,8 @@
     return new Date(candidates[0]).toISOString();
   }
   async function rpc(name,args){
+    // Complete interactive MFA before starting the network timeout.
+    if(name==='manager_correct_qr_independent_shift')await B.requireSensitiveMfa?.();
     const controller=new AbortController();let timer;
     try{
       // MFA and demo wrappers return Promises rather than PostgREST builders.

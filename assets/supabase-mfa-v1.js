@@ -7,7 +7,7 @@
   function css(){
     if(document.getElementById('sfMfaCss'))return;
     const s=document.createElement('style');s.id='sfMfaCss';s.textContent=`
-      .sf-mfa-backdrop{position:fixed;inset:0;z-index:26000;display:grid;place-items:center;padding:18px;background:rgba(2,7,13,.9);backdrop-filter:blur(10px)}
+      .sf-mfa-backdrop{position:fixed;inset:0;z-index:100000;display:grid;place-items:center;padding:18px;background:rgba(2,7,13,.9);backdrop-filter:blur(10px)}
       .sf-mfa-card{width:min(520px,96vw);overflow:hidden;border:1px solid #29455e;border-radius:17px;background:linear-gradient(180deg,#0e1c2b,#08131f);box-shadow:0 30px 90px rgba(0,0,0,.6)}
       .sf-mfa-head{padding:20px 22px 15px;border-bottom:1px solid #20364b}.sf-mfa-head h2{margin:4px 0}.sf-mfa-head p{margin:0;color:#8da4ba;font-size:12px;line-height:1.5}
       .sf-mfa-body{padding:18px 22px}.sf-mfa-field{display:grid;gap:6px;margin:12px 0}.sf-mfa-field label{font-size:11px;font-weight:800;color:#a7bbce}
@@ -99,7 +99,7 @@
   B.openMfaSettings=async function(options={}){
     const mandatory=options===true||options?.mandatory===true;
     if(!B.client||(!B.ready&&!mandatory))return;
-    const m=shell(mandatory?'Authenticator jetzt einrichten':'Zwei-Faktor-Schutz',mandatory?'Für Inhaber und Administratoren ist ein bestätigter Authenticator erforderlich, bevor sensible Bereiche verwendet werden können.':'Verwalte bestätigte Authenticator-Apps für dein persönliches Konto.');
+    const m=shell(mandatory?'Authenticator jetzt einrichten':'Zwei-Faktor-Schutz',mandatory?'Für diese geschützte Verwaltungsaktion ist ein bestätigter Authenticator erforderlich.':'Verwalte bestätigte Authenticator-Apps für dein persönliches Konto.');
     const body=m.querySelector('#sfMfaBody'),foot=m.querySelector('#sfMfaFoot');body.innerHTML='<div id="sfMfaMsg" class="sf-mfa-msg show good">Sicherheitsstatus wird geladen …</div>';
     try{
       const available=await allFactors();
@@ -114,7 +114,7 @@
   // Protected startup RPCs may require MFA before the application is ready.
   // Resume exactly those requests after verified enrollment; cancellation never retries them.
   B.requirePrivilegedMfaEnrollment=async function(){
-    if(!isPrivileged())throw new Error('Für diese Aktion muss zuerst ein Authenticator eingerichtet werden.');
+    if(!isPrivileged()&&!B.can?.('manageTime')&&!B.can?.('confirmTime')&&!B.can?.('personnelConversations'))throw new Error('Für diese Aktion muss zuerst ein Authenticator eingerichtet werden.');
     if(B.__mfaEnrollmentPromise)return B.__mfaEnrollmentPromise;
     if((await factors()).length)return true;
     if(B.__mfaEnrollmentPromise)return B.__mfaEnrollmentPromise;
@@ -129,6 +129,15 @@
       B.__mfaEnrollmentPromise=null;B.__mfaEnrollmentResolve=null;B.__mfaEnrollmentReject=null;
     });
     return B.__mfaEnrollmentPromise;
+  };
+
+  B.requireSensitiveMfa=async function(){
+    if(sessionStorage.getItem('sf_demo_session_v1')==='active')return true;
+    if((await assurance())?.currentLevel==='aal2')return true;
+    if(!(await factors()).length)await B.requirePrivilegedMfaEnrollment();
+    await B.requireMfaChallenge();
+    if((await assurance())?.currentLevel!=='aal2')throw new Error('Für diese Aktion ist eine bestätigte MFA-Sitzung erforderlich.');
+    return true;
   };
 
   B.enforcePrivilegedMfaEnrollment=async function(){

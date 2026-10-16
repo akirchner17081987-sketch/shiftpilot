@@ -48,6 +48,7 @@ jobs:
       - name: Verify reporting workspace and complete exports
         run: |
           npx playwright install --with-deps chromium
+          node tests/browser/access-mfa-matrix-qa.cjs
           npm run test:reports
           npm run test:today
           npm run test:staffing
