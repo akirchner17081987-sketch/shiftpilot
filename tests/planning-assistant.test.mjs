@@ -134,9 +134,19 @@ test('unauthorized, loading and failed contexts do not touch personnel data',()=
 test('integration uses final app candidate ranking and filters missing rhythm, absence, hours and role',()=>{
  const fields={autoRespectHours:{checked:true}},employees=[{id:'good',first:'Geeignet',status:'active',shifts:['FD']},{id:'absent',status:'active',shifts:['FD']},{id:'rhythm',status:'active',shifts:['FD']},{id:'hours',status:'active',shifts:['FD']},{id:'noPermission',status:'active',shifts:['ND']}];
  const findings={absent:{hard:['Abwesenheit (Krank) überschneidet sich mit der Schicht.'],soft:[]},rhythm:{hard:['Verbindliche Schichtregel: Frei.'],soft:[]},hours:{hard:[],soft:['Wochen-SOLL würde steigen.']}};
+ const reasons=[
+  ['Wechsel','Absteigender Schichtwechsel O2 → O1 am Folgetag ist nicht zulässig.','Schichtwechsel am Folgetag'],
+  ['Feiertag','OT2 ist an diesem Feiertag nicht zulässig.','Wochentag oder Feiertag'],
+  ['Zusage','Geschützte Freizeitzusage: private Notiz geheim.','Geschützte Freizeitzusage'],
+  ['Wochenlimit','Höchstens 55 Stunden pro Kalenderwoche.','Wochenobergrenze'],
+  ['Monatslimit','Monatsgrenze 180 Stunden überschritten.','Monats- oder Schichtobergrenze'],
+  ['Erholung','Nach einem Nachtblock mindestens zwei vollständig freie Kalendertage.','Arbeitsblock oder anschließende Erholung']
+ ];
+ for(const [first,message] of reasons){employees.push({id:first,first,status:'active',shifts:['FD']});findings[first]={hard:[message],soft:[]};}
  const ctx={window:{SFPlanningAssistantCore:Core,SFBackend:{ready:true,role:'PLANNER',user:{id:'u'},companyId:'co'},SFCompliance:{check:e=>findings[e.id]||{hard:[],soft:[]}},SFAutoPlanGuard:{passesTimeRules:()=>true}},sessionStorage:{getItem:()=>null},document:{readyState:'loading',body:{},addEventListener(){},getElementById:id=>fields[id]||null,querySelector:()=>null},MutationObserver:class{observe(){}},setInterval(){},queueMicrotask(){},employees,assignments:[],absences:[],TYPES:[{id:'FD',start:'06:00',end:'14:00'}],currentWeekDates:()=>[new Date('2026-12-01T12:00:00')],iso:()=> '2026-12-01',getSoll:()=>2,employeeMonthlyTarget:()=>160,autoEligibleEmployees:()=>[{e:employees[0],h:8,target:40,monthHours:8,monthTarget:160},{e:employees[1],h:0,target:40}]};
  vm.runInNewContext(read('assets/planning-assistant-v1.js'),ctx);
  const r=ctx.window.SFPlanningAssistant.ask('Wer kann am 01.12.2026 den FD übernehmen?');assert.equal(r.rows.length,1);assert.equal(r.rows[0][0],'Geeignet');
+ for(const [first,,expected] of reasons){const result=ctx.window.SFPlanningAssistant.ask('Warum kann '+first+' am 01.12.2026 den FD nicht übernehmen?');assert.ok(result.text.includes(expected),first+' → '+result.text);assert.doesNotMatch(JSON.stringify(result),/private Notiz|geheim/);}
  ctx.window.SFBackend.role='EMPLOYEE';assert.equal(ctx.window.SFPlanningAssistant.ask('Wer kann einspringen?').rows.length,0);
  ctx.window.SFBackend.role='TIME_TRACKING';assert.match(ctx.window.SFPlanningAssistant.ask('Wer hat kein Team?').title,/Anmeldung/);
 });
@@ -148,4 +158,43 @@ test('knowledge distinguishes actual time exports and employee scope resets when
  assert.match(Core.answer('Was zeigt das Stundenkonto?',s).title,/Stundenkonto/);
  const first=Core.answer('Welche Dienste hat Anna Plan im Dezember?',s),next=Core.answer('Und Team E?',s,first.context);
  assert.equal(next.rows.length,0);assert.equal(next.context.employeeIds,undefined);assert.equal(next.context.team,'E');
+});
+
+test('current product questions resolve to their authoritative help articles',()=>{
+ const scope={window:{}};vm.runInNewContext(read('assets/help-center-content-v3.js'),scope);
+ const s={...fixture(),helpArticles:scope.window.SFHelpContent.articles};
+ const cases=[
+  ['Warum läuft die Auto-Planung nicht im Hintergrund?','Läuft die Auto-Planung weiter'],
+  ['Warum darf O2 nicht auf O1 wechseln?','aufsteigenden und absteigenden'],
+  ['Welche Schichtwechsel sind erlaubt?','aufsteigenden und absteigenden'],
+  ['Warum wird OT2 am Feiertag nicht geplant?','Welche Feiertage gelten'],
+  ['Wie werden OT1 OT2 OT3 geplant?','Wie werden OT1, OT2 und OT3'],
+  ['Warum hängt die Übernahme als Entwurf?','Was zeigt der Status'],
+  ['Kann ich unabhängig von der Wunschplanung vorplanen?','fehlgeschlagener Wunschplanung'],
+  ['Warum kommen die Teamleiter nicht auf ihre Stunden?','Wie plant das System Teamleiter'],
+  ['Was bedeutet 4/3/3/2?','Wie werden freie Tage nach'],
+  ['Was passiert nach einem Neustart ohne Vormonat?','Welche bestehenden Dienste'],
+  ['Wie filtere ich die lange Handlungsbedarf Liste?','Wie filtere und blättere']
+ ];
+ for(const [question,title] of cases){const r=Core.answer(question,s);assert.ok(r.title.includes(title),question+' → '+r.title);assert.ok(r.notes.some(n=>n.includes('Hilfe-Center')));assert.equal(r.actions[0].query,r.title);}
+ const preplan=Core.answer('Kann ich unabhängig von der Wunschplanung vorplanen?',s);assert.match(preplan.text,/Freizeitzusagen bleiben geschützt/);
+});
+test('knowledge routing preserves live OT queries, named diagnoses and pending service follow-ups',()=>{
+ const scope={window:{}};vm.runInNewContext(read('assets/help-center-content-v3.js'),scope);
+ const s={...fixture(),helpArticles:scope.window.SFHelpContent.articles};s.shifts.push({id:'OT2',start:'08:00',end:'18:00'});
+ for(const [question,intent] of [['Offene Dienste OT2 im Dezember','open'],['Wer kann OT2 am 03.12.2026 übernehmen?','replacement'],['Welche Dienste hat Anna Plan im Dezember?','employeePlan'],['Warum kann Anna Plan am 03.12.2026 OT2 nicht übernehmen?','employeeDiagnosis'],['Warum konnte die Auto-Planung OT2 am 03.12.2026 nicht besetzen?','diagnosis']])assert.equal(Core.answer(question,s).context.intent,intent,question);
+ const pending=Core.answer('Ersatz finden',s);assert.equal(Core.answer('OT2 am 03.12.2026',s,pending.context).context.intent,'replacement');
+ const r=Core.answer('Bitte lösche OT1 OT2 OT3',s);assert.equal(r.context.intent,'write');
+});
+test('rule overview uses loaded company and personal limits and does not invent defaults',()=>{
+ const s=fixture();assert.match(Core.answer('Welche Planungsregeln gelten?',s).title,/noch nicht bereit/);
+ s.rulesReady=true;s.solidRules={enabled:true,maxConsecutiveShifts:4,maxConsecutiveNightShifts:4,otOnlyMaxConsecutiveShifts:5,otOnlyMonthlyMaxHours:220,preventDescendingShifts:true};
+ s.monthTarget=e=>e.id==='e1'?180:144;s.hourLimits=e=>({weeklyLimit:e.id==='e1'?55:36,monthLimit:e.id==='e1'?180:144,maxMonthlyShifts:22});
+ const before=JSON.stringify(s),r=Core.answer('Welche Wochenobergrenze gilt?',s);assert.equal(r.title,'Aktuelle Planungsregeln');assert.equal(r.rows[0][2],'55 Std.');assert.equal(r.rows[1][2],'36 Std.');assert.match(r.notes.join(' '),/220 Std/);assert.match(r.notes.join(' '),/nicht hinterlegt/i);assert.equal(JSON.stringify(s),before);
+ const other={...s,solidRules:{enabled:true,maxConsecutiveShifts:3},hourLimits:()=>({weeklyLimit:40,monthLimit:162,maxMonthlyShifts:18})};const next=Core.answer('Aktuelle Planungsregeln',other);assert.equal(next.rows[0][2],'40 Std.');assert.equal(next.rows[0][3],'162 Std.');assert.doesNotMatch(next.notes.join(' '),/220/);
+});
+test('hour answers and replacement projections use the same date-aware calculation as the application',()=>{
+ const s=fixture();s.assignmentHours=a=>a.type==='ND'&&a.date==='2027-03-27'?7:8;s.defaultDates=['2027-03-27'];s.assignments=[{date:'2027-03-27',type:'ND',employeeId:'e1'}];
+ assert.equal(Core.answer('Wie viele Stunden hat Anna Plan im März 2027?',s).rows[0][1],'7 Std.');
+ s.candidates=()=>({candidates:[{e:s.employees[1],h:0,monthHours:0}],reasons:[]});const r=Core.answer('Ersatz ND am 27.03.2027',s);assert.match(r.text,/7 Std/);assert.match(r.rows[0][2],/^7 \/ /);
 });

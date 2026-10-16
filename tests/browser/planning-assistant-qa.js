@@ -31,6 +31,19 @@
  ask('Bei wem fehlt die Schichtfreigabe für FD?');check('Missing permissions use actual staff profiles',log.lastChild.textContent.includes('Clara Beispiel'));
  ask('Warum kann Ben Beispiel am 02.12.2026 den FD nicht übernehmen?');check('Named employee diagnosis uses candidate assessment',log.lastChild.textContent.includes('erfüllt aktuell die Auto-Planungsregeln'));
  ask('Wie exportiere ich DATEV?');check('Knowledge routes DATEV to payroll help',log.lastChild.textContent.includes('LODAS-Bewegungsdaten'));
+ for(const [question,expected] of [
+  ['Warum läuft die Auto-Planung nicht im Hintergrund?','Hintergrundauftrag gespeichert'],
+  ['Warum darf O2 nicht auf O1 wechseln?','absteigenden Schichtwechsel'],
+  ['Warum wird OT2 am Feiertag nicht geplant?','Feiertagssperre'],
+  ['Kann ich unabhängig von der Wunschplanung vorplanen?','Freizeitzusagen bleiben geschützt'],
+  ['Was bedeutet 4/3/3/2?','Schlaftag'],
+  ['Warum hängt die Übernahme als Entwurf?','Entwurf gespeichert – Ansicht prüfen']
+ ]){ask(question);check('Current knowledge: '+question,log.lastChild.textContent.includes(expected)&&!!log.lastChild.querySelector('.sf-chat-actions button'));}
+ const previousRules=window.SFCompliance.policy.solidPlanningRules;
+ window.SFCompliance.policy.solidPlanningRules={enabled:true,confirmedRulesVersion:2,timezone:'Europe/Berlin',maxCalendarWeekHours:55,monthlyMaxHours:180};
+ ask('Welche Planungsregeln gelten?');check('Loaded rules show personal caps and contract targets',log.lastChild.textContent.includes('Aktuelle Planungsregeln')&&log.lastChild.textContent.includes('Wochenobergrenze')&&log.lastChild.textContent.includes('Monats-SOLL'));
+ check('Rule overview fits the panel',log.scrollWidth<=log.clientWidth+1);
+ window.SFCompliance.policy.solidPlanningRules=previousRules;
  ask('Welche Hilfethemen kennst du?');check('Knowledge catalog covers all help categories',log.lastChild.textContent.includes('Wissensdatenbank')&&log.lastChild.querySelectorAll('[data-sf-chat-result]').length===12);
  ask('Was fehlt noch für Dezember?');check('Monthly check is prioritized and has navigation per finding',log.lastChild.textContent.includes('Monatscheck')&&log.lastChild.textContent.includes('Zuerst prüfen')&&log.lastChild.querySelectorAll('.sf-chat-row-action').length>0);
  log.lastChild.querySelector('.sf-chat-row-action').click();check('Monthly check opens the precise question inside the chat',dialog.open&&log.lastChild.textContent.includes('Offene Dienste'));

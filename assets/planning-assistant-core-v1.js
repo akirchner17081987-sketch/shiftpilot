@@ -16,6 +16,7 @@
   const team=e=>e.planningTeam??meta(e,'planningTeam');
   function duration(a,shifts){const t=shifts.find(t=>t.id===a.type),start=a.start||t?.start,end=a.end||t?.end;const mins=v=>/^\d{2}:\d{2}$/.test(v||'')?Number(v.slice(0,2))*60+Number(v.slice(3)):NaN;let m=mins(end)-mins(start);if(m<0)m+=1440;return Number.isFinite(m)?m/60:0;}
   function intentFor(q){
+    if(/^(?:bitte\s+)?(?:aktuelle|geltende|geladene) planungsregeln|welche.*(?:planungsregeln|wochenobergrenze|monatsobergrenze)|planungsgrenzen (?:anzeigen|pruefen)/.test(q)&&!/\b(wie|wo)\b/.test(q))return 'rules';
     if(/belastungscheck|belastung.*(?:pruef|hoch)|(?:wo|wer).*(?:belast|erholung)|lange arbeitsbloecke|ruhezeiten pruefen/.test(q))return 'loadCheck';
     if(/ausfall.*(?:durchspiel|simulier)|was passiert.*(?:ausfaellt|ausfall)|wenn.*(?:ausfaellt|fehlt)|ausfallsimulation/.test(q))return 'outage';
     if(/planungsprotokoll|gespeicherte.*(?:gruende|planung)|(?:letzte|damalige).*planungs(?:lauf|gruende)|was hat.*besetzung.*verhindert/.test(q))return 'runReasons';
@@ -92,7 +93,8 @@
     const exact=staff.filter(e=>has(name(e))||e.personnelNo&&has(e.personnelNo));
     return exact.length?exact:staff.filter(e=>[e.first,e.last].some(v=>normalize(v).length>=3&&has(v)));
   }
-  function plannedHours(s,e,dates){return s.assignments.filter(a=>String(a.employeeId)===String(e.id)&&dates.includes(a.date)).reduce((sum,a)=>sum+duration(a,s.shifts),0);}
+  function paidHours(s,a){return s.assignmentHours?Number(s.assignmentHours(a))||0:duration(a,s.shifts);}
+  function plannedHours(s,e,dates){return s.assignments.filter(a=>String(a.employeeId)===String(e.id)&&dates.includes(a.date)).reduce((sum,a)=>sum+paidHours(s,a),0);}
   function fullMonth(dates){return dates.length>=28&&dates[0].endsWith('-01')&&dates[0].slice(0,7)===dates.at(-1).slice(0,7);}
   function response(title,text,more={}){return{title,text,rows:[],columns:[],actions:[],...more};}
   function planningCheck(s,dates,staff){
@@ -135,8 +137,27 @@
       notes:['Prüfung der aktuell geladenen Planung und Stammdaten. Kein Ersatz für die vollständige Auto-Planungsanalyse oder die Prüfung vor Veröffentlichung.','Stunden beziehen sich auf geplante Dienste ohne Pausenabzug, nicht auf bestätigte Überstunden.'],
       actions:[schedule,{view:'auto',label:'Auto-Planung öffnen'}],context:{intent:'planningCheck',dates,pending:false}});
   }
-  function findHelp(q,articles){
+  function findHelp(q,articles,explicitOnly=false){
+    for(const [category,items] of Object.entries(articles||{}))for(const [title,text] of items)if(normalize(title).replace(/[?!.,]/g,'')===q.replace(/[?!.,]/g,''))return{title,text,category,score:100};
     const aliases=[
+      [/hintergrund|browser.*(?:schliess|verlass)|weiter.*(?:desktop|browser)/,'auto','Läuft die Auto-Planung weiter'],
+      [/(?:entwurf|uebernahme|uebernehmen).*(?:haeng|dauer|fortschritt|status)|(?:haeng|dauer|status).*(?:entwurf|uebernahme)|entwurf gespeichert.*ansicht/,'auto','Was zeigt der Status'],
+      [/fortschritt|prozent|100\s*%/,'auto','Fortschrittsbalken'],
+      [/schichtwechsel|aufsteigend|absteigend|\b(?:o[123]|tl(?:-le|-re)?)\s*(?:nicht\s+)?(?:->|→|auf|zu|nach)\s*(?:o[123]|tl(?:-le|-re)?|ot)\b/,'auto','aufsteigenden und absteigenden'],
+      [/(?:feiertag|wochenende).*(?:ot|tagdienst)|(?:ot[123]?|tagdienst).*feiertag/,'auto','Welche Feiertage gelten'],
+      [/vorplan|unabhaengig.*wunsch|wunsch.*(?:blockier|verhind|sperr)/,'wishes','fehlgeschlagener Wunschplanung'],
+      [/(?:neustart|vormonat|monatsuebergang|geloeschter.*monat|dezember.*geloescht)/,'auto','Welche bestehenden Dienste'],
+      [/4\s*[/.-]\s*3\s*[/.-]\s*3\s*[/.-]\s*2|schlaftag|freie tage.*nacht|erholung.*nacht/,'auto','Wie werden freie Tage nach'],
+      [/teamleiter.*(?:stunden|monatsziel|arbeitstage)|(?:stunden|monatsziel).*teamleiter/,'settings','Wie plant das System Teamleiter'],
+      [/ot.tagdienst|tagdienst.*(?:regel|grenz)|(?:wie|welche).*(?:ot1|ot2|ot3).*(?:regel|plan|einstell|trenn)|ot1.*ot2.*ot3/,'settings','Wie werden OT1, OT2 und OT3'],
+      [/vertrags.soll.*(?:grenz|obergrenz)|(?:wochen|monats)(?:obergrenze|grenze|limit)|stunden.*(?:grenz|limit)/,'settings','Wie unterscheiden sich Vertrags-SOLL'],
+      [/planungsregeln/,'settings','Wo sehe und ändere ich'],
+      [/pflichtbesetz|gemeinsame.*deckung|optionale.*dienste/,'settings','Was bedeuten Pflichtbesetzung'],
+      [/handlungsbedarf.*(?:filter|blaett|lang)|(?:filter|blaett).*handlungsbedarf/,'overview','Wie filtere und blättere'],
+      [/standortpunkt|standort.*(?:karte|erde)/,'overview','Was zeigen die Standortpunkte'],
+      [/personal(?:bedarf|simulator)|neueinstellung/,'staffing','Wie vergleiche ich'],
+      [/schichtuebergabe/,'handover','Wie starte ich'],
+      [/stoerfall|akute[nr]? ausfall/,'disruptions','Wie melde ich'],
       [/monatsbericht|zeiterfassung.*(?:excel|pdf|export)|(?:excel|pdf|export).*zeiterfassung/,'reports','Wie exportiere ich Monatsberichte'],
       [/datev|lodas/,'reports','DATEV-LODAS'],
       [/qr.*(?:anzeigen|finden|ausdruck|nachdruc|drucken|code.*wo)|(?:wo|wie).*qr.?code/,'trouble','aktuelle QR-Code'],
@@ -159,6 +180,7 @@
       const article=(articles?.[category]||[]).find(([title])=>normalize(title).includes(normalize(titlePart)));
       if(article)return{title:article[0],text:article[1],category,score:100};
     }
+    if(explicitOnly)return null;
 
     const stop=new Set(['wie','wo','was','wer','warum','kann','kannst','koennen','ich','mir','man','den','die','das','der','dem','des','ein','eine','einen','einem','und','oder','im','in','am','an','zu','mit','von','fuer','bitte','meine','meinen','mein','sind','ist','werden','wird','habe','haben']);
     const words=[...new Set(q.split(/[^a-z0-9]+/).filter(w=>w.length>=3&&!stop.has(w)))];
@@ -184,6 +206,24 @@
     const context={intent,dates,type,team:requestedTeam,pending:false},label=periodLabel(dates),shiftLabel=id=>{const t=s.shifts.find(t=>t.id===id);return t?.name&&t.name!==id?`${id} · ${t.name}`:id;};
     const staff=s.employees.filter(e=>!e.deletedAt&&e.status==='active');
     const nav=(view,label)=>({view,label});
+    // Explicit product topics take precedence over broad analytical keywords.
+    // A named person or a pending service diagnosis keeps the actual data analysis.
+    const explanatory=/^(?:bitte\s+)?(?:wie(?! viele| viel)|wo\b|was\b|warum|weshalb|wieso|welche.*(?:regeln|grenzen|schichtwechsel|feiertage|obergrenze)|kann ich|laeuft|darf ich)/.test(q);
+    const topic=explanatory&&intent!=='write'&&intent!=='rules'&&!['replacement','outage','improvements','loadCheck','runReasons','planningCheck','employeePlan'].includes(intent)&&!employeeMatches(q,staff).length&&!previous.pending?findHelp(q,s.helpArticles,true):null;
+    if(topic)return response(topic.title,topic.text,{notes:['Quelle: SchichtFunk Hilfe-Center. Maßgeblich sind die geladenen Regeln des ausgewählten Unternehmens.'],actions:[{help:true,query:topic.title,label:'Anleitung im Hilfe-Center öffnen'}],context:{}});
+    if(intent==='rules'){
+      if(!s.rulesReady||!s.solidRules?.enabled||!s.hourLimits)return response('Planungsregeln noch nicht bereit','Die aktuellen Unternehmensregeln müssen vollständig geladen sein. Öffne Einstellungen → Planungsregeln und prüfe das ausgewählte Unternehmen.',{actions:[{view:'settings',section:'rules',label:'Planungsregeln öffnen'}],context:{}});
+      const number=v=>Number.isFinite(Number(v))&&v!=null?hours(v):'Nicht hinterlegt';
+      const p=s.solidRules,notes=[
+        'Allgemeiner Arbeitsblock: '+number(p.maxConsecutiveShifts)+' Dienste; Nachtblock: '+number(p.maxConsecutiveNightShifts)+' Nächte.',
+        'OT1/OT2/OT3: eigene Blockgrenze '+number(p.otOnlyMaxConsecutiveShifts)+' Dienste und Monatsobergrenze '+number(p.otOnlyMonthlyMaxHours)+' Std.',
+        'Teamleiter: eigene Nachtblockgrenze '+number(p.teamLeaderMaxConsecutiveNightShifts)+' Nächte.',
+        'Sperre absteigender Schichtwechsel: '+(p.preventDescendingShifts?'aktiv':'nicht aktiviert')+'. Freigaben, feste Rhythmen, Feiertage und Erholung werden zusätzlich geprüft.',
+        'Die Tabelle zeigt persönliche Obergrenzen aus der aktuellen Auto-Planung. Vertrags-SOLL und Obergrenze sind unterschiedliche Werte; höhere Grenzen garantieren keine zusätzlichen Dienste.'
+      ];
+      const values=staff.map(e=>({e,limit:s.hourLimits(e)}));
+      return response('Aktuelle Planungsregeln','Geladene Regeln des ausgewählten Unternehmens. Wochen- und Kalendermonatsgrenzen berücksichtigen Nachtüberträge zeitanteilig.',{columns:['Mitarbeiter','Monats-SOLL','Wochenobergrenze','Monatsobergrenze','Max. Dienste'],rows:values.map(({e,limit})=>[name(e),number(s.monthTarget(e))+' Std.',number(limit?.weeklyLimit)+' Std.',number(limit?.monthLimit)+' Std.',number(limit?.maxMonthlyShifts)]),rowActions:values.map(({e})=>({view:'employees',employeeId:e.id,label:'Profil prüfen'})),notes,actions:[{view:'settings',section:'rules',label:'Planungsregeln öffnen'},{help:true,query:'Wo sehe und ändere ich die aktuell geltenden Planungsregeln?',label:'Regeln erklärt'}],context:{intent:'rules',dates}});
+    }
     if(Insights&&['loadCheck','improvements','outage','runReasons'].includes(intent)){
       if(intent==='loadCheck')return Insights.workload(s,dates);
       if(intent==='runReasons')return Insights.journal(s,dates,type);
@@ -263,7 +303,7 @@
     if(intent==='replacement'){
       if(dates.length!==1||!type)return response('Für welchen Dienst suchst du Ersatz?',`Bitte gib ${dates.length!==1?'einen konkreten Tag':''}${dates.length!==1&&!type?' und ':''}${!type?'die Schichtart':''} an, zum Beispiel „Wer kann am 01.12.2026 den FD übernehmen?“`,{context:{...context,pending:true},suggestions:s.shifts.slice(0,6).map(t=>`Ersatz für ${t.id}${dates.length===1?' am '+formatDate(dates[0]):''}`)});
       const result=s.candidates(type,dates[0]);
-      const added=duration({type},s.shifts);
+      const added=paidHours(s,{date:dates[0],type});
       return response('Ersatz für '+shiftLabel(type)+' · '+label,result.candidates.length?result.candidates.length+' Mitarbeiter erfüllen die aktuellen Auto-Planungsregeln. Die zusätzliche Schicht umfasst '+hours(added)+' Std. Vor der tatsächlichen Zuordnung erneut prüfen.':'Aktuell erfüllt kein Mitarbeiter alle Auto-Planungsregeln für diesen Dienst.',{
         columns:['Mitarbeiter','Warum geeignet?','Woche nach Einsatz / SOLL','Monat nach Einsatz / SOLL','Folgedienst'],
         rows:result.candidates.map(c=>{
@@ -285,7 +325,7 @@
       const rows=intent==='open'?missing:intent==='overstaffed'?all.filter(x=>x.extra):all;
       return response(`${intent==='open'?'Offene Dienste':intent==='overstaffed'?'Überbesetzte Dienste':'SOLL / IST'} · ${label}`,required?`${open} offene Positionen in ${missing.length} Schichten. ${required-open} von ${required} benötigten Positionen sind besetzt.${extra?` Zusätzlich ${extra} Besetzungen über SOLL.`:''}`:'Für diesen Zeitraum ist kein SOLL-Bedarf hinterlegt. Bitte prüfe die Einstellungen, bevor du den Plan als vollständig bewertest.',{columns:['Tag','Schicht','SOLL','IST',intent==='overstaffed'?'Über SOLL':'Offen'],rows:rows.map(x=>[formatDate(x.date),x.label||shiftLabel(x.type),String(x.soll),String(x.ist),String(intent==='overstaffed'?x.extra:x.missing)]),rowActions:rows.map(x=>({view:'schedule',date:x.date,type:x.type,label:'Dienst öffnen'})),actions:[{view:'schedule',date:dates[0],month:dates.length>1,label:'Zeitraum im Dienstplan öffnen'},nav('auto','Auto-Planung öffnen')],suggestions:['Warum konnte die Auto-Planung die offenen Dienste nicht besetzen?'],context});
     }
-    if(intent==='help')return response('Planungsanalysen und Wissensdatenbank','Ich kann offene und überbesetzte Dienste, Ersatzbesetzung, einzelne Mitarbeiter, Teams, Rhythmusvorgaben, geplante Stunden und Schichtfreigaben prüfen. Die Wissensdatenbank erklärt zusätzlich die Bedienung von SchichtFunk.',{columns:['Hilfebereich','Anleitungen'],rows:Object.entries(s.helpArticles||{}).map(([category,items])=>[s.helpCategories?.find(c=>c[0]===category)?.[1]||category,String(items.length)]),suggestions:['Welche Dienste hat Team E im Dezember?','Welche Mitarbeiter haben im Dezember zu viele Stunden?','Welche Dienste sind im Dezember überbesetzt?','Welche Mitarbeiter haben keine Schichtfreigabe?','Wie funktioniert der DATEV-LODAS-Export?','Wo finde ich meinen QR-Code?'],actions:[{help:true,label:'Wissensdatenbank öffnen'}],context:{}});
+    if(intent==='help')return response('Planungsanalysen und Wissensdatenbank','Ich prüfe offene und überbesetzte Dienste, Ersatzbesetzung, Mitarbeiter, Teams, Stunden und Schichtfreigaben. Dazu kommen Monatscheck, Belastungsprüfung, gemeinsam geprüfte Verbesserungsvorschläge, Ausfallsimulation und gespeicherte Planungsgründe. Die Wissensdatenbank erklärt die aktuellen Funktionen und Regeln von SchichtFunk.',{columns:['Hilfebereich','Anleitungen'],rows:Object.entries(s.helpArticles||{}).map(([category,items])=>[s.helpCategories?.find(c=>c[0]===category)?.[1]||category,String(items.length)]),suggestions:['Welche Planungsregeln gelten?','Welche Schichtwechsel sind erlaubt?','Wie werden OT1 OT2 OT3 geplant?','Läuft die Auto-Planung im Hintergrund?','Kann ich unabhängig von der Wunschplanung vorplanen?','Wie funktioniert der DATEV-LODAS-Export?'],actions:[{help:true,label:'Wissensdatenbank öffnen'}],context:{}});
     const suggestions=/personal|mitarbeiter|team/.test(q)?['Welche Mitarbeiter haben keine Schichtfreigabe?','Bei welchen Mitarbeitern fehlt eine Teamzuordnung?','Geplante Stunden prüfen']:/plan|dienst|besetz|ersatz/.test(q)?['Monatscheck starten','Offene Dienste prüfen','Ersatz für einen Dienst suchen']:['Monatscheck starten','Offene Dienste prüfen','Ersatz für einen Dienst suchen','Geplante Stunden prüfen','Welche Hilfethemen kennst du?'];
     return response('Welches Thema meinst du?','Für diese Frage habe ich noch keine zuverlässige Auswertung. Wähle ein passendes Thema oder formuliere die Frage genauer. Bei einzelnen Diensten helfen Datum und Schichtart.',{suggestions,context:{}});
   }
