@@ -2,7 +2,7 @@
 (function(){
   const B=window.SFBackend=window.SFBackend||{};
   if(B.__reportExportV2)return; B.__reportExportV2=true;
-  const MANAGER=new Set(['OWNER','ADMIN','DISPATCHER','PLANNER']);
+  const MANAGER=new Set(['OWNER','ADMIN']);
   const monthValue=()=>document.getElementById('sfTaMonth')?.value||new Date().toISOString().slice(0,7);
   const monthDate=()=>monthValue()+'-01';
   const h=m=>(Number(m||0)/60).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -18,7 +18,7 @@
   function script(src,test){return new Promise((resolve,reject)=>{if(test())return resolve();const old=[...document.scripts].find(x=>x.src===src);if(old){old.addEventListener('load',resolve,{once:true});old.addEventListener('error',reject,{once:true});return}const s=document.createElement('script');s.src=src;s.async=true;s.onload=resolve;s.onerror=()=>reject(new Error('Export-Bibliothek konnte nicht geladen werden'));document.head.appendChild(s)})}
   async function needXlsx(){await script('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',()=>!!window.XLSX)}
   async function needPdf(){await script('https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js',()=>!!window.jspdf?.jsPDF);await script('https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js',()=>!!window.jspdf?.jsPDF?.API?.autoTable)}
-  async function bundle(employeeId=null,force=false){const key=[B.companyId,monthValue(),employeeId||'ALL'].join('|');if(!force&&cache.key===key&&cache.data)return cache.data;const q=await B.client.rpc('manager_time_report_bundle',{p_company_id:B.companyId,p_month:monthDate(),p_employee_id:employeeId||null});if(q.error)throw q.error;const data=typeof q.data==='string'?JSON.parse(q.data):q.data;cache={key,data};return data}
+  async function bundle(employeeId=null,force=false){if(!MANAGER.has(B.role))throw new Error('Nur Inhaber und Administratoren dürfen personenbezogene Monatsberichte exportieren.');force=true;const key=[B.companyId,monthValue(),employeeId||'ALL'].join('|');if(!force&&cache.key===key&&cache.data)return cache.data;const q=await B.client.rpc('manager_time_report_bundle',{p_company_id:B.companyId,p_month:monthDate(),p_employee_id:employeeId||null});if(q.error)throw q.error;const data=typeof q.data==='string'?JSON.parse(q.data):q.data;cache={key,data};return data}
 
   async function loadLogo(){
     if(logoData)return logoData;

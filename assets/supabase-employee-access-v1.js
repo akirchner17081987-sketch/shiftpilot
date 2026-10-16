@@ -65,6 +65,8 @@
   function removeInviteParam(){const u=new URL(location.href);u.searchParams.delete(INVITE_PARAM);history.replaceState(null,'',u.pathname+(u.search||'')+(u.hash||''))}
 
   B.createEmployeeInvite=async function(employeeId){
+    if(!['OWNER','ADMIN'].includes(B.role))throw new Error('Nur Inhaber und Administratoren dürfen Zugänge einladen.');
+    await B.requireSensitiveMfa?.();
     if(!B.ready||!B.client||!MANAGER_ROLES.has(B.role))return;
     const e=(window.employees||[]).find(x=>String(x.id)===String(employeeId));if(!e)return;
     const dbId=e._dbId||B.empDb?.get(String(e.id));if(!dbId)return alert('Mitarbeiter ist noch nicht mit PostgreSQL verknüpft.');
