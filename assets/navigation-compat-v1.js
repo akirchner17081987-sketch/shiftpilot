@@ -5,7 +5,7 @@
     dienstplan:'schedule',
     mitarbeiter:'employees',
     staff:'employees',
-    zeiterfassung:'time',
+    zeiterfassung:'time',abrechnung:'billing',
     abwesenheiten:'absence',
     autoplanung:'auto',
     'auto-planning':'auto',

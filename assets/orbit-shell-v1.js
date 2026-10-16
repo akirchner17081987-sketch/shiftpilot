@@ -6,7 +6,7 @@
   const GROUPS = [
     { id: 'overview', label: 'Tagesübersicht', icon: 'home', direct: true, items: [['overview', 'Tagesübersicht']] },
     { id: 'planning', label: 'Planung', icon: 'calendar', items: [['schedule', 'Dienstplan'], ['auto', 'Auto-Planung'], ['wishes', 'Wunschplanung'], ['disruptions', 'Störfallautopilot']] },
-    { id: 'personal', label: 'Personal', icon: 'people', items: [['staffing', 'Personalsimulator'], ['handover', 'Schichtübergabe'], ['marketplace', 'Schicht-Marktplatz'], ['employees', 'Mitarbeiter'], ['absence', 'Abwesenheit'], ['time', 'Zeiterfassung']] },
+    { id: 'personal', label: 'Personal', icon: 'people', items: [['staffing', 'Personalsimulator'], ['handover', 'Schichtübergabe'], ['marketplace', 'Schicht-Marktplatz'], ['employees', 'Mitarbeiter'], ['absence', 'Abwesenheit'], ['time', 'Zeiterfassung'], ['billing', 'Abrechnung']] },
     { id: 'analysis', label: 'Auswertung & Kontrolle', icon: 'chart', items: [['reports', 'Auswertung'], ['audit', 'Audit-Logs']] },
     { id: 'settings', label: 'Einstellungen', icon: 'settings', direct: true, items: [['settings', 'Einstellungen']] }
   ];

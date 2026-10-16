@@ -577,7 +577,7 @@ window.SFHelpContent = {
       ],
       [
         "Wie funktioniert der DATEV-LODAS-Export?",
-        "Inhaber und Administratoren erstellen LODAS-Bewegungsdaten aus einem geprüften, abgeschlossenen Monat. Vor dem Download sind Berater-/Mandantennummer, Personalnummern und Lohnarten-Zuordnungen zu prüfen. Die Vorprüfung meldet fehlende Angaben. Der Export gehört zur jeweiligen Abschlussrevision und lädt eine Datei herunter; eine automatische Übermittlung an DATEV erfolgt nicht."
+        "Unter Personal → Abrechnung erstellen Inhaber und Administratoren LODAS-Bewegungsdaten aus einem geprüften, abgeschlossenen Monat. Vor dem Download sind Berater-/Mandantennummer, Personalnummern und Lohnarten-Zuordnungen zu prüfen. Die Vorprüfung meldet fehlende Angaben. Der Export gehört zur jeweiligen Abschlussrevision und lädt eine Datei herunter; eine automatische Übermittlung an DATEV erfolgt nicht."
       ],
       [
         "Warum weichen Zahlen voneinander ab?",

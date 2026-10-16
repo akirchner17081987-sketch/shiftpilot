@@ -3,7 +3,7 @@
   const KEY='sf_active_view_v1';
   const aliases={
     plan:'schedule',dienstplan:'schedule',mitarbeiter:'employees',staff:'employees',
-    zeiterfassung:'time',abwesenheiten:'absence',autoplanung:'auto','auto-planning':'auto',
+    zeiterfassung:'time',abrechnung:'billing',abwesenheiten:'absence',autoplanung:'auto','auto-planning':'auto',
     auswertungen:'reports',einstellungen:'settings',dashboard:'overview',uebersicht:'overview','übersicht':'overview'
   };
 

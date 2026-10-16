@@ -20,16 +20,18 @@ test('DATEV LODAS one-click export is authorized, audited and downloaded', async
 
   await page.goto('/demo');
   await waitForDemoReady(page);
-  await openManagerArea(page, 'reports');
+  await openManagerArea(page, 'billing');
 
-  const workspace = page.locator('#sfTimeAccounts');
+  const workspace = page.locator('#view-billing');
   await workspace.waitFor({ state: 'visible' });
-  await workspace.locator('[data-sf-ta-tab="datev"]').click();
 
   const panel = workspace.locator('#sfDatevPanel');
   await expect(panel).toBeVisible();
   await panel.locator('#sfDatevMonth').fill('2026-08');
   await panel.locator('#sfDatevMonth').dispatchEvent('change');
+
+  await expect(page.locator('#view-time #sfDatevPanel,#view-reports #sfDatevPanel')).toHaveCount(0);
+  await page.screenshot({path:test.info().outputPath('billing-workspace.png'),fullPage:true,animations:'disabled'});
 
   const downloadPromise = page.waitForEvent('download');
   await panel.locator('#sfDatevExport').click();
@@ -57,15 +59,16 @@ test('DATEV LODAS export can be downloaded with the optional .sic extension', as
 
   await page.goto('/demo');
   await waitForDemoReady(page);
-  await openManagerArea(page, 'reports');
+  await openManagerArea(page, 'billing');
 
-  const workspace = page.locator('#sfTimeAccounts');
+  const workspace = page.locator('#view-billing');
   await workspace.waitFor({ state: 'visible' });
-  await workspace.locator('[data-sf-ta-tab="datev"]').click();
 
   const panel = workspace.locator('#sfDatevPanel');
   await expect(panel.locator('#sfDatevExtension')).toHaveValue('txt');
+  await page.evaluate(()=>window.SFManagerTheme?.apply('light',false));
   await panel.locator('#sfDatevExtension').selectOption('sic');
+  await page.screenshot({path:test.info().outputPath('billing-light.png'),fullPage:true,animations:'disabled'});
   await panel.locator('#sfDatevMonth').fill('2026-08');
   await panel.locator('#sfDatevMonth').dispatchEvent('change');
 
@@ -92,10 +95,9 @@ test('DATEV download is blocked when server authorization fails', async ({ page 
 
   await page.goto('/demo');
   await waitForDemoReady(page);
-  await openManagerArea(page, 'reports');
+  await openManagerArea(page, 'billing');
 
-  const workspace = page.locator('#sfTimeAccounts');
-  await workspace.locator('[data-sf-ta-tab="datev"]').click();
+  const workspace = page.locator('#view-billing');
   const panel = workspace.locator('#sfDatevPanel');
   await panel.locator('#sfDatevMonth').fill('2026-08');
   await panel.locator('#sfDatevMonth').dispatchEvent('change');

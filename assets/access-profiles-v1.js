@@ -2,6 +2,7 @@
 (function(){
   const B=window.SFBackend=window.SFBackend||{},labels={OWNER:'Inhaber',ADMIN:'Administrator',TEAM_LEAD:'Teamleiter',EMPLOYEE:'Mitarbeiter'};
   const admin=()=>['OWNER','ADMIN'].includes(B.accessRole),readOnly=()=>B.accessPermissions?.includes('read_only');
+  const billingAdmin=()=>['OWNER','ADMIN'].includes(B.role)&&(!B.accessRole||admin())&&!readOnly();
   const allowed=key=>admin()||B.accessPermissions?.includes(key);
   const previousCan=B.can;
   B.can=key=>{
@@ -46,11 +47,12 @@
   };
   for(const key of ['sync','importLegacy']){const old=B[key];if(typeof old==='function')B[key]=function(){return readOnly()?Promise.resolve():old.apply(this,arguments)}}
   const open=B.baseOpenApp;
-  B.baseOpenApp=function(view){const target=readOnly()?'schedule':(!B.can('viewTime')&&view==='time'?'schedule':view);const result=open.call(this,target);apply();return result};
+  B.baseOpenApp=function(view){const target=readOnly()?'schedule':view==='billing'&&!billingAdmin()?'overview':(!B.can('viewTime')&&view==='time'?'schedule':view);const result=open.call(this,target);apply();return result};
   const update=B.updateState;B.updateState=function(){const r=update?.apply(this,arguments);apply();return r};
   const qrOpen=B.qrCorrection?.open;
   if(qrOpen)B.qrCorrection.open=function(){if(!B.can('manageTime')){window.showSaveToast?.('Korrektur gesperrt','Das Zusatzrecht Zeiten verwalten fehlt.');return}return qrOpen.apply(this,arguments)};
   function apply(){
+    document.querySelectorAll('[data-view="billing"]').forEach(el=>{el.hidden=!billingAdmin();if(el.hidden)el.dataset.sfAccessHidden='true';else delete el.dataset.sfAccessHidden});
     if(!B.accessRole)return;
     document.querySelectorAll('#sfCreateEmployeeAccess,#sfCreateEmployeeAccessFix').forEach(el=>{el.hidden=!B.can('manageUsers');el.disabled=!B.can('manageUsers')});
     document.querySelectorAll('#sfReportExport,.sf-exp-mini').forEach(el=>el.hidden=!admin());
@@ -58,7 +60,7 @@
     const role=document.querySelector('.side-bottom .user-row small'),label=labels[B.accessRole]+(readOnly()?' · Nur lesen':B.role==='TIME_TRACKING'?' · Zeitverwaltung':'');
     if(role&&role.textContent!==label)role.textContent=label;
     document.querySelectorAll('[data-view]').forEach(el=>{
-      const v=el.dataset.view,hidden=readOnly()?v!=='schedule':v==='time'&&B.accessRole!=='EMPLOYEE'&&!B.can('viewTime');
+      const v=el.dataset.view,hidden=readOnly()?v!=='schedule':v==='billing'?!billingAdmin():v==='time'&&B.accessRole!=='EMPLOYEE'&&!B.can('viewTime');
       if(hidden){el.hidden=true;el.dataset.sfAccessHidden='true';}
       else if(el.dataset.sfAccessHidden){el.hidden=false;delete el.dataset.sfAccessHidden;}
     });
@@ -67,7 +69,7 @@
     if(B.accessRole&&!B.can('manageTime'))document.querySelectorAll('#sfQrCorrectionSave').forEach(el=>el.disabled=true);
   }
   // Navigation is only a convenience; SQL independently checks all writes.
-  document.addEventListener('click',event=>{const nav=event.target.closest('[data-view]');if(!B.accessRole||!nav)return;if((readOnly()&&nav.dataset.view!=='schedule')||(nav.dataset.view==='time'&&B.accessRole!=='EMPLOYEE'&&!B.can('viewTime'))){event.preventDefault();event.stopImmediatePropagation()}},true);
+  document.addEventListener('click',event=>{const nav=event.target.closest('[data-view]');if(!B.accessRole||!nav)return;if((readOnly()&&nav.dataset.view!=='schedule')||(nav.dataset.view==='billing'&&!billingAdmin())||(nav.dataset.view==='time'&&B.accessRole!=='EMPLOYEE'&&!B.can('viewTime'))){event.preventDefault();event.stopImmediatePropagation()}},true);
   let queued=false;new MutationObserver(()=>{if(queued)return;queued=true;queueMicrotask(()=>{queued=false;apply()})}).observe(document.body,{childList:true,subtree:true});
   B.accessProfileLabels=labels;
 })();

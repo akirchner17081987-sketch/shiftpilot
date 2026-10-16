@@ -24,7 +24,7 @@ test('workspaces load once on demand, retain dependency order and share time/rep
  const p=e.B.ensureManagerViewModules('employees'),p2=e.B.ensureManagerViewModules('employees');assert.equal(p,p2);assert.equal(e.scripts.length,79);
  assert.ok(e.scripts[68].src.includes('supabase-personnel-file-observer-guard'));assert.ok(e.scripts[69].src.includes('supabase-personnel-file-v1'));
  assert.equal(e.B.managerViewNeedsLoading('employees'),true);e.scripts.slice(68).forEach(s=>s.onload());await p;assert.equal(e.B.managerViewNeedsLoading('employees'),false);
- const t=e.B.ensureManagerViewModules('time'),r=e.B.ensureManagerViewModules('reports');assert.equal(t,r);assert.equal(e.scripts.length,85);e.scripts.slice(79).forEach(s=>s.onload());await t;
+ const t=e.B.ensureManagerViewModules('time'),r=e.B.ensureManagerViewModules('reports'),billing=e.B.ensureManagerViewModules('billing');assert.equal(t,r);assert.equal(t,billing);assert.equal(e.scripts.length,85);e.scripts.slice(79).forEach(s=>s.onload());await t;
  await e.B.ensureManagerViewModules('reports');assert.equal(e.scripts.length,85);assert.ok(e.scripts.every(s=>s.async===false));
 });
 test('a partially loaded workspace stays blocked until a fresh page can install all dependencies',async()=>{
