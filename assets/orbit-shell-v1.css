@@ -229,3 +229,20 @@ html.sf-display-high-contrast #appShell.sf-orbit{--orbit-text:var(--sf-contrast-
 @media(max-width:760px){#appShell.sf-orbit .sf-orbit-hero{padding:12px 0 22px}#appShell.sf-orbit .sf-orbit-hero-copy{align-items:flex-start;flex-wrap:wrap}#appShell.sf-orbit .sf-orbit-hero-copy .sf-td-buttons{margin:0}#appShell.sf-orbit .sf-orbit-status-scope{gap:8px;margin-top:16px}#appShell.sf-orbit .sf-orbit-location-strip .sf-orbit-sites{justify-content:flex-start}#appShell.sf-orbit .sf-orbit-earth-stage{height:clamp(300px,74vw,560px)}#appShell.sf-orbit .sf-orbit-status-hub .sf-orbit-emblem{top:50%;width:100%;max-width:none;margin:0}#appShell.sf-orbit .sf-orbit-status-hub .sf-td-kpi{min-height:96px;padding:12px 10px}#appShell.sf-orbit .sf-orbit-status-hub .sf-td-kpi>span{font-size:12px}#appShell.sf-orbit .sf-orbit-status-hub .sf-td-kpi strong{font-size:30px}#appShell.sf-orbit .sf-orbit-status-detail{align-items:flex-start;flex-direction:column;gap:12px}#appShell.sf-orbit .sf-orbit-status-title{font-size:17px}}
 @media(prefers-reduced-motion:reduce){#appShell.sf-orbit .sf-orbit-status-hub .sf-td-kpi{transition:none}}
 @media print{#appShell.sf-orbit .sf-orbit-earth-stage{display:none}#appShell.sf-orbit .sf-orbit-status-hub{padding:0}#appShell.sf-orbit [data-orbit-status-open]{display:none}}
+
+/* Give the lower daily overview a quiet, balanced card layout. */
+#appShell.sf-orbit #sfTodayWorkspace .sf-td-layout{gap:22px;align-items:start;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}
+#appShell.sf-orbit #sfTodayWorkspace .sf-td-main>.sf-td-panel,#appShell.sf-orbit #sfTodayWorkspace .sf-td-aside>#sfTodayActions{padding:20px 22px;background:var(--orbit-surface);border:1px solid var(--orbit-line);border-radius:16px;margin:0 0 18px}
+#appShell.sf-orbit #sfTodayWorkspace .sf-td-section-head{padding-top:0}
+#appShell.sf-orbit #sfTodayWorkspace .sf-td-section-head label{min-width:150px}
+#appShell.sf-orbit #sfTodayWorkspace .sf-td-aside>.sf-orbit-overview-details{background:var(--orbit-surface);border:1px solid var(--orbit-line);border-radius:12px;padding:0 18px;margin-bottom:10px}
+#appShell.sf-orbit #sfTodayWorkspace .sf-td-aside>.sf-orbit-overview-details>summary{min-height:48px}
+#appShell.sf-orbit #sfTodayWorkspace .sf-td-alert-summary button{background:var(--orbit-canvas);border:1px solid var(--orbit-line);color:var(--orbit-text);justify-self:stretch}
+#appShell.sf-orbit #sfTodayWorkspace .sf-td-alert-summary button[aria-pressed="true"]{border-color:var(--orbit-accent);box-shadow:inset 0 -2px var(--orbit-accent);background:var(--orbit-active)}
+#appShell.sf-orbit #sfTodayWorkspace .sf-td-alert-summary span{color:var(--orbit-muted)}
+#appShell.sf-orbit #sfTodayWorkspace .sf-td-alert-rows .sf-td-alert{grid-template-columns:minmax(0,1fr) auto;gap:14px;padding:14px 0}
+#appShell.sf-orbit #sfTodayWorkspace .sf-td-alert-rows .sf-td-alert>button{justify-self:end;background:var(--orbit-canvas);border:1px solid var(--orbit-line)}
+#appShell.sf-orbit #sfTodayWorkspace .sf-td-alert-rows .sf-td-alert-scope{color:var(--orbit-muted)}
+#appShell.sf-orbit #sfTodayWorkspace .sf-td-alert-pager button{background:var(--orbit-canvas);border:1px solid var(--orbit-line)}
+@media(max-width:900px){#appShell.sf-orbit #sfTodayWorkspace .sf-td-layout{grid-template-columns:minmax(0,1fr);gap:4px}}
+@media(max-width:520px){#appShell.sf-orbit #sfTodayWorkspace .sf-td-main>.sf-td-panel,#appShell.sf-orbit #sfTodayWorkspace .sf-td-aside>#sfTodayActions{padding:16px}#appShell.sf-orbit #sfTodayWorkspace .sf-td-alert-rows .sf-td-alert{grid-template-columns:minmax(0,1fr);gap:10px}#appShell.sf-orbit #sfTodayWorkspace .sf-td-alert-rows .sf-td-alert>button{justify-self:start}}

@@ -100,6 +100,17 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
      for(const id of ['west','hue','han','sch','aus']){await sitePin(id).click();await card.scrollIntoViewIfNeeded();const r=await card.boundingBox(),dock=await page.locator('#sfOrbitDock').boundingBox();assert.ok(r.y>=0&&r.y+r.height<=dock.y+1,'all categories stay above fixed navigation: '+JSON.stringify({id,width,dialog:r,dock}));await card.locator('.sf-close').click();}
    }
    await page.setViewportSize({width:1440,height:1000});await page.evaluate(()=>{SFManagerTheme.apply('dark',false);SFOrbit.setMotion('off')});
+   await page.evaluate(async rich=>{window.__beforeActionQa=qa.today;qa.today=rich;qa.today.company_id='qa';await SFToday.reload();SFToday.selectSite('');SFToday.openMetric('actions');},fixtures.rich());
+   for(const [theme,width] of [['dark',1440],['light',1440],['dark',768],['light',390],['dark',320]]){
+     await page.setViewportSize({width,height:1000});await page.evaluate(t=>SFManagerTheme.apply(t,false),theme);
+     await page.locator('#sfTodayActions').scrollIntoViewIfNeeded();
+     assert.equal(await page.locator('#sfTodayAlerts .sf-td-alert').count(),4);
+     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),true,'compact task area fits '+width);
+     const tasks=await page.locator('#sfTodayActions').boundingBox();assert.ok(tasks.height<1000,'four hints stay compact: '+width);
+     await page.screenshot({path:path.join(out,'orbit-compact-actions-'+theme+'-'+width+'.png'),animations:'disabled'});
+   }
+   await page.evaluate(async()=>{qa.today=window.__beforeActionQa;delete window.__beforeActionQa;await SFToday.reload();SFOrbit.refreshOverview();});
+   await page.setViewportSize({width:1440,height:1000});await page.evaluate(()=>SFManagerTheme.apply('dark',false));
    const mainBefore=await page.locator('#appShell .main').boundingBox();
    await page.locator('[data-orbit-category="planning"]').click();
    await page.waitForFunction(()=>document.querySelectorAll('#sfOrbitPopup .sf-orbit-entry').length===4);

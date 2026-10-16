@@ -21,10 +21,13 @@ jobs:
       - run: npm run build
       - run: npm run test:ionos
       - run: npx playwright install --with-deps chromium
+      - run: node tests/browser/today-workspace-qa.cjs
       - run: node tests/browser/site-loading-qa.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: orbit-navigation-qa
-          path: test-results/site-loading
+          path: |
+            test-results/site-loading
+            test-results/today-workspace
           retention-days: 7

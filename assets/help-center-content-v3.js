@@ -161,7 +161,7 @@ window.SFHelpContent = {
       ],
       [
         "Wie zeigt „Heute“ Pausen und offene Buchungen?",
-        "„Jetzt im Dienst“ zählt laufende Buchungen einschließlich Pausen, je Person einmal. Beginn, Anwesenheitsdauer, bezahlte Pausen und QR-Terminal werden angezeigt. Pausen werden nicht von der Anwesenheitsdauer abgezogen. Buchungen über 24 Stunden werden zur Prüfung markiert und nicht als aktuelle Anwesenheit gezählt. „Handlungsbedarf“ zeigt die vollständige Anzahl; „Weitere anzeigen“ lädt die übrigen Hinweise in die Liste."
+        "„Jetzt im Dienst“ zählt laufende Buchungen einschließlich Pausen, je Person einmal. Beginn, Anwesenheitsdauer, bezahlte Pausen und QR-Terminal werden angezeigt. Pausen werden nicht von der Anwesenheitsdauer abgezogen. Buchungen über 24 Stunden werden zur Prüfung markiert und nicht als aktuelle Anwesenheit gezählt. „Handlungsbedarf“ zeigt die vollständige Anzahl in einem kompakten Aufgabenbereich. Vier Hinweise pro Seite bleiben über Zurück und Weiter vollständig erreichbar. Die Prioritätsfilter Alle, Dringend, Prüfen und Weitere zeigen jeweils ihre Anzahl; zusätzlich können Sie nach Hinweisart filtern. Dringende Hinweise stehen zuerst. Standort- oder Filterwechsel beginnen wieder auf der ersten Seite. Eine normale Aktualisierung behält die ausgewählte Seite bei, sofern sie noch vorhanden ist."
       ],
       [
         "Was zeigt „Heute“?",
