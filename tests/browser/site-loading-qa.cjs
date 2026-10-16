@@ -84,6 +84,13 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
    for(const [theme,width] of [['dark',1920],['dark',1440],['light',1440],['dark',390],['light',390],['dark',320]]){
      await page.setViewportSize({width,height:1000});await page.evaluate(t=>SFManagerTheme.apply(t,false),theme);
      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),true,'map fits '+width);
+     await page.locator('.sf-orbit-hero').scrollIntoViewIfNeeded();
+     await page.waitForTimeout(80);
+     const composition=await page.evaluate(()=>{const hero=document.querySelector('.sf-orbit-hero'),scene=hero.querySelector('.sf-scene').getBoundingClientRect(),title=hero.querySelector('h1').getBoundingClientRect(),filter=hero.querySelector('#sfTodaySite').getBoundingClientRect(),content=hero.querySelector('.sf-orbit-hero-content').getBoundingClientRect(),pins=[...hero.querySelectorAll('[data-orbit-site]')].map(b=>b.getBoundingClientRect());return{scene:{x:scene.x,y:scene.y,right:scene.right,bottom:scene.bottom,width:scene.width,height:scene.height},title:{x:title.x,y:title.y,right:title.right,bottom:title.bottom},filter:{bottom:filter.bottom},content:{bottom:content.bottom},pinTop:Math.min(...pins.map(p=>p.top))};});
+     assert.ok(composition.scene.y<=composition.title.y&&composition.scene.bottom>=composition.filter.bottom,'map continues behind title and filter: '+width);
+     assert.ok(composition.scene.width/composition.scene.height<3,'map has generous height on wide screens: '+width);
+     assert.ok(composition.pinTop>=composition.content.bottom+30,'location labels stay clear of wrapped heading and filters: '+width);
+     await page.screenshot({path:path.join(out,'orbit-integrated-map-'+theme+'-'+width+'.png'),animations:'disabled'});
      await sitePin('east').click();await card.scrollIntoViewIfNeeded();const rect=await card.boundingBox();assert.ok(rect.x>=0&&rect.x+rect.width<=width+1,'location dialog fits '+width);
      const contrast=await card.evaluate(el=>{const heading=el.querySelector('h3'),background=el.querySelector('.sf-pop-header');const luminance=value=>{const rgb=value.match(/[\d.]+/g).slice(0,3).map(Number).map(x=>{x/=255;return x<=.04045?x/12.92:((x+.055)/1.055)**2.4;});return .2126*rgb[0]+.7152*rgb[1]+.0722*rgb[2];};const a=luminance(getComputedStyle(heading).color),b=luminance(getComputedStyle(background).backgroundColor);return(Math.max(a,b)+.05)/(Math.min(a,b)+.05);});assert.ok(contrast>=4.5,'location heading contrast in '+theme+' at '+width);
      await page.screenshot({path:path.join(out,'orbit-site-info-'+theme+'-'+width+'.png'),animations:'disabled'});

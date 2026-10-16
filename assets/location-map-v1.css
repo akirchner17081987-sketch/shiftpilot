@@ -139,3 +139,34 @@
 /* Portal escapes the map's clipping and remains clear of the fixed app navigation. */
 #appShell.sf-orbit>.sf-location-floating{position:fixed;inset:0;pointer-events:none;z-index:1100;padding:0;background:transparent;overflow:visible}
 #appShell.sf-orbit>.sf-location-floating .sf-popup{position:fixed;pointer-events:auto;overflow-y:auto;overscroll-behavior:contain}
+
+/* One geographic hero: the map continues behind the title and location filter. */
+#appShell.sf-orbit .sf-orbit-hero[data-location-map="true"]{display:grid;grid-template-columns:minmax(0,1fr);padding:0;gap:0;border:1px solid var(--orbit-line);border-radius:18px;overflow:hidden;background:#040d17}
+#appShell.sf-orbit .sf-orbit-hero[data-location-map="true"]:before{display:none}
+#appShell.sf-orbit .sf-orbit-hero[data-location-map="true"]>.sf-orbit-hero-content{grid-area:1/1;z-index:7;align-self:start;min-width:0;padding:28px 30px 16px;pointer-events:none;background:linear-gradient(180deg,#04101bf2,#04101bd4 58%,#04101b00)}
+#appShell.sf-orbit .sf-orbit-hero[data-location-map="true"]>.sf-orbit-status-hub{grid-area:1/1}
+#appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] .sf-orbit-hero-copy{align-items:flex-start;color:#edf7ff;gap:20px}
+#appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] .sf-orbit-hero-copy h1{font-size:clamp(30px,3vw,44px);color:#edf7ff!important;margin:8px 0 10px}
+#appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] .sf-orbit-hero-copy p{color:#aec7d8!important;font-size:13px}
+#appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] .sf-td-eyebrow{color:#74d6e8!important}
+#appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] .sf-td-buttons{pointer-events:auto;gap:8px}
+#appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] [data-td-action="refresh"]{color:#bad8e8!important;background:#0b2231b8;border-color:#507b8c60}
+#appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] .sf-orbit-status-scope{margin:20px 0 0;padding:0;border:0;pointer-events:none}
+#appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] .sf-orbit-status-scope label{pointer-events:auto;color:#aec7d8}
+#appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] .sf-orbit-status-scope select{background:#0b2231e8;color:#edf7ff;border-color:#507b8c80}
+#appShell.sf-orbit .sf-orbit-status-hub .sf-location-map{border-radius:0;background:#040d17}
+#appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] .sf-scene{height:clamp(660px,calc(100svh - 190px),800px)}
+#appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] .sf-current{top:var(--sf-map-controls-top,208px);left:30px;min-height:36px;color:#bad8e8}
+#appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] .sf-view{top:var(--sf-map-controls-top,208px);right:30px;min-height:36px}
+#appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] .sf-map-footer{color:#aec7d8;background:#06131f;border-top:1px solid #88c9dc1a}
+#appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] .sf-map-credits{color:#aec7d8}
+@media(max-width:760px){
+ #appShell.sf-orbit .sf-orbit-hero[data-location-map="true"]>.sf-orbit-hero-content{padding:22px 18px 12px}
+ #appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] .sf-orbit-hero-copy{gap:16px}
+ #appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] .sf-orbit-hero-copy h1{font-size:32px}
+ #appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] .sf-orbit-status-scope{margin-top:16px}
+ #appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] .sf-scene{height:780px}
+ #appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] .sf-current{left:18px;font-size:11px;max-width:calc(100% - 146px)}
+ #appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] .sf-view{right:18px;min-height:44px}
+}
+@media print{#appShell.sf-orbit .sf-orbit-hero[data-location-map="true"]{display:block}#appShell.sf-orbit .sf-orbit-hero[data-location-map="true"]>.sf-orbit-hero-content{background:none;pointer-events:auto}#appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] .sf-orbit-hero-copy h1{color:#172c3a!important}}

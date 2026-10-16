@@ -268,7 +268,8 @@
       const description = document.createElement('p'); description.className = 'sf-orbit-status-description'; copy.append(heading, description);
       const action = document.createElement('button'); action.type = 'button'; action.dataset.orbitStatusOpen = '';
       action.addEventListener('click', () => window.SFToday?.openMetric?.(statusSelection)); detail.append(copy, action);
-      hero.append(content, scope, hub, detail);
+      content.append(scope);
+      hero.append(content, hub, detail);
       locations.hidden = true;
       siteOrbit = createSiteOrbit(stage);
     }
