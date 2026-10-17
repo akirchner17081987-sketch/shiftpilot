@@ -59,12 +59,13 @@ body:has(#sfEmployeePortal.sf-employee-orbit) :is(#sfAbsenceEmployeeV3Modal,#sfS
 body:has(#sfEmployeePortal.sf-employee-orbit) :is(#sfAbsenceEmployeeV3Modal,#sfSwapModal,#sfMarketModal,#sfDisruptionResponse) :is(input,select,textarea,button,.sf-swap-info,.sf-ae3-duration){background:var(--ep-modal-inset)!important;border-color:var(--ep-modal-line)!important;color:var(--ep-modal-text)!important}
 body:has(#sfEmployeePortal.sf-employee-orbit) :is(#sfAe3Submit,.sf-market-approve,.sf-swap-approve,.sf-disruption-accept){background:var(--ep-modal-accent)!important;color:var(--ep-modal-ink)!important}
 @media(max-width:820px){
- #sfEmployeePortal.sf-employee-orbit .sf-portal-main{padding-top:12px!important}
+ #sfEmployeePortal.sf-employee-orbit .sf-portal-main{padding-top:12px!important;padding-bottom:calc(140px + env(safe-area-inset-bottom))!important;scroll-padding-bottom:140px}
  #sfEmployeePortal.sf-employee-orbit .sf-portal-welcome{padding:0 0 10px}
  #sfEmployeePortal.sf-employee-orbit .sf-portal-welcome h1{font-size:29px;margin:5px 0}
  #sfEmployeePortal.sf-employee-orbit .sf-portal-welcome>p{display:none}
  #sfEmployeePortal.sf-employee-orbit .sf-employee-view-head .eyebrow{display:none}
  #sfEmployeePortal.sf-employee-orbit .sf-employee-view-head h1{font-size:26px;margin:4px 0}
+ #sfEmployeePortal.sf-employee-orbit :is(.sf-ch-header,.sf-ho-head){display:none}
  #sfEmployeePortal.sf-employee-orbit :is(.sf-my-month-head,.sf-qb-head,.sf-ac-head,.sf-wv-head,.sf-pr-head,.sf-ae3-head,.sf-sx-head,.sf-ch-header,.sf-wish-head,.sf-ho-head,.sf-market-head) p{display:none}
  #sfEmployeePortal.sf-employee-orbit :is(.sf-pr-head,.sf-ac-head,.sf-wv-head,.sf-ae3-head,.sf-wish-head){flex-direction:row;justify-content:flex-end;padding-bottom:10px;margin-bottom:4px;min-height:0}
  #sfEmployeePortal.sf-employee-orbit .sf-orbit-dock{padding:5px;gap:3px;bottom:calc(6px + env(safe-area-inset-bottom))}

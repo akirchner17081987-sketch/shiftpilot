@@ -20,7 +20,7 @@ for(const fullApp of [false,true]){
 for(const [name,viewport] of [['desktop',{width:1560,height:1050}],['mobile',{width:390,height:844}],['small-mobile',{width:360,height:780}]]){
 const page=await browser.newPage({viewport,locale:'de-DE'}),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.clock.setFixedTime(new Date('2026-10-01T22:30:00Z'));
 await page.route('**/*',route=>{if(new URL(route.request().url()).hostname!=='sf.test')return route.abort();const pathname=new URL(route.request().url()).pathname;if(pathname==='/')return route.fulfill({contentType:'text/html',body:fullApp?fullHtml:html});const p=path.join(root,pathname);try{return route.fulfill({contentType:p.endsWith('.js')?'application/javascript':p.endsWith('.css')?'text/css':'image/svg+xml',body:fs.readFileSync(p)})}catch{return route.fulfill({status:404,body:''})}});
-await page.goto('http://sf.test/');if(fullApp){await page.waitForFunction(()=>SFBackend.__loaderInitStarted);await page.waitForTimeout(300);await page.evaluate(fixture.replace('window.SFBackend={','Object.assign(window.SFBackend,{').replace(/confirmSignOut:async\(\)=>\{\}\};/,'confirmSignOut:async()=>{}});'));await page.evaluate(()=>{SFBackend.closeAuth?.();SFBackend.hideLoading?.();SFBackend.openEmployeePortal();SFBackend.employeePortalNavigate('absences')});}const area=page.locator('#sfEmployeeAbsenceCard'),modal=page.locator('#sfAbsenceEmployeeV3Modal');await area.waitFor();await page.waitForTimeout(1200);if(fullApp)await page.evaluate(()=>SFBackend.employeePortalNavigate('absences'));await area.waitFor();assert.equal(await area.isVisible(),true);assert.match(await area.locator('.sf-empty').textContent(),/noch leer/);assert.equal(await area.locator('[data-absence-category]').count(),5);
+if(fullApp)await page.addInitScript(()=>{const pending=new Promise(()=>{});Object.defineProperty(window,'SFPageReady',{configurable:true,get:()=>pending,set(){}})});await page.goto('http://sf.test/');if(fullApp){await page.waitForFunction(()=>SFBackend.__loaderInitStarted);await page.waitForTimeout(300);await page.evaluate(fixture.replace('window.SFBackend={','Object.assign(window.SFBackend,{').replace(/confirmSignOut:async\(\)=>\{\}\};/,'confirmSignOut:async()=>{}});'));await page.evaluate(()=>{SFBackend.closeAuth?.();SFBackend.hideLoading?.();SFBackend.openEmployeePortal();SFBackend.employeePortalNavigate('absences')});}const area=page.locator('#sfEmployeeAbsenceCard'),modal=page.locator('#sfAbsenceEmployeeV3Modal');await area.waitFor();await page.waitForTimeout(1200);if(fullApp)await page.evaluate(()=>SFBackend.employeePortalNavigate('absences'));await area.waitFor();assert.equal(await area.isVisible(),true);assert.match(await area.locator('.sf-empty').textContent(),/noch leer/);assert.equal(await area.locator('[data-absence-category]').count(),5);
 
 // A settled workspace must keep cards attached: competing legacy layout
 // observers used to move every card out and back on every animation frame.
@@ -54,7 +54,20 @@ await page.waitForTimeout(120);
 assert.equal(await page.evaluate(()=>document.activeElement?.id),'sfAe3Type','Previous dialog callbacks must leave focus inside the new form');
 await modal.locator('#sfAe3Cancel').click();
 
-if(fullApp){
+if(fullApp&&await page.locator('#sfEmployeePortal').evaluate(el=>el.classList.contains('sf-employee-orbit'))){
+  const original=page.viewportSize();await page.setViewportSize({width:390,height:844});
+  const toggle=page.locator('[data-employee-orbit="requests"]'),popup=page.locator('#sfEmployeeOrbitPopup');
+  await toggle.click();await popup.waitFor();assert.equal(await toggle.getAttribute('aria-expanded'),'true');
+  await popup.locator('[data-employee-orbit-view="absences"]').click();assert.equal(await popup.getAttribute('aria-hidden'),'true');await area.waitFor();
+  await toggle.click();await page.setViewportSize({width:1440,height:1000});await page.waitForTimeout(100);
+  const bounds=await popup.boundingBox();assert.ok(bounds.x>=0&&bounds.x+bounds.width<=1440,'Orbit menu stays inside the resized viewport');
+  await page.keyboard.press('Escape');assert.equal(await toggle.getAttribute('aria-expanded'),'false');assert.equal(await page.locator('.sf-portal-main').evaluate(el=>el.inert),false);
+  for(const type of ['Urlaub','Sonderurlaub','Krank','Kind Krank','Home-Office']){
+    await area.locator('[data-absence-category="'+type+'"] b').click();await modal.waitFor();assert.equal(await modal.locator('#sfAe3Type').inputValue(),type);await modal.locator('#sfAe3Cancel').click();
+  }
+  await page.setViewportSize(original);
+}
+if(fullApp&&!await page.locator('#sfEmployeePortal').evaluate(el=>el.classList.contains('sf-employee-orbit'))){
   // Echte Menübedienung statt direktem Navigate-Aufruf: Overlay und inert prüfen.
   const original=page.viewportSize();
   await page.setViewportSize({width:390,height:844});

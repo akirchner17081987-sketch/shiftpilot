@@ -18,7 +18,11 @@ const output=path.resolve(__dirname,'../../test-results/employee-absences');fs.m
   });
   const area=page.locator('#sfEmployeeAbsenceCard'),modal=page.locator('#sfAbsenceEmployeeV3Modal');await area.waitFor();
   const sheetGuard=await page.evaluate(()=>[...document.scripts].some(s=>s.src.includes('employee-mobile-pwa-polish-v2.js?v=20261002-sheetguard1')));
-  if(sheetGuard){
+  if(await page.locator('#sfEmployeePortal').evaluate(el=>el.classList.contains('sf-employee-orbit'))){
+    await page.setViewportSize({width:390,height:844});const toggle=page.locator('[data-employee-orbit="requests"]');await toggle.click();await page.locator('#sfEmployeeOrbitPopup').waitFor();
+    await page.locator('[data-employee-orbit-view="absences"]').click();await area.waitFor();assert.equal(await toggle.getAttribute('aria-expanded'),'false');
+    await toggle.click();await page.setViewportSize({width:1440,height:1000});await page.keyboard.press('Escape');assert.equal(await page.locator('.sf-portal-main').evaluate(el=>el.inert),false);
+  }else if(sheetGuard){
     await page.setViewportSize({width:390,height:844});
     const more=page.locator('#sfEmployeeMobileDock [data-sf-mobile-more]');await more.click();
     await page.waitForFunction(()=>document.querySelector('.sf-portal-main').inert);
