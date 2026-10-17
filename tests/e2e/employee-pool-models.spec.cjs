@@ -4,6 +4,7 @@ const source=fs.readFileSync(path.join(__dirname,'../../index.html'),'utf8').spl
 async function fixture(page){
  await page.route('https://schichtfunk.de/__pool-models',r=>r.fulfill({contentType:'text/html',body:'<!doctype html><html><head></head><body></body></html>'}));await page.goto('https://schichtfunk.de/__pool-models');
  await page.setContent('<section id="view-schedule"><div class="shift-row"><button class="shift-chip"><b>FD</b></button><button class="shift-chip"><b>SD</b></button></div><div class="employee-pool-head"><input id="planEmployeeSearch"></div><div id="planEmployeePool"></div></section>');
+ await page.addScriptTag({path:path.join(__dirname,'../../assets/csp-actions-v1.js')});
  await page.addScriptTag({content:`window.TYPES=[{id:'FD'},{id:'SD'},{id:'ND'}];window.employees=[{id:'team',first:'Team',last:'Person',status:'active',shifts:['O1','O2','FD','SD','ND'],role:'Sicherheitsmitarbeiter'},{id:'fd',first:'Nur',last:'Frühdienst',status:'active',shifts:['O1','FD']}];window.absences=[];window.selectedPlanEmployeeId=null;window.currentWeekDates=()=>[new Date('2026-12-01T12:00:00')];window.iso=d=>d.toISOString().slice(0,10);window.showSaveToast=()=>{};`+source});
  await page.evaluate(()=>renderPlanEmployeePool());
 }

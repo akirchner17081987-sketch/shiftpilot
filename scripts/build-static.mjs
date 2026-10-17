@@ -1,6 +1,7 @@
 import { cp, mkdir, readdir, readFile, rm, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { hardenStaticCsp } from './harden-static-csp.mjs';
 
 const root = new URL('../', import.meta.url);
 const output = new URL('../dist/', import.meta.url);
@@ -14,6 +15,7 @@ await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
 await Promise.all(files.map(file => cp(new URL(file, root), new URL(file, output))));
 await cp(new URL('assets/', root), new URL('assets/', output), { recursive: true });
+const externalScripts=await hardenStaticCsp(output);
 
 const requiredOutput = [
   '.htaccess', 'index.html', 'demo.html', 'demo-abschluss.html',
@@ -45,4 +47,5 @@ async function sizeOf(path) {
 const bytes = await sizeOf(fileURLToPath(output));
 const limit = 50 * 1024 * 1024;
 if (bytes >= limit) throw new Error(`Static build is ${(bytes / 1024 / 1024).toFixed(2)} MiB; Deploy Now Starter limit is 50 MiB.`);
+console.log(`CSP: ${externalScripts} executable inline scripts moved to same-origin assets.`);
 console.log(`Static build ready: ${(bytes / 1024 / 1024).toFixed(2)} MiB (${bytes} bytes)`);

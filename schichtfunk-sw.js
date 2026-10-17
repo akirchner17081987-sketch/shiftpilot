@@ -1,5 +1,5 @@
-// SchichtFunk – sicherer PWA App-Shell + Web Push Service Worker V8
-const CACHE='schichtfunk-shell-v8';
+// SchichtFunk – sicherer PWA App-Shell + Web Push Service Worker V9
+const CACHE='schichtfunk-shell-v9-csp';
 const STATIC=[
   '/index.html',
   '/site.webmanifest',
@@ -40,9 +40,11 @@ self.addEventListener('fetch',event=>{
   const staticAsset=url.pathname.startsWith('/assets/')||url.pathname==='/site.webmanifest';
   if(!staticAsset)return;
 
+  // CSP callback dispatch and vendored libraries must not stay on an older shell.
+  const cspCritical=url.pathname==='/assets/csp-actions-v1.js'||url.pathname.startsWith('/assets/vendor/')||url.pathname.startsWith('/assets/page-');
   // Kritische Laufzeit-Integrationen immer zuerst aus dem Netz holen. So kann ein
   // installierter PWA-Cache keine Sicherheits-, Push- oder Mobile-Korrektur verdecken.
-  const networkFirst=/\/(supabase-[^/]+|conflict-plausibility-v1|access-profiles-v1|time-only-access-v1|team-admin-v1|time-workspace-v2|qr-manager-correction-v1|qr-independent-report-v1|navigation-compat-v1|employee-mobile-pwa-v1|push-notifications-v1|employee-wage-preview-v1)\.js$/.test(url.pathname);
+  const networkFirst=cspCritical||/\/(supabase-[^/]+|conflict-plausibility-v1|access-profiles-v1|time-only-access-v1|team-admin-v1|time-workspace-v2|qr-manager-correction-v1|qr-independent-report-v1|navigation-compat-v1|employee-mobile-pwa-v1|push-notifications-v1|employee-wage-preview-v1)\.js$/.test(url.pathname);
   if(networkFirst){
     event.respondWith(caches.open(CACHE).then(async cache=>{
       try{

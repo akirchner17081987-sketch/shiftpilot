@@ -2289,6 +2289,16 @@
       "area": "Geografische Standortkarte und gefilterte Tagesübersicht",
       "category": "overview",
       "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/csp-actions-v1.js",
+      "category": "settings",
+      "note": "Externe Ereignisbehandlung für bestehende Bedienaktionen"
+    },
+    {
+      "source": "assets/demo-boot-class-v1.js",
+      "category": "settings",
+      "note": "Externer Startmarker für den bestehenden Demo-Ladevorgang"
     }
   ],
   "categoryCoverage": [
@@ -2823,6 +2833,6 @@
     "correctedArticleCount": 8,
     "articleCount": 221,
     "categoryCount": 21,
-    "assetJavaScriptCount": 201
+    "assetJavaScriptCount": 203
   }
 }

@@ -3,7 +3,7 @@
   const B=window.SFBackend=window.SFBackend||{};
   if(B.__employeeQrScannerV1)return;B.__employeeQrScannerV1=true;
 
-  const JSQR_LIB='https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+  const JSQR_LIB='/assets/vendor/jsqr-1.4.0.js';
   let stream=null,scanTimer=null,decoderPromise=null,scanning=false;
   const demo=()=>sessionStorage.getItem('sf_demo_session_v1')==='active';
 

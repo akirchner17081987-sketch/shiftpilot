@@ -134,7 +134,7 @@
     const wrapped=function(date){
       const html=oldRenderAssignments.apply(this,arguments);css();const box=document.createElement('div');box.innerHTML=html;
       box.querySelectorAll('.assignment').forEach(el=>{
-        const raw=el.getAttribute('onclick')||'',m=raw.match(/editAssignment\('([^']+)'\)/),id=m?.[1];if(!id)return;
+        const id=decodeURIComponent(el.dataset.assignmentId||'');if(!id)return;
         const a=listAssignments().find(x=>String(x.id)===String(id)),c=assignmentConflict(a);if(!c)return;
         el.classList.add('sf-absence-conflict');el.title=`Konflikt mit ${c.type||c.absence_type||'Abwesenheit'}`;
         if(!el.querySelector('.sf-absence-conflict-badge')){const b=document.createElement('span');b.className='sf-absence-conflict-badge';b.textContent='⚠ Abwesend';el.appendChild(b)}

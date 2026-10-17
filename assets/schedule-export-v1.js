@@ -124,8 +124,8 @@
       const companyId=access().companyId;status.textContent='Aktueller Dienstplan wird geladen …';
       const fullPlan=await freshSnapshot(dialog.querySelector('input').value),plan=format==='pdf'?window.SFScheduleExportCore.selectPDFPlan(fullPlan,dialog.querySelector('#sfPlanExportScope').value):fullPlan;
       if(format==='pdf'&&!plan.rows.length)throw Error('Für '+plan.pdfScope+' sind im gewählten Monat keine Mitarbeiter vorhanden.');
-      if(format==='xlsx')await load('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',()=>!!window.XLSX);
-      else{await load('https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js',()=>!!window.jspdf?.jsPDF);await load('https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js',()=>!!window.jspdf?.jsPDF?.API?.autoTable)}
+      if(format==='xlsx')await load('/assets/vendor/xlsx-0.18.5.min.js',()=>!!window.XLSX);
+      else{await load('/assets/vendor/jspdf-2.5.2.min.js',()=>!!window.jspdf?.jsPDF);await load('/assets/vendor/jspdf-autotable-3.8.4.min.js',()=>!!window.jspdf?.jsPDF?.API?.autoTable)}
       if(access().companyId!==companyId)throw Error('Das Unternehmen wurde gewechselt. Bitte den Export neu öffnen.');
       if(!dialog.open)throw Error('Export abgebrochen.');
       if(format==='xlsx')excel(plan);else pdf(plan);status.textContent=fileName(plan,format)+' wurde erstellt.';

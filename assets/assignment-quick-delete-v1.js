@@ -32,13 +32,11 @@
     const html=previous(date);
     const box=document.createElement('div');box.innerHTML=html;
     box.querySelectorAll('.assignment').forEach(el=>{
-      const raw=el.getAttribute('onclick')||'';
-      const m=raw.match(/editAssignment\('([^']+)'\)/);
-      const id=m&&m[1];if(!id||el.querySelector('.sp-assignment-x'))return;
+      const id=decodeURIComponent(el.dataset.assignmentId||'');if(!id||el.querySelector('.sp-assignment-x'))return;
       const x=document.createElement('button');
       x.type='button';x.className='sp-assignment-x';x.textContent='×';
       x.title='Schicht schnell löschen';x.setAttribute('aria-label','Schicht löschen');
-      x.setAttribute('onclick',`return spQuickDeleteAssignment('${id}',event)`);
+      x.dataset.sfClick='click-2e80424353c1';x.setAttribute('data-sf-click-arg0',encodeURIComponent(id));
       el.appendChild(x);
     });
     return box.innerHTML;
