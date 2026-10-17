@@ -6,7 +6,7 @@ const output=path.resolve(__dirname,'../../test-results/employee-absences');fs.m
 (async()=>{const browser=await chromium.launch({headless:true});try{
   const page=await browser.newPage({viewport:{width:1440,height:1000},locale:'de-DE'}),errors=[];
   page.on('pageerror',e=>errors.push(e.message));
-  await page.goto('https://www.schichtfunk.de/',{waitUntil:'domcontentloaded',timeout:60000});
+  await page.goto('https://schichtfunk.de/?bereich=mitarbeiter',{waitUntil:'domcontentloaded',timeout:60000});
   await page.waitForFunction(()=>window.SFBackend?.__loaderInitStarted,null,{timeout:30000});
   await page.locator('#sfAuthBackdrop').waitFor({timeout:30000});
   await page.evaluate(()=>{

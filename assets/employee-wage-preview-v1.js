@@ -37,7 +37,7 @@
       rateInput.onchange=saveRate;
     }return card;
   }
-  function choose(m){if(!valid(m)||m===selected()){const c=shell();if(c)c.querySelector('.sf-wage-month').value=selected();return}persist();B.employeeFinanceMonth=m;document.dispatchEvent(new CustomEvent('sf:employee-finance-month-change',{detail:{month:m}}))}
+  function choose(m){if(!valid(m)||m===selected()){const c=shell();if(c)c.querySelector('.sf-wage-month').value=selected();return}B.employeeFinanceMonth=m;document.dispatchEvent(new CustomEvent('sf:employee-finance-month-change',{detail:{month:m}}))}
   function draw(card){
     card.querySelector('.sf-wage-month').value=selected();card.querySelector('[data-wv="refresh"]').disabled=loading;
     card.querySelector('[data-wv="previous"]').disabled=selected()==='1900-01';card.querySelector('[data-wv="next"]').disabled=selected()==='9998-12';
@@ -69,7 +69,7 @@
     if(keys.slice(1).reduce((n,k)=>n+Number(value.totals[k]),0)>Number(value.totals.paid_seconds)+.001)throw Error('Überlappende Zuschläge');return value;
   }
   async function render(){if(B.role!=='EMPLOYEE'||!B.client)return;const who=scope(),month=selected();
-    if(owner!==who){owner=who;data=null;dataMonth='';detailsOpen=false;loadRate()}else if(draftMonth!==month){persist();loadRate()}
+    if(owner!==who){owner=who;data=null;dataMonth='';detailsOpen=false;loadRate()}else if(draftMonth!==month){loadRate()}
     const card=shell();if(!card)return;card.querySelector('.sf-wage-rate').value=draft;const request=++sequence;loading=true;error='';draw(card);
     try{let value;if(B.client.__sfDemoLocalClientV1)value=await demoMonth(month);else{const result=await B.client.rpc('employee_my_wage_month',{p_month:month+'-01'});if(result.error)throw result.error;value=typeof result.data==='string'?JSON.parse(result.data):result.data}value=validate(value,month);
       if(request!==sequence||who!==scope()||B.role!=='EMPLOYEE'||!card.isConnected)return;data=value;dataMonth=month;
