@@ -65,7 +65,7 @@
   function loadIntegration(src,marker){
     if(demoOnly.has(marker)&&sessionStorage.getItem('sf_demo_session_v1')!=='active')return;
     if(document.querySelector(`script[${marker}]`))return;
-    const script=document.createElement('script');script.src=src;script.async=false;script.setAttribute(marker,'1');document.head.appendChild(script);
+    const script=document.createElement('script');script.src=src+(src.includes('?')?'&':'?')+'csp=20261017-1';script.async=false;script.setAttribute(marker,'1');document.head.appendChild(script);
   }
 
   function loadStyle(href,marker){

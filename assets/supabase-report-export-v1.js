@@ -21,8 +21,8 @@
     `;document.head.appendChild(s);
   }
   function script(src,test){return new Promise((resolve,reject)=>{if(test())return resolve();const old=[...document.scripts].find(x=>x.src===src);if(old){old.addEventListener('load',resolve,{once:true});old.addEventListener('error',reject,{once:true});return}const s=document.createElement('script');s.src=src;s.async=true;s.onload=resolve;s.onerror=()=>reject(new Error('Export-Bibliothek konnte nicht geladen werden'));document.head.appendChild(s)})}
-  async function needXlsx(){await script('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',()=>!!window.XLSX)}
-  async function needPdf(){await script('https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js',()=>!!window.jspdf?.jsPDF);await script('https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js',()=>!!window.jspdf?.jsPDF?.API?.autoTable)}
+  async function needXlsx(){await script('/assets/vendor/xlsx-0.18.5.min.js',()=>!!window.XLSX)}
+  async function needPdf(){await script('/assets/vendor/jspdf-2.5.2.min.js',()=>!!window.jspdf?.jsPDF);await script('/assets/vendor/jspdf-autotable-3.8.4.min.js',()=>!!window.jspdf?.jsPDF?.API?.autoTable)}
   async function bundle(employeeId=null,force=false){if(!MANAGER.has(B.role))throw new Error('Nur Inhaber und Administratoren dürfen personenbezogene Monatsberichte exportieren.');force=true;
     const key=[B.companyId,monthValue(),employeeId||'ALL'].join('|');
     if(!force&&cache.key===key&&cache.bundle)return cache.bundle;

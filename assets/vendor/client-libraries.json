@@ -1,0 +1,62 @@
+[
+  {
+    "package": "@supabase/supabase-js",
+    "version": "2.112.4",
+    "file": "supabase-2.112.4.mjs",
+    "source": "https://registry.npmjs.org/@supabase/supabase-js/-/supabase-js-2.112.4.tgz",
+    "upstreamPath": "dist/umd/supabase.js",
+    "upstreamSha256": "f8ce7fab799af1916019cbd0b485b39bb80dbdbc6dc062909a751c9e5198e04c",
+    "sha256": "5bd1d467ced114d73e9a46d8dfe71ba5efa3f8905ada15a4cc1eddd975efbd6f",
+    "npmIntegrity": "sha512-UiCX1udlFY1fQQrO7Z3GU7obQsju0w5Vk9mOOwalfo/+Gy+tahWVenSSuu5E/GTy/q//HxvGv2IrCdW66/61kw==",
+    "licenseFile": "supabase-2.112.4.mjs.LICENSE",
+    "licenseSha256": "334dd6820e2eaeab2064e7c59001b810566728a28a41a7c1dbf69bbee17d0936"
+  },
+  {
+    "package": "xlsx",
+    "version": "0.18.5",
+    "file": "xlsx-0.18.5.min.js",
+    "source": "https://registry.npmjs.org/xlsx/-/xlsx-0.18.5.tgz",
+    "upstreamPath": "dist/xlsx.full.min.js",
+    "upstreamSha256": "c9506197caf809a075b6dee1da0d36fb19da7158ffe8a88e7b0c96c5d8623c99",
+    "sha256": "c9506197caf809a075b6dee1da0d36fb19da7158ffe8a88e7b0c96c5d8623c99",
+    "npmIntegrity": "sha512-dmg3LCjBPHZnQp5/F/+nnTa+miPJxUXB6vtk42YjBBKayDNagxGEeIdWApkYPOf3Z3pm3k62Knjzp7lMeTEtFQ==",
+    "licenseFile": "xlsx-0.18.5.min.js.LICENSE",
+    "licenseSha256": "4d2a38ac35cda06a555c84074a819d413339cd3691b822cae50f8f322fe01f64"
+  },
+  {
+    "package": "jspdf",
+    "version": "2.5.2",
+    "file": "jspdf-2.5.2.min.js",
+    "source": "https://registry.npmjs.org/jspdf/-/jspdf-2.5.2.tgz",
+    "upstreamPath": "dist/jspdf.umd.min.js",
+    "upstreamSha256": "85ba2cc3ff858a20fa49fe6e457bec863ea40b55a9f3725e58a940e62f6f61a4",
+    "sha256": "85ba2cc3ff858a20fa49fe6e457bec863ea40b55a9f3725e58a940e62f6f61a4",
+    "npmIntegrity": "sha512-myeX9c+p7znDWPk0eTrujCzNjT+CXdXyk7YmJq5nD5V7uLLKmSXnlQ/Jn/kuo3X09Op70Apm0rQSnFWyGK8uEQ==",
+    "licenseFile": "jspdf-2.5.2.min.js.LICENSE",
+    "licenseSha256": "2d26bfab8a36d2250602c7a7597237e180c5cd3517acc108126e3cb399f483c8"
+  },
+  {
+    "package": "jspdf-autotable",
+    "version": "3.8.4",
+    "file": "jspdf-autotable-3.8.4.min.js",
+    "source": "https://registry.npmjs.org/jspdf-autotable/-/jspdf-autotable-3.8.4.tgz",
+    "upstreamPath": "dist/jspdf.plugin.autotable.min.js",
+    "upstreamSha256": "2223830cf9a1ec85af014cc71b37c1b1eb566f3d18b2ab8071e96af822c58bdb",
+    "sha256": "2223830cf9a1ec85af014cc71b37c1b1eb566f3d18b2ab8071e96af822c58bdb",
+    "npmIntegrity": "sha512-rSffGoBsJYX83iTRv8Ft7FhqfgEL2nLpGAIiqruEQQ3e4r0qdLFbPUB7N9HAle0I3XgpisvyW751VHCqKUVOgQ==",
+    "licenseFile": "jspdf-autotable-3.8.4.min.js.LICENSE",
+    "licenseSha256": "99a374e0385cf714d2faae5f6e02ec79217c6bcecec39bdb9e102091471b960a"
+  },
+  {
+    "package": "jsqr",
+    "version": "1.4.0",
+    "file": "jsqr-1.4.0.js",
+    "source": "https://registry.npmjs.org/jsqr/-/jsqr-1.4.0.tgz",
+    "upstreamPath": "dist/jsQR.js",
+    "upstreamSha256": "bc40c8a15196236b2314db0856f72ca0b49980cd5413b8c852a7349f5fee0859",
+    "sha256": "bc40c8a15196236b2314db0856f72ca0b49980cd5413b8c852a7349f5fee0859",
+    "npmIntegrity": "sha512-dxLob7q65Xg2DvstYkRpkYtmKm2sPJ9oFhrhmudT1dZvNFFTlroai3AWSpLey/w5vMcLBXRgOJsbXpdN9HzU/A==",
+    "licenseFile": "jsqr-1.4.0.js.LICENSE",
+    "licenseSha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08"
+  }
+]

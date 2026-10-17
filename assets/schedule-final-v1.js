@@ -11,7 +11,7 @@
     .sf-plan-context-label{color:#8098ad;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}.sf-plan-context strong{font-size:12px;color:#e8f4ff}
     .sf-plan-context .spacer{flex:1}.sf-plan-chip{display:inline-flex;align-items:center;min-height:25px;padding:4px 8px;border:1px solid #34516a;border-radius:999px;background:#102335;color:#aec2d3;font-size:9px;font-weight:850;white-space:nowrap}
     .sf-plan-chip.good{border-color:#28715e;background:#0f2d27;color:#82e8cf}.sf-plan-chip.warn{border-color:#80612f;background:#2d2314;color:#ffd08a}.sf-plan-chip.readonly{border-color:#65537d;background:#201a2b;color:#d7bdff}
-    #view-schedule.sf-schedule-readonly #autoPlanBtn,#view-schedule.sf-schedule-readonly .sf-published:not(.sf-plan-chip),#view-schedule.sf-schedule-readonly button[onclick*="spPublishCurrentWeek"]{display:none!important}
+    #view-schedule.sf-schedule-readonly #autoPlanBtn,#view-schedule.sf-schedule-readonly .sf-published:not(.sf-plan-chip),#view-schedule.sf-schedule-readonly button[data-sf-click="click-7e5a4b369dd7"]{display:none!important}
     #view-schedule.sf-schedule-readonly .sf-week-employee,#view-schedule.sf-schedule-readonly .assignment{cursor:default!important}
     body.sf-schedule-readonly .sp-assign-edit input,body.sf-schedule-readonly .sp-assign-edit select,body.sf-schedule-readonly .sp-assign-edit textarea,body.sf-schedule-readonly .sp-assign-edit #spSaveAssign,body.sf-schedule-readonly .sp-assign-edit #spDeleteAssign{display:none!important}
     @media(max-width:680px){.sf-plan-context{align-items:flex-start}.sf-plan-context .spacer{display:none}.sf-plan-context-label{width:100%}.sf-plan-chip{white-space:normal}}
@@ -27,7 +27,7 @@
     remember();
   }
   function blockMutations(e){
-    if(!B.ready||canPlan()||e.target.closest?.('.assignment,.sf-week-employee'))return;const t=e.target.closest?.('#view-schedule #autoPlanBtn,#view-schedule [onclick*="spPublishCurrentWeek"],#view-schedule .pill.drop-target,#view-schedule .sf-week-cell,#view-schedule .day-body');if(!t)return;
+    if(!B.ready||canPlan()||e.target.closest?.('.assignment,.sf-week-employee'))return;const t=e.target.closest?.('#view-schedule #autoPlanBtn,#view-schedule [data-sf-click="click-7e5a4b369dd7"],#view-schedule .pill.drop-target,#view-schedule .sf-week-cell,#view-schedule .day-body');if(!t)return;
     e.preventDefault();e.stopImmediatePropagation();if(typeof showSaveToast==='function')showSaveToast('Nur-Lese-Zugriff','Diese Rolle darf den Dienstplan ansehen, aber nicht verändern.');
   }
   restore();

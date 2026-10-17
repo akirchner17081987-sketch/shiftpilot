@@ -100,7 +100,7 @@
     setTimeout(()=>{
       let focused=false;
       if(item.assignment){
-        const target=[...document.querySelectorAll('#calendarGrid .assignment')].find(el=>(el.getAttribute('onclick')||'').includes(`'${item.assignment.id}'`));
+        const target=[...document.querySelectorAll('#calendarGrid .assignment')].find(el=>decodeURIComponent(el.dataset.assignmentId||'')===String(item.assignment.id));
         if(target){target.classList.add('sf-legacy-highlight');target.scrollIntoView({block:'center',behavior:'smooth'});focused=true}
       }
       if(!focused)(document.getElementById('sfLegacyTarget')||document.getElementById('view-schedule'))?.scrollIntoView({block:'start',behavior:'smooth'});
