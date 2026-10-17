@@ -129,3 +129,14 @@ test('hours results omit the retired weekend goal but retain the actual hours an
  const {c,el}=harness();Object.assign(c.SFCompliance.policy.solidPlanningRules,{weekendPlanningByRhythm:true,minFreeWeekendsPerMonth:1});await c.SFMonthOptimizer.optimize();
  assert.ok(c.SFMonthOptimizer.getResult(),c.toast?.copy);assert.doesNotMatch(el('autoMonthHours').innerHTML,/fehlende freie Wochenenden/);assert.match(el('autoMonthHours').innerHTML,/Prüfergebnis:|Gesamtobjekt/);
 });
+
+test('fixed options show status text while valid legacy controls return after a company policy change',()=>{
+ const {c,el,run}=harness();Object.assign(c.SFCompliance.policy.solidPlanningRules,{confirmedRulesVersion:2});c.document.querySelector=()=>null;
+ run('renderAutoPlanning()');assert.equal(el('autoRespectHours').hidden,true);assert.equal(el('autoRespectHours').checked,true);assert.equal(el('autoRespectHours').disabled,true);assert.equal(el('autoHoursStatus').textContent,'Verbindlich aktiv');
+ assert.equal(el('autoIndividualBlocks').hidden,true);assert.equal(el('autoBlocksStatus').textContent,'Automatisch durch Planungsregeln gesteuert');assert.equal(el('autoBlocksTitle').textContent,'Arbeitsblöcke und Erholung');
+ c.SFCompliance.policy.solidPlanningRules={};run('renderAutoPlanning()');assert.equal(el('autoRespectHours').hidden,false);assert.equal(el('autoRespectHours').disabled,false);assert.equal(el('autoHoursStatus').hidden,true);
+ assert.equal(el('autoBlocksStatus').textContent,'Für dieses Schichtmodell nicht verfügbar');
+ c.TYPES=[{id:'SD',start:'14:00',end:'22:00'},{id:'ND',start:'22:00',end:'06:00'}];c.plannedAssignmentHours=()=>8;run('renderAutoPlanning()');
+ assert.equal(el('autoIndividualBlocks').hidden,false);assert.equal(el('autoIndividualBlocks').disabled,false);assert.equal(el('autoBlocksStatus').hidden,true);assert.equal(el('autoBlocksTitle').textContent,'Individuelle Blockplanung im Monat');
+ assert.equal(c.assignments.length,0);
+});
