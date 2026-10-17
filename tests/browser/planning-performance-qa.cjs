@@ -41,6 +41,8 @@ async function main(){
   const samples=[];for(let n=0;n<3;n++)samples.push(await page.evaluate(()=>{const start=performance.now();renderAutoPlanning();return performance.now()-start}));stats.repeatMs=samples.sort((a,b)=>a-b)[1];
   if(variant==='current'){
    const ruleDetails=page.locator('#autoRuleDetails');
+   assert.equal(await page.locator('#optimizeAutoMonthBtn').isVisible(),false);assert.equal(await page.locator('#generateAutoPlanBtn').isVisible(),true);
+
    assert.equal(await page.locator('#autoRespectHours').isVisible(),false);assert.match(await page.locator('#autoHoursStatus').textContent(),/Verbindlich aktiv/);
    assert.equal(await page.locator('#autoIndividualBlocks').isVisible(),false);assert.match(await page.locator('#autoBlocksStatus').textContent(),/Automatisch durch Planungsregeln gesteuert/);
    assert.equal(await page.locator('#autoFairDistribution').isVisible(),true);assert.equal(await page.locator('#autoFairDistribution').isEnabled(),true);
