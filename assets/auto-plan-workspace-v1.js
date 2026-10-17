@@ -19,7 +19,7 @@
     html(host,values.length?values.map(v=>`<span>${esc(v)}</span>`).join(''):'Die hinterlegten Unternehmensregeln gelten.');
     text('autoRuleText',core?.summary(rules,TYPES,company)||'Aktive Mitarbeiter, persönliche Schichtfreigaben, Abwesenheiten, feste Rhythmen und hinterlegte Stundenlimits werden berücksichtigt. Die persönlichen Monatsziele und hinterlegten Planungsgrenzen gelten.');
     const goals=el('autoRuleGoals');if(goals)goals.hidden=!enabled;
-    if(enabled)text('autoRuleGoalText',`Angestrebt werden ${rules.minFreeWeekendsPerMonth??1} vollständig freie Wochenenden pro Monat, bevorzugt ${rules.preferredNightBlockLength||3} Nächte je Block und eine gleichmäßige Belastung mit ${rules.rollingWeekTargetHours||40} h als Ziel in rollierenden 7 Tagen. Abweichungen von diesen Zielen werden im Ergebnis ausgewiesen.`);
+    if(enabled){const weekends=core?.weekendTarget(rules)||0;text('autoRuleGoalText',`Angestrebt werden ${weekends>0?`${weekends} vollständig freie Wochenenden pro Monat, `:''}bevorzugt ${rules.preferredNightBlockLength||3} Nächte je Block und eine gleichmäßige Belastung mit ${rules.rollingWeekTargetHours||40} h als Ziel in rollierenden 7 Tagen. Abweichungen von diesen Zielen werden im Ergebnis ausgewiesen.`);}
   }
   function remainingSlots(slots,preview){
     const keyOf=x=>x.date+'|'+(x.coverageGroup||x.type);

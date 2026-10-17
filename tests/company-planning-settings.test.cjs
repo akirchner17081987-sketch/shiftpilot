@@ -113,3 +113,20 @@ test('database enforces configured limits, authorization, concurrency and compan
  assert.deepEqual((await db.query('SELECT solid_planning_rules FROM company_compliance_policy WHERE company_id=$1',[beta])).rows[0].solid_planning_rules,policy);
  }finally{await db.close()}
 });
+
+test('company weekend-by-rhythm policy hides the retired goal without hiding OT rules',()=>{
+ const {ctx,body}=fixture();Object.assign(ctx.SFCompliance.policy.solidPlanningRules,{weekendPlanningByRhythm:true,minFreeWeekendsPerMonth:1});ctx.SFPlanningRuleSettings.render(body);
+ assert.doesNotMatch(body.innerHTML,/data-rule-key="minFreeWeekendsPerMonth"/);assert.match(body.innerHTML,/data-rule-key="otOnlyMonthlyMaxHours"/);
+ ctx.SFCompliance.policy.solidPlanningRules.weekendPlanningByRhythm=false;ctx.SFPlanningRuleSettings.render(body);assert.match(body.innerHTML,/data-rule-key="minFreeWeekendsPerMonth"/);
+});
+test('weekend target migration preserves OT weekdays, fixed cycles, personal limits and other companies',async()=>{
+ const db=new PGlite(),migration=fs.readdirSync('supabase/migrations').find(x=>x.endsWith('_remove_general_weekend_target.sql'));
+ try{
+ await db.exec('CREATE TABLE companies(id text PRIMARY KEY,name text);CREATE TABLE company_compliance_policy(company_id text PRIMARY KEY,solid_planning_rules jsonb,updated_at timestamptz);');
+ const rules={enabled:true,confirmedRulesVersion:2,minFreeWeekendsPerMonth:1,otWeekdayRoster:{employeeIds:['a','b','c'],weekdays:[1,2,3,4,5],allowDaysOff:true},fixedWeeklyRoster:{employeeIds:['fixed'],weekdays:[1,2,3,4]},monthlyMaxHours:200,maxCalendarWeekHours:55};
+ for(const [id,name] of [['primary','Secontec Services'],['other','Secontec Services - 8h']]){await db.query('INSERT INTO companies VALUES($1,$2)',[id,name]);await db.query('INSERT INTO company_compliance_policy VALUES($1,$2,now())',[id,JSON.stringify(rules)]);}
+ const sql=fs.readFileSync('supabase/migrations/'+migration,'utf8');await db.exec(sql);await db.exec(sql);
+ const rows=(await db.query('SELECT company_id,solid_planning_rules AS rules FROM company_compliance_policy ORDER BY company_id')).rows;
+ assert.deepEqual(rows.find(r=>r.company_id==='primary').rules,{...rules,minFreeWeekendsPerMonth:0,weekendPlanningByRhythm:true});assert.deepEqual(rows.find(r=>r.company_id==='other').rules,rules);
+ }finally{await db.close()}
+});

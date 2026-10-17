@@ -1007,7 +1007,7 @@ window.SFHelpContent = {
     "assistant": [
       [
         "Wie starte ich den Monatscheck im Assistenten?",
-        "Öffne den Planungsassistenten und wähle Monat prüfen oder frage: Was fehlt noch für Januar 2027? Der Check zeigt offene Positionen, fehlende Freigaben, Teamregeln, Stundenvorgaben, Überbesetzung und verbindliche Belastungsregeln. Der Belastungscheck berücksichtigt geladene Dienste vor und nach dem Monat, Arbeitsblöcke, Nacht-Erholung, Wochenstunden und persönliche Monatsgrenzen einschließlich Nachtübertrag. Vollständig freie Wochenenden werden als Verbesserungsziel getrennt angezeigt. Ausschließlich für Frühdienst freigegebene Mitarbeiter ohne Team werden nicht als fehlende Teamzuordnung gewertet. Fehlende Daten oder Regeln werden benannt. Über die Ergebnisbuttons gelangst du zur betroffenen Stelle."
+        "Öffne den Planungsassistenten und wähle Monat prüfen oder frage: Was fehlt noch für Januar 2027? Der Check zeigt offene Positionen, fehlende Freigaben, Teamregeln, Stundenvorgaben, Überbesetzung und verbindliche Belastungsregeln. Der Belastungscheck berücksichtigt geladene Dienste vor und nach dem Monat, Arbeitsblöcke, Nacht-Erholung, Wochenstunden und persönliche Monatsgrenzen einschließlich Nachtübertrag. Ein zusätzliches Wochenendziel wird nur berücksichtigt, wenn es für das Unternehmen ausdrücklich aktiviert ist. Bei Planung nach Rhythmus gibt es dieses zusätzliche Ziel nicht; OT1/OT2/OT3 bleiben an Wochenenden frei. Ausschließlich für Frühdienst freigegebene Mitarbeiter ohne Team werden nicht als fehlende Teamzuordnung gewertet. Fehlende Daten oder Regeln werden benannt. Über die Ergebnisbuttons gelangst du zur betroffenen Stelle."
       ],
       [
         "Wie übernimmt der Assistent den ausgewählten Dienst?",
