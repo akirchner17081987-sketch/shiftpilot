@@ -16,6 +16,7 @@ Das Mitarbeiterportal behält die Orbit-Navigation mit vier Kategorien. Alle 13 
 - Wunschplanung: direkter Einstieg in das neue Wunschformular und Verknüpfung zu offenen Freigabeanfragen.
 - Übergabe: relevante eigene Übergabe vorausgewählt; persönliche und überfällige offene Aufgaben zuerst.
 - Lohnvorschau: Stundenlohn optional als private Vorgabe ab einem bestimmten Monat. Monatliche Einzelwerte haben Vorrang; die Vorgabe lässt sich entfernen. Speicherung bleibt nach Benutzer, Unternehmen und Mitarbeiter getrennt auf dem Gerät.
+- Dialoge: verzögerte Fokus-Rückgabe respektiert eine inzwischen geöffnete Orbit-Navigation und schließt diese nicht mehr unbeabsichtigt.
 - Profil/Abwesenheit: eine Auskunft zum fehlenden Urlaubskonto öffnet eine vorausgefüllte Korrekturanfrage. Sie wird erst durch explizites Absenden verschickt.
 
 ## Datenbasis und Grenzen

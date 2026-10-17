@@ -21,7 +21,7 @@
     const sequence=++modalFocusSequence,opener=returnFocus||document.activeElement,dialog=backdrop.querySelector(dialogSelector);
     if(!dialog)return()=>backdrop.remove();
     const focusable=()=>[...dialog.querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),a[href],[tabindex]:not([tabindex="-1"])')].filter(node=>node.offsetParent!==null);
-    const restoreOpener=()=>{if(sequence!==modalFocusSequence)return;const target=opener?.isConnected?opener:(returnFocusSelector?document.querySelector(returnFocusSelector):null);target?.focus({preventScroll:true})};
+    const restoreOpener=()=>{if(sequence!==modalFocusSequence)return;const current=document.activeElement;if(current&&current!==document.body&&current!==document.documentElement&&current!==opener&&!backdrop.contains(current))return;const target=opener?.isConnected?opener:(returnFocusSelector?document.querySelector(returnFocusSelector):null);target?.focus({preventScroll:true})};
     const close=()=>{backdrop.remove();requestAnimationFrame(restoreOpener);setTimeout(restoreOpener,80)};
     backdrop.addEventListener('keydown',event=>{
       if(event.key==='Escape'){event.preventDefault();close();return}
