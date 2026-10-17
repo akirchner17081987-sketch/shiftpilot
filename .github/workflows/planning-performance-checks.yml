@@ -13,6 +13,8 @@ on:
       - tests/regression.test.mjs
       - tests/performance-loader.test.cjs
       - tests/browser/planning-performance-qa.cjs
+      - tests/e2e/auto-plan-workspace.spec.cjs
+      - tests/e2e/schedule-publication-period.spec.cjs
       - .github/workflows/planning-performance-checks.yml
   workflow_dispatch:
 permissions:

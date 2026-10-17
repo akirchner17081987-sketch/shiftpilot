@@ -1,11 +1,15 @@
 const {test,expect}=require('@playwright/test');
 const fs=require('node:fs'),path=require('node:path');
-if(process.env.SF_EXPORT_LIB_ROOT)module.paths.unshift(path.join(process.env.SF_EXPORT_LIB_ROOT,'node_modules'));
 const read=file=>fs.readFileSync(path.join(__dirname,'../../',file),'utf8');
-let deps,dependencyError;
-try{deps={xlsx:path.join(path.dirname(require.resolve('xlsx')),'dist/xlsx.full.min.js'),pdf:path.join(path.dirname(require.resolve('jspdf')),'jspdf.umd.min.js'),table:require.resolve('jspdf-autotable')};if(!Object.values(deps).every(p=>fs.existsSync(p)))throw Error('Browser distributions were not found.')}catch(error){deps=null;dependencyError=error.message}
-if(process.env.SF_EXPORT_REAL_LIBRARIES==='1'&&!deps)throw Error('Real XLSX/PDF test dependencies are required: '+dependencyError);
+// Exercise the exact browser libraries shipped with the application, without CDN access.
+const deps={xlsx:path.join(__dirname,'../../assets/vendor/xlsx-0.18.5.min.js'),pdf:path.join(__dirname,'../../assets/vendor/jspdf-2.5.2.min.js'),table:path.join(__dirname,'../../assets/vendor/jspdf-autotable-3.8.4.min.js')};
+for(const file of Object.values(deps))if(!fs.existsSync(file))throw Error('Missing bundled export library: '+file);
 async function fixture(page){
+  await page.route('https://schichtfunk.de/assets/vendor/**',route=>{
+    const filename=new URL(route.request().url()).pathname.split('/').at(-1),file=Object.values(deps).find(file=>path.basename(file)===filename);
+    if(!file)throw Error('Unexpected export library: '+filename);
+    return route.fulfill({path:file,contentType:'application/javascript'});
+  });
   await page.route('https://schichtfunk.de/__schedule-export',route=>route.fulfill({contentType:'text/html',body:'<!doctype html><html lang="de"><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body></body></html>'}));await page.goto('https://schichtfunk.de/__schedule-export');
   await page.setContent('<div class="company-card"><b>Test GmbH</b></div><section id="view-schedule"><div class="page-head"><h1>Monatsplanung</h1><button>Veröffentlichen</button></div><input id="planEmployeeSearch" value="Anna"></section>');
   await page.addScriptTag({content:`window.SFBackend={companyId:'company-a',role:'PLANNER',ready:true};window.SchichtFunkCalendarView={getPeriod:()=>({mode:'month',start:'2026-12-01',end:'2026-12-31'})};window.employees=[{id:'A',first:'Anna',last:'Test',team:'Leipzig',status:'active',personnelNo:'001',planningTeam:'A',monthlyHours:180},{id:'B',first:'Berta',last:'Test',team:'Recklinghausen',status:'active',monthlyHours:162},{id:'C',first:'Chris',last:'Other',status:'active',company_id:'company-b'}];window.TYPES=[{id:'FD',name:'Frühdienst',start:'06:00',end:'14:00'},{id:'ND',name:'Nachtdienst',start:'22:00',end:'06:00'}];window.assignments=[{employeeId:'A',date:'2026-12-01',type:'FD'},{employeeId:'A',date:'2026-12-31',type:'ND'},{employeeId:'B',date:'2026-12-02',type:'FD',start:'07:00',end:'14:00'},{employeeId:'C',date:'2026-12-01',type:'FD',company_id:'company-b'}];window.absences=[];window.getSoll=()=>2;`});
@@ -37,7 +41,7 @@ test('read failures, company changes and pending edits block stale downloads and
  }expect(downloads).toBe(0);
 });
 test('real January PDF includes fresh drafts, employee count and IST/SOLL hours',async({page})=>{
- test.skip(!deps,'Real export libraries run in CI.');await cloudFixture(page);for(const lib of [deps.pdf,deps.table])await page.addScriptTag({content:fs.readFileSync(lib,'utf8')});await page.getByRole('button',{name:'Gesamtdienstplan als Excel oder PDF exportieren'}).click();
+ await cloudFixture(page);for(const lib of [deps.pdf,deps.table])await page.addScriptTag({content:fs.readFileSync(lib,'utf8')});await page.getByRole('button',{name:'Gesamtdienstplan als Excel oder PDF exportieren'}).click();
  const ready=page.waitForEvent('download');await page.getByRole('button',{name:'PDF herunterladen'}).click();const file=await ready;expect(file.suggestedFilename()).toBe('SchichtFunk_Gesamtdienstplan_2027-01.pdf');const raw=fs.readFileSync(await file.path()).toString('latin1');for(const text of ['Anna Aktuell','Januar 2027','Entwurf','1 / 1 Mitarbeiter','8,00 h','180,00 h','ND','Gesamtobjekt','496,00','488,00','Offene Dienste - Datum'])expect(raw).toContain(text);await expect(page.locator('.sf-plan-export-summary')).toContainText('1 Mitarbeiter · 1 Dienste · 8 Planstunden');
 });
 test('one export action selects the complete month and ignores employee search; company boundaries and roles are enforced',async({page})=>{
@@ -45,13 +49,19 @@ test('one export action selects the complete month and ignores employee search; 
   const plan=await page.evaluate(()=>SFScheduleExport.snapshot('2026-12'));expect(plan.rows.map(r=>r.person.id)).toEqual(['A','B']);expect(plan.days).toHaveLength(31);
   await page.evaluate(()=>SFBackend.role='EMPLOYEE');const denied=await page.evaluate(()=>{try{SFScheduleExport.snapshot('2026-12');return false}catch{return true}});expect(denied).toBe(true);
 });
-test('library failures show a retryable message and restore the controls',async({page})=>{
-  await fixture(page);await page.route('https://cdn.jsdelivr.net/**',route=>route.abort());await page.getByRole('button',{name:'Gesamtdienstplan als Excel oder PDF exportieren'}).click();await page.getByRole('button',{name:'Excel herunterladen'}).click();await expect(page.locator('.sf-plan-export-status')).toContainText('konnte nicht geladen werden');await expect(page.getByRole('button',{name:'Excel herunterladen'})).toBeEnabled();await expect(page.locator('#sfPlanExportMonth')).toBeEnabled();
+test('library failures show a retryable message, restore controls and allow a real retry',async({page})=>{
+  await fixture(page);let recover=false,requests=0,downloads=0;page.on('download',()=>downloads++);
+  await page.route('https://schichtfunk.de/assets/vendor/xlsx-0.18.5.min.js',route=>{requests++;return recover?route.fulfill({path:deps.xlsx,contentType:'application/javascript'}):route.abort()});
+  await page.getByRole('button',{name:'Gesamtdienstplan als Excel oder PDF exportieren'}).click();await page.getByRole('button',{name:'Excel herunterladen'}).click();
+  await expect(page.locator('.sf-plan-export-status')).toContainText('konnte nicht geladen werden');await expect(page.getByRole('button',{name:'Excel herunterladen'})).toBeEnabled();await expect(page.locator('#sfPlanExportMonth')).toBeEnabled();expect(requests).toBe(1);expect(downloads).toBe(0);
+  recover=true;const ready=page.waitForEvent('download');await page.getByRole('button',{name:'Excel herunterladen'}).click();const file=await ready;
+  expect(file.suggestedFilename()).toBe('SchichtFunk_Gesamtdienstplan_2026-12.xlsx');const workbook=require(deps.xlsx).read(fs.readFileSync(await file.path()),{type:'buffer'});expect(workbook.SheetNames).toContain('Monatsplan');
+  await expect(page.locator('.sf-plan-export-status')).toContainText('wurde erstellt');await expect(page.getByRole('button',{name:'Excel herunterladen'})).toBeEnabled();expect(requests).toBe(2);expect(downloads).toBe(1);
 });
 test('real XLSX and PDF downloads contain the complete December plan and the PDF appendix',async({page})=>{
-  test.skip(!deps,'Real export libraries run in CI.');await fixture(page);for(const lib of [deps.xlsx,deps.pdf,deps.table])await page.addScriptTag({content:fs.readFileSync(lib,'utf8')});
+  await fixture(page);for(const lib of [deps.xlsx,deps.pdf,deps.table])await page.addScriptTag({content:fs.readFileSync(lib,'utf8')});
   await page.getByRole('button',{name:'Gesamtdienstplan als Excel oder PDF exportieren'}).click();
-  const xlsxReady=page.waitForEvent('download');await page.getByRole('button',{name:'Excel herunterladen'}).click();const xlsx=await xlsxReady;expect(xlsx.suggestedFilename()).toBe('SchichtFunk_Gesamtdienstplan_2026-12.xlsx');await xlsx.saveAs(test.info().outputPath('Gesamt.xlsx'));const bytes=fs.readFileSync(await xlsx.path()),X=require('xlsx'),wb=X.read(bytes,{type:'buffer'});expect(wb.SheetNames).toEqual(['Monatsplan','Schichtdetails','Besetzung','Hinweise']);const matrix=X.utils.sheet_to_json(wb.Sheets.Monatsplan,{header:1});expect(matrix[6]).toHaveLength(38);expect(matrix[7][0]).toBe('001');expect(matrix[7][33]).toContain('ND 22:00');expect(matrix[8][1]).toBe('Berta Test');expect(matrix[7].slice(-4)).toEqual([2,16,180,-164]);expect(matrix[8].slice(-4)).toEqual([1,7,162,-155]);expect(wb.Sheets.Monatsplan.AL8.f).toBe('AJ8-AK8');
+  const xlsxReady=page.waitForEvent('download');await page.getByRole('button',{name:'Excel herunterladen'}).click();const xlsx=await xlsxReady;expect(xlsx.suggestedFilename()).toBe('SchichtFunk_Gesamtdienstplan_2026-12.xlsx');await xlsx.saveAs(test.info().outputPath('Gesamt.xlsx'));const bytes=fs.readFileSync(await xlsx.path()),X=require(deps.xlsx),wb=X.read(bytes,{type:'buffer'});expect(wb.SheetNames).toEqual(['Monatsplan','Schichtdetails','Besetzung','Hinweise']);const matrix=X.utils.sheet_to_json(wb.Sheets.Monatsplan,{header:1});expect(matrix[6]).toHaveLength(38);expect(matrix[7][0]).toBe('001');expect(matrix[7][33]).toContain('ND 22:00');expect(matrix[8][1]).toBe('Berta Test');expect(matrix[7].slice(-4)).toEqual([2,16,180,-164]);expect(matrix[8].slice(-4)).toEqual([1,7,162,-155]);expect(wb.Sheets.Monatsplan.AL8.f).toBe('AJ8-AK8');
   const pdfReady=page.waitForEvent('download');await page.getByRole('button',{name:'PDF herunterladen'}).click();const pdf=await pdfReady;expect(pdf.suggestedFilename()).toBe('SchichtFunk_Gesamtdienstplan_2026-12.pdf');await pdf.saveAs(test.info().outputPath('Gesamt.pdf'));const raw=fs.readFileSync(await pdf.path()).toString('latin1');expect(raw.startsWith('%PDF-')).toBe(true);expect(raw).toContain('SchichtFunk');expect(raw).toContain('Anna Test');expect(raw).toContain('07:00');expect(raw).toContain('Berta Test');expect(raw).toContain('Plan-IST');expect(raw).toContain('SOLL');expect(raw).toContain('-164,00');expect(raw).toContain('180,00');
 });
 
@@ -65,7 +75,7 @@ test('PDF location selector uses employee sites while overview and Excel retain 
  await page.getByRole('button',{name:'Schließen',exact:true}).click();await page.getByRole('button',{name:'Gesamtdienstplan als Excel oder PDF exportieren'}).click();await expect(page.locator('#sfPlanExportScope')).toHaveValue('Gesamt');
 });
 test('real location PDFs exclude other-site employees and appendix data while Excel stays complete',async({page})=>{
- test.skip(!deps,'Real export libraries run in CI.');await fixture(page);for(const lib of [deps.xlsx,deps.pdf,deps.table])await page.addScriptTag({content:fs.readFileSync(lib,'utf8')});
+ await fixture(page);for(const lib of [deps.xlsx,deps.pdf,deps.table])await page.addScriptTag({content:fs.readFileSync(lib,'utf8')});
  await page.getByRole('button',{name:'Gesamtdienstplan als Excel oder PDF exportieren'}).click();
  for(const [scope,included,excluded,hasAppendix] of [['Leipzig','Anna Test','Berta Test',false],['Recklinghausen','Berta Test','Anna Test',true]]){
   await page.locator('#sfPlanExportScope').selectOption(scope);const ready=page.waitForEvent('download');await page.getByRole('button',{name:'PDF herunterladen'}).click();const pdf=await ready;
@@ -73,7 +83,7 @@ test('real location PDFs exclude other-site employees and appendix data while Ex
  }
  await page.evaluate(()=>assignments=[]);await page.locator('#sfPlanExportScope').selectOption('Leipzig');const blankReady=page.waitForEvent('download');await page.getByRole('button',{name:'PDF herunterladen'}).click();const blank=await blankReady;await blank.saveAs(test.info().outputPath('Leipzig-ohne-Dienste.pdf'));expect(fs.readFileSync(await blank.path()).toString('latin1')).toContain('Anna Test');
  await page.evaluate(()=>assignments=[{employeeId:'A',date:'2026-12-01',type:'FD'},{employeeId:'B',date:'2026-12-02',type:'FD'}]);
- const ready=page.waitForEvent('download');await page.getByRole('button',{name:'Excel herunterladen'}).click();const file=await ready;expect(file.suggestedFilename()).toBe('SchichtFunk_Gesamtdienstplan_2026-12.xlsx');const X=require('xlsx'),wb=X.read(fs.readFileSync(await file.path()),{type:'buffer'}),matrix=X.utils.sheet_to_json(wb.Sheets.Monatsplan,{header:1});expect(matrix.some(row=>row.includes('Anna Test'))).toBe(true);expect(matrix.some(row=>row.includes('Berta Test'))).toBe(true);
+ const ready=page.waitForEvent('download');await page.getByRole('button',{name:'Excel herunterladen'}).click();const file=await ready;expect(file.suggestedFilename()).toBe('SchichtFunk_Gesamtdienstplan_2026-12.xlsx');const X=require(deps.xlsx),wb=X.read(fs.readFileSync(await file.path()),{type:'buffer'}),matrix=X.utils.sheet_to_json(wb.Sheets.Monatsplan,{header:1});expect(matrix.some(row=>row.includes('Anna Test'))).toBe(true);expect(matrix.some(row=>row.includes('Berta Test'))).toBe(true);
 });
 
 test('fresh coverage ignores stale calendar targets and paginates daily overrides',async({page})=>{
