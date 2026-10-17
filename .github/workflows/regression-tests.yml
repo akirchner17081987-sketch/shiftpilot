@@ -21,6 +21,20 @@ permissions:
   contents: read
 
 jobs:
+  storage-backup-drill:
+    name: Supabase Storage backup and independent restore (fictitious data)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Exercise SQL queue, signed S3 transfers, encryption and independent restore
+        run: npm run test:storage-drill
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -28,7 +42,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # Existing QR Edge tests import node:module.stripTypeScriptTypes.
+          node-version: '24.x'
           cache: npm
       - name: Abhängigkeiten installieren
         run: npm ci
