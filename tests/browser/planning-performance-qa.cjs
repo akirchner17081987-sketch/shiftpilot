@@ -88,7 +88,7 @@ async function main(){
    await page.evaluate(()=>{
     document.getElementById('autoMonthHours').innerHTML=SFPlanningReview.hoursMarkup(employees[1],180);
    });
-   const missing=page.locator('#autoMonthHours .sf-plan-diagnostic');await missing.locator('summary').click();assert.match(await missing.textContent(),/keine offenen Pflichtpositionen/);
+   const missing=page.locator('#autoMonthHours .sf-plan-diagnostic');await missing.locator('summary').click();await missing.locator('[data-plan-body] p').first().waitFor({state:'visible'});assert.match(await missing.textContent(),/keine offenen Pflichtpositionen/);
    await page.evaluate(()=>{
     autoPlanPreview=employees.map(e=>({employeeId:e.id,date:'2027-01-06',type:'SD',start:'14:00',end:'22:00'}));
     qa.reviewResult={base:[],reviewBefore:qa.reviewBefore};SFPlanningReview.render(qa.reviewResult);
