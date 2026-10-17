@@ -22,6 +22,11 @@ on:
       - assets/time-workspace-v2.js
       - tests/e2e/schedule-time-layout.spec.cjs
       - .github/workflows/schedule-time-layout-checks.yml
+# Superseded checks may stop; deployment workflows use separate, protected groups.
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   layout:
     runs-on: ubuntu-latest

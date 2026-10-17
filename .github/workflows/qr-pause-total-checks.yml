@@ -19,6 +19,11 @@ on:
       - tests/supabase-qr-time-migration.test.mjs
       - tests/e2e/qr-pause-total.spec.cjs
       - tests/browser/qr-forgotten-pause-qa.cjs
+# Superseded checks may stop; deployment workflows use separate, protected groups.
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   qr-pause:
     runs-on: ubuntu-latest

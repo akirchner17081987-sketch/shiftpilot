@@ -13,6 +13,11 @@ on:
       - assets/manager-theme-v1.css
       - tests/e2e/employee-card-layout.spec.cjs
       - .github/workflows/employee-card-layout-checks.yml
+# Superseded checks may stop; deployment workflows use separate, protected groups.
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   layout:
     runs-on: ubuntu-latest

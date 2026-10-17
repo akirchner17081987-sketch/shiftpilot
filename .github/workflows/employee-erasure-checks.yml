@@ -4,6 +4,11 @@ on:
   branches: [main, codex/ionos-migration, codex/employee-full-erasure]
   paths: ['assets/**','supabase/**','tests/**','.github/workflows/employee-erasure-checks.yml']
  workflow_dispatch:
+# Superseded checks may stop; deployment workflows use separate, protected groups.
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
  erasure:
   runs-on: ubuntu-latest

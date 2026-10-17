@@ -4,6 +4,11 @@ on:
     branches: [codex/manual-week-planning-20261013, codex/compact-week-timetable-20261013, codex/inline-duty-picker-20261013, codex/inline-picker-roster-fix-20261013, codex/ot-daily-roster-20261014, codex/teamleader-four-nights-20261014, codex/weekly-55-hours-20261014, codex/teamleader-month-targets-20261014]
 permissions:
   contents: read
+# Superseded checks may stop; deployment workflows use separate, protected groups.
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   manual-week:
     runs-on: ubuntu-latest

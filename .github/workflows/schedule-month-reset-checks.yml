@@ -7,6 +7,11 @@ on:
     paths: ['assets/supabase-schedule-reset-v1.js', 'assets/compliance-core-v2.js', 'tests/schedule-month-reset*', 'tests/browser/schedule-month-reset-qa.cjs', '.github/workflows/schedule-month-reset-checks.yml']
 permissions:
   contents: read
+# Superseded checks may stop; deployment workflows use separate, protected groups.
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   month-reset:
     runs-on: ubuntu-latest

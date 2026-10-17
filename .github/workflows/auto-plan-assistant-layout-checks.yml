@@ -15,6 +15,11 @@ on:
       - assets/planning-assistant-v1.css
       - tests/e2e/auto-plan-assistant-layout.spec.cjs
       - .github/workflows/auto-plan-assistant-layout-checks.yml
+# Superseded checks may stop; deployment workflows use separate, protected groups.
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   layout:
     runs-on: ubuntu-latest
@@ -29,7 +34,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install ffmpeg
-      - run: npx playwright test tests/e2e/auto-plan-assistant-layout.spec.cjs tests/e2e/planning-assistant.spec.cjs --project=desktop-chromium --retries=0 --max-failures=3
+      - run: npx playwright test tests/e2e/auto-plan-assistant-layout.spec.cjs --project=desktop-chromium --retries=0 --max-failures=3
         env:
           E2E_BASE_URL: http://auto-assistant.test
           SF_ASSISTANT_BROWSER_EXECUTABLE: /usr/bin/google-chrome

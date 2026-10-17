@@ -21,6 +21,7 @@ jobs:
   build-project:
     name: build shiftpilot
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: checkout
         uses: actions/checkout@v4
@@ -31,6 +32,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: v22.x
+          cache: npm
 
       - name: Build Node assets
         env:
@@ -45,19 +47,19 @@ jobs:
           npm test
           npm run test:ionos
 
-      - name: Verify reporting workspace and complete exports
+      - name: Verify browser workflows and complete exports
         run: |
           npx playwright install --with-deps chromium
           node tests/browser/access-mfa-matrix-qa.cjs
           node tests/browser/qr-pin-qa.cjs
-          npm run test:reports
-          npm run test:today
-          npm run test:staffing
-          npm run test:wishes
-          npm run test:handover
-          npm run test:performance
-          npm run test:site-loading
-          npm run test:entry-access
+          node tests/browser/reports-workspace-qa.cjs
+          node tests/browser/today-workspace-qa.cjs
+          node tests/browser/staffing-simulator-qa.cjs
+          node tests/browser/wish-planning-qa.cjs
+          node tests/browser/shift-handover-qa.cjs
+          node tests/browser/planning-performance-qa.cjs
+          node tests/browser/site-loading-qa.cjs
+          node tests/browser/entry-access-qa.cjs
           node tests/browser/manual-week-planning-qa.cjs
 
 # Please do not touch the following action

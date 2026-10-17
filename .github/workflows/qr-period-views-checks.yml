@@ -3,6 +3,11 @@ on:
   push:
     branches: [main, codex/ionos-migration, codex/qr-period-views-20261009]
     paths: ['assets/qr-independent-report-v1.js', 'tests/browser/qr-period-views-qa.cjs', '.github/workflows/qr-period-views-checks.yml']
+# Superseded checks may stop; deployment workflows use separate, protected groups.
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   qr-periods:
     runs-on: ubuntu-latest

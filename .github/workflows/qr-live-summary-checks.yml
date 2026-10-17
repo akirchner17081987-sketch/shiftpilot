@@ -11,6 +11,11 @@ on:
       - supabase/migrations/20261006041205_qr_employee_live_summary.sql
       - .github/workflows/qr-live-summary-checks.yml
   workflow_dispatch:
+# Superseded checks may stop; deployment workflows use separate, protected groups.
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   live-summary:
     runs-on: ubuntu-latest
@@ -32,7 +37,8 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - run: npm test
+      # The complete suite runs in Regressionstests and before the production upload.
+      - run: node --test tests/qr-live-summary.test.mjs tests/qr-pause-total.test.mjs
       - name: Validate location, server time and booking guards with fictitious PostgreSQL data
         run: |
           psql -v ON_ERROR_STOP=1 -f tests/sql/qr-live-bootstrap.sql

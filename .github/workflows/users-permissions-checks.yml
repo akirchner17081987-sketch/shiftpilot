@@ -26,6 +26,11 @@ on:
       - assets/users-permissions-v2.css
       - tests/browser/users-permissions-qa.cjs
       - .github/workflows/users-permissions-checks.yml
+# Superseded checks may stop; deployment workflows use separate, protected groups.
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   users-permissions:
     runs-on: ubuntu-latest

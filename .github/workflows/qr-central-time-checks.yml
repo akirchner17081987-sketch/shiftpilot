@@ -3,6 +3,11 @@ on:
   push:
     branches: [main, codex/ionos-migration, codex/qr-central-20261006]
     paths: ['assets/**', 'tests/**', 'supabase/migrations/20261006032450_qr_central_time_integration.sql', 'package.json', '.github/workflows/qr-central-time-checks.yml']
+# Superseded checks may stop; deployment workflows use separate, protected groups.
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   central-time:
     runs-on: ubuntu-latest
@@ -24,7 +29,8 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - run: npm test
+      # The complete suite runs in Regressionstests and before the production upload.
+      - run: node --test tests/qr-central-time.test.mjs tests/qr-manager-rpc.test.mjs
       - name: Validate migration and company scopes in isolated PostgreSQL
         run: |
           psql -v ON_ERROR_STOP=1 -f tests/sql/qr-central-bootstrap.sql

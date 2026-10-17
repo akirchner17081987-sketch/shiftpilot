@@ -6,6 +6,11 @@ on:
     paths: [index.html, 'assets/employee-home-*', 'assets/employee-portal-polish-*', assets/employee-orbit-v1.js, assets/employee-orbit-v1.css, assets/employee-shifts-month-v1.js, tests/browser/employee-home-qa.cjs, tests/browser/employee-portal-polish-qa.cjs, 'assets/orbit-shell-*', 'assets/location-map-*', assets/settings-management-v2.js, assets/help-center-content-v3.js, tests/browser/site-loading-qa.cjs, .github/workflows/orbit-shell-checks.yml]
 permissions:
   contents: read
+# Superseded checks may stop; deployment workflows use separate, protected groups.
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   orbit:
     runs-on: ubuntu-latest
@@ -17,7 +22,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm test
+      # The complete suite runs in Regressionstests and before the production upload.
+      - run: node --test tests/employee-home.test.cjs tests/employee-shifts-month.test.cjs tests/employee-wage-preview.test.cjs tests/site-loading.test.cjs
       - run: npm run build
       - run: npm run test:ionos
       - run: npx playwright install --with-deps chromium

@@ -4,6 +4,11 @@ on:
     branches: [main, codex/ionos-migration, codex/qr-reliable-20261006]
     paths: ['qr-time.html', 'assets/**', 'tests/**', 'supabase/**', 'package.json', '.github/workflows/qr-reliable-checks.yml']
   workflow_dispatch:
+# Superseded checks may stop; deployment workflows use separate, protected groups.
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   reliable-qr:
     runs-on: ubuntu-latest
@@ -25,7 +30,8 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - run: npm test
+      # The complete suite runs in Regressionstests and before the production upload.
+      - run: node --test tests/qr-reliable-requests.test.mjs tests/qr-manager-rpc.test.mjs
       - name: Fictitious database - permissions, audit, paid time and safe retries
         run: |
           psql -v ON_ERROR_STOP=1 -f tests/sql/qr-reliable-bootstrap.sql
