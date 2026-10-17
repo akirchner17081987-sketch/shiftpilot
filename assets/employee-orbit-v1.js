@@ -43,7 +43,8 @@
   function syncCounts() {
     if(!popup||!openGroup)return;
     popup.querySelectorAll('[data-employee-orbit-view]').forEach(b=>{
-      const view=b.dataset.employeeOrbitView,count=portal.querySelector('.sf-employee-tile [data-count-for="'+view+'"]')?.textContent||'0',badge=b.querySelector('.sf-employee-nav-count');
+      const view=b.dataset.employeeOrbitView,card=portal.querySelector('.sf-portal-card[data-sf-portal-section="'+view+'"]'),count=String(Math.max(0,Number(card?.dataset.sfActionCount)||0)),badge=b.querySelector('.sf-employee-nav-count');
+      badge.title=count+' offene Antworten oder Aufgaben';badge.setAttribute('aria-label',badge.title);
       if(badge.textContent!==count)badge.textContent=count;
       badge.hidden=count==='0';
       if(portal.dataset.sfPortalActive===view)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');
@@ -112,7 +113,7 @@
     if(routeChanged){close();sync()}
     if(!queued){queued=true;requestAnimationFrame(check)}
   });
-  observer.observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['data-sf-portal-active']});
+  observer.observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['data-sf-portal-active','data-sf-action-count']});
   document.addEventListener('pointerdown',event=>{if(openGroup&&!popup.contains(event.target)&&!dock.contains(event.target))close()});
   document.addEventListener('keydown',event=>{
     if(!openGroup)return;

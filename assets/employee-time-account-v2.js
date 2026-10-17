@@ -25,7 +25,7 @@
       card.querySelector('#sfAccountFormat').onchange=e=>{format=e.target.value;draw(card);drawHistory(card)};
       card.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||!card.contains(b))return;
         if(b.dataset.acMonth){choose(b.dataset.acMonth);return}
-        switch(b.dataset.ac){case'previous':choose(shift(selected(),-1));break;case'next':choose(shift(selected(),1));break;case'today':choose(current());break;case'refresh':render();break;case'history':historyOpen=!historyOpen;drawHistory(card);if(historyOpen)loadHistory();break;case'export':download();break;case'time':B.employeePortalNavigate?.('time');break;}
+        switch(b.dataset.ac){case'previous':choose(shift(selected(),-1));break;case'next':choose(shift(selected(),1));break;case'today':choose(current());break;case'refresh':render();break;case'history':historyOpen=!historyOpen;drawHistory(card);if(historyOpen)loadHistory();break;case'export':download();break;case'time':B.employeePortalNavigate?.('time');B.openEmployeeQrMonth?.(selected());break;}
       });
     }
     return card;
@@ -53,7 +53,7 @@
     if(B.role!=='EMPLOYEE'||!B.client)return;const who=scope();
     if(owner!==who){owner=who;data=null;dataMonth='';historyRows=null;historyError='';historyOpen=false;historySequence++;updated=''}
     css();const card=shell();if(!card)return;const request=++sequence,month=selected();if(dataMonth!==month){historyRows=null;historyError='';historySequence++}loading=true;loadError='';draw(card);drawHistory(card);
-    try{const result=await fetchMonth(month);if(request!==sequence||scope()!==who||B.role!=='EMPLOYEE'||!card.isConnected)return;data=result;dataMonth=month;updated=new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});}
+    try{const result=await fetchMonth(month);if(request!==sequence||scope()!==who||B.role!=='EMPLOYEE'||!card.isConnected)return;data=result;dataMonth=month;updated=new Date().toLocaleTimeString('de-DE',{timeZone:B.companyTimeZone||'Europe/Berlin',hour:'2-digit',minute:'2-digit'})+' Uhr · '+(B.companyTimeZone||'Europe/Berlin');}
     catch(e){if(request!==sequence||scope()!==who||B.role!=='EMPLOYEE')return;loadError='Aktualisierung fehlgeschlagen. '+(data&&dataMonth===month?'Die zuletzt geladenen Werte bleiben sichtbar.':'Bitte versuche es erneut.');console.warn('Stundenkonto konnte nicht geladen werden',e)}
     finally{if(request===sequence&&scope()===who&&B.role==='EMPLOYEE'&&card.isConnected){loading=false;draw(card);if(historyOpen)loadHistory()}}
   }

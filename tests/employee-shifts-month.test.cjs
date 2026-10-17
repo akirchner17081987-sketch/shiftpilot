@@ -35,3 +35,8 @@ test('German labels, accessible names and symbols survive source serialization',
  assert.ok(card.innerHTML.includes('\u25cf Freigegebene Planung'));
  assert.ok(card.innerHTML.includes('\u2039</button>'));
 });
+test('ICS export keeps published duties, exact DST instants, escaped text and UTF-8 line limits',()=>{
+ const data={company:{timezone:'Europe/Berlin',name:'Firma; Test'},templates:[{code:'FD',name:'Frühdienst, A; B'}],portalSites:[{code:'FD',name:'Standort '+('Ä'.repeat(65)),address:'Straße 1\nEingang A'}],shifts:[shift('night','2026-10-24T22:00:00+02:00','2026-10-25T06:00:00+01:00',{shift_code:'FD'}),{...shift('private','2026-10-26T05:00:00Z','2026-10-26T13:00:00Z'),status:'DRAFT'},shift('next-month','2026-11-01T05:00:00Z','2026-11-01T13:00:00Z')]};
+ const text=api.calendar(data,'2026-10',new Date('2026-10-17T12:00:00Z')),unfolded=text.replace(/\r\n /g,'');
+ assert.match(text,/^BEGIN:VCALENDAR\r\nVERSION:2.0/);assert.match(text,/DTSTART:20261024T200000Z/);assert.match(text,/DTEND:20261025T050000Z/);assert.equal((text.match(/BEGIN:VEVENT/g)||[]).length,1);assert.doesNotMatch(text,/private@|next-month@/);assert.ok(unfolded.includes('SUMMARY:Frühdienst\\, A\\; B'));assert.ok(unfolded.includes('Straße 1\\nEingang A'));assert.ok(text.split('\r\n').every(line=>Buffer.byteLength(line)<=75));assert.ok(text.endsWith('END:VCALENDAR\r\n'));
+});

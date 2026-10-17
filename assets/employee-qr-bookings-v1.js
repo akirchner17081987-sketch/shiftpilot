@@ -57,6 +57,7 @@
     }catch(e){if(request!==sequence||who!==scope()||B.role!=='EMPLOYEE')return;error='Aktualisierung fehlgeschlagen. '+(data&&dataMonth===month?'Die zuletzt geladenen Buchungen bleiben sichtbar.':'Bitte versuche es erneut.');console.warn('Eigene QR-Buchungen konnten nicht geladen werden',e)}
     finally{if(request===sequence&&who===scope()&&B.role==='EMPLOYEE'&&card.isConnected){loading=false;draw(card)}}
   }
+  B.openEmployeeQrMonth=async function(value){if(B.role!=='EMPLOYEE')return false;const next=String(value||'').slice(0,7);if(!valid(next))return false;const who=scope();if(owner!==who){owner=who;data=null;dataMonth='';error=''}month=next;source='qr';filter='all';visible=10;await render();return who===scope()};
   B.renderEmployeeQrBookings=render;
   const old=B.openEmployeePortal;if(typeof old==='function')B.openEmployeePortal=function(){const value=old.apply(this,arguments);setTimeout(()=>{const card=shell();if(card){draw(card);if(card.closest('#sfEmployeePortal').dataset.sfPortalActive==='time')render()}},0);return value};
   setTimeout(()=>{const card=shell();if(card){draw(card);if(card.closest('#sfEmployeePortal').dataset.sfPortalActive==='time')render()}},0);

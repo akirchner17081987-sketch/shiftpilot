@@ -22,6 +22,10 @@ test('personal home returns only the authenticated employee of the requested com
  create table public.shift_change_approvals(change_request_id uuid,approval_type text,status text);
  create table public.disruption_offers(company_id uuid,employee_id uuid,incident_id uuid,status text,expires_at timestamptz);
  create table public.disruption_incidents(id uuid,company_id uuid,assignment_id uuid,status text);
+ create table public.shift_swap_requests(id uuid,company_id uuid,assignment_id uuid,target_employee_id uuid,status text);
+ create table public.planning_wishes(id uuid,company_id uuid,employee_id uuid,status text,start_date date,end_date date);
+ create table public.shift_handovers(id uuid,company_id uuid,site_id uuid,shift_code text,starts_at timestamptz,ends_at timestamptz,state text,target_id uuid,received_at timestamptz);
+ create table public.shift_handover_items(id uuid,company_id uuid,board_id uuid,responsible_employee_id uuid,status text);
  create table public.notifications(company_id uuid,user_id uuid,employee_id uuid,kind text,is_read boolean);
  insert into companies values('${C}','A','Europe/Berlin'),('${C2}','B','Europe/Vienna');
  insert into employees values('${E}','${C}','${U}','active','ACTIVE'),('${E2}','${C2}','${U}','active','ACTIVE'),('${EF}','${C}','${F}','active','ACTIVE');
@@ -37,12 +41,23 @@ test('personal home returns only the authenticated employee of the requested com
  insert into disruption_offers values('${C}','${E}','${id(20)}','OFFERED',now()+interval '1 hour'),('${C}','${E}','${id(20)}','OFFERED',now()-interval '1 hour'),('${C}','${E}','${id(21)}','OFFERED',now()+interval '1 hour');
  insert into notifications values('${C}','${U}','${E}','PROFILE_DECISION',false),('${C}','${U}','${E}','ABSENCE_DECISION',true),('${C2}','${U}','${E2}','PROFILE_DECISION',false),('${C}','${F}','${EF}','PROFILE_DECISION',false);
  `);
- await db.exec(read('database/employee-home-summary-v1.sql'));
+ await db.exec(read('database/employee-home-summary-v1.sql'));await db.exec(read('database/employee-home-actions-v2.sql'));
  const session=async uid=>{await db.exec('reset role');await db.query("select set_config('request.jwt.claim.sub',$1,false)",[uid||'']);await db.exec('set role authenticated')};
  const summary=async c=>(await db.query('select public.employee_home_summary($1) v',[c])).rows[0].v;
  await t.test('anonymous, foreign and time-only access are rejected',async()=>{await session(null);await assert.rejects(summary(C));await session(F);await assert.rejects(summary(C2));await session(U);await db.query("select set_config('request.jwt.claim.time_only','true',false)");await assert.rejects(summary(C));await db.query("select set_config('request.jwt.claim.time_only','false',false)");});
- await t.test('published next shift, real location, old open QR and active tasks are exact',async()=>{await session(U);const v=await summary(C);assert.equal(v.employee_id,E);assert.equal(v.next_shift.shift_code,'O3');assert.equal(v.next_shift.site_name,'Leipzig');assert.equal(v.qr.state,'BREAK');assert.ok(v.qr.attendance_seconds>=35*86400);assert.ok(v.qr.pause_seconds>=2400&&v.qr.pause_seconds<2405);assert.deepEqual(v.tasks,{changes:1,replacements:1,feedback:1});});
- await t.test('a second company never receives the previous company QR or shift',async()=>{const v=await summary(C2);assert.equal(v.employee_id,E2);assert.equal(v.next_shift,null);assert.equal(v.qr,null);assert.deepEqual(v.tasks,{changes:0,replacements:0,feedback:1});});
+ await t.test('published next shift, real location, old open QR and active tasks are exact',async()=>{await session(U);const v=await summary(C);assert.equal(v.employee_id,E);assert.equal(v.next_shift.shift_code,'O3');assert.equal(v.next_shift.site_name,'Leipzig');assert.equal(v.qr.state,'BREAK');assert.ok(v.qr.attendance_seconds>=35*86400);assert.ok(v.qr.pause_seconds>=2400&&v.qr.pause_seconds<2405);assert.deepEqual(v.tasks,{changes:1,replacements:1,feedback:1,swaps:0,handover:0,wishes:0});});
+ await t.test('a second company never receives the previous company QR or shift',async()=>{const v=await summary(C2);assert.equal(v.employee_id,E2);assert.equal(v.next_shift,null);assert.equal(v.qr,null);assert.deepEqual(v.tasks,{changes:0,replacements:0,feedback:1,swaps:0,handover:0,wishes:0});});
+ await t.test('only own actionable swaps, release requests and accessible handover tasks are counted',async()=>{
+  await db.exec(`reset role;
+  insert into shift_swap_requests values('${id(30)}','${C}','${id(11)}','${E}','PENDING_COLLEAGUE'),('${id(31)}','${C}','${S}','${EF}','PENDING_COLLEAGUE'),('${id(32)}','${C2}','${S}','${E}','PENDING_COLLEAGUE'),('${id(33)}','${C}','${S}','${E}','PENDING_MANAGER');
+  insert into planning_wishes values('${id(34)}','${C}','${E}','RELEASE_REQUESTED',current_date+3,current_date+5),('${id(35)}','${C}','${EF}','RELEASE_REQUESTED',current_date+3,current_date+5),('${id(36)}','${C2}','${E}','RELEASE_REQUESTED',current_date+3,current_date+5),('${id(37)}','${C}','${E}','RELEASE_REQUESTED',current_date-5,current_date-2);
+  insert into shift_handovers select '${id(38)}','${C}','${id(12)}','O3',starts_at,ends_at,'WORKING',null,null from shift_assignments where id='${S}';
+  insert into shift_handovers values('${id(39)}','${C}',null,'FD',now()-interval '8 hours',now(),'SENT','${id(38)}',null),('${id(40)}','${C2}',null,'FD',now()-interval '8 hours',now(),'SENT','${id(38)}',null);
+  insert into shift_handover_items values('${id(41)}','${C}','${id(38)}','${E}','OPEN'),('${id(42)}','${C}','${id(38)}','${EF}','OPEN'),('${id(43)}','${C2}','${id(38)}','${E}','OPEN'),('${id(44)}','${C}','${id(38)}','${E}','DONE');`);
+  await session(U);let v=await summary(C);assert.equal(v.tasks.swaps,1);assert.equal(v.tasks.wishes,1);assert.equal(v.tasks.handover,2);assert.equal(v.wish_month,new Date(Date.now()+3*864e5).toISOString().slice(0,7));assert.deepEqual(v.sites,[{code:'O3',name:'Leipzig',address:'Testadresse'}]);
+  await db.exec(`reset role;update shift_swap_requests set status='PENDING_MANAGER';update planning_wishes set status='PROMISED';update shift_handovers set received_at=now() where id='${id(39)}';update shift_handover_items set status='DONE' where id='${id(41)}';`);
+  await session(U);v=await summary(C);assert.equal(v.tasks.swaps,0);assert.equal(v.tasks.wishes,0);assert.equal(v.tasks.handover,0);
+ });
  await t.test('closed QR booking and answered changes disappear on refresh',async()=>{await db.exec(`reset role;update time_qr_independent_shifts set ended_at=now() where id='${Q}';insert into shift_change_approvals values('${id(16)}','EMPLOYEE','REJECTED');`);await session(U);const v=await summary(C);assert.equal(v.qr,null);assert.equal(v.tasks.changes,0);});
  await t.test('disabled employees and revoked company membership are rejected',async()=>{await db.exec(`reset role;update employees set access_status='DISABLED' where id='${E}';`);await session(U);await assert.rejects(summary(C));await db.exec(`reset role;update employees set access_status='ACTIVE' where id='${E}';insert into company_members values('${C}','${U}','DISABLED');`);await session(U);await assert.rejects(summary(C));});
  await t.test('public wrapper does not expose privileged execution to anonymous callers',async()=>{await db.exec('reset role;set role anon');await assert.rejects(summary(C),/permission denied/);});
