@@ -159,7 +159,7 @@
     const list=[...grouped.values()].sort((a,b)=>a.date.localeCompare(b.date)||a.type.localeCompare(b.type)),key=JSON.stringify([window.SFBackend?.companyId,list]);
     if(key!==unresolvedKey){unresolvedKey=key;unresolvedPage=0}
     const size=60,pages=Math.ceil(list.length/size);unresolvedPage=Math.max(0,Math.min(unresolvedPage,pages-1));
-    html(el('autoUnresolved'),list.length?`${pages>1?`<div class="sf-auto-preview-nav" aria-label="Offene Positionen durchblättern"><span>Seite ${unresolvedPage+1} von ${pages} · ${list.length} Schichtgruppen</span><button type="button" class="ghost" data-sf-click="click-0268814d6fd6" ${unresolvedPage===0?'disabled':''}>Zurück</button><button type="button" class="ghost" data-sf-click="click-edb4d32093fc" ${unresolvedPage===pages-1?'disabled':''}>Weiter</button></div>`:''}${list.slice(unresolvedPage*size,(unresolvedPage+1)*size).map(x=>`<div class="sf-auto-unresolved-row"><div><b>${esc(dateLabel(x.date))} · ${esc(x.coverageLabel||shiftLabel(x.type))}</b><span class="sf-auto-needed">${x.count} Position${x.count===1?'':'en'} offen</span><p>${esc(x.reason)}</p></div><button type="button" class="ghost" data-auto-date="${esc(x.date)}" data-sf-click="click-1cb69e027894">Im Dienstplan prüfen</button></div>`).join('')}`:'<div class="sf-auto-empty is-good"><b>Alle offenen Positionen haben einen Vorschlag.</b><p>Prüfe die Besetzungen und übernimm sie anschließend als Entwurf.</p></div>');
+    html(el('autoUnresolved'),list.length?`${pages>1?`<div class="sf-auto-preview-nav" aria-label="Offene Positionen durchblättern"><span>Seite ${unresolvedPage+1} von ${pages} · ${list.length} Schichtgruppen</span><button type="button" class="ghost" data-sf-click="click-0268814d6fd6" ${unresolvedPage===0?'disabled':''}>Zurück</button><button type="button" class="ghost" data-sf-click="click-edb4d32093fc" ${unresolvedPage===pages-1?'disabled':''}>Weiter</button></div>`:''}${list.slice(unresolvedPage*size,(unresolvedPage+1)*size).map(x=>`<div class="sf-auto-unresolved-row"><div><b>${esc(dateLabel(x.date))} · ${esc(x.coverageLabel||shiftLabel(x.type))}</b><span class="sf-auto-needed">${x.count} Position${x.count===1?'':'en'} offen</span><p>${esc(x.reason)}</p>${window.SFPlanningReview?.slotMarkup(x)||''}</div><button type="button" class="ghost" data-auto-date="${esc(x.date)}" data-sf-click="click-1cb69e027894">Im Dienstplan prüfen</button></div>`).join('')}`:'<div class="sf-auto-empty is-good"><b>Alle offenen Positionen haben einen Vorschlag.</b><p>Prüfe die Besetzungen und übernimm sie anschließend als Entwurf.</p></div>');
   }
   function render(){
     if(!el('view-auto')||window.SFAutoPlanProgress?.isBusy())return;
@@ -227,4 +227,103 @@
   }
   window.SFAutoPlanWorkspace={render,explain,remainingSlots,openSchedule,confirmApply,startApply,stairMonth:value=>{stairMonth=value;renderAutoPlanning()},unresolvedPage:delta=>{unresolvedPage+=delta;renderAutoPlanning()},expandDays:open=>document.querySelectorAll('#autoSuggestions details').forEach(x=>{if(open)x.sfAutoFill?.();x.open=open})};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',render,{once:true});else render();
+})();
+
+// Read-only diagnostics and comparisons. This module never changes roster assignments.
+(function(){
+  'use strict';
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const el=id=>document.getElementById(id),active=a=>a.status!=='CANCELLED'&&a._dbStatus!=='CANCELLED',company=()=>String(window.SFBackend?.companyId||'');
+  const same=(a,b)=>String(a)===String(b),hours=n=>Number(n||0).toLocaleString('de-DE',{maximumFractionDigits:2})+' h';
+  const person=e=>[e.personnelNo,e.last&&e.first?e.last+', '+e.first:e.last||e.first||'Mitarbeiter'].filter(Boolean).join(' · ');
+  const withRows=(rows,fn)=>{const old=assignments;try{assignments=rows;return fn()}finally{assignments=old}};
+  const people=()=>employees.filter(e=>e.status==='active'&&!e.deletedAt),prepared=()=>window.SFMonthOptimizer?.getResult?.();
+  function normalize(rows,dates){const selected=new Set(dates);return rows.filter(a=>active(a)&&selected.has(a.date)).map(a=>{const t=typeById(a.type);return{employeeId:String(a.employeeId),date:a.date,type:a.type,start:a.start||t?.start||'',end:a.end||t?.end||'',hours:Number(plannedAssignmentHours(a))||0}});}
+  const rowKey=a=>[a.employeeId,a.date,a.type,a.start,a.end].join('|');
+  function missing(rows,targets){const totals=new Map();for(const a of rows)totals.set(a.employeeId,(totals.get(a.employeeId)||0)+a.hours);return targets.reduce((n,[id,target])=>n+Math.max(0,target-(totals.get(id)||0)),0);}
+  function snapshot(rows,dates,openCount){const normal=normalize(rows,dates),months=new Set(dates.map(d=>d.slice(0,7))).size,targets=people().map(e=>[String(e.id),employeeMonthlyTarget(e)*months]);return{version:1,company:company(),dates:dates.slice(),rows:normal,targets,openCount:Number(openCount)||0};}
+  function compare(before,afterRows,dates,openCount){
+    if(before?.version!==1||before.company!==company()||JSON.stringify(before.dates)!==JSON.stringify(dates))return null;
+    const after=normalize(afterRows,dates),buckets=new Map();for(const a of after){const k=rowKey(a);if(!buckets.has(k))buckets.set(k,[]);buckets.get(k).push(a);}
+    const removed=[];let unchanged=0;for(const a of before.rows){const list=buckets.get(rowKey(a));if(list?.length){list.pop();unchanged++;}else removed.push(a);}
+    const added=[...buckets.values()].flat(),changes=[...removed.map(a=>({kind:'removed',row:a})),...added.map(a=>({kind:'added',row:a}))].sort((a,b)=>a.row.date.localeCompare(b.row.date)||a.row.employeeId.localeCompare(b.row.employeeId)||a.kind.localeCompare(b.kind));
+    return{openBefore:before.openCount,openAfter:Number(openCount)||0,missingBefore:missing(before.rows,before.targets),missingAfter:missing(after,before.targets),unchanged,removed:removed.length,added:added.length,changes};
+  }
+  let cached=null;
+  function context(){
+    const result=prepared(),rows=[...(result?.base||assignments),...autoPlanPreview].filter(active).map(a=>{const t=typeById(a.type);return{...a,start:a.start||t?.start,end:a.end||t?.end}}),dates=autoPlanningDates(),policy=window.SFCompliance?.policy;
+    const key=JSON.stringify([company(),dates,rows,employees,TYPES,policy,typeof absences==='undefined'?[]:absences,typeof globalSoll==='undefined'?{}:globalSoll,typeof dailySoll==='undefined'?{}:dailySoll,window.SFShiftModels?.models,window.SFWishPlanning?.signature?.()]);if(cached?.key===key)return cached;
+    const slots=withRows(rows,()=>autoOpenSlots(dates)),grouped=new Map();for(const slot of slots){const k=slot.date+'|'+(slot.coverageGroup||slot.type);if(!grouped.has(k))grouped.set(k,{...slot,positions:0});grouped.get(k).positions++;}
+    cached={key,rows,dates,policy,slots:[...grouped.values()],people:people().sort((a,b)=>person(a).localeCompare(person(b),'de',{numeric:true})),checks:new Map()};return cached;
+  }
+  function evaluate(e,slot,ctx=context()){
+    const alternatives=slot.alternatives||[slot.type],attempts=[];let incomplete=false;
+    for(const type of alternatives){const t=typeById(type),reasons=[];
+      if(!t||t.active===false){attempts.push({type,reasons:['Schichtmodell ist nicht aktiv.']});continue;}
+      if(!(e.shifts||[]).includes(type))reasons.push('Keine persönliche Freigabe für '+type+'.');
+      if(slot.coverageGroup==='OT-DAY'&&window.SFSolidPlanningCore?.rosterEmployee(e,ctx.policy?.solidPlanningRules)!==true)reasons.push('Diese Position gehört zur fest hinterlegten OT-Tagdienstgruppe.');
+      if(e.startDate&&slot.date<e.startDate||e.contractEnd&&slot.date>e.contractEnd)reasons.push('Außerhalb des Beschäftigungszeitraums.');
+      if(absent(e.id,slot.date))reasons.push('Abwesenheit oder gesperrter Tag.');
+      if(ctx.rows.some(a=>same(a.employeeId,e.id)&&a.date===slot.date))reasons.push('An diesem Tag bereits mit einem Dienst belegt.');
+      const restriction=window.SFShiftModels?.planningRestriction?.(type,e,slot.date,t.start,t.end);if(restriction)reasons.push(restriction);
+      else if(window.SFShiftModels?.allowsEmployee?.(type,e,slot.date)===false)reasons.push('Für diese Schicht oder diesen Einsatzort nicht zuständig.');
+      const rhythm=window.sfRhythmCheck?.(e,type,slot.date);if(rhythm?.mode==='required'&&!rhythm.allowed)reasons.push(rhythm.reason||'Verbindlicher Rhythmus sieht diesen Dienst nicht vor.');
+      if(!reasons.length){
+        const candidate={employeeId:e.id,date:slot.date,type,start:t.start,end:t.end},all=[...ctx.rows,candidate],C=window.SFCompliance,S=window.SFSolidPlanningCore;
+        try{withRows(ctx.rows,()=>{
+          if(C?.check)reasons.push(...(C.check(e,type,slot.date,t.start,t.end).hard||[]));
+          if(C?.monthPlanningCheck){const months=new Set([slot.date.slice(0,7)]);if(S){const iv=S.interval(slot.date,t.start,t.end,ctx.policy?.solidPlanningRules?.timezone);months.add(S.localDate(iv.end-1,ctx.policy?.solidPlanningRules||{}).slice(0,7));}for(const month of months)reasons.push(...C.monthPlanningCheck(e,month+'-01',all));}
+          if(S&&ctx.policy?.solidPlanningRules?.enabled)reasons.push(...S.errors(e,all,ctx.policy.solidPlanningRules,[slot.date]).map(x=>x.message));
+          const limits=autoHourLimits(e),own=ctx.rows.filter(a=>same(a.employeeId,e.id)&&a.date.startsWith(slot.date.slice(0,7))),planned=own.reduce((n,a)=>n+plannedAssignmentHours(a),0);
+          if(planned+plannedAssignmentHours(candidate)>limits.monthLimit+.000001)reasons.push('Automatische Monatsobergrenze '+hours(limits.monthLimit)+' würde überschritten.');
+          if(limits.maxMonthlyShifts&&own.filter(a=>!S?.confirmed(ctx.policy?.solidPlanningRules)||S.countsTowardCap(a)).length>=limits.maxMonthlyShifts)reasons.push('Maximale automatische Dienstanzahl erreicht.');
+          if(!S?.confirmed(ctx.policy?.solidPlanningRules)&&el('autoRespectHours')?.checked!==false&&limits.weeklyLimit>0&&autoPlannedHours(e.id,[],slot.date)+plannedAssignmentHours(candidate)>limits.weeklyLimit+.000001)reasons.push('Wochenmaximum '+hours(limits.weeklyLimit)+' würde überschritten.');
+          if(window.SFAutoPlanGuard&&!window.SFAutoPlanGuard.passesTimeRules(e.id,type,slot.date)){const reason=window.SFAutoPlanGuard.transitionConflict?.(e.id,type,slot.date);reasons.push(reason||'Schichtfolge, Ruhezeit oder Dienstblock ist für diese Ergänzung nicht zulässig.');}
+          if(!C?.check&&!window.SFAutoPlanGuard&&!S)incomplete=true;
+        });}catch{incomplete=true;reasons.push('Die Regelprüfung ist unvollständig. Bitte Daten neu laden.');}
+      }
+      attempts.push({type,reasons:[...new Set(reasons)]});
+    }
+    const possible=attempts.filter(a=>!a.reasons.length).map(a=>a.type);return{employeeId:String(e.id),name:person(e),status:incomplete?'unknown':possible.length?'review':'blocked',possible,reasons:possible.length?[]:attempts.flatMap(a=>a.reasons.map(reason=>(attempts.length>1?a.type+': ':'')+reason))};
+  }
+  function cachedCheck(e,slot,ctx){const key=String(e.id)+'|'+slot.date+'|'+(slot.coverageGroup||slot.type);if(!ctx.checks.has(key))ctx.checks.set(key,evaluate(e,slot,ctx));return ctx.checks.get(key);}
+  const slotMarkup=slot=>`<details class="sf-plan-diagnostic" data-plan-slot="${esc(encodeURIComponent(JSON.stringify({date:slot.date,type:slot.type,alternatives:slot.alternatives,coverageGroup:slot.coverageGroup})))}"><summary>Passende Mitarbeiter und konkrete Hinderungsgründe prüfen</summary><div data-plan-body></div></details>`;
+  const hoursMarkup=(e,value)=>value>0?`<details class="sf-plan-diagnostic" data-plan-person="${esc(e.id)}"><summary>Warum fehlen Stunden?</summary><div data-plan-body></div></details>`:'<span class="sf-plan-ok">SOLL erreicht</span>';
+  const pager=(page,total,size=40)=>total>size?`<div class="sf-plan-pages"><span>${page*size+1}–${Math.min((page+1)*size,total)} von ${total}</span><button type="button" class="ghost" data-plan-page="${page-1}" ${page===0?'disabled':''}>Zurück</button><button type="button" class="ghost" data-plan-page="${page+1}" ${(page+1)*size>=total?'disabled':''}>Weiter</button></div>`:'';
+  function renderDiagnostic(node,page=0){
+    const body=node.querySelector?.('[data-plan-body]');if(!body)return;const ctx=context(),size=40;let markup='';
+    if(node.dataset.planPerson){
+      const e=ctx.people.find(e=>same(e.id,node.dataset.planPerson));if(!e){body.textContent='Das Mitarbeiterprofil ist nicht mehr verfügbar.';return;}
+      const compatible=ctx.slots.filter(s=>(s.alternatives||[s.type]).some(t=>(e.shifts||[]).includes(t))),total=compatible.length;page=Math.max(0,Math.min(page,Math.ceil(total/size)-1));
+      markup=`<p>Geprüft werden offene Pflichtpositionen im ausgewählten Zeitraum einschließlich der aktuellen Vorschläge. Optionale Besetzungen und Zeitgutschriften sind separat zu prüfen.</p>`;
+      if(!ctx.slots.length)markup+='<p>Es gibt keine offenen Pflichtpositionen im Zeitraum. Prüfe optionalen oder zusätzlichen tatsächlichen Bedarf, bevor du weitere Stunden einplanst.</p>';
+      else if(!total)markup+='<p>Für die noch offenen Positionen fehlt eine passende persönliche Schichtfreigabe.</p>';
+      else markup+=pager(page,total)+`<ul>${compatible.slice(page*size,(page+1)*size).map(slot=>{const found=cachedCheck(e,slot,ctx);return `<li><b>${esc(slot.date+' · '+(slot.coverageGroup||slot.type))}</b><span>${found.status==='review'?'Einzeldienst prüfbar; vollständiger Arbeitsblock und Gesamtverteilung müssen zusätzlich passen.':found.reasons.map(esc).join(' · ')||'Die Regelprüfung ist unvollständig.'}</span></li>`}).join('')}</ul>`;
+    }else{
+      let slot;try{slot=JSON.parse(decodeURIComponent(node.dataset.planSlot));}catch{return;}
+      const total=ctx.people.length;page=Math.max(0,Math.min(page,Math.ceil(total/size)-1));
+      markup='<p>„Einzeldienst prüfbar“ bedeutet: kein direktes Hindernis in dieser Prüfung. Ein vollständiger Arbeitsblock und die übrige Besetzung müssen ebenfalls passen.</p>'+pager(page,total);
+      markup+=total?`<ul>${ctx.people.slice(page*size,(page+1)*size).map(e=>{const found=cachedCheck(e,slot,ctx);return `<li><b>${esc(found.name)}</b><span>${found.status==='review'?`Einzeldienst prüfbar (${esc(found.possible.join(' / '))}). Vollständiger Arbeitsblock und Gesamtverteilung bleiben zu prüfen.`:found.reasons.map(esc).join(' · ')||'Die Regelprüfung ist unvollständig.'}</span></li>`}).join('')}</ul>`:'<p>Keine aktiven Mitarbeiterprofile vorhanden.</p>';
+    }
+    body.innerHTML=markup;node.sfPlanContext=ctx.key;node.sfPlanPage=page;
+  }
+  const describe=a=>a?`${a.date} · ${a.type} · ${a.start}–${a.end}`:'–';
+  function changeBody(node,page=0){
+    const comparison=node.sfPlanComparison,body=node.querySelector('[data-plan-changes]');if(!comparison||!body)return;
+    const filter=node.querySelector('[data-plan-change-person]')?.value||'',rows=comparison.changes.filter(c=>!filter||same(c.row.employeeId,filter)),size=40;page=Math.max(0,Math.min(page,Math.ceil(rows.length/size)-1));
+    const names=new Map(employees.map(e=>[String(e.id),person(e)]));body.innerHTML=rows.length?pager(page,rows.length)+`<div class="sf-plan-table-scroll" tabindex="0" aria-label="Geänderte Zuordnungen"><table><thead><tr><th>Mitarbeiter</th><th>Bisher</th><th>Vorschlag</th></tr></thead><tbody>${rows.slice(page*size,(page+1)*size).map(c=>`<tr><th>${esc(names.get(c.row.employeeId)||'Mitarbeiterprofil nicht mehr verfügbar')}</th><td>${esc(c.kind==='removed'?describe(c.row):'–')}</td><td>${esc(c.kind==='added'?describe(c.row):'–')}</td></tr>`).join('')}</tbody></table></div>`:'<p>Keine Zuordnungen geändert.</p>';
+  }
+  function render(result){
+    const host=el('autoPlanComparison');if(!host)return;host.hidden=!result||!!autoPlanApplied;if(host.hidden){host.innerHTML='';delete host.sfPlanKey;return;}
+    const dates=autoPlanningDates(),all=[...result.base,...autoPlanPreview],afterOpen=withRows(all.filter(active),()=>autoOpenSlots(dates).length),comparison=compare(result.reviewBefore,all,dates,afterOpen);
+    if(!comparison){delete host.sfPlanKey;host.innerHTML='<section class="sf-plan-comparison"><h3>Vorher / Nachher</h3><p>Für diesen Vorschlag fehlt ein passender gespeicherter Ausgangsstand. Erstelle einen neuen Vorschlag, um Veränderungen vollständig zu vergleichen.</p></section>';return;}
+    const open=host.querySelector?.('details[data-plan-comparison]')?.open,ids=[...new Set(comparison.changes.map(c=>c.row.employeeId))],names=new Map(employees.map(e=>[String(e.id),person(e)]));
+    const markup=`<section class="sf-plan-comparison"><h3>Was verändert der Vorschlag?</h3><div class="sf-plan-table-scroll"><table><thead><tr><th>Kennzahl</th><th>Bisher</th><th>Vorschlag</th></tr></thead><tbody><tr><th>Offene Positionen</th><td>${comparison.openBefore}</td><td>${comparison.openAfter}</td></tr><tr><th>Fehlende SOLL-Stunden</th><td>${hours(comparison.missingBefore)}</td><td>${hours(comparison.missingAfter)}</td></tr></tbody></table></div><div class="sf-plan-change-counts"><span><b>${comparison.unchanged}</b> Zuordnungen unverändert</span><span><b>${comparison.removed}</b> bestehende Zuordnungen entfallen</span><span><b>${comparison.added}</b> neue Zuordnungen vorgeschlagen</span></div><p>Entfallene und neue Zuordnungen können Teil einer Umverteilung sein. Gespeichert wird erst nach deiner Bestätigung.</p><details data-plan-comparison ${open?'open':''}><summary>Geänderte Zuordnungen ansehen (${comparison.removed+comparison.added})</summary><label>Nach Mitarbeiter filtern <select data-plan-change-person><option value="">Alle betroffenen Mitarbeiter</option>${ids.sort((a,b)=>(names.get(a)||a).localeCompare(names.get(b)||b,'de',{numeric:true})).map(id=>`<option value="${esc(id)}">${esc(names.get(id)||'Mitarbeiterprofil nicht mehr verfügbar')}</option>`).join('')}</select></label><div data-plan-changes></div></details></section>`;
+    const key=JSON.stringify([comparison,employees.map(e=>[e.id,e.first,e.last,e.personnelNo])]);if(host.sfPlanKey!==key){host.innerHTML=markup;host.sfPlanKey=key;}const details=host.querySelector?.('[data-plan-comparison]');if(details){details.sfPlanComparison=comparison;if(details.open)changeBody(details);}
+  }
+  function refreshOpen(){const nodes=document.querySelectorAll?.('details.sf-plan-diagnostic[open]')||[];if(!nodes.length)return;const ctx=context();for(const node of nodes)if(node.sfPlanContext!==ctx.key)renderDiagnostic(node,node.sfPlanPage||0);}
+  document.addEventListener('toggle',event=>{const node=event.target;if(!node.open)return;if(node.matches?.('details.sf-plan-diagnostic'))renderDiagnostic(node);else if(node.matches?.('details[data-plan-comparison]'))changeBody(node);},true);
+  document.addEventListener('click',event=>{const button=event.target.closest?.('button[data-plan-page]');if(!button||button.disabled)return;const node=button.closest('details');if(node?.matches('[data-plan-comparison]'))changeBody(node,Number(button.dataset.planPage));else if(node?.matches('.sf-plan-diagnostic'))renderDiagnostic(node,Number(button.dataset.planPage));});
+  document.addEventListener('change',event=>{if(event.target.matches?.('[data-plan-change-person]'))changeBody(event.target.closest('details'));});
+  window.SFPlanningReview={snapshot,compare,evaluate,slotMarkup,hoursMarkup,render,refreshOpen,reset(){cached=null;const host=el('autoPlanComparison');if(host){host.hidden=true;host.innerHTML='';delete host.sfPlanKey;}}};
 })();
