@@ -41,6 +41,12 @@ async function main(){
   const samples=[];for(let n=0;n<3;n++)samples.push(await page.evaluate(()=>{const start=performance.now();renderAutoPlanning();return performance.now()-start}));stats.repeatMs=samples.sort((a,b)=>a-b)[1];
   if(variant==='current'){
    const ruleDetails=page.locator('#autoRuleDetails');
+   assert.equal(await page.locator('#autoRespectHours').isVisible(),false);assert.match(await page.locator('#autoHoursStatus').textContent(),/Verbindlich aktiv/);
+   assert.equal(await page.locator('#autoIndividualBlocks').isVisible(),false);assert.match(await page.locator('#autoBlocksStatus').textContent(),/Automatisch durch Planungsregeln gesteuert/);
+   assert.equal(await page.locator('#autoFairDistribution').isVisible(),true);assert.equal(await page.locator('#autoFairDistribution').isEnabled(),true);
+   await page.locator('#autoHoursOption').click();await page.locator('#autoBlocksOption').click();assert.equal(await page.locator('#autoRespectHours').isChecked(),true);assert.equal(await page.locator('#autoRespectHours').isDisabled(),true);
+
+
    assert.equal(await ruleDetails.evaluate(e=>e.open),false);
    assert.match(await page.locator('#autoRuleValues').textContent(),/Vollzeit-SOLL 180 h.*200 h\/Monat.*55 h/);
    assert.doesNotMatch(await page.locator('#autoStartHint').textContent(),/Verbindlich:|Monats-SOLL/);
@@ -48,6 +54,7 @@ async function main(){
    assert.equal(await ruleDetails.evaluate(e=>e.open),true);assert.equal(await page.locator('#autoRuleText').isVisible(),true);
    await page.evaluate(()=>renderAutoPlanning());assert.equal(await ruleDetails.evaluate(e=>e.open),true);
    await page.evaluate(()=>{SFCompliance.policy={monthlyPlanningMaxHours:184,solidPlanningRules:{enabled:true}};renderAutoPlanning()});
+   assert.equal(await page.locator('#autoIndividualBlocks').isVisible(),true);assert.equal(await page.locator('#autoIndividualBlocks').isEnabled(),true);assert.equal(await page.locator('#autoBlocksStatus').isVisible(),false);
    assert.match(await page.locator('#autoRuleValues').textContent(),/184 h\/Monat/);assert.doesNotMatch(await page.locator('#autoRuleValues').textContent(),/180|200|55/);
    await page.evaluate(()=>{SFCompliance.policy={solidPlanningRules:{enabled:true,confirmedRulesVersion:2,monthlyHoursOnly:true,fullTimeMonthlyTarget:180,monthlyMaxHours:200,maxCalendarWeekHours:55}};renderAutoPlanning()});
    await ruleDetails.locator(':scope > summary').click();
