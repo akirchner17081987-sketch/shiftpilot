@@ -33,13 +33,15 @@
     "test:personnel-conversations:browser": "node tests/browser/personnel-conversations-qa.cjs",
     "test:background": "node --test tests/background-auto-plan.test.cjs tests/background-auto-plan-ui.test.cjs tests/background-start-sql.test.cjs tests/auto-plan-progress-error.test.cjs",
     "test:storage-backup": "node --test tests/storage-backup.test.mjs",
-    "test:storage-drill": "node scripts/storage-backup.mjs drill"
+    "test:storage-drill": "node --test tests/storage-backup.test.mjs",
+    "backup:restore": "node scripts/storage-backup-restore.mjs"
   },
   "engines": {
     "node": ">=18"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.8",
-    "@playwright/test": "^1.55.1"
+    "@playwright/test": "^1.55.1",
+    "aws4fetch": "1.0.20"
   }
 }

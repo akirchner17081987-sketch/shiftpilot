@@ -16,3 +16,7 @@ verify_jwt = false
 [functions.background-auto-plan]
 # Per-job dispatcher capability, verified by the worker-only claim RPC.
 verify_jwt = false
+
+# Random dispatch token is checked inside the worker before any database access.
+[functions.storage-backup]
+verify_jwt = false
