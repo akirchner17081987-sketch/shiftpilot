@@ -145,12 +145,14 @@
       skip.disabled = true;
       skip.hidden = true;
       setTimeout(() => {
+        if (window.SFEntryAccess?.isChoosing()) return;
         const email = document.getElementById('sfEmail');
         if (email && email.isConnected && (document.activeElement === document.body || document.activeElement === skip)) {
           email.focus({preventScroll:true});
         }
       }, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 660);
     }
+    window.SFEntryAccess?.mount(auth);
     syncAuthLoading();
   }
 
@@ -159,8 +161,11 @@
     // A restored AAL1 session can require MFA before a login form or app exists.
     // Let the real security dialog stay above the decorative entry surface.
     const mfaReady = isVisible(document.getElementById('sfMfaModal'));
+    const auxiliaryReady = isVisible(document.getElementById('sfPasswordResetBackdrop')) ||
+      isVisible(document.getElementById('sfEmployeeRegister'));
     root.classList.toggle('sf-entry-mfa-ready', mfaReady);
-    root.inert = mfaReady || welcoming;
+    root.classList.toggle('sf-entry-dialog-ready', auxiliaryReady);
+    root.inert = mfaReady || auxiliaryReady || welcoming;
     if (mfaReady) {
       cancelWelcome();
       readyTarget = 'mfa';
@@ -171,6 +176,7 @@
       skip.hidden = true;
       return;
     }
+    if (auxiliaryReady) { cancelWelcome(); root.inert = true; clearTimeout(slowTimer); return; }
     const auth = document.getElementById('sfAuthBackdrop');
     const manager = document.getElementById('appShell');
     const employee = document.getElementById('sfEmployeePortal');

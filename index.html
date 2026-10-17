@@ -13,7 +13,9 @@
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
 <link rel="manifest" href="/site.webmanifest" />
 <link rel="stylesheet" href="assets/sf-entry-v2.css?v=20261013-fade1">
-<script defer src="assets/sf-entry-v2.js?v=20261013-fade1&csp=20261017-1"></script>
+<script defer src="assets/sf-entry-v2.js?v=20261017-access1&csp=20261017-1"></script>
+<link rel="stylesheet" href="assets/sf-entry-access-v1.css?v=20261017-access1">
+<script defer src="assets/sf-entry-access-v1.js?v=20261017-access1&csp=20261017-1"></script>
 <script defer src="assets/sf-entry-globe-v1.js?v=20261013-globe1&csp=20261017-1"></script>
 <title>SchichtFunk – Dienstplanung</title>
 <script>
@@ -185,10 +187,30 @@ html[data-sf-theme="light"] #sfEmployeePortal{
       <div class="sf-entry-footer"><span id="sfEntryCounter" class="sf-entry-step">0 / 4</span><button id="sfEntrySkip" class="sf-entry-skip" type="button">Animation überspringen</button></div>
       <p id="sfEntryWarning" class="sf-entry-warning" hidden></p>
     </div>
-    <div id="sfEntryLoginSlot" class="sf-entry-login-slot" aria-label="SchichtFunk Anmeldung"></div>
+    <section id="sfEntryChoice" class="sf-entry-choice" aria-labelledby="sfEntryChoiceTitle" hidden>
+      <p class="sf-entry-choice-kicker">Ihr Zugang</p><h1 id="sfEntryChoiceTitle">Willkommen bei<br>SchichtFunk.</h1><p class="sf-entry-choice-intro">Wählen Sie Ihren Bereich.</p>
+      <div class="sf-entry-choices">
+        <button type="button" class="sf-entry-choice-button" data-entry-area="mitarbeiter"><svg class="sf-entry-choice-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></svg><span><span class="sf-entry-choice-name">Mitarbeiterportal</span><span class="sf-entry-choice-description">Meine Dienste, Abwesenheiten und Stundenkonto</span></span><span class="sf-entry-choice-arrow" aria-hidden="true">→</span></button>
+        <button type="button" class="sf-entry-choice-button" data-entry-area="zeit"><svg class="sf-entry-choice-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 8V4h4m8 0h4v4m0 8v4h-4M8 20H4v-4M3 12h18"/></svg><span><span class="sf-entry-choice-name">Arbeitszeit erfassen</span><span class="sf-entry-choice-description">Dienstbeginn, Pausen und Dienstende buchen</span></span><span class="sf-entry-choice-arrow" aria-hidden="true">→</span></button>
+        <button type="button" class="sf-entry-choice-button" data-entry-area="verwaltung"><svg class="sf-entry-choice-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 9v12"/></svg><span><span class="sf-entry-choice-name">Verwaltung</span><span class="sf-entry-choice-description">Dienstplanung, Personal und Auswertungen</span></span><span class="sf-entry-choice-arrow" aria-hidden="true">→</span></button>
+      </div><p class="sf-entry-choice-note">Anmeldung mit Ihrem persönlichen Zugang</p>
+    </section>
+    <div id="sfEntrySelected" class="sf-entry-selected" hidden>
+      <button type="button" id="sfEntryBack" class="sf-entry-back">← Bereich wechseln</button>
+      <div id="sfEntryLoginSlot" class="sf-entry-login-slot" aria-label="SchichtFunk Anmeldung"></div>
+      <section id="sfEntryTime" class="sf-entry-time" aria-labelledby="sfEntryTimeTitle" hidden>
+        <p class="sf-entry-choice-kicker">Ihre Arbeitszeit</p><h2 id="sfEntryTimeTitle">Arbeitszeit erfassen</h2>
+        <p>Scannen Sie den QR-Code am Standort. Anschließend melden Sie sich mit Ihrer Personalnummer und persönlichen PIN an.</p>
+        <button type="button" id="sfEntryScan" class="sf-entry-scan-button">QR-Code scannen</button>
+        <p class="sf-entry-time-hint">Sie können den Standort-Code auch direkt mit der Smartphone-Kamera öffnen.</p>
+        <button type="button" id="sfEntryTimeAccount" class="sf-entry-account-link">Mit Zeiterfassungszugang anmelden →</button>
+        <p id="sfEntryScanStatus" class="sf-entry-scan-status" role="status" aria-live="polite"></p>
+      </section>
+    </div><div class="sf-entry-light-sweep" aria-hidden="true"></div>
     </div>
   </div>
   <span class="sf-entry-brand-note">SchichtFunk</span>
+  <nav class="sf-entry-legal" aria-label="Rechtliche Informationen"><a href="/impressum.html">Impressum</a><a href="/datenschutz.html">Datenschutz</a></nav>
   <div id="sfEntryWelcome" class="sf-entry-welcome" role="status" aria-live="polite" hidden>
     <span class="sf-entry-welcome-kicker">ANMELDUNG ERFOLGREICH</span>
     <h2 id="sfEntryWelcomeTitle">Willkommen bei SchichtFunk.</h2>
@@ -1145,7 +1167,7 @@ table th,table td{font-size:13px;line-height:1.35}
 }
 </style>
 <div class="sf-help-backdrop" id="sfHelpModal" hidden><section class="sf-help" role="dialog" aria-modal="true" aria-labelledby="sfHelpTitle"><header class="sf-help-head"><div><div class="sf-help-kicker">SCHICHTFUNK HILFE-CENTER</div><h2 id="sfHelpTitle">Wie können wir helfen?</h2></div><div class="sf-help-search"><input id="sfHelpSearch" type="search" placeholder="Problem oder Funktion suchen ..." aria-label="Hilfe durchsuchen"><button class="sf-help-clear" id="sfHelpClear" type="button" aria-label="Suche leeren">×</button></div><button class="sf-help-close" id="sfHelpClose" type="button" aria-label="Hilfe schließen">×</button></header><nav class="sf-help-nav" id="sfHelpNav" aria-label="Hilfekategorien"></nav><main class="sf-help-main"><h3 id="sfHelpCategoryTitle"></h3><p id="sfHelpCategoryIntro"></p><div class="sf-help-results" id="sfHelpResults"></div></main><footer class="sf-help-foot"><span>Die Hilfe verändert keine Daten.</span><span><strong>ESC</strong> schließen · <strong>Strg/Cmd + K</strong> Suche</span></footer></section></div>
-<script defer src="assets/help-center-content-v3.js?v=20261016-help-audit1&assistant=20261016-1&security=20261016-pin-visible1&billing=20261016-2&billing=20261016-2&csp=20261017-1&weekends=20261017-rhythm1&review=20261017-1"></script>
+<script defer src="assets/help-center-content-v3.js?v=20261016-help-audit1&entry=20261017-1&assistant=20261016-1&security=20261016-pin-visible1&billing=20261016-2&billing=20261016-2&csp=20261017-1&weekends=20261017-rhythm1&review=20261017-1"></script>
 <link rel="stylesheet" href="assets/help-center-guides-v1.css?v=20260930-1">
 <script defer src="assets/help-center-guides-v1.js?v=20261009-qrperiods1&company=20261010-1&security=20261016-pin-visible1&billing=20261016-2&csp=20261017-1"></script>
 <script defer id="schichtfunk-help-center-v2-js" src="assets/help-center-renderer-v2.js?v=20261012-help-audit1&csp=20261017-1"></script>

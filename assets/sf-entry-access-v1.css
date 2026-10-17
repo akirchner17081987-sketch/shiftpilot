@@ -1,0 +1,54 @@
+/* Three destinations share the existing Earth and protected authentication. */
+#sfEntryOverlay.sf-entry-dialog-ready{z-index:24000;pointer-events:none}
+#sfEntryOverlay.sf-entry-access-enabled .sf-entry-access{min-height:510px;display:grid;align-items:center;padding:0}
+#sfEntryOverlay .sf-entry-choice,#sfEntryOverlay .sf-entry-selected{grid-area:1/1;min-width:0;width:100%}
+#sfEntryOverlay [hidden]{display:none!important}
+#sfEntryOverlay .sf-entry-loading{grid-area:1/1}
+#sfEntryOverlay .sf-entry-choice-kicker{display:flex;gap:9px;align-items:center;font-size:11px;letter-spacing:.17em;color:#62dbcb;text-transform:uppercase;margin:0 0 14px}
+#sfEntryOverlay .sf-entry-choice-kicker::before{content:"";width:19px;height:1px;background:#62dbcb}
+#sfEntryOverlay .sf-entry-choice h1{font-size:36px;line-height:1.16;letter-spacing:-.045em;font-weight:500;color:#ecf2f5;margin:0 0 14px}
+#sfEntryOverlay .sf-entry-choice-intro{color:#91a7b1;font-size:14px;margin:0 0 27px}
+#sfEntryOverlay .sf-entry-choices{display:flex;flex-direction:column;gap:10px}
+#sfEntryOverlay .sf-entry-choice-button{appearance:none;display:grid;grid-template-columns:28px minmax(0,1fr) 18px;align-items:center;gap:16px;position:relative;width:100%;min-height:93px;padding:18px;text-align:left;border:1px solid #20343e;border-radius:12px;background:#091820;color:#ecf2f5;font:inherit;cursor:pointer;overflow:hidden;transition:background .25s,border-color .25s,transform .25s,opacity .3s,box-shadow .25s}
+#sfEntryOverlay .sf-entry-choice-button::before{content:"";position:absolute;left:0;top:20px;bottom:20px;width:2px;background:#62dbcb;transform:scaleY(0);transition:transform .25s}
+#sfEntryOverlay .sf-entry-choice-button:hover,#sfEntryOverlay .sf-entry-choice-button:focus-visible{background:#0b2129;border-color:#467b80;transform:translateX(3px);box-shadow:0 0 22px #36c8b50b}
+#sfEntryOverlay .sf-entry-choice-button:hover::before,#sfEntryOverlay .sf-entry-choice-button:focus-visible::before{transform:scaleY(1)}
+#sfEntryOverlay .sf-entry-choice-button:focus-visible,#sfEntryOverlay .sf-entry-back:focus-visible,#sfEntryOverlay .sf-entry-scan-button:focus-visible,#sfEntryOverlay .sf-entry-account-link:focus-visible{outline:2px solid #8ff5dd;outline-offset:4px}
+#sfEntryOverlay .sf-entry-choice-icon{width:23px;height:23px;color:#62dbcb}
+#sfEntryOverlay .sf-entry-choice-name{display:block;font-size:16px;font-weight:500;letter-spacing:-.01em;margin-bottom:4px}
+#sfEntryOverlay .sf-entry-choice-description{display:block;font-size:12px;line-height:1.55;color:#91a7b1}
+#sfEntryOverlay .sf-entry-choice-arrow{font-size:20px;color:#9bc2c9;transition:transform .25s,color .25s}
+#sfEntryOverlay .sf-entry-choice-button:hover .sf-entry-choice-arrow,#sfEntryOverlay .sf-entry-choice-button:focus-visible .sf-entry-choice-arrow{color:#62dbcb;transform:translateX(2px)}
+#sfEntryOverlay .sf-entry-choices.sf-entry-launching .sf-entry-choice-button:not(.sf-entry-picked){opacity:.32;transform:translateX(-4px)}
+#sfEntryOverlay .sf-entry-choice-note{font-size:11px;color:#91a7b1;margin:22px 0 0}
+#sfEntryOverlay .sf-entry-back{appearance:none;background:transparent;border:0;border-radius:5px;padding:8px 0;color:#a1b8c1;font:inherit;font-size:12px;cursor:pointer;min-height:36px;margin:0 0 12px}
+#sfEntryOverlay .sf-entry-back:hover{color:#62dbcb}
+#sfEntryOverlay .sf-entry-light-sweep{position:absolute;z-index:3;left:0;right:0;top:0;height:2px;background:linear-gradient(90deg,transparent,#70ffe3 28%,#dbfff7 50%,#70ffe3 72%,transparent);box-shadow:0 0 18px 4px #33d8bf55;opacity:0;pointer-events:none}
+#sfEntryOverlay .sf-entry-time{padding:28px;border:1px solid #20343e;border-radius:16px;background:#091820;color:#ecf2f5}
+#sfEntryOverlay .sf-entry-time h2{font-size:25px;letter-spacing:-.03em;line-height:1.2;font-weight:500;margin:0 0 16px}
+#sfEntryOverlay .sf-entry-time p:not(.sf-entry-choice-kicker){font-size:13px;line-height:1.65;color:#a1b8c1;margin:0 0 18px}
+#sfEntryOverlay .sf-entry-scan-button{width:100%;min-height:46px;border:1px solid #56dac9;border-radius:8px;padding:12px;background:#2ac8b4;color:#062923;font:inherit;font-size:14px;font-weight:500;cursor:pointer;margin:4px 0 15px}
+#sfEntryOverlay .sf-entry-scan-button:disabled{opacity:.6;cursor:wait}
+#sfEntryOverlay .sf-entry-time .sf-entry-time-hint{font-size:12px}
+#sfEntryOverlay .sf-entry-account-link{border:0;border-top:1px solid #20343e;padding:17px 0 0;background:transparent;color:#62dbcb;font:inherit;font-size:12px;text-align:left;cursor:pointer;width:100%}
+#sfEntryOverlay .sf-entry-time .sf-entry-scan-status{margin:12px 0 0;font-size:12px}
+#sfEntryOverlay .sf-entry-scan-status:empty{display:none}
+#sfEntryOverlay.sf-entry-access-enabled #sfAuthBackdrop .sf-auth-card{border:1px solid #20343e;background:#091820;border-radius:14px;box-shadow:none}
+#sfEntryOverlay.sf-entry-access-enabled #sfAuthBackdrop .sf-auth-card::after{animation:none;display:none}
+#sfEntryOverlay.sf-entry-access-enabled #sfAuthBackdrop .sf-auth-head h2{font-size:25px;font-weight:500}
+#sfEntryOverlay.sf-entry-access-enabled #sfAuthBackdrop .sf-auth-legal{display:none}
+#sfEntryOverlay .sf-entry-legal{position:absolute;right:36px;bottom:24px;display:flex;gap:18px;font-size:11px}
+#sfEntryOverlay .sf-entry-legal a{color:#91a7b1;text-decoration:none}
+#sfEntryOverlay .sf-entry-legal a:hover{color:#62dbcb}
+#sfEntryOverlay.sf-entry-access-enabled .sf-entry-brand-note{left:36px;right:auto;text-align:left}
+@media(max-width:860px){
+ #sfEntryOverlay.sf-entry-access-enabled .sf-entry-access{min-height:510px;max-width:450px}
+ #sfEntryOverlay.sf-entry-access-enabled .sf-entry-inner{padding-bottom:70px}
+ #sfEntryOverlay .sf-entry-choice h1{font-size:30px}
+ #sfEntryOverlay .sf-entry-choice-button{min-height:88px;padding:15px;gap:12px;grid-template-columns:25px minmax(0,1fr) 18px}
+ #sfEntryOverlay .sf-entry-choice-name{font-size:15px}
+ #sfEntryOverlay .sf-entry-time{padding:22px}
+ #sfEntryOverlay.sf-entry-access-enabled .sf-entry-brand-note{left:22px;bottom:20px}
+ #sfEntryOverlay .sf-entry-legal{right:22px;bottom:20px;gap:13px}
+}
+@media(prefers-reduced-motion:reduce){#sfEntryOverlay .sf-entry-choice-button,#sfEntryOverlay .sf-entry-choice-button::before,#sfEntryOverlay .sf-entry-choice-arrow{transition:none!important}}

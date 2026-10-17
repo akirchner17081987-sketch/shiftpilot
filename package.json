@@ -27,6 +27,7 @@
     "test:performance": "node --test tests/performance-loader.test.cjs && node tests/browser/planning-performance-qa.cjs",
     "test:site-loading": "node --test tests/site-loading.test.cjs && node tests/browser/site-loading-qa.cjs",
     "test:entry": "node --test tests/entry-loading-v2.test.mjs",
+    "test:entry-access": "node tests/browser/entry-access-qa.cjs",
     "test:personnel-privacy": "node --test tests/personnel-health-privacy.test.mjs tests/absence-request-badge.test.cjs tests/personnel-health-client.test.mjs",
     "test:personnel-privacy:browser": "node tests/browser/personnel-health-privacy-qa.cjs",
     "test:personnel-conversations": "node --test tests/personnel-conversations.test.mjs tests/personnel-automatic-scope.test.mjs",

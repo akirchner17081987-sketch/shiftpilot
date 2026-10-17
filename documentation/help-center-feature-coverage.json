@@ -2299,6 +2299,10 @@
       "source": "assets/demo-boot-class-v1.js",
       "category": "settings",
       "note": "Externer Startmarker für den bestehenden Demo-Ladevorgang"
+    },
+    {
+      "source": "assets/sf-entry-access-v1.js",
+      "category": "start"
     }
   ],
   "categoryCoverage": [
@@ -2833,6 +2837,6 @@
     "correctedArticleCount": 8,
     "articleCount": 221,
     "categoryCount": 21,
-    "assetJavaScriptCount": 203
+    "assetJavaScriptCount": 204
   }
 }
