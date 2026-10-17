@@ -274,3 +274,14 @@ test('render aggregation visits each selected duty once instead of scanning the 
  run("autoPlanPreview=[{employeeId:'e',date:'2026-12-01',type:'TL-R'}];autoPlanAnalyzed=true;renderAutoPlanning()");
  const html=id('autoStaircase').innerHTML;assert.match(html,/data-staffing-shift="TL-L"[\s\S]*?<b>IST 0<\/b><small>SOLL gemeinsam/);assert.match(html,/data-staffing-shift="TL-R"[\s\S]*?<b>IST 1<\/b><small>SOLL gemeinsam/);assert.match(html,/data-staffing-group="Leitung"[\s\S]*?<b>IST 1<\/b><small>SOLL 1/);assert.equal(simulated.length,1);
  });
+
+test('rules overview follows the current company while the start strip describes the selected period',()=>{
+ const {c,id}=harness();vm.runInNewContext(read('assets/solid-planning-core-v1.js'),c);
+ c.window.SFCompliance={policy:{solidPlanningRules:{enabled:true,confirmedRulesVersion:2,monthlyHoursOnly:true,fullTimeMonthlyTarget:180,monthlyMaxHours:200,maxCalendarWeekHours:55}}};
+ id('autoRuleDetails').open=true;c.renderAutoPlanning();
+ assert.match(id('autoRuleValues').innerHTML,/Vollzeit-SOLL 180 h/);assert.match(id('autoRuleValues').innerHTML,/200 h\/Monat/);
+ assert.match(id('autoRuleText').textContent,/keine zusätzliche feste Anzahl/);assert.match(id('autoStartHint').textContent,/offene Position/);assert.doesNotMatch(id('autoStartHint').textContent,/Verbindlich:|Monats-SOLL/);
+ c.window.SFCompliance.policy={monthlyPlanningMaxHours:184,solidPlanningRules:{enabled:true,maxConsecutiveShifts:4}};c.renderAutoPlanning();
+ assert.match(id('autoRuleValues').innerHTML,/184 h\/Monat/);assert.doesNotMatch(id('autoRuleValues').innerHTML,/200|180|55/);assert.equal(id('autoRuleDetails').open,true);
+ c.window.SFCompliance.policy={};c.renderAutoPlanning();assert.equal(id('autoRuleGoals').hidden,true);assert.doesNotMatch(id('autoRuleText').textContent,/184|200/);
+});

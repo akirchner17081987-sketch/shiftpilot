@@ -9,6 +9,18 @@
   const html=(node,value)=>{if(!node||written.get(node)===value)return;node.innerHTML=value;written.set(node,value)};
   let suggestionKey='',suggestionHost=null,stairMonth='',unresolvedPage=0,unresolvedKey='';
   const shiftLabel=code=>{const t=typeById(code);return t?.name&&t.name!==code?`${code} · ${t.name}`:code};
+  function renderRules(){
+    const company=window.SFCompliance?.policy||{},rules=company.solidPlanningRules,core=window.SFSolidPlanningCore,enabled=!!rules?.enabled,confirmed=core?.confirmed(rules),values=[];
+    if(confirmed&&rules.monthlyHoursOnly)values.push(`Vollzeit-SOLL ${rules.fullTimeMonthlyTarget??180} h`);
+    const month=confirmed?rules.monthlyMaxHours??(rules.monthlyHoursOnly?200:190):Number(company.monthlyPlanningMaxHours);
+    if(month>0)values.push(`Automatisch max. ${month} h/Monat`);
+    if(confirmed)values.push(`Max. ${rules.maxCalendarWeekHours??40} h/Kalenderwoche`);
+    const host=el('autoRuleValues');
+    html(host,values.length?values.map(v=>`<span>${esc(v)}</span>`).join(''):'Die hinterlegten Unternehmensregeln gelten.');
+    text('autoRuleText',core?.summary(rules,TYPES,company)||'Aktive Mitarbeiter, persönliche Schichtfreigaben, Abwesenheiten, feste Rhythmen und hinterlegte Stundenlimits werden berücksichtigt. Die persönlichen Monatsziele und hinterlegten Planungsgrenzen gelten.');
+    const goals=el('autoRuleGoals');if(goals)goals.hidden=!enabled;
+    if(enabled)text('autoRuleGoalText',`Angestrebt werden ${rules.minFreeWeekendsPerMonth??1} vollständig freie Wochenenden pro Monat, bevorzugt ${rules.preferredNightBlockLength||3} Nächte je Block und eine gleichmäßige Belastung mit ${rules.rollingWeekTargetHours||40} h als Ziel in rollierenden 7 Tagen. Abweichungen von diesen Zielen werden im Ergebnis ausgewiesen.`);
+  }
   function remainingSlots(slots,preview){
     const keyOf=x=>x.date+'|'+(x.coverageGroup||x.type);
     const counts=new Map();preview.forEach(x=>{const key=keyOf(x);counts.set(key,(counts.get(key)||0)+1)});
@@ -83,6 +95,7 @@
   }
   function render(){
     if(!el('view-auto')||window.SFAutoPlanProgress?.isBusy())return;
+    renderRules();
     const dates=syncAutoPeriodControls(),counts=autoAssignmentCounts(),slots=autoOpenSlots(dates,counts),remaining=remainingSlots(slots,autoPlanPreview),analyzed=autoPlanAnalyzed,applied=autoPlanApplied||0,label=autoPeriodLabel(dates),count=autoPlanPreview.length,published=autoPlanPreview.some(x=>window.SFCompliance?.isWeekPublished?.(x.date));
     const available=employees.filter(e=>e.status==='active'&&!dates.every(d=>absent(e.id,d))).length;
     text('autoPeriodDates',dates.length===1?'1 Planungstag':`${new Date(dates[0]+'T12:00:00').toLocaleDateString('de-DE')} bis ${new Date(dates.at(-1)+'T12:00:00').toLocaleDateString('de-DE')} · ${dates.length} Tage`);
