@@ -124,3 +124,8 @@ test('a change during the last paint before saving cannot bypass the final data 
  c.SFAutoPlanWorkspace.startApply=()=>({phase:n=>stage=n,update(){},paint:async()=>{if(stage===1)c.employees[0].last='Zwischenzeitlich geändert'},finish:x=>outcome=x});
  await c.applyAutoPlanPreview();assert.equal(calls.filter(x=>x.name==='apply_planning_period').length,0);assert.match(outcome.error,/Daten haben sich geändert/);
 });
+
+test('hours results omit the retired weekend goal but retain the actual hours and other deviations',async()=>{
+ const {c,el}=harness();Object.assign(c.SFCompliance.policy.solidPlanningRules,{weekendPlanningByRhythm:true,minFreeWeekendsPerMonth:1});await c.SFMonthOptimizer.optimize();
+ assert.ok(c.SFMonthOptimizer.getResult(),c.toast?.copy);assert.doesNotMatch(el('autoMonthHours').innerHTML,/fehlende freie Wochenenden/);assert.match(el('autoMonthHours').innerHTML,/Prüfergebnis:|Gesamtobjekt/);
+});

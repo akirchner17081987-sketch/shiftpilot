@@ -45,3 +45,14 @@ test('missing O1/O3 coverage gives OT fallback priority over a third OT2',async(
 
 test('manual time validation retains invalid-input handling with solid rules enabled',()=>{const vm=require('node:vm'),fs=require('node:fs'),c={window:{SFSolidPlanningCore:s},store:{get:()=>{},set:()=>{}},typeById:()=>null,assignments:[]};vm.createContext(c);vm.runInContext(fs.readFileSync(__dirname+'/../assets/compliance-core-v2.js','utf8'),c);c.window.SFCompliance.policy={solidPlanningRules:p};for(const args of [['bad','18:00','04:00'],['2027-01-01','','04:00'],['2027-01-01','18:00','18:00']])assert.equal(c.window.SFCompliance.interval(...args),null);});
 
+
+test('rhythm-based weekend planning removes the weekend penalty even with a legacy target',()=>{
+ const rows=['2027-01-01','2027-01-08','2027-01-15','2027-01-22','2027-01-29'].map(d=>a(d));
+ const old=s.metrics([e],rows,p,['2027-01']),rules={...p,weekendPlanningByRhythm:true};
+ const current=s.metrics([e],rows,rules,['2027-01']);assert.equal(old.missingFreeWeekends,1);assert.equal(current.missingFreeWeekends,0);
+ assert.equal(s.penalty(old)-s.penalty(current),35);assert.deepEqual({...old,missingFreeWeekends:0},current);
+ assert.equal(s.metrics([e],rows,{...p,minFreeWeekendsPerMonth:undefined},['2027-01']).missingFreeWeekends,0);
+ assert.equal(s.weekendTarget({...p,minFreeWeekendsPerMonth:0}),0);assert.equal(s.weekendTarget(p),1,'other explicit company targets remain active');
+ const B=require('../assets/background-auto-plan-core-v1.js'),roundTrip=B.unpack(JSON.parse(JSON.stringify(B.pack({month:'2027-01',employees:[e],groups:[],base:rows,capacities:[],solidRules:rules}))));
+ assert.equal(s.metrics(roundTrip.employees,roundTrip.base,roundTrip.solidRules,['2027-01']).missingFreeWeekends,0);
+});

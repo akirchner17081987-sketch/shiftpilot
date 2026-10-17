@@ -285,3 +285,10 @@ test('rules overview follows the current company while the start strip describes
  assert.match(id('autoRuleValues').innerHTML,/184 h\/Monat/);assert.doesNotMatch(id('autoRuleValues').innerHTML,/200|180|55/);assert.equal(id('autoRuleDetails').open,true);
  c.window.SFCompliance.policy={};c.renderAutoPlanning();assert.equal(id('autoRuleGoals').hidden,true);assert.doesNotMatch(id('autoRuleText').textContent,/184|200/);
 });
+
+test('rhythm-based policy removes weekend goals from the overview, including a stale numeric target',()=>{
+ const {c,id}=harness();vm.runInNewContext(read('assets/solid-planning-core-v1.js'),c);
+ c.window.SFCompliance={policy:{solidPlanningRules:{enabled:true,minFreeWeekendsPerMonth:1,weekendPlanningByRhythm:true}}};c.renderAutoPlanning();
+ assert.doesNotMatch(id('autoRuleGoalText').textContent,/Wochenend/);assert.match(id('autoRuleGoalText').textContent,/Nächte/);
+ c.window.SFCompliance.policy.solidPlanningRules.weekendPlanningByRhythm=false;c.renderAutoPlanning();assert.match(id('autoRuleGoalText').textContent,/1 vollständig freie Wochenenden/);
+});
