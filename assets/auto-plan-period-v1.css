@@ -182,3 +182,26 @@ html[data-sf-theme="light"] .sf-auto-preview-dialog input[type="date"]{color-sch
 .sf-auto-option-status{display:inline-flex;max-width:100%;align-items:center;margin:6px 0 3px;padding:4px 9px;border:1px solid color-mix(in srgb,var(--auto-good,var(--teal)) 38%,var(--line));border-radius:7px;background:color-mix(in srgb,var(--auto-good,var(--teal)) 8%,var(--panel));color:var(--auto-good,var(--teal));font-size:11px;font-weight:700;line-height:1.5;overflow-wrap:anywhere}
 .sf-auto-option-status.is-unavailable{color:var(--muted);border-color:var(--line);background:var(--panel2)}
 .sf-auto-rule label{cursor:inherit}
+
+.sf-plan-comparison{margin:16px 0;padding:18px;border:1px solid var(--line);border-radius:12px;background:var(--panel);min-width:0}
+.sf-plan-comparison h3{margin:0 0 14px;font-size:16px}
+.sf-plan-comparison p,.sf-plan-diagnostic p{font-size:12px;line-height:1.65;color:var(--muted)}
+.sf-plan-table-scroll{max-width:100%;overflow:auto}
+.sf-plan-table-scroll table{width:100%;border-collapse:collapse;font-size:12px}
+.sf-plan-table-scroll th,.sf-plan-table-scroll td{padding:10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+.sf-plan-change-counts{display:flex;gap:10px 22px;flex-wrap:wrap;margin:14px 0;font-size:12px}
+.sf-plan-comparison summary,.sf-plan-diagnostic summary{cursor:pointer;min-height:44px;padding:10px 0;line-height:1.6;font-size:12px;font-weight:600;overflow-wrap:anywhere}
+.sf-plan-comparison label{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:12px;margin:12px 0}
+.sf-plan-comparison select{max-width:100%;min-height:40px}
+.sf-plan-diagnostic{min-width:190px;max-width:680px;white-space:normal}
+.sf-plan-diagnostic ul{list-style:none;margin:0;padding:0}
+.sf-plan-diagnostic li{padding:10px 0;border-top:1px solid var(--line);line-height:1.65;overflow-wrap:anywhere}
+.sf-plan-diagnostic li b,.sf-plan-diagnostic li span{display:block;font-size:12px}
+.sf-plan-diagnostic li span{color:var(--muted);font-weight:400}
+.sf-plan-pages{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0;font-size:12px}
+.sf-plan-pages button{min-height:40px;padding:8px 12px}
+.sf-plan-ok{color:var(--auto-good,var(--teal));font-size:12px}
+@media(max-width:650px){.sf-plan-comparison{padding:12px}.sf-plan-table-scroll th,.sf-plan-table-scroll td{padding:8px}.sf-plan-diagnostic{min-width:0}.sf-auto-hours .sf-plan-diagnostic{min-width:190px}.sf-plan-change-counts{flex-direction:column;gap:8px}}
+
+.sf-plan-table-scroll td{white-space:nowrap}
+.sf-plan-comparison [data-plan-changes] table{min-width:650px}

@@ -67,6 +67,44 @@ async function main(){
    await page.locator('#autoUnresolvedPanel > summary').click();const before=await page.locator('#autoUnresolved [data-auto-date]').first().getAttribute('data-auto-date');await page.locator('#autoUnresolved').getByRole('button',{name:'Weiter',exact:true}).click();assert.notEqual(await page.locator('#autoUnresolved [data-auto-date]').first().getAttribute('data-auto-date'),before);
    assert.deepEqual(await page.evaluate(()=>[autoPlanPreview.length,assignments.length]),[4320,4320]);
    for(const [theme,width]of[['dark',1440],['light',1440],['dark',390],['light',320]]){await page.setViewportSize({width,height:1000});await page.evaluate(t=>document.documentElement.dataset.sfTheme=t,theme);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),true);await page.locator('#autoStaircase').screenshot({path:path.join(out,'preview-'+theme+'-'+width+'.png')});await page.locator('.sf-auto-setup').screenshot({path:path.join(out,'rules-'+theme+'-'+width+'.png')});await ruleDetails.locator(':scope > summary').click();assert.equal(await page.locator('#autoRuleText').isVisible(),true);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),true);await ruleDetails.locator(':scope > summary').click()}
+   // Explain open duties lazily, including paging, preview edits and a read-only comparison.
+   await page.evaluate(()=>{
+    autoPlanPreview=[];assignments=[{id:'old',employeeId:'e0',date:'2027-01-04',type:'SD',start:'14:00',end:'22:00'}];autoPlanAnalyzed=true;
+    employees=Array.from({length:85},(_,i)=>({id:'e'+i,personnelNo:String(100+i),first:'Test',last:'Person '+i,status:'active',employment:'Vollzeit',monthlyHours:180,weeklyHours:55,shifts:i===0?['ND']:['SD']}));
+    getSoll=(date,type)=>date==='2027-01-05'&&type==='SD'?1:0;
+    document.getElementById('autoPlanMonthCount').value='1';renderAutoPlanning();
+    qa.reviewBefore=SFPlanningReview.snapshot(assignments,autoPlanningDates(),1);
+    qa.checkCount=0;SFCompliance.check=()=>{qa.checkCount++;return{hard:[]}};
+   });
+   assert.equal(await page.locator('.sf-plan-diagnostic [data-plan-body] li').count(),0);
+   const diagnostic=page.locator('#autoUnresolved .sf-plan-diagnostic').first();
+   await diagnostic.locator('summary').focus();await page.keyboard.press('Enter');
+   await page.waitForFunction(()=>document.querySelector('#autoUnresolved [data-plan-body] li'));
+   assert.equal(await diagnostic.locator('li').count(),40);assert.match(await diagnostic.textContent(),/Keine persönliche Freigabe für SD/);assert.match(await diagnostic.textContent(),/Einzeldienst prüfbar/);
+   await diagnostic.getByRole('button',{name:'Weiter',exact:true}).click();assert.equal(await diagnostic.locator('li').count(),40);assert.match(await diagnostic.textContent(),/41–80 von 85/);
+   await diagnostic.getByRole('button',{name:'Weiter',exact:true}).click();assert.equal(await diagnostic.locator('li').count(),5);
+   await page.evaluate(()=>{autoPlanPreview=[{id:'preview',employeeId:'e84',date:'2027-01-05',type:'SD',start:'14:00',end:'22:00'}];SFPlanningReview.refreshOpen()});
+   assert.match(await diagnostic.textContent(),/bereits mit einem Dienst belegt/);
+   await page.evaluate(()=>{
+    document.getElementById('autoMonthHours').innerHTML=SFPlanningReview.hoursMarkup(employees[1],180);
+   });
+   const missing=page.locator('#autoMonthHours .sf-plan-diagnostic');await missing.locator('summary').click();assert.match(await missing.textContent(),/keine offenen Pflichtpositionen/);
+   await page.evaluate(()=>{
+    autoPlanPreview=employees.map(e=>({employeeId:e.id,date:'2027-01-06',type:'SD',start:'14:00',end:'22:00'}));
+    qa.reviewResult={base:[],reviewBefore:qa.reviewBefore};SFPlanningReview.render(qa.reviewResult);
+   });
+   const comparison=page.locator('#autoPlanComparison');assert.equal(await comparison.isVisible(),true);assert.match(await comparison.textContent(),/1 bestehende Zuordnungen entfallen/);assert.match(await comparison.textContent(),/85 neue Zuordnungen/);
+   const changes=comparison.locator('details');await changes.locator('summary').click();await changes.locator('tbody tr').first().waitFor({state:'visible'});assert.equal(await changes.locator('tbody tr').count(),40);
+   await changes.getByRole('button',{name:'Weiter',exact:true}).click();assert.equal(await changes.locator('tbody tr').count(),40);
+   await changes.locator('select').selectOption('e0');assert.equal(await changes.locator('tbody tr').count(),2);assert.match(await changes.textContent(),/2027-01-04/);assert.match(await changes.textContent(),/2027-01-06/);
+   for(const [theme,width]of[['dark',1440],['light',1440],['dark',390],['light',320]]){
+    await page.setViewportSize({width,height:1000});await page.evaluate(t=>document.documentElement.dataset.sfTheme=t,theme);
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),true);
+    await comparison.screenshot({path:path.join(out,'comparison-'+theme+'-'+width+'.png')});
+   }
+   assert.deepEqual(await page.evaluate(()=>[assignments.length,assignments[0].id,autoPlanPreview.length]),[1,'old',85]);
+   await page.evaluate(()=>{SFPlanningReview.render({base:[]});});assert.match(await comparison.textContent(),/Ausgangsstand/);
+   await page.evaluate(()=>SFPlanningReview.reset());assert.equal(await comparison.isVisible(),false);
    // Inspect the complete rules view with a realistic policy and no production data.
    await page.evaluate(()=>{autoPlanPreview=[];autoPlanAnalyzed=false;assignments=[];employees=[];TYPES.push({id:'OT1',start:'06:00',end:'16:00'},{id:'OT2',start:'08:00',end:'18:00'},{id:'OT3',start:'10:00',end:'20:00'});SFCompliance.policy={solidPlanningRules:{enabled:true,confirmedRulesVersion:2,monthlyHoursOnly:true,fullTimeMonthlyTarget:180,monthlyMaxHours:200,maxCalendarWeekHours:55,maxConsecutiveShifts:4,maxConsecutiveNightShifts:4,minFreeCalendarDays:2,minNightRecoveryCalendarDays:2,minBlockRestHours:48,otOnlyMonthlyMaxHours:200,otOnlyMaxCalendarWeekHours:55,otOnlyMaxConsecutiveShifts:5,otWeekdayRoster:{employeeIds:['a','b','c'],weekdays:[1,2,3,4,5],allowDaysOff:true,minimumDailyStaff:2},teamLeaderMaxConsecutiveNightShifts:4,teamLeaderMinNightRecoveryCalendarDays:2,teamLeaderPreferredNightBlockLength:4,teamLeaderMinimumMonthlyHours:170,fixedWorkRestCycle:{pattern:['ALLE','ALLE','ALLE','ALLE','FREI','FREI','FREI','ALLE','ALLE','ALLE','FREI','FREI'],excludeShifts:['OT1','OT2','OT3']},fixedWeeklyRoster:{weekdays:[1,2,3,4],code:'O3'},threeNightBlockRecoveryFullCalendarDays:1,preventDescendingShifts:true,otDayHolidayExclusion:true,plannerMonthlyOverride:true,weekendPlanningByRhythm:true,preferredNightBlockLength:4}};renderAutoPlanning()});
    await ruleDetails.locator(':scope > summary').click();
