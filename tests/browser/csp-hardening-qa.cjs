@@ -48,7 +48,7 @@ async function main(){
  }
  // Real local Supabase SDK and original authentication UI, without a signed-in account.
  for(const viewport of [{width:1440,height:1000},{width:390,height:844}]){
-  const h=await pageFor('/',viewport);await h.page.locator('#sfAuthBackdrop').waitFor({timeout:45000});assert.equal(await h.page.evaluate(()=>typeof SFBackend.client.auth.signInWithPassword),'function');await clean(h,'real SDK login '+viewport.width);
+  const h=await pageFor('/',viewport);await h.page.locator('[data-entry-area="verwaltung"]').waitFor({timeout:45000});await h.page.locator('[data-entry-area="verwaltung"]').click();await h.page.locator('#sfEmail').waitFor();assert.equal(await h.page.evaluate(()=>typeof SFBackend.client.auth.signInWithPassword),'function');await clean(h,'real SDK login '+viewport.width);
  }
  for(const viewport of [{width:1440,height:1000},{width:390,height:844}]){
   const h=await pageFor('/__events',viewport),p=h.page;await p.locator('#nested').click();assert.deepEqual(await p.evaluate(()=>qa.calls),['FD']);

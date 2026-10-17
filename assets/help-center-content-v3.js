@@ -111,7 +111,7 @@ window.SFHelpContent = {
     "start": [
       [
         "Wie melde ich mich an?",
-        "Öffnen Sie die SchichtFunk-Startseite und wählen Sie die Anmeldung. Melden Sie sich mit Ihrem eigenen Zugang an. Nach dem Login sehen Sie die Bereiche, die Ihrer Rolle zugewiesen sind."
+        "Wählen Sie auf der SchichtFunk-Startseite Mitarbeiterportal, Arbeitszeit erfassen oder Verwaltung. Mitarbeiterportal und Verwaltung öffnen die Anmeldung mit Ihrem eigenen E-Mail-Zugang. Arbeitszeit erfassen führt zum Scanner für den Standort-QR-Code; danach folgen Personalnummer und persönliche PIN. Über „Mit Zeiterfassungszugang anmelden“ öffnen Sie alternativ die Anmeldung für das Zeiterfassungskonto. „Bereich wechseln“ führt zurück zur Auswahl. Die Auswahl vergibt keine Berechtigungen: Nach dem Login gelten weiterhin die Rolle und die Freigaben Ihres Kontos. Bestehende QR-Links öffnen die Buchungsseite direkt."
       ],
       [
         "Wie beginne ich mit der Planung?",

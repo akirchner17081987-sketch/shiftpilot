@@ -4,7 +4,7 @@
   if(B.__employeeQrScannerV1)return;B.__employeeQrScannerV1=true;
 
   const JSQR_LIB='/assets/vendor/jsqr-1.4.0.js';
-  let stream=null,scanTimer=null,decoderPromise=null,scanning=false;
+  let stream=null,scanTimer=null,decoderPromise=null,scanning=false,returnFocus=null,cameraGeneration=0;
   const demo=()=>sessionStorage.getItem('sf_demo_session_v1')==='active';
 
   function css(){
@@ -51,13 +51,14 @@
   }
 
   function stopCamera(){
+    cameraGeneration++;
     scanning=false;
     if(scanTimer){clearTimeout(scanTimer);scanTimer=null}
     if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}
     const video=document.querySelector('#sfQrScannerModal video');if(video)video.srcObject=null;
   }
 
-  function closeModal(){stopCamera();document.getElementById('sfQrScannerModal')?.remove()}
+  function closeModal(){stopCamera();document.getElementById('sfQrScannerModal')?.remove();if(returnFocus?.isConnected)returnFocus.focus({preventScroll:true});returnFocus=null}
   function setStatus(text,type=''){const n=document.querySelector('#sfQrScannerModal .sf-qr-scan-status');if(n){n.className='sf-qr-scan-status '+type;n.textContent=text}}
 
   async function loadJsQr(){
@@ -129,27 +130,37 @@
 
   async function startCamera(){
     const video=document.querySelector('#sfQrScannerModal video');if(!video)return;
+    const generation=++cameraGeneration;
     if(!navigator.mediaDevices?.getUserMedia){setStatus('Dieser Browser unterstützt keinen direkten Kamerazugriff. Bitte den QR-Code mit der normalen Smartphone-Kamera öffnen.','bad');return}
     try{
       setStatus('Kamera wird gestartet … Bitte Zugriff erlauben.');
-      stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:960}}});
-      video.srcObject=stream;video.setAttribute('playsinline','');video.muted=true;await video.play();scanning=true;
+      const opened=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:960}}});
+      if(generation!==cameraGeneration||!video.isConnected){opened.getTracks().forEach(track=>track.stop());return}
+      stream=opened;
+      video.srcObject=stream;video.setAttribute('playsinline','');video.muted=true;await video.play();
+      if(generation!==cameraGeneration||!video.isConnected)return;
+      scanning=true;
       setStatus('Kamera aktiv · QR-Code innerhalb des Rahmens halten.');
       if(await scanWithBarcodeDetector(video))return;
       await scanWithCanvas(video);
     }catch(e){
+      if(generation!==cameraGeneration)return;
       stopCamera();
       const name=String(e?.name||''),msg=/NotAllowed|Permission/i.test(name)?'Kamerazugriff wurde nicht erlaubt. Bitte Kamera für SchichtFunk freigeben oder den QR-Code mit der normalen Smartphone-Kamera scannen.':/NotFound|DevicesNotFound/i.test(name)?'Keine Kamera gefunden. Bitte den QR-Code mit einem Smartphone scannen.':'Kamera konnte nicht gestartet werden. Bitte Browser-Berechtigung prüfen oder die normale Smartphone-Kamera verwenden.';
       setStatus(msg,'bad');console.debug('[SchichtFunk QR Scanner]',e?.message||e);
     }
   }
 
-  function openModal(){
-    if(B.role!=='EMPLOYEE')return;css();closeModal();
+  function openModal(fromEntry=false,opener=null){
+    if(B.role!=='EMPLOYEE'&&!fromEntry)return;css();closeModal();returnFocus=opener||document.activeElement;
     const back=document.createElement('div');back.id='sfQrScannerModal';back.className='sf-qr-scan-backdrop';back.innerHTML=`<section class="sf-qr-scan-modal" role="dialog" aria-modal="true" aria-labelledby="sfQrScanTitle"><header class="sf-qr-scan-head"><div><div style="font-size:9px;font-weight:900;letter-spacing:.14em;color:#6edfc7">MITARBEITER · ZEITERFASSUNG</div><h2 id="sfQrScanTitle">QR-Code scannen</h2><p>Kamera auf den SchichtFunk-QR-Code am Objekt/Einsatzort richten.</p></div><button type="button" class="sf-qr-scan-close" aria-label="Scanner schließen">×</button></header><div class="sf-qr-scan-body"><div class="sf-qr-scan-camera"><video autoplay muted playsinline></video><div class="sf-qr-scan-frame" aria-hidden="true"></div></div><div class="sf-qr-scan-status">Scanner wird vorbereitet …</div>${demo()?'<div class="sf-qr-scan-demo"><b>Demo-Modus:</b> Die Kamera darf den QR-Code erkennen, aber es wird keine echte Zeitbuchung geöffnet oder gespeichert.</div>':''}<div class="sf-qr-scan-privacy">🔒 Die Kamerabilder werden nur lokal im Browser zur QR-Erkennung verarbeitet und nicht gespeichert oder hochgeladen.</div></div></section>`;
     document.body.appendChild(back);back.querySelector('.sf-qr-scan-close').onclick=closeModal;back.addEventListener('click',e=>{if(e.target===back)closeModal()});
     back.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});back.querySelector('.sf-qr-scan-close').focus();startCamera();
   }
+
+  // Public entry only decodes a location QR. The destination still requires the
+  // terminal token and personal PIN; no account role or booking is granted here.
+  window.SFEntryQrScanner={open:opener=>openModal(true,opener),close:closeModal};
 
   document.addEventListener('click',e=>{const b=e.target.closest?.('[data-sf-qr-scan]');if(b){e.preventDefault();openModal()}},true);
   document.addEventListener('visibilitychange',()=>{if(document.hidden&&document.getElementById('sfQrScannerModal'))closeModal()});
