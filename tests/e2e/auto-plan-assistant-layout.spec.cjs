@@ -8,7 +8,7 @@ const planning=index.slice(index.indexOf('let autoPlanPreview=[];'),index.indexO
 const styles=[...index.matchAll(/<style[^>]*>([\s\S]*?)<\/style>|<link\b[^>]*rel="stylesheet"[^>]*>/g)].map(m=>m[1]!==undefined?'<style>'+m[1]+'</style>':m[0]).join('\n');
 const script=s=>'<script>'+s.replace(/<\/script/gi,'<\\/script')+'</script>';
 const assistantTag=index.match(/<script\b[^>]*\bsrc="assets\/planning-assistant-v1\.js[^\"]*"><\/script>/)[0];
-const modules=['date-month-format-v1.js','employee-rhythm-v1.js','compliance-core-v2.js','supabase-auto-plan-guard-v1.js','individual-month-planner-v1.js','month-optimizer-core-v1.js','auto-plan-workspace-v1.js','month-optimizer-v1.js','help-center-content-v3.js','planning-assistant-core-v1.js'];
+const modules=['csp-actions-v1.js','date-month-format-v1.js','employee-rhythm-v1.js','compliance-core-v2.js','supabase-auto-plan-guard-v1.js','individual-month-planner-v1.js','month-optimizer-core-v1.js','auto-plan-workspace-v1.js','month-optimizer-v1.js','help-center-content-v3.js','planning-assistant-core-v1.js'];
 const fake=`
 window.__writes=0;window.store={get:(key,fallback)=>fallback,set:()=>__writes++};window.saveAll=()=>__writes++;window.showSaveToast=()=>{};window.renderCalendar=()=>{};
 window.SFBackend={ready:true,role:'PLANNER',user:{id:'fictitious-user'},companyId:'fictitious-company'};
