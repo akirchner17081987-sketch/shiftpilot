@@ -280,15 +280,25 @@ test('rules overview follows the current company while the start strip describes
  c.window.SFCompliance={policy:{solidPlanningRules:{enabled:true,confirmedRulesVersion:2,monthlyHoursOnly:true,fullTimeMonthlyTarget:180,monthlyMaxHours:200,maxCalendarWeekHours:55}}};
  id('autoRuleDetails').open=true;c.renderAutoPlanning();
  assert.match(id('autoRuleValues').innerHTML,/Vollzeit-SOLL 180 h/);assert.match(id('autoRuleValues').innerHTML,/200 h\/Monat/);
- assert.match(id('autoRuleText').textContent,/keine zusätzliche feste Anzahl/);assert.match(id('autoStartHint').textContent,/offene Position/);assert.doesNotMatch(id('autoStartHint').textContent,/Verbindlich:|Monats-SOLL/);
+ assert.match(id('autoRuleText').innerHTML,/Keine zusätzliche feste Anzahl/);assert.match(id('autoStartHint').textContent,/offene Position/);assert.doesNotMatch(id('autoStartHint').textContent,/Verbindlich:|Monats-SOLL/);
  c.window.SFCompliance.policy={monthlyPlanningMaxHours:184,solidPlanningRules:{enabled:true,maxConsecutiveShifts:4}};c.renderAutoPlanning();
  assert.match(id('autoRuleValues').innerHTML,/184 h\/Monat/);assert.doesNotMatch(id('autoRuleValues').innerHTML,/200|180|55/);assert.equal(id('autoRuleDetails').open,true);
- c.window.SFCompliance.policy={};c.renderAutoPlanning();assert.equal(id('autoRuleGoals').hidden,true);assert.doesNotMatch(id('autoRuleText').textContent,/184|200/);
+ c.window.SFCompliance.policy={};c.renderAutoPlanning();assert.equal(id('autoRuleGoals').hidden,true);assert.doesNotMatch(id('autoRuleText').innerHTML,/184|200/);
 });
 
 test('rhythm-based policy removes weekend goals from the overview, including a stale numeric target',()=>{
  const {c,id}=harness();vm.runInNewContext(read('assets/solid-planning-core-v1.js'),c);
  c.window.SFCompliance={policy:{solidPlanningRules:{enabled:true,minFreeWeekendsPerMonth:1,weekendPlanningByRhythm:true}}};c.renderAutoPlanning();
- assert.doesNotMatch(id('autoRuleGoalText').textContent,/Wochenend/);assert.match(id('autoRuleGoalText').textContent,/Nächte/);
- c.window.SFCompliance.policy.solidPlanningRules.weekendPlanningByRhythm=false;c.renderAutoPlanning();assert.match(id('autoRuleGoalText').textContent,/1 vollständig freie Wochenenden/);
+ assert.doesNotMatch(id('autoRuleGoalText').innerHTML,/Wochenend/);assert.match(id('autoRuleGoalText').innerHTML,/Nächte/);
+ c.window.SFCompliance.policy.solidPlanningRules.weekendPlanningByRhythm=false;c.renderAutoPlanning();assert.match(id('autoRuleGoalText').innerHTML,/Zusätzliche freie Wochenenden[\s\S]*1 pro Monat/);
+});
+
+test('rule cards distinguish general limits, OT rules, leader rules and recovery exceptions',()=>{
+ const {c,id}=harness();vm.runInNewContext(read('assets/ot-weekend-holiday-policy.js'),c);vm.runInNewContext(read('assets/solid-planning-core-v1.js'),c);c.TYPES.push({id:'OT2',start:'08:00',end:'18:00'});
+ c.window.SFCompliance={policy:{solidPlanningRules:{enabled:true,confirmedRulesVersion:2,monthlyHoursOnly:true,monthlyMaxHours:200,maxCalendarWeekHours:55,maxConsecutiveShifts:4,maxConsecutiveNightShifts:4,minNightRecoveryCalendarDays:2,otOnlyMonthlyMaxHours:200,otOnlyMaxConsecutiveShifts:5,otWeekdayRoster:{employeeIds:['a','b','c'],weekdays:[1,2,3,4,5],allowDaysOff:true,minimumDailyStaff:2},teamLeaderMaxConsecutiveNightShifts:4,teamLeaderMinimumMonthlyHours:170,threeNightBlockRecoveryFullCalendarDays:1,preventDescendingShifts:true,otDayHolidayExclusion:true,plannerMonthlyOverride:true,weekendPlanningByRhythm:true}}};
+ c.renderAutoPlanning();const markup=id('autoRuleText').innerHTML;
+ assert.match(markup,/data-rule-section="recovery"[\s\S]*Dienste am Stück<\/dt><dd>Max. 4/);assert.match(markup,/data-rule-section="ot"[\s\S]*Dienste am Stück<\/dt><dd>Max. 5/);
+ for(const key of ['hours','recovery','ot','leaders','rhythms','changes','holidays','personal'])assert.ok(markup.includes('data-rule-section="'+key+'"'));
+ assert.match(markup,/Mind. 2 Mitarbeiter/);assert.match(markup,/Schlaftag \+ 1 voller freier Tag/);assert.match(markup,/170 h, danach Vertrags-SOLL/);assert.match(markup,/Planer dürfen/);
+ c.window.SFCompliance.policy={};c.renderAutoPlanning();assert.doesNotMatch(id('autoRuleText').innerHTML,/170|200|data-rule-section="ot"|Planer dürfen/);
 });
