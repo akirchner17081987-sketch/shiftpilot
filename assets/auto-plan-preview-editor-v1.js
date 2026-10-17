@@ -31,6 +31,7 @@
    const rhythm=window.sfRhythmCheck?.(e,a.type,a.date);if(rhythm?.mode==='required'&&!rhythm.allowed)issues.push(prefix+rhythm.reason);
    if(others.some(b=>same(b.employeeId,e.id)&&b.date===a.date))issues.push(prefix+'An diesem Tag ist bereits ein Dienst vorhanden.');
    if(C?.check)withRows(others,()=>issues.push(...C.check(e,a.type,a.date,a.start,a.end).hard.map(v=>prefix+v)));
+   if(C?.monthPlanningCheck){const end=S?.interval(a.date,a.start,a.end,policy()?.timezone)?.end;for(const month of new Set([a.date.slice(0,7),end?S.localDate(end-1,policy()).slice(0,7):a.date.slice(0,7)]))issues.push(...C.monthPlanningCheck(e,month+'-01',all).map(v=>prefix+v));}
    else if(window.SFAutoPlanGuard)withRows(others,()=>{const reason=window.SFAutoPlanGuard.transitionConflict?.(e.id,a.type,a.date);if(reason)issues.push(prefix+reason);else if(!window.SFAutoPlanGuard.passesTimeRules(e.id,a.type,a.date))issues.push(prefix+'Ruhezeit, Schichtwechsel oder Dienstfolge ist nicht zulässig.');});
    if(policy()?.enabled&&S)issues.push(...S.errors(e,all,policy(),[a.date]).map(v=>prefix+v.message));
    const limits=withRows(others,()=>autoHourLimits(e)),own=all.filter(b=>same(b.employeeId,e.id)&&b.date.slice(0,7)===a.date.slice(0,7));

@@ -80,7 +80,8 @@
     if(monthTarget>0&&monthHours+duration>monthTarget+.01)soft.push(`Monats-SOLL würde auf ${(monthHours+duration).toFixed(1)} / ${Number(monthTarget).toFixed(1)} Std. steigen.`);
     const so=Number(getSoll(date,type)||0),ist=assignmentsFor(date,type).filter(a=>a.id!==ignoreId).length;if(so&&ist>=so)soft.push(`SOLL-Stärke ${so} ist bereits erreicht.`);
     const monthlyRows=[...assignments.filter(a=>a.id!==ignoreId),{employeeId:emp.id,type,date,start:start||t.start,end:end||t.end}];
-    for(const month of new Set([String(date).slice(0,7),C.iso(new Date(p.end-1)).slice(0,7)]))hard.push(...C.monthPlanningCheck(emp,month+'-01',monthlyRows));
+    const manualMonthlyOverride=C.policy?.solidPlanningRules?.plannerMonthlyOverride&&/^Vollzeit(?:\s+180)?$/i.test(String(emp.employment||'').trim())&&monthTarget>=180&&['OWNER','ADMIN','PLANNER','DISPATCHER'].includes(window.SFBackend?.role);
+    for(const month of new Set([String(date).slice(0,7),C.iso(new Date(p.end-1)).slice(0,7)])){const issues=C.monthPlanningCheck(emp,month+'-01',monthlyRows);if(manualMonthlyOverride)soft.push(...issues.map(message=>message+' Individuelle Überschreitung durch den Planer.'));else hard.push(...issues);}
     if(C.policy?.solidPlanningRules?.enabled&&window.SFSolidPlanningCore)hard.push(...window.SFSolidPlanningCore.errors(emp,monthlyRows,C.policy.solidPlanningRules,[date]).map(x=>x.message));
     return{hard:[...new Set(hard)],soft,proposed:p,duration,rest};
   };
