@@ -9,17 +9,85 @@
   const html=(node,value)=>{if(!node||written.get(node)===value)return;node.innerHTML=value;written.set(node,value)};
   let suggestionKey='',suggestionHost=null,stairMonth='',unresolvedPage=0,unresolvedKey='';
   const shiftLabel=code=>{const t=typeById(code);return t?.name&&t.name!==code?`${code} · ${t.name}`:code};
+  function renderRuleCards(rules,company,core,confirmed){
+    const p=rules||{},cards=[],hasOT=TYPES.some(t=>['OT1','OT2','OT3'].includes(t.id));
+    const card=(key,title,rows=[],notes=[])=>{
+      const preview={hours:rows.slice(0,2).map(([label,value])=>`${label}: ${value}`).join(' · '),recovery:rows.slice(0,2).map(([label,value])=>`${label}: ${value}`).join(' · '),ot:`${p.otWeekdayRoster?'Mo–Fr · ':''}${p.otOnlyMonthlyMaxHours} h/Monat${p.otWeekdayRoster?' · Wochenende frei':''}`,leaders:`Max. ${p.teamLeaderMaxConsecutiveNightShifts} Nächte${p.teamLeaderMinimumMonthlyHours!=null?` · erstes Ziel ${p.teamLeaderMinimumMonthlyHours} h`:''}`,rhythms:rows[0]?.[1],changes:p.preventDescendingShifts?'Gleiche oder aufsteigende Dienste':'TL → O1 am Folgetag gesperrt',holidays:'OT nach Bedarf · keine OT1 / OT2 / OT3',personal:'Freigaben · Stundenlimits · Rhythmen'}[key];
+      return `<details class="sf-auto-rule-card" data-rule-section="${key}"><summary><h3>${esc(title)}<small>${esc(preview)}</small></h3></summary><div class="sf-auto-rule-card-body">${rows.length?`<dl>${rows.map(([label,value])=>`<div><dt>${esc(label)}</dt><dd>${esc(value)}</dd></div>`).join('')}</dl>`:''}${notes.length?`<ul>${notes.map(note=>`<li>${esc(note)}</li>`).join('')}</ul>`:''}</div></details>`;
+    };
+    const weekdays=days=>(days||[]).map(d=>['','Mo','Di','Mi','Do','Fr','Sa','So'][d]).filter(Boolean).join(' · ');
+    if(!confirmed){
+      const hours=[];if(Number(company.monthlyPlanningMaxHours)>0)hours.push(['Monatsobergrenze',`${company.monthlyPlanningMaxHours} h`]);
+      if(Number(company.monthlyPlanningMaxShifts)>0)hours.push(['Automatische Dienste / Monat',company.monthlyPlanningMaxShifts]);
+      if(hours.length)cards.push(card('hours','Stunden & Monatsgrenzen',hours));
+      if(p.enabled)cards.push(card('recovery','Arbeitsblöcke & Erholung',[
+        ['Dienste am Stück',`Max. ${p.maxConsecutiveShifts??4}`],['Zwischen Arbeitsblöcken',`${p.minFreeStartDays??2} freie Starttage`],['Ruhe zwischen Blöcken',`Mind. ${p.minBlockRestHours??48} h`]
+      ]));
+    }else{
+      const hours=p.monthlyHoursOnly?[['Monats-SOLL · Vollzeit',`${p.fullTimeMonthlyTarget??180} h`],['Automatische Monatsobergrenze',`${p.monthlyMaxHours??200} h`]]:[['Monatsobergrenze',`${p.monthlyMaxHours??190} h`]];
+      hours.push(['Je Kalenderwoche',`Max. ${p.maxCalendarWeekHours??40} h`]);
+      if(!p.monthlyHoursOnly){
+        const minutes=t=>{const m=x=>Number(x.slice(0,2))*60+Number(x.slice(3,5));return(m(t.end)-m(t.start)+1440)%1440},normal=TYPES.filter(t=>!['OT1','OT2','OT3'].includes(t.id));
+        if(normal.some(t=>minutes(t)>480))hours.push(['Dienste über 8 h',`Max. ${p.tenHourMaxShifts??18} / Monat`]);
+        if(normal.some(t=>minutes(t)>0&&minutes(t)<=480))hours.push(['8-Stunden-Modell',`Max. ${p.eightHourMaxShifts??23} Dienste / ${Math.min(p.monthlyMaxHours??190,p.eightHourAutoMaxHours??184)} h automatisch`]);
+      }
+      cards.push(card('hours','Stunden & Monatsgrenzen',hours,[
+        ...(p.monthlyHoursOnly?['Keine zusätzliche feste Anzahl automatischer Dienste.']:[]),
+        'Teilzeit und niedrigere persönliche Grenzen bleiben maßgeblich. Nachtüberträge werden mitgerechnet.',
+        ...(p.plannerMonthlyOverride?['Planer dürfen Vollzeit-SOLL und Monatsobergrenze individuell überschreiten; das System zeigt einen Hinweis.']:[])
+      ]));
+      cards.push(card('recovery','Arbeitsblöcke & Erholung',[
+        ['Dienste am Stück',`Max. ${p.maxConsecutiveShifts??4}`],['Nächte am Stück',`Max. ${p.maxConsecutiveNightShifts??3}`],
+        ['Zwischen Arbeitsblöcken',`${p.minFreeCalendarDays??2} volle freie Kalendertage`],['Ruhe zwischen Blöcken',`Mind. ${p.minBlockRestHours??48} h`],
+        ['Nach Nachtblöcken',`${p.minNightRecoveryCalendarDays??3} volle freie Kalendertage`]
+      ],['Vollständig frei: keine Arbeitszeit im Kalendertag, auch kein Nachtübertrag.','Besondere OT-, Teamleiter- und Rhythmusvorgaben stehen in den eigenen Bereichen.']));
+      if(hasOT&&p.otOnlyMonthlyMaxHours!=null){
+        const roster=core?.otRoster?.(p),rows=[['Dienstlänge','10 h'],['Monatsobergrenze',`${p.otOnlyMonthlyMaxHours} h`],['Je Kalenderwoche',`Max. ${p.otOnlyMaxCalendarWeekHours??p.maxCalendarWeekHours??40} h`],['Dienste am Stück',`Max. ${p.otOnlyMaxConsecutiveShifts??p.maxConsecutiveShifts??4}`],['Zwischen Arbeitsblöcken',`${p.otOnlyMinFreeCalendarDays??p.minFreeCalendarDays??2} volle freie Tage / mind. ${p.otOnlyMinBlockRestHours??p.minBlockRestHours??48} h`]],notes=['Diese Sonderregeln gelten für OT1 / OT2 / OT3. Für normale OT-Dienste gelten die allgemeinen Regeln.'];
+        if(roster){rows.push(['Arbeitstage',weekdays(roster.weekdays||[1,2,3,4,5])],['Wochenenden & konfigurierte Feiertage','Frei']);
+          if(roster.allowDaysOff)rows.push(['Besetzung pro Werktag',`Mind. ${core.rosterMinimum(p)} Mitarbeiter`]);
+          notes.push('OT2 wird bevorzugt. OT1 und OT3 übernehmen fehlende O3- bzw. O1-Abdeckung.');
+          notes.push(roster.allowDaysOff?'Die Automatik verteilt zusätzliche freie Tage versetzt, wenn die Abdeckung ausreicht.':'Die feste Tagdienstgruppe wird an jedem regulären Werktag eingeplant.');
+        }
+        cards.push(card('ot','OT1 / OT2 / OT3',rows,notes));
+      }
+      if(p.teamLeaderMaxConsecutiveNightShifts!=null){
+        const rows=[['Nächte am Stück',`Max. ${p.teamLeaderMaxConsecutiveNightShifts}`]];
+        if(p.teamLeaderPreferredNightBlockLength!=null)rows.push(['Bevorzugte Blocklänge · Ziel',`${p.teamLeaderPreferredNightBlockLength} Nächte`]);
+        if(p.teamLeaderMinNightRecoveryCalendarDays!=null)rows.push(['Nach Nachtblöcken',`${p.teamLeaderMinNightRecoveryCalendarDays} volle freie Kalendertage / mind. ${p.minBlockRestHours??48} h`]);
+        if(p.teamLeaderMinimumMonthlyHours!=null)rows.push(['Erstes Monatsziel',`${p.teamLeaderMinimumMonthlyHours} h, danach Vertrags-SOLL`]);
+        cards.push(card('leaders','Teamleiter',rows,['Persönliche niedrigere Grenzen und das Wochenmaximum gelten weiterhin.']));
+      }
+      const rhythm=[],notes=[],cycle=p.fixedWorkRestCycle;
+      if(cycle?.pattern?.length){const runs=[];for(const value of cycle.pattern){const last=runs.at(-1);if(last?.value===value)last.count++;else runs.push({value,count:1})}rhythm.push(['Fester Rhythmus',runs.map(x=>`${x.count} ${x.value==='ALLE'?'Arbeit':x.value==='FREI'?'frei':x.value}`).join(' → ')]);if(cycle.excludeShifts?.length)notes.push(`Ausgenommen: ${cycle.excludeShifts.join(' / ')}.`);}
+      if(p.threeNightBlockRecoveryFullCalendarDays!=null){rhythm.push(['Nach genau 3 Nächten',`Schlaftag + ${p.threeNightBlockRecoveryFullCalendarDays} voller freier Tag`],['Nach 4 Nächten',`Schlaftag + ${p.minNightRecoveryCalendarDays??2} volle freie Tage`]);notes.push(`Mindestens ${p.minBlockRestHours??48} h Ruhe bleiben verbindlich.`);}
+      if(p.fixedWeeklyRoster){rhythm.push(['Fester Wochendienst',`${weekdays(p.fixedWeeklyRoster.weekdays)} · ${p.fixedWeeklyRoster.code||'laut Vorgabe'}`]);notes.push('Der feste Wochendienst gilt nur für die jeweils hinterlegten Mitarbeiter.');}
+      if(rhythm.length)cards.push(card('rhythms','Feste Rhythmen',rhythm,notes));
+      const changes=[];
+      if(p.preventDescendingShifts)changes.push('Gleiche oder aufsteigende Dienste: OT → O1 → O2 / TL-LE / TL-RE → O3.','Absteigende Wechsel am Folgetag sind gesperrt.');
+      else if(p.preventLeaderToO1)changes.push('TL-LE / TL-RE → O1 am Folgetag gesperrt. O1 → TL bleibt möglich.');
+      if(changes.length)cards.push(card('changes','Schichtwechsel',[],changes));
+      if(p.otDayHolidayExclusion)cards.push(card('holidays','Feiertage',[
+        ['Normale OT','Nach Bedarf und Einsatzort'],['OT1 / OT2 / OT3','Keine Einplanung · SOLL 0']
+      ],['Die konfigurierten Feiertage für Deutschland, Sachsen und Nordrhein-Westfalen werden berücksichtigt.']));
+    }
+    cards.push(card('personal','Persönliche Vorgaben',[],[
+      'Verbindliche Rhythmen, feste Wochendienste und persönliche Schichtfreigaben werden aus den Mitarbeiterprofilen übernommen.',
+      'Niedrigere persönliche Stundenlimits und Abwesenheiten bleiben maßgeblich.',
+      ...(p.weekendPlanningByRhythm?['Für andere Mitarbeiter ergeben sich freie Wochenenden aus Rhythmus und Bedarf; es gibt kein zusätzliches Wochenendziel.']:[]),
+      'Aktiver Mitarbeiter, passende Freigabe und freie Zeiten werden bei jeder Besetzung geprüft.'
+    ]));
+    html(el('autoRuleText'),cards.join(''));
+  }
   function renderRules(){
     const company=window.SFCompliance?.policy||{},rules=company.solidPlanningRules,core=window.SFSolidPlanningCore,enabled=!!rules?.enabled,confirmed=core?.confirmed(rules),values=[];
     if(confirmed&&rules.monthlyHoursOnly)values.push(`Vollzeit-SOLL ${rules.fullTimeMonthlyTarget??180} h`);
     const month=confirmed?rules.monthlyMaxHours??(rules.monthlyHoursOnly?200:190):Number(company.monthlyPlanningMaxHours);
     if(month>0)values.push(`Automatisch max. ${month} h/Monat`);
     if(confirmed)values.push(`Max. ${rules.maxCalendarWeekHours??40} h/Kalenderwoche`);
-    const host=el('autoRuleValues');
-    html(host,values.length?values.map(v=>`<span>${esc(v)}</span>`).join(''):'Die hinterlegten Unternehmensregeln gelten.');
-    text('autoRuleText',core?.summary(rules,TYPES,company)||'Aktive Mitarbeiter, persönliche Schichtfreigaben, Abwesenheiten, feste Rhythmen und hinterlegte Stundenlimits werden berücksichtigt. Die persönlichen Monatsziele und hinterlegten Planungsgrenzen gelten.');
+    html(el('autoRuleValues'),values.length?values.map(v=>`<span>${esc(v)}</span>`).join(''):'Die hinterlegten Unternehmensregeln gelten.');
+    renderRuleCards(rules,company,core,confirmed);
     const goals=el('autoRuleGoals');if(goals)goals.hidden=!enabled;
-    if(enabled){const weekends=core?.weekendTarget(rules)||0;text('autoRuleGoalText',`Angestrebt werden ${weekends>0?`${weekends} vollständig freie Wochenenden pro Monat, `:''}bevorzugt ${rules.preferredNightBlockLength||3} Nächte je Block und eine gleichmäßige Belastung mit ${rules.rollingWeekTargetHours||40} h als Ziel in rollierenden 7 Tagen. Abweichungen von diesen Zielen werden im Ergebnis ausgewiesen.`);}
+    if(enabled){const weekends=core?.weekendTarget?.(rules)||0,items=[['Bevorzugter Nachtblock',`${rules.preferredNightBlockLength||3} Nächte`],['Gleichmäßige Belastung',`${rules.rollingWeekTargetHours||40} h als Ziel in rollierenden 7 Tagen`]];if(weekends>0)items.push(['Zusätzliche freie Wochenenden',`${weekends} pro Monat`]);html(el('autoRuleGoalText'),`<dl>${items.map(([label,value])=>`<div><dt>${esc(label)}</dt><dd>${esc(value)}</dd></div>`).join('')}</dl><p>Diese Ziele werden angestrebt. Abweichungen erscheinen im Planungsergebnis.</p>`);}
   }
   function remainingSlots(slots,preview){
     const keyOf=x=>x.date+'|'+(x.coverageGroup||x.type);

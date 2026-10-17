@@ -149,8 +149,30 @@ html[data-sf-theme="light"] .sf-auto-preview-dialog input[type="date"]{color-sch
 
 /* One rules overview; native details preserve keyboard access and the open state. */
 .sf-auto-rule-values{display:flex;flex-wrap:wrap;gap:6px 12px;font-weight:600;color:var(--text)}
-.sf-auto-rule-details{margin-top:12px}
-.sf-auto-rule-details>summary{cursor:pointer;min-height:32px;align-content:center;color:var(--text);font-weight:600}
-.sf-auto-rule-details>summary:focus-visible{outline:2px solid var(--accent,#61c6c2);outline-offset:4px;border-radius:4px}
-.sf-auto-rule-details h3{font-size:12px;margin:16px 0 4px}
-.sf-auto-rule-details p{margin:4px 0 12px;overflow-wrap:anywhere}
+#view-auto .sf-auto-rule-details{grid-column:1/-1;margin:0;padding:18px 22px}
+.sf-auto-rule-details>summary{cursor:pointer;min-height:32px;align-content:center;color:var(--text);font-weight:700;font-size:14px}
+.sf-auto-rule-details>summary:focus-visible{outline:2px solid var(--teal);outline-offset:4px;border-radius:4px}
+.sf-auto-rule-intro{margin:12px 0 16px;color:var(--muted);font-size:13px}
+.sf-auto-rule-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+.sf-auto-rule-card{min-width:0;padding:0;border:1px solid var(--line);border-radius:10px;background:var(--panel2);color:var(--text)}
+.sf-auto-rule-card h3{margin:0;font-size:15px;line-height:1.4}
+.sf-auto-rule-card>summary{padding:16px;cursor:pointer;color:var(--text)}
+.sf-auto-rule-card>summary h3{display:inline-block;max-width:calc(100% - 24px);vertical-align:top}
+.sf-auto-rule-card>summary small{display:block;margin-top:7px;font-size:12px;line-height:1.6;font-weight:400;color:var(--muted)}
+.sf-auto-rule-card>summary:focus-visible{outline:2px solid var(--teal);outline-offset:3px;border-radius:8px}
+.sf-auto-rule-card[open]>summary{border-bottom:1px solid var(--line)}
+.sf-auto-rule-card-body{padding:0 16px 16px}
+.sf-auto-rule-card-body dl>div:first-child{border-top:0}
+.sf-auto-rule-card dl{margin:0;display:grid;gap:0}
+.sf-auto-rule-card dl>div{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:12px;padding:8px 0;border-top:1px solid var(--line);font-size:12px;line-height:1.6}
+.sf-auto-rule-card dt{color:var(--muted)}
+.sf-auto-rule-card dd{margin:0;font-weight:700;overflow-wrap:anywhere}
+.sf-auto-rule-card ul{margin:12px 0 0;padding-left:17px;font-size:12px;line-height:1.65;color:var(--muted)}
+.sf-auto-rule-card li+li{margin-top:7px}
+.sf-auto-rule-card p{font-size:12px;line-height:1.6;color:var(--muted);margin:12px 0 0}
+.sf-auto-rule-goals{padding:18px;margin-top:14px;border-left:3px solid var(--teal)}
+.sf-auto-rule-goals h3{margin-bottom:14px}
+.sf-auto-rule-goals[hidden]{display:none}
+.sf-auto-rule-goals dl{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:24px}
+@media(min-width:1280px){.sf-auto-rule-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:650px){#view-auto .sf-auto-rule-details{padding:14px}.sf-auto-rule-grid{grid-template-columns:1fr}.sf-auto-rule-goals{padding:14px}.sf-auto-rule-goals dl{grid-template-columns:1fr}}
