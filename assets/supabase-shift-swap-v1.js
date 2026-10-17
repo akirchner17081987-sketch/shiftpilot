@@ -132,7 +132,7 @@
     if(!pendingSwap(x.status)&&x.status!=='APPLIED')return '';
     const at=x.status==='PENDING_COLLEAGUE'?0:x.status==='PENDING_MANAGER'?1:3;
     const labels=['KOLLEGE','DISPOSITION','DIENSTPLAN'],texts=at===3?['Zugestimmt','Freigegeben','\u00dcbernommen']:at===1?['Zugestimmt','Freigabe offen','Noch unver\u00e4ndert']:['Antwort offen','Danach Freigabe','Noch unver\u00e4ndert'];
-    return '<div class="sf-sx-progress" aria-label="Stand der Freigabe">'+labels.map((label,i)=>'<div class="sf-sx-step '+(i<at?'done':i===at?'current':'')+'"><small>'+(i+1)+'. '+label+'</small><b>'+texts[i]+'</b></div>').join('')+'</div>';
+    return '<p class="sf-sx-next">'+(at===3?'Abgeschlossen · Dienstplan aktualisiert':at===1?'Nächster Schritt: Disposition gibt den Dienst frei':x.direction==='INCOMING'?'Du bist dran: Anfrage annehmen oder ablehnen':'Nächster Schritt: '+esc(x.other_employee_name||'Angefragter Kollege')+' antwortet')+'</p><div class="sf-sx-progress" aria-label="Stand der Freigabe">'+labels.map((label,i)=>'<div class="sf-sx-step '+(i<at?'done':i===at?'current':'')+'"><small>'+(i+1)+'. '+label+'</small><b>'+texts[i]+'</b></div>').join('')+'</div>';
   }
   function swapRow(x){
     const incoming=x.direction==='INCOMING',answer=incoming&&x.status==='PENDING_COLLEAGUE',pending=pendingSwap(x.status);
@@ -142,7 +142,7 @@
   }
   function renderEmployeeSwapCard(){
     if(B.role!=='EMPLOYEE')return;const portal=document.getElementById('sfEmployeePortal');if(!portal)return;const right=portal.querySelector('.sf-portal-grid > div[style*="display:grid"]')||portal.querySelector('.sf-portal-grid');if(!right)return;
-    const card=portal.querySelector('#sfEmployeeSwapCard')||document.createElement('section');card.id='sfEmployeeSwapCard';card.className='sf-portal-card sf-swap-card';card.dataset.sfPortalSection='swaps';card.dataset.sfSwapCount=String(employeeSwaps.length);
+    const card=portal.querySelector('#sfEmployeeSwapCard')||document.createElement('section');card.id='sfEmployeeSwapCard';card.className='sf-portal-card sf-swap-card';card.dataset.sfPortalSection='swaps';card.dataset.sfSwapCount=String(employeeSwaps.length);card.dataset.sfActionCount=String(employeeSwaps.filter(x=>swapGroup(x)==='answer').length);
     const rows=employeeSwaps.slice().sort((a,b)=>{const rank={answer:0,waiting:1,history:2};return rank[swapGroup(a)]-rank[swapGroup(b)]||new Date(b.requested_at)-new Date(a.requested_at)});
     const counts={all:rows.length,answer:rows.filter(x=>swapGroup(x)==='answer').length,open:rows.filter(x=>pendingSwap(x.status)).length,outgoing:rows.filter(x=>x.direction==='OUTGOING').length,history:rows.filter(x=>!pendingSwap(x.status)).length};
     const filtered=rows.filter(x=>swapView==='all'||swapView==='answer'&&swapGroup(x)==='answer'||swapView==='open'&&pendingSwap(x.status)||swapView==='outgoing'&&x.direction==='OUTGOING'||swapView==='history'&&!pendingSwap(x.status)),shown=filtered.slice(0,swapLimit);

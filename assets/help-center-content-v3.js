@@ -669,7 +669,7 @@ window.SFHelpContent = {
     "portal": [
       [
         "Was finde ich im Mitarbeiterportal?",
-        "Je nach Freigabe finden Sie Übersicht, Ersatzanfragen, Schicht-Marktplatz, Meine Schichten, Schichtänderungen, Schichttausch, Arbeitszeit, Abwesenheiten, Stundenkonto, Lohnvorschau und Mein Profil. Hinzu kommen Wunschplanung mit geschützten Freizeitzusagen sowie die digitale Schichtübergabe für eigene veröffentlichte Dienste. Berichtsentwürfe und deren Freigabe gehören zur berechtigten Verwaltung und sind nicht für Mitarbeiter freigeschaltet."
+        "Je nach Freigabe finden Sie Übersicht, Ersatzanfragen, Schicht-Marktplatz, Meine Schichten, Schichtänderungen, Schichttausch, Arbeitszeit, Abwesenheiten, Stundenkonto, Lohnvorschau und Mein Profil. In „Meine Schichten“ können Sie die freigegebenen Dienste des gewählten Monats als Kalenderdatei (.ics) exportieren. Diese Datei ist eine Momentaufnahme und kein automatisch aktualisiertes Kalenderabo. Hinzu kommen Wunschplanung mit geschützten Freizeitzusagen sowie die digitale Schichtübergabe für eigene veröffentlichte Dienste. Berichtsentwürfe und deren Freigabe gehören zur berechtigten Verwaltung und sind nicht für Mitarbeiter freigeschaltet."
       ],
       [
         "Wann sehe ich meine Schichten?",
@@ -681,7 +681,7 @@ window.SFHelpContent = {
       ],
       [
         "Wo starte ich den QR-Scanner?",
-        "Auf dem Smartphone finden Sie „QR-Code scannen“ in der Übersicht und im Bereich Arbeitszeit; die mobile Schnellnavigation bietet zusätzlich „QR-Scan“. Halten Sie die Kamera auf den SchichtFunk-Code am Einsatzort."
+        "Auf dem Smartphone finden Sie „QR-Code scannen“ in der Übersicht und im Bereich Arbeitszeit. Über die Orbit-Navigation öffnen Sie alle weiteren Bereiche. Halten Sie die Kamera auf den SchichtFunk-Code am Einsatzort."
       ],
       [
         "Wie erfasse ich Urlaub?",
@@ -701,7 +701,7 @@ window.SFHelpContent = {
       ],
       [
         "Wer sieht meinen eingetragenen Stundenlohn?",
-        "Der für die Lohnvorschau eingegebene Stundenlohn wird privat auf diesem Gerät und separat je Monat gespeichert und nicht an den Arbeitgeber übertragen. Auf einem anderen Gerät oder nach Löschen der Browserdaten kann eine erneute Eingabe nötig sein. Wenn der Browser Speicherung verhindert, zeigt die Vorschau einen entsprechenden Hinweis."
+        "Der für die Lohnvorschau eingegebene Stundenlohn wird privat auf diesem Gerät und separat je Monat gespeichert und nicht an den Arbeitgeber übertragen. Optional können Sie ihn ab dem ausgewählten Monat als Vorgabe für Folgemonate übernehmen. Eigene Monatswerte haben Vorrang; die Vorgabe lässt sich entfernen. Auf einem anderen Gerät oder nach Löschen der Browserdaten kann eine erneute Eingabe nötig sein. Wenn der Browser Speicherung verhindert, zeigt die Vorschau einen entsprechenden Hinweis."
       ],
       [
         "Wie läuft ein Schichttausch mit einem Kollegen ab?",

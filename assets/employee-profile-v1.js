@@ -48,6 +48,6 @@
     catch(e){if(who===scope()&&card.isConnected)feedback.textContent='Anfrage nicht gesendet. '+(e?.message||'Bitte erneut versuchen.')}
     finally{if(who===scope()){sending=false;if(!card.isConnected){render();return}card.querySelectorAll('form button,form input,form textarea,form select,[data-pr-change]').forEach(e=>e.disabled=false)}}
   }
-  B.employeeProfile={render};const old=B.openEmployeePortal;if(typeof old==='function')B.openEmployeePortal=function(){const result=old.apply(this,arguments);setTimeout(render,220);return result};setTimeout(render,1800);
+  B.employeeProfile={render,request:async(category,message)=>{if(B.role!=='EMPLOYEE')return;const who=scope();B.employeePortalNavigate?.('profile');await render();if(who!==scope()||B.role!=='EMPLOYEE')return;const card=shell();if(card&&data){openRequest(card,categories[category]?category:'other');card.querySelector('textarea').value=message||''}}};const old=B.openEmployeePortal;if(typeof old==='function')B.openEmployeePortal=function(){const result=old.apply(this,arguments);setTimeout(render,220);return result};setTimeout(render,1800);
 })();
 

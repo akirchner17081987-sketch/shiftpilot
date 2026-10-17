@@ -2313,6 +2313,11 @@
       "source": "assets/employee-home-v1.js",
       "category": "start",
       "note": "Persönliche Übersicht mit nächstem Dienst, offenen Aufgaben, Arbeitsstatus und vier Schnellzugriffen"
+    },
+    {
+      "source": "assets/employee-portal-polish-v1.js",
+      "category": "start",
+      "note": "Kompakte Mitarbeiteransichten, lesbare Orbit-Statusflächen und Profilhinweise"
     }
   ],
   "categoryCoverage": [
@@ -2847,6 +2852,6 @@
     "correctedArticleCount": 8,
     "articleCount": 221,
     "categoryCount": 21,
-    "assetJavaScriptCount": 206
+    "assetJavaScriptCount": 207
   }
 }
