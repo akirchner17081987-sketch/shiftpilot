@@ -2308,6 +2308,11 @@
       "source": "assets/employee-orbit-v1.js",
       "category": "start",
       "note": "Mitarbeiterportal mit Orbit-Navigation, Kategorien und einheitlicher Gestaltung"
+    },
+    {
+      "source": "assets/employee-home-v1.js",
+      "category": "start",
+      "note": "Persönliche Übersicht mit nächstem Dienst, offenen Aufgaben, Arbeitsstatus und vier Schnellzugriffen"
     }
   ],
   "categoryCoverage": [
@@ -2842,6 +2847,6 @@
     "correctedArticleCount": 8,
     "articleCount": 221,
     "categoryCount": 21,
-    "assetJavaScriptCount": 205
+    "assetJavaScriptCount": 206
   }
 }

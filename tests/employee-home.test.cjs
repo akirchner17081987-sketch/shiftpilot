@@ -1,0 +1,54 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const {PGlite}=require('@electric-sql/pglite');
+const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
+const id=n=>'00000000-0000-4000-8000-'+String(n).padStart(12,'0');
+test('personal home returns only the authenticated employee of the requested company',async t=>{
+ const db=new PGlite(),C=id(1),C2=id(2),U=id(3),F=id(4),E=id(5),E2=id(6),EF=id(7),S=id(8),Q=id(9);
+ try{
+ await db.exec(`create role anon;create role authenticated;create schema auth;create schema private;
+ create function auth.uid() returns uuid language sql as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
+ create function private.sf_has_time_only_login() returns boolean language sql as $$select coalesce(current_setting('request.jwt.claim.time_only',true),'')='true'$$;
+ grant usage on schema public,auth,private to authenticated;grant execute on function auth.uid(),private.sf_has_time_only_login() to authenticated;
+ create table public.companies(id uuid,name text,timezone text);
+ create table public.employees(id uuid,company_id uuid,auth_user_id uuid,status text,access_status text);
+ create table public.company_members(company_id uuid,user_id uuid,status text);
+ create table public.shift_assignments(id uuid,company_id uuid,employee_id uuid,shift_code text,starts_at timestamptz,ends_at timestamptz,break_minutes integer,status text,published_at timestamptz);
+ create table public.shift_templates(company_id uuid,code text,name text,site_id uuid);
+ create table public.company_locations(id uuid,company_id uuid,name text,address text);
+ create table public.time_qr_independent_shifts(id uuid,company_id uuid,employee_id uuid,terminal_id uuid,started_at timestamptz,ended_at timestamptz);
+ create table public.time_qr_terminals(id uuid,company_id uuid,name text,location_note text);
+ create table public.time_qr_independent_breaks(id uuid,shift_id uuid,started_at timestamptz,ended_at timestamptz);
+ create table public.shift_change_requests(id uuid,company_id uuid,employee_id uuid,requires_employee_approval boolean,status text);
+ create table public.shift_change_approvals(change_request_id uuid,approval_type text,status text);
+ create table public.disruption_offers(company_id uuid,employee_id uuid,incident_id uuid,status text,expires_at timestamptz);
+ create table public.disruption_incidents(id uuid,company_id uuid,assignment_id uuid,status text);
+ create table public.notifications(company_id uuid,user_id uuid,employee_id uuid,kind text,is_read boolean);
+ insert into companies values('${C}','A','Europe/Berlin'),('${C2}','B','Europe/Vienna');
+ insert into employees values('${E}','${C}','${U}','active','ACTIVE'),('${E2}','${C2}','${U}','active','ACTIVE'),('${EF}','${C}','${F}','active','ACTIVE');
+ insert into shift_assignments values('${S}','${C}','${E}','O3',now()+interval '1 hour',now()+interval '9 hours',0,'PUBLISHED',now()),('${id(10)}','${C}','${E}','DRAFT',now(),now()+interval '10 hours',0,'DRAFT',null),('${id(11)}','${C}','${EF}','FOREIGN',now(),now()+interval '8 hours',0,'PUBLISHED',now());
+ insert into company_locations values('${id(12)}','${C}','Leipzig','Testadresse');
+ insert into shift_templates values('${C}','O3','Nachtdienst','${id(12)}');
+ insert into time_qr_terminals values('${id(13)}','${C}','VOC EAST','Eingang');
+ insert into time_qr_independent_shifts values('${Q}','${C}','${E}','${id(13)}',now()-interval '35 days',null);
+ insert into time_qr_independent_breaks values('${id(14)}','${Q}',now()-interval '2 hours',now()-interval '90 minutes'),('${id(15)}','${Q}',now()-interval '10 minutes',null);
+ insert into shift_change_requests values('${id(16)}','${C}','${E}',true,'PENDING_EMPLOYEE'),('${id(17)}','${C}','${E}',true,'APPLIED'),('${id(18)}','${C}','${E}',true,'PENDING_MANAGER'),('${id(19)}','${C}','${EF}',true,'PENDING_EMPLOYEE');
+ insert into shift_change_approvals values('${id(18)}','EMPLOYEE','APPROVED');
+ insert into disruption_incidents values('${id(20)}','${C}','${S}','OPEN'),('${id(21)}','${C}','${S}','RESOLVED');
+ insert into disruption_offers values('${C}','${E}','${id(20)}','OFFERED',now()+interval '1 hour'),('${C}','${E}','${id(20)}','OFFERED',now()-interval '1 hour'),('${C}','${E}','${id(21)}','OFFERED',now()+interval '1 hour');
+ insert into notifications values('${C}','${U}','${E}','PROFILE_DECISION',false),('${C}','${U}','${E}','ABSENCE_DECISION',true),('${C2}','${U}','${E2}','PROFILE_DECISION',false),('${C}','${F}','${EF}','PROFILE_DECISION',false);
+ `);
+ await db.exec(read('database/employee-home-summary-v1.sql'));
+ const session=async uid=>{await db.exec('reset role');await db.query("select set_config('request.jwt.claim.sub',$1,false)",[uid||'']);await db.exec('set role authenticated')};
+ const summary=async c=>(await db.query('select public.employee_home_summary($1) v',[c])).rows[0].v;
+ await t.test('anonymous, foreign and time-only access are rejected',async()=>{await session(null);await assert.rejects(summary(C));await session(F);await assert.rejects(summary(C2));await session(U);await db.query("select set_config('request.jwt.claim.time_only','true',false)");await assert.rejects(summary(C));await db.query("select set_config('request.jwt.claim.time_only','false',false)");});
+ await t.test('published next shift, real location, old open QR and active tasks are exact',async()=>{await session(U);const v=await summary(C);assert.equal(v.employee_id,E);assert.equal(v.next_shift.shift_code,'O3');assert.equal(v.next_shift.site_name,'Leipzig');assert.equal(v.qr.state,'BREAK');assert.ok(v.qr.attendance_seconds>=35*86400);assert.ok(v.qr.pause_seconds>=2400&&v.qr.pause_seconds<2405);assert.deepEqual(v.tasks,{changes:1,replacements:1,feedback:1});});
+ await t.test('a second company never receives the previous company QR or shift',async()=>{const v=await summary(C2);assert.equal(v.employee_id,E2);assert.equal(v.next_shift,null);assert.equal(v.qr,null);assert.deepEqual(v.tasks,{changes:0,replacements:0,feedback:1});});
+ await t.test('closed QR booking and answered changes disappear on refresh',async()=>{await db.exec(`reset role;update time_qr_independent_shifts set ended_at=now() where id='${Q}';insert into shift_change_approvals values('${id(16)}','EMPLOYEE','REJECTED');`);await session(U);const v=await summary(C);assert.equal(v.qr,null);assert.equal(v.tasks.changes,0);});
+ await t.test('disabled employees and revoked company membership are rejected',async()=>{await db.exec(`reset role;update employees set access_status='DISABLED' where id='${E}';`);await session(U);await assert.rejects(summary(C));await db.exec(`reset role;update employees set access_status='ACTIVE' where id='${E}';insert into company_members values('${C}','${U}','DISABLED');`);await session(U);await assert.rejects(summary(C));});
+ await t.test('public wrapper does not expose privileged execution to anonymous callers',async()=>{await db.exec('reset role;set role anon');await assert.rejects(summary(C),/permission denied/);});
+ }finally{await db.close()}
+});
+test('countdown and duration handle overnight duties and full days without rounding up work',()=>{
+ const vm=require('node:vm'),c={};vm.runInNewContext(read('assets/employee-home-v1.js'),c);const a=c.SFEmployeeHome;
+ assert.equal(a.countdown('2026-11-01T00:00:00Z',Date.parse('2026-10-31T23:59:10Z')),'Beginn in 1 Min.');assert.equal(a.countdown('2026-11-02T02:00:00Z',Date.parse('2026-11-01T00:00:00Z')),'Beginn in 1 Tag 2 Std.');assert.equal(a.duration(3661),'1 Std. 01 Min.');
+});

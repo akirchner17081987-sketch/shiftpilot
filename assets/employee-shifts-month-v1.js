@@ -65,6 +65,7 @@
     card.querySelectorAll('[data-month-day]').forEach(b=>b.onclick=()=>{selectedDay=b.dataset.monthDay;render(card,true);card.querySelector(`[data-month-day="${selectedDay}"]`)?.focus({preventScroll:true});});
   }
   function mount(){const portal=document.getElementById('sfEmployeePortal');if(!portal||!B.employeePortalData)return;const card=portal.querySelector('.sf-portal-card[data-sf-portal-section="shifts"]')||[...portal.querySelectorAll('.sf-portal-card')].find(c=>c.querySelector('h3')?.textContent.trim()==='Meine Schichten');if(card)render(card);}
+  api.openShift=function(id){const data=B.employeePortalData;if(!data)return false;initialize(data);const shift=published(data).find(s=>String(s.id)===String(id));if(!shift)return false;selectedDay=dayKey(shift.starts_at,zone(data));selectedMonth=selectedDay.slice(0,7);save();mount();return true;};
   api.mount=mount;
   const old=B.openEmployeePortal;if(typeof old==='function')B.openEmployeePortal=function(){const result=old.apply(this,arguments);mount();return result;};
   new MutationObserver(records=>{if(records.some(r=>[...r.addedNodes].some(n=>n.nodeType===1&&(n.id==='sfEmployeePortal'||n.querySelector?.('#sfEmployeePortal')))))mount();}).observe(document.documentElement,{childList:true,subtree:true});
