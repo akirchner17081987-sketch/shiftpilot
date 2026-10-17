@@ -7,6 +7,11 @@ on:
     paths: ["assets/audit-logs*", "tests/audit-workspace*", "tests/browser/audit-workspace*", ".github/workflows/audit-workspace-checks.yml", "supabase/migrations/*audit_workspace*"]
 permissions:
   contents: read
+# Superseded checks may stop; deployment workflows use separate, protected groups.
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   audit-workspace:
     runs-on: ubuntu-latest

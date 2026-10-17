@@ -20,6 +20,11 @@ on:
 permissions:
   contents: read
 
+# Superseded checks may stop; deployment workflows use separate, protected groups.
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   csp-browser:
     name: CSP and local libraries in Chromium

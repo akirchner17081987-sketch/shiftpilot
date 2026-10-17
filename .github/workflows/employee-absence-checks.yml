@@ -11,6 +11,11 @@ on:
       - '.github/workflows/employee-absence-checks.yml'
 permissions:
   contents: read
+# Superseded checks may stop; deployment workflows use separate, protected groups.
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   absences:
     runs-on: ubuntu-latest

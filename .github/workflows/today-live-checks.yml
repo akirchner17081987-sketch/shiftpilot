@@ -6,6 +6,11 @@ on:
       - 'assets/today-workspace*'
       - 'scripts/verify-today-live.py'
       - '.github/workflows/today-live-checks.yml'
+# Superseded checks may stop; deployment workflows use separate, protected groups.
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify-published-release:
     runs-on: ubuntu-latest

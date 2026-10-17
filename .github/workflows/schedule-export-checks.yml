@@ -18,6 +18,11 @@ on:
       - tests/e2e/schedule-export.spec.cjs
 permissions:
   contents: read
+# Superseded checks may stop; deployment workflows use separate, protected groups.
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   exports:
     runs-on: ubuntu-latest

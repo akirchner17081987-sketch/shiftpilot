@@ -19,6 +19,11 @@ on:
       - assets/supabase-time-tracking-v1.js
       - tests/e2e/kpi-layout.spec.cjs
       - .github/workflows/kpi-layout-checks.yml
+# Superseded checks may stop; deployment workflows use separate, protected groups.
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   layout:
     runs-on: ubuntu-latest

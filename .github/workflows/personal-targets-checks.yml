@@ -4,6 +4,11 @@ on:
   branches: [main, codex/ionos-migration]
   paths: ['assets/**','supabase/**','tests/**','.github/workflows/personal-targets-checks.yml']
  workflow_dispatch:
+# Superseded checks may stop; deployment workflows use separate, protected groups.
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
  targets:
   runs-on: ubuntu-latest

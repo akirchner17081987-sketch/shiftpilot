@@ -17,6 +17,11 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+# Superseded checks may stop; deployment workflows use separate, protected groups.
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   performance:
     runs-on: ubuntu-latest
@@ -30,7 +35,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm test
+      # The complete suite runs in Regressionstests and before the production upload.
+      - run: node --test tests/startup-workspaces.test.cjs tests/performance-loader.test.cjs tests/auto-plan-workspace.test.mjs tests/schedule-publication-period.test.mjs
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test tests/e2e/auto-plan-workspace.spec.cjs tests/e2e/schedule-publication-period.spec.cjs

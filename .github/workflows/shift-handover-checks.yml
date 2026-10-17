@@ -10,6 +10,11 @@ on:
       - 'tests/browser/shift-handover-qa.cjs'
       - 'index.html'
       - '.github/workflows/shift-handover-checks.yml'
+# Superseded checks may stop; deployment workflows use separate, protected groups.
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -23,7 +28,7 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - run: npm test && npm run test:ionos && npm run build
+      - run: npm run test:ionos && npm run build
       - run: npx playwright install --with-deps chromium
       - run: npm run test:handover && npm run test:wishes && npm run test:today
       - uses: actions/upload-artifact@v4

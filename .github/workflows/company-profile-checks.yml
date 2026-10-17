@@ -18,6 +18,11 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+# Superseded checks may stop; deployment workflows use separate, protected groups.
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   company-profile:
     runs-on: ubuntu-latest

@@ -7,6 +7,11 @@ on:
     paths: ['assets/access-profiles-v1.js', 'assets/team-admin-v1.js', 'supabase/migrations/20261009220109_four_primary_access_roles.sql', 'tests/sql/access-profiles-*.sql']
 permissions:
   contents: read
+# Superseded checks may stop; deployment workflows use separate, protected groups.
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   profiles:
     runs-on: ubuntu-latest

@@ -4,6 +4,11 @@ on:
     branches: [codex/background-start-fix-20261013, codex/background-speed-20261013]
 permissions:
   contents: read
+# Superseded checks may stop; deployment workflows use separate, protected groups.
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   background-start:
     runs-on: ubuntu-latest
