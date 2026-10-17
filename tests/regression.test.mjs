@@ -215,7 +215,9 @@ test('individual monthly target hours are persisted and enforced during planning
   assert.match(index, /function plannedMonthlyHoursForEmployee\(employeeId,date,simulated=\[\],ignoreId=null\)/);
   assert.match(index, /Wochenmaximum berücksichtigen/);
   assert.match(index, /Das separate Wochenmaximum beachten/);
-  assert.match(index, /maximal 220 Stunden pro Kalendermonat/);
+  assert.match(index, /id="autoRuleDetails"/);
+  assert.match(index, /id="autoRuleText"/);
+  assert.doesNotMatch(index, /maximal 220 Stunden pro Kalendermonat/);
   assert.match(assignmentUx, /Monats-SOLL würde auf/);
 });
 
