@@ -51,3 +51,28 @@ Region-/Globusumschaltung, Hell/Dunkel und Breiten von 320 bis 1920 Pixeln.
 Die Entry-Browserprüfung lädt ebenfalls den neuen Renderer und prüft weiterhin
 Mitarbeiter-/Verwaltungsanmeldung, Deutschland-Zoom, fehlende Kartendaten und
 reduzierte Bewegung. Keine realen Mitarbeiterdaten oder Produktivanmeldungen.
+
+## Aufbau-Transformation beim Einstieg (19.10.2026)
+
+Der bestehende Punkt-/Linienglobus bleibt zunächst als bewusste Grundform sichtbar.
+Sobald die neue Oberfläche tatsächlich gezeichnet werden kann, werden die beiden
+Darstellungen weich überblendet: mindestens 650 ms aktive Grundform, anschließend
+1.600 ms Transformation mit sanftem Beginn und Ende. Kugelzentrum, Radius,
+Längengrad und Neigung stimmen überein. Die vollständigen Bildebenen werden
+gewichtet zusammengesetzt, damit die Kugel während des Übergangs nicht dunkler
+wird und auch die bisherige Atmosphäre verschwindet.
+
+Dies verlängert weder Ladeablauf noch Anmeldung; die Transformation darf auch
+während der bereits bedienbaren Anmeldung im Hintergrund auslaufen. Unsichtbare
+Tabs pausieren. Reduzierte Bewegung und „Animation überspringen“ zeigen die neue
+Oberfläche sofort nach deren Verfügbarkeit. Ein abgeschlossener Aufbau wird bei
+einem Wechsel der Bewegungseinstellung nicht wiederholt. Ohne Oberflächendatei
+oder WebGL bleibt der vorhandene Globus nutzbar.
+
+`node tests/browser/entry-globe-transform-qa.cjs` prüft 19 Bedingungen mit der
+tatsächlichen WebGL-Oberfläche: verzögerte Textur, sichtbare Zwischenstufe,
+gleichmäßige Bildänderung, finale Oberfläche, reduzierte Bewegung, Überspringen,
+fehlende Textur und Ressourcenfreigabe. Die Pixelprüfung berücksichtigt Alpha
+über dem tatsächlichen Hintergrund. Der maximale mittlere RGB-Unterschied je
+50-ms-Schritt lag lokal bei 1,0798 von 255. Die Prüfung läuft auch vor dem
+Produktionsupload; die bestehenden rollenabhängigen Login-Prüfungen bleiben bestehen.

@@ -42,24 +42,54 @@
       points.push({x: Math.cos(lat * rad) * Math.sin(lon * rad), y: -Math.sin(lat * rad), z: Math.cos(lat * rad) * Math.cos(lon * rad), land: onLand, phase: (lon * 13 + lat * 7) * rad});
     }
   }
-  let surface=null, engine=null, projection=null;
-  let size = 600, frame = 0, last = 0, angle = -.22, elapsed = 0, disposed = false;
+  // Keep both designs in the same camera and blend their pixels. Loading the
+  // surface never blocks the login or extends the protected entry's lifetime.
+  const surfaceCanvas=document.createElement('canvas'),surfaceContext=surfaceCanvas.getContext('2d');
+  let surface=null, engine=null, projection=null, revealAt=null, surfaceComplete=false;
+  let size = 600, frame = 0, last = 0, elapsed = 0, disposed = false;
+  root.dataset.globePhase='outline';
   function resize() {
     size = Math.max(1, canvas.getBoundingClientRect().width);
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = canvas.height = Math.round(size * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    surfaceCanvas.width=surfaceCanvas.height=canvas.width;
+    surfaceContext?.setTransform(dpr,0,0,dpr,0,0);
     draw();
   }
   function draw() {
-    const c = size / 2, r = size * .39;
+    const c = size / 2, r = size * .39, longitude=8+elapsed*.0015;
     ctx.clearRect(0, 0, size, size);
-    if(surface&&projection){
-      projection.rotate([-(8+elapsed*.0015),-21]).translate([c,c]).scale(r);
-      if(surface.render(ctx,projection,size,size,elapsed)){
-        ctx.beginPath();engine.d3.geoPath(projection,ctx)(engine.countries);ctx.strokeStyle='#c1e3df30';ctx.lineWidth=.45;ctx.stroke();return;
+    let blend=0;
+    if(surface&&projection&&surfaceContext){
+      projection.rotate([-longitude,-21]).translate([c,c]).scale(r);
+      surfaceContext.clearRect(0,0,size,size);
+      if(surface.render(surfaceContext,projection,size,size,elapsed)){
+        if(revealAt===null)revealAt=Math.max(elapsed,650);
+        const quiet=motion.matches||root.classList.contains('sf-entry-skip-animation')||root.classList.contains('sf-entry-success');
+        const t=surfaceComplete||quiet?1:Math.max(0,Math.min(1,(elapsed-revealAt)/1600));
+        if(t===1)surfaceComplete=true;
+        blend=t*t*(3-2*t);
+        surfaceContext.beginPath();engine.d3.geoPath(projection,surfaceContext)(engine.countries);surfaceContext.strokeStyle='#c1e3df30';surfaceContext.lineWidth=.45;surfaceContext.stroke();
       }
     }
+    const phase=blend>=1?'surface':blend>0?'transforming':'outline';
+    if(root.dataset.globePhase!==phase)root.dataset.globePhase=phase;
+    if(blend<1){
+      drawOutline(c,r,longitude);
+      // Fade the complete old image once, rather than each overlapping point
+      // separately. Its ocean, dots and atmosphere dissolve at the same rate.
+      if(blend>0){ctx.save();ctx.globalCompositeOperation='destination-in';ctx.globalAlpha=1-blend;ctx.fillStyle='#000';ctx.fillRect(0,0,size,size);ctx.restore();}
+    }
+    if(blend>0){
+      ctx.save();ctx.globalAlpha=blend;
+      // Add the two weighted, premultiplied layers: the opaque globe does not
+      // darken halfway through the dissolve, and the old halo also fades out.
+      if(blend<1)ctx.globalCompositeOperation='lighter';
+      ctx.drawImage(surfaceCanvas,0,0,size,size);ctx.restore();
+    }
+  }
+  function drawOutline(c,r,longitude){
     const atmosphere = ctx.createRadialGradient(c, c, r * .86, c, c, r * 1.15);
     atmosphere.addColorStop(0, 'rgba(17,132,167,0)');
     atmosphere.addColorStop(.52, 'rgba(26,194,218,.15)');
@@ -74,11 +104,12 @@
     for (const k of [-.75,-.4,0,.4,.75]) {
       ctx.beginPath(); ctx.ellipse(c, c + r * k, r * Math.sqrt(1 - k * k), r * .12, -.12, 0, Math.PI * 2); ctx.stroke();
     }
-    const sin = Math.sin(angle), cos = Math.cos(angle);
+    const sin = Math.sin(longitude*rad), cos = Math.cos(longitude*rad), tiltSin=Math.sin(21*rad), tiltCos=Math.cos(21*rad);
     for (const p of points) {
-      const x = p.x * cos + p.z * sin, z = p.z * cos - p.x * sin;
+      const x = p.x * cos - p.z * sin, front = p.z * cos + p.x * sin;
+      const z = front*tiltCos-p.y*tiltSin;
       if (z < 0) continue;
-      const y = p.y * .985 - z * .17;
+      const y = p.y*tiltCos+front*tiltSin;
       const shimmer = .65;
       const alpha = (.25 + z * .75) * (p.land ? .7 + shimmer * .3 : .22);
       ctx.fillStyle = p.land ? `rgba(92,239,226,${alpha})` : `rgba(72,147,181,${alpha})`;
@@ -93,7 +124,7 @@
     ctx.beginPath(); ctx.arc(c, c, r, 0, Math.PI * 2); ctx.stroke();
   }
   function dispose() {
-    disposed = true; surface?.dispose();cancelAnimationFrame(frame); observer.disconnect(); resizeObserver.disconnect();
+    disposed = true; surface?.dispose();surfaceCanvas.width=surfaceCanvas.height=1;cancelAnimationFrame(frame); observer.disconnect(); resizeObserver.disconnect();
     document.removeEventListener('visibilitychange', restart);document.removeEventListener('DOMContentLoaded',enhance);document.removeEventListener('sf:entry-dive-ready',enhance); motion.removeEventListener('change', restart);
   }
   function tick(now) {
@@ -102,7 +133,7 @@
     if (document.hidden || motion.matches || root.classList.contains('sf-entry-skip-animation') || root.classList.contains('sf-entry-success')) return;
     if (!last) last = now;
     const delta = now - last;
-    if (delta >= 33) { elapsed += Math.min(delta, 250); angle += Math.min(delta, 100) * .000035;draw();last = now; }
+    if (delta >= 33) { elapsed += Math.min(delta, 250);draw();last = now; }
     frame = requestAnimationFrame(tick);
   }
   function restart() {
