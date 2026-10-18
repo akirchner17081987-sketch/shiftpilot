@@ -49,6 +49,9 @@
       }
     }
     const target = site?.coordinates || null;
+    // Unassigned accounts enter Germany; the country geometry supplies the camera center.
+    const germany = land.features.find(feature => feature.properties?.id === 'DEU');
+    const cameraTarget = target || (germany ? d3.geoCentroid(germany) : [10.5,51.1]);
     let width = root.clientWidth, height = root.clientHeight, frame = 0, disposed = false, last = 0;
     const started = performance.now();
     const clamp = value => Math.max(0,Math.min(1,value));
@@ -66,8 +69,8 @@
       const cx = source.x + (width * .5 - source.x) * move;
       const cy = source.y + (height * .46 - source.y) * move;
       const radius = Math.max(1,source.radius) * Math.exp(zoom * 3.45);
-      const lon = 8 * (1 - move) + (target?.[0] || 8) * move;
-      const lat = 21 * (1 - move) + (target?.[1] || 42) * move;
+      const lon = 8 * (1 - move) + cameraTarget[0] * move;
+      const lat = 21 * (1 - move) + cameraTarget[1] * move;
       const center = [lon,lat];
       projection.rotate([-lon,-lat,0]).translate([cx,cy]).scale(radius);
       ctx.clearRect(0,0,width,height);ctx.save();ctx.globalAlpha = 1 - ease((t - 4350) / 1450);
