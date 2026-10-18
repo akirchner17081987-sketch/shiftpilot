@@ -2,9 +2,9 @@ name: Audit workspace checks
 on:
   push:
     branches: [codex/audit-workspace-20261010, codex/ionos-migration]
-    paths: ["assets/audit-logs*", "tests/audit-workspace*", "tests/browser/audit-workspace*", ".github/workflows/audit-workspace-checks.yml", "supabase/migrations/*audit_workspace*"]
+    paths: ["assets/audit-logs*", "tests/audit-workspace*", "tests/audit-permission-scan*", "database/audit-*", "tests/browser/audit-workspace*", ".github/workflows/audit-workspace-checks.yml", "supabase/migrations/*audit_workspace*", "supabase/migrations/*audit_permission*"]
   pull_request:
-    paths: ["assets/audit-logs*", "tests/audit-workspace*", "tests/browser/audit-workspace*", ".github/workflows/audit-workspace-checks.yml", "supabase/migrations/*audit_workspace*"]
+    paths: ["assets/audit-logs*", "tests/audit-workspace*", "tests/audit-permission-scan*", "database/audit-*", "tests/browser/audit-workspace*", ".github/workflows/audit-workspace-checks.yml", "supabase/migrations/*audit_workspace*", "supabase/migrations/*audit_permission*"]
 permissions:
   contents: read
 # Superseded checks may stop; deployment workflows use separate, protected groups.
