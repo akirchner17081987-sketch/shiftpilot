@@ -5,6 +5,9 @@ const start=index.indexOf('<section id="view-schedule"'),section=index.slice(sta
 const styles=[...index.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map(m=>m[1]).join('\n');
 const links=[...index.matchAll(/<link[^>]*rel="stylesheet"[^>]*>/g)].map(m=>m[0]).join('\n');
 const fixture=String.raw`
+// This fixture contains only Planning; activate that view explicitly instead of
+// inheriting the application's login landing from the extracted HTML section.
+document.getElementById('view-schedule').classList.add('active');
 window.store={get:(k,v)=>v,set:()=>{}};window.weekStart=new Date('2027-01-04T12:00:00');window.SFBackend={companyId:'fictional-company',ready:true,role:'PLANNER',can:()=>!qa.readOnly};window.qa={writes:0,changes:[],readOnly:false};
 window.iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');window.addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};window.currentWeekDates=()=>Array.from({length:7},(_,i)=>addDays(weekStart,i));
 window.TYPES=[{id:'FD',start:'06:00',end:'14:00',cls:'teal'},{id:'ND',start:'22:00',end:'08:00',cls:'blue'},{id:'QA',start:'10:00',end:'18:00',cls:'violet'}];window.typeById=id=>TYPES.find(t=>t.id===id);window.getSoll=(d,t)=>t==='FD'?(d==='2027-01-05'?1:2):0;window.assignmentsFor=(d,t)=>assignments.filter(a=>a.date===d&&a.type===t);
