@@ -1086,6 +1086,38 @@
         "assets/leave-accounts-v1.js",
         "supabase/migrations/20261018065003_employee_leave_accounts.sql"
       ]
+    },
+    {
+      "category": "messages",
+      "question": "Wie schreibe ich eine Kurznachricht?",
+      "sources": [
+        "assets/internal-messages-v1.js",
+        "database/internal-messages-v1.sql"
+      ]
+    },
+    {
+      "category": "messages",
+      "question": "Wer kann Nachrichten lesen und empfangen?",
+      "sources": [
+        "assets/internal-messages-v1.js",
+        "database/internal-messages-v1.sql"
+      ]
+    },
+    {
+      "category": "messages",
+      "question": "Wann werden neue Nachrichten angezeigt?",
+      "sources": [
+        "assets/internal-messages-v1.js",
+        "database/internal-messages-v1.sql"
+      ]
+    },
+    {
+      "category": "messages",
+      "question": "Was passiert mit meinem Entwurf oder bei einem Verbindungsfehler?",
+      "sources": [
+        "assets/internal-messages-v1.js",
+        "database/internal-messages-v1.sql"
+      ]
     }
   ],
   "moduleInventory": [
@@ -2357,9 +2389,25 @@
       "area": "Geschützte Login-Kamerafahrt in den zugeordneten Geschäftsstandort mit geografisch projiziertem Globus",
       "category": "start",
       "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/internal-messages-v1.js",
+      "area": "Persönliche Kurznachrichten für Mitarbeiter- und Verwaltungsportal mit Zugriffsschutz und Ungelesen-Zähler",
+      "category": "messages",
+      "kind": "feature-or-support"
     }
   ],
   "categoryCoverage": [
+    {
+      "id": "messages",
+      "name": "Kurznachrichten",
+      "questions": [
+        "Wie schreibe ich eine Kurznachricht?",
+        "Wer kann Nachrichten lesen und empfangen?",
+        "Wann werden neue Nachrichten angezeigt?",
+        "Was passiert mit meinem Entwurf oder bei einem Verbindungsfehler?"
+      ]
+    },
     {
       "id": "start",
       "name": "Erste Schritte",
@@ -2888,10 +2936,10 @@
   "currentAudit": {
     "date": "2026-10-16",
     "baselineArticleCount": 211,
-    "addedArticleCount": 11,
+    "addedArticleCount": 15,
     "correctedArticleCount": 8,
-    "articleCount": 222,
-    "categoryCount": 21,
-    "assetJavaScriptCount": 210
+    "articleCount": 226,
+    "categoryCount": 22,
+    "assetJavaScriptCount": 211
   }
 }
