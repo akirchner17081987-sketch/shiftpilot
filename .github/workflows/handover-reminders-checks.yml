@@ -1,0 +1,28 @@
+name: Handover reminders
+on:
+  pull_request:
+    paths:
+      - 'database/shift-handover-reminders-v1.sql'
+      - 'supabase/migrations/*shift_handover_reminders*'
+      - 'supabase/functions/push-dispatch/**'
+      - 'assets/shift-handover-v1.js'
+      - 'assets/push-notifications-v1.js'
+      - 'assets/supabase-notifications-v1.js'
+      - 'tests/*handover-reminders*'
+      - 'tests/browser/handover-reminders-qa.cjs'
+      - '.github/workflows/handover-reminders-checks.yml'
+permissions:
+  contents: read
+jobs:
+  handover-reminders:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:handover-reminders

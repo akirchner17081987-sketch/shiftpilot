@@ -57,6 +57,7 @@ jobs:
           node tests/browser/staffing-simulator-qa.cjs
           node tests/browser/wish-planning-qa.cjs
           node tests/browser/shift-handover-qa.cjs
+          node tests/browser/handover-reminders-qa.cjs
           node tests/browser/planning-performance-qa.cjs
           node tests/browser/site-loading-qa.cjs
           node tests/browser/entry-access-qa.cjs

@@ -965,7 +965,7 @@ window.SFHelpContent = {
       ],
       [
         "Wie funktionieren kritische Aufgaben und Eskalationen?",
-        "Für kritische Punkte sind eine <b>Frist und ein Eskalationsweg</b> Pflicht, etwa die diensthabende Einsatzleitung. Kritische überfällige Punkte werden hervorgehoben. Fristen bleiben bei Weitergabe erhalten. Es werden keine Anrufe, E-Mails oder Nachrichten automatisch ausgelöst; kontaktiere die zuständige Stelle über euren vereinbarten Weg."
+        "Für kritische Punkte sind eine <b>Frist und ein Eskalationsweg</b> Pflicht, etwa die diensthabende Einsatzleitung. Kritische überfällige Punkte werden hervorgehoben. Fristen bleiben bei Weitergabe erhalten. Das System prüft alle fünf Minuten und erinnert nach Fristablauf die zugeordnete verantwortliche Person und die berechtigte Leitung über die Glocke sowie bei aktiviertem Geräteabo per Push. Ohne Verantwortliche erhält das zugeordnete aktive Schichtteam die Erinnerung. Je offenem Vorgang gibt es höchstens drei Meldungen mit mindestens einer Stunde Abstand. Erledigung, Weitergabe oder ein entzogener Zugang stoppen weitere Meldungen. Der Freitext-Eskalationskontakt wird nicht automatisch angerufen oder per E-Mail angeschrieben; kontaktiere ihn über euren vereinbarten Weg. Aufgabendetails bleiben im Portal."
       ],
       [
         "Wie gehen offene Aufgaben an die nächste Schicht?",
@@ -977,7 +977,7 @@ window.SFHelpContent = {
       ],
       [
         "Wie bestätigt das Folgeteam die Übernahme?",
-        "Öffne deine Schichtübergabe, prüfe die eingegangenen Punkte, ordne Verantwortliche zu und wähle <b>Übernahme bestätigen</b>. Der Zeitpunkt wird in Ursprung und Folgeschicht dokumentiert. Die Planungsleitung kann die Übernahme ebenfalls bestätigen. Eine gesendete Übergabe gilt bis zur Bestätigung ausdrücklich als <b>Übernahme ausstehend</b>."
+        "Öffne deine Schichtübergabe, prüfe die eingegangenen Punkte, ordne Verantwortliche zu und wähle <b>Übernahme bestätigen</b>. Der Zeitpunkt wird in Ursprung und Folgeschicht dokumentiert. Die Planungsleitung kann die Übernahme ebenfalls bestätigen. Eine gesendete Übergabe gilt bis zur Bestätigung ausdrücklich als <b>Übernahme ausstehend</b>. Bleibt sie offen, werden das zugeordnete Folgeteam und die berechtigte Leitung ab 15 Minuten nach Schichtbeginn und Versand erinnert. Die Prüfung läuft alle fünf Minuten, höchstens drei Meldungen mit mindestens einer Stunde Abstand. Nach Bestätigung stoppen die Erinnerungen; vorhandene Meldungen werden beim nächsten Prüflauf als gelesen markiert. Teammitglieder erhalten Erinnerungen nur während ihres zugeordneten Dienstes, die Leitung auch danach. Ein Klick öffnet die betroffene Übergabe."
       ],
       [
         "Welche Übergabedaten kommen in den Leistungsbericht?",

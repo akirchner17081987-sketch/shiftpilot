@@ -555,7 +555,8 @@
       "sources": [
         "assets/shift-handover-v1.js",
         "assets/shift-handover-core-v1.js",
-        "database/shift-handover-v1.sql"
+        "database/shift-handover-v1.sql",
+        "database/shift-handover-reminders-v1.sql"
       ]
     },
     {
@@ -564,7 +565,8 @@
       "sources": [
         "assets/shift-handover-v1.js",
         "assets/shift-handover-core-v1.js",
-        "database/shift-handover-v1.sql"
+        "database/shift-handover-v1.sql",
+        "database/shift-handover-reminders-v1.sql"
       ]
     },
     {
@@ -573,7 +575,8 @@
       "sources": [
         "assets/shift-handover-v1.js",
         "assets/shift-handover-core-v1.js",
-        "database/shift-handover-v1.sql"
+        "database/shift-handover-v1.sql",
+        "database/shift-handover-reminders-v1.sql"
       ]
     },
     {
@@ -582,7 +585,8 @@
       "sources": [
         "assets/shift-handover-v1.js",
         "assets/shift-handover-core-v1.js",
-        "database/shift-handover-v1.sql"
+        "database/shift-handover-v1.sql",
+        "database/shift-handover-reminders-v1.sql"
       ]
     },
     {
@@ -591,7 +595,8 @@
       "sources": [
         "assets/shift-handover-v1.js",
         "assets/shift-handover-core-v1.js",
-        "database/shift-handover-v1.sql"
+        "database/shift-handover-v1.sql",
+        "database/shift-handover-reminders-v1.sql"
       ]
     },
     {
@@ -600,7 +605,8 @@
       "sources": [
         "assets/shift-handover-v1.js",
         "assets/shift-handover-core-v1.js",
-        "database/shift-handover-v1.sql"
+        "database/shift-handover-v1.sql",
+        "database/shift-handover-reminders-v1.sql"
       ]
     },
     {
@@ -609,7 +615,8 @@
       "sources": [
         "assets/shift-handover-v1.js",
         "assets/shift-handover-core-v1.js",
-        "database/shift-handover-v1.sql"
+        "database/shift-handover-v1.sql",
+        "database/shift-handover-reminders-v1.sql"
       ]
     },
     {
@@ -618,7 +625,8 @@
       "sources": [
         "assets/shift-handover-v1.js",
         "assets/shift-handover-core-v1.js",
-        "database/shift-handover-v1.sql"
+        "database/shift-handover-v1.sql",
+        "database/shift-handover-reminders-v1.sql"
       ]
     },
     {
@@ -627,7 +635,8 @@
       "sources": [
         "assets/shift-handover-v1.js",
         "assets/shift-handover-core-v1.js",
-        "database/shift-handover-v1.sql"
+        "database/shift-handover-v1.sql",
+        "database/shift-handover-reminders-v1.sql"
       ]
     },
     {
@@ -636,7 +645,8 @@
       "sources": [
         "assets/shift-handover-v1.js",
         "assets/shift-handover-core-v1.js",
-        "database/shift-handover-v1.sql"
+        "database/shift-handover-v1.sql",
+        "database/shift-handover-reminders-v1.sql"
       ]
     },
     {
@@ -645,7 +655,8 @@
       "sources": [
         "assets/shift-handover-v1.js",
         "assets/shift-handover-core-v1.js",
-        "database/shift-handover-v1.sql"
+        "database/shift-handover-v1.sql",
+        "database/shift-handover-reminders-v1.sql"
       ]
     },
     {
@@ -654,7 +665,8 @@
       "sources": [
         "assets/shift-handover-v1.js",
         "assets/shift-handover-core-v1.js",
-        "database/shift-handover-v1.sql"
+        "database/shift-handover-v1.sql",
+        "database/shift-handover-reminders-v1.sql"
       ]
     },
     {
@@ -663,7 +675,8 @@
       "sources": [
         "assets/shift-handover-v1.js",
         "assets/shift-handover-core-v1.js",
-        "database/shift-handover-v1.sql"
+        "database/shift-handover-v1.sql",
+        "database/shift-handover-reminders-v1.sql"
       ]
     },
     {
