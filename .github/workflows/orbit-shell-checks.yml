@@ -3,7 +3,7 @@ on:
   push:
     branches: [codex/orbit-redesign-20261013, codex/statusglobus-standorte, codex/earth-close-view, codex/location-horizon-20261016]
   pull_request:
-    paths: [index.html, 'assets/employee-home-*', 'assets/employee-portal-polish-*', assets/employee-orbit-v1.js, assets/employee-orbit-v1.css, assets/employee-shifts-month-v1.js, tests/browser/employee-home-qa.cjs, tests/browser/employee-portal-polish-qa.cjs, tests/browser/employee-qr-bookings-qa.cjs, 'assets/orbit-shell-*', 'assets/location-map-*', assets/settings-management-v2.js, assets/help-center-content-v3.js, tests/browser/site-loading-qa.cjs, .github/workflows/orbit-shell-checks.yml]
+    paths: [index.html, 'assets/employee-home-*', 'assets/employee-portal-polish-*', assets/employee-orbit-v1.js, assets/employee-orbit-v1.css, assets/employee-shifts-month-v1.js, tests/browser/employee-home-qa.cjs, tests/browser/employee-portal-polish-qa.cjs, tests/browser/employee-qr-bookings-qa.cjs, 'assets/orbit-shell-*', 'assets/location-map-*', 'assets/globe-surface-*', 'assets/sf-entry-*', tests/browser/globe-surface-qa.cjs, assets/settings-management-v2.js, assets/help-center-content-v3.js, tests/browser/site-loading-qa.cjs, .github/workflows/orbit-shell-checks.yml]
 permissions:
   contents: read
 # Superseded checks may stop; deployment workflows use separate, protected groups.
@@ -27,6 +27,7 @@ jobs:
       - run: npm run build
       - run: npm run test:ionos
       - run: npx playwright install --with-deps chromium
+      - run: npm run test:globe
       - run: node tests/browser/today-workspace-qa.cjs
       - run: node tests/browser/site-loading-qa.cjs
       - run: node tests/browser/employee-home-qa.cjs
@@ -37,6 +38,7 @@ jobs:
         with:
           name: orbit-navigation-qa
           path: |
+            test-results/globe-surface
             test-results/site-loading
             test-results/today-workspace
             test-results/employee-home

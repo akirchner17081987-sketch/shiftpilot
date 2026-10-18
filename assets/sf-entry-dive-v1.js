@@ -31,6 +31,7 @@
     root.appendChild(canvas);
     const d3 = engine.d3, land = engine.countries;
     const projection = d3.geoOrthographic().clipAngle(90).precision(.4);
+    const surface=window.SFGlobeSurface?.create(engine,{maxPixels:240000,adaptive:true});
     const path = d3.geoPath(projection, ctx), grid = d3.geoGraticule10();
     // Rasterize published Natural Earth geometry once to sample the illuminated continents.
     const texture = document.createElement('canvas');texture.width = 720;texture.height = 360;
@@ -74,6 +75,8 @@
       const center = [lon,lat];
       projection.rotate([-lon,-lat,0]).translate([cx,cy]).scale(radius);
       ctx.clearRect(0,0,width,height);ctx.save();ctx.globalAlpha = 1 - ease((t - 4350) / 1450);
+      const originalSurface=surface?.render(ctx,projection,width,height,t);
+      if(!originalSurface){
       const halo = ctx.createRadialGradient(cx,cy,radius * .75,cx,cy,radius * 1.25);
       halo.addColorStop(0,'#32b9b600');halo.addColorStop(.54,'#48dfd21c');halo.addColorStop(.7,'#48dfd238');halo.addColorStop(1,'#48dfd200');
       ctx.fillStyle = halo;ctx.beginPath();ctx.arc(cx,cy,radius * 1.25,0,Math.PI * 2);ctx.fill();
@@ -96,6 +99,7 @@
       }
       ctx.restore();ctx.beginPath();ctx.arc(cx,cy,radius,0,Math.PI * 2);
       ctx.strokeStyle = '#7de9df66';ctx.lineWidth = .8;ctx.stroke();
+      }else{ctx.beginPath();path(land);ctx.strokeStyle='#bce5dc3d';ctx.lineWidth=.65;ctx.stroke();}
       if (zoom < .4) {
         ctx.save();ctx.translate(cx,cy);ctx.rotate(-.3);ctx.beginPath();ctx.ellipse(0,0,radius * 1.16,radius * .3,0,0,Math.PI * 2);
         ctx.strokeStyle = `rgba(94,201,205,${.23 * (1 - zoom / .4)})`;ctx.lineWidth = .7;ctx.stroke();ctx.restore();
@@ -121,7 +125,7 @@
       if (now - started < 6000) frame = requestAnimationFrame(tick);
     }
     const observer = new ResizeObserver(resize);observer.observe(root);
-    stopActive = () => { disposed = true;cancelAnimationFrame(frame);observer.disconnect();canvas.remove(); };
+    stopActive = () => { disposed = true;surface?.dispose();cancelAnimationFrame(frame);observer.disconnect();canvas.remove(); };
     resize();draw(started);frame = requestAnimationFrame(tick);
     return true;
   }

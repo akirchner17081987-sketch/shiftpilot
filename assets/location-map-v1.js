@@ -20,7 +20,7 @@ host.append(root);
  const definitions={present:'Jetzt im Dienst',coverage:'Offene Positionen',actions:'Handlungsbedarf'};
  // Preview control names map to the existing production KPI identifiers.
  popup.querySelector('[data-kind="open"]').dataset.kind='coverage';popup.querySelector('[data-kind="hints"]').dataset.kind='actions';
- let loadingEngine=false,engine=null,d3=null,countries=null,projection=null,data=null,signature='',sites=[],selected='',opened='',fullGlobe=false,elapsed=0,last=0,raf=0,geometry=[],width=0,height=0,disposed=false,inView=true;
+ let loadingEngine=false,engine=null,surface=null,d3=null,countries=null,projection=null,data=null,signature='',sites=[],selected='',opened='',fullGlobe=false,elapsed=0,last=0,raf=0,geometry=[],width=0,height=0,disposed=false,inView=true;
  const overlay=host.closest('.sf-orbit-hero')?.querySelector('.sf-orbit-hero-content');
  const buttons=new Map(),reduced=window.matchMedia('(prefers-reduced-motion: reduce)');
  const makeSvg=tag=>document.createElementNS('http://www.w3.org/2000/svg',tag);
@@ -49,6 +49,9 @@ host.append(root);
 function paintMap(){
  const ratio=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(width*ratio);canvas.height=Math.round(height*ratio);ctx.setTransform(ratio,0,0,ratio,0,0);ctx.clearRect(0,0,width,height);
  const path=d3.geoPath(projection,ctx),center=projection.translate(),radius=projection.scale();
+ const originalSurface=surface?.render(ctx,projection,width,height);
+ root.dataset.surface=originalSurface?'original':'fallback';
+ if(!originalSurface){
  if(fullGlobe){const glow=ctx.createRadialGradient(center[0],center[1],radius*.95,center[0],center[1],radius*1.07);glow.addColorStop(0,'#3cb8d500');glow.addColorStop(.45,'#5adaec20');glow.addColorStop(1,'#3cb8d500');ctx.fillStyle=glow;ctx.fillRect(0,0,width,height);}
  ctx.beginPath();path({type:'Sphere'});const ocean=ctx.createRadialGradient(width*.45,height*.3,10,width*.55,height*.7,Math.max(width,height)*.8);ocean.addColorStop(0,'#0b293a');ocean.addColorStop(1,'#020c17');ctx.fillStyle=ocean;ctx.fill();ctx.save();ctx.clip();
  const graticule=d3.geoGraticule().step(fullGlobe?[30,30]:[2,2])();ctx.beginPath();path(graticule);ctx.strokeStyle='#7bcfe012';ctx.lineWidth=.6;ctx.stroke();
@@ -59,6 +62,9 @@ function paintMap(){
  for(let y=0;y<height;y+=spacing){for(let x=(Math.round(y/spacing)%2)*spacing/2;x<width;x+=spacing){const seed=Math.abs(Math.sin(x*12.9898+y*78.233));ctx.fillStyle=seed>.86?'#c2f0fa9c':'#4dc4d940';ctx.beginPath();ctx.arc(x,y,seed>.86?.8:.55,0,Math.PI*2);ctx.fill();}}
  ctx.restore();ctx.restore();
  if(fullGlobe){ctx.beginPath();path({type:'Sphere'});ctx.strokeStyle='#79d8e56b';ctx.lineWidth=1;ctx.stroke();}
+ }else{
+  for(const feature of countries.features){ctx.beginPath();path(feature);ctx.strokeStyle=['DEU','AUT'].includes(feature.properties.id)?'#d5ecdc90':'#c2dfd13d';ctx.lineWidth=['DEU','AUT'].includes(feature.properties.id)?.85:.5;ctx.stroke();}
+ }
  // Country names support orientation without replacing the six site labels.
  if(!fullGlobe){
   ctx.save();ctx.font='500 11px Inter,system-ui,sans-serif';ctx.fillStyle='#bedee9d9';ctx.strokeStyle='#071a28d9';ctx.lineWidth=3;ctx.lineJoin='round';ctx.textAlign='center';
@@ -161,8 +167,8 @@ function paintMap(){
  const resize=new ResizeObserver(layout);resize.observe(scene);if(overlay)resize.observe(overlay);const observer=typeof IntersectionObserver==='function'?new IntersectionObserver(entries=>{inView=entries[0].isIntersecting;syncMotion();}):null;observer?.observe(root);
  const onScroll=()=>{if(!popup.hidden)positionPopup();};document.addEventListener('scroll',onScroll,true);
  const onVisibility=()=>syncMotion();document.addEventListener('visibilitychange',onVisibility);reduced.addEventListener?.('change',onVisibility);
- function ensureEngine(){if(engine||loadingEngine)return;loadingEngine=true;loadEngine().then(value=>{if(disposed)return;engine=value;d3=value.d3;countries=value.countries;projection=d3.geoOrthographic().rotate([-10.1,-50.15]).precision(.15);sync(true);}).catch(error=>{loadingEngine=false;if(!disposed)root.querySelector('.sf-map-selection').textContent=error.message;});}
- return{sync,reset,dismissOutside(target){if(!root.contains(target)&&!popup.contains(target))hidePopup();},dispose(){disposed=true;cancelAnimationFrame(raf);resize.disconnect();observer?.disconnect();document.removeEventListener('visibilitychange',onVisibility);reduced.removeEventListener?.('change',onVisibility);document.removeEventListener('scroll',onScroll,true);floating.remove();root.remove();}};
+ function ensureEngine(){if(engine||loadingEngine)return;loadingEngine=true;loadEngine().then(value=>{if(disposed)return;engine=value;d3=value.d3;countries=value.countries;surface=window.SFGlobeSurface?.create(value);projection=d3.geoOrthographic().rotate([-10.1,-50.15]).precision(.15);sync(true);}).catch(error=>{loadingEngine=false;if(!disposed)root.querySelector('.sf-map-selection').textContent=error.message;});}
+ return{sync,reset,dismissOutside(target){if(!root.contains(target)&&!popup.contains(target))hidePopup();},dispose(){disposed=true;surface?.dispose();cancelAnimationFrame(raf);resize.disconnect();observer?.disconnect();document.removeEventListener('visibilitychange',onVisibility);reduced.removeEventListener?.('change',onVisibility);document.removeEventListener('scroll',onScroll,true);floating.remove();root.remove();}};
  }
  window.SFLocationMap={create};
 })();

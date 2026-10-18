@@ -42,7 +42,8 @@
       points.push({x: Math.cos(lat * rad) * Math.sin(lon * rad), y: -Math.sin(lat * rad), z: Math.cos(lat * rad) * Math.cos(lon * rad), land: onLand, phase: (lon * 13 + lat * 7) * rad});
     }
   }
-  let size = 600, frame = 0, last = 0, angle = -.22, elapsed = 0, disposed = false;
+  let surface=null, engine=null, projection=null;
+  let size = 600, frame = 0, last = 0, angle = -.22, elapsed = 0, disposed = false, drawCost=0;
   function resize() {
     size = Math.max(1, canvas.getBoundingClientRect().width);
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -53,6 +54,12 @@
   function draw() {
     const c = size / 2, r = size * .39;
     ctx.clearRect(0, 0, size, size);
+    if(surface&&projection){
+      projection.rotate([-(8+elapsed*.0015),-21]).translate([c,c]).scale(r);
+      if(surface.render(ctx,projection,size,size,elapsed)){
+        ctx.beginPath();engine.d3.geoPath(projection,ctx)(engine.countries);ctx.strokeStyle='#c1e3df30';ctx.lineWidth=.45;ctx.stroke();return;
+      }
+    }
     const atmosphere = ctx.createRadialGradient(c, c, r * .86, c, c, r * 1.15);
     atmosphere.addColorStop(0, 'rgba(17,132,167,0)');
     atmosphere.addColorStop(.52, 'rgba(26,194,218,.15)');
@@ -86,7 +93,7 @@
     ctx.beginPath(); ctx.arc(c, c, r, 0, Math.PI * 2); ctx.stroke();
   }
   function dispose() {
-    disposed = true; cancelAnimationFrame(frame); observer.disconnect(); resizeObserver.disconnect();
+    disposed = true; surface?.dispose();cancelAnimationFrame(frame); observer.disconnect(); resizeObserver.disconnect();
     document.removeEventListener('visibilitychange', restart); motion.removeEventListener('change', restart);
   }
   function tick(now) {
@@ -95,7 +102,7 @@
     if (document.hidden || motion.matches || root.classList.contains('sf-entry-skip-animation') || root.classList.contains('sf-entry-success')) return;
     if (!last) last = now;
     const delta = now - last;
-    if (delta >= 33) { elapsed += Math.min(delta, 100); angle += Math.min(delta, 100) * .000035; draw(); last = now; }
+    if (delta >= (surface?Math.max(66,drawCost*3):33)) { elapsed += Math.min(delta, 250); angle += Math.min(delta, 100) * .000035;const started=performance.now();draw();drawCost=performance.now()-started;last = now; }
     frame = requestAnimationFrame(tick);
   }
   function restart() {
@@ -113,4 +120,9 @@
   observer.observe(root.parentNode, {childList:true});
   document.addEventListener('visibilitychange', restart); motion.addEventListener('change', restart);
   resize(); restart();
+  // The shared same-origin engine is also reused by the login dive and manager globe.
+  setTimeout(()=>{if(disposed||!window.SFEntryDive?.prepare)return;window.SFEntryDive.prepare().then(value=>{
+    if(disposed||!value)return;engine=value;surface=window.SFGlobeSurface?.create(value,{maxPixels:180000,adaptive:true});
+    projection=value.d3.geoOrthographic().precision(.3);draw();
+  });},0);
 })();
