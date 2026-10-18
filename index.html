@@ -14,7 +14,7 @@
 <link rel="manifest" href="/site.webmanifest" />
 <link rel="stylesheet" href="assets/sf-entry-v2.css?v=20261013-fade1">
 <script defer src="assets/sf-entry-v2.js?v=20261018-dive1&csp=20261017-1"></script>
-<link rel="stylesheet" href="assets/sf-entry-access-v1.css?v=20261017-access1">
+<link rel="stylesheet" href="assets/sf-entry-access-v1.css?v=20261018-desktop1">
 <script defer src="assets/sf-entry-access-v1.js?v=20261018-dive1&csp=20261017-1"></script>
 <script defer src="assets/sf-entry-globe-v1.js?v=20261018-dive1&csp=20261017-1"></script>
 <link rel="stylesheet" href="assets/sf-entry-dive-v1.css?v=20261018-dive1">
@@ -203,10 +203,11 @@ html[data-sf-theme="light"] #sfEmployeePortal{
       <div id="sfEntryLoginSlot" class="sf-entry-login-slot" aria-label="SchichtFunk Anmeldung"></div>
       <section id="sfEntryTime" class="sf-entry-time" aria-labelledby="sfEntryTimeTitle" hidden>
         <p class="sf-entry-choice-kicker">Ihre Arbeitszeit</p><h2 id="sfEntryTimeTitle">Arbeitszeit erfassen</h2>
-        <p>Scannen Sie den QR-Code am Standort. Anschließend melden Sie sich mit Ihrer Personalnummer und persönlichen PIN an.</p>
+        <p>Melden Sie sich hier am PC mit Ihrer Personalnummer und persönlichen PIN an oder nutzen Sie am Handy den Standort-QR-Code.</p>
+        <a href="/qr-time?entry=desktop" id="sfEntryDesktopTime" class="sf-entry-scan-button sf-entry-desktop-time">Am PC anmelden →</a>
         <button type="button" id="sfEntryScan" class="sf-entry-scan-button">QR-Code scannen</button>
         <p class="sf-entry-time-hint">Sie können den Standort-Code auch direkt mit der Smartphone-Kamera öffnen.</p>
-        <button type="button" id="sfEntryTimeAccount" class="sf-entry-account-link">Mit Zeiterfassungszugang anmelden →</button>
+        <button type="button" id="sfEntryTimeAccount" class="sf-entry-account-link">Zur Zeiterfassungsverwaltung →</button>
         <p id="sfEntryScanStatus" class="sf-entry-scan-status" role="status" aria-live="polite"></p>
       </section>
     </div><div class="sf-entry-light-sweep" aria-hidden="true"></div>

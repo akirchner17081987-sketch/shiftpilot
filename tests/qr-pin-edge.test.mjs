@@ -34,3 +34,23 @@ test('database-denied date fallback never releases a session token',async()=>{
 test('origin, malformed JSON and actual request-size limits reject before database access',async()=>{
  for(const [body,origin,status] of [['null',undefined,400],['[]',undefined,400],['{',undefined,400],[' '.repeat(2049),undefined,413],[{action:'LOGIN',pin:'739281'},'https://foreign.invalid',403]]){const h=fixture(),r=await h.send(body,origin);assert.equal(r.status,status);assert.equal(h.calls.length,0)}
 });
+
+test('desktop directory needs no QR secret and returns only the protected directory response',async()=>{
+ const h=fixture({ok:true,terminals:[{id:'00000000-0000-4000-8000-000000000022',company_name:'Synthetic company',terminal_name:'Synthetic terminal'}]});
+ const r=await h.send({action:'DESKTOP_TERMINALS',qrToken:''});assert.equal(r.status,200);assert.match(h.calls[0].url,/qr_desktop_terminals$/);assert.equal(Object.keys(h.calls[0]).length,1);assert.equal((await r.json()).terminals.length,1);
+});
+test('desktop PIN and setup use terminal ID without a QR bearer secret',async()=>{
+ for(const action of ['LOGIN','SET_PIN']){
+  const h=fixture(),r=await h.send({action,qrToken:'',terminalId:'00000000-0000-4000-8000-000000000022',pin:'739281',setupCode:'482719530618'});
+  assert.equal(r.status,200);assert.match(h.calls[0].url,/qr_desktop_request$/);assert.equal(h.calls[0].p_action,action);assert.equal(h.calls[0].p_pin,'739281');assert.ok(!('p_terminal_token' in h.calls[0]));assert.ok(!JSON.stringify(await r.json()).includes('482719530618'));
+ }
+});
+test('desktop rejects date fallback and malformed terminal selection without calling SQL',async()=>{
+ for(const args of [{terminalId:'invalid',pin:'739281'},{terminalId:'',pin:'739281'},{terminalId:'00000000-0000-4000-8000-000000000022',startDate:'2020-01-15'}]){
+  const h=fixture(),r=await h.send({action:'LOGIN',qrToken:'',...args});assert.equal(r.status,400);assert.equal(h.calls.length,0);
+ }
+});
+test('desktop status and punches preserve session and request IDs through the shared RPC',async()=>{
+ const h=fixture(),r=await h.send({action:'CLOCK_IN',qrToken:'',terminalId:'00000000-0000-4000-8000-000000000022',sessionToken:'b'.repeat(64),requestId:'c'.repeat(64)});
+ assert.equal(r.status,200);assert.match(h.calls[0].url,/qr_desktop_request$/);assert.equal(h.calls[0].p_session_token,'b'.repeat(64));assert.equal(h.calls[0].p_request_id,'c'.repeat(64));assert.equal(h.calls[0].p_pin,null);
+});

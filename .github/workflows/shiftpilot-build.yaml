@@ -52,6 +52,7 @@ jobs:
           npx playwright install --with-deps chromium
           node tests/browser/access-mfa-matrix-qa.cjs
           node tests/browser/qr-pin-qa.cjs
+          node tests/browser/qr-desktop-qa.cjs
           node tests/browser/reports-workspace-qa.cjs
           node tests/browser/today-workspace-qa.cjs
           node tests/browser/staffing-simulator-qa.cjs

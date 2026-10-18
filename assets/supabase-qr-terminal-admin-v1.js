@@ -9,6 +9,7 @@
   let loading=false;
   let qrLibPromise=null;
   let pinSummary=null;
+  let desktopAccess=new Map();
 
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
   const tz=()=>B.companyTimeZone||'Europe/Berlin';
@@ -68,19 +69,43 @@
   }
 
   function render(card,error=''){
-    const rows=terminals.map(t=>`<div class="sf-qrt-row" data-qrt-id="${esc(t.id)}"><div class="sf-qrt-main"><b>${esc(t.name)} <span class="sf-qrt-state ${t.is_active?'':'off'}">${t.is_active?'● Aktiv':'○ Deaktiviert'}</span></b><label class="sf-qrt-site-control">Unternehmensstandort<select data-qrt-site ${window.SFCompanyProfile?.current()?.can_edit?'':'disabled'}>${window.SFCompanyProfile?.siteOptions(t.site_id)||'<option value="">Kein Standort zugeordnet</option>'}</select><button type="button" class="ghost" data-qrt-site-save ${window.SFCompanyProfile?.current()?.can_edit?'':'hidden disabled'}>Standort speichern</button></label><small>${esc(t.location_note||'Kein Standort-Hinweis')}<br>Zuletzt geändert: ${esc(fmt(t.updated_at))}</small></div><div class="sf-qrt-actions"><button class="primary" data-qrt-show>QR anzeigen</button><button class="ghost" data-qrt-rotate>QR erneuern</button><button class="ghost" data-qrt-toggle>${t.is_active?'Deaktivieren':'Aktivieren'}</button>${t.is_active?'':'<button class="ghost" data-qrt-delete>Löschen</button>'}</div></div>`).join('');
+    const rows=terminals.map(t=>`<div class="sf-qrt-row" data-qrt-id="${esc(t.id)}"><div class="sf-qrt-main"><b>${esc(t.name)} <span class="sf-qrt-state ${t.is_active?'':'off'}">${t.is_active?'● Aktiv':'○ Deaktiviert'}</span></b><label class="sf-qrt-site-control">Unternehmensstandort<select data-qrt-site ${window.SFCompanyProfile?.current()?.can_edit?'':'disabled'}>${window.SFCompanyProfile?.siteOptions(t.site_id)||'<option value="">Kein Standort zugeordnet</option>'}</select><button type="button" class="ghost" data-qrt-site-save ${window.SFCompanyProfile?.current()?.can_edit?'':'hidden disabled'}>Standort speichern</button></label><small>${esc(t.location_note||'Kein Standort-Hinweis')}<br>Zuletzt geändert: ${esc(fmt(t.updated_at))}</small></div><div class="sf-qrt-actions">${['OWNER','ADMIN'].includes(B.role)&&desktopAccess.has(t.id)?`<button class="ghost" data-qrt-desktop>PC-Zugang ${desktopAccess.get(t.id)?'ausschalten':'freigeben'}</button>`:''}<button class="primary" data-qrt-show>QR anzeigen</button><button class="ghost" data-qrt-rotate>QR erneuern</button><button class="ghost" data-qrt-toggle>${t.is_active?'Deaktivieren':'Aktivieren'}</button>${t.is_active?'':'<button class="ghost" data-qrt-delete>Löschen</button>'}</div></div>`).join('');
     const pinPanel=['OWNER','ADMIN'].includes(B.role)&&!B.client?.__sfDemoLocalClientV1?`<section id="sfQrPinAccess" class="sf-qrt-pin-panel" aria-labelledby="sfQrPinAccessTitle"><div class="sf-qrt-pin-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v5c0 5 8 10 8 10s8-5 8-10V6Z"/><path d="m8.5 12 2.3 2.3 4.7-5"/></svg></div><div class="sf-qrt-pin-copy"><div class="sf-qrt-pin-kicker">MITARBEITER-ZUGANG</div><h2 id="sfQrPinAccessTitle">Persönliche QR-PINs verwalten</h2><p>Hier richtest du Mitarbeiter-PINs ein, stellst neue Einrichtungscodes aus und aktivierst die PIN-Pflicht.</p><span id="sfQrPinAccessStatus" class="sf-qrt-pin-status" role="status">Einrichtungsstand und PIN-Pflicht in der Verwaltung prüfen</span></div><div class="sf-qrt-pin-action"><button type="button" id="sfQrPinAdminOpen" class="sf-qrt-pin-button">PIN-Verwaltung öffnen <span aria-hidden="true">→</span></button><small>Für Inhaber und Administratoren · mit MFA</small></div></section>`:'';
-    card.innerHTML=pinPanel+`<div class="sf-qrt-head"><div class="sf-qrt-icon">▦</div><div class="sf-qrt-copy"><div class="eyebrow">QR-STEMPELSTATIONEN</div><h3>Beginn, Pausen & Ende per QR-Code</h3><p>Der QR-Code identifiziert den Standort. Mitarbeiter melden sich mit Personalnummer und persönlicher PIN an; Beginn, Ende und bis zu zehn Pausen werden ohne Schichtbindung erfasst.</p></div><div class="sf-qrt-create"><input id="sfQrtName" maxlength="120" placeholder="Name, z. B. Objekt A"><input id="sfQrtLocation" maxlength="300" placeholder="Standort, z. B. Haupteingang"><label class="sf-qrt-site-control">Unternehmensstandort<select id="sfQrtSite">${window.SFCompanyProfile?.siteOptions()||'<option value="">Kein Standort zugeordnet</option>'}</select></label><button class="primary" id="sfQrtCreate">＋ Anlegen</button></div></div>${error?`<div class="sf-qrt-empty">${esc(error)}</div>`:`<div class="sf-qrt-list">${rows||'<div class="sf-qrt-empty">Noch kein QR-Terminal angelegt.</div>'}</div><div class="sf-qrt-note"><b>QR anzeigen</b> lädt den aktuellen Code aus dem sicheren Serverspeicher. Bei deaktivierten Terminals lässt er sich drucken, wird aber erst nach Aktivierung beim Scannen akzeptiert. <b>QR erneuern</b> macht den bisherigen Ausdruck sofort ungültig.</div>`}`;
+    card.innerHTML=pinPanel+`<div class="sf-qrt-head"><div class="sf-qrt-icon">▦</div><div class="sf-qrt-copy"><div class="eyebrow">QR-STEMPELSTATIONEN</div><h3>Beginn, Pausen & Ende am PC oder per QR-Code</h3><p>Der QR-Code identifiziert den Standort. Mitarbeiter melden sich mit Personalnummer und persönlicher PIN an; Beginn, Ende und bis zu zehn Pausen werden ohne Schichtbindung erfasst.</p></div><div class="sf-qrt-create"><input id="sfQrtName" maxlength="120" placeholder="Name, z. B. Objekt A"><input id="sfQrtLocation" maxlength="300" placeholder="Standort, z. B. Haupteingang"><label class="sf-qrt-site-control">Unternehmensstandort<select id="sfQrtSite">${window.SFCompanyProfile?.siteOptions()||'<option value="">Kein Standort zugeordnet</option>'}</select></label><button class="primary" id="sfQrtCreate">＋ Anlegen</button></div></div>${error?`<div class="sf-qrt-empty">${esc(error)}</div>`:`<div class="sf-qrt-list">${rows||'<div class="sf-qrt-empty">Noch kein QR-Terminal angelegt.</div>'}</div><div class="sf-qrt-note"><b>PC-Zugang</b> gibt den Betrieb und Terminalnamen für die Entry Page frei. Dort ist immer eine persönliche PIN erforderlich. <b>QR anzeigen</b> lädt den aktuellen Code aus dem sicheren Serverspeicher. Bei deaktivierten Terminals lässt er sich drucken, wird aber erst nach Aktivierung beim Scannen akzeptiert. <b>QR erneuern</b> macht den bisherigen Ausdruck sofort ungültig.</div>`}`;
     const pinButton=card.querySelector('#sfQrPinAdminOpen');if(pinButton)pinButton.onclick=openPinAdmin;updatePinSummary();
     const create=card.querySelector('#sfQrtCreate');if(create)create.onclick=()=>createTerminal(card.querySelector('#sfQrtName')?.value,card.querySelector('#sfQrtLocation')?.value,card.querySelector('#sfQrtSite')?.value||null);
-    card.querySelectorAll('[data-qrt-id]').forEach(row=>{const t=terminals.find(x=>String(x.id)===row.dataset.qrtId);if(!t)return;row.querySelector('[data-qrt-site-save]')?.addEventListener('click',()=>saveTerminalSite(t,row));row.querySelector('[data-qrt-show]')?.addEventListener('click',()=>showTerminalQr(t));row.querySelector('[data-qrt-rotate]')?.addEventListener('click',()=>rotateTerminal(t));row.querySelector('[data-qrt-toggle]')?.addEventListener('click',()=>toggleTerminal(t));row.querySelector('[data-qrt-delete]')?.addEventListener('click',()=>deleteTerminal(t))});
+    card.querySelectorAll('[data-qrt-id]').forEach(row=>{const t=terminals.find(x=>String(x.id)===row.dataset.qrtId);if(!t)return;row.querySelector('[data-qrt-site-save]')?.addEventListener('click',()=>saveTerminalSite(t,row));row.querySelector('[data-qrt-desktop]')?.addEventListener('click',()=>toggleDesktop(t));row.querySelector('[data-qrt-show]')?.addEventListener('click',()=>showTerminalQr(t));row.querySelector('[data-qrt-rotate]')?.addEventListener('click',()=>rotateTerminal(t));row.querySelector('[data-qrt-toggle]')?.addEventListener('click',()=>toggleTerminal(t));row.querySelector('[data-qrt-delete]')?.addEventListener('click',()=>deleteTerminal(t))});
   }
 
   async function refresh(){
     const card=shell();if(!card)return;
     if(!B.client||!B.companyId){render(card,'Cloud-Verbindung wird noch hergestellt …');return}
     if(loading)return;loading=true;card.innerHTML='<div class="sf-qrt-empty">QR-Terminals werden geladen …</div>';
-    try{const companyId=B.companyId;if(!B.client?.__sfDemoLocalClientV1)if(!B.client?.__sfDemoLocalClientV1)await window.SFCompanyProfile?.load();const q=await B.client.rpc('manager_list_time_qr_terminals',{p_company_id:B.companyId});if(q.error)throw q.error;if(companyId!==B.companyId||B.companySwitching)return;terminals=Array.isArray(q.data)?q.data:[];render(card)}catch(e){render(card,rpcError(e))}finally{loading=false}
+    const companyId=B.companyId,userId=B.user?.id;
+    const valid=()=>companyId===B.companyId&&userId===B.user?.id&&!B.companySwitching;
+    try{
+      if(!B.client?.__sfDemoLocalClientV1)await window.SFCompanyProfile?.load();
+      if(!valid())return;
+      const q=await B.client.rpc('manager_list_time_qr_terminals',{p_company_id:companyId});
+      if(q.error)throw q.error;if(!valid())return;
+      terminals=Array.isArray(q.data)?q.data:[];desktopAccess=new Map();
+      if(['OWNER','ADMIN'].includes(B.role)&&!B.client?.__sfDemoLocalClientV1){
+        const d=await B.client.rpc('manager_qr_desktop_access',{p_company_id:companyId});
+        if(d.error)throw d.error;if(!valid())return;
+        desktopAccess=new Map((Array.isArray(d.data)?d.data:[]).map(t=>[t.id,!!t.desktop_enabled]));
+      }
+      render(card);
+    }catch(e){if(valid())render(card,rpcError(e))}finally{loading=false}
+  }
+
+  async function toggleDesktop(t){
+    const companyId=B.companyId,userId=B.user?.id,enabled=desktopAccess.get(t.id);
+    if(!confirm(enabled?'PC-Zugang für „'+t.name+'“ ausschalten? Der QR-Code bleibt nutzbar.':'PC-Zugang für „'+t.name+'“ freigeben? Der Betriebs- und Terminalname erscheint dann auf der öffentlichen Anmeldeseite. Buchungen erfordern immer die persönliche PIN.'))return;
+    try{
+      await B.requireSensitiveMfa?.();if(companyId!==B.companyId||userId!==B.user?.id||B.companySwitching)return;
+      const q=await B.client.rpc('manager_qr_desktop_access',{p_company_id:companyId,p_terminal_id:t.id,p_enabled:!enabled,p_expected_enabled:enabled});
+      if(q.error)throw q.error;if(companyId!==B.companyId||userId!==B.user?.id)return;await refresh();
+    }catch(e){alert(rpcError(e))}
   }
 
   async function saveTerminalSite(t,row){
