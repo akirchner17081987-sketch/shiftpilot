@@ -1,0 +1,39 @@
+name: Roles and permissions
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/*roles_permission*'
+      - 'supabase/migrations/*roles_time_policy*'
+      - 'supabase/migrations/*roles_readonly*'
+      - 'tests/roles-permission-boundaries.test.mjs'
+      - 'tests/sql/roles-permissions*'
+      - 'tests/sql/roles-readonly*'
+      - 'assets/access-profiles-v1.js'
+      - 'assets/supabase-mfa-v1.js'
+      - '.github/workflows/roles-permissions-checks.yml'
+permissions:
+  contents: read
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  roles-permissions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: node --test tests/roles-permission-boundaries.test.mjs tests/access-mfa-action-matrix.test.mjs tests/legacy-user-management-auth.test.mjs tests/security-definer-cross-tenant.test.mjs tests/mfa-session-security.test.mjs tests/time-only-access.test.mjs tests/personnel-health-privacy.test.mjs tests/personnel-conversations.test.mjs tests/personnel-automatic-scope.test.mjs
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/browser/users-permissions-qa.cjs
+      - run: node tests/browser/access-mfa-matrix-qa.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: roles-permissions-qa
+          path: test-results/users-permissions
+          retention-days: 7
