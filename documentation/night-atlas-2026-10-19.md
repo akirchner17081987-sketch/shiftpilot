@@ -7,8 +7,9 @@ selection workflows and globe toggle.
 
 The image is our own decorative rendering, not a satellite photograph or a
 measurement of present activity. Real terrain, urban footprints and road geometry
-come from Natural Earth (public domain). The existing OpenStreetMap attribution
-for verified site positions is retained.
+come from Natural Earth (public domain). Visible attribution was reviewed and
+removed on 2026-10-19; see `map-attribution-review-2026-10-19.md`. The six existing
+address coordinates remain unchanged.
 
 - `assets/region-atlas-night-v1.webp`: 1890 × 1520, 456,974 bytes.
 - `scripts/generate-night-atlas.py`: reproducible authoring with the existing
