@@ -43,3 +43,21 @@ Prüfung: `npm run test:leave` enthält echte PostgreSQL-Prüfungen mit PGlite u
 Browserabläufe in vier Kombinationen aus Bildschirmgröße und Hell-/Dunkelmodus.
 Zusätzlich die bestehenden Portal-/Abwesenheitsprüfungen und `npm test` ausführen.
 Die Datenbankmigration muss vor dem zugehörigen Frontend veröffentlicht werden.
+
+## Abnahme des Antragsablaufs
+
+Der Browser übergibt das ausgewählte Unternehmen an
+`employee_submit_absence_request_for_company`. Die Datenbank prüft die aktive
+Mitarbeiterzuordnung genau für dieses Unternehmen. Der alte Endpunkt akzeptiert
+nur eine eindeutige aktive Zuordnung. Die produktive Datenbank erlaubt derzeit
+ein Mitarbeiterprofil je Auth-Zugang; der Zwei-Firmen-Test verwendet deshalb
+getrennte fiktive Mitarbeiterzugänge und einen Verwaltungskontext für beide Firmen.
+
+Der SQL-Test unter `tests/sql/leave-workflow-rollback.sql` wurde gegen die
+produktiven RPCs ausgeführt: Antrag lässt 30 Tage unverändert; Genehmigung von
+3 Anrechnungstagen ergibt 27 Tage. Im zweiten Unternehmen wurden zusätzlich ein
+falsches Unternehmen abgewiesen und nach Löschen des Testurlaubs wieder 30 Tage
+ermittelt. Alle Testschreibvorgänge einschließlich Benachrichtigungen und Audit
+liegen in zurückgerollten Untertransaktionen. Die echten Urlaubskonten bleiben
+unverändert. Das ist ein Datenbanktest mit Auth-Anfragekontext, kein interaktiver
+Anmeldetest mit echten Benutzerpasswörtern.

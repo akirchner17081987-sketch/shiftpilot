@@ -103,7 +103,7 @@
       if(note.length>2000)return fail('Der Kommentar darf höchstens 2.000 Zeichen enthalten.','#sfAe3Note');
       try{
         pendingSubmission=current;btn.disabled=true;btn.textContent='Wird gesendet …';
-        const {data,error}=await B.client.rpc('employee_submit_absence_request',{p_absence_type:type,p_start_date:from,p_end_date:to,p_note:note,p_full_day:full,p_start_time:full?null:st,p_end_time:full?null:en,p_time_note:''});
+        const {data,error}=await B.client.rpc('employee_submit_absence_request_for_company',{p_company_id:B.companyId,p_absence_type:type,p_start_date:from,p_end_date:to,p_note:note,p_full_day:full,p_start_time:full?null:st,p_end_time:full?null:en,p_time_note:''});
         if(error)throw error;
         close();if(current!==identity()||B.role!=='EMPLOYEE')return;
         if(typeof data==='string'&&!ownRows().some(a=>a.id===data))B.employeePortalData={...B.employeePortalData,absences:[...(B.employeePortalData.absences||[]),{id:data,company_id:B.companyId,employee_id:B.employeeDbId||B.employeePortalData.employee?.id,absence_type:type,start_date:from,end_date:to,note,status:'Beantragt',full_day:full,start_time:full?null:st,end_time:full?null:en,request_source:'EMPLOYEE',requested_at:new Date().toISOString()}]};
