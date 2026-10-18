@@ -3,6 +3,12 @@ on:
   pull_request:
     paths:
       - 'assets/*marketplace*'
+      - 'assets/supabase-shift-swap-v1.js'
+      - 'supabase/migrations/*shift_swap*'
+      - 'tests/shift-swap-availability.test.mjs'
+      - 'tests/sql/*market*rollback.sql'
+      - 'tests/sql/shift-swap-rollback.sql'
+      - 'tests/browser/shift-swap-workflow-qa.cjs'
       - 'assets/supabase-delta-sync-v1.js'
       - 'assets/auto-plan-workspace-v1.js'
       - 'tests/*marketplace*'
@@ -12,6 +18,12 @@ on:
     branches: [main, codex/ionos-migration, codex/open-shift-marketplace]
     paths:
       - 'assets/*marketplace*'
+      - 'assets/supabase-shift-swap-v1.js'
+      - 'supabase/migrations/*shift_swap*'
+      - 'tests/shift-swap-availability.test.mjs'
+      - 'tests/sql/*market*rollback.sql'
+      - 'tests/sql/shift-swap-rollback.sql'
+      - 'tests/browser/shift-swap-workflow-qa.cjs'
       - 'assets/supabase-delta-sync-v1.js'
       - 'tests/*marketplace*'
       - 'tests/browser/open-shift-marketplace-qa.cjs'
@@ -33,12 +45,15 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - run: node --test tests/auto-plan-workspace.test.mjs tests/open-shift-marketplace.test.mjs
+      - run: node --test tests/auto-plan-workspace.test.mjs tests/open-shift-marketplace.test.mjs tests/shift-swap-availability.test.mjs
       - run: npx playwright install --with-deps chromium
       - run: node tests/browser/open-shift-marketplace-qa.cjs
+      - run: node tests/browser/shift-swap-workflow-qa.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: marketplace-browser-screenshots
-          path: test-results/marketplace-publish-*.png
+          path: |
+            test-results/marketplace-*.png
+            test-results/shift-swap/*.png
 
