@@ -52,6 +52,9 @@ async function fixture(page,theme,fontSize,role='PLANNER'){
  const errors=[],requests=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
  await page.route('**/*',async r=>{requests.push(r.request().url());if(r.request().url()==='http://workspace-layout.test/')await r.fulfill({contentType:'text/html',body:html.replace("role:'PLANNER'","role:'"+role+"'")});else if(r.request().url()==='http://workspace-layout.test/'+layoutScriptPath)await r.fulfill({contentType:'application/javascript',body:read(layoutScriptPath.split('?')[0])});else await r.abort();});
  await page.goto('http://workspace-layout.test/');
+ // This isolated layout fixture measures Planning, independently of the
+ // application's authenticated landing page.
+ await show(page,'view-schedule');
  await page.evaluate(({theme,fontSize})=>{document.documentElement.dataset.sfTheme=theme;document.documentElement.style.fontSize=fontSize+'px';document.documentElement.classList.toggle('sf-font-large',fontSize===17);},{theme,fontSize});
  await expect(page.locator('#sfTimeWorkspaceTabs button')).toHaveCount(3);
  await expect(page.locator('#sfTimePeriodControls')).toHaveCount(1);
