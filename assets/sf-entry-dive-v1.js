@@ -61,7 +61,8 @@
     }
     function draw(now) {
       const t = now - started, move = ease((t - 350) / 1900);
-      const zoom = target ? ease((t - 2350) / 2800) : 0;
+      // Every successful login dives into the globe; a workplace only determines the named destination.
+      const zoom = ease((t - 2350) / 2800);
       const cx = source.x + (width * .5 - source.x) * move;
       const cy = source.y + (height * .46 - source.y) * move;
       const radius = Math.max(1,source.radius) * Math.exp(zoom * 3.45);
