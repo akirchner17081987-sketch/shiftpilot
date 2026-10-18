@@ -1065,6 +1065,14 @@
         "assets/solid-planning-core-v1.js",
         "tests/fixed-weekly-priority.test.cjs"
       ]
+    },
+    {
+      "category": "portal",
+      "question": "Wie wird mein Resturlaub berechnet?",
+      "sources": [
+        "assets/leave-accounts-v1.js",
+        "supabase/migrations/20261018065003_employee_leave_accounts.sql"
+      ]
     }
   ],
   "moduleInventory": [
@@ -2318,6 +2326,12 @@
       "source": "assets/employee-portal-polish-v1.js",
       "category": "start",
       "note": "Kompakte Mitarbeiteransichten, lesbare Orbit-Statusflächen und Profilhinweise"
+    },
+    {
+      "source": "assets/leave-accounts-v1.js",
+      "area": "Urlaubskonten, Jahresanspruch, Übertrag und bestätigte Urlaubstage",
+      "category": "portal",
+      "kind": "feature-or-support"
     }
   ],
   "categoryCoverage": [
@@ -2568,7 +2582,8 @@
         "Wie antworte ich auf eine angefragte Dienstplanänderung?",
         "Wie verwalte ich Benachrichtigungen?",
         "Wo sehe ich meine QR-Buchungen mit Beginn, Ende und Pausen?",
-        "Wie wechsle ich den Monat bei „Meine Schichten“?"
+        "Wie wechsle ich den Monat bei „Meine Schichten“?",
+        "Wie wird mein Resturlaub berechnet?"
       ]
     },
     {
@@ -2848,10 +2863,10 @@
   "currentAudit": {
     "date": "2026-10-16",
     "baselineArticleCount": 211,
-    "addedArticleCount": 10,
+    "addedArticleCount": 11,
     "correctedArticleCount": 8,
-    "articleCount": 221,
+    "articleCount": 222,
     "categoryCount": 21,
-    "assetJavaScriptCount": 207
+    "assetJavaScriptCount": 208
   }
 }

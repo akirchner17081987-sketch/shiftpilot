@@ -722,6 +722,10 @@ window.SFHelpContent = {
       [
         "Wie wechsle ich den Monat bei „Meine Schichten“?",
         "Öffnen Sie im Mitarbeiterportal „Meine Schichten“ und wählen Sie den gewünschten Monat. Die Liste zeigt Ihre eigenen veröffentlichten Dienste in diesem Zeitraum. Leere Ergebnisse können am Zeitraum, an einer noch fehlenden Veröffentlichung oder an Ihrer persönlichen Zuordnung liegen; Dienstplanentwürfe erscheinen nicht im Portal."
+      ],
+      [
+        "Wie wird mein Resturlaub berechnet?",
+        "Unter Abwesenheiten zeigt das Urlaubskonto den Jahresanspruch, den Übertrag aus dem Vorjahr und die bestätigten Urlaubstage für das gewählte Jahr. Genehmigter Urlaub einschließlich zukünftiger Zeiträume wird abgezogen. Anträge in Prüfung erscheinen getrennt und werden noch nicht abgezogen. Im Schichtbetrieb bestätigt die Personalverwaltung die anzurechnenden Urlaubstage; Kalendertage werden nicht pauschal als Urlaub gezählt. Fehlen Anspruch oder bestätigte Tage, bleibt der Resturlaub als noch offen gekennzeichnet. In der Verwaltung unter Personal → Abwesenheit pflegen Inhaber und Administratoren mit zweiter Anmeldestufe die Jahreskonten und prüfen bestehende Urlaube. Bei Genehmigungen werden die Urlaubstage je betroffenem Jahr bestätigt. Änderungen an Zeitraum oder Umfang erfordern eine erneute Prüfung. Übertrag und Jahresanspruch werden je Jahr gepflegt; ein automatischer Übertrag oder Verfall findet nicht statt."
       ]
     ],
     "appearance": [

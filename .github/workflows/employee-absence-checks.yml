@@ -3,6 +3,12 @@ on:
   pull_request:
     paths:
       - 'assets/supabase-absence-employee-v3.js'
+      - 'assets/supabase-absence-manager-v2.js'
+      - 'assets/leave-accounts-v1.js'
+      - 'assets/leave-accounts-v1.css'
+      - 'supabase/migrations/*employee_leave_accounts.sql'
+      - 'tests/leave-accounts.test.mjs'
+      - 'tests/browser/leave-accounts-qa.cjs'
       - 'assets/employee-mobile-pwa-polish-v2.js'
       - 'assets/navigation-compat-v1.js'
       - 'assets/employee-absences-workspace-v1.css'
@@ -29,6 +35,7 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: node tests/browser/employee-absences-qa.cjs
+      - run: node tests/browser/leave-accounts-qa.cjs
       - name: Veröffentlichte Hauptseite mit lokalen Mitarbeiterdaten prüfen
         run: node tests/browser/employee-absences-live-smoke.cjs
       - uses: actions/upload-artifact@v4
