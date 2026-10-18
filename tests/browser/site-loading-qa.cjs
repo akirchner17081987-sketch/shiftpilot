@@ -83,6 +83,22 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
    assert.equal(await page.locator('[data-orbit-site]').count(),6);
    await page.locator('#sfTodaySite').selectOption('');
    const stillFrame=await globe.evaluate(n=>n.toDataURL());await page.waitForTimeout(150);assert.equal(await globe.evaluate(n=>n.toDataURL()),stillFrame,'the map remains still');
+   assert.equal(await page.locator('.sf-site-breathe').count(),6,'each verified site has a separate pulse ring');
+   await page.evaluate(()=>SFOrbit.setMotion('subtle'));
+   await page.waitForFunction(()=>document.querySelector('.sf-location-map')?.dataset.animate==='true');
+   assert.equal(await page.locator('.sf-site-breathe').first().evaluate(el=>getComputedStyle(el).animationName),'sf-night-site-breathe');
+   await sitePin('east').click();
+   assert.equal(await page.locator('.sf-label-spark[data-active="true"]').count(),1,'only the selected site has a connector light');
+   assert.equal(await page.locator('.sf-location-map .sf-route').count(),0,'regional selection does not invent links between sites');
+   await page.keyboard.press('Escape');
+   await page.evaluate(()=>SFOrbit.setMotion('off'));
+   await page.waitForFunction(()=>document.querySelector('.sf-location-map')?.dataset.animate==='false');
+   assert.equal(await page.locator('.sf-site-breathe').first().evaluate(el=>getComputedStyle(el).animationName),'none','motion off stops the site pulse');
+   await page.evaluate(()=>SFOrbit.setMotion('subtle'));await page.emulateMedia({reducedMotion:'reduce'});
+   await page.waitForFunction(()=>document.querySelector('.sf-location-map')?.dataset.animate==='false');
+   assert.equal(await page.locator('.sf-site-breathe').first().evaluate(el=>getComputedStyle(el).animationName),'none','reduced motion keeps the night map static');
+   await page.emulateMedia({reducedMotion:'no-preference'});await page.locator('#sfTodaySite').selectOption('');
+
    await page.locator('.sf-location-map .sf-view').click();assert.equal(await page.locator('.sf-location-map .sf-view').getAttribute('aria-pressed'),'true');assert.equal(await page.locator('.sf-location-map').first().getAttribute('data-view'),'globe');await page.locator('.sf-location-map .sf-view').click();
    assert.equal(await page.locator('.sf-location-map').first().getAttribute('data-surface'),'atlas','returning from the globe restores the atlas');
    for(const [theme,width] of [['dark',1920],['dark',1440],['light',1440],['dark',390],['light',390],['dark',320]]){
