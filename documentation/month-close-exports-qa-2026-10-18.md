@@ -35,6 +35,7 @@ Alle geprüften Bestandszahlen vor und nach den Tests identisch: 2 Monatsabschl�
 - Einzel- und Gesamt-PDF: jeweils 2 Seiten; Beschriftungen, Summen, wiederholte Tabellenköpfe und Seitenzahlen kontrolliert. Zusätzlich zum Poppler-Render erfolgte wegen fehlerhafter lokaler Fontsubstitution eine Gegenprüfung mit MuPDF.
 - Auswertungsbericht: 8 Excel-Blätter; gewählte Filter gelten für alle 17 Mitarbeiter der Auswahl einschließlich Folgeseiten; 12 PDF-Seiten. Fehlerhafte Teilabfragen erzeugen keinen Download. Zeitraumaufteilung, responsive Darstellung und Unternehmenswechsel geprüft.
 - DATEV .txt und .sic: richtige Endung, ASCII, CRLF, Satzkopf und Bewegungsdaten; Download erst nach erfolgreicher Serverfreigabe. Abgewiesene Freigabe und veraltete Vorprüfung erzeugen keine Datei.
+- Zusätzlich alle 6 DATEV-End-to-End-Fälle in der vollständigen Demo bestanden (Desktop und Handy: .txt, .sic, abgewiesene Serverfreigabe). Der optionale lokale Testmodus lädt die echte Anwendung und blockiert externe Anfragen. Konfigurationsdaten werden an den tatsächlich angefragten Unternehmenskontext gebunden; Demo-Schlüssel bleiben unabhängig von produktiven IDs.
 - Kein Import in ein externes Lohnabrechnungsprogramm durchgeführt; die Prüfungen betreffen Dateierzeugung, Format und Freigabe in SchichtFunk.
 
 ## Prüfergebnis

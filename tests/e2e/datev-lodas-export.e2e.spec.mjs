@@ -1,4 +1,8 @@
 import { expect, test } from '@playwright/test';
+import { installLocalAppRoutes } from './helpers/local-app-routes.mjs';
+
+test.beforeEach(async({page})=>{if(process.env.SF_E2E_LOCAL_FILES==='1')await installLocalAppRoutes(page)});
+
 import { openManagerArea, primeDemoSession, waitForDemoReady } from './helpers/demo-ready.mjs';
 
 async function downloadText(download) {

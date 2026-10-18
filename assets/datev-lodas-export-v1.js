@@ -3,7 +3,7 @@
   const B=window.SFBackend=window.SFBackend||{};
   if(B.__datevLodasExportV1)return;B.__datevLodasExportV1=true;
   const ADMIN=new Set(['OWNER','ADMIN']);
-  let settings=null,rules=[],configLoaded=false,configBusy=false,ensureBusy=false,exportBusy=false,ensureTimer=0,exportExtension='txt';
+  let settings=null,rules=[],configLoaded=false,configBusy=false,ensureBusy=false,exportBusy=false,ensureTimer=0,exportExtension='txt',configCompany=null;
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const pad=n=>String(n).padStart(2,'0');
   let selectedMonth=sessionStorage.getItem('sf_demo_session_v1')==='active'?'2026-08':new Intl.DateTimeFormat('sv-SE',{timeZone:B.companyTimeZone||'Europe/Berlin',year:'numeric',month:'2-digit'}).format(new Date());
@@ -33,14 +33,14 @@
 
   async function loadConfig(force=false){
     if(configBusy)return; if(configLoaded&&!force)return; if(!ADMIN.has(B.role)||!B.client||!B.companyId)return;
-    configBusy=true;
+    configBusy=true;const scope=exportContext();
     try{
       const [s,r]=await Promise.all([
         B.client.from('datev_lodas_settings').select('company_id,berater_nr,mandanten_nr,updated_at').eq('company_id',B.companyId).maybeSingle(),
         B.client.from('datev_lodas_rules').select('id,company_id,label,source_type,source_key,wage_type,cost_center,sort_order,active').eq('company_id',B.companyId).order('sort_order').order('created_at')
       ]);
-      if(s.error)throw s.error;if(r.error)throw r.error;
-      settings=s.data||{company_id:B.companyId,berater_nr:'',mandanten_nr:''};rules=r.data||[];configLoaded=true;
+      assertExportContext(scope);if(s.error)throw s.error;if(r.error)throw r.error;
+      settings=s.data||{company_id:B.companyId,berater_nr:'',mandanten_nr:''};rules=r.data||[];configCompany=scope.company;configLoaded=true;
     }finally{configBusy=false}
   }
 
@@ -54,7 +54,7 @@
     const companyId=B.companyId;
     const existing=document.getElementById('sfDatevPanel');
     if(existing?.dataset.companyId===companyId&&existing.querySelector('#sfDatevMonth'))return;
-    if(settings?.company_id!==companyId){configLoaded=false;settings=null;rules=[]}
+    if(configCompany!==companyId){configLoaded=false;settings=null;rules=[]}
     let panel=document.getElementById('sfDatevPanel');if(!panel){host.replaceChildren();panel=document.createElement('section');panel.id='sfDatevPanel';panel.className='sf-datev';host.appendChild(panel)}
     else if(panel.parentElement!==host)host.appendChild(panel);
     try{ensureBusy=true;await B.requireSensitiveMfa?.();if(companyId!==B.companyId||B.companySwitching)return;await loadConfig();if(companyId!==B.companyId||!ADMIN.has(B.role)||B.companySwitching)return;panel.dataset.companyId=companyId;panel.innerHTML=`<div class="sf-datev-head"><div><div class="sf-datev-badge">DATEV · LODAS · SST 1.0</div><h3 style="margin-top:7px">LODAS Bewegungsdaten</h3><p>ASCII-sicherer Export nach dem DATEV-Schnittstellenhandbuch. Semikolon, deutsches Dezimalkomma, TT.MM.JJJJ, NULL und CR/LF-Zeilenenden werden fest erzeugt.</p></div><span class="sf-datev-spacer"></span></div><div class="sf-datev-grid"><label id="sfDatevMonthWrap"><span>Abrechnungsmonat</span><input id="sfDatevMonth" type="month" value="${esc(selectedMonth)}" aria-label="Abrechnungsmonat für DATEV"></label><label><span>BeraterNr</span><input id="sfDatevBerater" inputmode="numeric" minlength="4" maxlength="7" pattern="[0-9]{4,7}" value="${esc(settings?.berater_nr||'')}"></label><label><span>MandantenNr</span><input id="sfDatevMandant" inputmode="numeric" minlength="1" maxlength="5" pattern="[0-9]{1,5}" value="${esc(settings?.mandanten_nr||'')}"></label><label><span>Dateiendung</span><select id="sfDatevExtension" aria-label="Dateiendung für den DATEV-Export"><option value="txt" ${exportExtension==='txt'?'selected':''}>.txt (empfohlen)</option><option value="sic" ${exportExtension==='sic'?'selected':''}>.sic (optional)</option></select></label><div class="sf-datev-actions"><button type="button" class="sf-datev-btn" id="sfDatevSaveSettings">Stammdaten speichern</button><button type="button" class="sf-datev-btn" id="sfDatevPrecheck">Vorprüfung</button><button type="button" class="sf-datev-btn primary" id="sfDatevExport">DATEV exportieren</button><button type="button" class="sf-datev-btn primary" id="sfDatevPrevExport">Vormonat exportieren</button></div></div><div class="sf-datev-rules"><div class="sf-datev-rules-head"><b>Lohnarten-Zuordnung</b><small>Arbeitszeit-/Abwesenheitsquelle → eigene DATEV-Lohnart</small><span class="sf-datev-spacer"></span><button type="button" class="sf-datev-mini" id="sfDatevAddRule">+ Zuordnung</button></div><div id="sfDatevRules"></div></div><div id="sfDatevStatus" class="sf-datev-status">Bereit. .txt ist für DATEV vorausgewählt; .sic kann für abgestimmte Abläufe gewählt werden. Der finale Download wird nur für einen abgeschlossenen Monat freigegeben.</div>`;renderRules();
@@ -77,7 +77,7 @@
   async function deleteRule(id,m){if(!confirm('Diese DATEV-Lohnarten-Zuordnung wirklich löschen?'))return;try{const q=await B.client.from('datev_lodas_rules').delete().eq('id',id).eq('company_id',B.companyId);if(q.error)throw q.error;m.remove();configLoaded=false;await loadConfig(true);renderRules();setStatus('Lohnarten-Zuordnung gelöscht.','good')}catch(e){showModalErrors(m,[e?.message||String(e)])}}
 
   async function preflight(month){
-    const scope=exportContext();assertExportContext(scope);const C=await loadCore();assertExportContext(scope);await loadConfig(true);assertExportContext(scope);if(settings?.company_id!==scope.company||month!==scope.month)throw Error('Die Abrechnungsauswahl hat sich geändert. Bitte erneut prüfen.');const exportSettings={...settings},exportRules=rules.map(r=>({...r}));const errors=[...C.validateSettings(settings),...C.validateRules(rules)],warnings=[];let status=null,bundle=null,entries=[];
+    const scope=exportContext();assertExportContext(scope);const C=await loadCore();assertExportContext(scope);await loadConfig(true);assertExportContext(scope);if(configCompany!==scope.company||month!==scope.month)throw Error('Die Abrechnungsauswahl hat sich geändert. Bitte erneut prüfen.');const exportSettings={...settings},exportRules=rules.map(r=>({...r}));const errors=[...C.validateSettings(settings),...C.validateRules(rules)],warnings=[];let status=null,bundle=null,entries=[];
     try{const q=await scope.client.rpc('manager_time_month_status',{p_company_id:scope.company,p_month:`${month}-01`});if(q.error)throw q.error;status=typeof q.data==='string'?JSON.parse(q.data):q.data;if(status?.status!=='CLOSED')errors.push(`${monthLabel(month)} ist noch nicht abgeschlossen. DATEV-Download bleibt bis zum Monatsabschluss gesperrt.`)}catch(e){errors.push('Monatsabschluss-Status konnte nicht geprüft werden: '+(e?.message||e))}
     try{const q=await scope.client.rpc('manager_time_report_bundle',{p_company_id:scope.company,p_month:`${month}-01`,p_employee_id:null});if(q.error)throw q.error;bundle=typeof q.data==='string'?JSON.parse(q.data):q.data}catch(e){errors.push('Monatsdaten konnten nicht geladen werden: '+(e?.message||e))}
     try{const r=monthRange(month),q=await scope.client.rpc('manager_list_time_entries',{p_company_id:scope.company,p_start_date:r.start,p_end_date:r.end});if(q.error)throw q.error;entries=q.data||[]}catch(e){errors.push('Bestätigte IST-Zeiten konnten nicht geladen werden: '+(e?.message||e))}
