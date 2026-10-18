@@ -1,0 +1,28 @@
+name: Persönliche Kurznachrichten
+on:
+  pull_request:
+    paths: ['assets/internal-messages-v1.*', 'database/internal-messages-v1.sql', 'supabase/migrations/*_internal_messages_v1.sql', 'tests/internal-messages.test.mjs', 'tests/browser/internal-messages-qa.cjs', '.github/workflows/internal-messages-checks.yml']
+permissions:
+  contents: read
+concurrency:
+  group: checks-messages-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  messages:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:messages
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: internal-messages-results
+          path: test-results/internal-messages/
