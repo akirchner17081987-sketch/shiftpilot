@@ -1,0 +1,26 @@
+name: Push notifications
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/push-dispatch/**'
+      - 'supabase/migrations/*push*'
+      - 'assets/push-notifications-v1.js'
+      - 'schichtfunk-sw.js'
+      - 'tests/*push*'
+      - 'tests/browser/push-notifications-qa.cjs'
+      - '.github/workflows/push-notifications-checks.yml'
+permissions:
+  contents: read
+jobs:
+  push-notifications:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:push
