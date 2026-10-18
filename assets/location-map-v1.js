@@ -83,7 +83,14 @@ function paintMap(){
   root.style.setProperty('--sf-map-controls-top',(header+8)+'px');
   const top=Math.max(80,header+76),bottom=Math.max(top+100,height-85),middle=(top+bottom)/2;
   const inset=mobile?78:Math.min(300,width*.22),left=inset,right=Math.max(left+1,width-inset);
-  if(fullGlobe)projection.scale(Math.min(width*.43,(height-header-80)/2,300)).translate([width/2,header+40+(height-header-80)/2]);
+  if(fullGlobe){
+   // Let the desktop globe fill the shared hero behind the heading. The same
+   // projection drives the land, site pins and callouts, so they stay aligned.
+   const expanded=!!overlay&&width>760,space=height-header-80;
+   const radius=Math.min(width*.43,space/2*(expanded?1.16:1),expanded?348:300);
+   const lift=expanded?Math.min(72,(height-header)*.12):0;
+   projection.scale(radius).translate([width/2,header+40+space/2-lift]);
+  }
   else if(mapped.length>1){projection.scale(1).translate([0,0]);projection.fitExtent([[left,top],[right,bottom]],{type:'MultiPoint',coordinates:mapped.map(s=>s.coords)});if(projection.scale()>4600){projection.scale(4600).translate([0,0]);const b=d3.geoPath(projection).bounds({type:'MultiPoint',coordinates:mapped.map(s=>s.coords)});projection.translate([width/2-(b[0][0]+b[1][0])/2,middle-(b[0][1]+b[1][1])/2]);}}
   else projection.scale(mobile?1700:3800).translate([width/2,middle]);
   svg.setAttribute('viewBox','0 0 '+width+' '+height);paintMap();
