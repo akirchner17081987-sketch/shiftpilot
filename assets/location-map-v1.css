@@ -176,7 +176,7 @@
 .sf-location-map[data-surface="original"] canvas{opacity:1}
 
 /* Regional geography dissolves into the navy hero at every edge and corner. */
-.sf-location-map[data-view="region"] .sf-scene{background:#06131f}
+.sf-location-map[data-view="region"] .sf-scene{background:#040e1c}
 .sf-location-map[data-view="region"] .sf-planet{
  --sf-map-feather-x:clamp(28px,10vw,180px);
  -webkit-mask-image:linear-gradient(90deg,transparent,#000 var(--sf-map-feather-x),#000 calc(100% - var(--sf-map-feather-x)),transparent),linear-gradient(180deg,transparent,#000 150px,#000 calc(100% - 120px),transparent);
@@ -184,11 +184,24 @@
  -webkit-mask-composite:source-in;mask-composite:intersect;
 }
 .sf-location-map[data-view="region"] .sf-scene:after{display:none}
-.sf-location-map[data-view="region"] .sf-point{background:#0c2638ed;border-color:#83b5c270;color:#e4f1f7;box-shadow:0 4px 16px #142b3830}
-.sf-location-map[data-view="region"] .sf-point .sf-code{color:#8fcad8}
-.sf-location-map[data-view="region"] .sf-point:hover,.sf-location-map[data-view="region"] .sf-point[aria-pressed="true"]{background:#164254;border-color:#9ee7f1;color:#f0fcff}
-.sf-location-map[data-view="region"] .sf-label-lines path{stroke:#93bac7;stroke-width:1.2;opacity:.55}
-.sf-location-map[data-view="region"] .sf-label-lines path[data-active="true"]{stroke:#baf4ff;opacity:1}
-.sf-location-map[data-view="region"] .sf-anchors circle:not(.sf-alert-ring):not(.sf-select-pulse){fill:#d1f5fc;stroke:#225068;stroke-width:1.5}
+.sf-location-map[data-view="region"] .sf-point{background:linear-gradient(145deg,#092237f2,#031222f5);border-color:#1da9cf99;color:#e4f5ff;box-shadow:0 0 16px #0bbde318,inset 0 1px #7bdff314,0 5px 16px #01091455}
+.sf-location-map[data-view="region"] .sf-point .sf-code{color:#22ddf4}
+.sf-location-map[data-view="region"] .sf-point:hover,.sf-location-map[data-view="region"] .sf-point[aria-pressed="true"]{background:#073049f2;border-color:#7eefff;color:#f0fcff;box-shadow:0 0 18px #0bbde333,inset 0 0 14px #11d7e510}
+.sf-location-map[data-view="region"] .sf-label-lines path{stroke:#2dc8e4;stroke-width:1;opacity:.5}
+.sf-location-map[data-view="region"] .sf-label-lines path[data-active="true"]{stroke:#7deeff;opacity:.9}
+.sf-location-map[data-view="region"] .sf-anchors circle.sf-site-dot{fill:#b7fbff;stroke:#16cbe8;stroke-width:1.6;filter:drop-shadow(0 0 5px #04d9ff)}
 .sf-location-map[data-view="region"] .sf-view{background:#0c2638ed;border-color:#83b5c270;color:#e4f1f7;box-shadow:0 3px 12px #071c2430}
 .sf-location-map[data-view="region"] .sf-current{text-shadow:0 1px 5px #031421}
+
+/* Stationary terrain and city lights; only the separate SVG location layer moves. */
+.sf-location-map[data-view="region"] .sf-anchors circle.sf-site-aura{fill:#10cce923;stroke:#28dcf069;stroke-width:1;filter:drop-shadow(0 0 6px #08cce9a0)}
+.sf-location-map[data-view="region"] .sf-anchors circle.sf-site-breathe{fill:none;stroke:#42e4f4;stroke-width:1;opacity:.35;filter:none;transform-box:fill-box;transform-origin:center;animation:sf-night-site-breathe 5.5s ease-out infinite}
+.sf-location-map .sf-label-lines path.sf-label-spark{display:none}
+.sf-location-map[data-view="region"] .sf-label-lines path.sf-label-spark[data-active="true"]{display:block;fill:none;stroke:#c7fcff;stroke-width:2;stroke-linecap:round;stroke-dasharray:5 95;opacity:0;filter:drop-shadow(0 0 4px #08d5ef);animation:sf-night-connector-light 2.4s ease-out 1}
+.sf-location-map[data-view="globe"] .sf-site-aura,.sf-location-map[data-view="globe"] .sf-site-breathe{display:none}
+.sf-location-map[data-animate="false"] .sf-site-breathe{animation-play-state:paused}
+.sf-location-map[data-animate="false"] .sf-label-spark{animation:none!important;opacity:0!important}
+.sf-location-map[data-motion="off"] .sf-site-breathe{animation:none!important;opacity:.3}
+@keyframes sf-night-site-breathe{0%{transform:scale(.8);opacity:.55}65%,100%{transform:scale(2.05);opacity:0}}
+@keyframes sf-night-connector-light{0%{stroke-dashoffset:0;opacity:0}15%{opacity:.95}85%{opacity:.75}100%{stroke-dashoffset:-100;opacity:0}}
+@media(prefers-reduced-motion:reduce){.sf-location-map .sf-site-breathe{animation:none!important;opacity:.3}.sf-location-map .sf-label-spark{animation:none!important;opacity:0!important}}
