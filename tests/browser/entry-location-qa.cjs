@@ -26,7 +26,14 @@ const html=read('dist/index.html'),overlay=html.slice(html.indexOf('<div id="sfE
    B.baseOpenApp=()=>{document.querySelector('#appShell').style.display='block';B.closeAuth()};B.showLoading=()=>{};B.hideLoading=()=>{};B.updateState=()=>{};B.hydrate=async()=>{};
   },{team,role,linked});
   for(const file of ['supabase-employee-access-v1','supabase-employee-access-guard-v1','time-only-access-v1','access-profiles-v1'])await page.addScriptTag({content:read('assets/'+file+'.js')});
-  if(!linked)await page.evaluate(()=>{
+  if(!linked)await page.evaluate(async()=>{
+   await SFEntryDive.prepare();
+   const d3=SFLocationMapEngine.d3,orthographic=d3.geoOrthographic;
+   d3.geoOrthographic=function(...args){
+    const projection=orthographic(...args),rotate=projection.rotate;
+    projection.rotate=function(value){if(value)window.diveCenter=[-value[0],-value[1]];return rotate.apply(this,arguments)};
+    return projection;
+   };
    window.diveRadius=0;
    const arc=CanvasRenderingContext2D.prototype.arc;
    CanvasRenderingContext2D.prototype.arc=function(...args){if(this.canvas.id==='sfEntryDiveCanvas'&&args[2]>window.diveRadius)window.diveRadius=args[2];return arc.apply(this,args)};
@@ -47,6 +54,8 @@ const html=read('dist/index.html'),overlay=html.slice(html.indexOf('<div id="sfE
    await page.waitForTimeout(1650);
    const after=await page.evaluate(()=>diveRadius);
    assert.ok(after>before*4,'unassigned admin actually zooms into the globe: '+before+' -> '+after);checks++;
+   const destination=await page.evaluate(()=>{const {d3,countries}=SFLocationMapEngine;const germany=countries.features.find(f=>f.properties?.id==='DEU');return {center:diveCenter,inGermany:!!germany&&d3.geoContains(germany,diveCenter)}});
+   assert.equal(destination.inGermany,true,'unassigned admin camera must enter Germany, received '+JSON.stringify(destination.center));checks++;
    assert.equal(await page.locator('#sfEntryWelcomeTitle').innerText(),'Willkommen bei SchichtFunk.');checks++;
    await page.screenshot({path:path.join(out,'admin-no-workplace-'+width+'-zoom.png')});
   }
@@ -72,5 +81,5 @@ const html=read('dist/index.html'),overlay=html.slice(html.indexOf('<div id="sfE
   }
   assert.deepEqual(errors,[]);checks++;await context.close();
  }
- console.log('Location login browser QA passed: '+checks+' checks; Leipzig/Recklinghausen employee and team leader logins, retained real login fade, protected reveal, MFA interruption, 320/390/1440px, reduced motion, missing workplace, unassigned admins with measured camera zoom and failed geometry loading.');
+ console.log('Location login browser QA passed: '+checks+' checks; Leipzig/Recklinghausen employee and team leader logins, retained real login fade, protected reveal, MFA interruption, 320/390/1440px, reduced motion, missing workplace, unassigned admins with measured camera zoom into Germany and failed geometry loading.');
 }finally{await browser.close()}})().catch(e=>{console.error(e);process.exitCode=1});
