@@ -15,6 +15,7 @@
 
   function snapshot(){
     const old=read();
+    if(!B.ready||B.__startupActive||B.__explicitSignOut||B.__finishingSignOut||B.role==='EMPLOYEE')return old;
     const view=activeView()||old.view||B.pendingView||'overview';
     const state={
       view:validView(view)?view:(old.view||'overview'),
@@ -70,8 +71,8 @@
     if(restoring||now-lastRestore<35)return;
     const state=read();
     if(!state.view||!validView(state.view))return;
+    if(!B.ready||B.__startupActive||B.__explicitSignOut||B.__finishingSignOut||B.role==='EMPLOYEE')return;
     B.pendingView=state.view;
-    if(!B.ready)return;
     restoring=true;lastRestore=now;
     try{
       const shell=document.getElementById('appShell');
@@ -86,9 +87,10 @@
     }finally{setTimeout(()=>{restoring=false},60)}
   }
 
-  // Beim Laden den zuletzt gesicherten View sofort an Supabase/Auth weiterreichen.
+  // Only an already active workspace may restore its current view. The login
+  // landing is initialized by view-state-v1 before this manager module loads.
   const initial=read();
-  if(initial.view)B.pendingView=initial.view;
+  if(B.ready&&!B.__startupActive&&initial.view)B.pendingView=initial.view;
 
   document.addEventListener('click',e=>{
     const nav=e.target?.closest?.('[data-view]');

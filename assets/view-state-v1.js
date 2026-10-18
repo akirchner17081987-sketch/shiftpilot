@@ -18,10 +18,25 @@
   };
 
   const isValid=target=>!!target&&!!document.getElementById('view-'+target);
+  const activeSession=()=>!!window.SFBackend?.ready&&!window.SFBackend.__startupActive&&!window.SFBackend.__explicitSignOut&&!window.SFBackend.__finishingSignOut&&window.SFBackend.role!=='EMPLOYEE';
+  const demo=()=>{try{return sessionStorage.getItem('sf_demo_session_v1')==='active'}catch{return false}};
+
+  function startAtOverview(){
+    if(demo())return;
+    const target=new URLSearchParams(window.location.search).get('bereich')==='zeitkonto'?'time':'overview';
+    try{
+      sessionStorage.setItem(KEY,target);
+      const workspace=JSON.parse(sessionStorage.getItem('sf_workspace_state_v2')||'{}')||{};
+      workspace.view=target;workspace.personnelOpen=false;workspace.personnelTab=null;workspace.savedAt=Date.now();
+      sessionStorage.setItem('sf_workspace_state_v2',JSON.stringify(workspace));
+    }catch{}
+    if(window.SFBackend)window.SFBackend.pendingView=target;
+  }
 
   function remember(name){
     const target=normalize(name);
     if(!isValid(target))return target;
+    if(!activeSession())return target;
     try{
       sessionStorage.setItem(KEY,target);
       const workspace=JSON.parse(sessionStorage.getItem('sf_workspace_state_v2')||'{}')||{};
@@ -70,7 +85,7 @@
   function restore(){
     const target=stored();
     const B=window.SFBackend;
-    if(!isValid(target)||!B?.ready)return;
+    if(!isValid(target)||!activeSession())return;
     if(activeView()===target){B.pendingView=target;return}
     B.pendingView=target;
     if(typeof window.switchView==='function')window.switchView(target);
@@ -92,11 +107,14 @@
   window.addEventListener('pagehide',snapshot);
   window.addEventListener('pageshow',()=>setTimeout(restore,100));
 
-  // Beim ersten Laden darf die im HTML voreingestellte Dienstplan-Ansicht einen
-  // bereits gesicherten Bereich nicht überschreiben.
+  // A new document/login starts on Today; focus and token refresh within this
+  // document continue to restore the user's current workspace.
   const initial=stored();
-  if(isValid(initial)){
-    const B=window.SFBackend;
-    if(B)B.pendingView=initial;
-  }else setTimeout(snapshot,0);
+  if(!window.SFBackend?.ready&&!demo())startAtOverview();
+  else if(isValid(initial)&&window.SFBackend)window.SFBackend.pendingView=initial;
+  const auth=window.SFBackend?.authDialog;
+  if(typeof auth==='function')window.SFBackend.authDialog=function(){
+    if(!window.SFBackend.ready)startAtOverview();
+    return auth.apply(this,arguments);
+  };
 })();

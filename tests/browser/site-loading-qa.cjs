@@ -20,6 +20,7 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
  setTimeout(()=>res.end(body),js||css?35:0);
  });await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+server.address().port;browser=await chromium.launch({headless:true});const metrics={conditions:'Real page and modules with synthetic auth/read-only data, 35 ms asset latency. Timings are fixture measurements, not a signed-in production session.'};
  async function run(variant,role,extra=false){const context=await browser.newContext({serviceWorkers:'block',viewport:{width:1440,height:1000}}),page=await context.newPage(),errors=[],external=[],dialogs=[];qaPage=page;page.on('pageerror',e=>errors.push(e.message));page.on('dialog',async d=>{dialogs.push(d.message());await d.dismiss()});
+ if(variant==='current')await context.addInitScript(()=>{if(!sessionStorage.getItem('qaLandingSeeded')){sessionStorage.setItem('sf_active_view_v1','schedule');sessionStorage.setItem('sf_workspace_state_v2',JSON.stringify({view:'schedule',personnelOpen:true}));sessionStorage.setItem('qaLandingSeeded','1');}});
  await page.route('**/*',r=>{if(new URL(r.request().url()).origin!==origin){external.push(r.request().url());return r.abort()}return r.continue()});
  await page.goto(origin+'/?variant='+variant+'&role='+role);await page.waitForFunction(()=>qa.done,{timeout:45000}).catch(async e=>{console.error({variant,role,errors,dialogs,qa:await page.evaluate(()=>qa)});throw e});
  const data=await page.evaluate(()=>({...qa,scriptCount:document.scripts.length,paths:[...document.scripts].filter(s=>s.src).map(s=>new URL(s.src).pathname),styles:[...document.querySelectorAll('link[rel="stylesheet"]')].map(s=>new URL(s.href).pathname)}));
@@ -33,6 +34,7 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
  if(!['SIGNED_OUT','EMPLOYEE'].includes(role))assert.equal(await page.locator('#sfBillingNav').evaluate(n=>n.hidden),!['OWNER','ADMIN'].includes(role),'Abrechnung follows admin permissions');
  if(role==='TIME_TRACKING'){assert.equal(await page.locator('#view-time').evaluate(n=>n.classList.contains('active')),true)}
  if(role==='OWNER'){assert.deepEqual(data.startup,{shellVisible:true,ready:false,shellReady:true,entryDismissed:true,viewInert:true,status:true});assert.equal(await page.locator('#sfStartupStatus').count(),0);assert.equal(await page.locator('#appShell').evaluate(n=>n.getAttribute('aria-busy')),null)}
+ if(['OWNER','ADMIN','PLANNER','DISPATCHER'].includes(role)){await page.waitForFunction(()=>document.querySelector('#view-overview')?.classList.contains('active'));assert.equal(await page.evaluate(()=>SFBackend.pendingView),'overview','management starts on Today despite saved Planning state');}
  if(windowOrbit(data)) {
    if(['SIGNED_OUT','EMPLOYEE','TIME_TRACKING','VIEWER'].includes(role)){assert.equal(await page.locator('[data-orbit-site]').count(),0,'restricted roles receive no site summaries');assert.equal(await page.evaluate(()=>SFToday?.getSiteOverview?.()??null),null);}
    if(role!=='SIGNED_OUT'&&role!=='EMPLOYEE')assert.equal(await page.locator('#appShell>.sidebar').isVisible(),false,'legacy main navigation stays hidden for every manager role');
@@ -47,6 +49,11 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
  }
  if(extra){
  if(windowOrbit(data)) {
+   await page.evaluate(()=>showView('schedule'));await page.waitForFunction(()=>document.querySelector('#view-schedule').classList.contains('active'));
+   await page.evaluate(()=>{window.dispatchEvent(new Event('blur'));window.dispatchEvent(new Event('focus'));});await page.waitForTimeout(1400);
+   assert.equal(await page.locator('#view-schedule').evaluate(n=>n.classList.contains('active')),true,'focus preserves active Planning in the same session');
+   await page.reload();await page.waitForFunction(()=>qa.done&&document.querySelector('#view-overview')?.classList.contains('active'));await page.waitForTimeout(1400);
+   assert.equal(await page.evaluate(()=>SFBackend.pendingView),'overview','a document reload starts on Today again');
    await page.waitForFunction(()=>window.SFLocationMapEngine&&document.querySelectorAll('[data-orbit-site]').length===2);
    await page.waitForFunction(()=>document.querySelector('.sf-location-map')?.dataset.surface==='atlas');
    const overviewButton=page.locator('[data-orbit-category="overview"]'),assistant=page.locator('#appShell .top-actions #sfPlanningAssistantButton');
