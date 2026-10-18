@@ -1,0 +1,43 @@
+name: Month close and exports
+on:
+  pull_request:
+    paths:
+      - 'assets/supabase-time-month-close-v1.js'
+      - 'assets/supabase-report-export-v2.js'
+      - 'assets/datev-lodas-export-v1.js'
+      - 'supabase/migrations/*month_close*'
+      - 'supabase/migrations/*time_account_opening*'
+      - 'tests/month-close-*'
+      - 'tests/browser/month-close-exports-qa.cjs'
+      - 'tests/e2e/datev-lodas-export.e2e.spec.mjs'
+      - 'tests/e2e/helpers/local-app-routes.mjs'
+      - '.github/workflows/month-close-export-checks.yml'
+permissions:
+  contents: read
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  month-close-exports:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: node --test tests/month-close-opening.test.mjs tests/month-close-period.test.mjs tests/datev-lodas-format.test.mjs tests/reports-workspace.test.cjs
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/browser/month-close-exports-qa.cjs
+      - run: npx playwright test tests/e2e/datev-lodas-export.e2e.spec.mjs --workers=1 --reporter=line
+        env:
+          SF_E2E_LOCAL_FILES: '1'
+          E2E_BASE_URL: http://localhost:8989
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: month-close-export-qa
+          path: test-results/month-close-exports
+          retention-days: 7

@@ -3,12 +3,14 @@
   const B=window.SFBackend=window.SFBackend||{};
   if(B.__datevLodasExportV1)return;B.__datevLodasExportV1=true;
   const ADMIN=new Set(['OWNER','ADMIN']);
-  let settings=null,rules=[],configLoaded=false,configBusy=false,ensureBusy=false,exportBusy=false,ensureTimer=0,exportExtension='txt';
+  let settings=null,rules=[],configLoaded=false,configBusy=false,ensureBusy=false,exportBusy=false,ensureTimer=0,exportExtension='txt',configCompany=null;
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const pad=n=>String(n).padStart(2,'0');
   let selectedMonth=sessionStorage.getItem('sf_demo_session_v1')==='active'?'2026-08':new Intl.DateTimeFormat('sv-SE',{timeZone:B.companyTimeZone||'Europe/Berlin',year:'numeric',month:'2-digit'}).format(new Date());
   const monthInput=()=>document.getElementById('sfDatevMonth');
   const monthValue=()=>monthInput()?.value||selectedMonth;
+  const exportContext=()=>({company:B.companyId,user:B.user?.id,role:B.role,client:B.client,month:monthValue()});
+  function assertExportContext(c){if(!c||B.companySwitching||!ADMIN.has(B.role)||c.company!==B.companyId||c.user!==B.user?.id||c.role!==B.role||c.client!==B.client||c.month!==monthValue())throw Error('Unternehmen, Zugang oder Monat wurde geändert. Bitte die Vorprüfung erneut starten.')}
   const normalizeExtension=value=>value==='sic'?'sic':'txt';
   const monthLabel=m=>new Date(`${m}-01T12:00:00`).toLocaleDateString('de-DE',{month:'long',year:'numeric'});
   const previousMonth=()=>{const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()||12)}`.replace(/^([0-9]{4})-12$/,()=>`${d.getFullYear()-1}-12`)};
@@ -31,14 +33,14 @@
 
   async function loadConfig(force=false){
     if(configBusy)return; if(configLoaded&&!force)return; if(!ADMIN.has(B.role)||!B.client||!B.companyId)return;
-    configBusy=true;
+    configBusy=true;const scope=exportContext();
     try{
       const [s,r]=await Promise.all([
         B.client.from('datev_lodas_settings').select('company_id,berater_nr,mandanten_nr,updated_at').eq('company_id',B.companyId).maybeSingle(),
         B.client.from('datev_lodas_rules').select('id,company_id,label,source_type,source_key,wage_type,cost_center,sort_order,active').eq('company_id',B.companyId).order('sort_order').order('created_at')
       ]);
-      if(s.error)throw s.error;if(r.error)throw r.error;
-      settings=s.data||{company_id:B.companyId,berater_nr:'',mandanten_nr:''};rules=r.data||[];configLoaded=true;
+      assertExportContext(scope);if(s.error)throw s.error;if(r.error)throw r.error;
+      settings=s.data||{company_id:B.companyId,berater_nr:'',mandanten_nr:''};rules=r.data||[];configCompany=scope.company;configLoaded=true;
     }finally{configBusy=false}
   }
 
@@ -52,7 +54,7 @@
     const companyId=B.companyId;
     const existing=document.getElementById('sfDatevPanel');
     if(existing?.dataset.companyId===companyId&&existing.querySelector('#sfDatevMonth'))return;
-    if(settings?.company_id!==companyId){configLoaded=false;settings=null;rules=[]}
+    if(configCompany!==companyId){configLoaded=false;settings=null;rules=[]}
     let panel=document.getElementById('sfDatevPanel');if(!panel){host.replaceChildren();panel=document.createElement('section');panel.id='sfDatevPanel';panel.className='sf-datev';host.appendChild(panel)}
     else if(panel.parentElement!==host)host.appendChild(panel);
     try{ensureBusy=true;await B.requireSensitiveMfa?.();if(companyId!==B.companyId||B.companySwitching)return;await loadConfig();if(companyId!==B.companyId||!ADMIN.has(B.role)||B.companySwitching)return;panel.dataset.companyId=companyId;panel.innerHTML=`<div class="sf-datev-head"><div><div class="sf-datev-badge">DATEV · LODAS · SST 1.0</div><h3 style="margin-top:7px">LODAS Bewegungsdaten</h3><p>ASCII-sicherer Export nach dem DATEV-Schnittstellenhandbuch. Semikolon, deutsches Dezimalkomma, TT.MM.JJJJ, NULL und CR/LF-Zeilenenden werden fest erzeugt.</p></div><span class="sf-datev-spacer"></span></div><div class="sf-datev-grid"><label id="sfDatevMonthWrap"><span>Abrechnungsmonat</span><input id="sfDatevMonth" type="month" value="${esc(selectedMonth)}" aria-label="Abrechnungsmonat für DATEV"></label><label><span>BeraterNr</span><input id="sfDatevBerater" inputmode="numeric" minlength="4" maxlength="7" pattern="[0-9]{4,7}" value="${esc(settings?.berater_nr||'')}"></label><label><span>MandantenNr</span><input id="sfDatevMandant" inputmode="numeric" minlength="1" maxlength="5" pattern="[0-9]{1,5}" value="${esc(settings?.mandanten_nr||'')}"></label><label><span>Dateiendung</span><select id="sfDatevExtension" aria-label="Dateiendung für den DATEV-Export"><option value="txt" ${exportExtension==='txt'?'selected':''}>.txt (empfohlen)</option><option value="sic" ${exportExtension==='sic'?'selected':''}>.sic (optional)</option></select></label><div class="sf-datev-actions"><button type="button" class="sf-datev-btn" id="sfDatevSaveSettings">Stammdaten speichern</button><button type="button" class="sf-datev-btn" id="sfDatevPrecheck">Vorprüfung</button><button type="button" class="sf-datev-btn primary" id="sfDatevExport">DATEV exportieren</button><button type="button" class="sf-datev-btn primary" id="sfDatevPrevExport">Vormonat exportieren</button></div></div><div class="sf-datev-rules"><div class="sf-datev-rules-head"><b>Lohnarten-Zuordnung</b><small>Arbeitszeit-/Abwesenheitsquelle → eigene DATEV-Lohnart</small><span class="sf-datev-spacer"></span><button type="button" class="sf-datev-mini" id="sfDatevAddRule">+ Zuordnung</button></div><div id="sfDatevRules"></div></div><div id="sfDatevStatus" class="sf-datev-status">Bereit. .txt ist für DATEV vorausgewählt; .sic kann für abgestimmte Abläufe gewählt werden. Der finale Download wird nur für einen abgeschlossenen Monat freigegeben.</div>`;renderRules();
@@ -75,16 +77,16 @@
   async function deleteRule(id,m){if(!confirm('Diese DATEV-Lohnarten-Zuordnung wirklich löschen?'))return;try{const q=await B.client.from('datev_lodas_rules').delete().eq('id',id).eq('company_id',B.companyId);if(q.error)throw q.error;m.remove();configLoaded=false;await loadConfig(true);renderRules();setStatus('Lohnarten-Zuordnung gelöscht.','good')}catch(e){showModalErrors(m,[e?.message||String(e)])}}
 
   async function preflight(month){
-    const C=await loadCore();await loadConfig(true);const errors=[...C.validateSettings(settings),...C.validateRules(rules)],warnings=[];let status=null,bundle=null,entries=[];
-    try{const q=await B.client.rpc('manager_time_month_status',{p_company_id:B.companyId,p_month:`${month}-01`});if(q.error)throw q.error;status=typeof q.data==='string'?JSON.parse(q.data):q.data;if(status?.status!=='CLOSED')errors.push(`${monthLabel(month)} ist noch nicht abgeschlossen. DATEV-Download bleibt bis zum Monatsabschluss gesperrt.`)}catch(e){errors.push('Monatsabschluss-Status konnte nicht geprüft werden: '+(e?.message||e))}
-    try{const q=await B.client.rpc('manager_time_report_bundle',{p_company_id:B.companyId,p_month:`${month}-01`,p_employee_id:null});if(q.error)throw q.error;bundle=typeof q.data==='string'?JSON.parse(q.data):q.data}catch(e){errors.push('Monatsdaten konnten nicht geladen werden: '+(e?.message||e))}
-    try{const r=monthRange(month),q=await B.client.rpc('manager_list_time_entries',{p_company_id:B.companyId,p_start_date:r.start,p_end_date:r.end});if(q.error)throw q.error;entries=q.data||[]}catch(e){errors.push('Bestätigte IST-Zeiten konnten nicht geladen werden: '+(e?.message||e))}
-    let built={rows:[],errors:[],warnings:[]};if(bundle){built=C.buildRows({rules,employees:bundle.employees||[],details:bundle.details||[],entries});errors.push(...built.errors);warnings.push(...built.warnings)}
-    const uniqueErrors=[...new Set(errors)],uniqueWarnings=[...new Set(warnings)];return{C,status,bundle,entries,rows:built.rows,errors:uniqueErrors,warnings:uniqueWarnings}
+    const scope=exportContext();assertExportContext(scope);const C=await loadCore();assertExportContext(scope);await loadConfig(true);assertExportContext(scope);if(configCompany!==scope.company||month!==scope.month)throw Error('Die Abrechnungsauswahl hat sich geändert. Bitte erneut prüfen.');const exportSettings={...settings},exportRules=rules.map(r=>({...r}));const errors=[...C.validateSettings(settings),...C.validateRules(rules)],warnings=[];let status=null,bundle=null,entries=[];
+    try{const q=await scope.client.rpc('manager_time_month_status',{p_company_id:scope.company,p_month:`${month}-01`});if(q.error)throw q.error;status=typeof q.data==='string'?JSON.parse(q.data):q.data;if(status?.status!=='CLOSED')errors.push(`${monthLabel(month)} ist noch nicht abgeschlossen. DATEV-Download bleibt bis zum Monatsabschluss gesperrt.`)}catch(e){errors.push('Monatsabschluss-Status konnte nicht geprüft werden: '+(e?.message||e))}
+    try{const q=await scope.client.rpc('manager_time_report_bundle',{p_company_id:scope.company,p_month:`${month}-01`,p_employee_id:null});if(q.error)throw q.error;bundle=typeof q.data==='string'?JSON.parse(q.data):q.data}catch(e){errors.push('Monatsdaten konnten nicht geladen werden: '+(e?.message||e))}
+    try{const r=monthRange(month),q=await scope.client.rpc('manager_list_time_entries',{p_company_id:scope.company,p_start_date:r.start,p_end_date:r.end});if(q.error)throw q.error;entries=q.data||[]}catch(e){errors.push('Bestätigte IST-Zeiten konnten nicht geladen werden: '+(e?.message||e))}
+    let built={rows:[],errors:[],warnings:[]};if(bundle){built=C.buildRows({rules:exportRules,employees:bundle.employees||[],details:bundle.details||[],entries});errors.push(...built.errors);warnings.push(...built.warnings)}
+    const uniqueErrors=[...new Set(errors)],uniqueWarnings=[...new Set(warnings)];assertExportContext(scope);return{scope,exportSettings,C,status,bundle,entries,rows:built.rows,errors:uniqueErrors,warnings:uniqueWarnings}
   }
 
   function openPreflightModal(month,result){
-    css();document.getElementById('sfDatevModal')?.remove();const m=document.createElement('div');m.id='sfDatevModal';m.className='sf-datev-back';let preview='';if(!result.errors.length){preview=result.C.formatContent({beraterNr:settings.berater_nr,mandantenNr:settings.mandanten_nr,month,rows:result.rows}).split('\r\n').slice(0,22).join('\r\n');if(result.rows.length>12)preview+='\r\n…'}m.innerHTML=`<div class="sf-datev-modal"><header><div class="eyebrow">DATEV LODAS · VORPRÜFUNG</div><h2>${esc(monthLabel(month))}</h2><p>Prüfung gegen Monatsabschluss, DATEV-Stammdaten, Personalnummern, Lohnarten-Zuordnungen und feste Ausgabeform.</p></header><div class="sf-datev-body">${result.errors.length?`<div class="sf-datev-errorlist">${result.errors.map(x=>`<div class="sf-datev-error">✕ ${esc(x)}</div>`).join('')}</div>`:`<div class="sf-datev-ok">✓ Vorprüfung bestanden · ${result.rows.length} Bewegungszeilen sind exportbereit.</div>`}${result.warnings.map(x=>`<div class="sf-datev-warn" style="margin-top:7px">${esc(x)}</div>`).join('')}${preview?`<div class="sf-datev-preview">${esc(preview)}</div>`:''}</div><footer class="sf-datev-foot"><button type="button" class="sf-datev-close">Schließen</button>${!result.errors.length?'<button type="button" class="sf-datev-save" id="sfDatevModalExport">DATEV-Datei erstellen</button>':''}</footer></div>`;document.body.appendChild(m);m.querySelector('.sf-datev-close').onclick=()=>m.remove();m.onclick=e=>{if(e.target===m)m.remove()};m.querySelector('#sfDatevModalExport')?.addEventListener('click',async()=>{if(exportBusy)return;m.remove();setExportBusy(true);try{await finalizeExport(month,result)}finally{setExportBusy(false)}})
+    css();document.getElementById('sfDatevModal')?.remove();const m=document.createElement('div');m.id='sfDatevModal';m.className='sf-datev-back';let preview='';if(!result.errors.length){preview=result.C.formatContent({beraterNr:result.exportSettings.berater_nr,mandantenNr:result.exportSettings.mandanten_nr,month,rows:result.rows}).split('\r\n').slice(0,22).join('\r\n');if(result.rows.length>12)preview+='\r\n…'}m.innerHTML=`<div class="sf-datev-modal"><header><div class="eyebrow">DATEV LODAS · VORPRÜFUNG</div><h2>${esc(monthLabel(month))}</h2><p>Prüfung gegen Monatsabschluss, DATEV-Stammdaten, Personalnummern, Lohnarten-Zuordnungen und feste Ausgabeform.</p></header><div class="sf-datev-body">${result.errors.length?`<div class="sf-datev-errorlist">${result.errors.map(x=>`<div class="sf-datev-error">✕ ${esc(x)}</div>`).join('')}</div>`:`<div class="sf-datev-ok">✓ Vorprüfung bestanden · ${result.rows.length} Bewegungszeilen sind exportbereit.</div>`}${result.warnings.map(x=>`<div class="sf-datev-warn" style="margin-top:7px">${esc(x)}</div>`).join('')}${preview?`<div class="sf-datev-preview">${esc(preview)}</div>`:''}</div><footer class="sf-datev-foot"><button type="button" class="sf-datev-close">Schließen</button>${!result.errors.length?'<button type="button" class="sf-datev-save" id="sfDatevModalExport">DATEV-Datei erstellen</button>':''}</footer></div>`;document.body.appendChild(m);m.querySelector('.sf-datev-close').onclick=()=>m.remove();m.onclick=e=>{if(e.target===m)m.remove()};m.querySelector('#sfDatevModalExport')?.addEventListener('click',async()=>{if(exportBusy)return;m.remove();setExportBusy(true);try{await finalizeExport(month,result)}finally{setExportBusy(false)}})
   }
 
   async function runPrecheck(month,showModal=false){setStatus(`${monthLabel(month)} wird geprüft …`);try{const result=await preflight(month);if(result.errors.length)setStatus(`Vorprüfung: ${result.errors.length} Fehler – kein DATEV-Export.`,'bad');else setStatus(`Vorprüfung bestanden ✓ · ${result.rows.length} Bewegungszeilen`,'good');if(showModal)openPreflightModal(month,result);return result}catch(e){setStatus('DATEV-Vorprüfung fehlgeschlagen: '+(e?.message||e),'bad');return null}}
@@ -94,14 +96,14 @@
   async function sha256(text){if(!crypto?.subtle)return'';const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
   async function finalizeExport(month,result){
     try{
-      if(!result.rows.length)throw new Error('Ein leerer DATEV-Export ist nicht zulässig.');
+      assertExportContext(result.scope);if(!result.rows.length)throw new Error('Ein leerer DATEV-Export ist nicht zulässig.');
       const revision=Number(result.status?.revision||0);if(!Number.isInteger(revision)||revision<1)throw new Error('Die Monatsabschluss-Revision fehlt. Bitte die Vorprüfung erneut ausführen.');
-      const content=result.C.formatContent({beraterNr:settings.berater_nr,mandantenNr:settings.mandanten_nr,month,rows:result.rows});
+      const content=result.C.formatContent({beraterNr:result.exportSettings.berater_nr,mandantenNr:result.exportSettings.mandanten_nr,month,rows:result.rows});
       const hash=await sha256(content);if(!/^[0-9a-f]{64}$/.test(hash))throw new Error('Die DATEV-Datei konnte nicht sicher geprüft werden.');
-      setStatus(`DATEV LODAS ${monthLabel(month)} wird serverseitig freigegeben …`);
-      const audit=await B.client.rpc('manager_authorize_datev_lodas_export',{p_company_id:B.companyId,p_month:`${month}-01`,p_row_count:result.rows.length,p_content_sha256:hash,p_expected_closure_revision:revision});
+      assertExportContext(result.scope);setStatus(`DATEV LODAS ${monthLabel(month)} wird serverseitig freigegeben …`);
+      const audit=await result.scope.client.rpc('manager_authorize_datev_lodas_export',{p_company_id:result.scope.company,p_month:`${month}-01`,p_row_count:result.rows.length,p_content_sha256:hash,p_expected_closure_revision:revision});
       if(audit.error)throw audit.error;if(!audit.data)throw new Error('Die serverseitige Exportfreigabe wurde nicht bestätigt.');
-      const extension=normalizeExtension(exportExtension),blob=new Blob([content],{type:'text/plain;charset=us-ascii'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`SchichtFunk_DATEV_LODAS_${month}.${extension}`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1200);
+      assertExportContext(result.scope);const extension=normalizeExtension(exportExtension),blob=new Blob([content],{type:'text/plain;charset=us-ascii'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`SchichtFunk_DATEV_LODAS_${month}.${extension}`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1200);
       setStatus(`DATEV LODAS ${monthLabel(month)} als .${extension} erstellt und protokolliert ✓ · ${result.rows.length} Zeilen`,'good');
       if(typeof showSaveToast==='function')showSaveToast('DATEV LODAS erstellt',`${monthLabel(month)} · .${extension} · ${result.rows.length} Bewegungszeilen · protokolliert`);return true
     }catch(e){setStatus('DATEV-Datei wurde nicht erstellt: '+(e?.message||e),'bad');return false}

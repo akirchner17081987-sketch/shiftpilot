@@ -20,7 +20,7 @@ test('DATEV browser export module has valid JavaScript syntax',()=>{
 });
 
 test('DATEV download requires a successful server authorization first',()=>{
-  const authorization=ui.indexOf("B.client.rpc('manager_authorize_datev_lodas_export'");
+  const authorization=ui.indexOf("rpc('manager_authorize_datev_lodas_export'");
   const download=ui.indexOf('URL.createObjectURL(blob)');
   assert.ok(authorization>=0,'server authorization RPC is missing');
   assert.ok(download>authorization,'download must happen after server authorization');
