@@ -61,6 +61,7 @@ jobs:
           node tests/browser/planning-performance-qa.cjs
           node tests/browser/site-loading-qa.cjs
           node tests/browser/entry-access-qa.cjs
+          node tests/browser/entry-location-qa.cjs
           node tests/browser/portal-entry-routing-qa.cjs
           node tests/browser/manual-week-planning-qa.cjs
 

@@ -82,7 +82,7 @@ function entryHarness({reducedMotion=true}={}) {
   nodes.get('sfEntryWelcome').hidden=true;
   root.querySelector = selector => nodes.get(selector.slice(1));
   nodes.get('sfEntryLoginSlot').appendChild = el => {el.parentElement=nodes.get('sfEntryLoginSlot')};
-  const backend = {client:{},ready:false};
+  const backend = {client:{},ready:false,user:{id:'test-user'}};
   runInNewContext(boot,{
     document:{readyState:'loading',documentElement:{},body:{},getElementById:id=>nodes.get(id),addEventListener:(name,fn)=>events.set(name,fn)},
     window:{SFBackend:backend,addEventListener:(name,fn)=>events.set(name,fn),removeEventListener(){},matchMedia:()=>({matches:reducedMotion})},
@@ -141,7 +141,7 @@ test('cancelled MFA can return to the original login form', () => {
   assert.equal(auth.parentElement,h.nodes.get('sfEntryLoginSlot'));
 });
 
-test('interactive login welcomes only after the protected workspace is ready and reveals it after 4.2 seconds',()=>{
+test('interactive login welcomes only after the protected workspace is ready and reveals it after 6 seconds',()=>{
   const h=entryHarness({reducedMotion:false});h.add('sfAuthBackdrop');
   h.backend.user={user_metadata:{full_name:'Alexander Kirchner'}};
   assert.ok(!h.root.classList.contains('sf-entry-success'));
@@ -149,8 +149,8 @@ test('interactive login welcomes only after the protected workspace is ready and
   assert.ok(h.root.classList.contains('sf-entry-success'));
   assert.ok(!h.root.classList.contains('sf-entry-out'));
   assert.equal(h.root.inert,true);
-  assert.equal(h.nodes.get('sfEntryWelcomeTitle').textContent,'Willkommen, Alexander.');
-  const timer=[...h.timers.values()].find(x=>x.ms===4200);assert.ok(timer);timer.fn();
+  assert.equal(h.nodes.get('sfEntryWelcomeTitle').textContent,'Willkommen bei SchichtFunk.');
+  const timer=[...h.timers.values()].find(x=>x.ms===6000);assert.ok(timer);timer.fn();
   assert.ok(h.root.classList.contains('sf-entry-out'));
 });
 
@@ -159,7 +159,7 @@ test('MFA interrupts an active welcome and cancels its reveal timer',()=>{
   assert.ok(h.root.classList.contains('sf-entry-success'));h.add('sfMfaModal');
   assert.ok(!h.root.classList.contains('sf-entry-success'));
   assert.equal(h.nodes.get('sfEntryWelcome').hidden,true);
-  assert.ok(![...h.timers.values()].some(x=>x.ms===4200));
+  assert.ok(![...h.timers.values()].some(x=>x.ms===6000));
   assert.ok(!h.root.classList.contains('sf-entry-out'));assert.equal(h.root.inert,true);
 });
 
@@ -168,12 +168,12 @@ test('restored sessions and reduced-motion login do not wait for a cinematic wel
   assert.ok(restored.root.classList.contains('sf-entry-out'));
   const reduced=entryHarness();reduced.add('sfAuthBackdrop');reduced.backend.ready=true;reduced.add('appShell');
   assert.ok(reduced.root.classList.contains('sf-entry-out'));
-  assert.ok(![...reduced.timers.values()].some(x=>x.ms===4200));
+  assert.ok(![...reduced.timers.values()].some(x=>x.ms===6000));
 });
 
 test('session loss during the welcome returns to login instead of revealing a stale workspace',()=>{
   const h=entryHarness({reducedMotion:false});h.add('sfAuthBackdrop');h.backend.ready=true;h.add('appShell');
-  const timer=[...h.timers.values()].find(x=>x.ms===4200);h.backend.ready=false;timer.fn();
+  const timer=[...h.timers.values()].find(x=>x.ms===6000);h.backend.ready=false;timer.fn();
   assert.ok(!h.root.classList.contains('sf-entry-out'));
   assert.ok(!h.root.classList.contains('sf-entry-success'));assert.equal(h.root.inert,false);
 });

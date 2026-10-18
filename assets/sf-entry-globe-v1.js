@@ -92,7 +92,7 @@
   function tick(now) {
     frame = 0;
     if (!root.isConnected || root.classList.contains('sf-entry-out')) { dispose(); return; }
-    if (document.hidden || motion.matches || root.classList.contains('sf-entry-skip-animation')) return;
+    if (document.hidden || motion.matches || root.classList.contains('sf-entry-skip-animation') || root.classList.contains('sf-entry-success')) return;
     if (!last) last = now;
     const delta = now - last;
     if (delta >= 33) { elapsed += Math.min(delta, 100); angle += Math.min(delta, 100) * .000035; draw(); last = now; }
@@ -101,13 +101,13 @@
   function restart() {
     if (disposed) return;
     cancelAnimationFrame(frame); frame = 0; last = 0; draw();
-    if (!document.hidden && !motion.matches && !root.classList.contains('sf-entry-skip-animation')) frame = requestAnimationFrame(tick);
+    if (!document.hidden && !motion.matches && !root.classList.contains('sf-entry-skip-animation') && !root.classList.contains('sf-entry-success')) frame = requestAnimationFrame(tick);
   }
   const resizeObserver = new ResizeObserver(resize);
   resizeObserver.observe(canvas);
   const observer = new MutationObserver(() => {
     if (!root.isConnected || root.classList.contains('sf-entry-out')) dispose();
-    else if (root.classList.contains('sf-entry-skip-animation')) restart();
+    else if (root.classList.contains('sf-entry-skip-animation') || root.classList.contains('sf-entry-success') || !frame) restart();
   });
   observer.observe(root, {attributes:true, attributeFilter:['class']});
   observer.observe(root.parentNode, {childList:true});

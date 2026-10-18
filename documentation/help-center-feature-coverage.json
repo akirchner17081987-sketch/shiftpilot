@@ -2345,6 +2345,18 @@
       "area": "Urlaubskonten, Jahresanspruch, Übertrag und bestätigte Urlaubstage",
       "category": "portal",
       "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/sf-entry-location-v1.js",
+      "area": "Automatisches Login-Ziel aus dem eigenen Mitarbeiterstandort; keine Standortwahl und kein Browser-GPS",
+      "category": "start",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/sf-entry-dive-v1.js",
+      "area": "Geschützte Login-Kamerafahrt in den zugeordneten Geschäftsstandort mit geografisch projiziertem Globus",
+      "category": "start",
+      "kind": "feature-or-support"
     }
   ],
   "categoryCoverage": [
@@ -2880,6 +2892,6 @@
     "correctedArticleCount": 8,
     "articleCount": 222,
     "categoryCount": 21,
-    "assetJavaScriptCount": 208
+    "assetJavaScriptCount": 210
   }
 }
