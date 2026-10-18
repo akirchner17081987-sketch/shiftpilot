@@ -17,7 +17,7 @@
   };
   const icon = name => '<span class="sf-orbit-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+paths[name]+'</svg></span>';
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
-  let portal, dock, popup, openGroup, resize, queued=false, animations=[];
+  let portal, dock, popup, openGroup, resize, queued=false, animations=[], lastActiveView;
   const backend = () => window.SFBackend || {};
   const motion = () => { if(reduced.matches)return 'off';try{return localStorage.getItem('sf_orbit_motion_v1')||'full'}catch{return 'full'} };
   function close(restore=false) {
@@ -37,7 +37,8 @@
   }
   function navigate(view) {
     close();backend().employeePortalNavigate?.(view);
-    requestAnimationFrame(()=>{const heading=portal?.querySelector(view==='dashboard'?'.sf-portal-welcome h1':'.sf-employee-view-head h1');if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true})}});
+    const targetPortal=portal;
+    requestAnimationFrame(()=>{if(openGroup||portal!==targetPortal||portal?.dataset.sfPortalActive!==view)return;const heading=portal?.querySelector(view==='dashboard'?'.sf-portal-welcome h1':'.sf-employee-view-head h1');if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true})}});
     sync();
   }
   function syncCounts() {
@@ -84,7 +85,7 @@
     syncCounts();position();
   }
   function mount(next) {
-    close();resize?.disconnect();portal=next;
+    close();resize?.disconnect();portal=next;lastActiveView=portal.dataset.sfPortalActive;
     portal.classList.add('sf-employee-orbit');
     dock=document.createElement('nav');dock.className='sf-orbit-dock';dock.setAttribute('aria-label','Mitarbeiterportal Hauptnavigation');
     groups.forEach(group=>{
@@ -110,7 +111,7 @@
   }
   const observer=new MutationObserver(records=>{
     const routeChanged=records.some(r=>r.type==='attributes'&&r.attributeName==='data-sf-portal-active');
-    if(routeChanged){close();sync()}
+    if(routeChanged){const active=portal?.dataset.sfPortalActive;if(active!==lastActiveView){lastActiveView=active;close();sync()}}
     if(!queued){queued=true;requestAnimationFrame(check)}
   });
   observer.observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['data-sf-portal-active','data-sf-action-count']});
