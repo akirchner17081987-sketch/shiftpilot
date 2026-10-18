@@ -151,13 +151,22 @@ const handler=withSupabase({auth:"none"},async(req,ctx)=>{
   if(sError)throw sError;
   if(!subs?.length){await mark("SKIPPED");return Response.json({ok:true,status:"SKIPPED",delivered:0})}
 
+  if(notification.kind==='HANDOVER_PENDING'||notification.kind==='HANDOVER_CRITICAL_OVERDUE'){
+    const {data:reminderActive,error:reminderError}=await ctx.supabaseAdmin.rpc("server_handover_reminder_active",{p_notification_id:notificationId});
+    if(reminderError)throw reminderError;
+    if(reminderActive!==true){await mark("SKIPPED");return Response.json({ok:true,status:"SKIPPED",reason:"REMINDER_RESOLVED"})}
+  }
+
   const origin=appOrigin();
-  const relativeLink=notification.link_view?`/?sf_push_view=${encodeURIComponent(notification.link_view)}#app`:"/#app";
+  let relativeLink=notification.link_view?`/?sf_push_view=${encodeURIComponent(notification.link_view)}#app`:"/#app";
+  if(notification.kind==='HANDOVER_PENDING'||notification.kind==='HANDOVER_CRITICAL_OVERDUE'){
+    const link=new URL(relativeLink,origin);link.searchParams.set("sf_push_notification",notificationId);relativeLink=link.pathname+link.search+link.hash;
+  }
   const navigate=new URL(relativeLink,`${origin}/`).href;
   const tag=`sf-${notification.kind||"notice"}-${notification.entity_id||notification.id}`;
   const title=notification.title||"SchichtFunk";
   const message=notification.message||"Neue Benachrichtigung in SchichtFunk";
-  const urgency=new Set(["DISRUPTION_OFFER","ABSENCE_CONFLICT","TIME_ENTRY_CORRECTION"]).has(notification.kind)?"high":"normal";
+  const urgency=new Set(["DISRUPTION_OFFER","ABSENCE_CONFLICT","TIME_ENTRY_CORRECTION","HANDOVER_CRITICAL_OVERDUE"]).has(notification.kind)?"high":"normal";
 
   // Nicht-Apple bzw. ältere Apple-Clients behalten den bewährten Legacy-Payload.
   const legacyPayload={title,body:message,url:relativeLink,tag};

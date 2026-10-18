@@ -164,7 +164,19 @@
 
   async function sync(force=false){if(demo()||!supported()||Notification.permission!=='granted'||!B.client||!B.user?.id||!B.companyId)return false;const sub=await subscription();if(!sub)return false;const sig=`${B.user.id}|${sub.endpoint}`;if(!force&&sig===lastSync)return true;try{return await registerServer(sub)}catch(error){console.debug('[SchichtFunk Push] Sync',error?.message||error);if(force)throw error;return false}}
 
-  function routePending(){let target=sessionStorage.getItem('sf_pending_push_view')||'';try{const u=new URL(location.href),q=u.searchParams.get('sf_push_view');if(q){target=q;sessionStorage.setItem('sf_pending_push_view',q);u.searchParams.delete('sf_push_view');history.replaceState(null,'',u.pathname+(u.search?u.search:'')+u.hash)}}catch{}if(!target||!B.role)return false;
+  let handoverRouting=false;
+  async function routePending(){let target=sessionStorage.getItem('sf_pending_push_view')||'';try{const u=new URL(location.href),q=u.searchParams.get('sf_push_view');const notification=u.searchParams.get('sf_push_notification');if(notification){sessionStorage.setItem('sf_pending_push_notification',notification);u.searchParams.delete('sf_push_notification')}if(q){target=q;sessionStorage.setItem('sf_pending_push_view',q);u.searchParams.delete('sf_push_view');history.replaceState(null,'',u.pathname+(u.search?u.search:'')+u.hash)}}catch{}if(!target||!B.role)return false;
+    if(target==='handover'||target==='employee-handover'){
+      if(handoverRouting||!B.client||!B.notifications?.navigate||!window.SFHandover?.openNotification)return false;
+      handoverRouting=true;const client=B.client,user=B.user?.id,company=B.companyId,id=sessionStorage.getItem('sf_pending_push_notification');
+      try{
+        let row={entity_type:'handover_reminder',metadata:{company_id:company}};
+        if(id){const result=await client.from('notifications').select('entity_type,metadata').eq('id',id).eq('user_id',user).eq('company_id',company).maybeSingle();if(result.error)throw result.error;row=result.data;}
+        if(client!==B.client||user!==B.user?.id||company!==B.companyId)return false;
+        if(row?.entity_type==='handover_reminder')await B.notifications.navigate(row);
+        sessionStorage.removeItem('sf_pending_push_view');sessionStorage.removeItem('sf_pending_push_notification');return true;
+      }catch(error){console.debug('[SchichtFunk Push] Übergabe öffnen',error?.message||error);return false}finally{handoverRouting=false}
+    }
     if(B.role==='EMPLOYEE'){const map={'employee-shifts':'shifts','employee-changes':'changes','employee-absences':'absences','employee-times':'time','employee-swaps':'swaps','employee-disruptions':'disruptions','employee-marketplace':'marketplace'};const view=map[target]||target.replace(/^employee-/,'');try{B.openEmployeePortal?.();setTimeout(()=>B.employeePortalNavigate?.(view),120);sessionStorage.removeItem('sf_pending_push_view');return true}catch{return false}}
     if(target==='disruptions'){window.SFDisruptionAutopilot?.open?.();sessionStorage.removeItem('sf_pending_push_view');return true}
     if(['absence','schedule','time','employees','overview','auto','reports','settings'].includes(target)){window.showView?.(target);sessionStorage.removeItem('sf_pending_push_view');return true}return false;
