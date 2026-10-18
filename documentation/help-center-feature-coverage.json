@@ -2401,6 +2401,12 @@
       "area": "Eigene berechnete Globusoberfläche, Atmosphäre und Beleuchtung auf Natural-Earth-Ländergrenzen; gemeinsamer Renderer für Einstieg und Tagesübersicht",
       "category": "overview",
       "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/region-atlas-v1.js",
+      "area": "Eigene regionale Atlas-Karte mit lokalem Natural-Earth-Relief, Flüssen, Seen und kollisionsgeprüften Ortsnamen; gleicher Standort- und Dialogablauf",
+      "category": "overview",
+      "kind": "feature-or-support"
     }
   ],
   "categoryCoverage": [
@@ -2946,6 +2952,6 @@
     "correctedArticleCount": 8,
     "articleCount": 226,
     "categoryCount": 22,
-    "assetJavaScriptCount": 212
+    "assetJavaScriptCount": 213
   }
 }

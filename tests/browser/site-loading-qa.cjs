@@ -48,6 +48,7 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
  if(extra){
  if(windowOrbit(data)) {
    await page.waitForFunction(()=>window.SFLocationMapEngine&&document.querySelectorAll('[data-orbit-site]').length===2);
+   await page.waitForFunction(()=>document.querySelector('.sf-location-map')?.dataset.surface==='atlas');
    const overviewButton=page.locator('[data-orbit-category="overview"]'),assistant=page.locator('#appShell .top-actions #sfPlanningAssistantButton');
    await assistant.waitFor({state:'visible'});await assistant.click();await page.locator('#sfPlanningChat').waitFor({state:'visible'});await assistant.click();await page.locator('#sfPlanningChat').waitFor({state:'hidden'});
    const sitePin=id=>page.locator('[data-orbit-site="'+id+'"]'),card=page.locator('#sfOrbitSiteInfo'),globe=page.locator('.sf-location-map canvas');
@@ -75,7 +76,8 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
    assert.equal(await page.locator('[data-orbit-site]').count(),6);
    await page.locator('#sfTodaySite').selectOption('');
    const stillFrame=await globe.evaluate(n=>n.toDataURL());await page.waitForTimeout(150);assert.equal(await globe.evaluate(n=>n.toDataURL()),stillFrame,'the map remains still');
-   await page.locator('.sf-location-map .sf-view').click();assert.equal(await page.locator('.sf-location-map .sf-view').getAttribute('aria-pressed'),'true');await page.locator('.sf-location-map .sf-view').click();
+   await page.locator('.sf-location-map .sf-view').click();assert.equal(await page.locator('.sf-location-map .sf-view').getAttribute('aria-pressed'),'true');assert.equal(await page.locator('.sf-location-map').first().getAttribute('data-view'),'globe');await page.locator('.sf-location-map .sf-view').click();
+   assert.equal(await page.locator('.sf-location-map').first().getAttribute('data-surface'),'atlas','returning from the globe restores the atlas');
    for(const [theme,width] of [['dark',1920],['dark',1440],['light',1440],['dark',390],['light',390],['dark',320]]){
      await page.setViewportSize({width,height:1000});await page.evaluate(t=>SFManagerTheme.apply(t,false),theme);
      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),true,'map fits '+width);

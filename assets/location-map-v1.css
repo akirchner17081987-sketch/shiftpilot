@@ -174,3 +174,14 @@
 
 /* The synthesized surface carries its own light and shading. */
 .sf-location-map[data-surface="original"] canvas{opacity:1}
+
+/* The regional atlas is a full-bleed map, with quiet glass callouts above it. */
+.sf-location-map[data-view="region"] .sf-scene{background:#225969}
+.sf-location-map[data-view="region"] .sf-point{background:#112f37ed;border-color:#d5e8cf70;color:#f0f5e5;box-shadow:0 4px 16px #142b3830}
+.sf-location-map[data-view="region"] .sf-point .sf-code{color:#aed5cc}
+.sf-location-map[data-view="region"] .sf-point:hover,.sf-location-map[data-view="region"] .sf-point[aria-pressed="true"]{background:#1c4c50;border-color:#ebf4da;color:#fffdec}
+.sf-location-map[data-view="region"] .sf-label-lines path{stroke:#183f49;stroke-width:1.2;opacity:.55}
+.sf-location-map[data-view="region"] .sf-label-lines path[data-active="true"]{stroke:#f4f5da;opacity:1}
+.sf-location-map[data-view="region"] .sf-anchors circle:not(.sf-alert-ring):not(.sf-select-pulse){fill:#fff5d2;stroke:#234e54;stroke-width:1.5}
+.sf-location-map[data-view="region"] .sf-view{background:#102e39e8;border-color:#bfd6cb70;color:#edf4df;box-shadow:0 3px 12px #071c2430}
+.sf-location-map[data-view="region"] .sf-current{text-shadow:0 1px 5px #031421}
