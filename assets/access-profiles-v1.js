@@ -22,6 +22,8 @@
   B.ensureCompany=async function(){
     B.accessRole=null;B.accessPermissions=[];B.personnelConversationEmployeeIds=[];B.personnelConversationExcludedEmployeeIds=[];B.personnelConversationScope=null;B.accessProfileCompany=null;
     const result=await ensure.apply(this,arguments),company=B.companyId;
+    // A verified employee workspace must not reload the account's management scope.
+    if(B.role==='EMPLOYEE'){B.accessRole='EMPLOYEE';B.accessProfileCompany=company;apply();return result;}
     const q=await B.client.rpc('access_profile_context',{p_company_id:company});if(q.error)throw q.error;
     if(B.companyId!==company)throw Error('Das Unternehmen hat sich geändert.');
     B.accessRole=q.data.role;B.accessPermissions=q.data.permissions||[];B.accessProfileCompany=company;B.personnelConversationEmployeeIds=q.data.personnel_employee_ids||[];B.personnelConversationExcludedEmployeeIds=q.data.personnel_excluded_employee_ids||[];B.personnelConversationScope=q.data.personnel_assignment_mode||null;

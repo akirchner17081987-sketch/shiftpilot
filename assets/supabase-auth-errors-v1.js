@@ -6,6 +6,8 @@
   B.friendlyAuthError=function(error,fallback='Der Vorgang konnte nicht abgeschlossen werden. Bitte versuche es erneut.'){
     const code=String(error?.code||'').toLowerCase();
     const message=String(error?.message||'').toLowerCase();
+    if(code==='employee_profile_missing')return 'Für dieses Konto ist kein persönliches Mitarbeiterprofil verknüpft. Bitte nutze den Zugang „Verwaltung“ oder lass dein Mitarbeiterprofil mit diesem Konto verknüpfen.';
+    if(code==='employee_portal_disabled')return 'Dieser Mitarbeiterzugang ist deaktiviert oder für persönliche Mitarbeiterfunktionen nicht freigegeben. Bitte wende dich an die Verwaltung.';
     if(code==='weak_password'||includes(message,['weak password','password should','password must','pwned','leaked','compromised'])){
       return 'Dieses Passwort ist nicht sicher genug oder aus einem bekannten Datenleck bekannt. Bitte verwende ein neues, einzigartiges und längeres Passwort. Falls du dich nicht anmelden kannst, nutze „Passwort vergessen?“.';
     }
