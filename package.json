@@ -41,7 +41,8 @@
     "test:push": "node --test tests/push-notifications.test.mjs tests/push-dispatch-runtime.test.mjs tests/push-recipient-access.test.mjs && node tests/browser/push-notifications-qa.cjs",
     "test:handover-reminders": "node --test tests/handover-reminders.test.mjs tests/push-dispatch-runtime.test.mjs && node tests/browser/handover-reminders-qa.cjs",
     "test:portal-entry": "node --test tests/portal-entry-routing.test.mjs && node tests/browser/portal-entry-routing-qa.cjs",
-    "test:entry-location": "node --test tests/entry-loading-v2.test.mjs tests/entry-location.test.cjs && node tests/browser/entry-location-qa.cjs"
+    "test:entry-location": "node --test tests/entry-loading-v2.test.mjs tests/entry-location.test.cjs && node tests/browser/entry-location-qa.cjs",
+    "test:globe": "node tests/browser/globe-surface-qa.cjs"
   },
   "engines": {
     "node": ">=18"

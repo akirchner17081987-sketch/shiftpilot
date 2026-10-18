@@ -171,3 +171,6 @@
  #appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] .sf-view{right:18px;min-height:44px}
 }
 @media print{#appShell.sf-orbit .sf-orbit-hero[data-location-map="true"]{display:block}#appShell.sf-orbit .sf-orbit-hero[data-location-map="true"]>.sf-orbit-hero-content{background:none;pointer-events:auto}#appShell.sf-orbit .sf-orbit-hero[data-location-map="true"] .sf-orbit-hero-copy h1{color:#172c3a!important}}
+
+/* The synthesized surface carries its own light and shading. */
+.sf-location-map[data-surface="original"] canvas{opacity:1}

@@ -2395,6 +2395,12 @@
       "area": "Persönliche Kurznachrichten für Mitarbeiter- und Verwaltungsportal mit Zugriffsschutz und Ungelesen-Zähler",
       "category": "messages",
       "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/globe-surface-v1.js",
+      "area": "Eigene berechnete Globusoberfläche, Atmosphäre und Beleuchtung auf Natural-Earth-Ländergrenzen; gemeinsamer Renderer für Einstieg und Tagesübersicht",
+      "category": "overview",
+      "kind": "feature-or-support"
     }
   ],
   "categoryCoverage": [
@@ -2940,6 +2946,6 @@
     "correctedArticleCount": 8,
     "articleCount": 226,
     "categoryCount": 22,
-    "assetJavaScriptCount": 211
+    "assetJavaScriptCount": 212
   }
 }
