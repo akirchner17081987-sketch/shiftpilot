@@ -18,9 +18,10 @@ Berechtigungsgrenzen bleiben maßgeblich. Die lokale Demo darf weiterhin ihre
 gespeicherte Ansicht wiederherstellen. Es gibt keine Änderung an Supabase-Auth,
 Mitgliedschaften, MFA, Datenbank oder produktiven Nutzerdaten.
 
-Die sieben gezielten Tests in `tests/landing-view.test.cjs` prüfen gespeicherte
+Die acht gezielten Tests in `tests/landing-view.test.cjs` prüfen gespeicherte
 Planung beim Start, unbereite Snapshots, Fokuswechsel, erneute Anmeldung,
-Zeitkonto-Einstieg, Mitarbeiterabgrenzung, Demo und blockierten Browserspeicher.
+Zeitkonto-Einstieg, Mitarbeiterabgrenzung, Demo, blockierten Browserspeicher und
+den tatsächlichen Load-Handler mit direkten Zeitkonto-Links.
 Die Browserprüfung der vollständigen Seite startet mit alten Planungswerten in
 beiden Speichern und prüft die Tagesübersicht für Inhaber, Admin und Planer.
 Zusätzlich prüft sie Planung nach Fokuswechsel sowie Tagesübersicht nach Reload.
