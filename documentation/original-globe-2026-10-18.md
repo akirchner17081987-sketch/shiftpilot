@@ -2,9 +2,13 @@
 
 ## Darstellung
 
-SchichtFunk berechnet Ozeane, Vegetationsfarben, gestalterisches Relief, Schnee, Wolken,
-Beleuchtung und atmosphärischen Rand mit einem eigenen WebGL-Shader. Dafür werden
-keine Satellitenbilder, Bildtexturen, Kartenkacheln oder externen Dienste angefordert.
+SchichtFunk erzeugt Ozeane, Vegetationsfarben, gestalterisches Relief, Schnee und Wolken
+mit dem eigenen Offline-Werkzeug `scripts/generate-globe-surface.cjs`. Die enthaltenen
+gemeinfreien Natural-Earth-Geometrien legen die Landfläche fest. Der daraus selbst
+erstellte Atlas `assets/earth-surface-original-v2.webp` (4096 × 2048, ca. 512 KiB)
+wird einmal vom eigenen Server geladen und gemeinsam wiederverwendet. Satellitenbilder,
+fremde Texturen, Kartenkacheln und externe Dienste werden nicht verwendet. Beleuchtung
+und atmosphärischer Rand entstehen weiterhin im Renderer.
 Das Relief und die Wolken sind dekorativ; sie stellen keine gemessene Topografie,
 aktuelles Wetter oder eine Echtzeit-Sonnenposition dar.
 
@@ -22,18 +26,24 @@ Lizenzhinweise der bestehenden D3-/TopoJSON-Bibliotheken bleiben bestehen.
 - Auf der Entry Page drehen sich Oberfläche und Wolken langsam. Hintergrundtabs,
   reduzierte Bewegung und der vorhandene Animationsschalter pausieren weiterhin.
 - Die Renderfläche ist unabhängig von der Bildschirm-Pixeldichte begrenzt.
-  Animierte Instanzen reduzieren bei langsamen Frames die Auflösung automatisch.
+  Ihre Auflösung bleibt während der Animation stabil; es gibt keine laufenden Qualitätswechsel.
+  Ein einzelner Renderdurchgang und geglättete Mipmap-/Anisotropie-Filter ersetzen das
+  hochfrequente Rauschen und die vorherigen drei Durchgänge. Auch der Kugelrand wird geglättet.
 - Ohne WebGL, bei Shaderfehlern oder Kontextverlust erscheint die bisherige
   Canvas-Darstellung. Beim Entfernen der Ansicht werden GPU-Ressourcen freigegeben.
-- Keine zusätzlichen Bilddateien oder Abhängigkeiten; Cachekennungen aktualisiert.
+- Ein selbst erzeugter, lokal ausgelieferter Atlas; keine neuen Paketabhängigkeiten.
+  Vorladen, Cachekennungen und Bereitschaftsereignisse für die Anmeldeanimation aktualisiert.
+  Auch die Ersatzdarstellung enthält keine blinkenden Zufallspunkte mehr.
 
 ## Prüfung
 
 `npm test`: 1.037 Tests erfolgreich. `npm run test:globe` prüft den tatsächlichen
 Shader in Chromium: Kompilierung, Land-/Ozeanfarben an geografisch projizierten
 Positionen, transparenter Hintergrund, deterministische statische Ansicht,
-Regionalkamera, Freigabe der Ressourcen und fehlendes WebGL. Der Renderer fordert
-keine Netzwerkressourcen an. Die Bilder werden als lokale QA-Artefakte erzeugt.
+Regionalkamera, Freigabe der Ressourcen und fehlendes WebGL. 13 Bildprüfungen einschließlich
+zwölf identischer Frames trotz simulierter langsamer Renderzeit und gemessener Bilddifferenz
+bei kleiner Kamerabewegung. Nur ein Download des eigenen Atlas, keine externen Bildquellen.
+Die Bilder werden als lokale QA-Artefakte erzeugt.
 
 Die vorhandene Site-Loading-Browserprüfung umfasst die wirkliche Anwendungsseite
 mit isolierten Konten und Daten, sieben Rollen, Standortfenstern, Standortfiltern,

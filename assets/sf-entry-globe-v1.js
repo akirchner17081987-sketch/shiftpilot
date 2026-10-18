@@ -43,7 +43,7 @@
     }
   }
   let surface=null, engine=null, projection=null;
-  let size = 600, frame = 0, last = 0, angle = -.22, elapsed = 0, disposed = false, drawCost=0;
+  let size = 600, frame = 0, last = 0, angle = -.22, elapsed = 0, disposed = false;
   function resize() {
     size = Math.max(1, canvas.getBoundingClientRect().width);
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -79,7 +79,7 @@
       const x = p.x * cos + p.z * sin, z = p.z * cos - p.x * sin;
       if (z < 0) continue;
       const y = p.y * .985 - z * .17;
-      const shimmer = motion.matches ? .65 : .55 + .45 * Math.sin(elapsed * .0015 + p.phase);
+      const shimmer = .65;
       const alpha = (.25 + z * .75) * (p.land ? .7 + shimmer * .3 : .22);
       ctx.fillStyle = p.land ? `rgba(92,239,226,${alpha})` : `rgba(72,147,181,${alpha})`;
       ctx.beginPath(); ctx.arc(c + x * r, c + y * r, p.land ? .85 + z * .5 : .65, 0, Math.PI * 2); ctx.fill();
@@ -94,7 +94,7 @@
   }
   function dispose() {
     disposed = true; surface?.dispose();cancelAnimationFrame(frame); observer.disconnect(); resizeObserver.disconnect();
-    document.removeEventListener('visibilitychange', restart); motion.removeEventListener('change', restart);
+    document.removeEventListener('visibilitychange', restart);document.removeEventListener('DOMContentLoaded',enhance);document.removeEventListener('sf:entry-dive-ready',enhance); motion.removeEventListener('change', restart);
   }
   function tick(now) {
     frame = 0;
@@ -102,7 +102,7 @@
     if (document.hidden || motion.matches || root.classList.contains('sf-entry-skip-animation') || root.classList.contains('sf-entry-success')) return;
     if (!last) last = now;
     const delta = now - last;
-    if (delta >= (surface?Math.max(66,drawCost*3):33)) { elapsed += Math.min(delta, 250); angle += Math.min(delta, 100) * .000035;const started=performance.now();draw();drawCost=performance.now()-started;last = now; }
+    if (delta >= 33) { elapsed += Math.min(delta, 250); angle += Math.min(delta, 100) * .000035;draw();last = now; }
     frame = requestAnimationFrame(tick);
   }
   function restart() {
@@ -121,8 +121,11 @@
   document.addEventListener('visibilitychange', restart); motion.addEventListener('change', restart);
   resize(); restart();
   // The shared same-origin engine is also reused by the login dive and manager globe.
-  setTimeout(()=>{if(disposed||!window.SFEntryDive?.prepare)return;window.SFEntryDive.prepare().then(value=>{
-    if(disposed||!value)return;engine=value;surface=window.SFGlobeSurface?.create(value,{maxPixels:180000,adaptive:true});
+  function enhance(){if(disposed||surface||!window.SFEntryDive?.prepare)return;window.SFEntryDive.prepare().then(value=>{
+    if(disposed||!value||surface)return;engine=value;surface=window.SFGlobeSurface?.create(value,{maxPixels:420000,onReady(){if(!disposed)draw();}});
     projection=value.d3.geoOrthographic().precision(.3);draw();
-  });},0);
+  });}
+  document.addEventListener('DOMContentLoaded',enhance,{once:true});
+  document.addEventListener('sf:entry-dive-ready',enhance,{once:true});
+  setTimeout(enhance,0);
 })();
