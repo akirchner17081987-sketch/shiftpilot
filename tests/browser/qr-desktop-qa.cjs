@@ -34,7 +34,7 @@ const id='00000000-0000-4000-8000-000000000022',other='00000000-0000-4000-8000-0
   });
   await page.goto('https://qr.invalid/qr-time?entry=desktop');await page.locator('#desktopDirectoryRetry').waitFor();assert.equal(await page.locator('#login').isVisible(),false);passed++;
   offline=false;await page.locator('#desktopDirectoryRetry').click();await page.locator('#desktopTerminal').waitFor();
-  assert.equal(await page.locator('#loginButton').isDisabled(),true);assert.equal(await page.locator('#loginMode option[value="LEGACY"]').count(),0);passed++;
+  assert.equal(await page.locator('#loginButton').isDisabled(),true);assert.equal(await page.locator('#loginMode option[value="LEGACY"]').count(),1);passed++;
   assert.deepEqual(await page.locator('#desktopTerminal option').allTextContents(),['Bitte auswählen','Betrieb A · VOC TEST','Betrieb B · VOC TEST']);
   await page.locator('#desktopTerminal').selectOption(other);await page.locator('#personnel').fill('FIKTIV');await page.locator('#pin').fill('739281');
   await page.locator('#desktopTerminal').selectOption(id);assert.equal(await page.locator('#pin').inputValue(),'');assert.equal(await page.locator('#personnel').inputValue(),'');passed++;
@@ -53,6 +53,10 @@ const id='00000000-0000-4000-8000-000000000022',other='00000000-0000-4000-8000-0
   assert.ok(calls.filter(c=>c.terminalId).every(c=>!('qrToken'in c)));assert.ok(calls.find(c=>c.action==='CLOCK_IN').terminalId===id);assert.ok(calls.find(c=>c.action==='CLOCK_OUT').qrToken);passed++;
   await page.locator('#logout').click();await page.locator('#loginMode').selectOption('SETUP');await page.locator('#setupCode').fill('482719530618');await page.locator('#pin').fill('739281');await page.locator('#pinRepeat').fill('739281');await page.locator('#loginButton').click();await page.locator('#clock').waitFor();
   const setup=calls.find(c=>c.action==='SET_PIN');assert.equal(setup.terminalId,id);assert.equal(setup.setupCode,'482719530618');assert.equal(await page.locator('#setupCode').inputValue(),'');passed++;
+  await page.locator('#logout').click();await page.locator('#loginMode').selectOption('LEGACY');
+  assert.equal(await page.locator('#pin').isVisible(),false);assert.equal(await page.locator('#startDate').isVisible(),true);passed++;
+  await page.locator('#startDate').fill('15012020');await page.locator('#loginButton').click();await page.locator('#clock').waitFor();
+  const dateLogin=calls.findLast(c=>c.action==='LOGIN');assert.equal(dateLogin.terminalId,id);assert.equal(dateLogin.startDate,'2020-01-15');assert.ok(!('pin'in dateLogin));assert.equal(await page.locator('#startDate').inputValue(),'');passed++;
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);assert.deepEqual(errors,[]);passed++;
   if(viewport.width===1280){const out=path.join(root,'test-results/qr-desktop');fs.mkdirSync(out,{recursive:true});await page.locator('#logout').click();await page.screenshot({path:path.join(out,'pc-login.png')});}
   await context.close();

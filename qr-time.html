@@ -111,7 +111,7 @@ function logout(notice=''){
 }
 function clearSecrets(){for(const id of ['pin','pinRepeat','setupCode','startDate'])$(id).value=''}
 function chooseLoginMode(){
-  loginMode=$('loginMode').value||'PIN';if(desktop&&loginMode==='LEGACY'){loginMode='PIN';$('loginMode').value='PIN'}clearSecrets();msg('');
+  loginMode=$('loginMode').value||'PIN';clearSecrets();msg('');
   $('pinField').hidden=loginMode==='LEGACY';$('pin').required=loginMode!=='LEGACY';
   $('pin').autocomplete=loginMode==='SETUP'?'new-password':'current-password';
   $('setupField').hidden=$('repeatField').hidden=loginMode!=='SETUP';
@@ -171,9 +171,8 @@ async function loadDesktopTerminals(){
 }
 if(desktop){
   document.title='Arbeitszeit am PC erfassen | SchichtFunk';
-  $('loginIntro').textContent='Melde dich mit deiner Personalnummer und persönlichen PIN an. Am PC und per Standort-QR-Code nutzt du denselben Buchungsstand. Die Anmeldung startet noch keine Arbeitszeit.';
+  $('loginIntro').textContent='Melde dich mit deiner Personalnummer und persönlichen PIN an. Während der Umstellung ist auch das Eintrittsdatum möglich, solange deine PIN und die PIN-Pflicht noch nicht aktiviert sind. Am PC und per Standort-QR-Code nutzt du denselben Buchungsstand. Die Anmeldung startet noch keine Arbeitszeit.';
   $('desktopTerminalField').hidden=false;$('desktopTerminal').required=true;
-  $('loginMode').querySelector('[value="LEGACY"]').remove();
   $('desktopTerminal').addEventListener('change',()=>{logout();terminalId=$('desktopTerminal').value;$('personnel').value='';controls()});
   $('desktopDirectoryRetry').addEventListener('click',loadDesktopTerminals);
   loadDesktopTerminals();
