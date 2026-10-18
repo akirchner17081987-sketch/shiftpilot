@@ -56,8 +56,16 @@ Deno.serve(async(req:Request)=>{
   }catch{return reply({ok:false,error:'Ungültige Anfrage'},400,origin)}
   const action=String(input.action||'').toUpperCase();
   const qrToken=String(input.qrToken||'');
-  if(!tokenPattern.test(qrToken))return reply({ok:false,error:'Ungültiger QR-Code'},400,origin);
+  const terminalId=typeof input.terminalId==='string'?input.terminalId:'';
+  const desktop=Object.hasOwn(input,'terminalId');
+  if(action!=='DESKTOP_TERMINALS'&&desktop&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(terminalId))return reply({ok:false,error:'Bitte einen Betrieb und Standort auswählen'},400,origin);
+  if(action!=='DESKTOP_TERMINALS'&&!desktop&&!tokenPattern.test(qrToken))return reply({ok:false,error:'Ungültiger QR-Code'},400,origin);
   try{
+    if(action==='DESKTOP_TERMINALS')return reply(await rpc('qr_desktop_terminals',{}),200,origin);
+    const desktopRequest=(action:string,session:string,extra:Record<string,unknown>={})=>rpc('qr_desktop_request',{
+      p_terminal_id:terminalId,p_action:action,p_personnel_no:null,p_pin:null,
+      p_session_token:session,p_setup_code:null,p_request_id:null,...extra
+    });
     if(action==='LOGIN'||action==='SET_PIN'){
       const personnelNo=String(input.personnelNo||'').trim();
       const pin=typeof input.pin==='string'?input.pin:'';
@@ -66,10 +74,10 @@ Deno.serve(async(req:Request)=>{
       if(!personnelPattern.test(personnelNo))return reply({ok:false,error:'Anmeldung nicht möglich. Bitte Angaben prüfen.'},401,origin);
       const bytes=new Uint8Array(32);crypto.getRandomValues(bytes);const sessionToken=hex(bytes);
       let result;
-      if(action==='SET_PIN'||Object.hasOwn(input,'pin')){
+      if(desktop||action==='SET_PIN'||Object.hasOwn(input,'pin')){
         if(!/^[0-9]{6,8}$/.test(pin)||(action==='SET_PIN'&&!/^[0-9]{12}$/.test(setupCode)))
           return reply({ok:false,error:'PIN oder Einrichtungscode hat ein ungültiges Format.'},400,origin);
-        result=await rpc('qr_independent_pin_login',{
+        result=desktop?await desktopRequest(action,sessionToken,{p_personnel_no:personnelNo,p_pin:pin,p_setup_code:action==='SET_PIN'?setupCode:null}):await rpc('qr_independent_pin_login',{
           p_terminal_token:qrToken,p_personnel_no:personnelNo,p_pin:pin,
           p_session_token:sessionToken,p_setup_code:action==='SET_PIN'?setupCode:null
         });
@@ -88,7 +96,7 @@ Deno.serve(async(req:Request)=>{
     if(!tokenPattern.test(sessionToken))return reply({ok:false,error:'Bitte erneut anmelden'},401,origin);
     const requestId=input.requestId==null?null:String(input.requestId).toLowerCase();
     if(requestId!==null&&!tokenPattern.test(requestId))return reply({ok:false,error:'Ungültige Anfragekennung'},400,origin);
-    const result=await rpc('qr_independent_action',{
+    const result=desktop?await desktopRequest(action,sessionToken,{p_request_id:requestId}):await rpc('qr_independent_action',{
       p_terminal_token:qrToken,p_session_token:sessionToken,p_action:action,p_request_id:requestId
     });
     return reply(result,200,origin);

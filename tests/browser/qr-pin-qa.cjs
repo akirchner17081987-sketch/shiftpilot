@@ -38,17 +38,22 @@ const root=path.resolve(__dirname,'../..');
   const context=await browser.newContext({viewport}),page=await context.newPage();
   await page.setContent('<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><section id="view-time" class="active"></section></body></html>');
   await page.evaluate(()=>{
-   window.syntheticCalls=[];window.syntheticMfa=0;
+   window.syntheticCalls=[];window.syntheticMfa=0;window.desktopEnabled=false;
    window.SFBackend={role:'OWNER',companyId:'company',user:{id:'owner'},requireSensitiveMfa:async()=>{window.syntheticMfa++},client:{rpc:async(name,args)=>{
     window.syntheticCalls.push({name,...args});
-    if(name==='manager_list_time_qr_terminals')return{data:[]};
+    if(name==='manager_list_time_qr_terminals')return{data:[{id:'terminal',name:'Fiktiver Standort',is_active:true}]};
+    if(name==='manager_qr_desktop_access'){if(args.p_terminal_id)window.desktopEnabled=args.p_enabled;return{data:[{id:'terminal',desktop_enabled:window.desktopEnabled}]}};
     if(args.p_action==='ISSUE_CODE')return{data:{ok:true,setup_code:'482719530618'}};
     return{data:{ok:true,pin_required:false,employees:[{employee_id:'employee',name:'Fiktive Testperson',personnel_no:'FIKTIV',pin_ready:false,legacy_allowed:true}]}};
    }}};
   });
   await page.addScriptTag({path:path.join(root,'assets/supabase-qr-terminal-admin-v1.js')});
-  await page.evaluate(()=>window.SFBackend.qrTerminalAdmin.refresh());assert.equal(await page.locator('#sfQrTerminalAdmin > :first-child').getAttribute('id'),'sfQrPinAccess');assert.equal(await page.locator('#sfQrPinAdminOpen').isVisible(),true);await page.locator('#sfQrPinAdminOpen').click();await page.locator('#sfQrPinAdminModal').waitFor();assert.equal(await page.locator('#sfQrPinEnable').isDisabled(),true);assert.ok(await page.evaluate(()=>window.syntheticMfa>0));passed++;
-  page.on('dialog',d=>d.accept());await page.locator('[data-pin-code]').click();await page.locator('#sfQrPinSetupCode').waitFor();assert.equal(await page.locator('#sfQrPinSetupCode').textContent(),'482719530618');assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);passed++;
+  await page.evaluate(()=>window.SFBackend.qrTerminalAdmin.refresh());
+  page.on('dialog',d=>d.accept());await page.locator('[data-qrt-desktop]').click();await page.waitForFunction(()=>window.desktopEnabled);
+  await page.waitForFunction(()=>document.querySelector('[data-qrt-desktop]').textContent.includes('ausschalten'));
+  assert.ok(await page.evaluate(()=>window.syntheticCalls.some(c=>c.name==='manager_qr_desktop_access'&&c.p_terminal_id==='terminal'&&c.p_enabled===true&&c.p_expected_enabled===false)));passed++;
+  assert.equal(await page.locator('#sfQrTerminalAdmin > :first-child').getAttribute('id'),'sfQrPinAccess');assert.equal(await page.locator('#sfQrPinAdminOpen').isVisible(),true);await page.locator('#sfQrPinAdminOpen').click();await page.locator('#sfQrPinAdminModal').waitFor();assert.equal(await page.locator('#sfQrPinEnable').isDisabled(),true);assert.ok(await page.evaluate(()=>window.syntheticMfa>0));passed++;
+  await page.locator('[data-pin-code]').click();await page.locator('#sfQrPinSetupCode').waitFor();assert.equal(await page.locator('#sfQrPinSetupCode').textContent(),'482719530618');assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);passed++;
   await page.evaluate(()=>window.SFBackend.companyId='different');await page.locator('#sfQrPinAdminModal').waitFor({state:'detached'});assert.equal(await page.locator('#sfQrPinSetupCode').count(),0);passed++;
   await context.close();
  }

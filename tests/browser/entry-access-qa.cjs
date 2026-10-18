@@ -52,7 +52,7 @@ async function main(){
   await page.waitForFunction(()=>document.getElementById('sfEntryOverlay').inert);
   check(await page.locator('#sfEntryOverlay').evaluate(n=>getComputedStyle(n).zIndex),'24000','recovery dialog is above entry');
   await page.evaluate(()=>document.getElementById('sfPasswordResetBackdrop').remove());await page.waitForFunction(()=>!document.getElementById('sfEntryOverlay').inert);
-  await page.goto(origin+'/?bereich=zeit');await page.locator('#sfEntryScan').waitFor({state:'visible'});
+  await page.goto(origin+'/?bereich=zeit');await page.locator('#sfEntryScan').waitFor({state:'visible'});check(await page.locator('#sfEntryDesktopTime').getAttribute('href'),'/qr-time?entry=desktop','PC clock direct entry');
   await page.evaluate(()=>{Object.defineProperty(navigator.mediaDevices,'getUserMedia',{configurable:true,value:async()=>{qa.cameraCalls++;throw Object.assign(new Error('No synthetic camera'),{name:'NotFoundError'})}})});
   check(await page.evaluate(()=>qa.cameraCalls),0,'camera only starts on explicit click');
   await page.locator('#sfEntryScan').click();await page.locator('#sfQrScannerModal').waitFor({state:'visible'});

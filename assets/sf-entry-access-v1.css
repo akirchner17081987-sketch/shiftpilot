@@ -52,3 +52,5 @@
  #sfEntryOverlay .sf-entry-legal{right:22px;bottom:20px;gap:13px}
 }
 @media(prefers-reduced-motion:reduce){#sfEntryOverlay .sf-entry-choice-button,#sfEntryOverlay .sf-entry-choice-button::before,#sfEntryOverlay .sf-entry-choice-arrow{transition:none!important}}
+
+.sf-entry-desktop-time{display:block;text-align:center;text-decoration:none;box-sizing:border-box}.sf-entry-desktop-time:focus-visible{outline:3px solid #a1f0db;outline-offset:4px}
