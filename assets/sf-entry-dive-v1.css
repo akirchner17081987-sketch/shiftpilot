@@ -1,0 +1,25 @@
+/* The protected workspace stays behind the entry until the existing readiness checks pass. */
+#sfEntryDiveCanvas{position:absolute;inset:0;z-index:2;width:100%;height:100%;pointer-events:none;opacity:0;transition:opacity .55s ease}
+#sfEntryOverlay.sf-entry-success #sfEntryDiveCanvas{opacity:1}
+#sfEntryOverlay.sf-entry-success .sf-entry-visual{animation:none;transform:none!important;opacity:0;transition:opacity .65s ease}
+#sfEntryOverlay.sf-entry-success .sf-entry-world,#sfEntryOverlay.sf-entry-success #sfEntryGlobe{animation:none}
+#sfEntryOverlay.sf-entry-success .sf-entry-access{opacity:0;transform:translateY(14px);filter:blur(5px);transition:opacity 1s ease,transform 1s ease,filter 1s ease}
+#sfEntryOverlay.sf-entry-success{transition:opacity .6s ease,visibility .6s ease}
+#sfEntryOverlay.sf-entry-success .sf-entry-inner{min-height:0}
+#sfEntryOverlay .sf-entry-welcome{z-index:3;bottom:max(80px,12vh);animation:none;opacity:0;transition:opacity .55s ease;transform:none}
+#sfEntryOverlay.sf-entry-success .sf-entry-welcome{animation:sf-entry-dive-copy 6s ease both}
+#sfEntryOverlay .sf-entry-welcome-kicker{font-size:11px;letter-spacing:.14em;font-weight:500}
+#sfEntryOverlay .sf-entry-welcome h2{font-size:clamp(20px,2.4vw,28px);font-weight:500;margin:10px 0 8px}
+#sfEntryOverlay .sf-entry-welcome p{font-size:12px}
+#sfEntryOverlay .sf-entry-welcome-line{width:210px;height:2px;margin:18px auto 0;background:#18383f;box-shadow:none;overflow:hidden}
+#sfEntryOverlay .sf-entry-welcome-line::after{content:'';display:block;height:100%;background:#7ce9d8;transform-origin:left;animation:sf-entry-dive-progress 6s linear both}
+#sfEntryOverlay.sf-entry-success .sf-entry-brand-note,#sfEntryOverlay.sf-entry-success .sf-entry-legal{opacity:.35;transition:opacity 1s ease}
+@keyframes sf-entry-dive-copy{0%,10%{opacity:0}24%,82%{opacity:1}100%{opacity:0}}
+@keyframes sf-entry-dive-progress{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@media(max-width:860px){
+ #sfEntryOverlay.sf-entry-success .sf-entry-inner{height:auto;padding-bottom:58px;justify-content:center}
+ #sfEntryOverlay.sf-entry-success .sf-entry-access{position:relative;left:auto;right:auto;top:auto}
+ #sfEntryOverlay.sf-entry-success .sf-entry-world{width:inherit}
+ #sfEntryOverlay .sf-entry-welcome{bottom:max(80px,12vh)}
+}
+@media(prefers-reduced-motion:reduce){#sfEntryDiveCanvas{transition:none}#sfEntryOverlay.sf-entry-success .sf-entry-welcome,#sfEntryOverlay .sf-entry-welcome-line::after{animation:none}}

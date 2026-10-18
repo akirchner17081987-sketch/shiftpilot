@@ -42,6 +42,7 @@
   function mount(auth) {
     if (!root.isConnected) return;
     ready = true;render();
+    if (area && area !== 'zeit') window.SFEntryDive?.prepare();
     if (area === null && auth?.contains(document.activeElement)) choice.querySelector('button')?.focus({preventScroll:true});
   }
   async function animate(node, frames, options) {
@@ -67,6 +68,7 @@
       const password = document.getElementById('sfPassword');if (password) password.value = '';
       const message = document.getElementById('sfAuthMsg');if (message) { message.textContent = '';message.className = 'sf-auth-msg'; }
       render();setAddress();
+      if (next && next !== 'zeit') window.SFEntryDive?.prepare();
       const incoming = area === null ? choice : selected;
       const sweep = root.querySelector('.sf-entry-light-sweep');
       await Promise.all([

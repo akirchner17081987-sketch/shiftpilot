@@ -21,6 +21,7 @@
   let raf = 0;
   let welcoming = false;
   let welcomeTimer = 0;
+  let welcomeGeneration = 0;
   const welcome = root.querySelector('#sfEntryWelcome');
   const welcomeTitle = root.querySelector('#sfEntryWelcomeTitle');
 
@@ -71,8 +72,8 @@
     window.removeEventListener('load', onLoad);
     root.classList.add('sf-entry-out');
     const exitMs = root.classList.contains('sf-entry-success') &&
-      !window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 1250 : 500;
-    setTimeout(() => root.remove(), exitMs);
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 650 : 500;
+    setTimeout(() => { window.SFEntryDive?.stop(); root.remove(); }, exitMs);
   }
 
   function isVisible(el) {
@@ -84,9 +85,29 @@
     if (!welcoming) return;
     clearTimeout(welcomeTimer);
     welcoming = false;
+    welcomeGeneration++;
+    window.SFEntryDive?.stop();
+    if (activeAuth) activeAuth.inert = false;
     root.classList.toggle('sf-entry-success', false);
     if (welcome) welcome.hidden = true;
   }
+
+  function workspaceReady() {
+    const B = window.SFBackend;
+    return !!B?.user && ((isVisible(document.getElementById('appShell')) && (B.ready || B.shellReady)) ||
+      (isVisible(document.getElementById('sfEmployeePortal')) && B.ready));
+  }
+
+  // Keep the single real login form for its final fade; auth, roles and MFA stay authoritative.
+  window.SFEntryPresentation = {holdAuth(auth) {
+    if (!auth || !root.isConnected || dismissed || !morphed || !slot?.contains?.(auth) ||
+        !window.SFBackend?.user || !(window.SFBackend.ready || window.SFBackend.shellReady) ||
+        isVisible(document.getElementById('sfMfaModal'))) return false;
+    const password = document.getElementById('sfPassword');
+    if (password) password.value = '';
+    auth.inert = true;
+    return true;
+  }};
 
   function welcomeToWorkspace() {
     if (welcoming || dismissed) return;
@@ -95,29 +116,39 @@
         window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
         root.classList.contains('sf-entry-skip-animation')) { dismiss(); return; }
     welcoming = true;
+    const generation = ++welcomeGeneration;
     clearTimeout(slowTimer);
-    const name = window.SFBackend?.user?.user_metadata?.full_name;
-    if (welcomeTitle) welcomeTitle.textContent = typeof name === 'string' && name.trim()
-      ? 'Willkommen, ' + name.trim().split(/\s+/)[0].slice(0,60) + '.'
-      : 'Willkommen bei SchichtFunk.';
-    const visual = root.querySelector('.sf-entry-visual');
-    if (visual) {
-      const a = root.getBoundingClientRect(), b = visual.getBoundingClientRect();
-      root.style.setProperty('--sf-entry-success-shift', (a.x + a.width / 2 - b.x - b.width / 2) + 'px');
-    }
-    root.scrollTop = 0;
-    welcome.hidden = false;
     root.inert = true;
-    root.classList.add('sf-entry-success');
-    welcomeTimer = setTimeout(() => {
-      // Re-check the protected workspace before revealing it, even if the tab was suspended.
-      welcoming = false;
-      const B = window.SFBackend;
-      const valid = (isVisible(document.getElementById('appShell')) && (B?.ready || B?.shellReady)) ||
-        (isVisible(document.getElementById('sfEmployeePortal')) && B?.ready);
-      if (valid && !isVisible(document.getElementById('sfMfaModal'))) dismiss();
-      else { welcoming = true; cancelWelcome(); checkReady(); }
-    }, 4200);
+    function begin(site) {
+      if (generation !== welcomeGeneration || dismissed || !welcoming || !root.isConnected) return;
+      if (!workspaceReady() || isVisible(document.getElementById('sfMfaModal')) ||
+          isVisible(document.getElementById('sfPasswordResetBackdrop'))) { cancelWelcome(); checkReady(); return; }
+      if (document.hidden || window.matchMedia('(prefers-reduced-motion: reduce)').matches) { dismiss(); return; }
+      if (welcomeTitle) welcomeTitle.textContent = site ? 'Willkommen in ' + site.name + '.' : 'Willkommen bei SchichtFunk.';
+      const message = welcome.querySelector?.('p');
+      if (message) message.textContent = site ? 'Ihr Standort. Ihr Arbeitsbereich.' : 'Ihr Arbeitsbereich ist bereit.';
+      root.scrollTop = 0;
+      // Geometry is decorative. If loading or drawing fails, proceed to the verified workspace.
+      try {
+        if (window.SFEntryDive && !window.SFEntryDive.start(site)) { dismiss(); return; }
+      } catch (_) { window.SFEntryDive?.stop(); dismiss(); return; }
+      welcome.hidden = false;
+      root.classList.add('sf-entry-success');
+      welcomeTimer = setTimeout(() => {
+        // Re-check the protected workspace even after tab suspension or session changes.
+        if (generation !== welcomeGeneration) return;
+        if (workspaceReady() && !isVisible(document.getElementById('sfMfaModal'))) dismiss();
+        else { cancelWelcome(); checkReady(); }
+      }, 6000);
+    }
+    if (!window.SFEntryLocation || !window.SFEntryDive) { begin(null); return; }
+    let timeout;
+    const bounded = new Promise(resolve => { timeout = setTimeout(() => resolve(null), 1000); });
+    Promise.race([
+      Promise.all([window.SFEntryLocation.forBackend(window.SFBackend), window.SFEntryDive.prepare()])
+        .then(([site]) => site).catch(() => null),
+      bounded
+    ]).then(site => { clearTimeout(timeout); begin(site); });
   }
 
   function syncAuthLoading() {
