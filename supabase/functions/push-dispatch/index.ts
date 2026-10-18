@@ -138,19 +138,12 @@ const handler=withSupabase({auth:"none"},async(req,ctx)=>{
     });
   };
 
-  // Erlaubt aktive Manager-Mitglieder ODER regulär verknüpfte aktive Mitarbeiterkonten.
-  const {data:membership,error:mError}=await ctx.supabaseAdmin.from("company_members")
-    .select("user_id").eq("company_id",notification.company_id).eq("user_id",notification.user_id).eq("status","ACTIVE").maybeSingle();
-  if(mError)throw mError;
-  let activeEmployee:any=null;
-  if(!membership){
-    const {data,error}=await ctx.supabaseAdmin.from("employees")
-      .select("id").eq("company_id",notification.company_id).eq("auth_user_id",notification.user_id)
-      .eq("status","active").eq("access_status","ACTIVE").maybeSingle();
-    if(error)throw error;
-    activeEmployee=data;
-  }
-  if(!membership&&!activeEmployee){await mark("SKIPPED");return Response.json({ok:true,status:"SKIPPED",reason:"INACTIVE_ACCOUNT"})}
+  // Same company/account gate as subscription registration and test dispatch.
+  const {data:recipientActive,error:accessError}=await ctx.supabaseAdmin.rpc("server_push_recipient_active",{
+    p_company_id:notification.company_id,p_user_id:notification.user_id
+  });
+  if(accessError)throw accessError;
+  if(recipientActive!==true){await mark("SKIPPED");return Response.json({ok:true,status:"SKIPPED",reason:"INACTIVE_ACCOUNT"})}
 
   const {data:subs,error:sError}=await ctx.supabaseAdmin.from("push_subscriptions")
     .select("id,endpoint,p256dh,auth_key,user_agent")
