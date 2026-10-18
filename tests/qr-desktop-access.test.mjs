@@ -56,12 +56,15 @@ test('desktop PIN transport and QR share the real PostgreSQL booking engine',asy
   `);
   const desktopMigration=fs.readdirSync(new URL('../supabase/migrations/',import.meta.url)).find(f=>f.endsWith('_qr_desktop_entry_access.sql'));
   await db.exec(read('supabase/migrations/'+desktopMigration));
+  const transition=fs.readdirSync(new URL('../supabase/migrations/',import.meta.url)).find(f=>f.endsWith('_qr_desktop_legacy_transition.sql'));
+  await db.exec(read('supabase/migrations/'+transition));
   // Preserve the old entrypoint's actual production grants (CREATE OR REPLACE retains them).
   await db.exec('revoke all on function public.qr_independent_login(text,text,date,text),public.qr_independent_action(text,text,text,text) from public,anon,authenticated;grant execute on function public.qr_independent_login(text,text,date,text),public.qr_independent_action(text,text,text,text) to service_role;');
 
   const terminalId=await scalar("select id v from public.time_qr_terminals where name='Synthetic A'");
   const otherId=await scalar("select id v from public.time_qr_terminals where name='Synthetic B'");
   const foreignId=await scalar("select id v from public.time_qr_terminals where name='Foreign'");
+  const desktopLegacy=(session=token(),person='FIKTIV',date='2020-01-15',terminal=terminalId)=>scalar('select public.qr_desktop_legacy_login($1,$2,$3,$4) v',[terminal,person,date,session]);
   const directory=()=>scalar('select public.qr_desktop_terminals() v');
   const desktop=(action='LOGIN',session=token(),args={})=>scalar('select public.qr_desktop_request($1,$2,$3,$4,$5,$6,$7) v',
    [args.terminal||terminalId,action,args.person||'FIKTIV',Object.hasOwn(args,'pin')?args.pin:'739281',session,args.code||null,args.request||null]);
@@ -70,7 +73,7 @@ test('desktop PIN transport and QR share the real PostgreSQL booking engine',asy
    assert.deepEqual((await directory()).terminals,[]);
    await assert.rejects(desktop(),/PC-Zugang nicht/);
    for(const role of ['anon','authenticated']){
-    await db.exec('reset role;set role '+role);await assert.rejects(directory(),/permission denied/);await assert.rejects(desktop(),/permission denied/);
+    await db.exec('reset role;set role '+role);await assert.rejects(directory(),/permission denied/);await assert.rejects(desktop(),/permission denied/);await assert.rejects(desktopLegacy(),/permission denied/);
    }
    await root();await db.exec('set role service_role');assert.deepEqual((await directory()).terminals,[]);await root();
   });
@@ -86,13 +89,27 @@ test('desktop PIN transport and QR share the real PostgreSQL booking engine',asy
    assert.deepEqual(Object.keys(list.terminals[0]).sort(),['company_name','id','terminal_name']);
    assert.ok(!JSON.stringify(list).includes(terminal));
   });
+  await t.test('desktop date transition books the same shift as QR, with no automatic punch on login',async()=>{
+   await db.exec('begin');
+   try{
+    const session=token();assert.equal((await desktopLegacy(session,'TWO','2020-01-16')).ok,false);
+    assert.equal((await desktopLegacy(session,'TWO')).ok,true);
+    assert.equal((await desktop('STATUS',session)).state,'READY');
+    assert.equal(await scalar('select count(*)::int v from public.time_qr_independent_shifts'),0);
+    assert.equal((await desktop('CLOCK_IN',session,{request:token()})).state,'RUNNING');
+    const phone=token();assert.equal((await scalar('select public.qr_independent_login($1,$2,$3,$4) v',[terminal,'TWO','2020-01-15',phone])).ok,true);
+    assert.equal((await scalar('select public.qr_independent_action($1,$2,$3,$4) v',[terminal,phone,'STATUS',null])).state,'RUNNING');
+    assert.equal((await desktop('CLOCK_OUT',session,{request:token()})).state,'READY');
+   }finally{await db.exec('rollback')}
+  });
   let code,pcSession,phoneSession;
-  await t.test('PC requires PIN even during date rollout, including existing legacy sessions',async()=>{
+  await t.test('PC accepts legacy sessions only before personal PIN setup; PIN route never falls back',async()=>{
    const legacySession=token();assert.equal((await legacy(legacySession)).ok,true);
-   await assert.rejects(desktop('STATUS',legacySession),/abgelaufen/);
+   assert.equal((await desktop('STATUS',legacySession)).state,'READY');
    await assert.rejects(desktop('LOGIN',token(),{pin:null}),/persönlicher PIN/);
    await setUser(O);code=(await admin('ISSUE_CODE',E)).setup_code;await root();
    assert.equal((await desktop('SET_PIN',token(),{code})).ok,true);
+   assert.equal((await desktopLegacy()).ok,false);await assert.rejects(desktop('STATUS',legacySession),/abgelaufen/);
    pcSession=token();assert.equal((await desktop('LOGIN',pcSession)).ok,true);
    assert.equal((await desktop('STATUS',pcSession)).state,'READY');
    assert.equal(await scalar('select count(*)::int v from public.time_qr_independent_shifts'),0);
@@ -118,6 +135,20 @@ test('desktop PIN transport and QR share the real PostgreSQL booking engine',asy
    assert.equal(await scalar('select count(*)::int v from public.time_qr_independent_shifts'),1);
    assert.equal(await scalar('select count(*)::int v from public.time_qr_independent_events'),4);
    await assert.rejects(desktop('STATUS',pcSession,{terminal:foreignId}),/abgelaufen/);
+  });
+  await t.test('company PIN enforcement and PIN reset never reopen the desktop date route',async()=>{
+   await db.exec('begin');
+   try{
+    const old=token();assert.equal((await desktopLegacy(old,'TWO')).ok,true);
+    await db.query('insert into private.qr_pin_settings(company_id,pin_required) values($1,true) on conflict(company_id) do update set pin_required=true',[C]);
+    assert.equal((await desktopLegacy(token(),'TWO')).ok,false);
+    await assert.rejects(desktop('STATUS',old),/abgelaufen/);
+   }finally{await db.exec('rollback')}
+   await db.exec('begin');
+   try{
+    await setUser(O);await admin('ISSUE_CODE',E);await root();
+    assert.equal((await desktopLegacy()).ok,false);assert.equal((await desktop()).ok,false);
+   }finally{await db.exec('rollback')}
   });
   await t.test('disabling PC access blocks existing PC sessions but keeps QR working; corrupt vault fails closed',async()=>{
    await setUser(O);await access(C,terminalId,false,true);await root();

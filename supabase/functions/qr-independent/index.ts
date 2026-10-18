@@ -74,7 +74,7 @@ Deno.serve(async(req:Request)=>{
       if(!personnelPattern.test(personnelNo))return reply({ok:false,error:'Anmeldung nicht möglich. Bitte Angaben prüfen.'},401,origin);
       const bytes=new Uint8Array(32);crypto.getRandomValues(bytes);const sessionToken=hex(bytes);
       let result;
-      if(desktop||action==='SET_PIN'||Object.hasOwn(input,'pin')){
+      if(action==='SET_PIN'||Object.hasOwn(input,'pin')){
         if(!/^[0-9]{6,8}$/.test(pin)||(action==='SET_PIN'&&!/^[0-9]{12}$/.test(setupCode)))
           return reply({ok:false,error:'PIN oder Einrichtungscode hat ein ungültiges Format.'},400,origin);
         result=desktop?await desktopRequest(action,sessionToken,{p_personnel_no:personnelNo,p_pin:pin,p_setup_code:action==='SET_PIN'?setupCode:null}):await rpc('qr_independent_pin_login',{
@@ -83,7 +83,7 @@ Deno.serve(async(req:Request)=>{
         });
       }else{
         if(!datePattern.test(startDate))return reply({ok:false,error:'Anmeldung nicht möglich. Bitte Angaben prüfen.'},401,origin);
-        result=await rpc('qr_independent_login',{
+        result=desktop?await rpc('qr_desktop_legacy_login',{p_terminal_id:terminalId,p_personnel_no:personnelNo,p_start_date:startDate,p_session_token:sessionToken}):await rpc('qr_independent_login',{
           p_terminal_token:qrToken,p_personnel_no:personnelNo,p_start_date:startDate,p_session_token:sessionToken
         });
       }

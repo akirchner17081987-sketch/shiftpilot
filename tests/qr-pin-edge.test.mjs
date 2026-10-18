@@ -45,12 +45,22 @@ test('desktop PIN and setup use terminal ID without a QR bearer secret',async()=
   assert.equal(r.status,200);assert.match(h.calls[0].url,/qr_desktop_request$/);assert.equal(h.calls[0].p_action,action);assert.equal(h.calls[0].p_pin,'739281');assert.ok(!('p_terminal_token' in h.calls[0]));assert.ok(!JSON.stringify(await r.json()).includes('482719530618'));
  }
 });
-test('desktop rejects date fallback and malformed terminal selection without calling SQL',async()=>{
- for(const args of [{terminalId:'invalid',pin:'739281'},{terminalId:'',pin:'739281'},{terminalId:'00000000-0000-4000-8000-000000000022',startDate:'2020-01-15'}]){
-  const h=fixture(),r=await h.send({action:'LOGIN',qrToken:'',...args});assert.equal(r.status,400);assert.equal(h.calls.length,0);
+test('desktop rejects malformed terminal selection and missing credentials without calling SQL',async()=>{
+ for(const args of [{terminalId:'invalid',pin:'739281'},{terminalId:'',pin:'739281'},{terminalId:'00000000-0000-4000-8000-000000000022',startDate:'15012020'}]){
+  const h=fixture(),r=await h.send({action:'LOGIN',qrToken:'',...args});assert.ok([400,401].includes(r.status));assert.equal(h.calls.length,0);
  }
 });
 test('desktop status and punches preserve session and request IDs through the shared RPC',async()=>{
  const h=fixture(),r=await h.send({action:'CLOCK_IN',qrToken:'',terminalId:'00000000-0000-4000-8000-000000000022',sessionToken:'b'.repeat(64),requestId:'c'.repeat(64)});
  assert.equal(r.status,200);assert.match(h.calls[0].url,/qr_desktop_request$/);assert.equal(h.calls[0].p_session_token,'b'.repeat(64));assert.equal(h.calls[0].p_request_id,'c'.repeat(64));assert.equal(h.calls[0].p_pin,null);
+});
+
+test('desktop transition sends ISO date only to protected legacy login and returns no date or terminal secret',async()=>{
+ const h=fixture(),r=await h.send({action:'LOGIN',qrToken:'',terminalId:'00000000-0000-4000-8000-000000000022',startDate:'2020-01-15'});
+ assert.equal(r.status,200);assert.match(h.calls[0].url,/qr_desktop_legacy_login$/);assert.equal(h.calls[0].p_start_date,'2020-01-15');assert.ok(!('p_terminal_token'in h.calls[0]));
+ const data=await r.json();assert.match(data.sessionToken,/^[a-f0-9]{64}$/);assert.ok(!JSON.stringify(data).includes('2020-01-15'));
+});
+test('desktop transition denied by PIN policy never returns a usable session or retries another login',async()=>{
+ const h=fixture({ok:false,error:'Bitte mit persönlicher PIN anmelden'}),r=await h.send({action:'LOGIN',qrToken:'',terminalId:'00000000-0000-4000-8000-000000000022',startDate:'2020-01-15'});
+ assert.equal(r.status,401);assert.equal((await r.json()).sessionToken,undefined);assert.equal(h.calls.length,1);
 });
