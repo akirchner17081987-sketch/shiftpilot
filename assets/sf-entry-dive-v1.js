@@ -31,7 +31,7 @@
     root.appendChild(canvas);
     const d3 = engine.d3, land = engine.countries;
     const projection = d3.geoOrthographic().clipAngle(90).precision(.4);
-    const surface=window.SFGlobeSurface?.create(engine,{maxPixels:240000,adaptive:true});
+    const surface=window.SFGlobeSurface?.create(engine,{maxPixels:600000,onReady(){if(!disposed)draw(performance.now());}});
     const path = d3.geoPath(projection, ctx), grid = d3.geoGraticule10();
     // Rasterize published Natural Earth geometry once to sample the illuminated continents.
     const texture = document.createElement('canvas');texture.width = 720;texture.height = 360;
@@ -91,7 +91,7 @@
         if (distance > Math.PI / 2) continue;
         const xy = projection(point.geo);
         if (xy[0] < -6 || xy[0] > width + 6 || xy[1] < -6 || xy[1] > height + 6) continue;
-        const z = Math.cos(distance), shimmer = .5 + .5 * Math.sin(now * .001 + point.shine);
+        const z = Math.cos(distance), shimmer = .65;
         const alpha = (.24 + z * .68) * (point.land ? .55 + shimmer * .45 : .18);
         ctx.fillStyle = point.land ? `rgba(115,242,218,${alpha})` : `rgba(114,184,203,${alpha})`;
         const dot = (point.land ? .85 : .6) * Math.min(2.6,Math.sqrt(radius / Math.max(1,source.radius)));
@@ -131,4 +131,5 @@
   }
   function stop() { const stopCurrent = stopActive;stopActive = null;stopCurrent?.(); }
   window.SFEntryDive = {prepare,start,stop};
+  document.dispatchEvent(new Event('sf:entry-dive-ready'));
 })();
