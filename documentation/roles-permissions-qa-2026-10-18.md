@@ -2,7 +2,7 @@
 
 ## Ergebnis
 
-Die geprüften Rollen-, Unternehmens- und Mitarbeitergrenzen greifen nach den Korrekturen auch bei direkten Datenbankabfragen und älteren RPCs. 955 automatisierte Tests bestanden. Benutzerverwaltung auf Desktop/Handy (hell/dunkel, bis 320 Pixel mit großer Schrift) sowie 12 MFA-Browserprüfungen bestanden. Es wurden ausschließlich fiktive Testdatensätze verändert und sämtliche Testtransaktionen zurückgerollt.
+Die geprüften Rollen-, Unternehmens- und Mitarbeitergrenzen greifen nach den Korrekturen auch bei direkten Datenbankabfragen und älteren RPCs. 956 automatisierte Tests bestanden. Benutzerverwaltung auf Desktop/Handy (hell/dunkel, bis 320 Pixel mit großer Schrift) sowie 12 MFA-Browserprüfungen bestanden. Es wurden ausschließlich fiktive Testdatensätze verändert und sämtliche Testtransaktionen zurückgerollt.
 
 ## Behobene Lücken
 
@@ -12,7 +12,9 @@ Die geprüften Rollen-, Unternehmens- und Mitarbeitergrenzen greifen nach den Ko
 4. **Ältere Mitarbeiteraktionen:** Zehn interne Tausch-/Marktplatz-/Angebotsfunktionen und die öffentliche Antwort auf Dienstplanänderungen verlangen nun am Einstieg einen aktiven Mitarbeiterzugang. Sie behalten ihre vorhandenen Prüfungen für Anfragen, Dienstzustände und reine Zeitverwaltungszugänge. QR-Terminalbuchungen behalten ihre getrennte Authentifizierung.
 5. **Finanzielle Kontoeinstellungen:** Sieben aktive/ältere Schreibfunktionen für Startsaldo, Kontostart, Gutschriften und SOLL-Methode verlangen nun MFA zusätzlich zur unveränderten Rollenprüfung. Vier öffentliche Schreibwege wurden mit AAL1 abgewiesen; erlaubte Änderungen mit AAL2 wurden bestätigt.
 
-Migrationen: `20261018094117_roles_permission_boundaries.sql` und `20261018094151_roles_time_policy_helper_execute.sql`. Die zweite Migration gibt der angemeldeten Datenbankrolle die nötige Ausführungsberechtigung auf die interne Ja/Nein-Prüffunktion für Zeitrechte. Eine RLS-Regel wird mit den Rechten des Aufrufers ausgewertet; anonyme Ausführung bleibt gesperrt. Positivtests verhindern, dass die Absicherung berechtigte Leser blockiert.
+Migrationen: `20261018094117_roles_permission_boundaries.sql`, `20261018094151_roles_time_policy_helper_execute.sql` und `20261018094837_roles_readonly_employee_identity.sql`. Die zweite Migration gibt der angemeldeten Datenbankrolle die nötige Ausführungsberechtigung auf die interne Ja/Nein-Prüffunktion für Zeitrechte. Eine RLS-Regel wird mit den Rechten des Aufrufers ausgewertet; anonyme Ausführung bleibt gesperrt. Positivtests verhindern, dass die Absicherung berechtigte Leser blockiert.
+
+6. **Nur lesen mit verknüpftem Mitarbeiterprofil:** Dieser Sonderfall konnte einen Schichttausch anfordern. Die zentrale Portalidentität schließt jetzt reine Lese- und Zeitverwaltungsmitgliedschaften aus. Ein neuer produktiver Rollbacktest reproduzierte vorher die unerlaubte Anfrage und bestätigt nachher ihre Ablehnung.
 
 ## Geprüftes Rollenmodell
 
@@ -67,4 +69,4 @@ node tests/browser/users-permissions-qa.cjs
 node tests/browser/access-mfa-matrix-qa.cjs
 ```
 
-Die neue PostgreSQL-Simulation mit vier Untertests ist Bestandteil von `npm test`. Der CI-Workflow `Roles and permissions` führt fokussierte Sicherheits- und Browserprüfungen bei relevanten Änderungen aus. Produktive SQL-Tests erfolgen gezielt über einen autorisierten Datenbankzugang und rollen ihre Fixtures zurück.
+Die neue PostgreSQL-Simulation mit fünf Untertests ist Bestandteil von `npm test`. Der CI-Workflow `Roles and permissions` führt fokussierte Sicherheits- und Browserprüfungen bei relevanten Änderungen aus. Produktive SQL-Tests erfolgen gezielt über einen autorisierten Datenbankzugang und rollen ihre Fixtures zurück.

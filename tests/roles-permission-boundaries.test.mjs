@@ -31,6 +31,7 @@ test('role boundaries survive permissive legacy policies and stored snapshots',a
  await actor(O);await assert.rejects(rows('time_entries'),/permission denied/);await db.exec('reset role');
  await db.exec(fs.readFileSync(new URL('../supabase/migrations/20261018094151_roles_time_policy_helper_execute.sql',import.meta.url),'utf8'));
 
+ await db.exec(fs.readFileSync(new URL('../supabase/migrations/20261018094837_roles_readonly_employee_identity.sql',import.meta.url),'utf8'));
  await t.test('team leader without time rights cannot read raw times, openings or snapshots',async()=>{
   await actor(L);assert.equal(await rows('employees'),2);assert.equal(await rows('time_entries'),0);assert.equal(await rows('time_account_openings'),0);
   await assert.rejects(db.query('select public.manager_monthly_time_accounts($1)',[C]),/Zeitberechtigung/);
@@ -44,6 +45,9 @@ test('role boundaries survive permissive legacy policies and stored snapshots',a
   await actor(U);assert.equal(await rows('employees'),1);assert.equal(await rows('time_entries'),1);assert.ok((await db.query('select private.employee_list_shift_marketplace_impl() v')).rows[0].v.legacy_snapshot);
   for(const change of ["access_status='DISABLED'","access_status='ACTIVE',deleted_at=now()"]){await db.exec('reset role');await db.exec(`update employees set ${change} where id='${E}'`);await actor(U);assert.equal(await rows('employees'),0);assert.equal(await rows('time_entries'),0);assert.equal(await rows('shift_assignments'),0);await assert.rejects(db.query('select private.employee_list_shift_marketplace_impl()'),/aktiver Mitarbeiterzugang/)}
   await db.exec('reset role');await db.exec(`update employees set deleted_at=null where id='${E}';insert into company_members values('${C}','${U}','PLANNER','DISABLED','TEAM_LEAD','{}')`);await actor(U);assert.equal(await rows('employees'),0);await assert.rejects(db.query('select public.employee_respond_to_shift_change()'),/aktiver Mitarbeiterzugang/);
+ });
+ await t.test('read-only and time-only memberships cannot use a linked portal identity',async()=>{
+  for(const role of ['VIEWER','TIME_TRACKING']){await db.exec('reset role');await db.exec(`update employees set access_status='ACTIVE',deleted_at=null where id='${E}';update company_members set status='ACTIVE',role='${role}',extra_permissions=ARRAY['${role==='VIEWER'?'read_only':'manage_time'}'] where user_id='${U}'`);await actor(U);assert.equal((await db.query('select private.sf_employee_id() v')).rows[0].v,null);await assert.rejects(db.query('select private.employee_create_shift_swap_impl()'),/aktiver Mitarbeiterzugang/)}
  });
  await t.test('all seven financial setters require MFA and every selected function has its guard',async()=>{
   await actor(O,'aal1');await assert.rejects(db.query('select public.manager_set_time_account_opening()'),/MFA_REQUIRED/);await assert.rejects(db.query('select private.manager_set_time_account_target_method_impl()'),/MFA_REQUIRED/);

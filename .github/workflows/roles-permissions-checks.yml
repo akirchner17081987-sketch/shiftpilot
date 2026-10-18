@@ -4,8 +4,10 @@ on:
     paths:
       - 'supabase/migrations/*roles_permission*'
       - 'supabase/migrations/*roles_time_policy*'
+      - 'supabase/migrations/*roles_readonly*'
       - 'tests/roles-permission-boundaries.test.mjs'
       - 'tests/sql/roles-permissions*'
+      - 'tests/sql/roles-readonly*'
       - 'assets/access-profiles-v1.js'
       - 'assets/supabase-mfa-v1.js'
       - '.github/workflows/roles-permissions-checks.yml'
