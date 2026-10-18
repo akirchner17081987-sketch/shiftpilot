@@ -41,7 +41,21 @@ const html=employee=>`<!doctype html><html lang="de"><head><meta charset="utf-8"
   await dialog.locator('.sf-msg-log').getByText('Kannst du morgen übernehmen?',{exact:true}).waitFor();await page.waitForFunction(()=>__messages[0].read_at!==null);
   assert.equal(await page.locator('.sf-message-badge').isVisible(),false);
   assert.equal(await dialog.locator('.sf-msg-compose').isVisible(),true);
-  await dialog.locator('textarea').fill('Hallo Bob!\n<img src=x onerror="__xss=true">');
+  // Emoji selection preserves the caret/selection, never submits the form,
+  // and respects the existing length limit even for surrogate-pair emojis.
+  const emojiToggle=dialog.getByRole('button',{name:'Emoji auswählen',exact:true}),picker=dialog.getByRole('group',{name:'Emoji-Auswahl',exact:true}),text=dialog.locator('textarea');
+  await text.fill('Hallo Bob');await text.evaluate(n=>n.setSelectionRange(6,9));await emojiToggle.click();
+  await page.keyboard.press('ArrowRight');assert.equal(await picker.getByRole('button',{name:'Fröhlich',exact:true}).evaluate(n=>n===document.activeElement),true);
+  await page.keyboard.press('Escape');assert.equal(await picker.isVisible(),false);assert.equal(await dialog.isVisible(),true);assert.equal(await emojiToggle.evaluate(n=>n===document.activeElement),true);
+  await emojiToggle.click();await page.screenshot({path:path.join(out,name+'-emojis-dark.png'),fullPage:true});
+  assert.equal(await picker.evaluate(n=>{const r=n.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight}),true);
+  await page.evaluate(()=>document.documentElement.dataset.sfTheme='light');await page.screenshot({path:path.join(out,name+'-emojis-light.png'),fullPage:true});await page.evaluate(()=>document.documentElement.dataset.sfTheme='dark');
+  await picker.getByRole('button',{name:'Zustimmung',exact:true}).click();assert.equal(await text.inputValue(),'Hallo 👍');assert.equal(await text.evaluate(n=>n===document.activeElement&&n.selectionStart===8),true);assert.equal(await picker.isVisible(),false);
+  assert.equal(await page.evaluate(()=>__sentKeys.length),0);
+  await text.fill('a'.repeat(1999));await emojiToggle.click();await picker.getByRole('button',{name:'Zustimmung',exact:true}).click();assert.equal((await text.inputValue()).length,1999);await dialog.getByRole('status').filter({hasText:'reicht der Platz nicht'}).waitFor();
+  await text.evaluate(n=>n.setSelectionRange(1998,1999));await picker.getByRole('button',{name:'Zustimmung',exact:true}).click();assert.equal((await text.inputValue()).length,2000);assert.equal((await text.inputValue()).endsWith('👍'),true);
+  await text.fill('');await emojiToggle.click();await picker.getByRole('button',{name:'Lächeln',exact:true}).click();assert.equal(await dialog.getByRole('button',{name:'Senden',exact:true}).isEnabled(),true);
+  await dialog.locator('textarea').fill('Hallo Bob! 🙂\n<img src=x onerror="__xss=true">');
   await page.evaluate(()=>__failSend=true);await dialog.getByRole('button',{name:'Senden',exact:true}).click();
   await dialog.getByRole('status').filter({hasText:'Senden konnte nicht bestätigt werden'}).waitFor();
   assert.match(await dialog.locator('textarea').inputValue(),/Hallo Bob/);assert.equal(await dialog.getByRole('button',{name:'Senden',exact:true}).isEnabled(),true);
@@ -50,7 +64,7 @@ const html=employee=>`<!doctype html><html lang="de"><head><meta charset="utf-8"
   await page.evaluate(()=>{__failSend=false;__delay=80});await dialog.getByRole('button',{name:'Senden',exact:true}).click();
   await page.evaluate(()=>document.querySelector('.sf-msg-compose').dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));
   await page.waitForFunction(()=>document.querySelector('.sf-msg-compose textarea').value==='');await page.waitForFunction(()=>!document.querySelector('.sf-msg-compose textarea').disabled);
-  assert.equal(await page.evaluate(()=>__messages.filter(m=>m.client_message_id).length),1);assert.equal(await page.evaluate(()=>new Set(__sentKeys).size),1);assert.equal(await page.evaluate(()=>__sentKeys.length),2);
+  assert.equal(await page.evaluate(()=>__messages.filter(m=>m.client_message_id).length),1);assert.equal(await page.evaluate(()=>new Set(__sentKeys).size),1);assert.equal(await page.evaluate(()=>__sentKeys.length),2);assert.match(await page.evaluate(()=>__messages.find(m=>m.client_message_id).body),/🙂/);
   assert.equal(await page.evaluate(()=>__xss),false);await page.evaluate(()=>__delay=0);
   await dialog.locator('textarea').fill('Mein Entwurf bleibt hier.');
   if(employee)await dialog.getByRole('button',{name:'Zurück zu den Gesprächen',exact:true}).click();

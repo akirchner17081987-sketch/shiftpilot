@@ -6,6 +6,8 @@
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const envelope = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7 8 6 8-6"/></svg>';
   const roleNames = {OWNER:'Inhaber',ADMIN:'Administrator',TEAM_LEAD:'Teamleiter',EMPLOYEE:'Mitarbeiter'};
+  const EMOJIS = [['🙂','Freundlich'],['😀','Fröhlich'],['😄','Lachen'],['😂','Lachtränen'],['😉','Zwinkern'],['😊','Lächeln'],['😍','Begeistert'],['😎','Cool'],['🤔','Nachdenklich'],['😕','Unsicher'],['😢','Traurig'],['😴','Müde'],['👍','Zustimmung'],['👎','Ablehnung'],['👌','In Ordnung'],['🙌','Geschafft'],['👏','Applaus'],['🙏','Danke'],['💪','Motivation'],['🤝','Zusammenarbeit'],['❤️','Herz'],['✅','Erledigt'],['❗','Wichtig'],['❓','Frage'],['📅','Termin'],['⏰','Uhrzeit'],['☀️','Tagdienst'],['🌙','Nachtdienst'],['☕','Pause'],['🎉','Feiern']];
+  const preview = text => Array.from(text).slice(0,85).join('');
   const date = value => new Date(value).toLocaleString('de-DE', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
   let context = '', generation = 0, modal, opener, contacts = [], conversations = [], unread = 0;
   let peer = '', thread = [], hasOlder = false, showContacts = false, search = '', threadVersion = 0, modalVersion = 0;
@@ -71,6 +73,24 @@
     const node = modal?.querySelector('.sf-msg-send-status');if (!node) return;
     node.hidden = !message;node.textContent = message;node.classList.toggle('is-error',bad);
   }
+  function closeEmojis(restoreFocus = false) {
+    const picker = modal?.querySelector('#sfMessageEmojis'), toggle = modal?.querySelector('[data-msg-action="emojis"]');
+    if (!picker || !toggle) return;
+    picker.hidden = true;toggle.setAttribute('aria-expanded','false');
+    if (restoreFocus) toggle.focus({preventScroll:true});
+  }
+  function insertEmoji(emoji) {
+    const input = modal?.querySelector('textarea');if (!input || sending || !peer) return;
+    const start = input.selectionStart, end = input.selectionEnd;
+    if (input.value.length - (end - start) + emoji.length > input.maxLength) {
+      sendStatus('Für dieses Emoji reicht der Platz nicht mehr. Bitte kürze deine Nachricht etwas.',true);return;
+    }
+    input.setRangeText(emoji,start,end,'end');
+    input.dispatchEvent(new Event('input',{bubbles:true}));sendStatus('');closeEmojis();input.focus({preventScroll:true});
+  }
+  function emojiControl() {
+    return `<span class="sf-msg-emoji-wrap"><button type="button" class="sf-msg-emoji-toggle" data-msg-action="emojis" aria-label="Emoji auswählen" title="Emoji auswählen" aria-expanded="false" aria-controls="sfMessageEmojis"><span aria-hidden="true">🙂</span></button><span id="sfMessageEmojis" class="sf-msg-emoji-picker" role="group" aria-label="Emoji-Auswahl" hidden>${EMOJIS.map(([emoji,label]) => `<button type="button" class="sf-msg-emoji-choice" data-msg-emoji="${esc(emoji)}" aria-label="${esc(label)}" title="${esc(label)}"><span aria-hidden="true">${emoji}</span></button>`).join('')}</span></span>`;
+  }
   function contact(id) { return contacts.find(c => c.user_id === id); }
   function person(id) { return contact(id)?.display_name || 'Ehemaliger Zugang'; }
   function renderList() {
@@ -82,7 +102,7 @@
     modal.querySelector('[data-msg-action="contacts"]').textContent = showContacts ? 'Gespräche' : '+ Neue Nachricht';
     const html = items.map(id => {
       const c = contact(id), last = conversations.find(x => x.peer_id === id), count = Number(last?.unread || 0);
-      return `<button type="button" class="sf-msg-person ${id === peer ? 'is-active' : ''}" data-msg-peer="${esc(id)}" aria-pressed="${id === peer}"><span class="sf-msg-avatar" aria-hidden="true">${esc(person(id).slice(0,1).toLocaleUpperCase('de'))}</span><span class="sf-msg-person-copy"><b>${esc(person(id))}</b><small>${esc(all ? (roleNames[c?.access_role] || 'Mitarbeiter') : ((last?.sender_id === B.user.id ? 'Du: ' : '') + (last?.body || 'Neue Unterhaltung')).slice(0,85))}</small></span>${count ? `<span class="sf-msg-count" aria-label="${count} ungelesen">${count > 99 ? '99+' : count}</span>` : ''}</button>`;
+      return `<button type="button" class="sf-msg-person ${id === peer ? 'is-active' : ''}" data-msg-peer="${esc(id)}" aria-pressed="${id === peer}"><span class="sf-msg-avatar" aria-hidden="true">${esc(person(id).slice(0,1).toLocaleUpperCase('de'))}</span><span class="sf-msg-person-copy"><b>${esc(person(id))}</b><small>${esc(preview(all ? (roleNames[c?.access_role] || 'Mitarbeiter') : ((last?.sender_id === B.user.id ? 'Du: ' : '') + (last?.body || 'Neue Unterhaltung'))))}</small></span>${count ? `<span class="sf-msg-count" aria-label="${count} ungelesen">${count > 99 ? '99+' : count}</span>` : ''}</button>`;
     }).join('') || `<p class="sf-msg-empty">${needle ? 'Keine Person gefunden.' : all ? 'Keine weiteren aktiven persönlichen Zugänge vorhanden.' : 'Noch keine Gespräche. Wähle „Neue Nachricht“, um jemanden anzuschreiben.'}</p>`;
     const list = modal.querySelector('.sf-msg-people');if (list.innerHTML !== html) list.innerHTML = html;
   }
@@ -102,6 +122,8 @@
     const input = modal.querySelector('textarea'), button = modal.querySelector('[type="submit"]');
     modal.querySelector('.sf-msg-length').textContent = `${input.value.length.toLocaleString('de-DE')} / 2.000`;
     input.disabled = sending;button.disabled = sending || !peer || !input.value.trim() || input.value.length > 2000;
+    modal.querySelector('[data-msg-action="emojis"]').disabled = sending;
+    if (sending) closeEmojis();
     button.textContent = sending ? 'Wird gesendet …' : 'Senden';
   }
   async function loadInbox() {
@@ -148,6 +170,7 @@
   }
   function selectPeer(id) {
     if (sending) return;
+    closeEmojis();
     if (peer) drafts.set(peer,modal.querySelector('textarea').value);
     peer = id;threadVersion++;threadBusy = olderBusy = false;thread = [];hasOlder = false;
     modal.dataset.chat = 'true';modal.querySelector('textarea').value = drafts.get(peer) || '';renderList();renderThread();
@@ -180,7 +203,7 @@
     sync();if (!context) return;if (modal) { modal.querySelector('[data-msg-action="close"]').focus();return; }
     opener = button || document.activeElement;modalVersion++;peer = '';thread = [];search = '';showContacts = false;hasOlder = false;
     modal = document.createElement('div');modal.id = 'sfMessages';modal.className = 'sf-msg-backdrop';
-    modal.innerHTML = `<section class="sf-msg-dialog" role="dialog" aria-modal="true" aria-labelledby="sfMessagesTitle" tabindex="-1"><header class="sf-msg-head"><span class="sf-msg-head-icon">${envelope}</span><div><h2 id="sfMessagesTitle">Nachrichten</h2><p>Direkt miteinander in Verbindung</p></div><button type="button" data-msg-action="close" aria-label="Nachrichten schließen">✕</button></header><div class="sf-msg-body"><aside class="sf-msg-sidebar" aria-label="Gespräche und Kontakte"><div class="sf-msg-list-head"><b class="sf-msg-list-title">Gespräche</b><button type="button" data-msg-action="contacts">+ Neue Nachricht</button></div><label class="sf-msg-search"><span class="sf-msg-sr">Person suchen</span><input type="search" placeholder="Person suchen …" autocomplete="off"></label><div class="sf-msg-people"><p class="sf-msg-empty">Gespräche werden geladen …</p></div></aside><section class="sf-msg-thread" aria-label="Gespräch"><header class="sf-msg-thread-head"><button type="button" data-msg-action="back" aria-label="Zurück zu den Gesprächen">‹</button><div><h3 class="sf-msg-thread-name">Deine Nachrichten</h3><small class="sf-msg-thread-note"></small></div></header><button type="button" class="sf-msg-older" data-msg-action="older" hidden>Ältere Nachrichten laden</button><div class="sf-msg-log" aria-label="Nachrichtenverlauf" tabindex="0"></div><form class="sf-msg-compose" hidden><label for="sfMessageText">Deine Nachricht</label><textarea id="sfMessageText" rows="3" maxlength="2000" placeholder="Nachricht schreiben …"></textarea><p class="sf-msg-send-status" role="status" aria-live="polite" hidden></p><div><small class="sf-msg-length">0 / 2.000</small><button type="submit">Senden</button></div></form></section></div><footer class="sf-msg-status" role="status" aria-live="polite">Nachrichten werden geladen …</footer></section>`;
+    modal.innerHTML = `<section class="sf-msg-dialog" role="dialog" aria-modal="true" aria-labelledby="sfMessagesTitle" tabindex="-1"><header class="sf-msg-head"><span class="sf-msg-head-icon">${envelope}</span><div><h2 id="sfMessagesTitle">Nachrichten</h2><p>Direkt miteinander in Verbindung</p></div><button type="button" data-msg-action="close" aria-label="Nachrichten schließen">✕</button></header><div class="sf-msg-body"><aside class="sf-msg-sidebar" aria-label="Gespräche und Kontakte"><div class="sf-msg-list-head"><b class="sf-msg-list-title">Gespräche</b><button type="button" data-msg-action="contacts">+ Neue Nachricht</button></div><label class="sf-msg-search"><span class="sf-msg-sr">Person suchen</span><input type="search" placeholder="Person suchen …" autocomplete="off"></label><div class="sf-msg-people"><p class="sf-msg-empty">Gespräche werden geladen …</p></div></aside><section class="sf-msg-thread" aria-label="Gespräch"><header class="sf-msg-thread-head"><button type="button" data-msg-action="back" aria-label="Zurück zu den Gesprächen">‹</button><div><h3 class="sf-msg-thread-name">Deine Nachrichten</h3><small class="sf-msg-thread-note"></small></div></header><button type="button" class="sf-msg-older" data-msg-action="older" hidden>Ältere Nachrichten laden</button><div class="sf-msg-log" aria-label="Nachrichtenverlauf" tabindex="0"></div><form class="sf-msg-compose" hidden><label for="sfMessageText">Deine Nachricht</label><textarea id="sfMessageText" rows="3" maxlength="2000" placeholder="Nachricht schreiben …"></textarea><p class="sf-msg-send-status" role="status" aria-live="polite" hidden></p><div class="sf-msg-compose-actions">${emojiControl()}<small class="sf-msg-length">0 / 2.000</small><button type="submit">Senden</button></div></form></section></div><footer class="sf-msg-status" role="status" aria-live="polite">Nachrichten werden geladen …</footer></section>`;
     document.body.appendChild(modal);renderThread();
     document.querySelectorAll('.sf-message-launch').forEach(b => b.setAttribute('aria-expanded','true'));
     modal.querySelector('[data-msg-action="close"]').onclick = () => { if (peer) drafts.set(peer,modal.querySelector('textarea').value);close(); };
@@ -191,8 +214,23 @@
     modal.querySelector('[data-msg-action="older"]').onclick = () => loadThread(true);
     modal.querySelector('form').onsubmit = send;
     modal.querySelector('textarea').oninput = () => { drafts.set(peer,modal.querySelector('textarea').value);composeState(); };
+    modal.querySelector('[data-msg-action="emojis"]').onclick = () => {
+      const picker = modal.querySelector('#sfMessageEmojis'), opening = picker.hidden;
+      picker.hidden = !opening;modal.querySelector('[data-msg-action="emojis"]').setAttribute('aria-expanded',String(opening));
+      if (opening) picker.querySelector('button').focus({preventScroll:true});
+    };
+    modal.querySelector('#sfMessageEmojis').onclick = event => {
+      const button = event.target.closest('[data-msg-emoji]');if (button) insertEmoji(button.dataset.msgEmoji);
+    };
+    modal.addEventListener('click',event => { if (!event.target.closest('.sf-msg-emoji-wrap')) closeEmojis(); });
     // Stay open on backdrop clicks so a draft cannot be closed accidentally.
     modal.addEventListener('keydown',event => {
+      if (event.key === 'Escape' && !modal.querySelector('#sfMessageEmojis').hidden) { event.preventDefault();event.stopPropagation();closeEmojis(true);return; }
+      if (event.target.closest('[data-msg-emoji]') && ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(event.key)) {
+        event.preventDefault();const buttons = [...modal.querySelectorAll('[data-msg-emoji]')], i = buttons.indexOf(event.target.closest('[data-msg-emoji]'));
+        const next = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : (i + ({ArrowLeft:-1,ArrowRight:1,ArrowUp:-6,ArrowDown:6}[event.key]) + buttons.length) % buttons.length;
+        buttons[next].focus();return;
+      }
       if (event.key === 'Escape') { event.preventDefault();event.stopPropagation();if (peer) drafts.set(peer,modal.querySelector('textarea').value);close();return; }
       if (event.key !== 'Tab') return;
       const nodes = [...modal.querySelectorAll('button:not(:disabled),input,textarea:not(:disabled),[tabindex="0"]')].filter(n => n.offsetParent !== null);
