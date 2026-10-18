@@ -1,0 +1,49 @@
+-- Employee-owned marketplace offers; every scenario and fixture rolls back.
+DO $$ DECLARE o uuid;c uuid:=gen_random_uuid();u uuid:=gen_random_uuid();v uuid:=gen_random_uuid();
+e uuid:=gen_random_uuid();f uuid:=gen_random_uuid();a uuid;s uuid;r text;scenario text;evidence jsonb:='[]';blocked boolean;
+BEGIN
+SELECT user_id INTO o FROM public.company_members WHERE role='OWNER' AND status='ACTIVE' LIMIT 1;
+IF o IS NULL THEN RAISE EXCEPTION 'No owner context';END IF;
+BEGIN
+PERFORM set_config('request.jwt.claim.sub',o::text,true);PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',o,'role','authenticated','aal','aal2')::text,true);
+PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',o,'role','authenticated','aal','aal2')::text,true);
+INSERT INTO auth.users(id,email) VALUES(u,'qa-swap-'||u||'@example.invalid'),(v,'qa-swap-'||v||'@example.invalid');
+INSERT INTO public.companies(id,name,timezone,created_by) VALUES(c,'QA Swap Rollback','Europe/Berlin',o);
+INSERT INTO public.company_members(company_id,user_id,role,status) VALUES(c,o,'OWNER','ACTIVE');
+INSERT INTO public.shift_templates(company_id,code,name,default_start,default_end) VALUES(c,'FD','Test','06:00','14:00');
+INSERT INTO public.employees(id,company_id,auth_user_id,first_name,last_name,personnel_no,role,employment,work_time_model,status,access_status,weekly_hours,shift_permissions)
+VALUES(e,c,u,'Fiktiv','A','QA-SWAP-A','Mitarbeiter','Vollzeit','SHIFT','active','ACTIVE',40,ARRAY['FD']),
+(f,c,v,'Fiktiv','B','QA-SWAP-B','Mitarbeiter','Vollzeit','SHIFT','active','ACTIVE',40,ARRAY['FD']);
+INSERT INTO public.shift_assignments(company_id,employee_id,shift_code,starts_at,ends_at,status,published_at,created_by)
+VALUES(c,e,'FD','2027-02-01 06:00+01','2027-02-01 14:00+01','PUBLISHED',now(),o) RETURNING id INTO a;
+
+FOREACH scenario IN ARRAY ARRAY['approve','reject','cancel'] LOOP
+BEGIN
+PERFORM set_config('request.jwt.claim.sub',u::text,true);
+PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated','aal','aal1')::text,true);
+s:=public.employee_offer_shift_marketplace(a,'Fiktiver Test');
+ASSERT EXISTS(SELECT 1 FROM public.employee_list_shift_marketplace() x WHERE x.id=s AND x.is_own),'Own offer missing';
+blocked:=false;BEGIN PERFORM public.employee_claim_shift_marketplace(s);EXCEPTION WHEN OTHERS THEN IF sqlerrm LIKE '%Eigene Schichten%' THEN blocked:=true;ELSE RAISE;END IF;END;ASSERT blocked,'Own takeover allowed';
+IF scenario='cancel' THEN PERFORM public.employee_cancel_shift_swap(s);r:=(SELECT status FROM public.shift_swap_requests WHERE id=s);ASSERT r='CANCELLED';
+ELSE
+PERFORM set_config('request.jwt.claim.sub',v::text,true);
+PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',v,'role','authenticated','aal','aal1')::text,true);
+ASSERT EXISTS(SELECT 1 FROM public.employee_list_shift_marketplace() x WHERE x.id=s AND x.can_take),'Colleague cannot see valid offer';
+r:=public.employee_claim_shift_marketplace(s);ASSERT r='PENDING_MANAGER';
+ASSERT (SELECT employee_id=e FROM public.shift_assignments WHERE id=a),'Claim reassigned duty';
+blocked:=false;BEGIN PERFORM public.manager_review_shift_swap(s,'APPROVE');EXCEPTION WHEN OTHERS THEN IF sqlerrm LIKE '%Keine Berechtigung%' THEN blocked:=true;ELSE RAISE;END IF;END;ASSERT blocked,'Employee self-approved';
+PERFORM set_config('request.jwt.claim.sub',o::text,true);
+PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',o,'role','authenticated','aal','aal2')::text,true);
+SELECT status INTO r FROM public.manager_review_shift_swap(s,CASE WHEN scenario='approve' THEN 'APPROVE' ELSE 'REJECT' END);
+ASSERT r=CASE WHEN scenario='approve' THEN 'APPLIED' ELSE 'REJECTED_MANAGER' END;
+ASSERT (SELECT employee_id=CASE WHEN scenario='approve' THEN f ELSE e END FROM public.shift_assignments WHERE id=a),'Wrong schedule owner';
+END IF;
+ASSERT (SELECT count(*) FROM public.shift_assignments WHERE company_id=c)=1,'Duplicate duty';
+evidence:=evidence||jsonb_build_array(jsonb_build_object('scenario',scenario,'status',r,'passed',true));
+RAISE EXCEPTION USING ERRCODE='P7776',MESSAGE='ROLLBACK_SCENARIO';
+EXCEPTION WHEN SQLSTATE 'P7776' THEN NULL;END;
+END LOOP;
+RAISE EXCEPTION USING ERRCODE='P7777',MESSAGE='ROLLBACK_FIXTURE';
+EXCEPTION WHEN SQLSTATE 'P7777' THEN NULL;END;
+PERFORM set_config('sf.legacy_market_qa',evidence::text,false);
+END $$;SELECT current_setting('sf.legacy_market_qa')::jsonb AS results;
