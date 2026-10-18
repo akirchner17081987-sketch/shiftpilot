@@ -87,9 +87,9 @@ function paintMap(){
    // Let the desktop globe fill the shared hero behind the heading. The same
    // projection drives the land, site pins and callouts, so they stay aligned.
    const expanded=!!overlay&&width>760,space=height-header-80;
-   const radius=Math.min(width*.43,space/2*(expanded?1.16:1),expanded?348:300);
-   const lift=expanded?Math.min(72,(height-header)*.12):0;
-   projection.scale(radius).translate([width/2,header+40+space/2-lift]);
+   const radius=expanded?Math.min(width*.43,(height-56)/2):Math.min(width*.43,space/2,300);
+   const centerY=expanded?height/2:header+40+space/2;
+   projection.scale(radius).translate([width/2,centerY]);
   }
   else if(mapped.length>1){projection.scale(1).translate([0,0]);projection.fitExtent([[left,top],[right,bottom]],{type:'MultiPoint',coordinates:mapped.map(s=>s.coords)});if(projection.scale()>4600){projection.scale(4600).translate([0,0]);const b=d3.geoPath(projection).bounds({type:'MultiPoint',coordinates:mapped.map(s=>s.coords)});projection.translate([width/2-(b[0][0]+b[1][0])/2,middle-(b[0][1]+b[1][1])/2]);}}
   else projection.scale(mobile?1700:3800).translate([width/2,middle]);
