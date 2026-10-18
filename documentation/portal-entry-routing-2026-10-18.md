@@ -12,7 +12,7 @@ Die bestehende Kontoverknüpfung des gemeldeten Teamleiters wurde ausschließlic
 
 ## Prüfung
 
-- 1.003 automatisierte Tests erfolgreich, darunter 21 neue Fälle zu Portalwahl, Rollen, gesperrten Zugängen, fehlenden Verknüpfungen und Unternehmensauswahl.
+- 1.005 automatisierte Tests erfolgreich, darunter 23 neue Fälle zu Portalwahl, Rollen, gesperrten Zugängen, fehlenden Verknüpfungen und Unternehmensauswahl.
 - Neue Browserprüfung: 60 Prüfungen mit tatsächlicher Auswahloberfläche, Anmeldeformular, Rollenauflösung, persönlichem Datenladen und Portalrenderer. Fiktiver Teamleiter mit eigenem Mitarbeiterprofil, beide Wege bei 390 und 1440 Pixeln, Sitzung erneut aufgenommen, keine Verwaltungsdatenabfrage im Mitarbeiterstart.
 - Bestehende Zugangsprüfung: 83 Prüfungen bei 320, 390 und 1440 Pixeln einschließlich Zeiterfassung und QR-Wege erfolgreich.
 - Statischer Produktionsbuild erfolgreich. Neue Browserprüfung zusätzlich in den IONOS-Build aufgenommen; Cachekennung für die geänderten Module und den Loader angehoben.

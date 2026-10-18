@@ -10,7 +10,7 @@ const html=read('dist/index.html'),overlay=html.slice(html.indexOf('<div id="sfE
   await page.route('**/*',r=>r.fulfill({contentType:'text/html; charset=utf-8',body:'<!doctype html><html lang="de"><head><meta charset="utf-8"></head><body>'+overlay+'<section id="landingPage"></section><div id="appShell" style="display:none"><div class="side-bottom"><div class="user-row"><small></small></div></div><main id="managerWorkspace">Verwaltung</main></div></body></html>'}));
   await page.goto('https://portal-entry.invalid/');await page.addStyleTag({content:read('assets/sf-entry-v2.css')+read('assets/sf-entry-access-v1.css')});
   await page.evaluate(()=>{window.openApp=()=>{};});
-  for(const file of ['sf-entry-v2','sf-entry-access-v1','supabase-auth-v1'])await page.addScriptTag({content:read('assets/'+file+'.js')});
+  for(const file of ['sf-entry-v2','sf-entry-access-v1','supabase-auth-errors-v1','supabase-auth-v1'])await page.addScriptTag({content:read('assets/'+file+'.js')});
   await page.evaluate(()=>{
    window.qa={calls:[],managerBoot:0,session:{user:{id:'user-a',email:'dual-role@example.invalid'}}};const B=SFBackend;
    const own={id:'employee-a',company_id:'company-a',auth_user_id:'user-a',first_name:'Alex',last_name:'Fiktiv',status:'active',access_status:'ACTIVE',deleted_at:null,email:'dual-role@example.invalid',weekly_hours:40};

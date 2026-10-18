@@ -40,3 +40,8 @@ test('membership errors fail closed',async()=>{const {B}=setup({error:new Error(
 test('resolved entry does not leak the previous employee when reusing the backend context',async()=>{
  const {B}=setup();await B.ensureCompany();B.employeePortalData={employee:{id:'old'}};await B.ensureCompany();assert.equal(B.employeePortalData,null);assert.equal(B.employeeRecord.id,'employee-a');
 });
+
+for(const [code,pattern] of [['employee_profile_missing',/kein persönliches Mitarbeiterprofil.*Verwaltung/],['employee_portal_disabled',/nicht freigegeben.*Verwaltung/]])test(`login shows the actionable portal error: ${code}`,()=>{
+ const B={},context={window:{SFBackend:B}};vm.runInNewContext(fs.readFileSync(new URL('../assets/supabase-auth-errors-v1.js',import.meta.url),'utf8'),context);
+ assert.match(B.friendlyAuthError({code,message:'internal detail'},'generic login error'),pattern);assert.equal(B.friendlyAuthError({code:'unknown',message:'internal detail'},'generic login error'),'generic login error');
+});

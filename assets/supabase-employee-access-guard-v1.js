@@ -16,10 +16,10 @@
     if(e.error)throw e.error;
     if(e.data){
       const member=(m.data||[]).find(row=>row.company_id===e.data.company_id);
-      if(e.data.status!=='active'||e.data.access_status!=='ACTIVE'||e.data.deleted_at||member&&(member.status!=='ACTIVE'||['VIEWER','TIME_TRACKING'].includes(member.role)||member.extra_permissions?.includes('read_only')))throw new Error('Dieser Mitarbeiterzugang ist deaktiviert oder für persönliche Mitarbeiterfunktionen nicht freigegeben. Bitte wende dich an die Verwaltung.');
+      if(e.data.status!=='active'||e.data.access_status!=='ACTIVE'||e.data.deleted_at||member&&(member.status!=='ACTIVE'||['VIEWER','TIME_TRACKING'].includes(member.role)||member.extra_permissions?.includes('read_only')))throw Object.assign(new Error('Dieser Mitarbeiterzugang ist deaktiviert oder für persönliche Mitarbeiterfunktionen nicht freigegeben. Bitte wende dich an die Verwaltung.'),{code:'employee_portal_disabled'});
       B.companyId=e.data.company_id;B.role='EMPLOYEE';B.employeeDbId=e.data.id;B.employeeRecord=e.data;return;
     }
-    if(employeeEntry)throw new Error('Für dieses Konto ist kein persönliches Mitarbeiterprofil verknüpft. Bitte nutze den Zugang „Verwaltung“ oder lass dein Mitarbeiterprofil mit diesem Konto verknüpfen.');
+    if(employeeEntry)throw Object.assign(new Error('Für dieses Konto ist kein persönliches Mitarbeiterprofil verknüpft. Bitte nutze den Zugang „Verwaltung“ oder lass dein Mitarbeiterprofil mit diesem Konto verknüpfen.'),{code:'employee_profile_missing'});
     return base.apply(this,arguments);
   };
 })();
