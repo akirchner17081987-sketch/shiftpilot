@@ -34,9 +34,9 @@ const html=read('dist/index.html'),overlay=html.slice(html.indexOf('<div id="sfE
     projection.rotate=function(value){if(value)window.diveCenter=[-value[0],-value[1]];return rotate.apply(this,arguments)};
     return projection;
    };
-   window.diveRadius=0;
+   window.diveRadius=0;window.diveInitialRadius=null;
    const arc=CanvasRenderingContext2D.prototype.arc;
-   CanvasRenderingContext2D.prototype.arc=function(...args){if(this.canvas.id==='sfEntryDiveCanvas'&&args[2]>window.diveRadius)window.diveRadius=args[2];return arc.apply(this,args)};
+   CanvasRenderingContext2D.prototype.arc=function(...args){if(this.canvas.id==='sfEntryDiveCanvas'){if(window.diveInitialRadius===null)window.diveInitialRadius=args[2];window.diveRadius=Math.max(window.diveRadius,args[2]);}return arc.apply(this,args)};
   });
   await page.evaluate(()=>SFBackend.authDialog('login'));
   await page.locator('[data-entry-area="'+area+'"]').click();await page.locator('#sfEmail').fill('dual-role@example.invalid');await page.locator('#sfPassword').fill('synthetic-password');await page.locator('#sfAuthSubmit').click();await page.waitForFunction(()=>SFBackend.ready);
@@ -50,10 +50,11 @@ const html=read('dist/index.html'),overlay=html.slice(html.indexOf('<div id="sfE
   const out=path.join(root,'test-results/entry-location');fs.mkdirSync(out,{recursive:true});
   await page.screenshot({path:path.join(out,area+'-'+team+'-focus.png')});
   if(!linked){
-   const before=await page.evaluate(()=>diveRadius);
-   await page.waitForTimeout(1650);
-   const after=await page.evaluate(()=>diveRadius);
-   assert.ok(after>before*4,'unassigned admin actually zooms into the globe: '+before+' -> '+after);checks++;
+   // Compare the actual first and maximum drawn radii. Screenshot/GPU latency can
+   // place a wall-clock 'before' sample near the end of the six-second animation.
+   await page.waitForFunction(()=>diveInitialRadius>0&&diveRadius>diveInitialRadius*12,{},{timeout:6000});
+   const {before,after}=await page.evaluate(()=>({before:diveInitialRadius,after:diveRadius}));
+   assert.ok(after>before*12,'unassigned admin actually zooms into the globe: '+before+' -> '+after);checks++;
    const destination=await page.evaluate(()=>{const {d3,countries}=SFLocationMapEngine;const germany=countries.features.find(f=>f.properties?.id==='DEU');return {center:diveCenter,inGermany:!!germany&&d3.geoContains(germany,diveCenter)}});
    assert.equal(destination.inGermany,true,'unassigned admin camera must enter Germany, received '+JSON.stringify(destination.center));checks++;
    assert.equal(await page.locator('#sfEntryWelcomeTitle').innerText(),'Willkommen bei SchichtFunk.');checks++;
