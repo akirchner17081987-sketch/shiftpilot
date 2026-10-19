@@ -14,7 +14,7 @@
  const collection=features=>({type:'FeatureCollection',features});
  function create(engine,options={}){
   const {d3}=engine,detailCanvas=document.createElement('canvas');let atlas=null,disposed=false;
-  prepare().then(value=>{if(!disposed){atlas=value;options.onReady?.();}});
+  prepare().then(value=>{if(!disposed){atlas=value;options.onReady?.(!!value);}});
   function render(ctx,projection,width,height,{reserved=[],top=70}={}){
    const data=atlas?.data,countries=data?collection(data.countries):engine.countries,path=d3.geoPath(projection,ctx);
    ctx.save();

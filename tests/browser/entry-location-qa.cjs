@@ -5,18 +5,23 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 const root=path.resolve(__dirname,'../..'),read=p=>fs.readFileSync(path.join(root,p),'utf8');
 const html=read('dist/index.html'),overlay=html.slice(html.indexOf('<div id="sfEntryOverlay"'),html.indexOf('<section id="landingPage">')).replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,'');
 (async()=>{const browser=await chromium.launch({headless:true});let checks=0;try{
- for(const {width,area,team,motion='no-preference',noEngine=false,role='PLANNER',linked=true} of [
+ for(const {width,area,team,motion='no-preference',noEngine=false,noAtlas=false,role='PLANNER',linked=true} of [
   ...[390,1440].flatMap(width=>['mitarbeiter','verwaltung'].map(area=>({width,area,team:width===390?'Leipzig':'Recklinghausen'}))),
   {width:320,area:'mitarbeiter',team:'Recklinghausen',motion:'reduce'},
   {width:390,area:'mitarbeiter',team:'Leipzig',noEngine:true},
+  {width:390,area:'verwaltung',team:'Leipzig',noAtlas:true},
   {width:390,area:'mitarbeiter',team:'Standortleitung'},
   ...[390,1440].map(width=>({width,area:'verwaltung',team:'',role:'ADMIN',linked:false}))
  ]){
   const context=await browser.newContext({viewport:{width,height:1000},reducedMotion:motion}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.route('**/*',r=>{const url=new URL(r.request().url());if(noEngine&&url.pathname.endsWith('/location-map-engine-v1.js'))return r.abort();if(url.pathname.startsWith('/assets/')){const file=path.resolve(root,'dist','.'+url.pathname);if(!file.startsWith(path.join(root,'dist','assets')+path.sep)||!fs.existsSync(file))return r.abort();return r.fulfill({contentType:file.endsWith('.webp')?'image/webp':'application/javascript',body:fs.readFileSync(file)});}return r.fulfill({contentType:'text/html; charset=utf-8',body:'<!doctype html><html lang="de"><head><meta charset="utf-8"></head><body>'+overlay+'<section id="landingPage"></section><div id="appShell" style="display:none"><div class="side-bottom"><div class="user-row"><small></small></div></div><main id="managerWorkspace">Verwaltung</main></div></body></html>'});});
+  await page.route('**/*',r=>{const url=new URL(r.request().url());if(noEngine&&url.pathname.endsWith('/location-map-engine-v1.js')||noAtlas&&url.pathname.endsWith('/region-atlas-night-v1.webp'))return r.abort();if(url.pathname.startsWith('/assets/')){const file=path.resolve(root,'dist','.'+url.pathname);if(!file.startsWith(path.join(root,'dist','assets')+path.sep)||!fs.existsSync(file))return r.abort();return r.fulfill({contentType:file.endsWith('.webp')?'image/webp':'application/javascript',body:fs.readFileSync(file)});}return r.fulfill({contentType:'text/html; charset=utf-8',body:'<!doctype html><html lang="de"><head><meta charset="utf-8"></head><body>'+overlay+'<section id="landingPage"></section><div id="appShell" style="display:none"><div class="side-bottom"><div class="user-row"><small></small></div></div><main id="managerWorkspace">Verwaltung</main></div></body></html>'});});
   await page.goto('https://portal-entry.invalid/');await page.addStyleTag({content:read('assets/sf-entry-v2.css')+read('assets/sf-entry-access-v1.css')+read('assets/sf-entry-dive-v1.css')});
   await page.evaluate(()=>{window.openApp=()=>{};});
-  for(const file of ['globe-surface-v1','sf-entry-v2','sf-entry-access-v1','sf-entry-globe-v1','sf-entry-location-v1','sf-entry-dive-v1','supabase-auth-errors-v1','supabase-auth-v1'])await page.addScriptTag({content:read('assets/'+file+'.js')});
+  for(const file of ['globe-surface-v1','region-atlas-v1','sf-entry-v2','sf-entry-access-v1','sf-entry-globe-v1','sf-entry-location-v1','sf-entry-dive-v1','supabase-auth-errors-v1','supabase-auth-v1'])await page.addScriptTag({content:read('assets/'+file+'.js')});
+  await page.evaluate(()=>{
+   window.qaAtlasFrames=0;const create=SFRegionAtlas.create;
+   SFRegionAtlas.create=function(...args){const atlas=create(...args),render=atlas.render;atlas.render=function(...args){const ready=render(...args);if(ready)qaAtlasFrames++;return ready};return atlas;};
+  });
   assert.equal(await page.evaluate(()=>SFGlobeSurface.prepare()),true,'own authored surface is loaded for the actual login test');
   await page.evaluate(({team,role,linked})=>{
    window.qa={calls:[],managerBoot:0,session:{user:{id:'user-a',email:'dual-role@example.invalid'}}};const B=SFBackend;
@@ -71,6 +76,7 @@ const html=read('dist/index.html'),overlay=html.slice(html.indexOf('<div id="sfE
   }
   }
   await page.locator('#sfEntryOverlay').waitFor({state:'detached',timeout:12000});checks++;
+  assert.equal(await page.evaluate(()=>qaAtlasFrames>0),motion!=='reduce'&&!noEngine&&!noAtlas,'real login uses the shared night atlas; missing assets and reduced motion still proceed');checks++;
   const state=await page.evaluate(()=>({role:SFBackend.role,accessRole:SFBackend.accessRole,canPlan:SFBackend.can('plan'),canManageTime:SFBackend.can('manageTime'),scope:SFBackend.personnelConversationEmployeeIds,employee:SFBackend.employeePortalData?.employee?.id,calls:qa.calls,managerBoot:qa.managerBoot}));
   assert.equal(new URL(page.url()).searchParams.get('bereich'),area);checks++;
   if(area==='mitarbeiter'){
