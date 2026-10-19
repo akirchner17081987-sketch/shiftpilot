@@ -89,6 +89,7 @@
         const co=typeof q.data==='string'?JSON.parse(q.data):q.data;
         return {...member,name:co?.name||'Unternehmen'};
       }));
+      options.sort((a,b)=>a.name.localeCompare(b.name,'de',{numeric:true,sensitivity:'base',ignorePunctuation:true}));
       if(dialog!==currentDialog)return;
       const list=dialog.querySelector('.sf-company-list');
       list.innerHTML=options.map(o=>`<button type="button" class="sf-company-option" data-company="${esc(o.company_id)}" aria-current="${o.company_id===B.companyId}"><span><b>${esc(o.name)}</b><small>${esc(roles[o.role]||o.role)}</small></span>${o.company_id===B.companyId?'✓':''}</button>`).join('')||'<p class="sf-company-note">Kein aktiver Unternehmenszugang gefunden.</p>';
