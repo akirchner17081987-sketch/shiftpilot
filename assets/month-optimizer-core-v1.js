@@ -105,7 +105,9 @@
     }
     return selected;
   }
-  function teamLeaderTarget(e,p){return e.role==='Teamleiter'&&p.solidRules?.teamLeaderMinimumMonthlyHours!=null?Math.max(0,Math.min(Number(p.solidRules.teamLeaderMinimumMonthlyHours),Math.floor(Number(e.target||e.monthlyHours||0)/10)*10)):0;}
+  function employeeShiftHours(e,p){const cache=p._employeeShiftHours||(p._employeeShiftHours=new Map()),key=String(e.id);if(!cache.has(key)){const hours=(p.groups||[]).filter(g=>String(g.employee.id)===key).flatMap(g=>g.options.flatMap(o=>o.map(a=>{const minute=t=>Number(t.slice(0,2))*60+Number(t.slice(3,5));return ((minute(a.end)-minute(a.start)+1440)%1440)/60}))).filter(h=>h>0);cache.set(key,hours.length?Math.min(...hours):10)}return cache.get(key)}
+  function employeeShiftTarget(e,p){const h=employeeShiftHours(e,p);return Math.floor(Number(e.target||e.monthlyHours||0)/h)*h}
+  function teamLeaderTarget(e,p){return e.role==='Teamleiter'&&p.solidRules?.teamLeaderMinimumMonthlyHours!=null?Math.max(0,Math.min(Number(p.solidRules.teamLeaderMinimumMonthlyHours),employeeShiftTarget(e,p))):0;}
   function teamLeaderDeficit(p,s){return [...p.people.values()].reduce((n,e)=>n+Math.max(0,teamLeaderTarget(e,p)-s.people.get(String(e.id)).hours),0);}
   function teamLeaderBlockPenalty(p,records){
     if(p.solidRules.teamLeaderPreferredNightBlockLength==null)return 0;
@@ -123,7 +125,7 @@
     if(!leaders.length||p.criticalPeriod)return [];
     const phase=new Map(leaders.map((e,i)=>[String(e.id),(i+offset)%7])),dates=[...new Set([...p.capacity.keys()].map(k=>k.slice(0,10)))].sort();
     const working=(e,date)=>(solid.weekday(date)-1-phase.get(String(e.id))+7)%7<Number(solid.employeeRules(e,p.solidRules).preferredNightBlockLength||4);
-    const candidates=key=>(byResource.get(key)||[]).filter(r=>r.option.length===1&&teamLeaderTarget(r.group.employee,p)>0&&s.people.get(String(r.group.employee.id)).hours+r.option.hours<=Math.floor(r.group.employee.target/10)*10+1e-6&&!s.used.has(r.group.id)&&allowed(s,r));
+    const candidates=key=>(byResource.get(key)||[]).filter(r=>r.option.length===1&&teamLeaderTarget(r.group.employee,p)>0&&s.people.get(String(r.group.employee.id)).hours+r.option.hours<=employeeShiftTarget(r.group.employee,p)+1e-6&&!s.used.has(r.group.id)&&allowed(s,r));
     for(const date of dates){
       for(const key of [...p.criticalCapacity.keys()].filter(k=>k.startsWith(date+'|')&&!k.endsWith('|OT-DAY'))){while(criticalOpen(p,s,key)>0){const list=candidates(key).sort((a,b)=>Number(working(b.group.employee,date))-Number(working(a.group.employee,date))||teamLeaderOptionScore(p,s,b)-teamLeaderOptionScore(p,s,a));if(!list.length)break;commit(s,list[0],p.month);}}
       for(const e of leaders){if(!working(e,date)||s.people.get(String(e.id)).days.has(Math.floor(Date.parse(date+'T12:00:00Z')/86400000)))continue;const list=[...byResource.entries()].filter(([key])=>key.startsWith(date+'|')&&!p.criticalCapacity.has(key)).flatMap(([key])=>candidates(key)).filter(r=>String(r.group.employee.id)===String(e.id)&&r.option[0].start>='18:00').sort((a,b)=>['O2','O1','O3'].indexOf(a.option[0].type)-['O2','O1','O3'].indexOf(b.option[0].type));if(list.length)commit(s,list[0],p.month);}
