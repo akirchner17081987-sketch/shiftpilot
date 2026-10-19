@@ -5,13 +5,37 @@
 Der technische Mehrbenutzertest mit zwei getrennten Chromium-Profilen ist bestanden.
 Die tatsächlichen aktuellen Verwaltungs- und Mitarbeiteroberflächen laufen gleichzeitig
 gegen einen gemeinsamen, synthetischen HTTP-Lesedienst. Die Personalnummer 119 in
-dieser Fixture bezeichnet eine fiktive Testperson. Es gab keine Anmeldung mit dem
-echten Mitarbeiter 119 oder einem echten Admin-Konto.
+dieser Fixture bezeichnet eine fiktive Testperson. Dieser automatisierte Teil
+verwendet keine produktiven Konten. Der anschließend gemeinsam ausgeführte
+Live-Sitzungstest ist unten getrennt dokumentiert.
 
 Zusätzlich wurden die bestehenden produktiven Datenbankfunktionen in vollständig
 zurückgerollten Fixtures geprüft. Die Datenbankrollen werden dabei tatsächlich
 gewechselt; die JWT-Anmeldekontexte sind simuliert. Dies ist kein echter
 Supabase-Auth-Login und kein Nachweis für einen parallelen Schreiblasttest.
+
+## Live-Ergänzung: Verwaltung und Mitarbeiterportal um 13:33–13:38 Uhr
+
+- Der Nutzer stellte eine tatsächlich angemeldete Verwaltungssitzung im Testbrowser
+  bereit. Die sichtbare Oberfläche bestätigte die Rolle Inhaber, die verbundene Cloud
+  und die laufende Tagesübersicht mit echten Daten.
+- Mitarbeiter 119 wurde über die normale Mitarbeiterübersicht gezielt gefunden.
+  Seine bestehenden QR-Buchungen konnten in der Verwaltungsansicht gefiltert und
+  ein konkreter Vergleichseintrag für das Mitarbeiterportal bestimmt werden.
+  Namen, konkrete Arbeitszeiten und weitere Personaldaten werden hier nicht publiziert.
+- Nach einem echten Neuladen blieb die Verwaltung angemeldet und startete auf der
+  Tagesübersicht.
+- Der Nutzer bestätigte die parallele Anmeldung im Mitarbeiterportal auf seinem
+  Handy und anschließend das erfolgreiche Aktualisieren nach dem angewiesenen
+  Wechsel von WLAN auf Mobilfunk ohne erneute Anmeldung. Dies ist ein vom Nutzer
+  durchgeführter und bestätigter Geräteversuch, keine autonome Handybedienung.
+- Anschließend zeigte die Verwaltung weiterhin „Cloud verbunden“ und einen aktuellen
+  Datenstand um 13:38 Uhr. Die mobile Sitzung störte die Verwaltungsanmeldung nicht.
+- Es wurden über die Live-Oberflächen keine Dienstpläne oder Zeitbuchungen geändert.
+
+Damit ist der Live-Verbindungs- und Sitzungstest mit parallel geöffneter Verwaltung
+und Mitarbeiterportal bestanden. Die Rückmeldung zum Netzwechsel belegt allein
+keinen unabhängigen numerischen Abgleich aller Handywerte und keinen Schreiblasttest.
 
 ## Browserprofile und Netzunterbrechung
 
@@ -74,14 +98,15 @@ Ausnahme. Die Datenbankprüfungen sind keine gleichzeitigen schreibenden Sitzung
 
 ## Noch nicht nachgewiesen
 
-1. Zwei tatsächlich angemeldete reale Konten (Admin und Mitarbeiter 119). Der
-   verfügbare Testbrowser hatte keine angemeldete Sitzung. Ein sicherer Login ist
-   für diesen eigenständigen Praxisschritt erforderlich; der technische Fixturetest
-   ersetzt diesen Nachweis nicht.
-2. Physischer WLAN-/Mobilfunkwechsel, Verhalten eines echten Handys im Hintergrund,
-   Betriebssystem-Sperrbildschirm und reales Scannen mit der Handykamera.
-3. Gleichzeitige schreibende Datenbanksitzungen unter Last.
-4. Vollständige Schichtübergabe über zwei echte Schichten.
+1. Gleichzeitige schreibende Datenbanksitzungen unter Last und ein Test mit zwei
+   nachweislich unterschiedlichen Auth-Identitäten. Die zwei realen Portal-/Geräte-
+   sitzungen wurden bestätigt; ihre zugrunde liegenden Auth-Identitäten wurden
+   nicht ausgelesen.
+2. Verhalten eines echten Handys im gesperrten Zustand bzw. Betriebssystem-
+   Hintergrund und reales Scannen mit der Handykamera. Der WLAN-/Mobilfunkwechsel
+   bei geöffneter Arbeitszeitansicht wurde inzwischen vom Nutzer bestätigt.
+3. Vollständige Schichtübergabe über zwei echte Schichten.
 
-Produktcode wurde für diese Prüfung nicht geändert. Der technische Test ist
-abgeschlossen; die oben genannten Praxisnachweise bleiben offen.
+Produktcode wurde für diese Prüfung nicht geändert. Der technische Zweiprofiltest
+und der gemeinsam durchgeführte Live-Verbindungs-/Sitzungstest sind abgeschlossen;
+die oben genannten weitergehenden Praxisnachweise bleiben offen.
