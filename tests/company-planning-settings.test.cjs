@@ -130,3 +130,9 @@ test('weekend target migration preserves OT weekdays, fixed cycles, personal lim
  assert.deepEqual(rows.find(r=>r.company_id==='primary').rules,{...rules,minFreeWeekendsPerMonth:0,weekendPlanningByRhythm:true});assert.deepEqual(rows.find(r=>r.company_id==='other').rules,rules);
  }finally{await db.close()}
 });
+
+test('9h settings render the real duration, 45-hour five-day week and 22-duty monthly budget',()=>{
+ const {ctx,body}=fixture();ctx.SFShiftModels.models[0].end='17:00';ctx.SFCompliance.policy.solidPlanningRules.otOnlyMonthlyMaxHours=200;ctx.SFPlanningRuleSettings.render(body);
+ const ot=body.innerHTML.split('data-ot-day-settings>')[1].split('</section>')[0];
+ assert.match(ot,/OT1 \/ OT2 \/ OT3 · 9 Stunden/);assert.match(ot,/45 Planungsstunden/);assert.match(ot,/22 volle 9-Stunden-Dienste/);assert.doesNotMatch(ot,/10.Stunden|50 Planungsstunden/);
+});
