@@ -244,6 +244,17 @@
     detail.addEventListener('toggle', () => { if (detail.isConnected && companyContext === overviewContext) overviewExpanded.set(key, detail.open); });
     return detail;
   }
+  function overviewGroup(host, key, title, description) {
+    let group = host.querySelector(':scope > [data-orbit-daily-group="' + key + '"]');
+    if (!group) {
+      group = document.createElement('section'); group.className = 'sf-orbit-daily-group'; group.dataset.orbitDailyGroup = key;
+      const head = document.createElement('header'), heading = document.createElement('h2'), note = document.createElement('p');
+      heading.id = 'sfDailyGroup-' + key; heading.textContent = title; note.textContent = description;
+      group.setAttribute('aria-labelledby', heading.id); head.append(heading, note);
+      const grid = document.createElement('div'); grid.className = 'sf-orbit-daily-grid'; group.append(head, grid); host.append(group);
+    }
+    return group.lastElementChild;
+  }
   function refreshOverview() {
     const root = shell?.querySelector('#sfTodayWorkspace');
     if (!root) return;
@@ -308,11 +319,26 @@
       kpis.dataset.orbitPrepared = 'true'; const figures = overviewDetail(kpis, 'figures', 'Weitere Tageszahlen');
       root.querySelector('.sf-td-layout')?.after(figures);
     }
-    const aside = root.querySelector('.sf-td-aside'), actions = root.querySelector('#sfTodayActions');
-    if (aside && actions?.parentElement !== aside) aside.prepend(actions);
-    overviewDetail(root.querySelector('#sfTodayTransitions'), 'transitions', 'Schichtwechsel · nächste 2 Stunden');
+    const actions = root.querySelector('#sfTodayActions'), people = root.querySelector('#sfTodayPeople'), layout = root.querySelector('.sf-td-layout');
+    const transitions = overviewDetail(root.querySelector('#sfTodayTransitions'), 'transitions', 'Schichtwechsel · nächste 2 Stunden');
     const coverage = overviewDetail(root.querySelector('#sfTodayCoverage'), 'coverage', 'Besetzung je Schicht');
-    overviewDetail(root.querySelector('.sf-td-shortcuts')?.closest('.sf-td-panel'), 'shortcuts', 'Weitere Aktionen');
+    const shortcuts = overviewDetail(root.querySelector('.sf-td-shortcuts')?.closest('.sf-td-panel'), 'shortcuts', 'Schnellzugriff');
+    const content = root.querySelector('#sfTodayContent');
+    if (content && layout && actions && people) {
+      const details = overviewGroup(content, 'details', 'Schichtdetails & Tageszahlen', 'Bei Bedarf aufklappen und gezielt weiterarbeiten.');
+      [coverage, transitions, root.querySelector('[data-orbit-detail="figures"]'), shortcuts].filter(Boolean).forEach(detail => {
+        if (detail.parentElement !== details) details.append(detail);
+      });
+      if (layout.children.length !== 2 || layout.firstElementChild !== actions || layout.lastElementChild !== people) layout.replaceChildren(actions, people);
+      const explanation = content.querySelector('.sf-td-explain');
+      if (explanation && explanation.previousElementSibling !== details.parentElement) details.parentElement.after(explanation);
+      const list = root.querySelector('#sfTodayPeopleList');
+      if (list && !list.hasAttribute('role')) { list.setAttribute('role', 'region'); list.setAttribute('aria-label', 'Einsätze und Anwesenheit'); list.tabIndex = 0; }
+    }
+    if (handoverDetail || marketDetail || legacyDetail) {
+      const team = overviewGroup(root, 'team', 'Übergabe & Zusammenarbeit', 'Offene Übergaben, Schichtangebote und Altbestand an einem Ort.');
+      [handoverDetail, marketDetail, legacyDetail].filter(Boolean).forEach(detail => { if (detail.parentElement !== team) team.append(detail); });
+    }
     syncStatusHub();
   }
 
