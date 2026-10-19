@@ -28,6 +28,7 @@
  }
  const allowsTransition=(from,to,p)=>!transitionError(from,to,p);
  const countsTowardCap=a=>!a._marketApproved;
+ const modelHours=t=>{const m=x=>Number(x.slice(0,2))*60+Number(x.slice(3,5));return ((m(t.end||t.default_end)-m(t.start||t.default_start)+1440)%1440)/60};
  function fixedWeeklyRoster(e,p){
   const rule=p?.fixedWeeklyRoster;
   return rule&&Array.isArray(rule.employeeIds)&&rule.employeeIds.map(String).includes(String(e._dbId||e.id))?rule:null;
@@ -62,7 +63,7 @@
   const monthMax=Number(p.monthlyMaxHours)||190,eightMax=Math.min(monthMax,Number(p.eightHourAutoMaxHours)||184),eightCount=Number(p.eightHourMaxShifts)||23,tenCount=Number(p.tenHourMaxShifts)||18;
   const fixed=fixedWeeklyRoster(e,p);
   if(p.monthlyHoursOnly){const cap=otOnly?otMaximum:monthMax;return{eightHourModel:eight,monthLimit:full?cap:Math.min(cap,target),calendarLimit:full?cap:Math.min(cap,target),maxMonthlyShifts:Infinity,weeklyLimit:weeklyLimit(e,p)};}
-  return{eightHourModel:eight,monthLimit:fixed?fixed.monthlyMaxHours:otOnly?otMaximum:full?(eight?eightMax:monthMax):Math.min(monthMax,target),calendarLimit:fixed?fixed.monthlyMaxHours:otOnly?otMaximum:full?monthMax:Math.min(monthMax,target),maxMonthlyShifts:fixed?fixed.maxMonthlyShifts:otOnly?Math.floor(otMaximum/10):eight?eightCount:tenCount,weeklyLimit:weeklyLimit(e,p)};
+  return{eightHourModel:eight,monthLimit:fixed?fixed.monthlyMaxHours:otOnly?otMaximum:full?(eight?eightMax:monthMax):Math.min(monthMax,target),calendarLimit:fixed?fixed.monthlyMaxHours:otOnly?otMaximum:full?monthMax:Math.min(monthMax,target),maxMonthlyShifts:fixed?fixed.maxMonthlyShifts:otOnly?Math.floor(otMaximum/Math.max(1,...allowed.map(modelHours))):eight?eightCount:tenCount,weeklyLimit:weeklyLimit(e,p)};
  }
  function confirmedErrors(e,rows,p,affected){
   const weekCap=weeklyLimit(e,p);p=employeeRules(e,p);
@@ -134,7 +135,8 @@
    for(const d of days){const available=crew.filter(e=>choices.get(String(e.id))?.get(d)?.some(a=>otCodes.includes(a.type))).length,filled=new Set(base.filter(a=>active(a)&&a.date===d&&otCodes.includes(a.type)&&crew.some(e=>String(e.id)===String(a.employeeId))).map(a=>String(a.employeeId))).size;capacity.set(d,Math.max(0,available+filled-rosterMinimum(p)))}
    const tasks=crew.map(e=>{
     const own=base.filter(a=>active(a)&&String(a.employeeId)===String(e.id)).map(a=>duty(a,p)),started=own.filter(a=>a.date.startsWith(month)),begin=instant(month+'-01','00:00',p.timezone),endDate=new Date(month+'-01T12:00Z');endDate.setUTCMonth(endDate.getUTCMonth()+1);const end=instant(endDate.toISOString().slice(0,10),'00:00',p.timezone);
-    const calendar=own.reduce((n,a)=>n+Math.max(0,Math.min(a.endMs,end)-Math.max(a.startMs,begin))/H,0),slots=Math.max(0,Math.min((e.maxMonthlyShifts??Infinity)-started.filter(countsTowardCap).length,Math.floor(((e.monthLimit??Infinity)-started.reduce((n,a)=>n+a.hours,0)+1e-6)/10),Math.floor(((e.calendarLimit??Infinity)-calendar+1e-6)/10)));
+    const candidateHours=days.flatMap(d=>(choices.get(String(e.id))?.get(d)||[]).filter(a=>otCodes.includes(a.type)).map(a=>duty(a,p).hours)).filter(h=>h>0),shiftHours=candidateHours.length?Math.min(...candidateHours):10;
+    const calendar=own.reduce((n,a)=>n+Math.max(0,Math.min(a.endMs,end)-Math.max(a.startMs,begin))/H,0),slots=Math.max(0,Math.min((e.maxMonthlyShifts??Infinity)-started.filter(countsTowardCap).length,Math.floor(((e.monthLimit??Infinity)-started.reduce((n,a)=>n+a.hours,0)+1e-6)/shiftHours),Math.floor(((e.calendarLimit??Infinity)-calendar+1e-6)/shiftHours)));
     const available=days.filter(d=>choices.get(String(e.id))?.get(d)?.some(a=>otCodes.includes(a.type)));
     return {id:String(e.id),left:Math.max(0,available.length-slots),candidates:available.filter(d=>[1,5].includes(weekday(d))&&capacity.get(d)>0&&!(required(d,'OT1',base,p)||required(d,'OT3',base,p))),off:new Set(),weeks:new Set()};
    }).filter(t=>t.left>0);
@@ -162,7 +164,8 @@
 
   const durations=types.filter(t=>!['OT1','OT2','OT3'].includes(t.id)).map(t=>{const m=x=>Number(x.slice(0,2))*60+Number(x.slice(3,5));return(m(t.end)-m(t.start)+1440)%1440});
   const model=[];if(!p.monthlyHoursOnly){if(durations.some(m=>m>480))model.push(`über 8 h: ${p.tenHourMaxShifts??18} automatische Dienste`);if(durations.some(m=>m>0&&m<=480))model.push(`8 h: ${p.eightHourMaxShifts??23} automatische Dienste / ${Math.min(p.monthlyMaxHours??190,p.eightHourAutoMaxHours??184)} h`);}
-  if(p.otOnlyMonthlyMaxHours!=null&&types.some(t=>['OT1','OT2','OT3'].includes(t.id)))model.push(`Tagdienst OT1 / OT2 / OT3 · 10 h je Dienst: ${p.otOnlyMonthlyMaxHours} h/Monat, ${p.otOnlyMaxCalendarWeekHours??p.maxCalendarWeekHours??40} h/Woche, ${p.otOnlyMaxConsecutiveShifts??p.maxConsecutiveShifts??4} Dienste am Stück, ${p.otOnlyMinFreeCalendarDays??p.minFreeCalendarDays??2} freie Tage und ${p.otOnlyMinBlockRestHours??p.minBlockRestHours??48} h zwischen Blöcken (normale OT ausgenommen)`);
+  const otHours=[...new Set(types.filter(t=>t.active!==false&&otCodes.includes(t.id||t.code)).map(modelHours))].sort((a,b)=>a-b),otDuration=otHours.length===1?otHours[0]:otHours.length?otHours[0]+'–'+otHours.at(-1):10;
+  if(p.otOnlyMonthlyMaxHours!=null&&types.some(t=>otCodes.includes(t.id||t.code)))model.push(`Tagdienst OT1 / OT2 / OT3 · ${otDuration} h je Dienst: ${p.otOnlyMonthlyMaxHours} h/Monat, ${p.otOnlyMaxCalendarWeekHours??p.maxCalendarWeekHours??40} h/Woche, ${p.otOnlyMaxConsecutiveShifts??p.maxConsecutiveShifts??4} Dienste am Stück, ${p.otOnlyMinFreeCalendarDays??p.minFreeCalendarDays??2} freie Tage und ${p.otOnlyMinBlockRestHours??p.minBlockRestHours??48} h zwischen Blöcken (normale OT ausgenommen)`);
   if(p.teamLeaderMaxConsecutiveNightShifts!=null)model.push(`Teamleiter: höchstens ${p.teamLeaderMaxConsecutiveNightShifts} Nächte am Stück${p.teamLeaderPreferredNightBlockLength!=null?`, bevorzugt ${p.teamLeaderPreferredNightBlockLength}`:''}${p.teamLeaderMinNightRecoveryCalendarDays!=null?`; danach ${p.teamLeaderMinNightRecoveryCalendarDays} vollständig freie Kalendertage und mindestens ${p.minBlockRestHours??48} h Ruhe`:''}${p.teamLeaderMinimumMonthlyHours!=null?`; Monatsziel zuerst ${p.teamLeaderMinimumMonthlyHours} h, anschließend Vertrags-SOLL (persönliche niedrigere Grenzen bleiben verbindlich)`:''}; Wochenmaximum bleibt verbindlich`);
   if(p.threeNightBlockRecoveryFullCalendarDays!=null)model.push(`Fester 4 Arbeit / 3 frei / 3 Arbeit / 2 frei: nach genau drei Nächten Schlaftag plus ${p.threeNightBlockRecoveryFullCalendarDays} voller freier Tag; nach vier Nächten Schlaftag plus ${p.minNightRecoveryCalendarDays??2} volle freie Tage; mindestens ${p.minBlockRestHours??48} h Ruhe`);
   if(otWeekendMinimum(p)>0)model.push(`OT am Samstag und Sonntag: mindestens ${otWeekendMinimum(p)} unterschiedliche Mitarbeiter je Tag; vor der Übernahme vollständig besetzen`);
