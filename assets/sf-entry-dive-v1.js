@@ -5,6 +5,8 @@
   if (!root) return;
   let preparing = null, stopActive = null;
   function prepare() {
+    // Share the actual daily overview's night atlas, without delaying login.
+    window.SFRegionAtlas?.prepare();
     if (window.SFLocationMapEngine) return Promise.resolve(window.SFLocationMapEngine);
     if (!preparing) preparing = new Promise(resolve => {
       const script = document.createElement('script');
@@ -54,6 +56,13 @@
     const germany = land.features.find(feature => feature.properties?.id === 'DEU');
     const cameraTarget = target || (germany ? d3.geoCentroid(germany) : [10.5,51.1]);
     let width = root.clientWidth, height = root.clientHeight, frame = 0, disposed = false, last = 0;
+    const atlasCanvas = document.createElement('canvas'), atlasContext = atlasCanvas.getContext('2d');
+    const atlasProjection = d3.geoMercator().precision(.15);
+    let atlasReady = false, atlasKey = '', atlasRevealAt = 3450;
+    const atlas = window.SFRegionAtlas?.create(engine, {onReady(ready) {
+      atlasReady = !!ready;atlasRevealAt = Math.max(3450,performance.now() - started);
+      if (!disposed) draw(performance.now());
+    }});
     const started = performance.now();
     const clamp = value => Math.max(0,Math.min(1,value));
     const ease = value => { value = clamp(value); return value * value * (3 - 2 * value); };
@@ -62,6 +71,10 @@
       const ratio = Math.min(devicePixelRatio || 1,2);
       canvas.width = Math.round(width * ratio);canvas.height = Math.round(height * ratio);
       ctx.setTransform(ratio,0,0,ratio,0,0);
+      // Fixed dimensions throughout the animation keep the city lights stable.
+      const atlasRatio = Math.min(ratio,Math.sqrt(1000000 / Math.max(1,width * height)));
+      atlasCanvas.width = Math.max(1,Math.round(width * atlasRatio));atlasCanvas.height = Math.max(1,Math.round(height * atlasRatio));
+      atlasContext?.setTransform(atlasRatio,0,0,atlasRatio,0,0);atlasKey = '';
     }
     function draw(now) {
       const t = now - started, move = ease((t - 350) / 1900);
@@ -74,7 +87,12 @@
       const lat = 21 * (1 - move) + cameraTarget[1] * move;
       const center = [lon,lat];
       projection.rotate([-lon,-lat,0]).translate([cx,cy]).scale(radius);
-      ctx.clearRect(0,0,width,height);ctx.save();ctx.globalAlpha = 1 - ease((t - 4350) / 1450);
+      const atlasBlend = atlasReady && atlasContext ? ease((t - atlasRevealAt) / 1250) : 0;
+      canvas.dataset.phase = atlasBlend >= 1 ? 'atlas' : atlasBlend > 0 ? 'transforming' : 'globe';
+      canvas.dataset.atlasBlend = atlasBlend.toFixed(3);
+      // Keep the finished map visible until the entry itself fades into the workspace.
+      ctx.clearRect(0,0,width,height);ctx.save();
+      if (atlasBlend < 1) {
       const originalSurface=surface?.render(ctx,projection,width,height,t);
       if(!originalSurface){
       const halo = ctx.createRadialGradient(cx,cy,radius * .75,cx,cy,radius * 1.25);
@@ -104,12 +122,25 @@
         ctx.save();ctx.translate(cx,cy);ctx.rotate(-.3);ctx.beginPath();ctx.ellipse(0,0,radius * 1.16,radius * .3,0,0,Math.PI * 2);
         ctx.strokeStyle = `rgba(94,201,205,${.23 * (1 - zoom / .4)})`;ctx.lineWidth = .7;ctx.stroke();ctx.restore();
       }
+      }
+      if (atlasBlend > 0) {
+        // The local scale of Mercator matches the zoomed sphere at its center.
+        // Both the terrain and its labels come from the shared atlas renderer.
+        atlasProjection.center(center).translate([cx,cy]).scale(radius * Math.cos(lat * Math.PI / 180));
+        const key = [width,height,lon,lat,radius].join('|');
+        if (key !== atlasKey) {
+          atlasContext.clearRect(0,0,width,height);
+          atlas.render(atlasContext,atlasProjection,width,height,{top:35});atlasKey = key;
+        }
+        ctx.save();ctx.globalAlpha *= atlasBlend;ctx.drawImage(atlasCanvas,0,0,width,height);ctx.restore();
+      }
       if (target && d3.geoDistance(center,target) < Math.PI / 2) {
-        const pin = projection(target), pulse = (Math.sin(now * .002) + 1) / 2;
-        ctx.save();ctx.shadowColor = '#8affe3';ctx.shadowBlur = 16;ctx.fillStyle = '#bdfff0';
-        ctx.beginPath();ctx.arc(pin[0],pin[1],3 + zoom * 9,0,Math.PI * 2);ctx.fill();ctx.shadowBlur = 0;
-        ctx.strokeStyle = `rgba(123,255,224,${.6 - pulse * .3})`;ctx.lineWidth = 1;
-        ctx.beginPath();ctx.arc(pin[0],pin[1],10 + pulse * 8 + zoom * 70,0,Math.PI * 2);ctx.stroke();
+        const globePin = projection(target), mapPin = atlasBlend ? atlasProjection(target) : globePin;
+        const pin = globePin.map((value,index)=>value+(mapPin[index]-value)*atlasBlend), pulse = (Math.sin(now * .002) + 1) / 2;
+        ctx.save();ctx.shadowColor = '#18d2ef';ctx.shadowBlur = 16;ctx.fillStyle = '#b5f5ff';
+        ctx.beginPath();ctx.arc(pin[0],pin[1],(3 + zoom * 9) * (1 - atlasBlend) + 3.3 * atlasBlend,0,Math.PI * 2);ctx.fill();ctx.shadowBlur = 0;
+        ctx.strokeStyle = `rgba(24,210,239,${.6 - pulse * .3})`;ctx.lineWidth = 1;
+        ctx.beginPath();ctx.arc(pin[0],pin[1],(10 + pulse * 8 + zoom * 70) * (1 - atlasBlend) + (10 + pulse * 6) * atlasBlend,0,Math.PI * 2);ctx.stroke();
         if (t > 1100 && t < 3750) {
           ctx.fillStyle = `rgba(203,246,238,${ease((t - 1100) / 550) * (1 - ease((t - 3250) / 500))})`;
           ctx.font = '12px Inter,system-ui,sans-serif';ctx.textAlign = 'left';ctx.fillText(site.name,pin[0] + 22,pin[1] - 15);
@@ -125,7 +156,7 @@
       if (now - started < 6000) frame = requestAnimationFrame(tick);
     }
     const observer = new ResizeObserver(resize);observer.observe(root);
-    stopActive = () => { disposed = true;surface?.dispose();cancelAnimationFrame(frame);observer.disconnect();canvas.remove(); };
+    stopActive = () => { disposed = true;surface?.dispose();atlas?.dispose();atlasCanvas.width=atlasCanvas.height=1;cancelAnimationFrame(frame);observer.disconnect();canvas.remove(); };
     resize();draw(started);frame = requestAnimationFrame(tick);
     return true;
   }
