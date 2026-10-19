@@ -64,7 +64,7 @@
       const own=current().filter(a=>a.date===date&&a.type==='OT1'&&a.status!=='CANCELLED').length;
       if(code==='OT1')return Math.min(raw,own);
       return raw+Math.max(0,M.rawRequired(date,'OT1',typeof globalSoll==='undefined'?0:globalSoll.OT1||0)-own);
-    }return raw;
+    }return code==='OT'&&window.SFSolidPlanningCore?.weekday(date)>5?Math.max(Number(raw)||0,window.SFSolidPlanningCore.otWeekendMinimum?.(rules)||0):raw;
   };
   M.normalizeMorningOt=(proposed,base=typeof assignments==='undefined'?[]:assignments)=>{
     for(const a of proposed){if(a.type!=='OT1'&&!a._morningOt1)continue;const type=M.morningOtSwitch(a.date,[...base,...proposed])?'OT2':'OT1';if(a.type===type)continue;

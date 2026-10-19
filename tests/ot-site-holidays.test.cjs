@@ -10,6 +10,17 @@ test('unknown site gets national holidays only and invalid dates fail closed',()
  assert.equal(api.applies('2027-11-01',[api.siteState('',mapping)]),false);assert.equal(api.applies('2027-02-30',['SN']),false);
 });
 function browser(){const c={window:{SFCompliance:{policy:{solidPlanningRules:{otHolidayStatesBySite:mapping}}}},document:{readyState:'loading',addEventListener(){}}};vm.runInNewContext(source,c);return c;}
+test('weekend OT demand cannot fall below the fixed minimum through optional or daily targets',()=>{
+ const c=browser();c.window.SFBackend={companyId:'co'};c.sessionStorage={getItem:()=>null};c.TYPES=[];c.globalSoll={OT:1};c.dailySoll={'2027-01-02':{OT:0},'2027-01-03':{OT:1}};c.assignments=[];c.selectedType=null;c.document.getElementById=()=>null;
+ vm.runInNewContext(fs.readFileSync(require.resolve('../assets/solid-planning-core-v1.js'),'utf8'),c);
+ Object.assign(c.window.SFCompliance.policy.solidPlanningRules,{enabled:true,criticalShifts:[{code:'OT',minimum:3,weekdays:[6,7]}]});
+ vm.runInNewContext(fs.readFileSync(require.resolve('../assets/shift-models-v1.js'),'utf8'),c);
+ const m=c.window.SFShiftModels;m.apply([{code:'OT',active:true,default_start:'08:00',default_end:'18:00',optional_weekdays:[6,7],planning_mode:'optional'}],'co');
+ assert.equal(m.requiredSoll('2027-01-02','OT',0),3);assert.equal(m.requiredSoll('2027-01-03','OT',1),3);
+ c.dailySoll['2027-01-02'].OT=5;assert.equal(m.requiredSoll('2027-01-02','OT',1),5);
+ assert.equal(m.requiredSoll('2027-01-04','OT',1),0);
+ c.window.SFCompliance.policy.solidPlanningRules={};assert.equal(m.requiredSoll('2027-01-03','OT',1),1,'other company policies keep their own demand');
+});
 test('holiday eligibility uses employee assignment site while total demand sees both sites',()=>{
  const c=browser(),p=c.window.SFOtPolicy;assert.equal(p.applies('2027-11-01'),true);
  assert.equal(p.applies('2027-11-01',{team:'Leipzig'}),false);assert.equal(p.applies('2027-11-01',{qualifications:['__sp:team=Recklinghausen']}),true);

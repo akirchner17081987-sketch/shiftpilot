@@ -18,7 +18,8 @@
     const original=root.getSoll,wrapped=function(date,type){
       if(['OT1','OT2','OT3'].includes(String(type).toUpperCase())&&root.SFSolidPlanningCore?.otDayHoliday(date,root.SFCompliance?.policy?.solidPlanningRules))return 0;
       if(String(type).toUpperCase()==='OT'&&!applies(date))return 0;
-      return original.apply(this,arguments);
+      const value=original.apply(this,arguments),core=root.SFSolidPlanningCore;
+      return String(type).toUpperCase()==='OT'&&core?.weekday(date)>5?Math.max(Number(value)||0,core.otWeekendMinimum?.(root.SFCompliance?.policy?.solidPlanningRules)||0):value;
     };
     wrapped.__otPolicy=true;wrapped.__original=original;root.getSoll=wrapped;return true;
   }
@@ -26,7 +27,8 @@
     const settings=document.getElementById('view-settings');if(!settings)return;
     let note=settings.querySelector('.sp-ot-policy-hint');
     if(!note){const target=[...settings.querySelectorAll('input[data-soll], label, .setting-row, .section-box, .card')].find(el=>/\bOT\b/.test(el.textContent||''));if(!target)return;note=document.createElement('div');note.className='sp-ot-policy-hint';target.insertAdjacentElement('afterend',note);}
-    note.innerHTML=rules()?'<b>OT-Regel</b><span>OT gilt samstags, sonntags und an gesetzlichen Feiertagen am hinterlegten Einsatzort: Leipzig (Sachsen), Recklinghausen (NRW). An bundesweiten Feiertagen sowie Feiertagen in Sachsen oder NRW entfällt der Pflichtbedarf für OT1/OT2/OT3; stattdessen gilt die normale OT-Besetzung.</span>':'<b>OT-Regel</b><span>OT gilt samstags, sonntags und an den für dieses Unternehmen hinterlegten Feiertagen.</span>';
+    const minimum=root.SFSolidPlanningCore?.otWeekendMinimum?.(root.SFCompliance?.policy?.solidPlanningRules)||0;
+    note.innerHTML=(minimum?`<b>Feste OT-Wochenendregel</b><span>Samstag und Sonntag: jeweils mindestens ${minimum} unterschiedliche OT-Mitarbeiter. Niedrigere Tageswerte heben diese Pflicht nicht auf.</span>`:'')+(rules()?'<b>OT-Regel</b><span>OT gilt samstags, sonntags und an gesetzlichen Feiertagen am hinterlegten Einsatzort: Leipzig (Sachsen), Recklinghausen (NRW). An bundesweiten Feiertagen sowie Feiertagen in Sachsen oder NRW entfällt der Pflichtbedarf für OT1/OT2/OT3; stattdessen gilt die normale OT-Besetzung.</span>':'<b>OT-Regel</b><span>OT gilt samstags, sonntags und an den für dieses Unternehmen hinterlegten Feiertagen.</span>');
   }
   function init(){
     let tries=0;const timer=setInterval(()=>{tries++;const ok=installPolicy();addSettingsHint();if(ok||tries>30){clearInterval(timer);root.renderCalendar?.();root.updateStats?.();}},100);
