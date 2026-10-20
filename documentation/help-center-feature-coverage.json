@@ -1,5 +1,5 @@
 {
-  "reviewedAt": "2026-10-20",
+  "reviewedAt": "2026-10-21",
   "sourceCommit": "80485ff3eb6e003ab4cd1f329f118118d0d103bc",
   "addedArticles": [
     {
@@ -1297,6 +1297,14 @@
       "sources": [
         "assets/audit-archives-v1.js",
         "database/audit-weekly-archives-v1.sql"
+      ]
+    },
+    {
+      "category": "auto",
+      "question": "Wie verteile ich Arbeitsblöcke als versetzte Treppe?",
+      "sources": [
+        "assets/rhythm-staggering-v1.js",
+        "assets/rhythm-staggering-core-v1.js"
       ]
     }
   ],
@@ -2617,6 +2625,18 @@
       "area": "Audit-Wochenarchive, Export und Wiederherstellung",
       "category": "access",
       "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/rhythm-staggering-v1.js",
+      "category": "auto",
+      "area": "Bedarfsgerechte individuelle Rhythmusstaffelung",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/rhythm-staggering-core-v1.js",
+      "category": "auto",
+      "area": "Bedarfsgerechte individuelle Rhythmusstaffelung",
+      "kind": "feature-or-support"
     }
   ],
   "categoryCoverage": [
@@ -2782,7 +2802,8 @@
         "Was zeigt der Status bei „Als Entwurf übernehmen“?",
         "Welche aufsteigenden und absteigenden Schichtwechsel sind erlaubt?",
         "Welche bestehenden Dienste berücksichtigt ein neu geplanter Monat?",
-        "Wie lernt die Planung aus meinen Dienstkorrekturen?"
+        "Wie lernt die Planung aus meinen Dienstkorrekturen?",
+        "Wie verteile ich Arbeitsblöcke als versetzte Treppe?"
       ]
     },
     {
@@ -3177,13 +3198,13 @@
     "entry": "index.html"
   },
   "currentAudit": {
-    "date": "2026-10-20",
+    "date": "2026-10-21",
     "baselineArticleCount": 211,
-    "addedArticleCount": 36,
+    "addedArticleCount": 37,
     "correctedArticleCount": 8,
-    "articleCount": 247,
+    "articleCount": 248,
     "categoryCount": 22,
-    "assetJavaScriptCount": 219
+    "assetJavaScriptCount": 221
   },
   "incrementalUpdate": {
     "date": "2026-10-20",

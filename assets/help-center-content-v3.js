@@ -1,4 +1,4 @@
-// Aktive SchichtFunk-Hilfe: Funktionsabgleich · 20.10.2026.
+// Aktive SchichtFunk-Hilfe: Funktionsabgleich · 21.10.2026.
 window.SFHelpContent = {
   "categories": [
     [
@@ -631,6 +631,10 @@ window.SFHelpContent = {
       [
         "Wie lernt die Planung aus meinen Dienstkorrekturen?",
         "Nach dem Bearbeiten eines bestehenden Dienstes erscheint „Aus Änderung lernen“. Wähle eine wiederkehrende Schichtpräferenz, eine zu vermeidende Dienstfolge oder eine angebotene Teamkombination. Erst „Präferenz bestätigen“ speichert den Vorschlag zentral für das aktuelle Unternehmen. Die Präferenz gilt für den angezeigten Wochentag und unterstützt neue Vorschläge zusätzlich zu den verbindlichen Regeln. Einmalige Korrekturen überspringst du. Im Planungsassistenten führt „Lernpräferenzen verwalten“ zur Liste; dort kannst du jede Präferenz pausieren, aktivieren oder löschen. Bestehende Dienste werden dadurch nicht geändert. In der Demo wird nur lokal gespeichert."
+      ],
+      [
+        "Wie verteile ich Arbeitsblöcke als versetzte Treppe?",
+        "Identische verbindliche Rhythmen mit demselben Startdatum führen zu gemeinsamen Arbeits- und Freitagen. Inhaber oder Administratoren aktivieren unter Einstellungen → Planung → Automatische Rhythmusstaffelung die Staffelungsvorschläge separat für das ausgewählte Unternehmen. Danach unter Auto-Planung einen einzelnen Monat wählen, Wochenstunden berücksichtigen und „Staffelung berechnen“ starten. Die Suche vergleicht vollständige Blöcke mit echten Besetzungsbedarfen, Freigaben, Abwesenheiten, Ruhezeiten und Stundenlimits. Prüfe die Vorher/Nachher-Lücken und die Rhythmustreppe. „Einstiege übernehmen“ speichert die vorgeschlagenen individuellen Einstiege gemeinsam; anschließend die Monatsplanung neu berechnen. Muster und persönliche Grenzen bleiben bestehen. Mitarbeiter mit gespeicherten Diensten werden nicht verschoben. Unterstützt werden bis zu 30 individuelle verbindliche ALLE/FREI-Tageszyklen; zentrale Team- oder Unternehmensrhythmen werden weiterhin in ihren eigenen Einstellungen gepflegt. Deaktivieren blendet die Vorschläge aus, setzt bereits übernommene Einstiege aber nicht zurück. Eine Staffelung kann fehlende Gesamtkapazität oder unpassende Blocklängen nicht ausgleichen und garantiert keine vollständige Besetzung."
       ]
     ],
     "reports": [
