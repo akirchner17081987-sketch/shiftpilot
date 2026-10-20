@@ -1306,6 +1306,15 @@
         "assets/rhythm-staggering-v1.js",
         "assets/rhythm-staggering-core-v1.js"
       ]
+    },
+    {
+      "category": "schedule",
+      "question": "Wie plane ich trotz eines freien Rhythmustags einen zusätzlichen Dienst?",
+      "sources": [
+        "assets/manual-rhythm-exceptions-v1.js",
+        "assets/compliance-core-v2.js",
+        "assets/compliance-workflow-v2.js"
+      ]
     }
   ],
   "moduleInventory": [
@@ -2637,6 +2646,12 @@
       "category": "auto",
       "area": "Bedarfsgerechte individuelle Rhythmusstaffelung",
       "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/manual-rhythm-exceptions-v1.js",
+      "category": "schedule",
+      "area": "Bewusste manuelle Rhythmusausnahme je Dienst",
+      "kind": "feature-or-support"
     }
   ],
   "categoryCoverage": [
@@ -2696,7 +2711,8 @@
         "Was bedeutet Überbesetzung?",
         "Für welchen Zeitraum wird ein Dienstplan veröffentlicht?",
         "Wo sehe ich Planänderungen und ausstehende Rückmeldungen?",
-        "Kann ich einen ganzen Planungsmonat löschen?"
+        "Kann ich einen ganzen Planungsmonat löschen?",
+        "Wie plane ich trotz eines freien Rhythmustags einen zusätzlichen Dienst?"
       ]
     },
     {
@@ -3200,11 +3216,11 @@
   "currentAudit": {
     "date": "2026-10-21",
     "baselineArticleCount": 211,
-    "addedArticleCount": 37,
+    "addedArticleCount": 38,
     "correctedArticleCount": 8,
-    "articleCount": 248,
+    "articleCount": 249,
     "categoryCount": 22,
-    "assetJavaScriptCount": 221
+    "assetJavaScriptCount": 222
   },
   "incrementalUpdate": {
     "date": "2026-10-20",

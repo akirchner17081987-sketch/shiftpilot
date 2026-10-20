@@ -259,6 +259,10 @@ window.SFHelpContent = {
       [
         "Kann ich einen ganzen Planungsmonat löschen?",
         "Inhaber und Administratoren können die gesonderte Löschfunktion für den ausgewählten Monat öffnen. Die Vorschau zeigt betroffene gespeicherte und ungespeicherte Dienste sowie Marktplatzangebote. Abgeschlossene Monate und Monate mit erfassten Arbeitszeiten oder QR-Nachweisen sind gesperrt. Andere Monate, Mitarbeiter, Abwesenheiten und SOLL-Vorgaben bleiben erhalten. Eine Nachtschicht gehört zu ihrem Startmonat. Die bestätigte Löschung ist unwiderruflich."
+      ],
+      [
+        "Wie plane ich trotz eines freien Rhythmustags einen zusätzlichen Dienst?",
+        "Wähle den Mitarbeiter bei der manuellen Dienstzuweisung im Dienstplan aus. „Laut Rhythmus frei“ wird bei erlaubten manuellen Rhythmusausnahmen als Hinweis angezeigt. Gib eine Begründung ein und bestätige „Trotzdem einplanen“. Die Ausnahme gilt nur für diesen Dienst; sein Rhythmus wird nicht geändert. Sie wird mit dem Dienst gespeichert und im Audit protokolliert. „Rhythmus bearbeiten“ öffnet die dauerhafte Mitarbeitervorgabe. Inhaber und Administratoren können unter Einstellungen → Planung → Manuelle Rhythmusausnahmen neue Ausnahmen für das aktuelle Unternehmen abschalten; standardmäßig sind sie für Planungsberechtigte erlaubt. Bestätigte Ausnahmen bleiben beim Optimieren als bestehende Dienste geschützt. Die Auto-Planung darf selbst keine Rhythmusausnahmen erzeugen. Andere Prüfungen wie Schichtfreigaben, Abwesenheiten, Überschneidungen und Erholung bleiben wirksam. Für veröffentlichte Pläne gelten zusätzlich der bestehende Änderungsablauf und erforderliche Freigaben."
       ]
     ],
     "employees": [

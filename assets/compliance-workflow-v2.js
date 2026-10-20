@@ -4,7 +4,7 @@
 
   C.snapshot=a=>a?{
     id:a.id,employeeId:a.employeeId,type:a.type,date:a.date,start:a.start,end:a.end,
-    pause:Number(a.pause||0),note:a.note||'',version:Number(a.version||1),publishedAt:a.publishedAt||null
+    pause:Number(a.pause||0),note:a.note||'',rhythmOverride:a.rhythmOverride||null,version:Number(a.version||1),publishedAt:a.publishedAt||null
   }:null;
 
   C.requestStatus=(result,approvals={})=>{
@@ -40,14 +40,14 @@
 
   C.directSave=(emp,type,date,start,end,extra={})=>{
     const existing=extra.ignoreId?assignments.find(x=>x.id===extra.ignoreId):null;
-    const c=C.check(emp,type,date,start,end,existing?.id||null);
+    const c=(C.manualCheck||C.check)(emp,type,date,start,end,existing?.id||null);
     if(c.hard.length){alert('Zuweisung nicht möglich:\n\n'+c.hard.join('\n'));return false}
     if(c.soft.length&&!extra.softConfirmed){C.openPlausibilityDialog(c.soft,()=>C.directSave(emp,type,date,start,end,{...extra,softConfirmed:true}));return false}
     const learningBefore=existing?{...existing}:null;
     if(existing){
-      Object.assign(existing,{employeeId:emp.id,type,date,start,end,pause:Number(extra.pause||0),note:extra.note||'',version:Number(existing.version||1)+1});
+      Object.assign(existing,{employeeId:emp.id,type,date,start,end,pause:Number(extra.pause||0),note:extra.note||'',rhythmOverride:extra.rhythmOverride||null,version:Number(existing.version||1)+1});
     }else{
-      assignments.push({id:C.uid('as'),employeeId:emp.id,type,date,start,end,pause:Number(extra.pause||0),note:extra.note||'',version:1});
+      assignments.push({id:C.uid('as'),employeeId:emp.id,type,date,start,end,pause:Number(extra.pause||0),note:extra.note||'',rhythmOverride:extra.rhythmOverride||null,version:1});
     }
     C.audit(existing?'SHIFT_UPDATED_DRAFT':'SHIFT_CREATED_DRAFT',existing?.id||null,{employeeId:emp.id,type,date,start,end});
     C.refresh();
@@ -59,11 +59,21 @@
 
   C.save=(emp,type,date,start,end,extra={})=>{
     const assignment=extra.ignoreId?assignments.find(x=>x.id===extra.ignoreId):null;
+    const M=window.SFManualRhythm;
+    if(M){
+      if(M.isBusy()||window.SFBackend?.teamRhythmSaving){C.toast?.('Speicherung läuft','Bitte kurz warten.');return false;}
+      const check=C.manualCheck(emp,type,date,start,end,assignment?.id||null);
+      if(check.hard.length){C.toast?.('Zuweisung nicht möglich',check.hard.join(' '));return false;}
+      const accepted=M.matches(assignment,emp,type,date,start,end);
+      if(check.rhythmConflict&&!accepted&&!extra.rhythmOverride?.reason){const rhythmLegacyId=assignment?.id||C.uid('manual-rhythm-');M.confirm(emp,type,date,start,end,check,reason=>C.save(emp,type,date,start,end,{...extra,rhythmLegacyId,rhythmOverride:{reason},softConfirmed:true}));return false;}
+      if(accepted&&!extra.rhythmOverride)extra={...extra,rhythmOverride:assignment.rhythmOverride};
+      if(check.rhythmConflict&&!accepted&&extra.rhythmOverride?.reason&&!C.isPublished(assignment)&&!C.isWeekPublished(date))return M.persistDraft(emp,type,date,start,end,extra);
+    }
     const published=assignment?C.isPublished(assignment):C.isWeekPublished(date);
     if(!published)return C.directSave(emp,type,date,start,end,extra);
     C.openChangeDrawer?.({
       action:assignment?'UPDATE':'CREATE',assignment,employeeId:emp.id,type,date,start,end,
-      pause:Number(extra.pause||0),note:extra.note||''
+      pause:Number(extra.pause||0),note:extra.note||'',rhythmOverride:extra.rhythmOverride||null
     });
     return false;
   };
@@ -78,7 +88,7 @@
       employeeId:payload.employeeId||assignment?.employeeId||null,
       type:payload.type||assignment?.type||null,date:payload.date||assignment?.date||null,
       old:C.snapshot(assignment),
-      proposed:payload.action==='DELETE'?null:{employeeId:payload.employeeId,type:payload.type,date:payload.date,start:payload.start,end:payload.end,pause:Number(payload.pause||0),note:payload.note||''},
+      proposed:payload.action==='DELETE'?null:{employeeId:payload.employeeId,type:payload.type,date:payload.date,start:payload.start,end:payload.end,pause:Number(payload.pause||0),note:payload.note||'',rhythmOverride:payload.rhythmOverride||null},
       baseVersion:Number(assignment?.version||0),reasonCode:form.reasonCode,reasonText:form.reasonText||'',predictable:form.predictable||'UNKNOWN',
       requestedAt:new Date().toISOString(),requestedBy:'Administrator',noticeHours:null,
       complianceStatus:result.level,findings:result.findings,approvals,status:'DRAFT',appliedAt:null,rejectedAt:null
@@ -95,7 +105,7 @@
   C.latestCheckForRequest=req=>C.complianceCheck({
     action:req.action,assignment:req.assignmentId?assignments.find(a=>a.id===req.assignmentId):null,
     employeeId:req.proposed?.employeeId||req.employeeId,type:req.proposed?.type||req.type,date:req.proposed?.date||req.date,
-    start:req.proposed?.start,end:req.proposed?.end
+    start:req.proposed?.start,end:req.proposed?.end,rhythmOverride:req.proposed?.rhythmOverride||null
   });
 
   C.applyRequest=id=>{
@@ -163,7 +173,7 @@
   function personRows(type,date,start,end,q=''){
     q=q.trim().toLowerCase();
     return employees.filter(e=>e.status==='active'&&(`${e.first} ${e.last} ${e.personnelNo||''} ${e.role||''}`).toLowerCase().includes(q)).map(e=>{
-      const x=C.check(e,type,date,start,end),blocked=x.hard.length>0,status=blocked?x.hard.join(' '):(x.soft.length?'⚠ '+x.soft.join(' '):'✓ Verfügbar und freigegeben');
+      const x=(C.manualCheck||C.check)(e,type,date,start,end),blocked=x.hard.length>0,status=blocked?x.hard.join(' '):(x.soft.length?'⚠ '+x.soft.join(' '):'✓ Verfügbar und freigegeben');
       return `<button type="button" class="sp-assign-person ${blocked?'blocked':''}" data-emp="${C.esc(e.id)}" ${blocked?'disabled':''}><span class="avatar">${C.esc((e.first?.[0]||'')+(e.last?.[0]||''))}</span><span class="sp-assign-person-copy"><b>${C.esc(e.first+' '+e.last)}</b><small>${C.esc((e.personnelNo||'')+(e.role?' · '+e.role:''))}</small><em>${C.esc(status)}</em></span></button>`;
     }).join('')||'<div class="sp-assign-empty">Keine passenden Mitarbeiter gefunden.</div>';
   }
@@ -182,7 +192,7 @@
     const m=document.createElement('div');m.id='spAssignModal';m.className='sp-assign-backdrop';
     m.innerHTML=`<div class="sp-assign-modal sp-assign-edit" role="dialog" aria-modal="true"><div class="sp-assign-head"><div><div class="eyebrow">SCHICHT BEARBEITEN</div><h2>${C.esc(a.type)} · ${C.esc(emp.first+' '+emp.last)}</h2><p>${C.isPublished(a)?'Veröffentlichte Schicht: Änderungen laufen über die Compliance-Prüfung.':'Entwurf: Änderungen können direkt gespeichert werden.'}</p></div><button class="sp-assign-close" data-sf-click="click-b8dbdb5ccc60">✕</button></div><div class="sp-assign-body"><div class="sp-edit-grid"><label>Mitarbeiter<select id="spEditEmp">${emps}</select></label><label>Schicht<select id="spEditType">${types}</select></label><label>Datum<input id="spEditDate" type="date" value="${C.esc(a.date)}"></label><label>Beginn<input id="spEditStart" type="time" value="${C.esc(a.start||t.start)}"></label><label>Ende<input id="spEditEnd" type="time" value="${C.esc(a.end||t.end)}"></label><label>Pause (Min.)<input id="spEditPause" type="number" min="0" step="5" value="${Number(a.pause||0)}"></label></div><label class="sp-edit-note">Bemerkung<textarea id="spEditNote" rows="3">${C.esc(a.note||'')}</textarea></label><div id="spEditCheck" class="sp-edit-check"></div></div><div class="sp-assign-foot"><button class="danger" id="spDeleteAssign">🗑 Schicht löschen</button><span></span><button class="ghost" data-sf-click="click-b8dbdb5ccc60">Abbrechen</button><button class="primary" id="spSaveAssign">${C.isPublished(a)?'Änderung prüfen':'Änderungen speichern'}</button></div></div>`;
     document.body.appendChild(m);const val=x=>m.querySelector('#'+x).value;
-    const validate=()=>{const e=employees.find(x=>x.id===val('spEditEmp')),type=val('spEditType'),tt=typeById(type),date=val('spEditDate'),start=val('spEditStart')||tt?.start,end=val('spEditEnd')||tt?.end,c=e&&tt?C.check(e,type,date,start,end,a.id):{hard:['Ungültige Eingabe'],soft:[]};const box=m.querySelector('#spEditCheck');box.className='sp-edit-check '+(c.hard.length?'bad':c.soft.length?'warn':'good');box.innerHTML=c.hard.length?'⛔ '+C.esc(c.hard.join(' ')):c.soft.length?'⚠ '+C.esc(c.soft.join(' ')):'✓ Keine Standardverletzung erkannt.';return{e,type,date,start,end,c}};
+    const validate=()=>{const e=employees.find(x=>x.id===val('spEditEmp')),type=val('spEditType'),tt=typeById(type),date=val('spEditDate'),start=val('spEditStart')||tt?.start,end=val('spEditEnd')||tt?.end,c=e&&tt?(C.manualCheck||C.check)(e,type,date,start,end,a.id):{hard:['Ungültige Eingabe'],soft:[]};const box=m.querySelector('#spEditCheck');box.className='sp-edit-check '+(c.hard.length?'bad':c.soft.length?'warn':'good');box.innerHTML=c.hard.length?'⛔ '+C.esc(c.hard.join(' ')):c.soft.length?'⚠ '+C.esc(c.soft.join(' ')):'✓ Keine Standardverletzung erkannt.';return{e,type,date,start,end,c}};
     ['spEditEmp','spEditType','spEditDate','spEditStart','spEditEnd'].forEach(x=>m.querySelector('#'+x).onchange=validate);validate();
     m.querySelector('#spEditType').onchange=()=>{const model=typeById(val('spEditType'));if(model){m.querySelector('#spEditStart').value=model.start;m.querySelector('#spEditEnd').value=model.end;}validate();};
     m.querySelector('#spSaveAssign').onclick=()=>{const v=validate();if(!v.e)return;if(!C.isPublished(a)&&v.c.hard.length)return;C.save(v.e,v.type,v.date,v.start,v.end,{ignoreId:a.id,pause:val('spEditPause'),note:val('spEditNote')});closeAssign()};

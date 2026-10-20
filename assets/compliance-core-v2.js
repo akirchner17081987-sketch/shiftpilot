@@ -49,7 +49,7 @@
     if(maxHours&&(startedHours>cap+.000001||totalStartedHours>maxHours+.000001||calendarHours>maxHours+.000001))errors.push(`Monatsgrenze ${cap} Stunden überschritten; Monatsüberträge zählen zeitanteilig.`);
     return errors;
   };
-  C.check=(emp,type,date,start,end,ignoreId=null)=>{
+  C.check=(emp,type,date,start,end,ignoreId=null,options={})=>{
     const hard=[],soft=[],t=typeById(type),p=C.interval(date,start||t?.start,end||t?.end);
     if(!emp||!t)return{hard:['Mitarbeiter oder Schichtvorlage wurde nicht gefunden.'],soft:[]};
     if(!p)return{hard:['Beginn und Ende müssen gültig und unterschiedlich sein.'],soft:[]};
@@ -61,8 +61,9 @@
     if(t.active===false&&existing?.type!==type)hard.push('Dieses Schichtmodell wurde aus der Planung entfernt.');
     if(!(emp.shifts||[]).includes(type))hard.push(`Keine Freigabe für ${type}.`);
     const scope=window.SFShiftModels?.planningRestriction(type,emp,date,start||t.start,end||t.end);if(scope)hard.push(scope);
-    const rhythm=window.sfRhythmCheck?.(emp,type,date);
-    if(rhythm?.mode==='required'&&!rhythm.allowed)hard.push(`Verbindliche Schichtregel: ${rhythm.reason}.`);
+    const rhythm=window.sfRhythmCheck?.(emp,type,date),manualRhythm=options.manualRhythm&&(window.SFManualRhythm?.canOverride()||window.SFManualRhythm?.matches(existing,emp,type,date,start||t.start,end||t.end));
+    const rhythmConflict=rhythm?.mode==='required'&&!rhythm.allowed&&rhythm.expected?rhythm:null;
+    if(rhythm?.mode==='required'&&!rhythm.allowed){if(manualRhythm&&rhythmConflict)soft.push(`Rhythmushinweis: ${rhythm.reason}. Bewusste Ausnahme mit Begründung möglich.`);else hard.push(`Verbindliche Schichtregel: ${rhythm.reason}.`);}
     else if(rhythm?.mode==='preferred'&&!rhythm.allowed)soft.push(`Bevorzugte Schichtregel: ${rhythm.reason}.`);
     if(!C.roleAllows(emp,type))hard.push('Teamleiter-Schicht erfordert Teamleiter/Schichtleiter.');
     if(String(type).toUpperCase()==='OT'&&!C.otAllowed(date))hard.push('OT ist nach der hinterlegten OT-Regel an diesem Tag nicht zulässig.');
@@ -84,7 +85,7 @@
     const manualMonthlyOverride=C.policy?.solidPlanningRules?.plannerMonthlyOverride&&/^Vollzeit(?:\s+180)?$/i.test(String(emp.employment||'').trim())&&monthTarget>=180&&['OWNER','ADMIN','PLANNER','DISPATCHER'].includes(window.SFBackend?.role);
     for(const month of new Set([String(date).slice(0,7),C.iso(new Date(p.end-1)).slice(0,7)])){const issues=C.monthPlanningCheck(emp,month+'-01',monthlyRows);if(manualMonthlyOverride)soft.push(...issues.map(message=>message+' Individuelle Überschreitung durch den Planer.'));else hard.push(...issues);}
     if(C.policy?.solidPlanningRules?.enabled&&window.SFSolidPlanningCore)hard.push(...window.SFSolidPlanningCore.errors(emp,monthlyRows,C.policy.solidPlanningRules,[date]).map(x=>x.message));
-    return{hard:[...new Set(hard)],soft,proposed:p,duration,rest};
+    return{hard:[...new Set(hard)],soft,proposed:p,duration,rest,rhythmConflict:manualRhythm?rhythmConflict:null};
   };
   window.spAssignmentConflict=C.check;
 
@@ -105,11 +106,11 @@
   };
   C.isPublished=a=>!!a&&(!!a.publishedAt||C.isWeekPublished(a.date));
 
-  C.complianceCheck=({action='UPDATE',assignment=null,employeeId,type,date,start,end})=>{
+  C.complianceCheck=({action='UPDATE',assignment=null,employeeId,type,date,start,end,rhythmOverride=null})=>{
     const emp=employees.find(e=>e.id===employeeId), findings=[];let level='GREEN',employeeApproval=false,worksCouncil=!!C.policy.worksCouncilEnabled;
     const add=(code,status,text,basis='')=>{findings.push({code,status,text,basis});if(status==='BLOCK')level='BLOCK';else if(status==='REVIEW'&&level!=='BLOCK')level='REVIEW'};
     if(action!=='DELETE'){
-      const b=C.check(emp,type,date,start,end,assignment?.id||null);
+      const b=C.check(emp,type,date,start,end,assignment?.id||null,{manualRhythm:!!rhythmOverride?.reason||!!window.SFManualRhythm?.matches(assignment,emp,type,date,start,end)});
       b.hard.forEach((x,i)=>add('RULE_'+(i+1),'BLOCK',x));b.soft.forEach((x,i)=>add('CHECK_'+(i+1),'REVIEW',x));
       if(!b.hard.length&&!b.soft.length)add('BASIC','PASS','Keine Standardverletzung erkannt.');
       if(!b.rest?.assignment)add('REST_11H','PASS','Keine angrenzende Schicht mit kritischer Ruhezeit gefunden.');

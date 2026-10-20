@@ -79,6 +79,7 @@
       <div class="sf-c-note"><strong>Hinweis:</strong> Die Anzeige ersetzt keine Einzelfall-Rechtsberatung. Unternehmensschwellen wie 24/48 Stunden sind betriebliche Risikoregeln, keine allgemeinen gesetzlichen Fristen. Gesetzliche/tarifliche Ausnahmen müssen separat hinterlegt und geprüft werden.</div>
     </div><div class="sf-c-foot"><button class="ghost" data-sf-click="click-1ca1d0d27833">Abbrechen</button>${result.level==='BLOCK'?'<button class="primary" disabled title="Blockierende Standardregel">Änderung nicht möglich</button>':`<button class="primary" id="sfSubmitChange">${result.employeeApproval?'Änderung anfragen':result.worksCouncil?'Freigabe anfordern':'Änderung speichern'}</button>`}</div></div>`;
     document.body.appendChild(el);
+    if(payload.rhythmOverride?.reason){el.querySelector('#sfReasonText').value=payload.rhythmOverride.reason;el.querySelector('#sfReason').value='Zusätzlicher Personalbedarf';}
     el.querySelector('#sfSubmitChange')?.addEventListener('click',()=>{
       const reasonCode=el.querySelector('#sfReason').value,reasonText=el.querySelector('#sfReasonText').value.trim(),predictable=el.querySelector('#sfPredictable').value;
       if(C.policy.requireReason&&!reasonCode){alert('Bitte einen Grund für die veröffentlichte Schichtänderung auswählen.');return}

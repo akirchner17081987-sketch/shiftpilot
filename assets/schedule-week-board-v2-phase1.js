@@ -105,7 +105,7 @@
     const emp=employees.find(e=>e.id===a.employeeId);
     if(!emp)return'';
     const start=a.start||t.start,end=a.end||t.end;
-    return `<button type="button" class="sf-week-employee" style="${window.SFScheduleEmployeeDisplay?.style(emp)||''}" draggable="true" data-assignment-id="${esc(a.id)}" title="${esc([emp.last,emp.first].filter(Boolean).join(', '))} · ${esc(start)}–${esc(end)} · verschieben oder bearbeiten"><span class="sf-week-avatar">${esc(initials(emp))}</span><span class="sf-week-employee-info"><b>${esc([emp.last,emp.first].filter(Boolean).join(', '))}</b><small>${esc(start)} – ${esc(end)}</small>${window.SFDisplayPreferences?.hoursMarkup(emp,a.date)||''}</span></button>`;
+    return `<button type="button" class="sf-week-employee" style="${window.SFScheduleEmployeeDisplay?.style(emp)||''}" draggable="true" data-assignment-id="${esc(a.id)}" title="${esc([emp.last,emp.first].filter(Boolean).join(', '))} · ${esc(start)}–${esc(end)} · verschieben oder bearbeiten${a.rhythmOverride?' · Rhythmusausnahme: '+esc(a.rhythmOverride.reason):''}"><span class="sf-week-avatar">${esc(initials(emp))}</span><span class="sf-week-employee-info"><b>${esc([emp.last,emp.first].filter(Boolean).join(', '))}</b><small>${esc(start)} – ${esc(end)}</small>${a.rhythmOverride?'<span class="sf-rhythm-exception-badge">Rhythmusausnahme</span>':''}${window.SFDisplayPreferences?.hoursMarkup(emp,a.date)||''}</span></button>`;
   }
   function shiftBlock(date,id){
     const t=typeById(id);if(!t)return'';
@@ -249,7 +249,7 @@
     const t=typeById(target.type),C=window.SFCompliance;
     if(!canPlan())return {hard:['Dieser Zugang darf den Dienstplan nur ansehen.'],soft:[]};
     if(!C?.check||!C?.save)return {hard:['Planungsprüfung wird noch geladen. Bitte kurz warten.'],soft:[]};
-    return C.check(e,target.type,target.date,t.start,t.end);
+    return (C.manualCheck||C.check)(e,target.type,target.date,t.start,t.end);
   }
   function renderCandidates(){
     if(!target&&inlineAnchor)closeInlinePicker(true);
