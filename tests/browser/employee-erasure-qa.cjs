@@ -2,7 +2,7 @@ const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 (async () => {
- const browser=await chromium.launch({headless:true});
+ const browser=await chromium.launch({headless:true,...(process.env.SF_QA_CHROMIUM?{executablePath:process.env.SF_QA_CHROMIUM}:{})});
  try {
   for(const [width,height] of [[1280,900],[390,844]]) {
    const page=await browser.newPage({viewport:{width,height}});const errors=[];page.on('pageerror',e=>errors.push(e.message));

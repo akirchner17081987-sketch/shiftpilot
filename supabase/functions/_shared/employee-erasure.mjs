@@ -35,5 +35,10 @@ export async function runEmployeeErasure(admin,request,actor){
    if(deleted.error)throw Error('Der Mitarbeiterzugang konnte noch nicht vollständig gelöscht werden. Bitte erneut starten.');
   }
  }
- return await rpc(admin,'server_finish_employee_erasure',{p_job_id:staged.job_id,p_actor:actor});
+ // Verification is independently resumable, including large audit histories.
+ const verificationStarted=Date.now();
+ for(let batch=0;batch<6;batch++){
+  const verified=await rpc(admin,'server_finish_employee_erasure',{p_job_id:staged.job_id,p_actor:actor});
+  if(verified?.pending!==true||batch===5||Date.now()-verificationStarted>=12000)return verified;
+ }
 }

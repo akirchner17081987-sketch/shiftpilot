@@ -10,6 +10,15 @@ begin
   perform public.assert_erasure(not exists(select 1 from private.employee_erasure_context),'pending batch clears transaction context');
  end loop;
 end$$;
+create function public.finish_verification_for_test(job_id uuid,actor_id uuid) returns jsonb language plpgsql as $$
+declare result_ jsonb; attempts_ integer:=0;
+begin
+ loop
+  result_:=public.server_finish_employee_erasure(job_id,actor_id);attempts_:=attempts_+1;
+  if (result_->>'verified')::boolean then return result_;end if;
+  if attempts_>1000 or not coalesce((result_->>'pending')::boolean,false) then raise exception 'ASSERTION: verification does not converge';end if;
+ end loop;
+end$$;
 insert into auth.users(id,email) values('10000000-0000-0000-0000-000000000001','owner@example.invalid'),('10000000-0000-0000-0000-000000000002','planner@example.invalid');
 insert into public.companies(id,name,created_by) values('20000000-0000-0000-0000-000000000001','Erasure fixture','10000000-0000-0000-0000-000000000001'),('20000000-0000-0000-0000-000000000002','Other fixture','10000000-0000-0000-0000-000000000001');
 insert into public.company_members(company_id,user_id,role,status) values('20000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001','OWNER','ACTIVE'),('20000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000002','PLANNER','ACTIVE');
@@ -80,7 +89,7 @@ begin
  -- Only schema-fixture metadata exists; no real storage service or object is used.
  delete from storage.objects where name='20000000-0000-0000-0000-000000000001/30000000-0000-0000-0000-000000000001/fixture.pdf';
  perform public.finish_database_erasure_for_test((job->>'job_id')::uuid,'10000000-0000-0000-0000-000000000001');
- perform public.assert_erasure((public.server_finish_employee_erasure((job->>'job_id')::uuid,'10000000-0000-0000-0000-000000000001')->>'complete')::boolean,'verified completion');
+ perform public.assert_erasure((public.finish_verification_for_test((job->>'job_id')::uuid,'10000000-0000-0000-0000-000000000001')->>'complete')::boolean,'verified completion');
 end$$;
 select public.assert_erasure(not exists(select 1 from public.employees where id='30000000-0000-0000-0000-000000000001'),'profile removed');
 select public.assert_erasure(exists(select 1 from public.employees where id='30000000-0000-0000-0000-000000000003'),'same person in other company preserved');
@@ -128,7 +137,7 @@ do $$declare preview jsonb;job jsonb;target uuid;begin
  begin perform public.server_finish_employee_erasure((job->>'job_id')::uuid,'10000000-0000-0000-0000-000000000001');raise exception 'ASSERTION: remaining auth account accepted';exception when others then if sqlerrm like 'ASSERTION:%' then raise;end if;end;
  -- Auth schema fixture only; production exclusively calls auth.admin.deleteUser.
  delete from auth.users where id='10000000-0000-0000-0000-000000000003';
- perform public.assert_erasure((public.server_finish_employee_erasure((job->>'job_id')::uuid,'10000000-0000-0000-0000-000000000001')->>'verified')::boolean,'erasure finishes after Auth API');
+ perform public.assert_erasure((public.finish_verification_for_test((job->>'job_id')::uuid,'10000000-0000-0000-0000-000000000001')->>'verified')::boolean,'erasure finishes after Auth API');
 end$$;
 select public.assert_erasure(not exists(select 1 from public.employees where legacy_id='auth-target') and not exists(select 1 from public.company_members where user_id='10000000-0000-0000-0000-000000000003'),'dedicated employee and membership erased');
 select public.assert_erasure(not exists(select 1 from auth.audit_log_entries where id='80000000-0000-0000-0000-000000000001'),'employee Auth JSON audit removed');

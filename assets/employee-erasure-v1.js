@@ -89,10 +89,14 @@
      const update=()=>button.disabled=D.busy||!D.validConfirmation(snapshot,name.value,ack.checked);name.oninput=update;ack.onchange=update;
      button.onclick=async()=>{
       if(!D.validConfirmation(snapshot,name.value,ack.checked)||D.busy)return;
-      snapshot.onProgress=progress=>{button.textContent=progress.phase==='AUDIT'?'Protokolle werden bereinigt …':'Verknüpfte Daten werden bereinigt …';};
+      snapshot.onProgress=progress=>{
+       const count=Number(progress.processed||0).toLocaleString('de-DE');
+       button.textContent=progress.phase==='AUDIT'?`Protokolle bereinigen · ${count} geprüft …`:
+        progress.phase==='VERIFY'?`Restdaten prüfen · ${count} geprüft …`:'Verknüpfte Daten bereinigen …';
+      };
       shade.querySelectorAll('input,select,button').forEach(control=>control.disabled=true);error.textContent='';button.textContent='Dateien, Daten und Restbestand werden geprüft …';
       try{const result=await D.commit(snapshot,name.value,ack.checked);close();window.showSaveToast?.('Vollständig gelöscht',result.reloadNeeded?'Die Löschung wurde bestätigt. Bitte die Seite neu laden.':'Alle zugehörigen Daten wurden entfernt und der Restbestand geprüft.');}
-      catch(failure){error.textContent=failure.message||String(failure);shade.querySelectorAll('input,select,button').forEach(control=>control.disabled=false);button.textContent='Löschung erneut versuchen';update();}
+      catch(failure){const message=failure.message||String(failure);error.textContent=/statement timeout/i.test(message)?'Ein Löschschritt hat zu lange gedauert. Bereits abgeschlossene Schritte bleiben gespeichert. Mit „Löschung erneut versuchen“ setzt du den Vorgang fort.':message;shade.querySelectorAll('input,select,button').forEach(control=>control.disabled=false);button.textContent='Löschung erneut versuchen';update();}
      };name.focus();
     }catch(failure){if(turn===serial){preview.textContent='Die Löschübersicht konnte nicht geladen werden.';error.textContent=failure.message||String(failure);}}
    };
