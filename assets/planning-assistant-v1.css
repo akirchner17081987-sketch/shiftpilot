@@ -133,3 +133,14 @@
 .sf-chat-wizard>li>strong::before{content:counter(sf-step) '. '}
 .sf-chat-wizard>li.is-complete{border-inline-start:4px solid #22a676}
 .sf-chat-wizard p{margin:8px 0 12px}
+
+.sf-chat-profile-form{display:grid;gap:12px;min-width:0}
+.sf-chat-profile-form label{display:grid;gap:6px;font-size:13px;min-width:0}
+.sf-chat-profile-form input,.sf-chat-profile-form select{min-width:0;max-width:100%;padding:10px;border:1px solid var(--border,#718397);border-radius:8px;font:inherit;background:var(--panel,#142334);color:inherit}
+.sf-chat-profile-form .sf-chat-details>label{margin:12px 0}
+.sf-chat-profile-form fieldset{display:grid;gap:10px;margin:12px 0;padding:12px;border:1px solid var(--border,#718397);border-radius:8px}
+.sf-chat-profile-form fieldset label{display:flex;align-items:center;gap:9px}
+.sf-chat-profile-form input[type=checkbox]{width:18px;height:18px;margin:0}
+.sf-chat-profile-error{color:#e77777}
+.sf-planning-change-open{position:fixed;right:24px;bottom:84px;z-index:1200;max-width:calc(100vw - 32px);background:var(--panel,#18302f)!important;color:var(--text,#f2faf7)!important;border:1px solid #389a87!important;box-shadow:0 8px 22px #0003}
+@media(max-width:600px){.sf-chat-profile-form input,.sf-chat-profile-form select{font-size:16px}.sf-planning-change-open{right:16px;bottom:78px}}

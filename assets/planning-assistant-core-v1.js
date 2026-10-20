@@ -16,6 +16,7 @@
   const meta=(e,k)=>String((e.qualifications||[]).find(q=>String(q).startsWith('__sp:'+k+'='))||'').split('=').slice(1).join('=');
   const team=e=>e.planningTeam??meta(e,'planningTeam');
   const questionGroups=[
+    ['Planung erleichtern',['Planungsprofile verwalten','November mit unserem Standardprofil vorbereiten','Änderungscheck anzeigen','Planvarianten vergleichen']],
     ['Planungsaufträge und Begleitung',['Planungsauftrag starten','Bringe die Teamleiter im November möglichst auf ihre Sollstunden. Bereits veröffentlichte Dienste bleiben bestehen.','Hilf mir, diesen Monat fertigzustellen','Mehrmonatsausgleich starten','Nimm die letzte Änderung des Assistenten zurück.']],
     ['Vorausschauen und Änderungen prüfen',['Frühwarnung starten','Welche Dienste sind in den nächsten 28 Tagen besonders anfällig?','Urlaubsfolgen prüfen','Dienstverschiebung prüfen']],
     ['Plan prüfen und Engpässe lösen',['Engpasslöser starten','Wie bekommen wir alle auf ihre Sollstunden und besetzen alle Pflichtdienste?','Wie bekommen wir die Teamleiter auf ihre Sollstunden?','Monatscheck starten','Belastungscheck starten','Verbesserungsvorschläge erstellen']],
@@ -25,6 +26,9 @@
   ];
   function duration(a,shifts){const t=shifts.find(t=>t.id===a.type),start=a.start||t?.start,end=a.end||t?.end;const mins=v=>/^\d{2}:\d{2}$/.test(v||'')?Number(v.slice(0,2))*60+Number(v.slice(3)):NaN;let m=mins(end)-mins(start);if(m<0)m+=1440;return Number.isFinite(m)?m/60:0;}
   function intentFor(q){
+    if(/aenderungscheck|folgepruefung|automatische.*(?:aenderung|pruefung)/.test(q))return 'followup';
+    if(/planvarianten|planvariante|varianten vergleichen/.test(q))return 'variants';
+    if(/planungsprofil|standardprofil|\bprofil\b/.test(q))return 'profiles';
     if(/rueckgaengig|ruecknahme|(?:aenderung|assistentenauftrag).*zurueck|letzte.*aenderung.*zurueck/.test(q))return 'undo';
     if(/mehrmonats|(?:naechsten|ueber|in)\s+(?:zwei|drei|vier|fuenf|sechs|\d+)\s+monat/.test(q))return 'multiBalance';
     if(/gefuehrt|monatsbegleit|planung fortsetzen|hilf mir.*(?:monat|plan|fertig)/.test(q))return 'wizard';
@@ -271,6 +275,29 @@
     const staff=s.employees.filter(e=>!e.deletedAt&&e.status==='active');
     const nav=(view,label)=>({view,label});
     if(Insights&&['forecast','leaveImpact','changeImpact'].includes(intent))return scenarioAnswer(q,s,previous,intent,period,staff);
+    if(Workflows&&['profiles','variants','followup'].includes(intent)){
+      const help=findHelp(q,s.helpArticles,true);if(help&&/^(?:wie|was|wo)\b/.test(q))return response(help.title,help.text,{context:{}});
+      const request=s.analysisRequest||{},month=request.month||dates[Math.floor(dates.length/2)].slice(0,7);
+      if(!Workflows.validMonth(month))return response('Monat prüfen','Bitte einen gültigen Startmonat wählen.');
+      if(intent==='followup')return Workflows.followup(s,s.changeRequest);
+      if(intent==='variants'){
+        const focus=request.focus||'all',ids=Array.isArray(request.focusIds)?request.focusIds.filter(id=>staff.some(e=>String(e.id)===String(id))):Workflows.focusIds(s,focus);if(ids&&!ids.length)return response('Mitarbeiterkreis prüfen','Für den gewählten Fokus ist kein aktiver Mitarbeiter verfügbar.');
+        return Workflows.variants(s,Workflows.datesFor(month),ids,request.strategy||null);
+      }
+      if(s.profileError)return response('Planungsprofile derzeit nicht verfügbar',s.profileError,{profileManager:true,context:{intent:'profiles'}});
+      const profiles=s.profiles||[],matches=profiles.filter(p=>q.includes(normalize(p.name))),chosen=request.profileId?profiles.find(p=>p.id===request.profileId):matches.length===1?matches[0]:null;
+      if(!chosen||/verwalten|anlegen|speichern|bearbeiten/.test(q))return response('Planungsprofile',profiles.length+' Profile im ausgewählten Unternehmen. Wähle ein Profil und den Startmonat oder lege ein neues Profil an.',{profileManager:true,context:{intent:'profiles',dates}});
+      const config=Workflows.profileConfig(chosen.config);if(!config)return response('Profil prüfen','Dieses Profil enthält nicht unterstützte Angaben. Bitte bearbeiten.');
+      const ids=Workflows.focusIds(s,config.focus);if(ids&&!ids.length)return response('Profil prüfen','Der gespeicherte Mitarbeiterkreis ist hier nicht mehr verfügbar. Bitte das Profil aktualisieren.',{profileManager:true});
+      let result=config.mode==='multiBalance'?Workflows.multi(s,month,config.count,ids):config.mode==='variants'?Workflows.variants(s,Workflows.datesFor(month),ids,request.strategy||null):Workflows.order(s,Workflows.datesFor(month),ids,config.goal);
+      if(result.variants)result.variants=result.variants.map(v=>({...v,profileId:chosen.id}));
+      const compareOnly=config.mode==='variants'&&!request.strategy;
+      const plan=result.proposal?[...result.proposal.base,...result.proposal.proposed]:s.assignments,period=result.context?.dates||Workflows.datesFor(month),notes=[];
+      if(!compareOnly&&config.checks.includes('rules')){const audit=Insights.audit({...s,assignments:plan},period);notes.push('Profilprüfung Regeln: '+audit.issues.length+' Auffälligkeiten; '+audit.unknown.length+' offene Datenhinweise.');}
+      if(!compareOnly&&config.checks.includes('hours'))notes.push('Profilprüfung Stunden: '+hours(staff.reduce((n,e)=>n+Math.max(0,Number(s.monthTarget(e))*new Set(period.map(d=>d.slice(0,7))).size-Insights.hours(s,e,plan,period)),0))+' h verbleibender Sollstundenfehlbetrag.');
+      if(!compareOnly&&config.checks.includes('reserve')){const r=Workflows.reserveMetrics(s,plan,period);notes.push('Profilprüfung Reserve: '+r.none+' ohne direkte Reserve, '+r.single+' mit einer Reserve, '+r.checked+' von '+r.total+' Diensten geprüft.');}
+      return {...result,title:chosen.name+' · '+result.title,notes:['Gespeichertes Unternehmensprofil. Startmonat: '+month+'. Ziele ersetzen keine verbindlichen Regeln.',...(result.notes||[]),...notes]};
+    }
     if(Workflows&&['order','multiBalance','wizard','undo'].includes(intent)){
       const help=findHelp(q,s.helpArticles,true);if(help&&/^(?:wie|was|wo)\b/.test(q))return response(help.title,help.text,{actions:[{help:true,query:help.title,label:'Anleitung im Hilfe-Center öffnen'}],context:{}});
       if(intent==='undo')return Workflows.undo(s,s.undoEntries?.find(e=>!e.undone));

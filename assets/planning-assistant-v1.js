@@ -6,7 +6,8 @@
   if(!Core)return;
   let context={},messages=[],scope=null,previousFocus=null,selectedMonth='',hydrationFailed=false,selectedService=null,planningRuns=[],journalError='',requestId=0,applyingProposal=false,refreshingProposal=null;
   const Insights=window.SFPlanningInsights,Workflows=window.SFPlanningWorkflows;
-  let protectedAssignmentIds=new Set();
+  let protectedAssignmentIds=new Set(),profiles=[],profileError='',changeRequest=null,changeReport=null;
+  let observedOwner=null,observedState=null,pendingChange=null,changeDue=0,changeRevision='',lastObserved=0,changeAcknowledged=false;
   const withRows=(rows,fn)=>{const original=assignments;try{assignments=rows;return fn()}finally{assignments=original}};
   const signature=()=>JSON.stringify([identity(),window.SFCompliance?.policy,window.SFCompliance?.publications,window.SFPlanningTeams?.rules,employees,assignments,absences,TYPES,typeof globalSoll==='undefined'?null:globalSoll,typeof dailySoll==='undefined'?null:dailySoll]);
   const B=()=>window.SFBackend||{};
@@ -16,10 +17,10 @@
   const busy=()=>!!(B().companySwitching||B().bootPromise||B().suppressSync||applyingProposal||refreshingProposal);
   const ownRefresh=()=>!!(refreshingProposal&&refreshingProposal.owner===identity()&&refreshingProposal.request===requestId&&!B().companySwitching&&!B().bootPromise);
   const el=id=>document.getElementById(id);
-  function reset(){requestId++;context={};messages=[];selectedMonth='';selectedService=null;planningRuns=[];journalError='';protectedAssignmentIds=new Set();el('sfAssignmentImpactPreview')?.remove();el('sfAssignmentImpactButton')?.remove();el('sfPlanningChatLog')?.replaceChildren();toggleQuestionGuide(false);setProgress(false);updateService();}
+  function reset(){requestId++;context={};messages=[];selectedMonth='';selectedService=null;planningRuns=[];journalError='';profiles=[];profileError='';protectedAssignmentIds=new Set();el('sfAssignmentImpactPreview')?.remove();el('sfAssignmentImpactButton')?.remove();el('sfPlanningChatLog')?.replaceChildren();toggleQuestionGuide(false);setProgress(false);updateService();}
   function close(restore=true){
     const dialog=el('sfPlanningChat'),docked=dialog?.classList.contains('sf-chat-docked');
-    if(dialog?.open)dialog.close();
+    if(dialog?.open)dialog.close();showChangeNotice();
     el('sfPlanningAssistantButton')?.setAttribute('aria-expanded','false');
     if(restore&&previousFocus?.isConnected){
       previousFocus.focus({preventScroll:true});
@@ -27,10 +28,11 @@
     }
   }
   function syncScope(){
-    const next=identity();if(scope!==next||(busy()&&!ownRefresh())){close(false);reset();scope=next;}
+    const next=identity();if(scope!==next){observedOwner=next;observedState=null;pendingChange=null;changeRequest=null;changeReport=null;changeRevision='';clearChangeNotice();}
+    if(scope!==next||(busy()&&!ownRefresh())){close(false);reset();scope=next;}
     if(selectedService&&!contextDates().includes(selectedService.date)){selectedService=null;context={};updatePeriod();}
     const button=el('sfPlanningAssistantButton');if(button){button.hidden=!authorized();button.disabled=busy();}
-    syncPlacement();bindEditFunction();
+    syncPlacement();bindEditFunction();if(!next)clearChangeNotice();
     document.querySelectorAll?.('.sf-chat-service-open').forEach(button=>{button.hidden=!authorized();button.disabled=busy();});
   }
   function syncPlacement(){
@@ -120,7 +122,7 @@
     const belongs=row=>!(row.companyId||row.company_id)||(row.companyId||row.company_id)===B().companyId;
     const dates=contextDates();
     if(selectedService&&!dates.includes(selectedService.date))selectedService=null;
-    return{authorized:true,...workSnapshot(),today:today(),defaultDates:dates,selectedService,selectedPeriodExplicit:!!selectedMonth,
+    return{authorized:true,...workSnapshot(),profiles,profileError,changeRequest,today:today(),defaultDates:dates,selectedService,selectedPeriodExplicit:!!selectedMonth,
       employees:typeof employees==='undefined'?[]:employees.filter(belongs),
       assignments:typeof assignments==='undefined'?[]:assignments.filter(belongs).filter(a=>a.status!=='CANCELLED'&&a._dbStatus!=='CANCELLED'),
       absences:typeof absences==='undefined'?[]:absences.filter(belongs),
@@ -136,6 +138,49 @@
       movable:a=>!!a.id&&!a.fixed&&!a.locked&&!a.protected&&!protectedAssignmentIds.has(a._dbId||B().asgDb?.get(String(a.id))||a.id)&&!a.publishedAt&&(!a._dbStatus||a._dbStatus==='DRAFT')&&a.status!=='PUBLISHED'&&!a._marketApproved&&!/markt|market|freiwill|tausch/i.test(a.note||'')&&!window.SFCompliance?.isWeekPublished?.(a.date)&&!((typeof timeEntries!=='undefined')&&(timeEntries[a.id]?.actualStart||timeEntries[a.id]?.actualEnd))&&window.sfRhythmCheck?.(employees.find(e=>String(e.id)===String(a.employeeId)),a.type,a.date)?.mode!=='required',
       openSlots:(wanted,rows)=>withRows(rows,()=>{const slots=[];for(const date of wanted)for(const t of TYPES.filter(t=>t.active!==false)){const info=window.SFShiftModels?.coverageInfo?.(date,t.id);if(info&&info.representative!==t.id)continue;const raw=getSoll(date,t.id),need=window.SFShiftModels?.requiredSoll?.(date,t.id,raw)??raw,count=rows.filter(a=>a.date===date&&a.type===t.id).length,missing=info?info.missing:Math.max(0,need-count);for(let n=0;n<missing;n++)slots.push({date,type:t.id,...(info?{alternatives:info.alternatives}:{})});}return slots;}),
       planningRuns,journalError,teamRulesReady:window.SFPlanningTeams?.isLoaded?.()??false,helpCategories:window.SFHelpContent?.categories||[],teamRules:window.SFPlanningTeams?.isLoaded?.()?window.SFPlanningTeams.rules:[],helpArticles:window.SFHelpContent?.articles||{}};
+  }
+  async function loadProfiles(){
+    const owner=identity(),company=B().companyId;if(!owner)return;
+    try{let data;if(demo())data=JSON.parse(localStorage.getItem('sf-assistant-profiles-demo|'+owner)||'[]');else{const q=await B().client.from('planning_assistant_profiles').select('id,name,config,updated_at').eq('company_id',company).order('name').limit(100);if(q.error)throw q.error;data=q.data;}
+      if(identity()!==owner)return;profiles=(Array.isArray(data)?data:[]).filter(p=>p&&typeof p.id==='string'&&typeof p.name==='string'&&Workflows.profileConfig(p.config));profileError='';
+    }catch(error){if(identity()===owner){profiles=[];profileError='Profile konnten nicht geladen werden. '+(error.message||'Bitte die Verbindung prüfen.');}}
+  }
+  async function persistProfile(id,name,config,remove=false){
+    syncScope();if(!authorized()||busy())throw Error('Planungsdaten sind derzeit nicht bereit.');
+    const owner=identity(),company=B().companyId,old=profiles.find(p=>p.id===id),clean=Workflows.profileConfig(config);
+    if(id&&!old)throw Error('Dieses Profil ist nicht mehr verfügbar. Bitte neu laden.');
+    if(!remove&&(!clean||!name.trim()||name.trim().length>80))throw Error('Bitte einen Profilnamen mit höchstens 80 Zeichen und gültige Ziele wählen.');
+    if(demo()){
+      const next=remove?profiles.filter(p=>p.id!==id):[...profiles.filter(p=>p.id!==id),{id:id||'demo-profile-'+Date.now(),name:name.trim(),config:clean,updated_at:new Date().toISOString()}];if(next.some((p,i)=>next.some((x,j)=>i!==j&&p.name.toLocaleLowerCase('de-DE')===x.name.toLocaleLowerCase('de-DE'))))throw Error('Ein Profil mit diesem Namen ist bereits vorhanden.');localStorage.setItem('sf-assistant-profiles-demo|'+owner,JSON.stringify(next));
+    }else{
+      let query=B().client.from('planning_assistant_profiles');const payload={name:name.trim(),config:clean};
+      if(remove)query=query.delete().eq('id',id).eq('company_id',company).eq('updated_at',old.updated_at);
+      else if(id)query=query.update(payload).eq('id',id).eq('company_id',company).eq('updated_at',old.updated_at);
+      else query=query.insert({...payload,company_id:company});
+      const q=await query.select('id').maybeSingle();if(q.error){if(q.error.code==='23505')throw Error('Ein Planungsprofil mit diesem Namen existiert bereits.');throw q.error;}if(!q.data)throw Error('Dieses Profil wurde inzwischen geändert. Bitte neu laden.');
+    }
+    if(identity()!==owner)return;await loadProfiles();if(identity()===owner)submit('Planungsprofile verwalten');
+  }
+  function clearChangeNotice(){el('sfPlanningChangeNotice')?.remove();el('sfPlanningChangeOpen')?.remove();}
+  function showChangeNotice(){
+    if(!changeReport||changeAcknowledged||!authorized())return;let button=el('sfPlanningChangeOpen');if(!button){button=node('button','Änderungscheck öffnen','ghost sf-planning-change-open');button.id='sfPlanningChangeOpen';button.type='button';button.onclick=()=>{open();submit('Änderungscheck anzeigen');};document.body.appendChild(button);}
+    let inline=el('sfPlanningChangeNotice');if(el('sfPlanningChatLog')&&!inline){inline=node('button','Änderungscheck öffnen','sf-chat-row-action');inline.id='sfPlanningChangeNotice';inline.type='button';inline.onclick=()=>submit('Änderungscheck anzeigen');el('sfPlanningChatLog').before(inline);}
+    button.hidden=!!el('sfPlanningChat')?.open;button.title=changeReport.text;button.setAttribute('aria-label','Automatische Folgeprüfung: Änderungscheck öffnen');
+  }
+  function mergeChange(next){
+    const old=pendingChange||{dates:[],assignmentIds:[]};pendingChange={dates:[...new Set([...old.dates,...next.dates])].sort().slice(0,62),assignmentIds:[...new Set([...(old.assignmentIds||[]),...(next.assignmentIds||[])])],limited:old.limited||next.limited||old.dates.length+next.dates.length>62};changeDue=Date.now()+1600;
+    changeReport=null;changeAcknowledged=false;clearChangeNotice();
+  }
+  function observePlanningChanges(){
+    const owner=identity();if(observedOwner!==owner){observedOwner=owner;observedState=null;pendingChange=null;changeRequest=null;changeReport=null;changeRevision='';clearChangeNotice();}
+    if(!owner||busy()||hydrationFailed||B().syncing||B().lastSyncError||window.SFMonthOptimizer?.isBusy?.())return;
+    if(Date.now()-lastObserved<1400)return;lastObserved=Date.now();
+    const belongs=a=>!(a.companyId||a.company_id)||(a.companyId||a.company_id)===B().companyId;
+    const raw={assignments:assignments.filter(belongs).filter(a=>a._dbStatus!=='CANCELLED'&&a.status!=='CANCELLED'),absences:absences.filter(belongs)},next=Workflows.changeState(raw);
+    if(!observedState){observedState=next;return;}
+    if(changeReport&&changeRevision&&changeRevision!==signature()&&!pendingChange)mergeChange(changeRequest);
+    const delta=Workflows.changedDays(observedState,next);observedState=next;if(delta.dates.length)mergeChange(delta);
+    if(pendingChange&&Date.now()>=changeDue){const request=pendingChange;pendingChange=null;try{const current=snapshot();if(current.loading||current.error)return;changeReport=Workflows.followup(current,request);changeRequest=request;changeRevision=signature();showChangeNotice();}catch{changeReport={title:'Änderungscheck noch offen',text:'Die automatische Folgeprüfung konnte nicht abgeschlossen werden. Bitte erneut prüfen.'};changeRequest=request;showChangeNotice();}}
   }
   function ask(question,analysisRequest){syncScope();return Core.answer(question,{...snapshot(),analysisRequest},context);}
   async function loadRuns(){
@@ -328,6 +373,23 @@
     const button=node('button','Auswirkungen prüfen','sf-chat-row-action');button.type='submit';form.appendChild(button);
     form.onsubmit=event=>{event.preventDefault();if(!form.reportValidity())return;const request={kind:config.kind,...Object.fromEntries(new FormData(form))};submit(config.kind==='leaveImpact'?'Urlaubsfolgen prüfen':'Dienstverschiebung prüfen',request);};host.appendChild(form);
   }
+  function renderProfileManager(host){
+    const owner=identity(),form=node('form',undefined,'sf-chat-profile-form'),make=(label,name,type,items=[],value='')=>{const wrap=node('label',label),input=node(type==='select'?'select':'input');input.name=name;if(type==='select')for(const [id,text] of items){const option=node('option',text);option.value=id;input.appendChild(option);}else input.type=type;input.value=value;wrap.appendChild(input);form.appendChild(wrap);return input;};
+    const choose=make('Gespeichertes Unternehmensprofil','profileId','select',[['','Neues Profil anlegen'],...profiles.map(p=>[p.id,p.name])]),month=make('Startmonat für die Ausführung','month','month',[],contextDates()[0].slice(0,7));month.required=true;
+    const run=node('button','Mit Profil vorbereiten');run.type='button';run.disabled=!choose.value;run.onclick=()=>{if(month.reportValidity()&&choose.value)submit('Planungsprofil ausführen',{kind:'profile',profileId:choose.value,month:month.value});};form.appendChild(run);
+    const details=node('details',undefined,'sf-chat-details');details.open=!profiles.length;details.appendChild(node('summary','Profil anlegen oder bearbeiten'));
+    const name=make('Profilname','name','text',[],'Standardprofil');name.maxLength=80;name.required=true;
+    const mode=make('Ablauf','mode','select',[['order','Planungsauftrag'],['multiBalance','Mehrmonatsausgleich'],['variants','Planvarianten vergleichen']],'order'),goal=make('Planungsziel','goal','select',[['both','Pflichtbesetzung und Sollstunden'],['coverage','Pflichtbesetzung']],'both');
+    const people=snapshot().employees.filter(e=>e.status==='active'&&!e.deletedAt),focus=make('Mitarbeiterkreis','focus','select',[['all','Alle aktiven Mitarbeiter'],['leaders','Teamleiter'],...['A','B','C','D','E'].map(t=>['team:'+t,'Team '+t]),...people.map(e=>['person:'+e.id,[e.first,e.last].filter(Boolean).join(' ')])],'all'),count=make('Monate beim Mehrmonatsausgleich','count','select',[2,3,4,5,6].map(n=>[String(n),String(n)]),'3');
+    for(const input of [name,mode,goal,focus,count])details.appendChild(input.closest('label'));
+    const checks=node('fieldset'),legend=node('legend','Zusätzliche Ergebnisprüfungen');checks.appendChild(legend);const checkInputs={};for(const [id,label] of [['rules','Regelübersicht'],['hours','Stundenübersicht'],['reserve','Vertretungsreserve']]){const wrap=node('label',label),input=node('input');input.type='checkbox';input.name='check-'+id;input.checked=id!=='reserve';checkInputs[id]=input;wrap.prepend(input);checks.appendChild(wrap);}details.appendChild(checks);
+    const error=node('p',undefined,'sf-chat-profile-error');error.setAttribute('role','status');
+    const save=node('button','Profil speichern');save.type='submit';const remove=node('button','Profil löschen');remove.type='button';remove.disabled=true;details.append(save,remove,error);form.appendChild(details);
+    const adjust=()=>{if(mode.value!=='order')goal.value='both';goal.disabled=mode.value!=='order';count.disabled=mode.value!=='multiBalance';};mode.onchange=adjust;
+    choose.onchange=()=>{const p=profiles.find(p=>p.id===choose.value),c=p?.config||{mode:'order',goal:'both',focus:'all',count:3,checks:['rules','hours']};name.value=p?.name||'Standardprofil';mode.value=c.mode;goal.value=c.goal;focus.value=c.focus;count.value=String(c.count);for(const [key,input] of Object.entries(checkInputs))input.checked=c.checks.includes(key);run.disabled=remove.disabled=!p;details.open=!p;adjust();};adjust();
+    const persist=async deleting=>{if(identity()!==owner)return;if(!deleting&&(!name.reportValidity()||!form.reportValidity()))return;save.disabled=remove.disabled=true;try{await persistProfile(choose.value,name.value,{mode:mode.value,goal:goal.value,focus:focus.value,count:Number(count.value),checks:Object.entries(checkInputs).filter(([,input])=>input.checked).map(([key])=>key)},deleting);}catch(e){if(identity()===owner)error.textContent=e.message||String(e);}finally{save.disabled=false;remove.disabled=!choose.value;}};
+    form.onsubmit=e=>{e.preventDefault();persist(false);};remove.onclick=()=>{if(choose.value&&confirm('Dieses Planungsprofil löschen? Dienste und verbindliche Regeln bleiben erhalten.'))persist(true);};host.appendChild(form);
+  }
   function renderWizard(config,host){
     const list=node('ol',undefined,'sf-chat-wizard');list.setAttribute('aria-label','Planungsschritte');
     for(const step of config.steps){const item=node('li',undefined,step.done?'is-complete':''),label=node('strong',(step.done?'Erledigt: ':'Offen: ')+step.title);item.append(label,node('p',step.text));
@@ -392,6 +454,8 @@
       if(a.actions?.length){const actions=node('div',undefined,'sf-chat-actions');a.actions.forEach(action=>{const button=node('button',action.label);button.type='button';button.onclick=()=>openAction(action);actions.appendChild(button);});article.appendChild(actions);}
       if(a.form)renderAnalysisForm(a.form,article);
       if(a.wizard)renderWizard(a.wizard,article);
+      if(a.profileManager)renderProfileManager(article);
+      if(a.variants){const actions=node('div',undefined,'sf-chat-actions');for(const variant of a.variants){const button=node('button',variant.label+' prüfen');button.type='button';button.onclick=()=>variant.profileId?submit('Planungsprofil ausführen',{kind:'profile',profileId:variant.profileId,strategy:variant.key,month:variant.month}):submit('Planvariante prüfen',{kind:'variant',strategy:variant.key,month:variant.month,focus:variant.focus?.length===1?'person:'+variant.focus[0]:'all',focusIds:variant.focus});actions.appendChild(button);}article.appendChild(actions);}
       if((a.proposal?.proposed?.length||a.proposal?.undoId)&&a.proposal.owner){const button=node('button',a.proposal.undoId?'Rücknahme bestätigen':'Vorschläge als Entwurf übernehmen','sf-chat-row-action');button.type='button';button.onclick=()=>applyProposal(a.proposal,button);article.appendChild(button);}
       if(a.suggestions?.length){const examples=node('div',undefined,'sf-chat-examples');quickButtons(examples,a.suggestions);article.appendChild(examples);}
       article.appendChild(node('small',`Geprüft um ${new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})} · Aktuell geladene Planungsdaten`,'sf-chat-source'));
@@ -405,9 +469,10 @@
     toggleQuestionGuide(false);setProgress(true);
     el('sfPlanningChatStatus').textContent='Planungsdaten werden geprüft.';
     try{
-      if(['bottlenecks','forecast','leaveImpact','changeImpact','order','multiBalance','undo','wizard'].includes(Core.intentFor(Core.normalize(text))))await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+      if(['bottlenecks','forecast','leaveImpact','changeImpact','order','multiBalance','undo','wizard','variants','profiles','followup'].includes(Core.intentFor(Core.normalize(text))))await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       if(owner!==identity()||request!==requestId)return;
       if(/protokoll|gespeicherte|planungsgruende|besetzung.*verhindert/.test(Core.normalize(text)))await loadRuns();
+      if(Core.intentFor(Core.normalize(text))==='profiles')await loadProfiles();
       if(owner!==identity()||request!==requestId)return;
       answer=ask(text,analysisRequest);
       if(answer.proposal&&(answer.proposal.proposed?.length||answer.proposal.undoId)){
@@ -432,6 +497,7 @@
     if(owner!==identity()||request!==requestId)return;
     if(!authorized()||busy())return;
     if(answer.wizard){try{const state=loadWork();state.activeMonth=answer.wizard.month;saveWork(state);}catch{answer.notes=[...(answer.notes||[]),'Fortschritt konnte in diesem Browser nicht gespeichert werden.'];}}
+    if(Core.intentFor(Core.normalize(text))==='followup'){changeAcknowledged=true;clearChangeNotice();}
     const activeMonth=loadWork().activeMonth;if(activeMonth&&!answer.wizard)answer.actions=[...(answer.actions||[]),{question:'Geführte Monatsplanung '+activeMonth,label:'Planung fortsetzen'}];
     context=answer.context||{};if(input)input.value='';
     messages.push({user:true,text},{answer});if(messages.length>40)messages=messages.slice(-40);
@@ -449,6 +515,9 @@
     welcome.appendChild(node('p','Stelle deine Frage oder wähle einen Einstieg. Alle unterstützten Themen findest du jederzeit unter „Fragen & Beispiele“.'));
     const examples=node('div',undefined,'sf-chat-examples sf-chat-start');
     for(const [label,question] of [
+      ['Planungsprofile','Planungsprofile verwalten'],
+      ['Änderungscheck','Änderungscheck anzeigen'],
+      ['Planvarianten','Planvarianten vergleichen'],
       ['Planungsauftrag','Planungsauftrag starten'],
       ['Geführte Planung','Hilf mir, diesen Monat fertigzustellen'],
       ['Mehrmonatsausgleich','Mehrmonatsausgleich starten'],
@@ -503,7 +572,7 @@
       el('sfPlanningChatCurrent').onclick=()=>{requestId++;selectedMonth='';selectedService=null;context={};el('sfPlanningChatMonth').value='';updatePeriod();el('sfPlanningChatMonth').closest('details').open=false;};
     }
     if(!messages.length)welcome();else{el('sfPlanningChatLog').replaceChildren();messages.forEach(message=>renderMessage(message));}
-    syncPlacement();el('sfPlanningChatMonth').value=selectedMonth;updatePeriod();dialog.show();
+    syncPlacement();el('sfPlanningChatMonth').value=selectedMonth;updatePeriod();dialog.show();showChangeNotice();
     if(dialog.classList.contains('sf-chat-docked'))dialog.scrollIntoView({block:'nearest'});
     el('sfPlanningAssistantButton')?.setAttribute('aria-expanded','true');el('sfPlanningChatInput').focus({preventScroll:true});
   }
@@ -533,5 +602,7 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
   // Auth state can change without a DOM mutation (for example an expired session).
   setInterval(syncScope,500);
+  setInterval(observePlanningChanges,1500);
+  document.addEventListener('sf:planning-change',event=>{const detail=event.detail;if(!authorized()||detail?.companyId!==B().companyId)return;observePlanningChanges();if(!Array.isArray(detail.dates))return;mergeChange({dates:detail.dates.filter(Core.validDate),assignmentIds:(detail.assignmentIds||[]).filter(id=>assignments.some(a=>String(a.id)===String(id)))});});
 })();
 

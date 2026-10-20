@@ -1199,6 +1199,33 @@
         "assets/planning-assistant-core-v1.js",
         "assets/planning-assistant-v1.js"
       ]
+    },
+    {
+      "category": "auto",
+      "question": "Wie verwende ich gespeicherte Planungsprofile?",
+      "sources": [
+        "assets/planning-assistant-workflows-v1.js",
+        "assets/planning-assistant-v1.js",
+        "supabase/migrations/20261020023326_planning_assistant_profiles.sql"
+      ]
+    },
+    {
+      "category": "auto",
+      "question": "Wann startet der automatische Änderungscheck?",
+      "sources": [
+        "assets/planning-assistant-workflows-v1.js",
+        "assets/planning-assistant-v1.js",
+        "supabase/migrations/20261020023326_planning_assistant_profiles.sql"
+      ]
+    },
+    {
+      "category": "auto",
+      "question": "Wie vergleiche ich entscheidungsfertige Planvarianten?",
+      "sources": [
+        "assets/planning-assistant-workflows-v1.js",
+        "assets/planning-assistant-v1.js",
+        "supabase/migrations/20261020023326_planning_assistant_profiles.sql"
+      ]
     }
   ],
   "moduleInventory": [
@@ -2624,6 +2651,9 @@
       "id": "auto",
       "name": "Auto-Planung",
       "questions": [
+        "Wie verwende ich gespeicherte Planungsprofile?",
+        "Wann startet der automatische Änderungscheck?",
+        "Wie vergleiche ich entscheidungsfertige Planvarianten?",
         "Wie erteile ich einen Planungsauftrag in Alltagssprache?",
         "Wie führt mich der Assistent durch die Monatsplanung?",
         "Wie funktioniert der Mehrmonatsausgleich im Assistenten?",
@@ -3044,14 +3074,14 @@
   "currentAudit": {
     "date": "2026-10-16",
     "baselineArticleCount": 211,
-    "addedArticleCount": 24,
+    "addedArticleCount": 27,
     "correctedArticleCount": 8,
-    "articleCount": 235,
+    "articleCount": 238,
     "categoryCount": 22,
     "assetJavaScriptCount": 214
   },
   "incrementalUpdate": {
     "date": "2026-10-20",
-    "description": "Engpasslöser, Fragenübersicht, Frühwarnung, Urlaubsfolgen und Dienständerungsvorschau ergänzt. Planungsaufträge, geführte Monatsplanung, Mehrmonatsausgleich und Rücknahme ergänzt."
+    "description": "Engpasslöser, Fragenübersicht, Frühwarnung, Urlaubsfolgen und Dienständerungsvorschau ergänzt. Planungsaufträge, geführte Monatsplanung, Mehrmonatsausgleich und Rücknahme ergänzt. Zentrale Planungsprofile, automatischer Änderungscheck und Variantenvergleich ergänzt."
   }
 }
