@@ -5,10 +5,10 @@
   const Core=window.SFPlanningAssistantCore,roles=['OWNER','ADMIN','PLANNER','DISPATCHER'];
   if(!Core)return;
   let context={},messages=[],scope=null,previousFocus=null,selectedMonth='',hydrationFailed=false,selectedService=null,planningRuns=[],journalError='',requestId=0,applyingProposal=false,refreshingProposal=null;
-  const Insights=window.SFPlanningInsights;
+  const Insights=window.SFPlanningInsights,Workflows=window.SFPlanningWorkflows;
   let protectedAssignmentIds=new Set();
   const withRows=(rows,fn)=>{const original=assignments;try{assignments=rows;return fn()}finally{assignments=original}};
-  const signature=()=>JSON.stringify([identity(),window.SFCompliance?.policy,employees,assignments,absences,TYPES,typeof globalSoll==='undefined'?null:globalSoll,typeof dailySoll==='undefined'?null:dailySoll]);
+  const signature=()=>JSON.stringify([identity(),window.SFCompliance?.policy,window.SFCompliance?.publications,window.SFPlanningTeams?.rules,employees,assignments,absences,TYPES,typeof globalSoll==='undefined'?null:globalSoll,typeof dailySoll==='undefined'?null:dailySoll]);
   const B=()=>window.SFBackend||{};
   const demo=()=>sessionStorage.getItem('sf_demo_session_v1')==='active';
   const authorized=()=>!!(B().ready&&roles.includes(B().role)&&(demo()||B().user?.id&&B().companyId));
@@ -100,6 +100,18 @@
     accepted.sort((a,b)=>candidates.findIndex(c=>String(c.e.id)===String(a.e.id))-candidates.findIndex(c=>String(c.e.id)===String(b.e.id)));
     return{candidates:accepted,assessments,reasons:[...rejected].map(([label,count])=>({label,count}))};
   }
+  const stateKey=()=> 'sf-assistant-work-v1|'+identity();
+  function loadWork(){
+    if(!authorized())return {entries:[],progress:{}};
+    try{const value=JSON.parse(localStorage.getItem(stateKey())||'{}');return {activeMonth:value.activeMonth,entries:(Array.isArray(value.entries)?value.entries:[]).filter(e=>e&&Array.isArray(e.dates)&&e.dates.length&&Date.now()-e.created<90*86400000).slice(0,20),progress:value.progress&&typeof value.progress==='object'?value.progress:{}};}catch{return {entries:[],progress:{}};}
+  }
+  function saveWork(value){localStorage.setItem(stateKey(),JSON.stringify(value));}
+  function planRevision(){let hash=2166136261;for(const c of signature()){hash^=c.charCodeAt(0);hash=Math.imul(hash,16777619);}return (hash>>>0).toString(16);}
+  function workSnapshot(){const state=loadWork(),revision=planRevision();return {undoEntries:state.entries,wizardMonth:state.activeMonth,wizardProgress:Object.fromEntries(Object.entries(state.progress).map(([m,p])=>[m,p.revision===revision?p.steps:{}]))};}
+  function completeWizard(month,key,done){
+    syncScope();if(!authorized()||busy()||!['hours','reserve','release'].includes(key))return;
+    try{const state=loadWork(),revision=planRevision(),old=state.progress[month];state.progress[month]={revision,steps:{...(old?.revision===revision?old.steps:{}),[key]:done}};state.progress=Object.fromEntries(Object.entries(state.progress).slice(-12));saveWork(state);submit('Geführte Monatsplanung '+month);}catch(error){window.showSaveToast?.('Fortschritt nicht gespeichert',error.message);}
+  }
   function snapshot(){
     const auth=authorized();
     if(!auth)return{authorized:false};
@@ -108,7 +120,7 @@
     const belongs=row=>!(row.companyId||row.company_id)||(row.companyId||row.company_id)===B().companyId;
     const dates=contextDates();
     if(selectedService&&!dates.includes(selectedService.date))selectedService=null;
-    return{authorized:true,today:today(),defaultDates:dates,selectedService,selectedPeriodExplicit:!!selectedMonth,
+    return{authorized:true,...workSnapshot(),today:today(),defaultDates:dates,selectedService,selectedPeriodExplicit:!!selectedMonth,
       employees:typeof employees==='undefined'?[]:employees.filter(belongs),
       assignments:typeof assignments==='undefined'?[]:assignments.filter(belongs).filter(a=>a.status!=='CANCELLED'&&a._dbStatus!=='CANCELLED'),
       absences:typeof absences==='undefined'?[]:absences.filter(belongs),
@@ -151,35 +163,47 @@
   function confirmProposal(proposal){
     return new Promise(resolve=>{
       const dialog=node('dialog',undefined,'sf-planning-proposal-confirm');dialog.setAttribute('aria-labelledby','sfPlanningProposalTitle');
-      const title=node('h2','Geprüfte Änderungen als Entwurf übernehmen?');title.id='sfPlanningProposalTitle';dialog.appendChild(title);
-      dialog.appendChild(node('p',proposal.changes.length+' Zuweisungen werden gespeichert. '+proposal.changes.filter(c=>c.replaces).length+' bestehende Entwurfszuweisungen werden ersetzt.'));
-      const actions=node('div',undefined,'sf-chat-actions'),cancel=node('button','Abbrechen'),accept=node('button','Jetzt als Entwurf übernehmen');cancel.type=accept.type='button';
+      const title=node('h2',proposal.undoId?'Assistentenänderungen zurücknehmen?':'Geprüfte Änderungen als Entwurf übernehmen?');title.id='sfPlanningProposalTitle';dialog.appendChild(title);
+      dialog.appendChild(node('p',proposal.undoId?'Rücknahme: '+(proposal.removed||[]).length+' Assistentendienste entfernen und '+proposal.proposed.length+' frühere Entwurfsdienste wiederherstellen. Dadurch können Besetzungslücken erneut entstehen.':proposal.proposed.length+' Zuweisungen werden gespeichert. '+(proposal.removed||proposal.changes.filter(c=>c.replaces)).length+' bestehende Entwurfszuweisungen werden ersetzt.'));
+      const actions=node('div',undefined,'sf-chat-actions'),cancel=node('button','Abbrechen'),accept=node('button',proposal.undoId?'Rücknahme jetzt bestätigen':'Jetzt als Entwurf übernehmen');cancel.type=accept.type='button';
       const done=value=>{dialog.close();dialog.remove();resolve(value)};cancel.onclick=()=>done(false);accept.onclick=()=>done(true);dialog.addEventListener('cancel',e=>{e.preventDefault();done(false)});
       actions.append(cancel,accept);dialog.append(actions);document.body.appendChild(dialog);dialog.showModal();cancel.focus();
     });
   }
   async function applyProposal(proposal,button){
-    if(!authorized()||busy()||!proposal?.proposed?.length)return;
+    if(!authorized()||busy()||!proposal||(!proposal.proposed?.length&&!proposal.undoId))return;
     const owner=identity();let committed=false,controls=[],priorSuppression=B().suppressSync;
     try{
       if(proposal.signature!==signature()||proposal.owner!==owner||Date.now()-proposal.created>15*60*1000)throw Error('Diese Vorschau ist nicht mehr aktuell. Bitte neue Verbesserungsvorschläge erstellen.');
       if(!await confirmProposal(proposal))return;
       if(!authorized()||busy()||identity()!==owner||proposal.signature!==signature())throw Error('Die Planungsdaten wurden geändert. Bitte die Vorschau erneuern.');
       if(B().syncing||B().lastSyncError||window.SFMonthOptimizer?.isBusy?.())throw Error('Eine andere Planung oder Speicherung läuft. Bitte anschließend erneut prüfen.');
-      if(proposal.dates.some(d=>window.SFCompliance?.isWeekPublished?.(d)))throw Error('Der Monat enthält veröffentlichte Wochen. Bitte Änderungen dort einzeln prüfen.');
+      const changedDates=[...proposal.proposed,...(proposal.removed||proposal.changes.filter(c=>c.replaces).map(c=>c.replaces))].map(a=>a.date);
+      if(changedDates.some(d=>window.SFCompliance?.isWeekPublished?.(d)))throw Error('Eine Änderung betrifft eine veröffentlichte Woche. Bitte dort einzeln prüfen.');
       const current=snapshot(),checked=[];
-      for(const a of proposal.proposed){const employee=current.employees.find(e=>String(e.id)===String(a.employeeId));if(!employee||!candidateCheck(a.type,a.date,[...proposal.base,...checked]).candidates.some(c=>String(c.e.id)===String(a.employeeId))||!Insights.capacity(current,employee,[...proposal.base,...checked],a))throw Error('Ein Vorschlag erfüllt die aktuellen Regeln nicht mehr.');checked.push(a);}
+      for(const a of proposal.proposed){const employee=current.employees.find(e=>String(e.id)===String(a.employeeId));if(!employee||!candidateCheck(a.type,a.date,[...proposal.base,...checked],a).candidates.some(c=>String(c.e.id)===String(a.employeeId))||!Insights.capacity(current,employee,[...proposal.base,...checked],a))throw Error('Ein Vorschlag erfüllt die aktuellen Regeln nicht mehr.');checked.push(a);}
+      const removed=proposal.removed||proposal.changes.filter(c=>c.replaces).map(c=>c.replaces),affected=new Set([...removed,...proposal.proposed].map(a=>String(a.employeeId)));
+      if(removed.some(a=>!current.movable(a)))throw Error('Ein betroffener Entwurf ist inzwischen geschützt. Bitte neu prüfen.');
+      const problems=Insights.checkedPlan(current,current.assignments,[...proposal.base,...proposal.proposed],affected,proposal.dates);if(problems.length)throw Error(problems[0]);
+      const batch='assistant-'+Array.from(crypto.getRandomValues(new Uint8Array(16)),n=>n.toString(16).padStart(2,'0')).join(''),generated=proposal.proposed.map((a,i)=>({...a,id:batch+'-'+i,note:a.note??(demo()?'':'Monatsoptimierung'),pause:Number(a.pause||0),version:1,_dbStatus:'DRAFT'}));
+      const state=loadWork(),entry=proposal.undoId?state.entries.find(e=>e.id===proposal.undoId):{id:batch,created:Date.now(),label:proposal.label||'Assistentenänderung',dates:proposal.dates,monthCount:proposal.monthCount||1,before:removed.map(a=>({...a})),added:generated.map(a=>({id:a.id,date:a.date,type:a.type,stamp:Workflows.stamp(current,a)})),pending:true};
+      if(!entry)throw Error('Die gespeicherte Rücknahme ist nicht mehr verfügbar.');
+      if(!proposal.undoId){state.entries=[entry,...state.entries].slice(0,20);saveWork(state);}
       applyingProposal=true;controls=[...document.querySelectorAll('#appShell button,#appShell input,#appShell select,#appShell textarea,#sfPlanningChat button,#sfPlanningChat textarea')].map(n=>({n,disabled:n.disabled}));controls.forEach(x=>x.n.disabled=true);
-      if(demo()){assignments=[...proposal.base,...proposal.proposed.map((a,i)=>({...a,id:'assistant-'+Date.now()+'-'+i}))];saveAll();committed=true;}
+      if(demo()){assignments=[...proposal.base,...generated];saveAll();committed=true;}
       else{
         B().suppressSync=true;clearTimeout(B().syncTimer);B().syncTimer=null;
-        const replace=proposal.changes.filter(c=>c.replaces).map(c=>c.replaces._dbId||B().asgDb?.get(String(c.replaces.id)));
+        const replace=removed.map(a=>a._dbId||B().asgDb?.get(String(a.id)));
         if(replace.some(x=>!x))throw Error('Ein Entwurf besitzt noch keine gespeicherte Kennung. Bitte neu laden.');
-        const rows=proposal.proposed.map((a,i)=>{const t=window.SFSolidPlanningCore.interval(a.date,a.start,a.end,current.solidRules.timezone),id=B().empDb?.get(String(a.employeeId));if(!id)throw Error('Die Mitarbeiterzuordnung ist nicht aktuell.');return {employee_id:id,shift_code:a.type,starts_at:new Date(t.start).toISOString(),ends_at:new Date(t.end).toISOString(),legacy_id:'assistant-'+Date.now()+'-'+i}});
-        const q=await B().client.rpc('apply_planning_period',{p_company_id:B().companyId,p_first_month:proposal.dates[0].slice(0,7)+'-01',p_month_count:1,p_fingerprint:proposal.fingerprint,p_replace_ids:replace,p_assignments:rows,p_respect_weekly:true});
-        if(q.error)throw q.error;committed=true;await B().hydrate();
+        const rows=generated.map((a,i)=>{const t=window.SFSolidPlanningCore.interval(a.date,a.start,a.end,current.solidRules.timezone),id=B().empDb?.get(String(a.employeeId));if(!id)throw Error('Die Mitarbeiterzuordnung ist nicht aktuell.');return {employee_id:id,shift_code:a.type,starts_at:new Date(t.start).toISOString(),ends_at:new Date(t.end).toISOString(),legacy_id:a.id,note:a.note,break_minutes:Number(a.pause||0)}});
+        const q=await B().client.rpc('apply_planning_period',{p_company_id:B().companyId,p_first_month:proposal.dates[0].slice(0,7)+'-01',p_month_count:proposal.monthCount||1,p_fingerprint:proposal.fingerprint,p_replace_ids:replace,p_assignments:rows,p_respect_weekly:true});
+        if(q.error)throw q.error;committed=true;
+        // Record success before hydration; an interrupted refresh must not lose the undo receipt.
+        entry.pending=false;const committedState=loadWork();if(proposal.undoId){const old=committedState.entries.find(e=>e.id===proposal.undoId);if(old)old.undone=true;}else committedState.entries=committedState.entries.map(e=>e.id===entry.id?entry:e);saveWork(committedState);
+        await B().hydrate();
       }
-      window.renderCalendar?.();window.renderAutoPlanning?.();window.showSaveToast?.('Vorschläge als Entwurf gespeichert','Die Änderungen wurden übernommen. Der Dienstplan kann jetzt geprüft werden.');
+      if(identity()===owner){const finalState=loadWork();if(proposal.undoId){const old=finalState.entries.find(e=>e.id===proposal.undoId);if(old)old.undone=true;}else{entry.pending=false;entry.added=generated.map(a=>{const live=assignments.find(x=>String(x.id)===a.id)||a;return {id:a.id,date:a.date,type:a.type,stamp:Workflows.stamp({shifts:TYPES},live)};});finalState.entries=finalState.entries.map(e=>e.id===entry.id?entry:e);}saveWork(finalState);}
+      window.renderCalendar?.();window.renderAutoPlanning?.();window.showSaveToast?.(proposal.undoId?'Assistentenänderungen zurückgenommen':'Vorschläge als Entwurf gespeichert','Die Änderungen wurden übernommen. Der Dienstplan kann jetzt geprüft werden.');
       if(button)button.disabled=true;
     }catch(error){window.showSaveToast?.(committed?'Gespeichert – Ansicht neu laden':'Vorschläge nicht übernommen',committed?'Die Speicherung war erfolgreich; die Ansicht konnte nicht aktualisiert werden. Bitte neu laden.':error.message||String(error));}
     finally{B().suppressSync=priorSuppression;applyingProposal=false;controls.forEach(x=>x.n.disabled=x.disabled);if(committed&&button)button.disabled=true;}
@@ -278,6 +302,14 @@
     };
     const people=s.employees.filter(e=>e.status==='active'&&!e.deletedAt).map(e=>[String(e.id),[e.first,e.last].filter(Boolean).join(' ')+(e.personnelNo?' · '+e.personnelNo:'')]);
     let source,target,date,type,start,end,employee,from,to;
+    if(['order','multiBalance'].includes(config.kind)){
+      field('Startmonat','month','month',[],config.month);
+      field('Mitarbeiterkreis','focus','select',[['all','Alle aktiven Mitarbeiter'],['leaders','Teamleiter'],...['A','B','C','D','E'].map(t=>['team:'+t,'Team '+t]),...people.map(([id,name])=>['person:'+id,name])],config.focus||'all');
+      if(config.kind==='order')field('Planungsziel','goal','select',[['both','Pflichtbesetzung und Sollstunden verbessern'],['coverage','Pflichtdienste besetzen']],config.goal||'both');
+      else field('Anzahl Monate','count','select',[2,3,4,5,6].map(n=>[String(n),n+' Monate']),String(config.count||3));
+      const button=node('button','Vorschau erstellen','sf-chat-row-action');button.type='submit';form.appendChild(button);
+      form.onsubmit=event=>{event.preventDefault();if(form.reportValidity())submit(config.kind==='order'?'Planungsauftrag vorbereiten':'Mehrmonatsausgleich vorbereiten',{kind:config.kind,...Object.fromEntries(new FormData(form))});};host.appendChild(form);return;
+    }
     if(config.kind==='leaveImpact'){
       employee=field('Mitarbeiter','employeeId','select',people,config.employeeId);from=field('Urlaub von','startDate','date',[],config.startDate);to=field('Urlaub bis einschließlich','endDate','date',[],config.endDate);
       from.onchange=()=>{to.min=from.value;if(!to.value)to.value=from.value;};
@@ -295,6 +327,13 @@
     }
     const button=node('button','Auswirkungen prüfen','sf-chat-row-action');button.type='submit';form.appendChild(button);
     form.onsubmit=event=>{event.preventDefault();if(!form.reportValidity())return;const request={kind:config.kind,...Object.fromEntries(new FormData(form))};submit(config.kind==='leaveImpact'?'Urlaubsfolgen prüfen':'Dienstverschiebung prüfen',request);};host.appendChild(form);
+  }
+  function renderWizard(config,host){
+    const list=node('ol',undefined,'sf-chat-wizard');list.setAttribute('aria-label','Planungsschritte');
+    for(const step of config.steps){const item=node('li',undefined,step.done?'is-complete':''),label=node('strong',(step.done?'Erledigt: ':'Offen: ')+step.title);item.append(label,node('p',step.text));
+      const actions=node('div',undefined,'sf-chat-actions'),open=node('button',step.title+' prüfen');open.type='button';open.onclick=()=>submit(step.question);actions.appendChild(open);
+      if(!step.automatic){const toggle=node('button',step.done?'Erneut öffnen':'Als geprüft markieren');toggle.type='button';toggle.onclick=()=>completeWizard(config.month,step.key,!step.done);actions.appendChild(toggle);}item.appendChild(actions);list.appendChild(item);
+    }host.appendChild(list);
   }
   function bindEditFunction(){
     const edit=window.editAssignment;
@@ -352,7 +391,8 @@
       }
       if(a.actions?.length){const actions=node('div',undefined,'sf-chat-actions');a.actions.forEach(action=>{const button=node('button',action.label);button.type='button';button.onclick=()=>openAction(action);actions.appendChild(button);});article.appendChild(actions);}
       if(a.form)renderAnalysisForm(a.form,article);
-      if(a.proposal?.proposed?.length&&a.proposal.owner){const button=node('button','Vorschläge als Entwurf übernehmen','sf-chat-row-action');button.type='button';button.onclick=()=>applyProposal(a.proposal,button);article.appendChild(button);}
+      if(a.wizard)renderWizard(a.wizard,article);
+      if((a.proposal?.proposed?.length||a.proposal?.undoId)&&a.proposal.owner){const button=node('button',a.proposal.undoId?'Rücknahme bestätigen':'Vorschläge als Entwurf übernehmen','sf-chat-row-action');button.type='button';button.onclick=()=>applyProposal(a.proposal,button);article.appendChild(button);}
       if(a.suggestions?.length){const examples=node('div',undefined,'sf-chat-examples');quickButtons(examples,a.suggestions);article.appendChild(examples);}
       article.appendChild(node('small',`Geprüft um ${new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})} · Aktuell geladene Planungsdaten`,'sf-chat-source'));
     }
@@ -365,12 +405,12 @@
     toggleQuestionGuide(false);setProgress(true);
     el('sfPlanningChatStatus').textContent='Planungsdaten werden geprüft.';
     try{
-      if(['bottlenecks','forecast','leaveImpact','changeImpact'].includes(Core.intentFor(Core.normalize(text))))await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+      if(['bottlenecks','forecast','leaveImpact','changeImpact','order','multiBalance','undo','wizard'].includes(Core.intentFor(Core.normalize(text))))await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       if(owner!==identity()||request!==requestId)return;
       if(/protokoll|gespeicherte|planungsgruende|besetzung.*verhindert/.test(Core.normalize(text)))await loadRuns();
       if(owner!==identity()||request!==requestId)return;
       answer=ask(text,analysisRequest);
-      if(answer.proposal?.proposed?.length){
+      if(answer.proposal&&(answer.proposal.proposed?.length||answer.proposal.undoId)){
         if(!demo()){
           if(B().syncing||window.SFMonthOptimizer?.isBusy?.())throw Error('Eine Planung oder Speicherung läuft. Bitte danach erneut prüfen.');
           clearTimeout(B().syncTimer);B().syncTimer=null;await B().sync();if(B().lastSyncError)throw B().lastSyncError;
@@ -379,18 +419,20 @@
             try{
               await B().hydrate();
               if(owner!==identity()||request!==requestId)return;
-              q=await B().client.rpc('preview_planning_period',{p_company_id:B().companyId,p_first_month:answer.proposal.dates[0].slice(0,7)+'-01',p_month_count:1});if(q.error)throw q.error;
+              q=await B().client.rpc('preview_planning_period',{p_company_id:B().companyId,p_first_month:answer.proposal.dates[0].slice(0,7)+'-01',p_month_count:answer.proposal.monthCount||1});if(q.error)throw q.error;
             }finally{refreshingProposal=null;syncScope();}
           if(owner!==identity()||request!==requestId)return;
           protectedAssignmentIds=new Set(q.data.protectedIds||[]);
-          answer=ask(text);if(answer.proposal){const protectedIds=protectedAssignmentIds;if(answer.proposal.changes.some(c=>c.replaces&&protectedIds.has(c.replaces._dbId||B().asgDb?.get(String(c.replaces.id)))))throw Error('Ein vorgeschlagener Wechsel betrifft einen geschützten Dienst. Bitte im Dienstplan einzeln prüfen.');answer.proposal.fingerprint=q.data.fingerprint;}
+          answer=ask(text,analysisRequest);if(answer.proposal){const protectedIds=protectedAssignmentIds;if((answer.proposal.removed||answer.proposal.changes.filter(c=>c.replaces).map(c=>c.replaces)).some(a=>protectedIds.has(a._dbId||B().asgDb?.get(String(a.id)))))throw Error('Ein vorgeschlagener Wechsel betrifft einen geschützten Dienst. Bitte im Dienstplan einzeln prüfen.');answer.proposal.fingerprint=q.data.fingerprint;}
         }
-        if(answer.proposal)Object.assign(answer.proposal,{owner,signature:signature(),created:Date.now()});
+        if(answer.proposal)Object.assign(answer.proposal,{owner,signature:signature(),created:Date.now(),label:answer.title});
       }
     }catch(error){answer={title:'Prüfung derzeit nicht möglich',text:error.message||'Bitte lade die Planungsdaten erneut und versuche es noch einmal.',context:{}};}
     finally{if(request===requestId)setProgress(false);}
     if(owner!==identity()||request!==requestId)return;
     if(!authorized()||busy())return;
+    if(answer.wizard){try{const state=loadWork();state.activeMonth=answer.wizard.month;saveWork(state);}catch{answer.notes=[...(answer.notes||[]),'Fortschritt konnte in diesem Browser nicht gespeichert werden.'];}}
+    const activeMonth=loadWork().activeMonth;if(activeMonth&&!answer.wizard)answer.actions=[...(answer.actions||[]),{question:'Geführte Monatsplanung '+activeMonth,label:'Planung fortsetzen'}];
     context=answer.context||{};if(input)input.value='';
     messages.push({user:true,text},{answer});if(messages.length>40)messages=messages.slice(-40);
     el('sfPlanningChatWelcome')?.remove();el('sfPlanningChatLog')?.replaceChildren();messages.forEach(message=>renderMessage(message));
@@ -407,6 +449,10 @@
     welcome.appendChild(node('p','Stelle deine Frage oder wähle einen Einstieg. Alle unterstützten Themen findest du jederzeit unter „Fragen & Beispiele“.'));
     const examples=node('div',undefined,'sf-chat-examples sf-chat-start');
     for(const [label,question] of [
+      ['Planungsauftrag','Planungsauftrag starten'],
+      ['Geführte Planung','Hilf mir, diesen Monat fertigzustellen'],
+      ['Mehrmonatsausgleich','Mehrmonatsausgleich starten'],
+      ['Rückgängig machen','Nimm die letzte Änderung des Assistenten zurück.'],
       ['Frühwarnung','Frühwarnung starten'],
       ['Urlaubsfolgen','Urlaubsfolgen prüfen'],
       ['Dienständerung prüfen','Dienstverschiebung prüfen'],

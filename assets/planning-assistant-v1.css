@@ -126,3 +126,10 @@
 @media(max-width:600px){.sf-chat-analysis-form :is(input,select){font-size:16px}}
 .sp-assign-foot:has(#sfAssignmentImpactButton){display:flex;flex-wrap:wrap;align-items:center}.sp-assign-foot:has(#sfAssignmentImpactButton)>span{flex:1}.sp-assign-foot #sfAssignmentImpactButton{min-height:44px;white-space:normal}
 .sf-chat-priority.is-danger{border-left:3px solid var(--danger,#ff6677);background:#ff667719}.sf-chat-priority.is-warning{border-left:3px solid var(--amber,#ffb84d);background:#ffb84d19}
+
+/* Guided planning follows the existing assistant card layout. */
+.sf-chat-wizard{display:grid;gap:12px;padding:0;list-style:none;counter-reset:sf-step}
+.sf-chat-wizard>li{counter-increment:sf-step;border:1px solid var(--border,rgba(148,163,184,.25));border-radius:12px;padding:14px;min-width:0}
+.sf-chat-wizard>li>strong::before{content:counter(sf-step) '. '}
+.sf-chat-wizard>li.is-complete{border-inline-start:4px solid #22a676}
+.sf-chat-wizard p{margin:8px 0 12px}

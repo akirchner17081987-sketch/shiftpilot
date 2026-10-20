@@ -12,9 +12,11 @@
   const hours=v=>Number(v||0).toLocaleString('de-DE',{maximumFractionDigits:1});
   const name=e=>[e.first,e.last].filter(Boolean).join(' ')||e.personnelNo||'Mitarbeiter';
   const Insights=typeof module!=='undefined'&&module.exports?require('./planning-assistant-insights-v1.js'):root.SFPlanningInsights;
+  const Workflows=typeof module!=='undefined'&&module.exports?require('./planning-assistant-workflows-v1.js'):root.SFPlanningWorkflows;
   const meta=(e,k)=>String((e.qualifications||[]).find(q=>String(q).startsWith('__sp:'+k+'='))||'').split('=').slice(1).join('=');
   const team=e=>e.planningTeam??meta(e,'planningTeam');
   const questionGroups=[
+    ['Planungsaufträge und Begleitung',['Planungsauftrag starten','Bringe die Teamleiter im November möglichst auf ihre Sollstunden. Bereits veröffentlichte Dienste bleiben bestehen.','Hilf mir, diesen Monat fertigzustellen','Mehrmonatsausgleich starten','Nimm die letzte Änderung des Assistenten zurück.']],
     ['Vorausschauen und Änderungen prüfen',['Frühwarnung starten','Welche Dienste sind in den nächsten 28 Tagen besonders anfällig?','Urlaubsfolgen prüfen','Dienstverschiebung prüfen']],
     ['Plan prüfen und Engpässe lösen',['Engpasslöser starten','Wie bekommen wir alle auf ihre Sollstunden und besetzen alle Pflichtdienste?','Wie bekommen wir die Teamleiter auf ihre Sollstunden?','Monatscheck starten','Belastungscheck starten','Verbesserungsvorschläge erstellen']],
     ['Besetzung und Ersatz',['Welche Dienste sind im gewählten Zeitraum noch offen?','Welche Dienste sind im gewählten Zeitraum überbesetzt?','Welche Mitarbeiter kommen als Ersatz infrage?','Warum konnte die Auto-Planung diesen Dienst nicht besetzen?','Ausfallsimulation starten','Gespeicherte Planungsgründe anzeigen']],
@@ -23,6 +25,10 @@
   ];
   function duration(a,shifts){const t=shifts.find(t=>t.id===a.type),start=a.start||t?.start,end=a.end||t?.end;const mins=v=>/^\d{2}:\d{2}$/.test(v||'')?Number(v.slice(0,2))*60+Number(v.slice(3)):NaN;let m=mins(end)-mins(start);if(m<0)m+=1440;return Number.isFinite(m)?m/60:0;}
   function intentFor(q){
+    if(/rueckgaengig|ruecknahme|(?:aenderung|assistentenauftrag).*zurueck|letzte.*aenderung.*zurueck/.test(q))return 'undo';
+    if(/mehrmonats|(?:naechsten|ueber|in)\s+(?:zwei|drei|vier|fuenf|sechs|\d+)\s+monat/.test(q))return 'multiBalance';
+    if(/gefuehrt|monatsbegleit|planung fortsetzen|hilf mir.*(?:monat|plan|fertig)/.test(q))return 'wizard';
+    if(/planungsauftrag|^(?:bitte\s+)?(?:bringe?|besetze|optimiere?|verteile|verbessere?)\b/.test(q))return 'order';
     if(/fruehwarn|vertretungsreserve|anfaellig|(?:kritisch|riskant).*(?:dienst|schicht)|(?:dienst|schicht).*kritisch/.test(q))return 'forecast';
     if(/urlaubsfolgen|urlaubsantrag.*pruef|(?:folgen|auswirkung).*urlaub|urlaub.*(?:folgen|auswirkung|pruefen|genehmigen|vom|am\s+\d)/.test(q))return 'leaveImpact';
     if(/aenderungsvorschau|dienstverschiebung|was passiert.*(?:verschieb|umplan)|(?:auswirkung|folgen).*(?:dienst|schicht).*aender|was passiert.*(?:dienst|schicht).*(?:verschieb|von|auf)|(?:dienst|schicht).*(?:verschieb|aenderung pruef)/.test(q))return 'changeImpact';
@@ -265,6 +271,33 @@
     const staff=s.employees.filter(e=>!e.deletedAt&&e.status==='active');
     const nav=(view,label)=>({view,label});
     if(Insights&&['forecast','leaveImpact','changeImpact'].includes(intent))return scenarioAnswer(q,s,previous,intent,period,staff);
+    if(Workflows&&['order','multiBalance','wizard','undo'].includes(intent)){
+      const help=findHelp(q,s.helpArticles,true);if(help&&/^(?:wie|was|wo)\b/.test(q))return response(help.title,help.text,{actions:[{help:true,query:help.title,label:'Anleitung im Hilfe-Center öffnen'}],context:{}});
+      if(intent==='undo')return Workflows.undo(s,s.undoEntries?.find(e=>!e.undone));
+      const request=s.analysisRequest?.kind===intent?s.analysisRequest:{},anchor=request.month||(intent==='wizard'&&!period.explicit?s.wizardMonth:null)||dates[Math.floor(dates.length/2)].slice(0,7);
+      if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(anchor))return response('Monat prüfen','Bitte einen gültigen Monat auswählen.',{context});
+      const month=Workflows.datesFor(anchor),matches=employeeMatches(q,staff);
+      const focusName=request.focus||(requestedTeam?'team:'+requestedTeam:/teamleiter/.test(q)?'leaders':matches.length===1?'person:'+matches[0].id:'all');
+      const focus=focusName==='all'?null:focusName==='leaders'?staff.filter(e=>e.role==='Teamleiter'):focusName.startsWith('team:')?staff.filter(e=>team(e)===focusName.slice(5)):focusName.startsWith('person:')?staff.filter(e=>String(e.id)===focusName.slice(7)):[];
+      const form=(text)=>response(intent==='order'?'Planungsauftrag vorbereiten':'Mehrmonatsausgleich vorbereiten',text,{form:{kind:intent,month:anchor,focus:focusName,goal:request.goal||'both',count:request.count||3},context:{...context,pending:true}});
+      if(intent==='wizard')return Workflows.wizard(s,month,s.wizardProgress?.[anchor]||{});
+      if(focus&&!focus.length)return form('Für diesen Fokus wurde kein aktiver Mitarbeiter gefunden. Bitte die Auswahl prüfen.');
+      if(matches.length>1&&!request.focus)return form('Mehrere Personen passen zum Namen. Wähle den Mitarbeiter eindeutig aus.');
+      if(!request.focus&&/mitarbeiter\s+\d|personalnummer\s+\d/.test(q)&&!matches.length)return form('Diese Personalnummer ist keinem aktiven Mitarbeiter zugeordnet.');
+      if(intent==='multiBalance'){
+        const words={zwei:2,drei:3,vier:4,fuenf:5,sechs:6},match=q.match(/(?:naechsten|ueber|in)\s+(zwei|drei|vier|fuenf|sechs|\d+)\s+monat/),count=Number(request.count||(match?(words[match[1]]||match[1]):3));
+        if(!s.analysisRequest&&!match&&!period.explicit)return form('Wähle Startmonat, zwei bis sechs Monate und den gewünschten Fokus.');
+        return Workflows.multi(s,anchor,count,focus?.map(e=>String(e.id))||null);
+      }
+      if(!request.goal&&(/starten|vorbereiten/.test(q)||!/(?:soll|stunden|pflicht|besetz|optimier|verbesser)/.test(q)))return form('Wähle Ziel, Monat und Mitarbeiterkreis. Danach erhältst du einen gemeinsam geprüften Entwurf zur Bestätigung.');
+      const restrictions=q.replace(/(?:ohne|keine)\s+(?:veroeffentlichte|geschuetzte|feste)\s+(?:dienste|schichten)(?:\s+(?:zu\s+)?(?:aendern|veraendern))?/g,'');
+      const unsupported=/\b(?:nur|ausser|ohne|maximal|mindestens|hoechstens|keine|keinen|niemals|bevorzuge)\b/.test(restrictions);
+      if(!request.goal&&(unsupported||/\b(?:loesche|ignoriere|erzwinge|ueberschreite)\b/.test(q)))return form('Diese Zusatzbedingung kann ich nicht zuverlässig als Planungsregel ausführen. Bitte wähle den unterstützten Auftrag unten; die aktuellen verbindlichen Regeln bleiben maßgeblich.');
+      const goal=request.goal||(/pflicht|besetz/.test(q)&&!/stunden|soll|optimier/.test(q)?'coverage':'both');
+      if(!['both','coverage'].includes(goal))return form('Bitte ein unterstütztes Planungsziel wählen.');
+      return Workflows.order(s,month,focus?.map(e=>String(e.id))||null,goal);
+    }
+
     // Explicit product topics take precedence over broad analytical keywords.
     // A named person or a pending service diagnosis keeps the actual data analysis.
     const explanatory=/^(?:bitte\s+)?(?:wie(?! viele| viel)|wo\b|was\b|warum|weshalb|wieso|welche.*(?:regeln|grenzen|schichtwechsel|feiertage|obergrenze)|kann ich|laeuft|darf ich)/.test(q);
