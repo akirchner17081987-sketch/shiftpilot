@@ -152,7 +152,7 @@
   function moveAssignment(id,type,date){
     const a=assignments.find(x=>x.id===id),emp=a&&employees.find(e=>e.id===a.employeeId),t=typeById(type);if(!a||!emp||!t)return;
     if(a.type===type&&a.date===date)return;
-    const before={...a},afterSave=()=>{const label=`${emp.first} ${emp.last}: ${before.type} → ${type}`;showUndo(label,()=>{const current=assignments.find(x=>x.id===id);if(!current)return;Object.assign(current,before,{version:Number(current.version||1)+1});window.SFCompliance?.audit?.('SHIFT_MOVE_UNDONE',id,{from:{type,date},to:{type:before.type,date:before.date}});refreshAll()})};
+    const before={...a},afterSave=()=>{const label=`${emp.first} ${emp.last}: ${(window.SFShiftModels?.label?.(before.type)||before.type)} → ${(window.SFShiftModels?.label?.(type)||type)}`;showUndo(label,()=>{const current=assignments.find(x=>x.id===id);if(!current)return;Object.assign(current,before,{version:Number(current.version||1)+1});window.SFCompliance?.audit?.('SHIFT_MOVE_UNDONE',id,{from:{type,date},to:{type:before.type,date:before.date}});refreshAll()})};
     window.SFCompliance?.save?.(emp,type,date,t.start,t.end,{ignoreId:a.id,pause:a.pause,note:a.note,onSaved:afterSave});
   }
   function addEmployee(employeeId,type,date){
@@ -262,7 +262,7 @@
     const t=typeById(target.type);if(!t){target=null;renderCandidates();return}
     const count=assignmentsFor(target.date,target.type).length,soll=Number(getSoll(target.date,target.type)||0),shared=window.SFShiftModels?.coverageInfo?.(target.date,target.type);
     const status=shared?`${shared.label}: ${shared.filled} / ${shared.target} gemeinsam besetzt`:`${count} / ${soll} besetzt${count>=soll?' · zusätzliche Besetzung':' · '+(soll-count)+' offen'}`;
-    context.innerHTML=`<div class="sf-manual-context-head"><b>${esc(target.type)} · ${esc(labelDate(target.date))}</b><button type="button" class="ghost" id="sfManualClear" aria-label="Dienstauswahl aufheben">✕</button></div><small>${esc(t.start)} – ${esc(t.end)} · ${esc(status)}</small><small>${window.SFCompliance?.isWeekPublished?.(target.date)?'Veröffentlicht: Zuweisung startet die Änderungsprüfung.':'Entwurf: Mitarbeiter anklicken, um den Dienst zuzuweisen.'}</small>`;
+    context.innerHTML=`<div class="sf-manual-context-head"><b>${esc((window.SFShiftModels?.label?.(target.type)||target.type))} · ${esc(labelDate(target.date))}</b><button type="button" class="ghost" id="sfManualClear" aria-label="Dienstauswahl aufheben">✕</button></div><small>${esc(t.start)} – ${esc(t.end)} · ${esc(status)}</small><small>${window.SFCompliance?.isWeekPublished?.(target.date)?'Veröffentlicht: Zuweisung startet die Änderungsprüfung.':'Entwurf: Mitarbeiter anklicken, um den Dienst zuzuweisen.'}</small>`;
     document.getElementById('sfManualClear').onclick=()=>{target=null;markTarget();renderCandidates();window.renderPlanEmployeePool?.()};
     const query=(document.getElementById('planEmployeeSearch')?.value||'').trim().toLocaleLowerCase('de'),team=document.getElementById('sfManualTeam').value;
     const rows=employees.filter(e=>e.status==='active'&&(!inlineAnchor||((e.shifts||[]).includes(target.type)&&window.SFShiftModels?.allowsEmployee?.(target.type,e,target.date)!==false))&&(!team||e.planningTeam===team)&&(`${name(e)} ${e.first} ${e.last} ${e.personnelNo||''}`).toLocaleLowerCase('de').includes(query)).map(e=>({e,check:checkCandidate(e)}));
@@ -319,7 +319,7 @@
     const day=document.getElementById('sfManualDay'),previousDay=day.value;
     day.innerHTML=ds.map(d=>`<option value="${d}">${esc(labelDate(d))}</option>`).join('');if(ds.includes(previousDay))day.value=previousDay;
     const availableTypes=TYPES.filter(t=>t.active!==false),select=document.getElementById('sfManualShift'),previousType=select.value;
-    select.innerHTML=availableTypes.map(t=>`<option value="${esc(t.id)}">${esc(t.id)} · ${esc(t.start)}–${esc(t.end)}</option>`).join('');if(availableTypes.some(t=>t.id===previousType))select.value=previousType;
+    select.innerHTML=availableTypes.map(t=>`<option value="${esc(t.id)}">${esc((window.SFShiftModels?.label?.(t.id)||t.id))} · ${esc(t.start)}–${esc(t.end)}</option>`).join('');if(availableTypes.some(t=>t.id===previousType))select.value=previousType;
     if(!availableTypes.some(t=>t.id===shiftFilter))shiftFilter='';
     const filter=document.getElementById('sfManualFilterShift');filter.innerHTML='<option value="">Alle Schichten</option>'+shiftOrder().map(id=>`<option value="${esc(id)}">${esc(id)}</option>`).join('');filter.value=shiftFilter;
     document.getElementById('sfManualOnlyOpen').checked=onlyOpen;

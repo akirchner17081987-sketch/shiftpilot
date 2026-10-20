@@ -3,7 +3,7 @@
   function esc(s){return String(s??'').replace(/[&<>'\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','\"':'&quot;'}[c]))}
   function line(t,date){
     const so=getSoll(date,t.id),is=assignmentsFor(date,t.id).length,miss=Math.max(0,so-is),ok=is>=so;
-    return {id:t.id,so,is,miss,ok,html:`<button type="button" class="sp-soll-line ${ok?'good':''} sp-soll-click" data-date="${esc(date)}" data-type="${esc(t.id)}"><b>${esc(t.id)}</b><span>SOLL ${so} · IST ${is}${miss?' · FEHLT '+miss:' · OK'}</span></button>`};
+    return {id:t.id,so,is,miss,ok,html:`<button type="button" class="sp-soll-line ${ok?'good':''} sp-soll-click" data-date="${esc(date)}" data-type="${esc(t.id)}"><b>${esc((window.SFShiftModels?.label?.(t.id)||t.id))}</b><span>SOLL ${so} · IST ${is}${miss?' · FEHLT '+miss:' · OK'}</span></button>`};
   }
   function bind(){
     document.querySelectorAll('#view-schedule .sp-soll-click').forEach(b=>b.addEventListener('click',()=>openAssign(b.dataset.type,b.dataset.date)));

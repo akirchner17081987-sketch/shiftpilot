@@ -29,7 +29,7 @@ test('add overnight model, isolate companies, then delete unused model',async({p
 });
 test('used model is removed from active list and restored; read-only roles cannot add',async({page})=>{
   await fixture(page);await page.getByRole('button',{name:'F8 löschen',exact:true}).click();await page.getByRole('button',{name:'Schichtmodell löschen',exact:true}).click();await expect(page.getByRole('button',{name:'F8 löschen',exact:true})).toHaveCount(0);
-  await page.getByText('Entfernte Schichtmodelle (1)',{exact:true}).click();await page.getByRole('button',{name:'Wiederherstellen',exact:true}).click();await expect(page.getByLabel('Kürzel',{exact:true})).toBeDisabled();await page.getByRole('button',{name:'Wiederherstellen',exact:true}).last().click();await expect(page.getByRole('button',{name:'F8 löschen',exact:true})).toBeVisible();
+  await page.getByText('Entfernte Schichtmodelle (1)',{exact:true}).click();await page.getByRole('button',{name:'Wiederherstellen',exact:true}).click();await expect(page.getByLabel('Kürzel',{exact:true})).toBeEnabled();await page.getByRole('button',{name:'Wiederherstellen',exact:true}).last().click();await expect(page.getByRole('button',{name:'F8 löschen',exact:true})).toBeVisible();
   await page.evaluate(()=>{SFBackend.role='VIEWER';SFSettingsV2.refreshPlanning()});await expect(page.getByRole('button',{name:'＋ Schichtmodell hinzufügen',exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:'Schichtwerte speichern',exact:true})).toBeDisabled();
 });
 test('optional QA editor persists responsibility and daily optional/off/required choices',async({page})=>{
@@ -48,4 +48,18 @@ test('shared TL cards explain the combined minimum and daily values have one fie
  await expect(page.getByText('Gemeinsame Leitung TL LE/RE · SOLL 1 insgesamt · zweiter TL möglich',{exact:true})).toHaveCount(2);
  const mon=page.locator('[data-sf-day="2026-09-28"]');await expect(mon).toHaveCount(1);await expect(mon).toHaveValue('2');await expect(page.locator('[data-sf-soll="TL-RE"]')).toBeDisabled();await mon.fill('1');await page.getByRole('button',{name:'Tageswerte speichern',exact:true}).click();expect(await page.evaluate(()=>dailySoll['2026-09-28'])).toEqual({'TL-LE':1});
  await page.screenshot({path:test.info().outputPath('shared-tl-settings.png'),fullPage:true});await page.getByRole('button',{name:'TL-RE bearbeiten',exact:true}).click();await expect(page.getByRole('dialog').getByLabel('SOLL-Stärke',{exact:true})).toBeDisabled();await expect(page.getByRole('dialog').getByText(/Ein TL deckt beide Standorte ab/)).toBeVisible();
+});
+
+test('edit code without changing identity and retain input after outside click',async({page})=>{
+ await fixture(page);await page.getByRole('button',{name:'F8 bearbeiten',exact:true}).click();const d=page.getByRole('dialog');
+ await expect(d.getByLabel('Kürzel',{exact:true})).toBeEnabled();await d.getByLabel('Kürzel',{exact:true}).fill('FRUEH');
+ await page.mouse.click(2,2);await expect(d).toBeVisible();await expect(d.getByLabel('Kürzel',{exact:true})).toHaveValue('FRUEH');
+ await d.getByRole('button',{name:'Änderungen speichern',exact:true}).click();await expect(d).toHaveCount(0);
+ expect(await page.evaluate(()=>lastModelPayload)).toMatchObject({code:'F8',display_code:'FRUEH'});
+ await expect(page.getByRole('button',{name:'FRUEH bearbeiten',exact:true})).toBeVisible();
+ expect(await page.evaluate(()=>SFShiftModels.find('F8').id)).toBe('F8');
+ await page.getByRole('button',{name:'FRUEH bearbeiten',exact:true}).click();await expect(d.getByLabel('Kürzel',{exact:true})).toHaveValue('FRUEH');
+ await d.getByRole('button',{name:'Abbrechen',exact:true}).click();
+ await page.evaluate(()=>selectFixtureCompany('b'));await expect(page.getByRole('button',{name:'FRUEH bearbeiten',exact:true})).toHaveCount(0);
+ await expect(page.getByRole('button',{name:'B8 bearbeiten',exact:true})).toBeVisible();
 });

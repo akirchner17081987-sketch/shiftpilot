@@ -9,12 +9,13 @@
   M.isCompanyLoaded=()=>!demo()&&!!B.companyId&&M.companyId===B.companyId;
   M.canManage=()=>M.isCompanyLoaded()&&B.ready&&['OWNER','ADMIN','PLANNER','DISPATCHER'].includes(B.role);
   M.find=code=>M.isCompanyLoaded()?(TYPES.find(x=>x.id===code)||M.models.find(x=>x.id===code)):null;
+  M.label=code=>{const templates=B.role==='EMPLOYEE'?(B.employeePortalData?.templates||[]):M.isCompanyLoaded()?M.models:[];const t=templates.find(t=>(t.id||t.code)===code);return t?.displayCode||t?.display_code||code;};
   M.activeCodes=()=>typeof TYPES==='undefined'?[]:TYPES.map(x=>x.id);
   M.knownCodes=()=>M.isCompanyLoaded()?M.models.map(x=>x.id):M.activeCodes();
   M.apply=(rows,companyId)=>{
     if(demo())return;
     M.companyId=companyId;
-    M.models=(rows||[]).map(x=>({id:x.code,name:x.name||x.code,start:x.default_start?.slice(0,5)||'06:00',end:x.default_end?.slice(0,5)||'14:00',cls:palette[x.css_class]?x.css_class:'teal',active:x.active!==false,_dbId:x.id,sortOrder:x.sort_order||0,planningMode:x.planning_mode||'required',optionalStaffing:Number(x.optional_staffing)||0,responsibleEmployeeId:x.responsible_employee_id||null,responsibleOnly:x.responsible_only===true,optionalWeekdays:x.optional_weekdays||[1,2,3,4,5,6,7],coverageGroup:x.coverage_group||null,coverageRequired:Number(x.coverage_required)||0,morningOtMinimum:Number(x.morning_ot_switch_min)||0,allowedPersonnelNos:x.allowed_personnel_nos||null,exclusiveEmployees:x.exclusive_employees===true,requiresPlanningTeam:x.requires_planning_team===true,strictWeekdays:x.strict_weekdays===true,strictTimes:x.strict_times===true,rhythmAlias:x.rhythm_alias||null,siteId:x.site_id||null}));
+    M.models=(rows||[]).map(x=>({id:x.code,displayCode:x.display_code||x.code,name:x.name||x.code,start:x.default_start?.slice(0,5)||'06:00',end:x.default_end?.slice(0,5)||'14:00',cls:palette[x.css_class]?x.css_class:'teal',active:x.active!==false,_dbId:x.id,sortOrder:x.sort_order||0,planningMode:x.planning_mode||'required',optionalStaffing:Number(x.optional_staffing)||0,responsibleEmployeeId:x.responsible_employee_id||null,responsibleOnly:x.responsible_only===true,optionalWeekdays:x.optional_weekdays||[1,2,3,4,5,6,7],coverageGroup:x.coverage_group||null,coverageRequired:Number(x.coverage_required)||0,morningOtMinimum:Number(x.morning_ot_switch_min)||0,allowedPersonnelNos:x.allowed_personnel_nos||null,exclusiveEmployees:x.exclusive_employees===true,requiresPlanningTeam:x.requires_planning_team===true,strictWeekdays:x.strict_weekdays===true,strictTimes:x.strict_times===true,rhythmAlias:x.rhythm_alias||null,siteId:x.site_id||null}));
     if(typeof TYPES!=='undefined')TYPES.splice(0,TYPES.length,...M.models.filter(x=>x.active).map(x=>({...x})));
     if(typeof selectedType!=='undefined'&&!M.activeCodes().includes(selectedType))selectedType=M.activeCodes()[0]||null;
   };
@@ -30,9 +31,9 @@
     if(!t)return null;
     if(['OT1','OT2','OT3'].includes(code)&&date&&solid?.otDayHoliday(date,rules))return 'An Feiertagen entfällt OT1 / OT2 / OT3; bitte die normale OT-Schicht prüfen.';
     if(code==='OT'&&date&&window.SFOtPolicy?.configured()&&!window.SFOtPolicy.applies(date,employee))return 'OT ist nur am Wochenende oder an einem Feiertag am Einsatzort zulässig.';
-    if(t.allowedPersonnelNos&&!t.allowedPersonnelNos.map(String).includes(no))return `${code} ist nur für Personalnummern ${t.allowedPersonnelNos.join(', ')} freigegeben.`;
+    if(t.allowedPersonnelNos&&!t.allowedPersonnelNos.map(String).includes(no))return `${(window.SFShiftModels?.label?.(code)||code)} ist nur für Personalnummern ${t.allowedPersonnelNos.join(', ')} freigegeben.`;
     const team=employee.planningTeam??String((employee.qualifications||[]).find(x=>String(x).startsWith('__sp:planningTeam='))||'').slice(18);
-    if(t.requiresPlanningTeam&&!['A','B','C','D','E'].includes(team))return `${code} ist ausschließlich für Mitarbeiter in Teams A–E freigegeben.`;
+    if(t.requiresPlanningTeam&&!['A','B','C','D','E'].includes(team))return `${(window.SFShiftModels?.label?.(code)||code)} ist ausschließlich für Mitarbeiter in Teams A–E freigegeben.`;
     if(t.strictWeekdays&&date&&!t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7))return `${code} ist an diesem Wochentag nicht zulässig.`;
     if(t.strictTimes&&((start&&start!==t.start)||(end&&end!==t.end)))return `${code} gilt ausschließlich von ${t.start} bis ${t.end} Uhr.`;
     return null;
@@ -79,6 +80,8 @@
   M.invalidate=()=>{if(typeof autoPlanPreview!=='undefined'){autoPlanPreview=[];autoPlanUnresolved=[];autoPlanOptionalSkipped=[];autoPlanAnalyzed=false;autoPlanApplied=0;}window.renderAutoPlanning?.()};
   M.validate=model=>{
     if(!/^[A-Za-z0-9][A-Za-z0-9_-]{0,19}$/.test(model.code||''))throw Error('Das Kürzel benötigt 1–20 Buchstaben oder Zahlen; Bindestrich und Unterstrich sind möglich.');
+    if(model.display_code!==undefined&&(!/^[A-Za-z0-9][A-Za-z0-9_-]{0,19}$/.test(model.display_code)))throw Error('Bitte ein gültiges Kürzel mit 1–20 Zeichen angeben.');
+    if(model.display_code!==undefined&&M.models.some(t=>t.id!==model.code&&M.label(t.id).toUpperCase()===model.display_code.toUpperCase()))throw Error('Dieses Kürzel wird in diesem Unternehmen bereits verwendet.');
     if(!model.name?.trim()||model.name.trim().length>80||/[<>]/.test(model.name))throw Error('Bitte einen Namen mit 1–80 Zeichen ohne spitze Klammern eingeben.');
     if(!/^\d{2}:\d{2}$/.test(model.start)||!/^\d{2}:\d{2}$/.test(model.end)||[model.start,model.end].some(t=>Number(t.slice(0,2))>23||Number(t.slice(3))>59)||model.start===model.end)throw Error('Bitte unterschiedliche, gültige Anfangs- und Endzeiten eingeben.');
     if(!Number.isInteger(model.soll)||model.soll<0||model.soll>99)throw Error('Die SOLL-Stärke muss eine ganze Zahl zwischen 0 und 99 sein.');
@@ -89,7 +92,7 @@
     if(only&&(!responsible||(planningMode==='optional'&&optionalStaffing>1)))throw Error('Bei exklusiver Zuständigkeit ist ein Mitarbeiter und höchstens eine optionale Besetzung erforderlich.');
     if(responsible&&!staff().some(e=>String(e._dbId||e.id)===String(responsible)&&e.status==='active'))throw Error('Bitte einen aktiven Mitarbeiter dieses Unternehmens auswählen.');
     if(!Array.isArray(days)||!days.length||new Set(days).size!==days.length||days.some(d=>!Number.isInteger(d)||d<1||d>7))throw Error('Bitte gültige Wochentage auswählen.');
-    return{...(model.site_id!==undefined?{site_id:model.site_id||null}:{}),code:model.code,name:model.name.trim(),start:model.start,end:model.end,soll:planningMode==='optional'?0:model.soll,color:model.color,planning_mode:planningMode,optional_staffing:optionalStaffing,responsible_employee_id:responsible,responsible_only:!!only,optional_weekdays:days};
+    return{...(model.display_code!==undefined?{display_code:model.display_code}:{}),...(model.site_id!==undefined?{site_id:model.site_id||null}:{}),code:model.code,name:model.name.trim(),start:model.start,end:model.end,soll:planningMode==='optional'?0:model.soll,color:model.color,planning_mode:planningMode,optional_staffing:optionalStaffing,responsible_employee_id:responsible,responsible_only:!!only,optional_weekdays:days};
   };
   async function reload(companyId){
     const [models,gs,ds]=await Promise.all([
@@ -147,7 +150,7 @@
     });
     shade.querySelector('[data-cancel]').onclick=close;
     shade.querySelector('input:not(:disabled),button')?.focus();
-    return{shade,close,setSaving(value){saving=value;shade.querySelectorAll('button,input,select').forEach(e=>{if(e.id!=='sfModelCode'||!e.dataset.fixed)e.disabled=value;});}};
+    return{shade,close,setSaving(value){saving=value;shade.querySelectorAll('button,input,select').forEach(e=>{e.disabled=value;});}};
   }
   M.openEditor=async code=>{
     if(!M.canManage()||M.busy)return;
@@ -158,7 +161,7 @@
     const d=dialog(existing?(existing.active?'Schichtmodell bearbeiten':'Schichtmodell wiederherstellen'):'Schichtmodell hinzufügen',`
       <p>Das Modell gilt nur für das aktuell ausgewählte Unternehmen. Zeiten über Mitternacht sind möglich.</p>
       <form id="sfModelForm"><div class="sf-model-fields">
-        <label><span>Kürzel</span><input id="sfModelCode" maxlength="20" required placeholder="z. B. F8" value="${esc(existing?.id||'')}" ${existing?'disabled data-fixed="true"':''}></label>
+        <label><span>Kürzel</span><input id="sfModelCode" maxlength="20" required placeholder="z. B. F8" value="${esc(existing?.displayCode||existing?.id||'')}"></label>
         <label><span>Name</span><input id="sfModelName" maxlength="80" required placeholder="z. B. Frühdienst 8 Stunden" value="${esc(existing?.name||'')}"></label>
         <label><span>Beginn</span><input id="sfModelStart" type="time" ${existing?.coverageGroup?'readonly':''} required value="${esc(existing?.start||'06:00')}"></label>
         <label><span>Ende</span><input id="sfModelEnd" type="time" ${existing?.coverageGroup?'readonly':''} required value="${esc(existing?.end||'14:00')}"></label>
@@ -176,7 +179,7 @@
     d.shade.querySelector('form').onsubmit=async e=>{
       e.preventDefault();d.setSaving(true);const error=d.shade.querySelector('[role=alert]');error.textContent='';
       try{
-        await M.perform(action,{code:existing?.id||val('sfModelCode').trim().toUpperCase(),name:val('sfModelName'),start:val('sfModelStart'),end:val('sfModelEnd'),soll:Number(val('sfModelSoll')),color:val('sfModelColor'),...(d.shade.querySelector('#sfModelSite')?{site_id:val('sfModelSite')||null}:{}),planning_mode:val('sfModelMode'),optional_staffing:val('sfModelMode')==='optional'?Number(val('sfModelOptional')):0,responsible_employee_id:val('sfModelResponsible')||null,responsible_only:val('sfModelOnly')==='true',optional_weekdays:[...d.shade.querySelectorAll('[data-sf-optional-day]:checked')].map(el=>Number(el.value))});
+        await M.perform(action,{code:existing?.id||val('sfModelCode').trim().toUpperCase(),display_code:val('sfModelCode').trim().toUpperCase(),name:val('sfModelName'),start:val('sfModelStart'),end:val('sfModelEnd'),soll:Number(val('sfModelSoll')),color:val('sfModelColor'),...(d.shade.querySelector('#sfModelSite')?{site_id:val('sfModelSite')||null}:{}),planning_mode:val('sfModelMode'),optional_staffing:val('sfModelMode')==='optional'?Number(val('sfModelOptional')):0,responsible_employee_id:val('sfModelResponsible')||null,responsible_only:val('sfModelOnly')==='true',optional_weekdays:[...d.shade.querySelectorAll('[data-sf-optional-day]:checked')].map(el=>Number(el.value))});
         d.setSaving(false);d.close();window.showSaveToast?.('Schichtmodell gespeichert','Das Modell ist im aktuellen Unternehmen verfügbar.');
       }catch(err){d.setSaving(false);syncMode();error.textContent=err.message||'Das Modell konnte nicht gespeichert werden.';}
     };
@@ -184,7 +187,7 @@
   };
   M.remove=code=>{
     const model=M.find(code);if(!model||!M.canManage()||M.busy)return;
-    const d=dialog('Schichtmodell löschen',`<p>„${esc(model.name)}“ (${esc(code)}) aus diesem Unternehmen entfernen?</p><p>Bereits verwendete Modelle werden archiviert. Vorhandene Dienste und Zeiteinträge bleiben erhalten. Neue Einplanungen mit diesem Modell sind anschließend nicht mehr möglich.</p><div class="sf-model-error" role="alert"></div><div class="sf-model-footer"><button type="button" class="ghost" data-cancel>Abbrechen</button><button type="button" class="danger" data-remove>Schichtmodell löschen</button></div>`);
+    const d=dialog('Schichtmodell löschen',`<p>„${esc(model.name)}“ (${esc((window.SFShiftModels?.label?.(code)||code))}) aus diesem Unternehmen entfernen?</p><p>Bereits verwendete Modelle werden archiviert. Vorhandene Dienste und Zeiteinträge bleiben erhalten. Neue Einplanungen mit diesem Modell sind anschließend nicht mehr möglich.</p><div class="sf-model-error" role="alert"></div><div class="sf-model-footer"><button type="button" class="ghost" data-cancel>Abbrechen</button><button type="button" class="danger" data-remove>Schichtmodell löschen</button></div>`);
     d.shade.querySelector('[data-remove]').onclick=async()=>{
       d.setSaving(true);
       try{const result=await M.perform('REMOVE',{code});d.setSaving(false);d.close();window.showSaveToast?.('Schichtmodell entfernt',result?.archived?'Bestehende Dienste bleiben erhalten. Das Modell kann später wiederhergestellt werden.':'Das unbenutzte Schichtmodell wurde gelöscht.');}
@@ -201,13 +204,13 @@
     if(M.canManage())for(const row of list.querySelectorAll('.sf-set-shift')){
       const code=row.querySelector('[data-sf-start]')?.dataset.sfStart;if(!code)continue;
       const actions=document.createElement('div');actions.className='sf-model-actions';
-      actions.innerHTML=`<button type="button" class="ghost" aria-label="${esc(code)} bearbeiten">Bearbeiten</button><button type="button" class="danger" aria-label="${esc(code)} löschen">Löschen</button>`;
+      actions.innerHTML=`<button type="button" class="ghost" aria-label="${esc(M.label(code))} bearbeiten">Bearbeiten</button><button type="button" class="danger" aria-label="${esc(M.label(code))} löschen">Löschen</button>`;
       actions.children[0].onclick=()=>M.openEditor(code);actions.children[1].onclick=()=>M.remove(code);row.appendChild(actions);
     }
     const removed=M.isCompanyLoaded()?M.models.filter(x=>!x.active):[];
     if(removed.length){
       const details=document.createElement('details');details.className='sf-model-removed';
-      details.innerHTML=`<summary>Entfernte Schichtmodelle (${removed.length})</summary><p>Diese Modelle bleiben für bestehende Dienste erhalten.</p>${removed.map(x=>`<div class="sf-model-removed-row"><span><b>${esc(x.id)}</b> · ${esc(x.name)}</span>${M.canManage()?`<button type="button" class="ghost" data-restore="${esc(x.id)}">Wiederherstellen</button>`:''}</div>`).join('')}`;
+      details.innerHTML=`<summary>Entfernte Schichtmodelle (${removed.length})</summary><p>Diese Modelle bleiben für bestehende Dienste erhalten.</p>${removed.map(x=>`<div class="sf-model-removed-row"><span><b>${esc(M.label(x.id))}</b> · ${esc(x.name)}</span>${M.canManage()?`<button type="button" class="ghost" data-restore="${esc(x.id)}">Wiederherstellen</button>`:''}</div>`).join('')}`;
       details.querySelectorAll('[data-restore]').forEach(b=>b.onclick=()=>M.openEditor(b.dataset.restore));list.after(details);
     }
     host.querySelectorAll('#sfSaveShiftSettings,#sfSaveDailySoll,#sfResetDailySoll,[data-sf-start],[data-sf-end],[data-sf-soll],[data-sf-day]').forEach(el=>el.disabled=!M.canManage()||M.busy);

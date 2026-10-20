@@ -1,0 +1,40 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {PGlite} from '@electric-sql/pglite';
+const migration=fs.readFileSync(new URL('../supabase/migrations/20261020210525_editable_shift_display_codes.sql',import.meta.url),'utf8');
+test('display code changes preserve linked data, reject duplicates and enforce company access',async()=>{
+ const db=new PGlite();try{
+ await db.exec(`create schema auth;create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('test.user_id',true),'')::uuid$$;
+ create table company_members(company_id uuid,user_id uuid,status text,role text);
+ create table shift_templates(id uuid primary key default gen_random_uuid(),company_id uuid,code text,name text,default_start time,default_end time,css_class text,active boolean,sort_order integer,planning_mode text,optional_staffing integer,responsible_employee_id uuid,responsible_only boolean,optional_weekdays integer[],site_id uuid,unique(company_id,code));
+ create table employees(id uuid,company_id uuid,status text,deleted_at timestamptz,shift_permissions text[],qualifications text[]);
+ create table shift_assignments(company_id uuid,shift_code text);
+ create table shift_change_requests(company_id uuid,old_snapshot jsonb,proposed_snapshot jsonb);
+ create table datev_lodas_rules(company_id uuid,source_key text);
+ create table global_staffing_requirements(company_id uuid,shift_code text,required_count integer,unique(company_id,shift_code));
+ create table daily_staffing_overrides(company_id uuid,shift_code text);
+ create table company_locations(id uuid,company_id uuid,is_active boolean);`);
+ await db.exec(migration);
+ const company='11111111-1111-1111-1111-111111111111',other='22222222-2222-2222-2222-222222222222',user='aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+ await db.query("select set_config('test.user_id',$1,false)",[user]);await db.query("insert into company_members values($1,$2,'ACTIVE','OWNER')",[company,user]);
+ const payload=(code,display=code)=>({code,display_code:display,name:'Nachtdienst',start:'22:00',end:'06:00',color:'teal',soll:2});
+ const call=async(c,action,p)=>(await db.query('select manager_manage_shift_model($1,$2,$3) result',[c,action,p])).rows[0].result;
+ await call(company,'CREATE',payload('O3'));await call(company,'CREATE',payload('O2'));
+ await db.query('insert into shift_assignments values($1,$2)',[company,'O3']);
+ await db.query("insert into employees values(gen_random_uuid(),$1,'active',null,array['O3'],array['O3'])",[company]);
+ const oldId=(await db.query("select id from shift_templates where code='O3'")).rows[0].id;
+ const changed=await call(company,'UPDATE',payload('O3','NACHT'));
+ assert.equal(changed.model.id,oldId);assert.equal(changed.model.code,'O3');assert.equal(changed.model.display_code,'NACHT');
+ assert.equal((await db.query('select shift_code from shift_assignments')).rows[0].shift_code,'O3');
+ assert.deepEqual((await db.query('select shift_permissions from employees')).rows[0].shift_permissions,['O3']);
+ assert.equal((await db.query("select shift_code from global_staffing_requirements where shift_code='O3'")).rows[0].shift_code,'O3');
+ await assert.rejects(call(company,'UPDATE',payload('O2','NACHT')),/bereits verwendet/);
+ await assert.rejects(call(company,'UPDATE',payload('O3','bad code')),/Kürzel/);
+ await assert.rejects(call(other,'CREATE',payload('OTHER','NACHT')),/Planungsrechte/);
+ await db.query("insert into company_members values($1,$2,'ACTIVE','OWNER')",[other,user]);
+ await call(other,'CREATE',payload('OTHER','NACHT'));
+ const legacy=payload('O3');delete legacy.display_code;assert.equal((await call(company,'UPDATE',legacy)).model.display_code,'NACHT');
+ assert.equal((await db.query("select count(*)::int count from shift_templates where display_code='NACHT'")).rows[0].count,2);
+ }finally{await db.close()}
+});

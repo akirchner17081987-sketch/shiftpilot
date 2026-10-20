@@ -15,7 +15,7 @@
   const monthLabel=m=>new Date(`${m}-01T12:00:00`).toLocaleDateString('de-DE',{month:'long',year:'numeric'});
   const previousMonth=()=>{const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()||12)}`.replace(/^([0-9]{4})-12$/,()=>`${d.getFullYear()-1}-12`)};
   const monthRange=m=>{const [y,mo]=m.split('-').map(Number),last=new Date(Date.UTC(y,mo,0)).getUTCDate();return{start:`${m}-01`,end:`${m}-${pad(last)}`}};
-  const sourceName=r=>r.source_type==='WORK_TOTAL'?'Bestätigte IST-Arbeitszeit gesamt':r.source_type==='SHIFT_CODE'?`Schichtart: ${r.source_key}`:r.source_type==='ABSENCE_TYPE'?`Abwesenheit: ${r.source_key}`:r.source_type;
+  const sourceName=r=>r.source_type==='WORK_TOTAL'?'Bestätigte IST-Arbeitszeit gesamt':r.source_type==='SHIFT_CODE'?`Schichtart: ${window.SFShiftModels?.label?.(r.source_key)||r.source_key}`:r.source_type==='ABSENCE_TYPE'?`Abwesenheit: ${r.source_key}`:r.source_type;
 
   function loadCore(){return new Promise((resolve,reject)=>{if(window.SFDatevLodasCore)return resolve(window.SFDatevLodasCore);const old=document.getElementById('sfDatevLodasCoreScript');if(old){old.addEventListener('load',()=>resolve(window.SFDatevLodasCore),{once:true});old.addEventListener('error',reject,{once:true});return}const s=document.createElement('script');s.id='sfDatevLodasCoreScript';s.src='assets/datev-lodas-core-v1.js?v=20260911-production-v2';s.onload=()=>window.SFDatevLodasCore?resolve(window.SFDatevLodasCore):reject(new Error('DATEV-Formatter wurde nicht geladen.'));s.onerror=()=>reject(new Error('DATEV-Formatter konnte nicht geladen werden.'));document.head.appendChild(s)})}
 

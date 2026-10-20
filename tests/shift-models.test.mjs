@@ -98,3 +98,31 @@ test('manual compliance treats staff and shift time restrictions as hard conflic
  const {c,M}=harness();M.apply([{...row('O3'),default_start:'22:00:00',default_end:'08:00:00'},{...row('OT1'),default_start:'06:00:00',default_end:'14:00:00'},{...row('OT2'),default_start:'08:00:00',default_end:'16:00:00',morning_ot_switch_min:3}],'a');c.assignments=[];c.globalSoll={OT1:1,OT2:1};
  const preview=['a','b','c'].map(employeeId=>({employeeId,date:'2026-12-01',type:'O3'}));assert.equal(M.requiredSoll('2026-12-02','OT1',1,preview),0);assert.equal(M.requiredSoll('2026-12-02','OT2',1,preview),2);assert.equal(M.requiredSoll('2026-12-02','OT1',1),1);assert.equal(c.assignments.length,0);
  });
+
+// Changing the presentation code must not change rule keys or permissions.
+test('editable display code keeps internal model keys and company isolation',()=>{
+ const {M,B,c}=harness();M.apply([{...row('O3'),display_code:'NACHT'}],'a');
+ assert.equal(M.label('O3'),'NACHT');assert.equal(M.find('O3').id,'O3');assert.deepEqual(Array.from(M.activeCodes()),['O3']);
+ assert.equal(M.validate({...model,code:'O3',display_code:'N9'}).display_code,'N9');
+ M.apply([{...row('O3'),display_code:'NACHT'},{...row('O2'),display_code:'SPAET'}],'a');
+ assert.throws(()=>M.validate({...model,code:'O3',display_code:'SPAET'}),/bereits verwendet/);
+ assert.throws(()=>M.validate({...model,code:'O3',display_code:'bad code'}),/gültiges Kürzel/);
+ B.companyId='b';assert.equal(M.label('O3'),'O3');
+ B.role='EMPLOYEE';B.employeePortalData={templates:[{code:'O3',display_code:'N9'}]};assert.equal(M.label('O3'),'N9');
+});
+
+test('editor allows changing code, keeps input on outside click and saves the stable key',async()=>{
+ const {Window}=await import('happy-dom');const w=new Window({url:'https://schichtfunk.de'});
+ try{
+  w.TYPES=[];w.selectedType=null;w.globalSoll={O3:2};w.dailySoll={};w.employees=[];
+  const rows=[{...row('O3'),default_start:'22:00:00',default_end:'06:00:00'}];let saved;
+  w.SFBackend={ready:true,role:'OWNER',companyId:'a',client:{async rpc(name,args){saved=args.p_model;Object.assign(rows[0],{display_code:saved.display_code,name:saved.name});return {data:{model:rows[0]}}},from(table){return{select(){return this},eq(){return this},order(){return this},then(resolve){resolve({data:table==='shift_templates'?rows:[]})}}}}};
+  w.eval(source);w.SFShiftModels.apply(rows,'a');await w.SFShiftModels.openEditor('O3');
+  const input=w.document.getElementById('sfModelCode');assert.equal(input.disabled,false);input.value='NACHT';
+  const shade=w.document.getElementById('sfShiftModelDialog');shade.dispatchEvent(new w.MouseEvent('click',{bubbles:true}));
+  assert.equal(shade.isConnected,true);assert.equal(input.value,'NACHT');
+  await shade.querySelector('form').onsubmit({preventDefault(){}});
+  assert.equal(saved.code,'O3');assert.equal(saved.display_code,'NACHT');assert.equal(shade.isConnected,false);
+  assert.equal(w.SFShiftModels.label('O3'),'NACHT');assert.equal(w.SFShiftModels.find('O3').id,'O3');
+ }finally{w.happyDOM.abort();}
+});

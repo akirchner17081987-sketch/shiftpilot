@@ -100,7 +100,7 @@
     if(!emp||!t)return {ok:false,msg:'Mitarbeiter oder Schichtvorlage wurde nicht gefunden.'};
     if(!normalizedDate)return {ok:false,msg:'Das ausgewählte Kalenderdatum konnte nicht erkannt werden.'};
     if(emp.status!=='active')return {ok:false,msg:'Dieser Mitarbeiter ist aktuell inaktiv.'};
-    if(!(emp.shifts||[]).includes(type))return {ok:false,msg:`${emp.first} ${emp.last} ist für ${type} nicht freigegeben.`};
+    if(!(emp.shifts||[]).includes(type))return {ok:false,msg:`${emp.first} ${emp.last} ist für ${(window.SFShiftModels?.label?.(type)||type)} nicht freigegeben.`};
     if(type==='OT'&&!isOTDay(normalizedDate))return {ok:false,msg:'OT darf nur samstags, sonntags oder an gesetzlichen Feiertagen eingeplant werden.'};
     if(window.absent(emp.id,normalizedDate)){
       const a=absences.find(x=>x.employeeId===emp.id&&absenceCovers(x,normalizedDate));
@@ -114,7 +114,7 @@
     if(!type){alert('Bitte zuerst eine Schichtvorlage auswählen.');return;}
     const v=validateAssignment(employeeId,type,date);if(!v.ok){alert(v.msg);return;}
     assignments.push({id:'as'+Date.now(),date:v.date,type,employeeId:v.emp.id,start:v.t.start,end:v.t.end});
-    if(typeof saveAll==='function')saveAll();if(typeof renderCalendar==='function')renderCalendar();if(typeof renderPlanEmployeePool==='function')renderPlanEmployeePool();if(typeof showSaveToast==='function')showSaveToast('Schicht erfolgreich zugewiesen',`${v.emp.first} ${v.emp.last} wurde am ${v.date} für ${type} eingeplant.`);
+    if(typeof saveAll==='function')saveAll();if(typeof renderCalendar==='function')renderCalendar();if(typeof renderPlanEmployeePool==='function')renderPlanEmployeePool();if(typeof showSaveToast==='function')showSaveToast('Schicht erfolgreich zugewiesen',`${v.emp.first} ${v.emp.last} wurde am ${v.date} für ${(window.SFShiftModels?.label?.(type)||type)} eingeplant.`);
   };
 
   window.openAssign=function(type,date){
@@ -122,16 +122,16 @@
     const normalizedDate=canonicalDate(date);if(!normalizedDate){alert('Das ausgewählte Kalenderdatum konnte nicht erkannt werden.');return;}
     if(type==='OT'&&!isOTDay(normalizedDate)){alert('OT darf nur samstags, sonntags oder an gesetzlichen Feiertagen eingeplant werden.');return;}
     const eligible=employees.filter(e=>window.isEligible(e,type,normalizedDate));if(!eligible.length){alert('Für diese Schicht ist aktuell kein verfügbarer, freigegebener Mitarbeiter vorhanden.');return;}
-    const names=eligible.map((e,i)=>`${i+1}: ${e.first} ${e.last}`).join('\n');const pick=prompt(`Mitarbeiter für ${type} am ${normalizedDate} auswählen:\n\n${names}`,'1');if(pick===null)return;
+    const names=eligible.map((e,i)=>`${i+1}: ${e.first} ${e.last}`).join('\n');const pick=prompt(`Mitarbeiter für ${(window.SFShiftModels?.label?.(type)||type)} am ${normalizedDate} auswählen:\n\n${names}`,'1');if(pick===null)return;
     const idx=parseInt(pick,10)-1;if(idx<0||idx>=eligible.length)return;window.assignEmployeeByDrop(eligible[idx].id,type,normalizedDate);
   };
 
   window.editAssignment=function(id){
     const a=assignments.find(x=>x.id===id);if(!a)return;const t=typeById(a.type),emp=employees.find(e=>e.id===a.employeeId);if(!t||!emp)return;
-    const s=prompt(`${t.id} · ${emp.first} ${emp.last}\nBeginn ändern:`,a.start||t.start);if(s===null)return;const e=prompt('Ende ändern:',a.end||t.end);if(e===null)return;
+    const s=prompt(`${(window.SFShiftModels?.label?.(t.id)||t.id)} · ${emp.first} ${emp.last}\nBeginn ändern:`,a.start||t.start);if(s===null)return;const e=prompt('Ende ändern:',a.end||t.end);if(e===null)return;
     if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(s)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(e)){alert('Bitte eine gültige Uhrzeit im Format HH:MM eingeben.');return;}
     const proposed=intervalFor(a.date,s,e);const conflict=assignments.some(x=>x.employeeId===a.employeeId&&x.id!==a.id&&overlaps(proposed,assignmentInterval(x)));if(conflict){alert(`${emp.first} ${emp.last} hat in diesem Zeitraum bereits eine andere Schicht.`);return;}
-    if(confirm('Schicht speichern?\nOK = speichern, Abbrechen = Schicht löschen')){a.start=s;a.end=e;saveAll();renderCalendar();if(typeof renderPlanEmployeePool==='function')renderPlanEmployeePool();if(typeof showSaveToast==='function')showSaveToast('Schichtänderung gespeichert',`${t.id} für ${emp.first} ${emp.last}: ${s} – ${e}.`);}else{assignments=assignments.filter(x=>x.id!==id);saveAll();renderCalendar();if(typeof renderPlanEmployeePool==='function')renderPlanEmployeePool();if(typeof showSaveToast==='function')showSaveToast('Schicht entfernt',`${t.id} für ${emp.first} ${emp.last} wurde aus dem Dienstplan entfernt.`);}
+    if(confirm('Schicht speichern?\nOK = speichern, Abbrechen = Schicht löschen')){a.start=s;a.end=e;saveAll();renderCalendar();if(typeof renderPlanEmployeePool==='function')renderPlanEmployeePool();if(typeof showSaveToast==='function')showSaveToast('Schichtänderung gespeichert',`${(window.SFShiftModels?.label?.(t.id)||t.id)} für ${emp.first} ${emp.last}: ${s} – ${e}.`);}else{assignments=assignments.filter(x=>x.id!==id);saveAll();renderCalendar();if(typeof renderPlanEmployeePool==='function')renderPlanEmployeePool();if(typeof showSaveToast==='function')showSaveToast('Schicht entfernt',`${(window.SFShiftModels?.label?.(t.id)||t.id)} für ${emp.first} ${emp.last} wurde aus dem Dienstplan entfernt.`);}
   };
 
   window.SchichtFunkScheduleCore={isBerlinHoliday,isOTDay,absenceCovers,employeeHasConflict,validateAssignment,canonicalDate};
