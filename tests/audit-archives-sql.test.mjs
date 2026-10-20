@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import {PGlite} from '@electric-sql/pglite';
 import {pgcrypto} from '@electric-sql/pglite/contrib/pgcrypto';
 const sql=fs.readFileSync(new URL('../database/audit-weekly-archives-v1.sql',import.meta.url),'utf8');
+const storageSql=fs.readFileSync(new URL('../database/audit-archive-object-storage-v1.sql',import.meta.url),'utf8');
 const id=n=>'00000000-0000-4000-8000-'+String(n).padStart(12,'0');
 const [C,D,U,E,F]=[1,2,3,4,5].map(id);
 test('signed audit archive: restore originals, scopes, tampering, duplicates, privacy and weekly DST',async t=>{
@@ -31,7 +32,18 @@ test('signed audit archive: restore originals, scopes, tampering, duplicates, pr
    insert into employees values('${E}','${C}');
    insert into audit_events select md5(n::text)::uuid,'${C}','UPDATE_EMPLOYEES','employees','${E}','${U}','OWNER','{}',jsonb_build_object('n',n,'big',9007199254740993::bigint),jsonb_build_object('transaction_id','original-tx'),'2026-10-19 08:00Z' from generate_series(1,601)n;
    grant usage on schema public,auth,private to authenticated;`);
-  await db.exec(sql);await actor();
+  await db.exec(sql);
+  await db.exec(`
+   create schema storage;create schema net;
+   create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
+   create table storage.objects(id uuid default gen_random_uuid(),bucket_id text,name text,metadata jsonb);
+   alter table storage.objects enable row level security;
+   create function net.http_post(url text,headers jsonb,body jsonb,timeout_milliseconds integer)returns bigint language sql as $select 1::bigint$;
+   create function auth.role()returns text language sql stable as $select current_setting('qa.role',true)$;
+   create function private.sf_retry_push_dispatches()returns integer language sql as $select 0$;
+
+   create or replace function cron.schedule(text,text,text)returns bigint language plpgsql as $begin insert into cron.job values($1,$2,$3) on conflict(jobname) do update set schedule=excluded.schedule,command=excluded.command;return 1;end$;
+  `);await db.exec(storageSql);await actor();
   let info,parts;
   await t.test('export includes all pages and retains integers above JS safe precision as opaque text',async()=>{
    info=await call('create');assert.equal(info.manifest.row_count,601);assert.equal(info.manifest.parts.length,3);
@@ -77,5 +89,28 @@ test('signed audit archive: restore originals, scopes, tampering, duplicates, pr
    let r=(await db.query("select period_from,period_to from private.audit_archives where kind='WEEKLY' and company_id=$1",[C])).rows;assert.equal(r.length,1);assert.equal(r[0].period_from.toISOString(),'2026-10-18T22:00:00.000Z');assert.equal(r[0].period_to.toISOString(),'2026-10-25T23:00:00.000Z');
    assert.equal(await run('2026-03-30T01:00:00Z'),2);assert.equal(await run('2026-03-30T02:00:00Z'),0);
   });
+
+  await t.test('object storage completion requires every acknowledged object; clears only verified payloads',async()=>{
+   await actor();const fresh=await call('create');await db.exec('reset role');
+   const row=(await db.query('select * from private.audit_archive_transfers where archive_id=$1',[fresh.manifest.archive_id])).rows[0];
+   const worker=async(action,args={})=>(await db.query('select public.server_audit_archive_storage($1,$2,$3,$4::jsonb) data',[action,row.archive_id,row.token,JSON.stringify(args)])).rows[0].data;
+   await db.query("select set_config('qa.role','service_role',false)");await db.exec('set role service_role');
+   const claim=await worker('claim');assert.equal(claim.state,'PENDING');
+   await assert.rejects(db.query('select * from private.audit_archive_transfers'),/permission denied/);
+   const parts=[];for(const descriptor of fresh.manifest.parts)parts.push(await worker('part',{lease:claim.lease,part:descriptor.part}));
+   const headHash=(await import('node:crypto')).createHash('sha256').update(claim.head).digest('hex');
+   const finish={lease:claim.lease,head_sha256:headHash,parts:fresh.manifest.parts.map(p=>({sha256:p.sha256}))};
+   await assert.rejects(worker('complete',finish),/fehlt im Dateispeicher/);
+   await db.exec('reset role');assert.equal((await db.query('select count(*)::int n from private.audit_archive_parts where archive_id=$1',[row.archive_id])).rows[0].n,parts.length);
+   for(const [name,text] of [['manifest.json',claim.head],...parts.map(p=>['part-'+p.part+'.json',p.data])])await db.query('insert into storage.objects(bucket_id,name,metadata) values($1,$2,$3)', ['audit-archives',claim.prefix+name,JSON.stringify({size:Buffer.byteLength(text)})]);
+   await db.exec('set role service_role');assert.equal((await worker('complete',finish)).ok,true);
+   await db.exec('reset role');assert.equal((await db.query('select count(*)::int n from private.audit_archive_parts where archive_id=$1',[row.archive_id])).rows[0].n,0);
+   await actor();if(parts.length)assert.equal((await call('part',{archive_id:row.archive_id,part:0})).storage,true);
+   await assert.rejects(db.query("select public.server_audit_archive_storage('claim',$1,$2,'{}')",[row.archive_id,row.token]),/permission denied/);
+   await db.exec('reset role');await db.query('update private.audit_archive_epochs set generation=gen_random_uuid() where company_id=$1',[C]);await actor();
+   await assert.rejects(call('open',{archive_id:row.archive_id}),/Datenschutzbereinigung/);
+   await db.exec('reset role');assert.equal((await db.query('select state from private.audit_archive_transfers where archive_id=$1',[row.archive_id])).rows[0].state,'DELETE');
+  });
+
  }finally{await db.close()}
 });

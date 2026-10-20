@@ -1,0 +1,37 @@
+name: Audit archive storage checks
+on:
+  push:
+    branches: ['codex/audit-object-storage-20261020', 'codex/ionos-migration']
+    paths:
+      - 'database/audit-archive-object-storage-v1.sql'
+      - 'supabase/functions/audit-archive-storage/**'
+      - 'assets/audit-archives-v1.js'
+      - 'tests/audit-archive*'
+      - '.github/workflows/audit-storage-checks.yml'
+  pull_request:
+    paths:
+      - 'supabase/functions/audit-archive-storage/**'
+      - 'database/audit-archive-object-storage-v1.sql'
+permissions:
+  contents: read
+concurrency:
+  group: audit-storage-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: npm run test:ionos
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno check supabase/functions/audit-archive-storage/index.ts
