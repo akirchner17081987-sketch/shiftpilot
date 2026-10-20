@@ -35,4 +35,6 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - run: deno check supabase/functions/audit-archive-storage/index.ts
+      - run: |
+          deno check --node-modules-dir=auto --lock=supabase/functions/audit-archive-storage/deno.lock supabase/functions/audit-archive-storage/index.ts
+          cat supabase/functions/audit-archive-storage/deno.lock

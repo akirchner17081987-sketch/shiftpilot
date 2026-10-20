@@ -1,4 +1,3 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "npm:@supabase/supabase-js@2.116.0";
 import {transferArchive,authorizedPart} from "./core.mjs";
 const origins=new Set(['https://schichtfunk.de','https://www.schichtfunk.de','https://home-5021411544.app-ionos.space']);

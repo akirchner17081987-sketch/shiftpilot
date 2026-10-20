@@ -112,5 +112,19 @@ test('signed audit archive: restore originals, scopes, tampering, duplicates, pr
    await db.exec('reset role');assert.equal((await db.query('select state from private.audit_archive_transfers where archive_id=$1',[row.archive_id])).rows[0].state,'DELETE');
   });
 
+
+  await t.test('privacy invalidation waits for in-flight upload before deleting its objects',async()=>{
+   await actor();const fresh=await call('create');await db.exec('reset role');
+   const row=(await db.query('select * from private.audit_archive_transfers where archive_id=$1',[fresh.manifest.archive_id])).rows[0];
+   const worker=async(action,args={})=>(await db.query('select public.server_audit_archive_storage($1,$2,$3,$4::jsonb) data',[action,row.archive_id,row.token,JSON.stringify(args)])).rows[0].data;
+   await db.query("select set_config('qa.role','service_role',false)");await db.exec('set role service_role');
+   const claim=await worker('claim');await db.exec('reset role');
+   await db.query('update private.audit_archive_epochs set generation=gen_random_uuid() where company_id=$1',[C]);
+   let state=(await db.query('select * from private.audit_archive_transfers where archive_id=$1',[row.archive_id])).rows[0];assert.equal(state.state,'DELETE');assert.equal(state.lease,claim.lease);
+   await db.exec('set role service_role');assert.equal(await worker('claim'),null);
+   await worker('fail',{lease:claim.lease,error:'privacy generation changed'});assert.equal((await worker('claim')).state,'DELETE');
+   await db.exec('reset role');
+  });
+
  }finally{await db.close()}
 });
