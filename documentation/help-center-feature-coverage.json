@@ -1118,6 +1118,24 @@
         "assets/internal-messages-v1.js",
         "database/internal-messages-v1.sql"
       ]
+    },
+    {
+      "category": "auto",
+      "question": "Wie verwende ich den Engpasslöser im Planungsassistenten?",
+      "sources": [
+        "assets/planning-assistant-core-v1.js",
+        "assets/planning-assistant-insights-v1.js",
+        "assets/planning-assistant-v1.js"
+      ]
+    },
+    {
+      "category": "auto",
+      "question": "Wo sehe ich mögliche Fragen an den Planungsassistenten?",
+      "sources": [
+        "assets/planning-assistant-core-v1.js",
+        "assets/planning-assistant-insights-v1.js",
+        "assets/planning-assistant-v1.js"
+      ]
     }
   ],
   "moduleInventory": [
@@ -2537,6 +2555,8 @@
       "id": "auto",
       "name": "Auto-Planung",
       "questions": [
+        "Wie verwende ich den Engpasslöser im Planungsassistenten?",
+        "Wo sehe ich mögliche Fragen an den Planungsassistenten?",
         "Läuft die Auto-Planung weiter, wenn ich den Browser verlasse?",
         "Wie öffne oder beende ich eine Hintergrundplanung?",
         "Welche Regeln nutzt die Auto-Planung?",
@@ -2948,10 +2968,14 @@
   "currentAudit": {
     "date": "2026-10-16",
     "baselineArticleCount": 211,
-    "addedArticleCount": 15,
+    "addedArticleCount": 17,
     "correctedArticleCount": 8,
-    "articleCount": 226,
+    "articleCount": 228,
     "categoryCount": 22,
     "assetJavaScriptCount": 213
+  },
+  "incrementalUpdate": {
+    "date": "2026-10-20",
+    "description": "Engpasslöser und jederzeit erreichbare Fragenübersicht; zwei Hilfeartikel ergänzt."
   }
 }

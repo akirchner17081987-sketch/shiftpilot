@@ -79,6 +79,15 @@
 .sf-chat-form>small{display:block;margin-top:8px;font-size:10px;line-height:1.5;color:var(--muted)}
 .sf-planning-chat :is(button,textarea,input,summary):focus-visible,.sf-chat-launcher:focus-visible{outline:2px solid var(--chat-accent,#36cbb7);outline-offset:3px}
 .sf-chat-sr{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.sf-chat-question-guide{flex:1;min-height:0;overflow:auto;padding:16px 18px;overscroll-behavior:contain}
+.sf-chat-question-guide h3{font-size:18px;margin:0 0 8px}
+.sf-chat-question-guide p{font-size:13px;line-height:1.6;color:var(--muted)}
+.sf-chat-question-guide .sf-chat-details{margin-top:8px;border-bottom:1px solid var(--line);padding-bottom:8px}
+.sf-chat-question-guide summary{font-size:13px;color:var(--text)}
+.sf-chat-question-guide .sf-chat-examples{margin:4px 0 10px}
+.sf-chat-context{gap:6px}
+.sf-chat-progress{flex:none;margin:0;padding:8px 16px;font-size:12px;color:var(--text);background:#36cbb714}
+.sf-chat-question-guide[hidden],.sf-chat-progress[hidden],.sf-chat-log[hidden]{display:none!important}
 @media(max-width:600px){
 .sf-chat-launcher{right:max(12px,env(safe-area-inset-right));bottom:max(12px,env(safe-area-inset-bottom));min-height:48px;font-size:12px!important;padding:10px 14px!important}
 .sf-planning-chat{inset:auto max(12px,env(safe-area-inset-right)) calc(max(12px,env(safe-area-inset-bottom)) + 60px) auto;width:calc(100vw - 24px);max-width:calc(100vw - 24px);height:min(720px,calc(100dvh - 88px));max-height:calc(100dvh - 88px);border-radius:16px}
@@ -105,3 +114,5 @@
 .sf-planning-proposal-confirm p{line-height:1.6}
 .sf-planning-proposal-confirm .sf-chat-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:24px}
 .sf-planning-proposal-confirm button{padding:12px 16px;min-height:44px;border-radius:10px;cursor:pointer}
+.sf-chat-blockers{margin-top:16px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
+.sf-chat-blockers h4{margin:0 0 8px;font-size:13px}.sf-chat-blockers ul{margin:0;padding-left:18px}.sf-chat-blockers li+li{margin-top:8px}
