@@ -1242,6 +1242,54 @@
         "assets/planning-timeline-v1.js",
         "assets/planning-timeline-core-v1.js"
       ]
+    },
+    {
+      "category": "personnel",
+      "question": "Wie fordere ich einen erneuerten Nachweis an?",
+      "sources": [
+        "assets/personnel-evidence-v1.js",
+        "database/personnel-evidence-service.sql"
+      ]
+    },
+    {
+      "category": "personnel",
+      "question": "Wie prüfe und übernehme ich eingereichte Nachweise?",
+      "sources": [
+        "assets/personnel-evidence-v1.js",
+        "database/personnel-evidence-service.sql"
+      ]
+    },
+    {
+      "category": "personnel",
+      "question": "Wie fordere ich eine Nachbesserung an oder ziehe eine Anforderung zurück?",
+      "sources": [
+        "assets/personnel-evidence-v1.js",
+        "database/personnel-evidence-service.sql"
+      ]
+    },
+    {
+      "category": "portal",
+      "question": "Wie reiche ich einen angeforderten Nachweis ein?",
+      "sources": [
+        "assets/personnel-evidence-v1.js",
+        "database/personnel-evidence-service.sql"
+      ]
+    },
+    {
+      "category": "portal",
+      "question": "Wo sehe ich den Prüfstatus meiner Nachweise?",
+      "sources": [
+        "assets/personnel-evidence-v1.js",
+        "database/personnel-evidence-service.sql"
+      ]
+    },
+    {
+      "category": "portal",
+      "question": "Was tue ich bei einem unterbrochenen Nachweis-Upload?",
+      "sources": [
+        "assets/personnel-evidence-v1.js",
+        "database/personnel-evidence-service.sql"
+      ]
     }
   ],
   "moduleInventory": [
@@ -2549,6 +2597,12 @@
     {
       "source": "assets/planning-timeline-core-v1.js",
       "category": "overview"
+    },
+    {
+      "source": "assets/personnel-evidence-v1.js",
+      "category": "personnel",
+      "area": "Nachweise anfordern, selbst einreichen, prüfen und übernehmen",
+      "kind": "feature-or-support"
     }
   ],
   "categoryCoverage": [
@@ -2824,7 +2878,10 @@
         "Wie verwalte ich Benachrichtigungen?",
         "Wo sehe ich meine QR-Buchungen mit Beginn, Ende und Pausen?",
         "Wie wechsle ich den Monat bei „Meine Schichten“?",
-        "Wie wird mein Resturlaub berechnet?"
+        "Wie wird mein Resturlaub berechnet?",
+        "Wie reiche ich einen angeforderten Nachweis ein?",
+        "Wo sehe ich den Prüfstatus meiner Nachweise?",
+        "Was tue ich bei einem unterbrochenen Nachweis-Upload?"
       ]
     },
     {
@@ -2886,7 +2943,10 @@
         "Warum kann ein Teamleiter die Akte eines anderen Teamleiters nicht öffnen?",
         "Was erfasse ich in einem Personalgespräch?",
         "Warum ist eine Qualifikation im Gesprächsbereich nicht mehr sichtbar?",
-        "Was wird bei Personalgesprächen protokolliert?"
+        "Was wird bei Personalgesprächen protokolliert?",
+        "Wie fordere ich einen erneuerten Nachweis an?",
+        "Wie prüfe und übernehme ich eingereichte Nachweise?",
+        "Wie fordere ich eine Nachbesserung an oder ziehe eine Anforderung zurück?"
       ]
     },
     {
@@ -3104,14 +3164,14 @@
   "currentAudit": {
     "date": "2026-10-20",
     "baselineArticleCount": 211,
-    "addedArticleCount": 29,
+    "addedArticleCount": 35,
     "correctedArticleCount": 8,
-    "articleCount": 240,
+    "articleCount": 246,
     "categoryCount": 22,
-    "assetJavaScriptCount": 217
+    "assetJavaScriptCount": 218
   },
   "incrementalUpdate": {
     "date": "2026-10-20",
-    "description": "Engpasslöser, Fragenübersicht, Frühwarnung, Urlaubsfolgen und Dienständerungsvorschau ergänzt. Planungsaufträge, geführte Monatsplanung, Mehrmonatsausgleich und Rücknahme ergänzt. Zentrale Planungsprofile, automatischer Änderungscheck und Variantenvergleich ergänzt."
+    "description": "Engpasslöser, Fragenübersicht, Frühwarnung, Urlaubsfolgen und Dienständerungsvorschau ergänzt. Planungsaufträge, geführte Monatsplanung, Mehrmonatsausgleich und Rücknahme ergänzt. Zentrale Planungsprofile, automatischer Änderungscheck und Variantenvergleich ergänzt. Nachweise selbst einreichen, gezielte Anforderung, Prüfung und atomare Übernahme ergänzt."
   }
 }
