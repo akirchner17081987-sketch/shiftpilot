@@ -14,7 +14,7 @@ const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
   assert.equal(await dock.locator('button').count(),4);assert.equal(await portal.locator('.sf-employee-side').isVisible(),false);
   assert.equal(await page.locator('#sfEmployeeMobileDock').isVisible().catch(()=>false),false);
   await page.screenshot({path:path.join(out,name+'-dashboard.png')});
-  const expected={duties:['shifts','disruptions','marketplace','handover'],requests:['time','changes','swaps','absences','wishes'],account:['account','wage','profile']};
+  const expected={duties:['shifts','disruptions','marketplace','handover'],requests:['time','changes','swaps','absences','wishes'],account:['account','wage','profile','evidence']};
   for(const [group,views] of Object.entries(expected)){
    const trigger=dock.locator('[data-employee-orbit="'+group+'"]');await trigger.click();await popup.waitFor({state:'visible'});
    assert.deepEqual(await popup.locator('[data-employee-orbit-view]').evaluateAll(nodes=>nodes.map(n=>n.dataset.employeeOrbitView)),views);
@@ -36,6 +36,6 @@ const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
   await page.keyboard.press('Escape');
   // Rebuilds and company switches receive exactly one fresh dock, preserving the view.
   await page.evaluate(()=>{SFBackend.employeePortalData.company={id:'other-company',name:'Zweites Unternehmen'};SFBackend.employeePortalData.employee.updated_at=new Date().toISOString();SFBackend.openEmployeePortal()});await page.waitForTimeout(850);assert.equal(await portal.locator('.sf-orbit-dock').count(),1);assert.match(await portal.locator('.sf-portal-brand').textContent(),/Zweites Unternehmen/);
-  assert.deepEqual(errors,[]);console.log(JSON.stringify({name,passed:true,views:13}));await page.close();
+  assert.deepEqual(errors,[]);console.log(JSON.stringify({name,passed:true,views:14}));await page.close();
  }
 }finally{await browser.close()}})().catch(e=>{console.error(e);process.exitCode=1});
