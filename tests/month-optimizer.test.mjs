@@ -85,3 +85,10 @@ test('individual optimization reports one cumulative work count across both sear
  await core.optimize(input,{iterations:2,progress:p=>updates.push({completed:p.completed,total:p.total,phase:p.phase})});
  assert.deepEqual(updates.map(p=>p.completed),[1,2,3,4]);assert.ok(updates.every(p=>p.total===4));assert.deepEqual(updates.map(p=>p.phase),['fixed','fixed','individual','individual']);
 });
+
+test('month optimizer honors company twelve-hour limit instead of a fixed ten-hour ceiling',async()=>{
+ const e=person('a',180),a={...duty('a','2026-12-01','N'),start:'18:00',end:'06:00'},input={month:'2026-12',employees:[e],groups:[{id:'night',employee:e,options:[[a]]}],base:[],capacities:[[a.resource,1]],respectHours:true};
+ assert.equal((await core.optimize(input,{iterations:1})).preview.length,0);
+ assert.equal((await core.optimize({...input,maxShiftHours:12},{iterations:1})).preview.length,1);
+ assert.equal((await core.optimize({...input,maxShiftHours:11.75},{iterations:1})).preview.length,0);
+});

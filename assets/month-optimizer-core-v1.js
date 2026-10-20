@@ -38,7 +38,8 @@
     if(p.accept&&!p.accept(e,x.duties,option))return false;
     if(p.solidRules&&!solid.canAdd(e,x.byDay,option,p.solidRules))return false;
     const addedDays=new Set(),addedByDay=new Map(option.map(a=>[a.day,a]));
-    for(const a of option){if((s.remaining.get(a.resource)||0)<1||x.days.has(a.day)||addedDays.has(a.day)||a.hours>10+.000001)return false;addedDays.add(a.day);
+    const configuredDuration=Number(p.maxShiftHours),maxDuration=Number.isFinite(configuredDuration)&&configuredDuration>0?configuredDuration:10;
+    for(const a of option){if((s.remaining.get(a.resource)||0)<1||x.days.has(a.day)||addedDays.has(a.day)||a.hours>maxDuration+.000001)return false;addedDays.add(a.day);
       for(const day of [a.day-1,a.day+1]){const b=x.byDay.get(day)||addedByDay.get(day);if(!b)continue;
         if(a.day+1===b.day&&!transition(a.type,b.type,p.solidRules)||b.day+1===a.day&&!transition(b.type,a.type,p.solidRules))return false;
         if(a.startMs<b.endMs&&a.endMs>b.startMs)return false;

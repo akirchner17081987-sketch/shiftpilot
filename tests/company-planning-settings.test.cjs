@@ -141,3 +141,37 @@ test('a new company has an empty rules view without values from defaults or anot
  const {ctx,body}=fixture();ctx.SFBackend.companyId='new';ctx.SFBackend.planningPolicyCompanyId='new';ctx.document.querySelector=()=>({textContent:'Sicherheitsmanufaktur'});ctx.SFCompliance.policy={solidPlanningRules:{timezone:'Europe/Berlin'}};
  ctx.SFPlanningRuleSettings.render(body);assert.match(body.innerHTML,/Sicherheitsmanufaktur/);assert.match(body.innerHTML,/noch keine zusätzlichen Planungsregeln/);assert.doesNotMatch(body.innerHTML,/private-alpha|value="|OT1|OT2|OT3|190|220/);
 });
+
+test('shift duration settings save only the acknowledged company field and reject stale values and roles',async()=>{
+ const {ctx}=fixture(),B=ctx.SFBackend;ctx.SFCompliance.policy.standardMaxShiftHours=10;let value=10,mode='',calls=[],cleared=0;
+ ctx.clearAutoPlanPreview=()=>cleared++;
+ B.client={from(table){const filters={};let patch;return{update(v){patch=v;calls.push({table,patch,filters});return this},eq(k,v){filters[k]=v;return this},select(){return this},async single(){if(mode==='offline')return{error:{message:'offline'}};if(filters.standard_max_shift_hours!==value)return{error:{code:'PGRST116'}};value=patch.standard_max_shift_hours;return{data:{company_id:mode==='wrong'?'beta':filters.company_id,standard_max_shift_hours:value}}}}}};
+ const api=ctx.SFShiftDurationSettings;
+ assert.match(api.card(),/value="10"/);assert.match(api.card(),/Alpha/);
+ mode='offline';await assert.rejects(api.save(12,10,'alpha'),/offline/);assert.equal(ctx.SFCompliance.policy.standardMaxShiftHours,10);assert.equal(cleared,0);
+ mode='';await api.save(12,10,'alpha');assert.equal(value,12);assert.equal(ctx.SFCompliance.policy.standardMaxShiftHours,12);assert.equal(cleared,1);assert.deepEqual(Object.keys(calls.at(-1).patch),['standard_max_shift_hours']);assert.equal(calls.at(-1).filters.company_id,'alpha');assert.equal(calls.at(-1).filters.standard_max_shift_hours,10);
+ await assert.rejects(api.save(11,10,'alpha'),/zwischenzeitlich/);assert.equal(value,12);assert.equal(cleared,1);
+ for(const invalid of [0,25,12.1,NaN])await assert.rejects(api.save(invalid,12,'alpha'),/Viertelstunden/);
+ B.role='PLANNER';assert.match(api.card(),/id="sfMaxShiftHours"[^>]*disabled/);await assert.rejects(api.save(12,12,'alpha'),/Änderungsrechte/);
+ B.role='OWNER';await assert.rejects(api.save(12,12,'beta'),/Änderungsrechte/);B.companyId='beta';assert.doesNotMatch(api.card(),/value="12"|Alpha/);assert.equal(B.planningRulesSaving,false);
+});
+
+test('real settings form saves 12 hours, refreshes its baseline and keeps the second company separate',async()=>{
+ const {Window}=await import('happy-dom'),w=new Window({url:'https://schichtfunk.de'});
+ try{
+  w.document.body.innerHTML='<div class="company-card"><b>Alpha</b></div><div id="sfSettingBody"></div>';
+  Object.assign(w,{TYPES:[],employees:[],DAYS:[],globalSoll:{},dailySoll:{},weekStart:new Date(),SFCompliance:{policy:{standardMaxShiftHours:10}},SFShiftModels:{isCompanyLoaded:()=>true,enhance(){},invalidate(){}}});
+  let stored=10;w.SFBackend={ready:true,role:'OWNER',companyId:'alpha',planningPolicyCompanyId:'alpha',account(){},client:{from(){const filters={};let patch;return{update(v){patch=v;return this},eq(k,v){filters[k]=v;return this},select(){return this},async single(){assert.equal(filters.company_id,'alpha');assert.equal(filters.standard_max_shift_hours,stored);stored=patch.standard_max_shift_hours;return{data:{company_id:'alpha',standard_max_shift_hours:stored}}}}}}};
+  w.eval(source);w.SFSettingsV2.refreshPlanning();const form=w.document.getElementById('sfShiftDurationForm');w.document.getElementById('sfMaxShiftHours').value='12';await form.onsubmit({preventDefault(){}});
+  assert.equal(stored,12);assert.equal(w.SFCompliance.policy.standardMaxShiftHours,12);assert.equal(w.document.getElementById('sfMaxShiftHours').value,'12');assert.match(w.document.getElementById('sfShiftDurationMessage').textContent,/Gespeichert/);
+  w.SFBackend.companyId='beta';w.SFBackend.planningPolicyCompanyId='beta';w.SFCompliance.policy={standardMaxShiftHours:9};w.document.querySelector('.company-card b').textContent='Beta';w.SFSettingsV2.refreshPlanning();assert.equal(w.document.getElementById('sfMaxShiftHours').value,'9');assert.match(w.document.querySelector('[data-shift-duration]').textContent,/Beta/);
+ }finally{w.happyDOM.abort()}
+});
+
+test('manual compliance uses the company duration without weakening other checks',()=>{
+ const {ctx}=fixture();ctx.SFShiftModels.planningRestriction=()=>null;Object.assign(ctx,{TYPES:[{id:'N',start:'18:00',end:'06:00'}],assignments:[],absences:[],store:{get:(_k,f)=>f,set(){}},getSoll:()=>1,assignmentsFor:()=>[],typeById:code=>ctx.TYPES.find(t=>t.id===code)});
+ vm.runInContext(fs.readFileSync('assets/compliance-core-v2.js','utf8'),ctx);const e={id:'night',shifts:['N'],qualifications:[],status:'active',weeklyHours:40,employment:'Vollzeit'};
+ assert.ok(ctx.SFCompliance.check(e,'N','2027-01-04').hard.some(x=>x.includes('Unternehmensgrenze 10')));
+ ctx.SFCompliance.policy.standardMaxShiftHours=12;assert.deepEqual(Array.from(ctx.SFCompliance.check(e,'N','2027-01-04').hard),[]);
+ ctx.assignments=[{id:'previous',employeeId:e.id,type:'N',date:'2027-01-03',start:'20:00',end:'08:00'}];ctx.TYPES[0]={id:'N',start:'18:00',end:'06:00'};assert.ok(ctx.SFCompliance.check(e,'N','2027-01-04').hard.some(x=>x.includes('Ruhezeit')));
+});

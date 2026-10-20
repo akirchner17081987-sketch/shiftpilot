@@ -315,3 +315,11 @@ test('custom day and night models create demand under stable keys and give an ex
  }
  c.TYPES[0].end='16:00';assert.equal(c.window.SFAutoPlanGuard.shiftDurationIssue('TS','2026-12-01'),null);assert.equal(c.window.SFAutoPlanGuard.passesTimeRules('e','TS','2026-12-01'),true);
 });
+
+test('company shift duration is read dynamically and still enforces rest after allowing twelve hours',()=>{
+ const {c}=harness();c.TYPES=[{id:'N',start:'18:00',end:'06:00'}];c.employees[0].shifts=['N'];c.window.SFCompliance={policy:{standardMaxShiftHours:10}};
+ vm.runInNewContext(read('assets/supabase-auto-plan-guard-v1.js'),c);const guard=c.window.SFAutoPlanGuard;
+ assert.equal(guard.passesTimeRules('e','N','2026-12-01'),false);c.window.SFCompliance.policy.standardMaxShiftHours=12;assert.equal(guard.passesTimeRules('e','N','2026-12-01'),true);
+ c.assignments=[{employeeId:'e',type:'N',date:'2026-12-01',start:'18:00',end:'06:00'}];assert.equal(guard.passesTimeRules('e','N','2026-12-02'),true);c.TYPES[0].start='16:00';c.TYPES[0].end='04:00';assert.equal(guard.passesTimeRules('e','N','2026-12-02'),false);
+ c.window.SFCompliance.policy={standardMaxShiftHours:9};assert.equal(guard.maxShiftHours(),9);assert.equal(guard.passesTimeRules('e','N','2026-12-04'),false);
+});

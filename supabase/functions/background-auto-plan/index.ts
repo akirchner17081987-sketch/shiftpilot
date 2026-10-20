@@ -29,7 +29,9 @@ Deno.serve(async req => {
   const started = performance.now();
   let checkpoint = job.checkpoint, output = null, failure = null, progress = null, steps = 0;
   try {
-    const input = core.withServerWishes(job.payload, job.server_wishes);
+    const policy = await admin.from("company_compliance_policy").select("standard_max_shift_hours").eq("company_id", job.payload.metadata.company).single();
+    if (policy.error || !policy.data) throw new Error("Die Schichtdauer des Unternehmens konnte nicht geladen werden.");
+    const input = core.withShiftDurationLimit(core.withServerWishes(job.payload, job.server_wishes), Number(policy.data.standard_max_shift_hours));
     checkpoint = checkpoint || core.start(input);
     const run = core.context(input, checkpoint), slice = performance.now();
     // Leave headroom for preparation, JSON, database calls and cold starts. Each

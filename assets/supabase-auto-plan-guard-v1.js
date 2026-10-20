@@ -2,7 +2,7 @@
 (function(){
   const HOUR=60*60*1000;
   const MIN_REST_HOURS=11;
-  const MAX_SHIFT_HOURS=10;
+  const maxShiftHours=()=>{const value=Number(window.SFCompliance?.policy?.standardMaxShiftHours);return Number.isFinite(value)&&value>0?value:10;};
   let blockCandidateDepth=0;
   // Recovery depends on the complete night block. Only synchronous candidate
   // collection may defer it; the solver and confirmation check complete rows.
@@ -39,7 +39,7 @@
   function shiftDurationIssue(type,date){
     const t=typeof typeById==='function'?typeById(type):null;if(!t)return null;
     const target=interval(date,t.start,t.end),hours=(target.end-target.start)/HOUR;
-    return hours>MAX_SHIFT_HOURS?{hours,maximum:MAX_SHIFT_HOURS}:null;
+    const maximum=maxShiftHours();return hours>maximum+1e-8?{hours,maximum}:null;
   }
   function passesTimeRules(employeeId,type,date,simulated=[]){
     const t=typeof typeById==='function'?typeById(type):null;
@@ -104,5 +104,5 @@
     };
   }
 
-  window.SFAutoPlanGuard={passesTimeRules,shiftDurationIssue,allowsTransition,passesShiftTransitions,transitionConflict,withBlockCandidates};
+  window.SFAutoPlanGuard={passesTimeRules,shiftDurationIssue,maxShiftHours,allowsTransition,passesShiftTransitions,transitionConflict,withBlockCandidates};
 })();

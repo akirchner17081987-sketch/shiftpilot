@@ -19,3 +19,8 @@ test('holiday crew exclusion overrides critical minima and scenario extras while
  const d=fixture();d.rules={...d.rules,otDayHolidayExclusion:true,otDayHolidayStates:['DE','SN','NW'],otHolidayStatesBySite:{Leipzig:'SN',Recklinghausen:'NW'},criticalShifts:[{code:'OT2',minimum:2,weekdays:[1,2,3,4,5]}]};d.models=['OT1','OT2','OT3','OT'].map(code=>({...d.models[0],code,optional_weekdays:code==='OT'?[6,7]:[1,2,3,4,5]}));d.global={OT1:1,OT2:2,OT3:1,OT:3};d.daily=[{date:'2027-01-01',shift:'OT2',required:5}];
  const cells=C.cells(d,{...variant(),extraShift:'OT2',extraCount:2},['2027-01-01'],[]);assert.deepEqual(cells.map(x=>x.required),[0,0,0,3]);assert.match(C.eligibility({...d.employees[0],shifts:['OT2']},d.models[1],'2027-01-01',d,[]),/Feiertag/);
 });
+
+test('simulator uses the company duration for custom twelve-hour models',()=>{
+ const d=fixture(),e=d.employees[0],t={...d.models[0],default_start:'06:00',default_end:'18:00'};
+ assert.match(C.eligibility(e,t,'2027-01-04',d,[]),/10 Stunden/);d.maxShiftHours=12;assert.equal(C.eligibility(e,t,'2027-01-04',d,[]),'');d.maxShiftHours=11.75;assert.match(C.eligibility(e,t,'2027-01-04',d,[]),/11.75 Stunden/);
+});

@@ -39,7 +39,7 @@
   if(S.otCodes.includes(t.code)&&S.otDayHoliday(date,data.rules))return 'Feiertag: reguläre OT statt OT1 / OT2 / OT3';
   const mapping=data.rules.otHolidayStatesBySite;if(t.code==='OT'&&mapping&&!OT.applies(date,[OT.siteState(meta(e,'team'),mapping)]))return 'Kein OT-Tag am Einsatzort';
   const r=e.rhythms?.[date];if(r?.mode==='required'&&!(r.exemptOt&&['OT1','OT2','OT3'].includes(t.code))&&r.expected!=='ALLE'&&r.expected!==t.code.toUpperCase())return 'Verbindlicher Rhythmus';
-  const iv=S.interval(date,t.default_start,t.default_end,data.timezone);if((iv.end-iv.start)/H>10+.000001)return 'Schicht länger als 10 Stunden';
+  const iv=S.interval(date,t.default_start,t.default_end,data.timezone),maximum=Number(data.maxShiftHours)>0?Number(data.maxShiftHours):10;if((iv.end-iv.start)/H>maximum+.000001)return `Schicht länger als ${maximum} Stunden`;
   if(off.some(a=>a.employeeId===e.id&&a.start<iv.end&&a.end>iv.start))return 'Abwesenheit oder angenommener Ausfall';if(W?.conflict(data.wishes||[],e.id,{date,start:t.default_start,end:t.default_end},data.timezone))return 'Geschützte Freizeitzusage';return '';
  }
  function cells(data,config,dates,rows){
@@ -73,7 +73,7 @@
    // Extra conditional demand is represented separately from the company's fallback rule.
    const required=(date,code,rows)=>{const value=S.required(date,code,rows,policy);return value===null?null:value+(slotByKey.get(date+'|'+code)?.extra||0)};
    const accept=(e,own,option)=>{const touched=new Set(option.flatMap(a=>[a.date.slice(0,7),S.localDate(a.endMs-1,policy).slice(0,7)]));for(const m of touched){const start=S.instant(m+'-01','00:00',data.timezone),end=S.instant(monthNext(m+'-01'),'00:00',data.timezone);if([...own,...option].reduce((n,a)=>n+Math.max(0,Math.min(a.endMs,end)-Math.max(a.startMs,start))/H,0)>e.calendarLimit+1e-6)return false;}return true};
-   const wishes=W?.optimizer(data.wishes||[],employees,data.wish_history||[],month,data.timezone);const input={...wishes,month,employees,base,groups,capacities,criticalBeamWidth:16,respectHours:true,solidRules:policy,required,accept:(e,own,option)=>accept(e,own,option)&&(!wishes||wishes.accept(e,own,option)),criticalCapacities:[...critical]};
+   const wishes=W?.optimizer(data.wishes||[],employees,data.wish_history||[],month,data.timezone);const input={...wishes,month,employees,base,groups,capacities,criticalBeamWidth:16,respectHours:true,maxShiftHours:Number(data.maxShiftHours)||10,solidRules:policy,required,accept:(e,own,option)=>accept(e,own,option)&&(!wishes||wishes.accept(e,own,option)),criticalCapacities:[...critical]};
    const found=await O.optimize(input,{iterations,yieldStep,progress:p=>progress({month,...p})});preview.push(...found.preview.map(a=>S.duty(a,policy)));
   }
   const all=[...boundary,...preview],errors=[];

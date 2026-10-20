@@ -72,7 +72,8 @@
     const rest=C.nearestRest(emp.id,p,ignoreId);
     if(rest.assignment&&rest.hours<11)hard.push(`Standard-Ruhezeit unterschritten: ${rest.hours.toFixed(1)} Std. (Standardprüfung 11 Std.). Ausnahmefälle müssen gesondert geprüft werden.`);
     const duration=(p.end-p.start)/HOUR;
-    if(duration>10)hard.push(`Schichtdauer ${duration.toFixed(1)} Std. überschreitet die Standard-Höchstgrenze 10 Std. Ausnahmefälle müssen gesondert geprüft werden.`);
+    const configuredDuration=Number(C.policy?.standardMaxShiftHours),maxDuration=Number.isFinite(configuredDuration)&&configuredDuration>0?configuredDuration:10;
+    if(duration>maxDuration+1e-8)hard.push(`Schichtdauer ${duration.toFixed(1)} Std. überschreitet die Unternehmensgrenze ${maxDuration.toLocaleString('de-DE')} Std.`);
     const current=C.weekHours(emp.id,date,ignoreId),target=Number(emp.weeklyHours)||0;
     if(target&&current+duration>target+.01)soft.push(`Wochen-SOLL würde auf ${(current+duration).toFixed(1)} / ${target.toFixed(1)} Std. steigen.`);
     const configured=emp.monthlyHours??meta('monthlyHours'),monthTarget=typeof employeeMonthlyTarget==='function'?employeeMonthlyTarget({...emp,monthlyHours:configured===''?undefined:configured}):Number(configured||0);
@@ -87,7 +88,7 @@
   };
   window.spAssignmentConflict=C.check;
 
-  C.defaults={shortNoticeHours:48,criticalNoticeHours:24,employeeConfirmationUnderHours:24,requireReason:true,worksCouncilEnabled:false,sector:'security'};
+  C.defaults={standardMaxShiftHours:10,shortNoticeHours:48,criticalNoticeHours:24,employeeConfirmationUnderHours:24,requireReason:true,worksCouncilEnabled:false,sector:'security'};
   C.policy={...C.defaults,...store.get('compliancePolicy',{})};
   C.requests=store.get('shiftChangeRequests',[]);
   C.auditEvents=store.get('complianceAudit',[]);

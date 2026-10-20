@@ -542,7 +542,7 @@ test('absence overlap rules are enforced in the database and respect partial-day
 });
 
 test('exactly ten hours is neutral while longer shifts remain flagged', () => {
-  assert.match(complianceCore, /if\(duration>10\)hard\.push/);
+  assert.match(complianceCore, /if\(duration>maxDuration\+1e-8\)hard\.push/);
   assert.doesNotMatch(complianceCore, /duration>=10|duration>8/);
   assert.match(schedulePublish, /if\(mins>600\)\{long\+\+/);
   assert.doesNotMatch(schedulePublish, /mins>=600|Ab 10 Stunden/);

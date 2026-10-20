@@ -31,3 +31,11 @@ test('local dates remain correct across zones and daylight-saving transitions af
   const expected=new Intl.DateTimeFormat('en-CA',{timeZone:timezone,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(iso));assert.equal(S.localDate(Date.parse(iso),{timezone}),expected);assert.equal(S.localDate(Date.parse(iso),{timezone}),expected);
  }
 });
+
+test('background input preserves company duration and the worker rejects an outdated or forged limit',()=>{
+ const i={...input(),maxShiftHours:12},packed=C.pack(i);assert.equal(packed.maxShiftHours,12);assert.equal(C.unpack(JSON.parse(JSON.stringify(packed))).maxShiftHours,12);
+ const p={version:1,months:[i.month],minimumInput:packed,monthInputs:[packed],metadata:{company:'one'}},before=JSON.stringify(p);
+ const applied=C.withShiftDurationLimit(p,12);assert.equal(applied.monthInputs[0].maxShiftHours,12);assert.equal(JSON.stringify(p),before);
+ assert.throws(()=>C.withShiftDurationLimit(p,10),/Schichtdauer wurde geändert/);assert.throws(()=>C.withShiftDurationLimit(p,0),/Ungültige/);
+ assert.equal(C.withShiftDurationLimit(payload(),10).minimumInput.maxShiftHours,10);const legacy=payload();delete legacy.minimumInput.maxShiftHours;delete legacy.monthInputs[0].maxShiftHours;assert.equal(C.withShiftDurationLimit(legacy,9).minimumInput.maxShiftHours,9);
+});
