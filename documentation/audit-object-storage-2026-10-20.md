@@ -23,3 +23,15 @@ Die Meldung gibt den aktuellen Objektbestand wieder, keine verbindliche Rechnung
 ## Tests und Grenzen
 Node-Tests prüfen reale PostgreSQL-Funktionen in PGlite sowie den Edge-Kern mit Storage-Fehlerfällen und die Browser-Integration in happy-dom. GitHub Actions führt zusätzlich die gesamte Regression, Build, IONOS-Prüfung und Deno-Typprüfung aus. Nach Freigabe folgt ein echter Upload mit Rückleseprüfung der vorhandenen vier Archive.
 Die Wiederherstellung einer vollständigen Datenbank bleibt ein separater offener Betriebsnachweis. Ein Audit-Archiv ist kein Vollbackup.
+
+## Betriebsnachweis vom 20.10.2026, 21:42 Europe/Berlin
+- Alle vier vorhandenen Archive wurden durch die produktive Edge-Funktion hochgeladen und bytegetreu zurückgelesen.
+- READY bestätigt: 1.327 + 1.332 + 1.332 + 1.862 = **5.853 Bytes** in acht Storage-Objekten.
+- Redundante Datenbank-Pakete: **0**. Archivverzeichnis/Signaturen bleiben erhalten; aktive Audit-Ereignisse wurden nicht gelöscht.
+- Telefonstatistik: 0 Dateien / 0 Bytes; damit gemeinsame aktuelle Objektbelegung 5.853 Bytes von 100 GB.
+- Weiterhin sieben Datenbank-Zeitpläne. Vorhandener Push-Retry jobid 2 übernimmt offene Übertragungen; Wochenjob unverändert.
+- Authentifizierungsprüfungen am echten Edge-Endpunkt: fehlende Anmeldung und falscher Worker-Token jeweils HTTP 401.
+- Isolierter leerer Löschauftrag im echten Betrieb erfolgreich, anschließende Testmetadaten entfernt.
+- 23 gezielte Tests, 1.138 Gesamttests, fünf IONOS-Prüfungen, Deno-Prüfung und produktive IONOS-Browser-/Deployment-Prüfungen bestanden.
+- Veröffentlichte Archiv-JavaScriptdatei per Git-Blob-SHA geprüft: 45f1eebee0ee57d229ca917af9e036f0dfc7cd1f.
+- Kapazitätsaufgabe „Audit-Sicherungen und Speicher melden“ wurde angelegt. Die Aufgabenverwaltung meldete später is_enabled=false und requires_user_action=true, ohne textlichen Grund. Deshalb ist die automatische ChatGPT-Zustellung **noch nicht als betriebsbereit bestätigt**. Nutzeraktion in der Aufgabe erforderlich; nicht ungeprüft erneut aktivieren oder eine zweite Aufgabe anlegen.
