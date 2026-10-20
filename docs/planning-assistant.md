@@ -62,3 +62,31 @@ Die Suche ist auf 100 offene Positionen, 240 Kandidatenprüfungen und ein Zeitbu
 Die Vorschau speichert keine Zuweisungen. Vor einer übernehmbaren Vorschau werden wie bisher ausstehende Änderungen synchronisiert und aktuelle Daten samt serverseitigem Fingerprint und geschützten Kennungen geladen; die Suche wird damit erneut gerechnet. Übernahme nutzt den bestehenden Bestätigungsdialog und die atomare Entwurfsübernahme einschließlich erneuter Regeln-, Signatur-, Berechtigungs- und Aktualitätsprüfung. Kein neues Datenbankschema und keine neue KI-API.
 
 Prüfungen: `node --test tests/planning-assistant*.test.*`, Browserprüfungen `tests/e2e/planning-assistant-bottlenecks.spec.cjs` (Desktop/Mobil), bestehende Assistentenprüfungen und statischer Build. Die Browserdaten sind vollständig fiktiv; es wird kein produktiver Dienstplan verändert.
+
+## Frühwarnung, Urlaubsfolgen und Änderungsvorschau · 20.10.2026
+
+Drei weitere Einstiege und die Kategorie **Vorausschauen und Änderungen prüfen** ergänzen den jederzeit erreichbaren Fragenkatalog. Alle drei Auswertungen sind lesende Simulationen ohne Speicherung, Urlaubsentscheidung, Vertretungsanfrage oder Benachrichtigung. Sie verwenden die vorhandene Rollen- und Unternehmensabgrenzung.
+
+### Frühwarnung
+
+**Frühwarnung starten** prüft standardmäßig die kommenden 28 Kalendertage ab dem Unternehmensdatum. Ein im Chat ausdrücklich ausgewählter Monat oder ein im Text genannter Zeitraum hat Vorrang; „die nächsten 14 Tage“ ist ebenfalls möglich. Bestehende offene Pflichtpositionen werden getrennt von fehlender oder einzelner direkter Vertretungsreserve dargestellt. Für einen geplanten Dienst wird die zugewiesene Person einzeln als ausgefallen angenommen; wenn vorhandene Überbesetzung den Ausfall bereits abdeckt, entsteht kein Reservehinweis. Sonst werden direkte Ersatzpersonen mit den aktuellen zentralen Prüfungen und persönlichen Kapazitätsgrenzen ermittelt.
+
+Die Suche ist auf 31 Tage, 160 Szenarien und etwa 1,8 Sekunden Suchbudget begrenzt. Ungeprüfte Dienste gelten nicht als sicher. Das Ergebnis prognostiziert keine Erkrankung oder Ausfallwahrscheinlichkeit. Reservepersonen können in mehreren unabhängigen Szenarien erscheinen; dies ist keine gemeinsame Zusage für mehrere Ausfälle. Geladene Planungsdaten und hinterlegter Bedarf bestimmen die Aussagekraft.
+
+### Urlaubsfolgen
+
+**Urlaubsfolgen prüfen** öffnet eine Auswahl für Mitarbeiter und Zeitraum (bis einschließlich). Unterstützte Beispiele sind „Urlaubsfolgen Mitarbeiter 119 vom 05.01.2027 bis 09.01.2027“ und „Welche Folgen hätte der Urlaub von Mitarbeiter 119 vom 10. bis 17. November 2027?“. Unklare Personen oder fehlende Daten führen zur Auswahl; ungültige, umgekehrte und mehr als 62 Tage lange Bereiche werden zurückgewiesen.
+
+Alle Dienste der Person, deren tatsächliches Zeitintervall den angenommenen Urlaub überschneidet, werden für die Simulation vollständig entfernt. Nachtüberträge vom Vortag zählen dazu. Bestehende Pflichtlücken werden von zusätzlich entstehenden Lücken getrennt. Direkte Ersatzbesetzungen werden gemeinsam gegen die verbleibende Planung geprüft. Tatsächliche individuelle Dienstzeiten und vorhandene wirksame Abwesenheiten anderer Personen bleiben Teil der Kandidatenprüfung. Die Suche prüft höchstens 100 zusätzliche Pflichtpositionen mit begrenztem Zeitbudget und bis zu acht Kandidaten je Position; Umverteilungen und andere Suchreihenfolgen können weitere Lösungen liefern.
+
+Veröffentlichte und geschützte betroffene Dienste werden ausdrücklich genannt. Die Simulation kann auch sie als Vertretungsbedarf analysieren, erteilt aber keine Änderungsfreigabe. Es wird kein Urlaub genehmigt und keine Abwesenheit oder Vertretung gespeichert. Geplante Dienststunden sind kein Urlaubskontingent und keine Berechnung einer Urlaubsgutschrift.
+
+### Dienständerung
+
+**Dienstverschiebung prüfen** bietet Ausgangsdienst und Zielmitarbeiter sowie optionale Änderungen an Datum, Schicht und Uhrzeit. Eindeutige Fragen wie „Was passiert wenn ich den FD am 05.01.2027 von Mitarbeiter 119 auf Mitarbeiter 120 verschiebe?“ können direkt ausgewertet werden. Ein ausgewählter Kalenderdienst kann die Auswahl vorbelegen.
+
+Die Vorschau nennt Ausgangs- und Zielzuweisung, die monatlichen geplanten Stunden beider Personen vor/nach der Änderung, angrenzende geladene Dienste im Bereich ±7 Tage und Veränderungen der Pflichtbesetzung. Verbindliche neue Regelauffälligkeiten und die verbleibenden Dienste der betroffenen Personen werden erneut geprüft. Schutzkennzeichen, fehlende Eignung, Ruhe-/Block-/Stundengrenzen und zusätzliche Pflichtlücken erzeugen Prüfhinweise. Es entsteht kein übernehmbares Vorschlagsobjekt.
+
+Im bestehenden Dienstplan-Editor wird zusätzlich **Auswirkungen prüfen** angeboten. Diese Auswertung liest die noch ungespeicherten Felder für Mitarbeiter, Datum, Schicht und Beginn/Ende. Weitere Eingaben verwerfen den sichtbaren Bericht zugunsten eines Hinweises zur erneuten Prüfung. Die bisherige Speicherfunktion und deren Schutzprüfungen bleiben verbindlich. Ältere übernehmbare Planungsvorschläge behalten ihre vorhandene Signatur- und Fingerprintprüfung; nach tatsächlicher Änderung werden sie beim Übernehmen als veraltet zurückgewiesen.
+
+Fachprüfung: `tests/planning-assistant-scenarios.test.cjs`. Browserprüfung: `tests/e2e/planning-assistant-scenarios.spec.cjs` (Desktop/Mobil, Hell/Dunkel; Auswahlformulare, tatsächlicher Dienstplan-Editor, ungültig gewordene Vorschau und ausbleibende Schreibzugriffe mit fiktiven Daten).

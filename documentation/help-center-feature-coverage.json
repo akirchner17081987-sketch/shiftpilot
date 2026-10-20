@@ -1136,6 +1136,33 @@
         "assets/planning-assistant-insights-v1.js",
         "assets/planning-assistant-v1.js"
       ]
+    },
+    {
+      "category": "auto",
+      "question": "Wie erkenne ich besonders anfällige Dienste?",
+      "sources": [
+        "assets/planning-assistant-core-v1.js",
+        "assets/planning-assistant-insights-v1.js",
+        "assets/planning-assistant-v1.js"
+      ]
+    },
+    {
+      "category": "auto",
+      "question": "Wie prüfe ich die Besetzungsfolgen eines Urlaubs?",
+      "sources": [
+        "assets/planning-assistant-core-v1.js",
+        "assets/planning-assistant-insights-v1.js",
+        "assets/planning-assistant-v1.js"
+      ]
+    },
+    {
+      "category": "auto",
+      "question": "Wie prüfe ich die Auswirkungen einer Dienständerung?",
+      "sources": [
+        "assets/planning-assistant-core-v1.js",
+        "assets/planning-assistant-insights-v1.js",
+        "assets/planning-assistant-v1.js"
+      ]
     }
   ],
   "moduleInventory": [
@@ -2555,6 +2582,9 @@
       "id": "auto",
       "name": "Auto-Planung",
       "questions": [
+        "Wie erkenne ich besonders anfällige Dienste?",
+        "Wie prüfe ich die Besetzungsfolgen eines Urlaubs?",
+        "Wie prüfe ich die Auswirkungen einer Dienständerung?",
         "Wie verwende ich den Engpasslöser im Planungsassistenten?",
         "Wo sehe ich mögliche Fragen an den Planungsassistenten?",
         "Läuft die Auto-Planung weiter, wenn ich den Browser verlasse?",
@@ -2968,14 +2998,14 @@
   "currentAudit": {
     "date": "2026-10-16",
     "baselineArticleCount": 211,
-    "addedArticleCount": 17,
+    "addedArticleCount": 20,
     "correctedArticleCount": 8,
-    "articleCount": 228,
+    "articleCount": 231,
     "categoryCount": 22,
     "assetJavaScriptCount": 213
   },
   "incrementalUpdate": {
     "date": "2026-10-20",
-    "description": "Engpasslöser und jederzeit erreichbare Fragenübersicht; zwei Hilfeartikel ergänzt."
+    "description": "Engpasslöser, Fragenübersicht, Frühwarnung, Urlaubsfolgen und Dienständerungsvorschau ergänzt."
   }
 }
