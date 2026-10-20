@@ -156,7 +156,7 @@
     if(!s.candidates)return response('Prüfung nicht verfügbar','Die Besetzungsprüfung ist noch nicht geladen.');
     const original=s.assignments.filter(active),removed=outage?original.filter(a=>dates.includes(a.date)&&excluded.has(String(a.employeeId))):[],base=original.filter(a=>!removed.includes(a)),proposed=[],changes=[];
     const initial=outage?removed.map(a=>({date:a.date,type:a.type})):slots(s,dates,base),remaining=new Map();
-    const target=e=>Math.max(0,Number(s.monthTarget(e))||0);
+    const target=e=>Math.max(0,Number(s.monthTarget(e,dates[0].slice(0,7)))||0);
     for(const slot of initial.slice(0,500)){
       if(!outage&&s.isPublished?.(slot.date))continue;
       const options=candidates(s,slot,[...base,...proposed],excluded).filter(c=>outage||hours(s,c.e,[...base,...proposed],dates)<target(c.e)-0.05);
@@ -178,21 +178,21 @@
   }
   // Bounded repair search: keep every protected assignment and only accept a
   // jointly checked plan with fewer gaps or a strictly smaller hours deficit.
-  function bottlenecks(s,dates,focusIds=null){
+  function bottlenecks(s,dates,focusIds=null,options={}){
     const context={intent:'bottlenecks',dates,pending:false};
     if(!rulesReady(s)||!s.candidates||!s.monthTarget)return response('Engpasslöser noch nicht bereit','Die verbindlichen Regeln und Besetzungsprüfungen müssen vollständig geladen sein.',{context});
     const original=s.assignments.filter(active),staff=s.employees.filter(e=>e.status==='active'&&!e.deletedAt);
     const focused=e=>!focusIds||focusIds.includes(String(e.id));
-    const target=e=>Math.max(0,Number(s.monthTarget(e))||0);
+    const target=e=>Math.max(0,Number(s.monthTarget(e,dates[0].slice(0,7)))||0);
     const deficit=(rows,focus=false)=>staff.filter(e=>!focus||focused(e)).reduce((n,e)=>n+Math.max(0,target(e)-hours(s,e,rows,dates)),0);
     const baseline=audit(s,dates),key=x=>String(x.employee.id)+'|'+x.date+'|'+x.message;
     if(baseline.unknown.length)return response('Engpasslöser – Daten prüfen','Die Prüfung ist unvollständig. Bitte zuerst die fehlenden Daten ergänzen.',{notes:baseline.unknown,context});
     const allowedIssues=new Set(baseline.issues.map(key));
     const started=Date.now();let checks=0,limited=false,rows=original.slice();
     const budget=()=>{if(checks>=240||Date.now()-started>1800){limited=true;return false;}return true;};
-    const eligible=(slot,plan,exclude=new Set())=>{if(!budget())return [];checks++;return candidates(s,slot,plan,exclude).sort((a,b)=>{
+    const eligible=(slot,plan,exclude=new Set())=>{if(!budget())return [];checks++;const list=candidates(s,slot,plan,exclude),scores=options.balanceScore?new Map(list.map(c=>[c,options.balanceScore([...plan,c.a])])):null;return list.sort((a,b)=>{
       const gain=c=>Math.min(paid(s,c.a),Math.max(0,target(c.e)-hours(s,c.e,plan,dates)));
-      return Number(focused(b.e))-Number(focused(a.e))||gain(b)-gain(a)||person(a.e).localeCompare(person(b.e),'de');
+      return Number(focused(b.e))-Number(focused(a.e))||(scores?scores.get(a)-scores.get(b):0)||gain(b)-gain(a)||person(a.e).localeCompare(person(b.e),'de');
     });};
     const canMove=a=>original.includes(a)&&staff.some(e=>String(e.id)===String(a.employeeId))&&dates.includes(a.date)&&!s.isPublished?.(a.date)&&!!s.movable?.(a);
     const finalValid=plan=>{
@@ -202,12 +202,12 @@
       for(const a of plan.filter(a=>affected.has(String(a.employeeId)))){
         if(!budget())return false;checks++;
         const e=staff.find(e=>String(e.id)===String(a.employeeId)),without=plan.filter(x=>x!==a);
-        if(!e||!capacity(s,e,without,a)||!(s.candidates(a.type,a.date,without).candidates||[]).some(c=>String(c.e.id)===String(e.id)))return false;
+        if(!e||!capacity(s,e,without,a)||!(s.candidates(a.type,a.date,without,model(s,a)).candidates||[]).some(c=>String(c.e.id)===String(e.id)))return false;
       }return true;
     };
     const initialSlots=slots(s,dates,original),blocked=[];
     const accept=plan=>{
-      if(deficit(plan)>deficit(rows)+0.05||deficit(plan,true)>deficit(rows,true)+0.05||!finalValid(plan))return false;
+      if(deficit(plan)>deficit(rows)+0.05||deficit(plan,true)>deficit(rows,true)+0.05||options.balanceScore&&options.balanceScore(plan)>options.balanceScore(rows)+0.05||!finalValid(plan))return false;
       rows=plan;return true;
     };
     for(const slot of initialSlots.slice(0,100)){
@@ -226,7 +226,7 @@
         for(const c of next){
           const replacements=eligible({date:donor.date,type:donor.type},[...without,c.a],new Set([String(donor.employeeId)]));
           for(const replacement of replacements){
-            const a=model(s,{...replacement.a,start:donor.start||replacement.a.start,end:donor.end||replacement.a.end});
+            const a=model(s,{...replacement.a,start:donor.start||replacement.a.start,end:donor.end||replacement.a.end,note:donor.note||'',pause:Number(donor.pause||0)});
             if(accept([...without,c.a,a])){found=true;break;}
           }if(found)break;
         }if(found)break;
@@ -235,13 +235,13 @@
     }
     // Redistribute existing duties to staff below target without creating gaps
     // or increasing the total deficit. No extra demand is invented to add hours.
-    for(const donor of rows.filter(canMove)){
+    for(const donor of (options.goal==='coverage'?[]:rows.filter(canMove))){
       if(!budget())break;
       const without=rows.filter(a=>a!==donor),before=deficit(rows),beforeFocus=deficit(rows,true);
       for(const c of eligible({date:donor.date,type:donor.type},without,new Set([String(donor.employeeId)]))){
         if(!focused(c.e)||hours(s,c.e,rows,dates)>=target(c.e)-0.05)continue;
-        const a=model(s,{...c.a,start:donor.start||c.a.start,end:donor.end||c.a.end}),plan=[...without,a];
-        if((focusIds?deficit(plan,true)<beforeFocus-0.05:deficit(plan)<before-0.05)&&accept(plan))break;
+        const a=model(s,{...c.a,start:donor.start||c.a.start,end:donor.end||c.a.end,note:donor.note||'',pause:Number(donor.pause||0)}),plan=[...without,a];
+        if((options.balanceScore?options.balanceScore(plan)<options.balanceScore(rows)-0.05:focusIds?deficit(plan,true)<beforeFocus-0.05:deficit(plan)<before-0.05)&&accept(plan))break;
       }
     }
     const removed=original.filter(a=>!rows.includes(a)),base=original.filter(a=>rows.includes(a)),proposed=rows.filter(a=>!original.includes(a));
@@ -285,5 +285,5 @@
     const entries=(run.analysis?.entries||[]).filter(x=>dates.includes(x.date)&&(!type||x.type===type));
     return response('Gespeicherte Planungsgründe','Stand des Laufs vom '+new Date(run.created_at).toLocaleString('de-DE')+'. '+run.analysis.open+' offene Positionen im damaligen Ergebnis.',{columns:['Datum','Schicht','Ausschlussgründe im Ergebnis'],rows:entries.map(x=>[x.date,x.type,x.reasons.map(r=>r.count+' × '+r.label).join('; ')||'Keine passende Besetzung unter den geprüften Regeln.']),notes:['Gespeicherte Prüfung am Ende des Planungslaufs. Dies ist keine vollständige Aufzeichnung aller Suchschritte.','Im verwendeten Browser gespeichert, getrennt nach Benutzer und Unternehmen; bis zu 20 Läufe der letzten 90 Tage. Keine Synchronisierung zwischen Geräten.','Das aktuelle Ergebnis kann nach späteren Änderungen abweichen.',...(run.analysis.truncated?['Die Detailansicht wurde auf 200 Schichten begrenzt.']:[])],context:{intent:'runReasons',dates,type}});
   }
-  return {audit,workload,improvements,bottlenecks,forecast,leaveImpact,changeImpact,journal,person,hours,paid,capacity,slots};
+  return {audit,workload,improvements,bottlenecks,checkedPlan,forecast,leaveImpact,changeImpact,journal,person,hours,paid,capacity,slots};
 });

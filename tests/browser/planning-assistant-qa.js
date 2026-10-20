@@ -6,7 +6,7 @@
  const input=document.getElementById('sfPlanningChatInput'),log=document.getElementById('sfPlanningChatLog'),dialog=document.getElementById('sfPlanningChat');
  check('Dialog opens and focuses input',dialog.open&&document.activeElement===input);
  check('Planning remains interactive while chat is open',!dialog.matches(':modal'));
- check('Welcome shows eleven clear starting points',log.querySelectorAll('.sf-chat-start .sf-chat-example').length===11);
+ check('Welcome offers the new supported planning workflows',[...log.querySelectorAll('.sf-chat-start .sf-chat-example')].some(b=>b.textContent==='Planungsauftrag')&&['Geführte Planung','Mehrmonatsausgleich','Rückgängig machen','Frühwarnung','Engpass lösen'].every(label=>[...log.querySelectorAll('.sf-chat-start .sf-chat-example')].some(b=>b.textContent===label)));
  check('Additional examples and month controls start collapsed',!log.querySelector('.sf-chat-details').open&&!dialog.querySelector('.sf-chat-period').open);
  const originalButtonRect=button.getBoundingClientRect(),originalChatRect=dialog.getBoundingClientRect();
  document.body.style.minHeight='220vh';window.scrollTo(0,300);await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));

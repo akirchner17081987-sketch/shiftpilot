@@ -1163,6 +1163,42 @@
         "assets/planning-assistant-insights-v1.js",
         "assets/planning-assistant-v1.js"
       ]
+    },
+    {
+      "category": "auto",
+      "question": "Wie erteile ich einen Planungsauftrag in Alltagssprache?",
+      "sources": [
+        "assets/planning-assistant-workflows-v1.js",
+        "assets/planning-assistant-core-v1.js",
+        "assets/planning-assistant-v1.js"
+      ]
+    },
+    {
+      "category": "auto",
+      "question": "Wie führt mich der Assistent durch die Monatsplanung?",
+      "sources": [
+        "assets/planning-assistant-workflows-v1.js",
+        "assets/planning-assistant-core-v1.js",
+        "assets/planning-assistant-v1.js"
+      ]
+    },
+    {
+      "category": "auto",
+      "question": "Wie funktioniert der Mehrmonatsausgleich im Assistenten?",
+      "sources": [
+        "assets/planning-assistant-workflows-v1.js",
+        "assets/planning-assistant-core-v1.js",
+        "assets/planning-assistant-v1.js"
+      ]
+    },
+    {
+      "category": "auto",
+      "question": "Wie mache ich Assistentenänderungen rückgängig?",
+      "sources": [
+        "assets/planning-assistant-workflows-v1.js",
+        "assets/planning-assistant-core-v1.js",
+        "assets/planning-assistant-v1.js"
+      ]
     }
   ],
   "moduleInventory": [
@@ -2452,6 +2488,12 @@
       "area": "Eigene regionale Atlas-Karte mit lokalem Natural-Earth-Relief, Flüssen, Seen und kollisionsgeprüften Ortsnamen; gleicher Standort- und Dialogablauf",
       "category": "overview",
       "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/planning-assistant-workflows-v1.js",
+      "area": "Planungsaufträge, geführte Monatsplanung, Mehrmonatsausgleich und sichere Rücknahme bestätigter Assistentenänderungen",
+      "category": "auto",
+      "kind": "feature-or-support"
     }
   ],
   "categoryCoverage": [
@@ -2582,6 +2624,10 @@
       "id": "auto",
       "name": "Auto-Planung",
       "questions": [
+        "Wie erteile ich einen Planungsauftrag in Alltagssprache?",
+        "Wie führt mich der Assistent durch die Monatsplanung?",
+        "Wie funktioniert der Mehrmonatsausgleich im Assistenten?",
+        "Wie mache ich Assistentenänderungen rückgängig?",
         "Wie erkenne ich besonders anfällige Dienste?",
         "Wie prüfe ich die Besetzungsfolgen eines Urlaubs?",
         "Wie prüfe ich die Auswirkungen einer Dienständerung?",
@@ -2998,14 +3044,14 @@
   "currentAudit": {
     "date": "2026-10-16",
     "baselineArticleCount": 211,
-    "addedArticleCount": 20,
+    "addedArticleCount": 24,
     "correctedArticleCount": 8,
-    "articleCount": 231,
+    "articleCount": 235,
     "categoryCount": 22,
-    "assetJavaScriptCount": 213
+    "assetJavaScriptCount": 214
   },
   "incrementalUpdate": {
     "date": "2026-10-20",
-    "description": "Engpasslöser, Fragenübersicht, Frühwarnung, Urlaubsfolgen und Dienständerungsvorschau ergänzt."
+    "description": "Engpasslöser, Fragenübersicht, Frühwarnung, Urlaubsfolgen und Dienständerungsvorschau ergänzt. Planungsaufträge, geführte Monatsplanung, Mehrmonatsausgleich und Rücknahme ergänzt."
   }
 }
