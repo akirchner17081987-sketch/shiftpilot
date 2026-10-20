@@ -6,7 +6,7 @@
     {id:'home',label:'Übersicht',icon:'home',items:[['dashboard','Übersicht']]},
     {id:'duties',label:'Meine Dienste',icon:'calendar',items:[['shifts','Meine Schichten'],['disruptions','Ersatzanfragen'],['marketplace','Schicht-Marktplatz'],['handover','Schichtübergabe']]},
     {id:'requests',label:'Zeit & Anträge',icon:'clock',items:[['time','Arbeitszeit'],['changes','Schichtänderungen'],['swaps','Schichttausch'],['absences','Abwesenheiten'],['wishes','Wunschplanung']]},
-    {id:'account',label:'Mein Konto',icon:'person',items:[['account','Stundenkonto'],['wage','Lohnvorschau'],['profile','Mein Profil']]}
+    {id:'account',label:'Mein Konto',icon:'person',items:[['account','Stundenkonto'],['wage','Lohnvorschau'],['profile','Mein Profil'],['evidence','Meine Nachweise']]}
   ];
   const paths = {
     home:'<path d="m3 10 9-7 9 7v10H3Zm6 10v-7h6v7"/>',

@@ -805,6 +805,18 @@ window.SFHelpContent = {
       [
         "Wie wird mein Resturlaub berechnet?",
         "Unter Abwesenheiten zeigt das Urlaubskonto den Jahresanspruch, den Übertrag aus dem Vorjahr und die bestätigten Urlaubstage für das gewählte Jahr. Genehmigter Urlaub einschließlich zukünftiger Zeiträume wird abgezogen. Anträge in Prüfung erscheinen getrennt und werden noch nicht abgezogen. Im Schichtbetrieb bestätigt die Personalverwaltung die anzurechnenden Urlaubstage; Kalendertage werden nicht pauschal als Urlaub gezählt. Fehlen Anspruch oder bestätigte Tage, bleibt der Resturlaub als noch offen gekennzeichnet. In der Verwaltung unter Personal → Abwesenheit pflegen Inhaber und Administratoren mit zweiter Anmeldestufe die Jahreskonten und prüfen bestehende Urlaube. Bei Genehmigungen werden die Urlaubstage je betroffenem Jahr bestätigt. Änderungen an Zeitraum oder Umfang erfordern eine erneute Prüfung. Übertrag und Jahresanspruch werden je Jahr gepflegt; ein automatischer Übertrag oder Verfall findet nicht statt."
+      ],
+      [
+        "Wie reiche ich einen angeforderten Nachweis ein?",
+        "Öffne Mein Konto → Meine Nachweise oder die zugehörige Benachrichtigung. Klappe die Anforderung auf, lies den Hinweis und wähle den passenden Nachweis als PDF, JPG, PNG oder WebP mit maximal 10 MB. „Nachweis einreichen“ lädt die Datei privat hoch und legt sie der Personalverwaltung zur Prüfung vor. Ein Upload allein ändert keine Personalakte, Qualifikation oder Schichtfreigabe. Du siehst ausschließlich deine eigenen Anforderungen und Einreichungen."
+      ],
+      [
+        "Wo sehe ich den Prüfstatus meiner Nachweise?",
+        "Meine Nachweise zeigt Angefordert, Zur Prüfung, Nachbesserung nötig, Übernommen und Zurückgezogen. Im aufgeklappten Vorgang siehst du frühere Einreichungen und die Rückmeldung der Personalverwaltung. Bei Nachbesserung reichst du eine neue Version ein. Benachrichtigungen informieren über neue Anforderungen und Entscheidungen; Fristen werden angezeigt. Der Service ist in der Demo nicht verfügbar."
+      ],
+      [
+        "Was tue ich bei einem unterbrochenen Nachweis-Upload?",
+        "Bei einem Fehler bleibt die ausgewählte Datei im offenen Formular erhalten. Versuche es mit derselben Datei erneut. Wurde der Upload bereits gespeichert, aber die Einreichung nicht bestätigt, aktualisiere die Ansicht und nutze „Vorbereitete Datei einreichen“. Eine eingereichte Datei wird nicht überschrieben. Bei „inzwischen geändert“ lade den aktuellen Stand und prüfe den Status vor einem erneuten Versuch."
       ]
     ],
     "appearance": [
@@ -943,6 +955,18 @@ window.SFHelpContent = {
       [
         "Was wird bei Personalgesprächen protokolliert?",
         "Erfolgreiches Öffnen des Gesprächsbereichs und das Hinzufügen einer Gesprächsnotiz erzeugen Audit-Einträge. Die Protokolle enthalten den Vorgang und den Bezug zum Mitarbeiter, nicht eine Kopie der Gesprächsinhalte. Das Audit-Protokoll steht der berechtigten Verwaltung zur Verfügung; Teamleiter erhalten darüber keinen Zugriff auf private Aktenbereiche."
+      ],
+      [
+        "Wie fordere ich einen erneuerten Nachweis an?",
+        "Unter Personal → Mitarbeiter öffnest du „Nachweise öffnen“ und „Neuen Nachweis anfordern“. Wähle einen Mitarbeiter mit aktivem persönlichem Zugang, Titel, optionale Frist und einen Hinweis. Im Qualifikationsreiter der Personalakte öffnet „Erneuerung anfordern“ eine Anforderung für den ausgewählten Nachweis. Der Mitarbeiter erhält eine Meldung und findet die Anforderung unter Mein Konto → Meine Nachweise. Die Anforderung wird erst durch „Nachweis anfordern“ gesendet."
+      ],
+      [
+        "Wie prüfe und übernehme ich eingereichte Nachweise?",
+        "Inhaber und Administratoren mit bestätigter Zwei-Faktor-Anmeldung öffnen Nachweise und den Status Zur Prüfung. Lade die Datei über „Datei öffnen“ herunter und prüfe ihren Inhalt. Trage geprüften Titel, Ausstellungs- und Gültigkeitsdaten, gegebenenfalls Aussteller sowie eine Rückmeldung ein. Bestätige die Prüfung ausdrücklich und wähle „Prüfen & in Personalakte übernehmen“. Das Dokument wird atomar in die private Personalakte übernommen. Optional wird die zugehörige Qualifikation aktualisiert oder eine neue angelegt. Eine bisherige Freigabe der geänderten Qualifikation für Personalgespräche wird zurückgesetzt. Schichtfreigaben werden nicht automatisch erteilt."
+      ],
+      [
+        "Wie fordere ich eine Nachbesserung an oder ziehe eine Anforderung zurück?",
+        "Bei einer unvollständigen Einreichung nutzt du „Nachbesserung anfordern“ mit einer Rückmeldung von 5–2000 Zeichen. Der Mitarbeiter kann eine neue Dateiversion einreichen; vorherige Versionen und Rückmeldungen bleiben sichtbar. Eine offene Anforderung lässt sich mit Begründung zurückziehen. Danach sind weitere Einreichungen gesperrt. Bereits übernommene Anforderungen lassen sich darüber nicht zurückziehen. Höchstens 20 offene Anforderungen je Mitarbeiter und zehn Dateiversionen je Anforderung sind möglich. Die Liste lädt jeweils 50 Anforderungen; „Weitere 50 laden“ erreicht die übrigen Vorgänge. Filter beziehen sich auf die geladenen Einträge."
       ]
     ],
     "access": [

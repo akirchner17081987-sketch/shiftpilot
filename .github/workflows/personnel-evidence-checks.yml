@@ -1,0 +1,46 @@
+name: Personnel evidence checks
+on:
+  pull_request:
+    paths:
+      - 'assets/personnel-evidence-*'
+      - 'assets/employee-portal-workspace-v2.js'
+      - 'assets/employee-orbit-v1.js'
+      - 'assets/supabase-personnel-file-v1.js'
+      - 'assets/supabase-notifications-v1.js'
+      - 'database/personnel-evidence-service.sql'
+      - 'supabase/migrations/*personnel_evidence*'
+      - 'tests/*personnel-evidence*'
+      - 'tests/browser/personnel-evidence*'
+      - '.github/workflows/personnel-evidence-checks.yml'
+  push:
+    branches: [codex/ionos-migration]
+    paths:
+      - 'assets/personnel-evidence-*'
+      - 'database/personnel-evidence-service.sql'
+      - 'tests/*personnel-evidence*'
+      - 'tests/browser/personnel-evidence*'
+      - '.github/workflows/personnel-evidence-checks.yml'
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:evidence
+      - run: node --test tests/help-center-coverage.test.mjs tests/personnel-health-client.test.mjs tests/personnel-health-privacy.test.mjs tests/portal-entry-routing.test.mjs
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: personnel-evidence-browser-results
+          path: test-results/personnel-evidence/

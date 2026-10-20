@@ -9,42 +9,42 @@ function loader(role){
 }
 test('authenticated data and required scripts can load concurrently without finishing early',async()=>{
  const e=loader('OWNER');e.scripts.slice().forEach(s=>s.onload());
- const modules=e.B.prepareManagerModules();assert.equal(e.scripts.length,68);
- const boot=e.B.boot();await flush();assert.equal(e.scripts.length,68,'The core request is shared');
+ const modules=e.B.prepareManagerModules();assert.equal(e.scripts.length,69);
+ const boot=e.B.boot();await flush();assert.equal(e.scripts.length,69,'The core request is shared');
  let complete=false;boot.then(()=>complete=true);await flush();assert.equal(complete,false);
- e.scripts.slice(56).forEach(s=>s.onload());await modules;await boot;assert.equal(complete,true);
+ e.scripts.slice(57).forEach(s=>s.onload());await modules;await boot;assert.equal(complete,true);
 });
 test('concurrent login and token events share one complete boot',async()=>{
  const e=loader('OWNER');e.scripts.slice().forEach(s=>s.onload());
  const first=e.B.boot(),second=e.B.boot();assert.equal(first,second);
- await flush();assert.equal(e.scripts.length,68);e.scripts.slice(56).forEach(s=>s.onload());await first;
+ await flush();assert.equal(e.scripts.length,69);e.scripts.slice(57).forEach(s=>s.onload());await first;
 });
 test('workspaces load once on demand, retain dependency order and share time/report requests',async()=>{
- const e=loader('OWNER');e.scripts.slice().forEach(s=>s.onload());const boot=e.B.boot();await flush();e.scripts.slice(56).forEach(s=>s.onload());await boot;
- const p=e.B.ensureManagerViewModules('employees'),p2=e.B.ensureManagerViewModules('employees');assert.equal(p,p2);assert.equal(e.scripts.length,79);
- assert.ok(e.scripts[68].src.includes('supabase-personnel-file-observer-guard'));assert.ok(e.scripts[69].src.includes('supabase-personnel-file-v1'));
- assert.equal(e.B.managerViewNeedsLoading('employees'),true);e.scripts.slice(68).forEach(s=>s.onload());await p;assert.equal(e.B.managerViewNeedsLoading('employees'),false);
- const t=e.B.ensureManagerViewModules('time'),r=e.B.ensureManagerViewModules('reports'),billing=e.B.ensureManagerViewModules('billing');assert.equal(t,r);assert.equal(t,billing);assert.equal(e.scripts.length,85);e.scripts.slice(79).forEach(s=>s.onload());await t;
- await e.B.ensureManagerViewModules('reports');assert.equal(e.scripts.length,85);assert.ok(e.scripts.every(s=>s.async===false));
+ const e=loader('OWNER');e.scripts.slice().forEach(s=>s.onload());const boot=e.B.boot();await flush();e.scripts.slice(57).forEach(s=>s.onload());await boot;
+ const p=e.B.ensureManagerViewModules('employees'),p2=e.B.ensureManagerViewModules('employees');assert.equal(p,p2);assert.equal(e.scripts.length,80);
+ assert.ok(e.scripts[69].src.includes('supabase-personnel-file-observer-guard'));assert.ok(e.scripts[70].src.includes('supabase-personnel-file-v1'));
+ assert.equal(e.B.managerViewNeedsLoading('employees'),true);e.scripts.slice(69).forEach(s=>s.onload());await p;assert.equal(e.B.managerViewNeedsLoading('employees'),false);
+ const t=e.B.ensureManagerViewModules('time'),r=e.B.ensureManagerViewModules('reports'),billing=e.B.ensureManagerViewModules('billing');assert.equal(t,r);assert.equal(t,billing);assert.equal(e.scripts.length,86);e.scripts.slice(80).forEach(s=>s.onload());await t;
+ await e.B.ensureManagerViewModules('reports');assert.equal(e.scripts.length,86);assert.ok(e.scripts.every(s=>s.async===false));
 });
 test('a partially loaded workspace stays blocked until a fresh page can install all dependencies',async()=>{
- const e=loader('OWNER');e.scripts.slice().forEach(s=>s.onload());const boot=e.B.boot();await flush();e.scripts.slice(56).forEach(s=>s.onload());await boot;
+ const e=loader('OWNER');e.scripts.slice().forEach(s=>s.onload());const boot=e.B.boot();await flush();e.scripts.slice(57).forEach(s=>s.onload());await boot;
  const first=e.B.ensureManagerViewModules('employees'),assertion=assert.rejects(first,/Modul konnte nicht geladen/);
- const group=e.scripts.slice(68);group[0].onerror();group.slice(1).forEach(s=>s.onload());await assertion;
- assert.equal(e.B.managerViewNeedsLoading('employees'),true);await assert.rejects(e.B.ensureManagerViewModules('employees'),/Modul konnte nicht geladen/);assert.equal(e.scripts.length,78,'No partially installed dependency group is reported as ready');
+ const group=e.scripts.slice(69);group[0].onerror();group.slice(1).forEach(s=>s.onload());await assertion;
+ assert.equal(e.B.managerViewNeedsLoading('employees'),true);await assert.rejects(e.B.ensureManagerViewModules('employees'),/Modul konnte nicht geladen/);assert.equal(e.scripts.length,79,'No partially installed dependency group is reported as ready');
 });
 test('restored time-only accounts prepare their own initial workspace before boot returns',async()=>{
- const e=loader('TIME_TRACKING');e.scripts.slice().forEach(s=>s.onload());const boot=e.B.boot();await flush();e.scripts.slice(56).forEach(s=>s.onload());await flush();assert.equal(e.scripts.length,74);e.scripts.slice(68).forEach(s=>s.onload());await boot;
+ const e=loader('TIME_TRACKING');e.scripts.slice().forEach(s=>s.onload());const boot=e.B.boot();await flush();e.scripts.slice(57).forEach(s=>s.onload());await flush();assert.equal(e.scripts.length,75);e.scripts.slice(69).forEach(s=>s.onload());await boot;
  assert.equal(e.B.managerViewNeedsLoading('time'),false);assert.equal(e.scripts.some(s=>s.src.includes('supabase-personnel-file-v1')),false);
 });
 test('module downloads start together with ordered execution and initialization waits for the entire base phase',async()=>{
- const e=loader('EMPLOYEE');assert.equal(e.scripts.length,56);assert.ok(e.scripts.every(s=>s.async===false));assert.deepEqual(e.calls,[]);
+ const e=loader('EMPLOYEE');assert.equal(e.scripts.length,57);assert.ok(e.scripts.every(s=>s.async===false));assert.deepEqual(e.calls,[]);
  e.scripts.slice(1).reverse().forEach(s=>s.onload());assert.deepEqual(e.calls,[]);e.scripts[0].onload();assert.deepEqual(e.calls,['init']);
- assert.equal(await e.B.boot(),'booted');assert.equal(e.scripts.length,56);
+ assert.equal(await e.B.boot(),'booted');assert.equal(e.scripts.length,57);
 });
 test('startup only waits for the core workspaces; personnel and time modules stay deferred',async()=>{
- const e=loader('OWNER');e.scripts.slice().forEach(s=>s.onload());const pending=e.B.boot();await flush();assert.equal(e.scripts.length,68);assert.ok(e.scripts.every(s=>s.async===false));
- e.scripts.slice(56,67).forEach(s=>s.onload());assert.deepEqual(e.calls,['init']);e.scripts[67].onload();assert.equal(await pending,'booted');assert.deepEqual(e.calls,['init']);
+ const e=loader('OWNER');e.scripts.slice().forEach(s=>s.onload());const pending=e.B.boot();await flush();assert.equal(e.scripts.length,69);assert.ok(e.scripts.every(s=>s.async===false));
+ e.scripts.slice(57,68).forEach(s=>s.onload());assert.deepEqual(e.calls,['init']);e.scripts[68].onload();assert.equal(await pending,'booted');assert.deepEqual(e.calls,['init']);
  assert.equal(e.scripts.some(s=>s.src.includes('supabase-personnel-file-v1')),false);assert.equal(e.scripts.some(s=>s.src.includes('datev-lodas-export')),false);
 });
 test('timezone conversion remains correct across midnight and DST without constructing a formatter for every duty',()=>{
