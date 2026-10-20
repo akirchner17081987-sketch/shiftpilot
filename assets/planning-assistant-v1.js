@@ -9,7 +9,7 @@
   let protectedAssignmentIds=new Set(),profiles=[],profileError='',changeRequest=null,changeReport=null;
   let observedOwner=null,observedState=null,pendingChange=null,changeDue=0,changeRevision='',lastObserved=0,changeAcknowledged=false;
   const withRows=(rows,fn)=>{const original=assignments;try{assignments=rows;return fn()}finally{assignments=original}};
-  const signature=()=>JSON.stringify([identity(),window.SFCompliance?.policy,window.SFCompliance?.publications,window.SFPlanningTeams?.rules,employees,assignments,absences,TYPES,typeof globalSoll==='undefined'?null:globalSoll,typeof dailySoll==='undefined'?null:dailySoll]);
+  const signature=()=>JSON.stringify([identity(),window.SFCompliance?.policy,window.SFCompliance?.publications,window.SFPlanningLearning?.signature(),window.SFPlanningTeams?.rules,employees,assignments,absences,TYPES,typeof globalSoll==='undefined'?null:globalSoll,typeof dailySoll==='undefined'?null:dailySoll]);
   const B=()=>window.SFBackend||{};
   const demo=()=>sessionStorage.getItem('sf_demo_session_v1')==='active';
   const authorized=()=>!!(B().ready&&roles.includes(B().role)&&(demo()||B().user?.id&&B().companyId));
@@ -173,7 +173,7 @@
   }
   function observePlanningChanges(){
     const owner=identity();if(observedOwner!==owner){observedOwner=owner;observedState=null;pendingChange=null;changeRequest=null;changeReport=null;changeRevision='';clearChangeNotice();}
-    if(!owner||busy()||hydrationFailed||B().syncing||B().lastSyncError||window.SFMonthOptimizer?.isBusy?.())return;
+    if(!Workflows||!owner||busy()||hydrationFailed||B().syncing||B().lastSyncError||window.SFMonthOptimizer?.isBusy?.())return;
     if(Date.now()-lastObserved<1400)return;lastObserved=Date.now();
     const belongs=a=>!(a.companyId||a.company_id)||(a.companyId||a.company_id)===B().companyId;
     const raw={assignments:assignments.filter(belongs).filter(a=>a._dbStatus!=='CANCELLED'&&a.status!=='CANCELLED'),absences:absences.filter(belongs)},next=Workflows.changeState(raw);
@@ -256,6 +256,7 @@
   const node=(tag,text,className)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(className)n.className=className;return n;};
   function openAction(action){
     syncScope();if(!authorized()||busy())return;
+    if(action.learning){close();window.SFPlanningLearning?.open();return;}
     if(action.question){submit(action.question);return;}
     if(!action.help&&!['schedule','employees','settings','auto','reports','absence'].includes(action.view))return;
     if(action.employeeId&&!snapshot().employees.some(e=>!e.deletedAt&&String(e.id)===String(action.employeeId)))return;
@@ -515,6 +516,7 @@
     welcome.appendChild(node('p','Stelle deine Frage oder wähle einen Einstieg. Alle unterstützten Themen findest du jederzeit unter „Fragen & Beispiele“.'));
     const examples=node('div',undefined,'sf-chat-examples sf-chat-start');
     for(const [label,question] of [
+      ['Lernpräferenzen','Lernpräferenzen verwalten'],
       ['Planungsprofile','Planungsprofile verwalten'],
       ['Änderungscheck','Änderungscheck anzeigen'],
       ['Planvarianten','Planvarianten vergleichen'],

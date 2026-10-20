@@ -528,7 +528,7 @@ function autoEligibleEmployees(type,date,simulated=[]){
     const weeklyLoad=target?(h+dur)/target:(h+dur)/40,monthlyLoad=(monthHours+dur)/(monthTarget>0?monthTarget:180),load=monthlyLoad+weeklyLoad*.15,overTarget=monthTarget>0&&monthHours+dur>monthTarget+1e-8;
     const rhythm=window.sfRhythmCheck?.(e,type,date),rhythmPenalty=rhythm&&!rhythm.allowed&&rhythm.mode==='preferred'?40:0,fixed=!!(rhythm?.mode==='required'&&rhythm.allowed&&rhythm.expected&&rhythm.expected!=='ALLE'&&rhythm.expected!=='FREI');
     const block=autoWorkBlock(e,type,date,all);
-    return {e,h,target,weeklyLimit,monthHours,monthTarget,monthLimit,fixed,block,overTarget,weeklyEnforced:respectHours&&weeklyLimit>0,overWeek,overMonth,reserve:window.SFShiftModels?.reservePenalty?.(e,date,type)||0,score:rolePenalty+rhythmPenalty+(fair?load*20+(overTarget?1000:0):h*.1)}
+    return {e,h,target,weeklyLimit,monthHours,monthTarget,monthLimit,fixed,block,overTarget,weeklyEnforced:respectHours&&weeklyLimit>0,overWeek,overMonth,reserve:window.SFShiftModels?.reservePenalty?.(e,date,type)||0,score:rolePenalty+rhythmPenalty-(window.SFPlanningLearning?.effect(e.id,all,[{employeeId:e.id,date,type,start:t?.start,end:t?.end}]).score||0)+(fair?load*20+(overTarget?1000:0):h*.1)}
   }).filter(x=>!x.overWeek&&!x.overMonth).sort((a,b)=>a.reserve-b.reserve||a.score-b.score||a.monthHours-b.monthHours||a.h-b.h)
 }
 const autoDayFormatter=new Intl.DateTimeFormat('de-DE',{weekday:'short'}),autoDayLabels=new Map();
@@ -1049,7 +1049,7 @@ table th,table td{font-size:13px;line-height:1.35}
 <!-- /SCHICHTFUNK_SCHEDULE_UX_V2 -->
 
 <script defer src="assets/schedule-ux-v3.js?csp=20261017-1"></script>
-<script defer src="assets/assignment-ux-v4.js?v=20261002-weekdays1&csp=20261017-1"></script>
+<script defer src="assets/assignment-ux-v4.js?v=20261002-weekdays1&csp=20261017-1&lernen=20261020-1"></script>
 <script defer src="assets/soll-summary-v5.js?csp=20261017-1"></script>
 <script defer src="assets/ot-weekend-holiday-policy.js?v=20261014-ot-holidays1&csp=20261017-1&otmin=20261019-1"></script>
 <script defer src="assets/dynamic-employee-pool-v1.js?csp=20261017-1"></script>
@@ -1073,15 +1073,15 @@ table th,table td{font-size:13px;line-height:1.35}
 <script defer src="assets/month-optimizer-core-v1.js?v=20261020-duration9h1&wish=20261010-1&personnel=20261012-1&progress=20261011-1&csp=20261017-1"></script>
 <script defer src="assets/auto-plan-workspace-v1.js?v=20261015-apply-feedback1&personnel=20261012-1&progress=20261011-1&csp=20261017-1&rulesview=20261017-compact1&weekends=20261017-rhythm1&rulecards=20261017-1&review=20261017-1&otmin=20261019-1"></script>
 <script defer src="assets/auto-plan-progress-v1.js?v=bg1-20261013-startfix1&csp=20261017-1"></script>
-<script defer src="assets/solid-planning-resume-v1.js?v=20261015-ot200-1&csp=20261017-1"></script>
-<script defer src="assets/background-auto-plan-core-v1.js?v=20261014-fixed-cycle1&csp=20261017-1&otmin=20261019-1"></script>
-<script defer src="assets/month-optimizer-v1.js?v=20261015-apply-feedback1&otsettings=20261012-2&preplan=20261012-1&csp=20261017-1&rulesview=20261017-compact1&weekends=20261017-rhythm1&optionstatus=20261017-1&singleplan=20261017-1&review=20261017-1&otmin=20261019-1"></script>
+<script defer src="assets/solid-planning-resume-v1.js?v=20261015-ot200-1&csp=20261017-1&lernen=20261020-1"></script>
+<script defer src="assets/background-auto-plan-core-v1.js?v=20261014-fixed-cycle1&csp=20261017-1&otmin=20261019-1&lernen=20261020-1"></script>
+<script defer src="assets/month-optimizer-v1.js?v=20261015-apply-feedback1&otsettings=20261012-2&preplan=20261012-1&csp=20261017-1&rulesview=20261017-compact1&weekends=20261017-rhythm1&optionstatus=20261017-1&singleplan=20261017-1&review=20261017-1&otmin=20261019-1&lernen=20261020-1"></script>
 <script defer src="assets/auto-plan-preview-editor-v1.js?v=20261015-vacancy-picker1&csp=20261017-1&monthly=20261017-200h"></script>
 <script defer src="assets/background-auto-plan-v1.js?v=20261012-background1&csp=20261017-1"></script>
 <script defer src="assets/planning-assistant-insights-v1.js?v=20261009-1&csp=20261017-1&engpass=20261020-1&vorausschau=20261020-1&auftraege=20261020-1&profile=20261020-1"></script>
 <script defer src="assets/planning-assistant-workflows-v1.js?auftraege=20261020-1&profile=20261020-1"></script>
-<script defer src="assets/planning-assistant-core-v1.js?v=20261016-audit1&billing=20261016-2&csp=20261017-1&engpass=20261020-1&vorausschau=20261020-1&auftraege=20261020-1&profile=20261020-1"></script>
-<script defer src="assets/planning-assistant-v1.js?orbit=20261013-3&v=20261016-audit1&csp=20261017-1&engpass=20261020-1&vorausschau=20261020-1&auftraege=20261020-1&profile=20261020-1"></script>
+<script defer src="assets/planning-assistant-core-v1.js?v=20261016-audit1&billing=20261016-2&csp=20261017-1&engpass=20261020-1&vorausschau=20261020-1&auftraege=20261020-1&profile=20261020-1&lernen=20261020-1"></script>
+<script defer src="assets/planning-assistant-v1.js?orbit=20261013-3&v=20261016-audit1&csp=20261017-1&engpass=20261020-1&vorausschau=20261020-1&auftraege=20261020-1&profile=20261020-1&lernen=20261020-1"></script>
 <script defer src="assets/employee-management-v2.js?v=20261006-erasure1&pool=20261009-focus3&csp=20261017-1"></script>
 <script defer src="assets/team-admin-v1.js?v=20261012-automatic-personnel1&security=20261016-pin-visible1&billing=20261016-2&csp=20261017-1"></script>
 <script defer src="assets/audit-logs-v1.js?v=20261010-audit2&csp=20261017-1"></script>
@@ -1175,7 +1175,7 @@ table th,table td{font-size:13px;line-height:1.35}
 }
 </style>
 <div class="sf-help-backdrop" id="sfHelpModal" hidden><section class="sf-help" role="dialog" aria-modal="true" aria-labelledby="sfHelpTitle"><header class="sf-help-head"><div><div class="sf-help-kicker">SCHICHTFUNK HILFE-CENTER</div><h2 id="sfHelpTitle">Wie können wir helfen?</h2></div><div class="sf-help-search"><input id="sfHelpSearch" type="search" placeholder="Problem oder Funktion suchen ..." aria-label="Hilfe durchsuchen"><button class="sf-help-clear" id="sfHelpClear" type="button" aria-label="Suche leeren">×</button></div><button class="sf-help-close" id="sfHelpClose" type="button" aria-label="Hilfe schließen">×</button></header><nav class="sf-help-nav" id="sfHelpNav" aria-label="Hilfekategorien"></nav><main class="sf-help-main"><h3 id="sfHelpCategoryTitle"></h3><p id="sfHelpCategoryIntro"></p><div class="sf-help-results" id="sfHelpResults"></div></main><footer class="sf-help-foot"><span>Die Hilfe verändert keine Daten.</span><span><strong>ESC</strong> schließen · <strong>Strg/Cmd + K</strong> Suche</span></footer></section></div>
-<script defer src="assets/help-center-content-v3.js?v=20261016-help-audit1&messages=20261018-emoji1&leave=20261018-1&portal=20261017-2&entry=20261017-1&assistant=20261016-1&security=20261016-pin-visible1&billing=20261016-2&billing=20261016-2&csp=20261017-1&weekends=20261017-rhythm1&review=20261017-1&handoverReminders=20261018-1&engpass=20261020-1&vorausschau=20261020-1&auftraege=20261020-1&profile=20261020-1"></script>
+<script defer src="assets/help-center-content-v3.js?v=20261016-help-audit1&messages=20261018-emoji1&leave=20261018-1&portal=20261017-2&entry=20261017-1&assistant=20261016-1&security=20261016-pin-visible1&billing=20261016-2&billing=20261016-2&csp=20261017-1&weekends=20261017-rhythm1&review=20261017-1&handoverReminders=20261018-1&engpass=20261020-1&vorausschau=20261020-1&auftraege=20261020-1&profile=20261020-1&lernen=20261020-1"></script>
 <link rel="stylesheet" href="assets/help-center-guides-v1.css?v=20260930-1">
 <script defer src="assets/help-center-guides-v1.js?v=20261009-qrperiods1&company=20261010-1&security=20261016-pin-visible1&billing=20261016-2&csp=20261017-1"></script>
 <script defer id="schichtfunk-help-center-v2-js" src="assets/help-center-renderer-v2.js?v=20261012-help-audit1&csp=20261017-1"></script>
@@ -1188,11 +1188,11 @@ table th,table td{font-size:13px;line-height:1.35}
 <script defer src="assets/today-workspace-core-v1.js?v=20261010-today1&orbit=20261016-actions2&csp=20261017-1"></script>
 <script defer src="assets/today-workspace-v3.js?v=20261010-today1&orbit=20261016-actions2&csp=20261017-1"></script>
 <link rel="stylesheet" href="assets/staffing-simulator-v1.css?v=20261010-sim1">
-<script defer src="assets/wish-planning-core-v1.js?v=20261010-wish1&csp=20261017-1"></script>
+<script defer src="assets/wish-planning-core-v1.js?v=20261010-wish1&csp=20261017-1&lernen=20261020-1"></script>
 <script defer src="assets/staffing-simulator-core-v1.js?v=20261014-fixed-cycle1&wish=20261010-1&csp=20261017-1"></script>
 <script defer src="assets/staffing-simulator-v1.js?v=20261014-fixed-week1&csp=20261017-1"></script>
 <link rel="stylesheet" href="assets/wish-planning-v1.css?v=20261010-wish1">
-<script defer src="assets/wish-planning-v1.js?v=20261010-wish1&preplan=20261012-1&csp=20261017-1"></script>
+<script defer src="assets/wish-planning-v1.js?v=20261010-wish1&preplan=20261012-1&csp=20261017-1&lernen=20261020-1"></script>
 <link rel="stylesheet" href="assets/shift-handover-v1.css?v=20261010-handover1">
 <script defer src="assets/shift-handover-core-v1.js?v=20261010-handover1&csp=20261017-1"></script>
 <script defer src="assets/shift-handover-v1.js?v=20261010-handover1&csp=20261017-1&handoverReminders=20261018-1&engpass=20261020-1"></script>
@@ -1200,8 +1200,8 @@ table th,table td{font-size:13px;line-height:1.35}
 <link rel="stylesheet" href="assets/orbit-shell-v1.css?v=20261019-daily-layout1">
 <link rel="stylesheet" href="assets/location-map-v1.css?v=20261019-night1">
 <script defer src="assets/location-map-core-v1.js?v=20261016-actions2&csp=20261017-1"></script>
-<script defer src="assets/location-map-v1.js?v=20261019-notice1&csp=20261017-1"></script>
-<script defer src="assets/orbit-shell-v1.js?v=20261019-daily-layout1&billing=20261016-2&csp=20261017-1"></script>
+<script defer src="assets/location-map-v1.js?v=20261019-notice1&csp=20261017-1&lernen=20261020-1"></script>
+<script defer src="assets/orbit-shell-v1.js?v=20261019-daily-layout1&billing=20261016-2&csp=20261017-1&lernen=20261020-1"></script>
 <link rel="stylesheet" href="assets/employee-orbit-v1.css?v=20261017-1">
 <script defer src="assets/employee-orbit-v1.js?v=20261018-1"></script>
 <link rel="stylesheet" href="assets/employee-home-v1.css?v=20261017-1">
@@ -1212,5 +1212,9 @@ table th,table td{font-size:13px;line-height:1.35}
 <script defer src="assets/leave-accounts-v1.js?v=20261018-1"></script>
 <link rel="stylesheet" href="assets/internal-messages-v1.css?v=20261018-emoji1">
 <script defer src="assets/internal-messages-v1.js?v=20261018-emoji1"></script>
+<link rel="stylesheet" href="assets/planning-experience-v1.css?v=20261020-1">
+<script defer src="assets/planning-learning-v1.js?v=20261020-1"></script>
+<script defer src="assets/planning-timeline-core-v1.js?v=20261020-1"></script>
+<script defer src="assets/planning-timeline-v1.js?v=20261020-1"></script>
 </body>
 </html>

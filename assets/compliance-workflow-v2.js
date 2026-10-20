@@ -43,6 +43,7 @@
     const c=C.check(emp,type,date,start,end,existing?.id||null);
     if(c.hard.length){alert('Zuweisung nicht möglich:\n\n'+c.hard.join('\n'));return false}
     if(c.soft.length&&!extra.softConfirmed){C.openPlausibilityDialog(c.soft,()=>C.directSave(emp,type,date,start,end,{...extra,softConfirmed:true}));return false}
+    const learningBefore=existing?{...existing}:null;
     if(existing){
       Object.assign(existing,{employeeId:emp.id,type,date,start,end,pause:Number(extra.pause||0),note:extra.note||'',version:Number(existing.version||1)+1});
     }else{
@@ -51,6 +52,7 @@
     C.audit(existing?'SHIFT_UPDATED_DRAFT':'SHIFT_CREATED_DRAFT',existing?.id||null,{employeeId:emp.id,type,date,start,end});
     C.refresh();
     C.toast(existing?'Schicht aktualisiert':'Schicht zugewiesen',`${emp.first} ${emp.last} · ${type} · ${C.fmt(date)} · ${start}–${end}`);
+    if(learningBefore)document.dispatchEvent(new CustomEvent('sf:manual-assignment-edited',{detail:{companyId:window.SFBackend?.companyId,before:learningBefore,after:{...existing}}}));
     extra.onSaved?.(existing||assignments[assignments.length-1]);
     return true;
   };
@@ -112,6 +114,7 @@
     if(fresh.worksCouncil&&req.approvals.worksCouncil!=='APPROVED'){
       req.approvals.worksCouncil='PENDING';req.status='PENDING_WORKS_COUNCIL';C.persist();C.openComplianceCenter?.();return false;
     }
+    const learningBefore=req.action==='UPDATE'&&current?{...current}:null;
     if(req.action==='UPDATE'){
       Object.assign(current,{...req.proposed,version:Number(current.version||1)+1,lastChangeRequestId:req.id});
     }else if(req.action==='CREATE'){
@@ -123,6 +126,7 @@
     req.status='APPLIED';req.appliedAt=new Date().toISOString();
     C.audit('SHIFT_CHANGE_APPLIED',req.id,{action:req.action,assignmentId:req.assignmentId});
     C.refresh();C.openComplianceCenter?.();
+    if(learningBefore)document.dispatchEvent(new CustomEvent('sf:manual-assignment-edited',{detail:{companyId:window.SFBackend?.companyId,before:learningBefore,after:{...current}}}));
     C.toast('Schichtänderung übernommen','Compliance-Prüfung und erforderliche Freigaben sind abgeschlossen.');
     return true;
   };

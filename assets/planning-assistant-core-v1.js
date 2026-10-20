@@ -16,7 +16,7 @@
   const meta=(e,k)=>String((e.qualifications||[]).find(q=>String(q).startsWith('__sp:'+k+'='))||'').split('=').slice(1).join('=');
   const team=e=>e.planningTeam??meta(e,'planningTeam');
   const questionGroups=[
-    ['Planung erleichtern',['Planungsprofile verwalten','November mit unserem Standardprofil vorbereiten','Änderungscheck anzeigen','Planvarianten vergleichen']],
+    ['Planung erleichtern',['Lernpräferenzen verwalten','Planungsprofile verwalten','November mit unserem Standardprofil vorbereiten','Änderungscheck anzeigen','Planvarianten vergleichen']],
     ['Planungsaufträge und Begleitung',['Planungsauftrag starten','Bringe die Teamleiter im November möglichst auf ihre Sollstunden. Bereits veröffentlichte Dienste bleiben bestehen.','Hilf mir, diesen Monat fertigzustellen','Mehrmonatsausgleich starten','Nimm die letzte Änderung des Assistenten zurück.']],
     ['Vorausschauen und Änderungen prüfen',['Frühwarnung starten','Welche Dienste sind in den nächsten 28 Tagen besonders anfällig?','Urlaubsfolgen prüfen','Dienstverschiebung prüfen']],
     ['Plan prüfen und Engpässe lösen',['Engpasslöser starten','Wie bekommen wir alle auf ihre Sollstunden und besetzen alle Pflichtdienste?','Wie bekommen wir die Teamleiter auf ihre Sollstunden?','Monatscheck starten','Belastungscheck starten','Verbesserungsvorschläge erstellen']],
@@ -26,6 +26,7 @@
   ];
   function duration(a,shifts){const t=shifts.find(t=>t.id===a.type),start=a.start||t?.start,end=a.end||t?.end;const mins=v=>/^\d{2}:\d{2}$/.test(v||'')?Number(v.slice(0,2))*60+Number(v.slice(3)):NaN;let m=mins(end)-mins(start);if(m<0)m+=1440;return Number.isFinite(m)?m/60:0;}
   function intentFor(q){
+    if(/lernpr(?:ae|e)ferenz|lernende planung|aus.*korrekturen.*lernen/.test(q))return 'learning';
     if(/aenderungscheck|folgepruefung|automatische.*(?:aenderung|pruefung)/.test(q))return 'followup';
     if(/planvarianten|planvariante|varianten vergleichen/.test(q))return 'variants';
     if(/planungsprofil|standardprofil|\bprofil\b/.test(q))return 'profiles';
@@ -275,6 +276,7 @@
     const staff=s.employees.filter(e=>!e.deletedAt&&e.status==='active');
     const nav=(view,label)=>({view,label});
     if(Insights&&['forecast','leaveImpact','changeImpact'].includes(intent))return scenarioAnswer(q,s,previous,intent,period,staff);
+    if(intent==='learning')return response('Lernende Planung','Bestätige Präferenzen aus manuellen Dienstkorrekturen. Sie unterstützen neue Vorschläge zusätzlich zu den verbindlichen Planungsregeln.',{actions:[{label:'Lernpräferenzen verwalten',learning:true}],context:{intent:'learning',dates}});
     if(Workflows&&['profiles','variants','followup'].includes(intent)){
       const help=findHelp(q,s.helpArticles,true);if(help&&/^(?:wie|was|wo)\b/.test(q))return response(help.title,help.text,{context:{}});
       const request=s.analysisRequest||{},month=request.month||dates[Math.floor(dates.length/2)].slice(0,7);
