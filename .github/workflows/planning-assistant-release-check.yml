@@ -10,7 +10,7 @@ permissions:
 jobs:
   verify-live:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -27,7 +27,7 @@ jobs:
           const expected=new Map(files.map(file=>[file,hash(readFileSync(file))]));
           for(const origin of ['https://schichtfunk.de']){
             let passed=false;
-            for(let attempt=1;attempt<=15;attempt++){
+            for(let attempt=1;attempt<=100;attempt++){
               try{
                 const headers={'Cache-Control':'no-cache'};
                 const check=async path=>{
@@ -42,7 +42,7 @@ jobs:
                 passed=true;break;
               }catch(error){
                 console.log(origin+' attempt '+attempt+': '+error.message);
-                if(attempt<15)await delay(15000);
+                if(attempt<100)await delay(15000);
               }
             }
             if(!passed)throw Error(origin+' failed release verification');

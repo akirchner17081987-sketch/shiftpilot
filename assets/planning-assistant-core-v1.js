@@ -15,6 +15,7 @@
   const meta=(e,k)=>String((e.qualifications||[]).find(q=>String(q).startsWith('__sp:'+k+'='))||'').split('=').slice(1).join('=');
   const team=e=>e.planningTeam??meta(e,'planningTeam');
   const questionGroups=[
+    ['Vorausschauen und Änderungen prüfen',['Frühwarnung starten','Welche Dienste sind in den nächsten 28 Tagen besonders anfällig?','Urlaubsfolgen prüfen','Dienstverschiebung prüfen']],
     ['Plan prüfen und Engpässe lösen',['Engpasslöser starten','Wie bekommen wir alle auf ihre Sollstunden und besetzen alle Pflichtdienste?','Wie bekommen wir die Teamleiter auf ihre Sollstunden?','Monatscheck starten','Belastungscheck starten','Verbesserungsvorschläge erstellen']],
     ['Besetzung und Ersatz',['Welche Dienste sind im gewählten Zeitraum noch offen?','Welche Dienste sind im gewählten Zeitraum überbesetzt?','Welche Mitarbeiter kommen als Ersatz infrage?','Warum konnte die Auto-Planung diesen Dienst nicht besetzen?','Ausfallsimulation starten','Gespeicherte Planungsgründe anzeigen']],
     ['Mitarbeiter und Teams',['Wie viele Stunden sind im gewählten Zeitraum geplant?','Welche Dienste hat Team E im gewählten Zeitraum?','Bei welchen Mitarbeitern fehlt eine Teamzuordnung?','Welche Mitarbeiter haben keine Schichtfreigabe?']],
@@ -22,6 +23,9 @@
   ];
   function duration(a,shifts){const t=shifts.find(t=>t.id===a.type),start=a.start||t?.start,end=a.end||t?.end;const mins=v=>/^\d{2}:\d{2}$/.test(v||'')?Number(v.slice(0,2))*60+Number(v.slice(3)):NaN;let m=mins(end)-mins(start);if(m<0)m+=1440;return Number.isFinite(m)?m/60:0;}
   function intentFor(q){
+    if(/fruehwarn|vertretungsreserve|anfaellig|(?:kritisch|riskant).*(?:dienst|schicht)|(?:dienst|schicht).*kritisch/.test(q))return 'forecast';
+    if(/urlaubsfolgen|urlaubsantrag.*pruef|(?:folgen|auswirkung).*urlaub|urlaub.*(?:folgen|auswirkung|pruefen|genehmigen|vom|am\s+\d)/.test(q))return 'leaveImpact';
+    if(/aenderungsvorschau|dienstverschiebung|was passiert.*(?:verschieb|umplan)|(?:auswirkung|folgen).*(?:dienst|schicht).*aender|was passiert.*(?:dienst|schicht).*(?:verschieb|von|auf)|(?:dienst|schicht).*(?:verschieb|aenderung pruef)/.test(q))return 'changeImpact';
     if(/welche.*fragen|was.*(?:fragen|dich fragen)|beispielfragen|fragenuebersicht/.test(q))return 'questions';
     if(/engpass|engpaesse|(?:plan|dienstplan).*(?:reparier|aufgeht)|was.*(?:aendern|aenderung).*(?:plan|besetz)|wie.*(?:bekomm\w*|bring\w*|erreich\w*).*(?:sollstunden|soll|stunden)|wie.*(?:luecken|pflichtdienste).*(?:schliess|besetz)/.test(q))return 'bottlenecks';
     if(/^(?:bitte\s+)?(?:aktuelle|geltende|geladene) planungsregeln|welche.*(?:planungsregeln|wochenobergrenze|monatsobergrenze)|planungsgrenzen (?:anzeigen|pruefen)/.test(q)&&!/\b(wie|wo)\b/.test(q))return 'rules';
@@ -55,6 +59,7 @@
   }
   function parsePeriod(q,s){
     const base=s.defaultDates?.[0]||s.today,year=Number(base.slice(0,4));
+    const upcoming=q.match(/naechsten?\s+(\d+)\s+tag/);if(upcoming){const n=Number(upcoming[1]);return n>=1&&n<=62?{dates:Array.from({length:n},(_,i)=>addDays(s.today,i)),explicit:true}:{error:'Bitte einen Zeitraum von 1 bis 62 Tagen wählen.'};}
     const iso=q.match(/\b(\d{4}-\d{2}-\d{2})\b/);
     if(iso)return validDate(iso[1])?{dates:[iso[1]],explicit:true}:{error:'Dieses Datum ist ungültig. Bitte gib beispielsweise 01.12.2026 ein.'};
     const numeric=q.match(/\b(\d{1,2})\.(\d{1,2})\.(?:(\d{4})\b)?/);
@@ -69,6 +74,51 @@
     if(/(naechsten|kommenden|naechster|kommender|diesen|aktuellen|dieser) monat/.test(q)){const d=new Date(s.today+'T12:00:00Z');if(/naechst|kommend/.test(q))d.setUTCMonth(d.getUTCMonth()+1,1);return{dates:monthDates(d.getUTCFullYear(),d.getUTCMonth()+1),explicit:true};}
     if(/(diese|aktuellen|aktuelle|naechste|kommende) woche/.test(q)){const d=new Date(s.today+'T12:00:00Z');let offset=-((d.getUTCDay()+6)%7);if(/naechst|kommend/.test(q))offset+=7;const start=addDays(s.today,offset);return{dates:Array.from({length:7},(_,i)=>addDays(start,i)),explicit:true};}
     return{dates:s.defaultDates||[s.today],explicit:false};
+  }
+  function parseRange(q,s){
+    const year=Number((s.defaultDates?.[0]||s.today).slice(0,4)),iso=[...q.matchAll(/\b\d{4}-\d{2}-\d{2}\b/g)].map(m=>m[0]);
+    let values=iso.length?iso:[...q.matchAll(/\b(\d{1,2})\.(\d{1,2})\.(?:(\d{4})\b)?/g)].map(m=>day(m[3]?+m[3]:year,+m[2],+m[1]));
+    if(!values.length){const month=months.findIndex(m=>new RegExp('\\b'+m+'\\b').test(q));if(month>=0){const m=q.match(/(?:vom|von|ab)\s+(\d{1,2})\.?\s*(?:bis|[-–])\s*(\d{1,2})\.?/);if(m){const y=Number(q.match(/\b20\d{2}\b/)?.[0]||year);values=[day(y,month+1,+m[1]),day(y,month+1,+m[2])];}}}
+    if(!values.length)return{};
+    if(values.length>2||values.some(v=>!validDate(v)))return{error:'Bitte einen eindeutigen Zeitraum mit gültigem Beginn und Ende angeben.'};
+    if(values.length===1&&/\bbis\b/.test(q))return{};
+    return {startDate:values[0],endDate:values[1]||values[0]};
+  }
+  function rangeDates(start,end){
+    if(!validDate(start)||!validDate(end)||end<start)return {error:'Bitte gültige Daten wählen; das Ende darf nicht vor dem Beginn liegen.'};
+    const n=Math.round((Date.parse(end+'T12:00:00Z')-Date.parse(start+'T12:00:00Z'))/86400000)+1;
+    return n<=62?{dates:Array.from({length:n},(_,i)=>addDays(start,i))}:{error:'Bitte höchstens 62 Kalendertage auf einmal prüfen.'};
+  }
+  function scenarioAnswer(q,s,previous,intent,period,staff){
+    const request=s.analysisRequest?.kind===intent?s.analysisRequest:{},form=(text,params={})=>response(intent==='leaveImpact'?'Urlaubsfolgen prüfen':'Dienstverschiebung prüfen',text,{form:{kind:intent,...params},context:{intent,pending:true,...params}});
+    if(intent==='forecast')return Insights.forecast(s,period.explicit||s.selectedPeriodExplicit?period.dates:Array.from({length:28},(_,i)=>addDays(s.today,i)));
+    if(intent==='leaveImpact'){
+      const matches=employeeMatches(q,staff),employeeId=request.employeeId||(matches.length===1?matches[0].id:previous.intent===intent?previous.employeeId:null),range=parseRange(q,s);
+      if(range.error)return form(range.error,{employeeId});
+      const startDate=request.startDate||range.startDate||(previous.intent===intent?previous.startDate:null),endDate=request.endDate||range.endDate||(previous.intent===intent?previous.endDate:null);
+      const params={employeeId,startDate,endDate};
+      if(!employeeId||!startDate||!endDate)return form(matches.length>1?'Mehrere Personen passen zu diesem Namen. Bitte Mitarbeiter und Zeitraum eindeutig auswählen.':'Wähle Mitarbeiter und Zeitraum. Ich zeige betroffene Dienste, gemeinsam geprüfte Vertretungen und verbleibende zusätzliche Lücken.',params);
+      if(!staff.some(e=>String(e.id)===String(employeeId)))return form('Diese Person ist im ausgewählten Unternehmen nicht als aktiver Mitarbeiter verfügbar.',{});
+      const checked=rangeDates(startDate,endDate);if(checked.error)return form(checked.error,params);
+      return Insights.leaveImpact(s,employeeId,checked.dates);
+    }
+    let assignmentId=request.assignmentId,targetEmployeeId=request.targetEmployeeId;
+    const targetText=q.split(/\b(?:auf|an)\s+(?:mitarbeiter\s+)?/).at(-1),targets=targetText!==q?employeeMatches(targetText,staff):[];
+    if(!targetEmployeeId&&targets.length===1)targetEmployeeId=targets[0].id;
+    if(!assignmentId){
+      const ownerText=q.split(/\b(?:auf|an)\s+(?:mitarbeiter\s+)?/)[0],owners=employeeMatches(ownerText,staff),type=parseShift(q,s);
+      if(!period.explicit&&!type&&!owners.length)assignmentId=s.selectedService?.assignmentId;
+      if(!assignmentId&&(period.explicit||type||owners.length)){
+        const options=s.assignments.filter(a=>(!period.explicit||period.dates.includes(a.date))&&(!type||a.type===type)&&(owners.length!==1||String(a.employeeId)===String(owners[0].id)));
+        if(options.length===1)assignmentId=options[0].id;
+      }
+    }
+    const params={assignmentId,targetEmployeeId,...Object.fromEntries(['date','type','start','end'].filter(k=>request[k]).map(k=>[k,request[k]]))};
+    if(!assignmentId||!targetEmployeeId)return form('Wähle den Ausgangsdienst und den Zielmitarbeiter. Datum, Schicht und Uhrzeit kannst du bei Bedarf zusätzlich ändern.',params);
+    const a=s.assignments.find(a=>String(a.id)===String(assignmentId));
+    if(!a||!staff.some(e=>String(e.id)===String(targetEmployeeId)))return form('Der gewählte Dienst oder Mitarbeiter ist nicht mehr verfügbar. Bitte neu auswählen.');
+    if(request.date&&!validDate(request.date)||['start','end'].some(k=>request[k]&&!/^([01]\d|2[0-3]):[0-5]\d$/.test(request[k])))return form('Bitte gültige Daten und Uhrzeiten wählen.',params);
+    return Insights.changeImpact(s,params);
   }
   function parseShift(q,s){
     const exact=s.shifts.filter(t=>new RegExp('(?:^|[^a-z0-9])'+normalize(t.id).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(?:$|[^a-z0-9])').test(q));
@@ -214,6 +264,7 @@
     const context={intent,dates,type,team:requestedTeam,pending:false},label=periodLabel(dates),shiftLabel=id=>{const t=s.shifts.find(t=>t.id===id);return t?.name&&t.name!==id?`${id} · ${t.name}`:id;};
     const staff=s.employees.filter(e=>!e.deletedAt&&e.status==='active');
     const nav=(view,label)=>({view,label});
+    if(Insights&&['forecast','leaveImpact','changeImpact'].includes(intent))return scenarioAnswer(q,s,previous,intent,period,staff);
     // Explicit product topics take precedence over broad analytical keywords.
     // A named person or a pending service diagnosis keeps the actual data analysis.
     const explanatory=/^(?:bitte\s+)?(?:wie(?! viele| viel)|wo\b|was\b|warum|weshalb|wieso|welche.*(?:regeln|grenzen|schichtwechsel|feiertage|obergrenze)|kann ich|laeuft|darf ich)/.test(q);
@@ -346,7 +397,7 @@
     const suggestions=[...(/personal|mitarbeiter|team/.test(q)?['Welche Mitarbeiter haben keine Schichtfreigabe?','Bei welchen Mitarbeitern fehlt eine Teamzuordnung?','Geplante Stunden prüfen']:/plan|dienst|besetz|ersatz/.test(q)?['Monatscheck starten','Engpasslöser starten','Offene Dienste prüfen','Ersatz für einen Dienst suchen']:['Monatscheck starten','Offene Dienste prüfen','Ersatz für einen Dienst suchen','Geplante Stunden prüfen','Welche Hilfethemen kennst du?']),'Welche Fragen kann ich stellen?'];
     return response('Welches Thema meinst du?','Für diese Frage habe ich noch keine zuverlässige Auswertung. Wähle ein passendes Thema oder formuliere die Frage genauer. Bei einzelnen Diensten helfen Datum und Schichtart.',{suggestions,context:{}});
   }
-  const api={answer,normalize,parsePeriod,parseShift,coverage,periodLabel,validDate,team,findHelp,questionGroups,intentFor};
+  const api={answer,normalize,parsePeriod,parseRange,rangeDates,parseShift,coverage,periodLabel,validDate,team,findHelp,questionGroups,intentFor};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.SFPlanningAssistantCore=api;
 })(typeof window==='undefined'?globalThis:window);
 
