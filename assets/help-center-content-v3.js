@@ -1009,6 +1009,10 @@ window.SFHelpContent = {
       [
         "Was unterscheidet „Zeiten verwalten“ von „Zeiten bestätigen“?",
         "„Zeiten verwalten“ erlaubt die Bearbeitung von Zeiteinträgen. „Zeiten bestätigen“ erlaubt Freigabe beziehungsweise Korrekturanforderung. Beide Zusatzrechte lassen sich getrennt vergeben. Sie eröffnen keine private Personalakte, keine Abwesenheitsverwaltung und keinen administrativen Monatsabschluss. Prüfen Sie in Benutzer & Rechte die tatsächlichen Rechte des Zugangs."
+      ],
+      [
+        "Wie sichere und importiere ich Audit-Logs?",
+        "Öffnen Sie Audit-Logs → Wochenarchive & Wiederherstellung. Die abgeschlossene Vorwoche wird montags um 03:00 Uhr (Europe/Berlin) je Unternehmen gesichert. Herunterladen speichert ein vorhandenes Archiv als JSON auf Ihrem Gerät. Zeitraum als Sicherung exportieren erstellt eine vollständige Sicherung aller Aktionen im gewählten Zeitraum; Such- und Bereichsfilter gelten nur für die CSV/PDF-Prüfberichte. Sicherung importieren prüft zunächst Signatur, Unternehmen und Inhalte. Erst Neue Ereignisse wiederherstellen fügt fehlende Ereignisse hinzu. Identische Einträge werden übersprungen; widersprüchliche IDs und nicht mehr vorhandene Benutzer sperren den Import. Nach einem Abbruch können Sie dieselbe Datei erneut auswählen und fortsetzen. Personallöschungen oder Audit-Anonymisierungen sperren den Wiederimport älterer Sicherungen. Die Archive liegen in derselben Datenbank und löschen keine Live-Logs; laden Sie die Dateien für eine zusätzliche lokale Kopie herunter. Der Import unterstützt dieses JSON-Sicherungsformat aus demselben SchichtFunk-System, keine CSV/PDF-Dateien und keine vollständigen Datenbankbackups."
       ]
     ],
     "wishes": [

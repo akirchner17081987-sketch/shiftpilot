@@ -1290,6 +1290,14 @@
         "assets/personnel-evidence-v1.js",
         "database/personnel-evidence-service.sql"
       ]
+    },
+    {
+      "category": "access",
+      "question": "Wie sichere und importiere ich Audit-Logs?",
+      "sources": [
+        "assets/audit-archives-v1.js",
+        "database/audit-weekly-archives-v1.sql"
+      ]
     }
   ],
   "moduleInventory": [
@@ -2603,6 +2611,12 @@
       "category": "personnel",
       "area": "Nachweise anfordern, selbst einreichen, prüfen und übernehmen",
       "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/audit-archives-v1.js",
+      "area": "Audit-Wochenarchive, Export und Wiederherstellung",
+      "category": "access",
+      "kind": "feature-or-support"
     }
   ],
   "categoryCoverage": [
@@ -2962,7 +2976,8 @@
         "Was bedeutet Datenschutz & Löschung in den Einstellungen?",
         "Was unterscheidet vollständige Datenlöschung vom normalen Entfernen?",
         "Was unterscheidet die Personalrolle „Teamleiter“ von der Zugangsrolle?",
-        "Was unterscheidet „Zeiten verwalten“ von „Zeiten bestätigen“?"
+        "Was unterscheidet „Zeiten verwalten“ von „Zeiten bestätigen“?",
+        "Wie sichere und importiere ich Audit-Logs?"
       ]
     },
     {
@@ -3164,11 +3179,11 @@
   "currentAudit": {
     "date": "2026-10-20",
     "baselineArticleCount": 211,
-    "addedArticleCount": 35,
+    "addedArticleCount": 36,
     "correctedArticleCount": 8,
-    "articleCount": 246,
+    "articleCount": 247,
     "categoryCount": 22,
-    "assetJavaScriptCount": 218
+    "assetJavaScriptCount": 219
   },
   "incrementalUpdate": {
     "date": "2026-10-20",
