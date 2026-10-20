@@ -34,9 +34,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - run: npm ci
       - run: node --test tests/planning-assistant.test.mjs tests/planning-assistant-insights.test.cjs tests/planning-assistant-bottlenecks.test.cjs tests/planning-assistant-scenarios.test.cjs tests/planning-assistant-workflows.test.cjs tests/planning-assistant-workflows-sql.test.cjs tests/solid-planning.test.cjs tests/solid-planning-ui.test.cjs
       - run: node scripts/build-static.mjs
-      - run: npm ci
       - run: npx playwright install ffmpeg
       - run: npx playwright test tests/e2e/planning-assistant.spec.cjs tests/e2e/planning-assistant-insights.spec.cjs tests/e2e/planning-assistant-bottlenecks.spec.cjs tests/e2e/planning-assistant-scenarios.spec.cjs tests/e2e/planning-assistant-workflows.spec.cjs
         env:
