@@ -192,9 +192,9 @@
     const budget=()=>{if(checks>=240||Date.now()-started>1800){limited=true;return false;}return true;};
     const eligible=(slot,plan,exclude=new Set())=>{if(!budget())return [];checks++;const list=candidates(s,slot,plan,exclude),scores=options.balanceScore?new Map(list.map(c=>[c,options.balanceScore([...plan,c.a])])):null;return list.sort((a,b)=>{
       const gain=c=>Math.min(paid(s,c.a),Math.max(0,target(c.e)-hours(s,c.e,plan,dates)));
-      return Number(focused(b.e))-Number(focused(a.e))||(scores?scores.get(a)-scores.get(b):0)||gain(b)-gain(a)||person(a.e).localeCompare(person(b.e),'de');
+      return Number(focused(b.e))-Number(focused(a.e))||(scores?scores.get(a)-scores.get(b):0)||(options.reserve?(a.e.shifts||[]).length-(b.e.shifts||[]).length:0)||gain(b)-gain(a)||person(a.e).localeCompare(person(b.e),'de');
     });};
-    const canMove=a=>original.includes(a)&&staff.some(e=>String(e.id)===String(a.employeeId))&&dates.includes(a.date)&&!s.isPublished?.(a.date)&&!!s.movable?.(a);
+    const canMove=a=>!options.directOnly&&(!options.allowedDates||options.allowedDates.has(a.date))&&original.includes(a)&&staff.some(e=>String(e.id)===String(a.employeeId))&&dates.includes(a.date)&&!s.isPublished?.(a.date)&&!!s.movable?.(a);
     const finalValid=plan=>{
       if(audit({...s,assignments:plan},dates).issues.some(x=>!allowedIssues.has(key(x))))return false;
       // Removing a duty can affect the donor's block/rhythm as well as the recipient.
@@ -205,7 +205,7 @@
         if(!e||!capacity(s,e,without,a)||!(s.candidates(a.type,a.date,without,model(s,a)).candidates||[]).some(c=>String(c.e.id)===String(e.id)))return false;
       }return true;
     };
-    const initialSlots=slots(s,dates,original),blocked=[];
+    const initialSlots=slots(s,dates,original).filter(x=>!options.allowedDates||options.allowedDates.has(x.date)),blocked=[];
     const accept=plan=>{
       if(deficit(plan)>deficit(rows)+0.05||deficit(plan,true)>deficit(rows,true)+0.05||options.balanceScore&&options.balanceScore(plan)>options.balanceScore(rows)+0.05||!finalValid(plan))return false;
       rows=plan;return true;
@@ -249,7 +249,7 @@
       const index=unmatched.findIndex(x=>x.date===a.date&&x.type===a.type),replaced=index<0?null:unmatched.splice(index,1)[0],e=staff.find(e=>String(e.id)===String(a.employeeId));
       return {assignment:a,...(replaced?{replaces:replaced}:{}),employee:e,before:hours(s,e,original,dates),after:hours(s,e,rows,dates),target:target(e),reason:replaced?'Entwurf von '+person(staff.find(e=>String(e.id)===String(replaced.employeeId)))+' umverteilen; Pflichtbesetzung bleibt erhalten.':'Offene Pflichtposition besetzen; Freigaben und verbindliche Regeln geprüft.'};
     });
-    const remaining=slots(s,dates,rows),diagnoses=[],seen=new Set();
+    const remaining=slots(s,dates,rows).filter(x=>!options.allowedDates||options.allowedDates.has(x.date)),diagnoses=[],seen=new Set();
     const suggestion=reason=>/Freigabe|Leitungsrolle|Standort/i.test(reason)?'Zusätzliche verfügbare Person mit passender Freigabe, Rolle und Standortzuordnung prüfen.':/Abwesenheit|Freizeit/i.test(reason)?'Weitere verfügbare Vertretung prüfen; Abwesenheiten und Freizeitzusagen bleiben geschützt.':/Stunden|grenze|Schichtanzahl/i.test(reason)?'Qualifiziertes Personal mit verbleibender Stundenkapazität prüfen.':/Rhythmus|Erholung|Ruhezeit|Arbeitsblock|Schichtwechsel/i.test(reason)?'Passenden Arbeitsblock oder weitere Vertretung prüfen; verbindliche Regeln bleiben bestehen.':'Zusätzliche passende Kapazität oder eine weitergehende manuelle Umplanung prüfen.';
     for(const slot of remaining){
       const id=slot.date+'|'+slot.type;if(seen.has(id)||diagnoses.length>=12)continue;seen.add(id);
@@ -278,6 +278,16 @@
       proposal:proposed.length?{base,proposed,changes,dates}:null,context
     });
   }
+  function absenceConflict(s,assignment){
+    const a=model(s,assignment);if(!valid(a)||!rulesReady(s))return false;
+    const zone=s.solidRules.timezone,iv=Solid.interval(a.date,a.start,a.end,zone);
+    for(const x of s.absences||[]){
+      if(!['Genehmigt','Erfasst'].includes(x.status)||String(x.employeeId)!==String(a.employeeId))continue;
+      const from=x.startDate||x.date,to=x.endDate||from;if(!from||!to)continue;
+      if(x.fullDay!==false){if(iv.start<Solid.instant(Solid.plus(to,1),'00:00',zone)&&iv.end>Solid.instant(from,'00:00',zone))return true;}
+      else if(/^([01]\d|2[0-3]):[0-5]\d$/.test(x.startTime||'')&&/^([01]\d|2[0-3]):[0-5]\d$/.test(x.endTime||''))for(const day of [Solid.plus(a.date,-1),a.date,Solid.plus(a.date,1)]){if(day<from||day>to)continue;const absent=Solid.interval(day,x.startTime,x.endTime,zone);if(iv.start<absent.end&&iv.end>absent.start)return true;}
+    }return false;
+  }
   function journal(s,dates,type){
     if(s.journalError)return response('Planungsprotokoll nicht verfügbar',s.journalError,{context:{intent:'runReasons',dates,type}});
     const runs=(s.planningRuns||[]).filter(r=>r.first_month<=dates.at(-1)&&r.last_date>=dates[0]),run=runs[0];
@@ -285,5 +295,5 @@
     const entries=(run.analysis?.entries||[]).filter(x=>dates.includes(x.date)&&(!type||x.type===type));
     return response('Gespeicherte Planungsgründe','Stand des Laufs vom '+new Date(run.created_at).toLocaleString('de-DE')+'. '+run.analysis.open+' offene Positionen im damaligen Ergebnis.',{columns:['Datum','Schicht','Ausschlussgründe im Ergebnis'],rows:entries.map(x=>[x.date,x.type,x.reasons.map(r=>r.count+' × '+r.label).join('; ')||'Keine passende Besetzung unter den geprüften Regeln.']),notes:['Gespeicherte Prüfung am Ende des Planungslaufs. Dies ist keine vollständige Aufzeichnung aller Suchschritte.','Im verwendeten Browser gespeichert, getrennt nach Benutzer und Unternehmen; bis zu 20 Läufe der letzten 90 Tage. Keine Synchronisierung zwischen Geräten.','Das aktuelle Ergebnis kann nach späteren Änderungen abweichen.',...(run.analysis.truncated?['Die Detailansicht wurde auf 200 Schichten begrenzt.']:[])],context:{intent:'runReasons',dates,type}});
   }
-  return {audit,workload,improvements,bottlenecks,checkedPlan,forecast,leaveImpact,changeImpact,journal,person,hours,paid,capacity,slots};
+  return {audit,workload,improvements,bottlenecks,checkedPlan,absenceConflict,forecast,leaveImpact,changeImpact,journal,person,hours,paid,capacity,slots};
 });
