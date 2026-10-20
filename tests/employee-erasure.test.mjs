@@ -53,3 +53,15 @@ test('database batches resume and finish only after database_done is explicitly 
  assert.equal(b.calls.filter(x=>x==='server_commit_employee_erasure').length,3);
  assert.equal(b.calls.at(-1),'server_finish_employee_erasure');
 });
+test('independent verification resumes in bounded batches without claiming success',async()=>{
+ const b=backend({databaseDone:true}),original=b.rpc;
+ b.rpc=async(name,args)=>name==='server_finish_employee_erasure'?{data:{complete:false,pending:true,phase:'VERIFY',processed:12000}}:original(name,args);
+ assert.deepEqual(await runEmployeeErasure(b,request,'actor'),{complete:false,pending:true,phase:'VERIFY',processed:12000});
+ assert(!b.calls.includes('server_commit_employee_erasure'));
+});
+test('a resumed final verification reports completion only after the independent check succeeds',async()=>{
+ const b=backend({databaseDone:true}),original=b.rpc;let checks=0;
+ b.rpc=async(name,args)=>name==='server_finish_employee_erasure'&&++checks<3?{data:{complete:false,pending:true,phase:'VERIFY',processed:checks*2000}}:original(name,args);
+ assert.equal((await runEmployeeErasure(b,request,'actor')).verified,true);
+ assert.equal(checks,3);
+});
