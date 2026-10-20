@@ -173,7 +173,7 @@
   }
   function observePlanningChanges(){
     const owner=identity();if(observedOwner!==owner){observedOwner=owner;observedState=null;pendingChange=null;changeRequest=null;changeReport=null;changeRevision='';clearChangeNotice();}
-    if(!owner||busy()||hydrationFailed||B().syncing||B().lastSyncError||window.SFMonthOptimizer?.isBusy?.())return;
+    if(!Workflows||!owner||busy()||hydrationFailed||B().syncing||B().lastSyncError||window.SFMonthOptimizer?.isBusy?.())return;
     if(Date.now()-lastObserved<1400)return;lastObserved=Date.now();
     const belongs=a=>!(a.companyId||a.company_id)||(a.companyId||a.company_id)===B().companyId;
     const raw={assignments:assignments.filter(belongs).filter(a=>a._dbStatus!=='CANCELLED'&&a.status!=='CANCELLED'),absences:absences.filter(belongs)},next=Workflows.changeState(raw);
