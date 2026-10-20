@@ -138,7 +138,7 @@
     shade.innerHTML=`<section class="sf-model-dialog" role="dialog" aria-modal="true" aria-labelledby="sfShiftModelTitle"><h2 id="sfShiftModelTitle">${esc(title)}</h2>${body}</section>`;
     document.body.appendChild(shade);let saving=false;
     const close=()=>{if(saving)return;shade.remove();if(focus?.isConnected)focus.focus();else document.getElementById('sfAddShiftModel')?.focus();};
-    shade.addEventListener('click',e=>{if(e.target===shade)close();});
+    // Keep in-progress input when a click lands outside the dialog.
     shade.addEventListener('keydown',e=>{
       if(e.key==='Escape'){e.preventDefault();close();}
       if(e.key==='Tab'){const all=[...shade.querySelectorAll('input:not(:disabled),select:not(:disabled),button:not(:disabled)')],first=all[0],last=all.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}}
