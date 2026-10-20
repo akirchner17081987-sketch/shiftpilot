@@ -6,6 +6,7 @@
   if(!Core)return;
   let context={},messages=[],scope=null,previousFocus=null,selectedMonth='',hydrationFailed=false,selectedService=null,planningRuns=[],journalError='',requestId=0,applyingProposal=false,refreshingProposal=null;
   const Insights=window.SFPlanningInsights;
+  let protectedAssignmentIds=new Set();
   const withRows=(rows,fn)=>{const original=assignments;try{assignments=rows;return fn()}finally{assignments=original}};
   const signature=()=>JSON.stringify([identity(),window.SFCompliance?.policy,employees,assignments,absences,TYPES,typeof globalSoll==='undefined'?null:globalSoll,typeof dailySoll==='undefined'?null:dailySoll]);
   const B=()=>window.SFBackend||{};
@@ -15,7 +16,7 @@
   const busy=()=>!!(B().companySwitching||B().bootPromise||B().suppressSync||applyingProposal||refreshingProposal);
   const ownRefresh=()=>!!(refreshingProposal&&refreshingProposal.owner===identity()&&refreshingProposal.request===requestId&&!B().companySwitching&&!B().bootPromise);
   const el=id=>document.getElementById(id);
-  function reset(){requestId++;context={};messages=[];selectedMonth='';selectedService=null;planningRuns=[];journalError='';el('sfPlanningChatLog')?.replaceChildren();updateService();}
+  function reset(){requestId++;context={};messages=[];selectedMonth='';selectedService=null;planningRuns=[];journalError='';protectedAssignmentIds=new Set();el('sfPlanningChatLog')?.replaceChildren();toggleQuestionGuide(false);setProgress(false);updateService();}
   function close(restore=true){
     const dialog=el('sfPlanningChat'),docked=dialog?.classList.contains('sf-chat-docked');
     if(dialog?.open)dialog.close();
@@ -120,7 +121,7 @@
       assignmentHours:a=>typeof plannedAssignmentHours==='function'?plannedAssignmentHours(a):0,
       candidates:candidateCheck,solidRules:window.SFCompliance?.policy?.solidPlanningRules,rulesReady:!!window.SFCompliance?.policy,
       hourLimits:e=>typeof autoHourLimits==='function'?autoHourLimits(e):null,isPublished:date=>!!window.SFCompliance?.isWeekPublished?.(date),
-      movable:a=>!!a.id&&!a.publishedAt&&(!a._dbStatus||a._dbStatus==='DRAFT')&&a.status!=='PUBLISHED'&&!a._marketApproved&&!/markt|market|freiwill|tausch/i.test(a.note||'')&&!window.SFCompliance?.isWeekPublished?.(a.date)&&!((typeof timeEntries!=='undefined')&&(timeEntries[a.id]?.actualStart||timeEntries[a.id]?.actualEnd))&&window.sfRhythmCheck?.(employees.find(e=>String(e.id)===String(a.employeeId)),a.type,a.date)?.mode!=='required',
+      movable:a=>!!a.id&&!a.fixed&&!a.locked&&!a.protected&&!protectedAssignmentIds.has(a._dbId||B().asgDb?.get(String(a.id))||a.id)&&!a.publishedAt&&(!a._dbStatus||a._dbStatus==='DRAFT')&&a.status!=='PUBLISHED'&&!a._marketApproved&&!/markt|market|freiwill|tausch/i.test(a.note||'')&&!window.SFCompliance?.isWeekPublished?.(a.date)&&!((typeof timeEntries!=='undefined')&&(timeEntries[a.id]?.actualStart||timeEntries[a.id]?.actualEnd))&&window.sfRhythmCheck?.(employees.find(e=>String(e.id)===String(a.employeeId)),a.type,a.date)?.mode!=='required',
       openSlots:(wanted,rows)=>withRows(rows,()=>{const slots=[];for(const date of wanted)for(const t of TYPES.filter(t=>t.active!==false)){const info=window.SFShiftModels?.coverageInfo?.(date,t.id);if(info&&info.representative!==t.id)continue;const raw=getSoll(date,t.id),need=window.SFShiftModels?.requiredSoll?.(date,t.id,raw)??raw,count=rows.filter(a=>a.date===date&&a.type===t.id).length,missing=info?info.missing:Math.max(0,need-count);for(let n=0;n<missing;n++)slots.push({date,type:t.id,...(info?{alternatives:info.alternatives}:{})});}return slots;}),
       planningRuns,journalError,teamRulesReady:window.SFPlanningTeams?.isLoaded?.()??false,helpCategories:window.SFHelpContent?.categories||[],teamRules:window.SFPlanningTeams?.isLoaded?.()?window.SFPlanningTeams.rules:[],helpArticles:window.SFHelpContent?.articles||{}};
   }
@@ -248,6 +249,24 @@
     document.querySelectorAll('.sf-chat-service-open').forEach(b=>{b.hidden=!authorized();b.disabled=busy();});
   }
   function quickButtons(host,questions){for(const q of questions){const button=node('button',q,'sf-chat-example');button.type='button';button.onclick=()=>submit(q);host.appendChild(button);}}
+  function toggleQuestionGuide(force){
+    const guide=el('sfPlanningQuestionGuide');if(!guide)return;
+    const open=force??guide.hidden;guide.hidden=!open;el('sfPlanningChatLog').hidden=open;
+    el('sfPlanningChatQuestions')?.setAttribute('aria-expanded',String(open));
+    if(open)guide.querySelector('summary')?.focus();
+  }
+  function setProgress(active){
+    const progress=el('sfPlanningChatProgress');if(progress)progress.hidden=!active;
+    el('sfPlanningChatLog')?.setAttribute('aria-busy',String(active));
+  }
+  function mountQuestionGuide(){
+    const guide=node('section',undefined,'sf-chat-question-guide');guide.id='sfPlanningQuestionGuide';guide.hidden=true;
+    guide.setAttribute('aria-label','Fragen und Beispiele');guide.appendChild(node('h3','Welche Fragen kann ich stellen?'));
+    guide.appendChild(node('p','Du kannst eigene Fragen zu diesen Themen formulieren. Bei einem Dienst helfen Datum und Schichtart, bei Personen Name oder Personalnummer. Der Assistent erkennt unterstützte Themen; er ist kein allgemeiner KI-Chat.'));
+    for(const [title,questions] of Core.questionGroups){const group=node('details',undefined,'sf-chat-details');group.appendChild(node('summary',title));const examples=node('div',undefined,'sf-chat-examples');quickButtons(examples,questions);group.appendChild(examples);guide.appendChild(group);}
+    const back=node('button','Zurück zum Gespräch','sf-chat-row-action');back.type='button';back.onclick=()=>{toggleQuestionGuide(false);el('sfPlanningChatInput').focus();};guide.appendChild(back);
+    el('sfPlanningChatLog').before(guide);
+  }
   function renderMessage(message){
     const log=el('sfPlanningChatLog');if(!log)return;
     const article=node('article',undefined,'sf-chat-message '+(message.user?'is-user':'is-answer'));
@@ -255,6 +274,7 @@
     if(message.user)article.appendChild(node('p',message.text));
     else{
       const a=message.answer;article.appendChild(node('h3',a.title));article.appendChild(node('p',a.text));
+      if(a.blockers?.length){const section=node('section',undefined,'sf-chat-blockers'),list=node('ul');section.appendChild(node('h4','Verbleibende Engpässe'));a.blockers.forEach(text=>list.appendChild(node('li',text)));section.appendChild(list);article.appendChild(section);}
       if(a.rows?.length){
         const results=node('div',undefined,'sf-chat-results');results.setAttribute('aria-label',a.title+' – Ergebnisse');
         const count=node('p',undefined,'sf-chat-result-count'),list=node('div',undefined,'sf-chat-result-list');
@@ -295,8 +315,11 @@
     syncScope();if(!authorized()||busy())return;
     const input=el('sfPlanningChatInput'),text=String(raw??input?.value??'').trim().slice(0,1200);if(!text)return;
     let answer;const owner=identity(),request=++requestId;
+    toggleQuestionGuide(false);setProgress(true);
     el('sfPlanningChatStatus').textContent='Planungsdaten werden geprüft.';
     try{
+      if(Core.intentFor(Core.normalize(text))==='bottlenecks')await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+      if(owner!==identity()||request!==requestId)return;
       if(/protokoll|gespeicherte|planungsgruende|besetzung.*verhindert/.test(Core.normalize(text)))await loadRuns();
       if(owner!==identity()||request!==requestId)return;
       answer=ask(text);
@@ -312,11 +335,13 @@
               q=await B().client.rpc('preview_planning_period',{p_company_id:B().companyId,p_first_month:answer.proposal.dates[0].slice(0,7)+'-01',p_month_count:1});if(q.error)throw q.error;
             }finally{refreshingProposal=null;syncScope();}
           if(owner!==identity()||request!==requestId)return;
-          answer=ask(text);if(answer.proposal){const protectedIds=new Set(q.data.protectedIds||[]);if(answer.proposal.changes.some(c=>c.replaces&&protectedIds.has(c.replaces._dbId||B().asgDb?.get(String(c.replaces.id)))))throw Error('Ein vorgeschlagener Wechsel betrifft einen geschützten Dienst. Bitte im Dienstplan einzeln prüfen.');answer.proposal.fingerprint=q.data.fingerprint;}
+          protectedAssignmentIds=new Set(q.data.protectedIds||[]);
+          answer=ask(text);if(answer.proposal){const protectedIds=protectedAssignmentIds;if(answer.proposal.changes.some(c=>c.replaces&&protectedIds.has(c.replaces._dbId||B().asgDb?.get(String(c.replaces.id)))))throw Error('Ein vorgeschlagener Wechsel betrifft einen geschützten Dienst. Bitte im Dienstplan einzeln prüfen.');answer.proposal.fingerprint=q.data.fingerprint;}
         }
         if(answer.proposal)Object.assign(answer.proposal,{owner,signature:signature(),created:Date.now()});
       }
     }catch(error){answer={title:'Prüfung derzeit nicht möglich',text:error.message||'Bitte lade die Planungsdaten erneut und versuche es noch einmal.',context:{}};}
+    finally{if(request===requestId)setProgress(false);}
     if(owner!==identity()||request!==requestId)return;
     if(!authorized()||busy())return;
     context=answer.context||{};if(input)input.value='';
@@ -331,9 +356,10 @@
     const log=el('sfPlanningChatLog');if(!log)return;log.replaceChildren();
     const welcome=node('section',undefined,'sf-chat-welcome');welcome.id='sfPlanningChatWelcome';
     welcome.appendChild(node('h3','Was möchtest du prüfen?'));
-    welcome.appendChild(node('p','Stelle deine Frage oder wähle einen Einstieg.'));
+    welcome.appendChild(node('p','Stelle deine Frage oder wähle einen Einstieg. Alle unterstützten Themen findest du jederzeit unter „Fragen & Beispiele“.'));
     const examples=node('div',undefined,'sf-chat-examples sf-chat-start');
     for(const [label,question] of [
+      ['Engpass lösen','Engpasslöser starten'],
       ['Monat prüfen','Monatscheck starten'],
       ['Belastung prüfen','Belastungscheck starten'],
       ['Stunden verbessern','Verbesserungsvorschläge erstellen'],
@@ -365,6 +391,8 @@
       dialog=node('dialog',undefined,'sf-planning-chat');dialog.id='sfPlanningChat';dialog.setAttribute('aria-labelledby','sfPlanningChatTitle');
       dialog.innerHTML='<div class="sf-chat-frame"><header class="sf-chat-header"><div class="sf-chat-mark" aria-hidden="true">'+chatIcon+'</div><div><small>SCHICHTFUNK</small><h2 id="sfPlanningChatTitle">Planungsassistent</h2></div><button type="button" id="sfPlanningChatClose" aria-label="Planungsassistent schließen">×</button></header><div class="sf-chat-context"><details class="sf-chat-period"><summary><span>Zeitraum</span><b id="sfPlanningChatPeriod"></b></summary><div class="sf-chat-month"><label for="sfPlanningChatMonth">Monat auswählen</label><input type="month" id="sfPlanningChatMonth"><button type="button" id="sfPlanningChatCurrent">Aktueller Plan</button></div></details><button type="button" id="sfPlanningChatReset">Neuer Chat</button></div><div id="sfPlanningChatLog" class="sf-chat-log" role="log" aria-label="Fragen und Antworten"></div><div id="sfPlanningChatStatus" class="sf-chat-sr" role="status" aria-live="polite"></div><form id="sfPlanningChatForm" class="sf-chat-form"><label for="sfPlanningChatInput">Deine Frage</label><div class="sf-chat-compose"><textarea id="sfPlanningChatInput" rows="2" maxlength="1200" placeholder="Wie kann ich dir bei der Planung helfen?" required></textarea><button type="submit" aria-label="Frage senden"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7M12 5v14"/></svg></button></div><small>Aktuell geladene Daten · Speichern erst nach Bestätigung</small></form></div>';
       document.body.appendChild(dialog);
+      const questions=node('button','Fragen & Beispiele');questions.type='button';questions.id='sfPlanningChatQuestions';questions.setAttribute('aria-controls','sfPlanningQuestionGuide');questions.setAttribute('aria-expanded','false');questions.onclick=()=>toggleQuestionGuide();el('sfPlanningChatReset').before(questions);mountQuestionGuide();
+      const progress=node('p','Engpässe und Planungsregeln werden geprüft …','sf-chat-progress');progress.id='sfPlanningChatProgress';progress.hidden=true;progress.setAttribute('role','status');el('sfPlanningChatForm').before(progress);
       const service=node('div',undefined,'sf-chat-service');service.id='sfPlanningChatService';service.hidden=true;el('sfPlanningChatLog').before(service);
       el('sfPlanningChatClose').onclick=()=>close();
       dialog.addEventListener('cancel',event=>{event.preventDefault();close();});

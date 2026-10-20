@@ -84,6 +84,108 @@
     const beforeMissing=slots(s,dates,original).length,afterMissing=slots(s,dates,[...base,...proposed]).length,deficit=rows=>s.employees.filter(e=>e.status==='active'&&!e.deletedAt).reduce((n,e)=>n+Math.max(0,target(e)-hours(s,e,rows,dates)),0);
     return response(outage?'Ausfall durchspielen – Simulation':'Konkrete Verbesserungen – Vorschau',changes.length+' geprüfte Zuweisungen vorgeschlagen. '+(outage?remaining.size+' betroffene Schichten bleiben ohne passenden Ersatz.':'Offene Positionen: '+beforeMissing+' → '+afterMissing+'. Stunden-Soll-Defizit: '+h(deficit(original))+' → '+h(deficit([...base,...proposed]))+' h.'),{columns:['Mitarbeiter','Dienst','Stunden vorher → nachher','Monats-SOLL','Begründung'],rows:changes.map(c=>[person(c.employee),c.assignment.date+' · '+c.assignment.type,h(c.before)+' → '+h(c.after)+' h',h(c.target)+' h',c.reason]),rowActions:changes.map(c=>({view:'schedule',date:c.assignment.date,type:c.assignment.type,label:'Dienst prüfen'})),notes:[outage?'Angenommener Ausfall. Es wird keine Abwesenheit gebucht und kein Dienst geändert.':'Nur Entwürfe. Übernahme erst nach Bestätigung und erneuter Prüfung des gespeicherten Plans.','Die Suche prüft direkte Besetzungen und einzelne Entlastungswechsel; sie garantiert kein globales Optimum.',...(initial.length>500?['Die Vorschau ist auf 500 Positionen begrenzt.']:[]),...([...remaining].map(([k,n])=>k.replace('|',' · ')+': '+n+' Position(en) ohne regelkonformen Vorschlag.'))],proposal:outage?null:{base,proposed,changes,dates},context:{intent:outage?'outage':'improvements',dates,pending:false}});
   }
+  // Bounded repair search: keep every protected assignment and only accept a
+  // jointly checked plan with fewer gaps or a strictly smaller hours deficit.
+  function bottlenecks(s,dates,focusIds=null){
+    const context={intent:'bottlenecks',dates,pending:false};
+    if(!rulesReady(s)||!s.candidates||!s.monthTarget)return response('Engpasslöser noch nicht bereit','Die verbindlichen Regeln und Besetzungsprüfungen müssen vollständig geladen sein.',{context});
+    const original=s.assignments.filter(active),staff=s.employees.filter(e=>e.status==='active'&&!e.deletedAt);
+    const focused=e=>!focusIds||focusIds.includes(String(e.id));
+    const target=e=>Math.max(0,Number(s.monthTarget(e))||0);
+    const deficit=(rows,focus=false)=>staff.filter(e=>!focus||focused(e)).reduce((n,e)=>n+Math.max(0,target(e)-hours(s,e,rows,dates)),0);
+    const baseline=audit(s,dates),key=x=>String(x.employee.id)+'|'+x.date+'|'+x.message;
+    if(baseline.unknown.length)return response('Engpasslöser – Daten prüfen','Die Prüfung ist unvollständig. Bitte zuerst die fehlenden Daten ergänzen.',{notes:baseline.unknown,context});
+    const allowedIssues=new Set(baseline.issues.map(key));
+    const started=Date.now();let checks=0,limited=false,rows=original.slice();
+    const budget=()=>{if(checks>=240||Date.now()-started>1800){limited=true;return false;}return true;};
+    const eligible=(slot,plan,exclude=new Set())=>{if(!budget())return [];checks++;return candidates(s,slot,plan,exclude).sort((a,b)=>{
+      const gain=c=>Math.min(paid(s,c.a),Math.max(0,target(c.e)-hours(s,c.e,plan,dates)));
+      return Number(focused(b.e))-Number(focused(a.e))||gain(b)-gain(a)||person(a.e).localeCompare(person(b.e),'de');
+    });};
+    const canMove=a=>original.includes(a)&&staff.some(e=>String(e.id)===String(a.employeeId))&&dates.includes(a.date)&&!s.isPublished?.(a.date)&&!!s.movable?.(a);
+    const finalValid=plan=>{
+      if(audit({...s,assignments:plan},dates).issues.some(x=>!allowedIssues.has(key(x))))return false;
+      // Removing a duty can affect the donor's block/rhythm as well as the recipient.
+      const affected=new Set([...original.filter(a=>!plan.includes(a)),...plan.filter(a=>!original.includes(a))].map(a=>String(a.employeeId)));
+      for(const a of plan.filter(a=>affected.has(String(a.employeeId)))){
+        if(!budget())return false;checks++;
+        const e=staff.find(e=>String(e.id)===String(a.employeeId)),without=plan.filter(x=>x!==a);
+        if(!e||!capacity(s,e,without,a)||!(s.candidates(a.type,a.date,without).candidates||[]).some(c=>String(c.e.id)===String(e.id)))return false;
+      }return true;
+    };
+    const initialSlots=slots(s,dates,original),blocked=[];
+    const accept=plan=>{
+      if(deficit(plan)>deficit(rows)+0.05||deficit(plan,true)>deficit(rows,true)+0.05||!finalValid(plan))return false;
+      rows=plan;return true;
+    };
+    for(const slot of initialSlots.slice(0,100)){
+      if(!budget())break;
+      if(s.isPublished?.(slot.date)){blocked.push([slot,'Veröffentlichter Zeitraum bleibt geschützt.']);continue;}
+      // Recalculate coverage: a previously repaired group may already be full.
+      if(!slots(s,[slot.date],rows).some(x=>x.type===slot.type))continue;
+      const direct=eligible(slot,rows);let found=false;
+      for(const c of direct){if(accept([...rows,c.a])){found=true;break;}}
+      if(found)continue;
+      // Free a qualified person by handing one movable draft to another person.
+      for(const donor of rows.filter(canMove)){
+        if(!budget())break;
+        const without=rows.filter(a=>a!==donor);
+        const next=eligible(slot,without).filter(c=>String(c.e.id)===String(donor.employeeId));
+        for(const c of next){
+          const replacements=eligible({date:donor.date,type:donor.type},[...without,c.a],new Set([String(donor.employeeId)]));
+          for(const replacement of replacements){
+            const a=model(s,{...replacement.a,start:donor.start||replacement.a.start,end:donor.end||replacement.a.end});
+            if(accept([...without,c.a,a])){found=true;break;}
+          }if(found)break;
+        }if(found)break;
+      }
+      if(!found)blocked.push([slot,'In der begrenzten Suche keine gemeinsam geprüfte Besetzung gefunden.']);
+    }
+    // Redistribute existing duties to staff below target without creating gaps
+    // or increasing the total deficit. No extra demand is invented to add hours.
+    for(const donor of rows.filter(canMove)){
+      if(!budget())break;
+      const without=rows.filter(a=>a!==donor),before=deficit(rows),beforeFocus=deficit(rows,true);
+      for(const c of eligible({date:donor.date,type:donor.type},without,new Set([String(donor.employeeId)]))){
+        if(!focused(c.e)||hours(s,c.e,rows,dates)>=target(c.e)-0.05)continue;
+        const a=model(s,{...c.a,start:donor.start||c.a.start,end:donor.end||c.a.end}),plan=[...without,a];
+        if((focusIds?deficit(plan,true)<beforeFocus-0.05:deficit(plan)<before-0.05)&&accept(plan))break;
+      }
+    }
+    const removed=original.filter(a=>!rows.includes(a)),base=original.filter(a=>rows.includes(a)),proposed=rows.filter(a=>!original.includes(a));
+    const unmatched=removed.slice(),changes=proposed.map(a=>{
+      const index=unmatched.findIndex(x=>x.date===a.date&&x.type===a.type),replaced=index<0?null:unmatched.splice(index,1)[0],e=staff.find(e=>String(e.id)===String(a.employeeId));
+      return {assignment:a,...(replaced?{replaces:replaced}:{}),employee:e,before:hours(s,e,original,dates),after:hours(s,e,rows,dates),target:target(e),reason:replaced?'Entwurf von '+person(staff.find(e=>String(e.id)===String(replaced.employeeId)))+' umverteilen; Pflichtbesetzung bleibt erhalten.':'Offene Pflichtposition besetzen; Freigaben und verbindliche Regeln geprüft.'};
+    });
+    const remaining=slots(s,dates,rows),diagnoses=[],seen=new Set();
+    const suggestion=reason=>/Freigabe|Leitungsrolle|Standort/i.test(reason)?'Zusätzliche verfügbare Person mit passender Freigabe, Rolle und Standortzuordnung prüfen.':/Abwesenheit|Freizeit/i.test(reason)?'Weitere verfügbare Vertretung prüfen; Abwesenheiten und Freizeitzusagen bleiben geschützt.':/Stunden|grenze|Schichtanzahl/i.test(reason)?'Qualifiziertes Personal mit verbleibender Stundenkapazität prüfen.':/Rhythmus|Erholung|Ruhezeit|Arbeitsblock|Schichtwechsel/i.test(reason)?'Passenden Arbeitsblock oder weitere Vertretung prüfen; verbindliche Regeln bleiben bestehen.':'Zusätzliche passende Kapazität oder eine weitergehende manuelle Umplanung prüfen.';
+    for(const slot of remaining){
+      const id=slot.date+'|'+slot.type;if(seen.has(id)||diagnoses.length>=12)continue;seen.add(id);
+      const protectedDay=s.isPublished?.(slot.date);let reasons=[];
+      if(!protectedDay&&budget()){checks++;for(const type of slot.alternatives||[slot.type]){if(!budget())break;checks++;reasons.push(...(s.candidates(type,slot.date,rows).reasons||[]));}}
+      const labels=[...new Set(reasons.map(r=>r.label))];
+      diagnoses.push(slot.date+' · '+slot.type+': '+(protectedDay?'Veröffentlicht und geschützt. Änderungen einzeln im Dienstplan prüfen.':labels.length?labels.join('; ')+'. '+suggestion(labels.join(' ')):blocked.find(([x])=>x.date===slot.date&&x.type===slot.type)?.[1]||'Keine Lösung in der begrenzten Suche gefunden. Zusätzliche Kapazität oder weitere Umplanung prüfen.'));
+    }
+    const beforeMissing=initialSlots.length,afterMissing=remaining.length;
+    const afterAudit=audit({...s,assignments:rows},dates);
+    if(deficit(rows,true)>0.05)diagnoses.push('Noch fehlende Sollstunden'+(focusIds?' im gewählten Fokus':'')+': '+h(deficit(rows,true))+' h. Eine vollständige Pflichtbesetzung bedeutet nicht automatisch, dass alle ihr Stunden-SOLL erreichen. Weitere Verteilung oder zusätzlichen tatsächlichen Bedarf gesondert prüfen.');
+    const affected=[...new Set([...removed,...proposed].map(a=>String(a.employeeId)))].map(id=>staff.find(e=>String(e.id)===id)).filter(Boolean);
+    return response('Engpasslöser – Entscheidungsvorschlag',new Date(dates[0]+'T12:00:00Z').toLocaleDateString('de-DE',{month:'long',year:'numeric',timeZone:'UTC'})+': Offene Pflichtpositionen '+beforeMissing+' → '+afterMissing+'. Fehlende Sollstunden '+h(deficit(original))+' → '+h(deficit(rows))+' h. Verbindliche Regelauffälligkeiten '+baseline.issues.length+' → '+afterAudit.issues.length+'.'+(focusIds?' Fokus: '+staff.filter(focused).map(person).join(', ')+'.':''),{
+      columns:['Änderung','Dienst','Stunden vorher → nachher','Monats-SOLL','Begründung'],
+      rows:changes.map(c=>[person(c.employee),c.assignment.date+' · '+c.assignment.type,h(c.before)+' → '+h(c.after)+' h',h(c.target)+' h',c.reason]),
+      rowActions:changes.map(c=>({view:'schedule',date:c.assignment.date,type:c.assignment.type,label:'Dienst prüfen'})),
+      blockers:diagnoses,
+      notes:[changes.length?changes.length+' Zuweisungen, davon '+removed.length+' veränderte Entwurfsdienste.':'Keine übernehmbare Änderung gefunden.',
+        ...affected.map(e=>person(e)+': '+h(hours(s,e,original,dates))+' → '+h(hours(s,e,rows,dates))+' h; SOLL '+h(target(e))+' h.'),
+        ...(remaining.length>seen.size?['Weitere offene Positionen sind im Dienstplan sichtbar.']:[]),
+        'Geprüft werden direkte Besetzungen, das Umverteilen eines Entwurfs mit Ersatz und Stundenverschiebungen. Längere Ketten und das Versetzen ganzer Arbeitsblöcke sind nicht Teil dieser Suche. Kein Nachweis, dass andere Lösungen unmöglich sind.',
+        'Ausschlussgründe beziehen sich auf die aktuelle Kandidatenprüfung; sie sind kein Beweis für eine notwendige Regeländerung.',
+        ...(limited||initialSlots.length>100?['Suchgrenze erreicht. Das Ergebnis ist eine Teilanalyse; erneut prüfen oder im Dienstplan weiterplanen.']:[]),
+        'Feste und geschützte Dienste sowie veröffentlichte Zeiträume bleiben erhalten. Übernahme erst nach Bestätigung und erneuter Prüfung.'],
+      actions:[{view:'schedule',date:dates[0],month:true,label:'Dienstplan prüfen'}],
+      proposal:proposed.length?{base,proposed,changes,dates}:null,context
+    });
+  }
   function journal(s,dates,type){
     if(s.journalError)return response('Planungsprotokoll nicht verfügbar',s.journalError,{context:{intent:'runReasons',dates,type}});
     const runs=(s.planningRuns||[]).filter(r=>r.first_month<=dates.at(-1)&&r.last_date>=dates[0]),run=runs[0];
@@ -91,5 +193,5 @@
     const entries=(run.analysis?.entries||[]).filter(x=>dates.includes(x.date)&&(!type||x.type===type));
     return response('Gespeicherte Planungsgründe','Stand des Laufs vom '+new Date(run.created_at).toLocaleString('de-DE')+'. '+run.analysis.open+' offene Positionen im damaligen Ergebnis.',{columns:['Datum','Schicht','Ausschlussgründe im Ergebnis'],rows:entries.map(x=>[x.date,x.type,x.reasons.map(r=>r.count+' × '+r.label).join('; ')||'Keine passende Besetzung unter den geprüften Regeln.']),notes:['Gespeicherte Prüfung am Ende des Planungslaufs. Dies ist keine vollständige Aufzeichnung aller Suchschritte.','Im verwendeten Browser gespeichert, getrennt nach Benutzer und Unternehmen; bis zu 20 Läufe der letzten 90 Tage. Keine Synchronisierung zwischen Geräten.','Das aktuelle Ergebnis kann nach späteren Änderungen abweichen.',...(run.analysis.truncated?['Die Detailansicht wurde auf 200 Schichten begrenzt.']:[])],context:{intent:'runReasons',dates,type}});
   }
-  return {audit,workload,improvements,journal,person,hours,paid,capacity,slots};
+  return {audit,workload,improvements,bottlenecks,journal,person,hours,paid,capacity,slots};
 });
