@@ -94,7 +94,7 @@
     window.SFCompanyProfile?.load?.().then(() => siteOrbit?.sync()).catch(() => {});
     return window.SFLocationMap.create(art, {
       getData() {
-        const current = window.SFToday?.getSiteOverview?.();
+        const current = window.SFPlanningTimeline?.mapData?.() || window.SFToday?.getSiteOverview?.();
         if (!current || !ready()) return null;
         const profile = window.SFCompanyProfile?.current?.();
         const locations = new Map((profile?.sites || []).map(site => [site.id, site]));
@@ -103,8 +103,8 @@
           return { ...site, code: location?.code || site.code || '', address: location?.address || '', longitude: location?.longitude, latitude: location?.latitude };
         }) };
       },
-      select: id => window.SFToday?.selectSite?.(id) ?? false,
-      open: (id, metric) => window.SFToday?.openSiteMetric?.(id, metric) ?? false,
+      select: id => window.SFPlanningTimeline?.mapData?.() ? window.SFPlanningTimeline.select(id) : window.SFToday?.selectSite?.(id) ?? false,
+      open: (id, metric) => window.SFPlanningTimeline?.mapData?.() ? window.SFPlanningTimeline.openMetric(id, metric) : window.SFToday?.openSiteMetric?.(id, metric) ?? false,
       motion: effectiveMotion,
       active: () => ready() && activeView() === 'overview'
     });

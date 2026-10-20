@@ -1,5 +1,5 @@
 {
-  "reviewedAt": "2026-10-16",
+  "reviewedAt": "2026-10-20",
   "sourceCommit": "80485ff3eb6e003ab4cd1f329f118118d0d103bc",
   "addedArticles": [
     {
@@ -1225,6 +1225,22 @@
         "assets/planning-assistant-workflows-v1.js",
         "assets/planning-assistant-v1.js",
         "supabase/migrations/20261020023326_planning_assistant_profiles.sql"
+      ]
+    },
+    {
+      "category": "auto",
+      "question": "Wie lernt die Planung aus meinen Dienstkorrekturen?",
+      "sources": [
+        "assets/planning-learning-v1.js",
+        "assets/wish-planning-core-v1.js"
+      ]
+    },
+    {
+      "category": "overview",
+      "question": "Was zeigt die Globus-Zeitachse?",
+      "sources": [
+        "assets/planning-timeline-v1.js",
+        "assets/planning-timeline-core-v1.js"
       ]
     }
   ],
@@ -2521,6 +2537,18 @@
       "area": "Planungsaufträge, geführte Monatsplanung, Mehrmonatsausgleich und sichere Rücknahme bestätigter Assistentenänderungen",
       "category": "auto",
       "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/planning-learning-v1.js",
+      "category": "auto"
+    },
+    {
+      "source": "assets/planning-timeline-v1.js",
+      "category": "overview"
+    },
+    {
+      "source": "assets/planning-timeline-core-v1.js",
+      "category": "overview"
     }
   ],
   "categoryCoverage": [
@@ -2562,7 +2590,8 @@
         "Kann ein Mitarbeiter die Einsatzbereitschaft bestätigen?",
         "Warum fehlen Kennzahlen?",
         "Wie filtere und blättere ich im Handlungsbedarf?",
-        "Warum fehlt ein Standortpunkt auf der Karte?"
+        "Warum fehlt ein Standortpunkt auf der Karte?",
+        "Was zeigt die Globus-Zeitachse?"
       ]
     },
     {
@@ -2684,7 +2713,8 @@
         "Wie bearbeite ich die Auto-Planungsvorschau und offene IST/SOLL-Felder?",
         "Was zeigt der Status bei „Als Entwurf übernehmen“?",
         "Welche aufsteigenden und absteigenden Schichtwechsel sind erlaubt?",
-        "Welche bestehenden Dienste berücksichtigt ein neu geplanter Monat?"
+        "Welche bestehenden Dienste berücksichtigt ein neu geplanter Monat?",
+        "Wie lernt die Planung aus meinen Dienstkorrekturen?"
       ]
     },
     {
@@ -3072,13 +3102,13 @@
     "entry": "index.html"
   },
   "currentAudit": {
-    "date": "2026-10-16",
+    "date": "2026-10-20",
     "baselineArticleCount": 211,
-    "addedArticleCount": 27,
+    "addedArticleCount": 29,
     "correctedArticleCount": 8,
-    "articleCount": 238,
+    "articleCount": 240,
     "categoryCount": 22,
-    "assetJavaScriptCount": 214
+    "assetJavaScriptCount": 217
   },
   "incrementalUpdate": {
     "date": "2026-10-20",

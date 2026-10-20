@@ -68,11 +68,13 @@
   function saveAssignment(emp,type,date,start,end,extra={}){
     const t=typeById(type);const check=conflictFor(emp,type,date,start,end,extra.ignoreId||null);
     if(check.hard.length){notice('Zuweisung nicht möglich',check.hard.join(' '),'danger');return false}
+    const learningBefore=extra.ignoreId?assignments.find(a=>a.id===extra.ignoreId):null,learningCopy=learningBefore?{...learningBefore}:null;
     if(extra.ignoreId){
       const a=assignments.find(x=>x.id===extra.ignoreId);if(!a)return false;
       Object.assign(a,{employeeId:emp.id,type,date,start,end,pause:Number(extra.pause||0),note:extra.note||''});
     }else assignments.push({id:'as'+Date.now()+Math.random().toString(36).slice(2,6),date,type,employeeId:emp.id,start,end,pause:Number(extra.pause||0),note:extra.note||''});
     refreshAfterChange();
+    if(learningCopy)document.dispatchEvent(new CustomEvent('sf:manual-assignment-edited',{detail:{companyId:window.SFBackend?.companyId,before:learningCopy,after:{...assignments.find(a=>a.id===extra.ignoreId)}}}));
     const title=extra.ignoreId?'Schicht aktualisiert':'Schicht zugewiesen';
     const msg=`${emp.first} ${emp.last} · ${type} · ${new Date(date+'T00:00:00').toLocaleDateString('de-DE')} · ${start}–${end}${check.soft.length?' · Hinweis: '+check.soft.join(' '):''}`;
     if(typeof showSaveToast==='function')showSaveToast(title,msg);else notice(title,msg,'good');

@@ -11,17 +11,37 @@
  function decisions(wishes,from,to){const entries=new Map();for(const w of wishes){if(!w.decided_at||!approvedStatus.has(w.status)&&w.status!=='REJECTED')continue;for(const d of days(w.start_date<from?from:w.start_date,w.end_date>to?to:w.end_date)){const key=w.employee_id+'|'+d,old=entries.get(key);if(!old||w.decided_at>old.decided_at||w.decided_at===old.decided_at&&String(w.id)>String(old.id))entries.set(key,w);}}const yes=[...entries.values()].filter(w=>approvedStatus.has(w.status)).length;return{approved:yes,rejected:entries.size-yes,total:entries.size,rate:entries.size?yes/entries.size*100:null}}
  function report(data){return data.employees.map(e=>({...e,...workload(data.duties.filter(a=>String(a.employeeId)===String(e.id)),data.fairness_from,data.fairness_to,data.timezone),decisions:decisions(data.wishes.filter(w=>w.employee_id===e.id),data.fairness_from,data.fairness_to)})).sort((a,b)=>a.last.localeCompare(b.last,'de-DE',{sensitivity:'base',numeric:true})||a.first.localeCompare(b.first,'de-DE',{sensitivity:'base'}))}
  function preferenceEffect(wishes,id,option,zone){let score=0;const reasons=new Set();for(const a of option){const iv=span(a,zone);for(const w of wishes){if(String(w.employee_id)!==String(id)||!activeStatus.has(w.status))continue;const weight=w.priority==='IMPORTANT'?2:1;if(w.kind==='OFF'&&w.status==='PENDING'&&overlap(iv,{start:Date.parse(w.starts_at),end:Date.parse(w.ends_at)})){score-=10*weight;reasons.add('Offener Freizeitwunsch überschneidet sich');}if(w.kind==='SHIFT'&&a.date>=w.start_date&&a.date<=w.end_date){const match=a.type===w.shift_code;score+=(match?8:-8)*weight;reasons.add(match?'Schichtwunsch passt':'Andere Schicht als gewünscht');}}}return{score,reasons:[...reasons]}}
- function optimizer(wishes,people,base,month,zone='Europe/Berlin'){
+ // Confirmed, bounded soft preferences. They never filter candidates or relax a rule.
+ function learnedConfig(v){
+  if(!v||typeof v!=='object'||!['prefer_shift','avoid_shift','avoid_transition','prefer_pair'].includes(v.kind)||!/^[-a-zA-Z0-9_]{1,100}$/.test(v.employeeId||'')||!Number.isInteger(v.weekday)||v.weekday<0||v.weekday>6||typeof v.shift!=='string'||!v.shift||v.shift.length>50)return null;
+  if(v.kind==='avoid_transition'&&(!v.previousShift||typeof v.previousShift!=='string'||v.previousShift.length>50))return null;
+  if(v.kind==='prefer_pair'&&(!/^[-a-zA-Z0-9_]{1,100}$/.test(v.partnerId||'')||v.partnerId===v.employeeId))return null;
+  return {kind:v.kind,employeeId:v.employeeId,weekday:v.weekday,shift:v.shift,...(v.kind==='avoid_transition'?{previousShift:v.previousShift}:{}),...(v.kind==='prefer_pair'?{partnerId:v.partnerId}:{})};
+ }
+ function learnedEffect(preferences,id,rows,option){
+  const relevant=(preferences||[]).slice(0,100).map(learnedConfig).filter(p=>p&&(String(id)===p.employeeId||p.kind==='prefer_pair'&&String(id)===p.partnerId));if(!relevant.length)return {score:0,reasons:[]};
+  let score=0;const reasons=[];const all=relevant.some(p=>p.kind==='avoid_transition'||p.kind==='prefer_pair')?[...rows,...option].filter(a=>a.status!=='CANCELLED'&&a._dbStatus!=='CANCELLED'):[];
+  for(const p of relevant){
+   for(const a of option){if(a.type!==p.shift||new Date(a.date+'T12:00Z').getUTCDay()!==p.weekday)continue;let n=0;
+    if(p.kind==='prefer_shift')n=3;if(p.kind==='avoid_shift')n=-3;
+    if(p.kind==='avoid_transition'&&all.some(b=>String(b.employeeId)===String(id)&&b.date===S.plus(a.date,-1)&&b.type===p.previousShift))n=-4;
+    if(p.kind==='prefer_pair'&&all.some(b=>String(b.employeeId)===(String(id)===p.employeeId?p.partnerId:p.employeeId)&&b.date===a.date&&b.type===a.type))n=3;
+    if(n){score+=n;reasons.push(p.kind==='avoid_transition'?'Bestätigte Dienstfolgepräferenz':p.kind==='prefer_pair'?'Bestätigte Teamkombination':'Bestätigte Schichtpräferenz');}
+   }
+  }
+  return {score:Math.max(-12,Math.min(12,score)),reasons:[...new Set(reasons)]};
+ }
+ function optimizer(wishes,people,base,month,zone='Europe/Berlin',learned=[]){
   const first=month.slice(0,7)+'-01',last=S.plus(monthNext(first),-1),histFrom=new Date(Date.UTC(+first.slice(0,4),+first.slice(5,7)-4,1)).toISOString().slice(0,10),history=new Map(),groups=new Map();
   for(const e of people){const h=workload(base.filter(a=>String(a.employeeId)===String(e.id)&&(a.status==='PUBLISHED'||a._dbStatus==='PUBLISHED')&&!!(a.publishedAt||a.published_at)),histFrom,S.plus(first,-1),zone);history.set(String(e.id),h);const key=[...(e.shifts||[])].sort().join('|'),list=groups.get(key)||[];list.push(String(e.id));groups.set(key,list)}
   const comparisons=new Map();for(const ids of groups.values()){const hours=ids.reduce((n,id)=>n+history.get(id).hours,0),night=ids.reduce((n,id)=>n+history.get(id).night,0),weekend=ids.reduce((n,id)=>n+history.get(id).weekend,0);for(const id of ids)comparisons.set(id,{peers:ids.length,night:hours?night/hours:0,weekend:hours?weekend/hours:0});}
   const memo=new Map(),effect=(e,option)=>{const key=String(e.id)+'|'+option.map(a=>a.date+a.type+a.start+a.end).join(';');if(memo.has(key))return memo.get(key);let n=preferenceEffect(wishes,e.id,option,zone).score;const h=history.get(String(e.id)),avg=comparisons.get(String(e.id));if(h?.hours&&avg?.peers>1){const load=workload(option,first,last,zone);n-=(h.night/h.hours-avg.night)*load.night*2+(h.weekend/h.hours-avg.weekend)*load.weekend*2;}memo.set(key,n);return n};
   return {
    accept:(e,own,option)=>option.every(a=>!conflict(wishes,e.id,a,zone)),
-   preferenceScore:(e,own,option)=>effect(e,option),
-   preferencePenalty:rows=>-rows.filter(a=>a.date>=first&&a.date<=last).reduce((n,a)=>n+effect(people.find(e=>String(e.id)===String(a.employeeId))||{id:a.employeeId},[a]),0),
-   wishes
+   preferenceScore:(e,own,option)=>effect(e,option)+(learned.length?learnedEffect(learned,e.id,[...base,...own],option).score:0),
+   preferencePenalty:rows=>-rows.filter(a=>a.date>=first&&a.date<=last).reduce((n,a)=>n+effect(people.find(e=>String(e.id)===String(a.employeeId))||{id:a.employeeId},[a]),0)-(learned.length?rows.filter(a=>a.date>=first&&a.date<=last).reduce((n,a)=>n+learnedEffect(learned,a.employeeId,rows,[a]).score,0):0),
+   learned, wishes
   };
  }
- return{days,monthNext,span,overlap,conflict,workload,decisions,report,preferenceEffect,optimizer,protectedStatus,activeStatus};
+ return{days,monthNext,span,overlap,conflict,workload,decisions,report,preferenceEffect,learnedConfig,learnedEffect,optimizer,protectedStatus,activeStatus};
 });
