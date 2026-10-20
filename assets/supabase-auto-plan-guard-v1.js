@@ -36,12 +36,16 @@
     const t=typeof typeById==='function'?typeById(a.type):null;
     return interval(a.date,a.start||t?.start||'00:00',a.end||t?.end||'00:00');
   };
+  function shiftDurationIssue(type,date){
+    const t=typeof typeById==='function'?typeById(type):null;if(!t)return null;
+    const target=interval(date,t.start,t.end),hours=(target.end-target.start)/HOUR;
+    return hours>MAX_SHIFT_HOURS?{hours,maximum:MAX_SHIFT_HOURS}:null;
+  }
   function passesTimeRules(employeeId,type,date,simulated=[]){
     const t=typeof typeById==='function'?typeById(type):null;
     if(!t)return true;
     const target=interval(date,t.start,t.end);
-    const duration=(target.end-target.start)/HOUR;
-    if(duration>MAX_SHIFT_HOURS)return false;
+    if(shiftDurationIssue(type,date))return false;
 
     const existing=[...(typeof assignments!=='undefined'&&Array.isArray(assignments)?assignments:[]),...(Array.isArray(simulated)?simulated:[])]
       .filter(a=>String(a.employeeId)===String(employeeId));
@@ -100,5 +104,5 @@
     };
   }
 
-  window.SFAutoPlanGuard={passesTimeRules,allowsTransition,passesShiftTransitions,transitionConflict,withBlockCandidates};
+  window.SFAutoPlanGuard={passesTimeRules,shiftDurationIssue,allowsTransition,passesShiftTransitions,transitionConflict,withBlockCandidates};
 })();

@@ -126,3 +126,28 @@ test('editor allows changing code, keeps input on outside click and saves the st
   assert.equal(w.SFShiftModels.label('O3'),'NACHT');assert.equal(w.SFShiftModels.find('O3').id,'O3');
  }finally{w.happyDOM.abort();}
 });
+
+test('employee badges, permissions and rhythm choices use the company display code and model name',()=>{
+ const {c,M}=harness();M.apply([{...row('TS'),display_code:'T',name:'Tagschicht'},{...row('N'),display_code:'NACHT',name:'Nachtschicht'}],'a');
+ c.document.readyState='loading';c.document.addEventListener=()=>{};
+ const src=fs.readFileSync(new URL('../assets/employee-management-v2.js',import.meta.url),'utf8').replace(/\}\)\(\);\s*$/, 'window.labelsTest={normalizeEmployee,qualificationTab,rhythmDayOptions,cycleRow,shiftLabel,shiftCodes};})();');
+ vm.runInNewContext(src,c);const api=c.window.labelsTest,e={shifts:['TS','N'],qualifications:['TS','N'],preferredShifts:['N']};
+ api.normalizeEmployee(e);assert.equal(api.shiftLabel('TS'),'T · Tagschicht');assert.equal(api.shiftLabel('N'),'NACHT · Nachtschicht');
+ const html=api.qualificationTab(e);assert.match(html,/value="TS" checked>T · Tagschicht/);assert.match(html,/value="N" checked>NACHT · Nachtschicht/);
+ assert.match(api.rhythmDayOptions('TS'),/value="TS" selected>T · Tagschicht/);assert.match(api.cycleRow({days:2,type:'N'}),/value="N" selected>Arbeiten \(NACHT · Nachtschicht\)/);
+ assert.deepEqual(Array.from(e.shifts),['TS','N']);M.apply([{...row('TS'),display_code:'TAG',name:'Tagschicht'}],'a');assert.equal(api.shiftLabel('TS'),'TAG · Tagschicht');
+});
+
+test('loading another company preserves employee permissions until its own catalogue is available',()=>{
+ const {c,M,B}=harness();c.document.readyState='loading';c.document.addEventListener=()=>{};
+ const src=fs.readFileSync(new URL('../assets/employee-management-v2.js',import.meta.url),'utf8').replace(/\}\)\(\);\s*$/, 'window.loadingTest={normalizeEmployee,shiftCodes};})();');
+ vm.runInNewContext(src,c);const api=c.window.loadingTest;B.companyId='b';const e={shifts:['TS','N'],qualifications:[]};
+ api.normalizeEmployee(e);assert.deepEqual(Array.from(e.shifts),['TS','N']);assert.deepEqual(Array.from(api.shiftCodes()),[]);
+ M.apply([row('TS'),row('N')],'b');api.normalizeEmployee(e);assert.deepEqual(Array.from(e.shifts),['TS','N']);assert.deepEqual(Array.from(api.shiftCodes()),['TS','N']);
+});
+
+test('own profile uses updated portal labels even when its profile response omits display_code',()=>{
+ const {c,M,B}=harness();B.role='EMPLOYEE';B.employeePortalData={templates:[{code:'TS',display_code:'T'}]};c.setTimeout=()=>{};
+ const src=fs.readFileSync(new URL('../assets/employee-profile-v1.js',import.meta.url),'utf8').replace(/\}\)\(\);\s*$/, 'window.profileLabelsTest=templateLabel;})();');
+ vm.runInNewContext(src,c);assert.equal(c.window.profileLabelsTest('TS',[{code:'TS',name:'Tagschicht'}]),'T · Tagschicht');assert.equal(c.window.profileLabelsTest('N',[{code:'N',name:'Nachtschicht',display_code:'NACHT'}]),'NACHT · Nachtschicht');
+});

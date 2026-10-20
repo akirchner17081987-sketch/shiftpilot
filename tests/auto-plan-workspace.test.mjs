@@ -302,3 +302,16 @@ test('rule cards distinguish general limits, OT rules, leader rules and recovery
  assert.match(markup,/Mind. 2 Mitarbeiter/);assert.match(markup,/Schlaftag \+ 1 voller freier Tag/);assert.match(markup,/170 h, danach Vertrags-SOLL/);assert.match(markup,/Planer dürfen/);
  c.window.SFCompliance.policy={};c.renderAutoPlanning();assert.doesNotMatch(id('autoRuleText').innerHTML,/170|200|data-rule-section="ot"|Planer dürfen/);
 });
+
+test('custom day and night models create demand under stable keys and give an exact duration rejection',()=>{
+ const {c,api}=harness();c.TYPES=[{id:'TS',name:'Tagschicht',start:'06:00',end:'18:00'},{id:'N',name:'Nachtschicht',start:'18:00',end:'06:00'}];
+ c.window.SFShiftModels={label:code=>code==='TS'?'T':code,description:code=>code==='TS'?'T · Tagschicht':'N · Nachtschicht'};
+ c.getSoll=(_date,code)=>code==='TS'?2:1;c.employees[0].shifts=['TS','N'];
+ vm.runInNewContext(read('assets/supabase-auto-plan-guard-v1.js'),c);
+ assert.deepEqual(Array.from(c.autoOpenSlots().map(s=>s.type)),['TS','TS','N']);
+ for(const type of ['TS','N']){
+  const reason=api.explain({type,date:'2026-12-01'});assert.match(reason,/dauert 12 Stunden/);assert.match(reason,/höchstens 10 Stunden/);assert.match(reason,type==='TS'?/T · Tagschicht/:/N · Nachtschicht/);
+  assert.equal(c.window.SFAutoPlanGuard.passesTimeRules('e',type,'2026-12-01'),false);
+ }
+ c.TYPES[0].end='16:00';assert.equal(c.window.SFAutoPlanGuard.shiftDurationIssue('TS','2026-12-01'),null);assert.equal(c.window.SFAutoPlanGuard.passesTimeRules('e','TS','2026-12-01'),true);
+});

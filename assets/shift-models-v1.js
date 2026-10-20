@@ -10,6 +10,7 @@
   M.canManage=()=>M.isCompanyLoaded()&&B.ready&&['OWNER','ADMIN','PLANNER','DISPATCHER'].includes(B.role);
   M.find=code=>M.isCompanyLoaded()?(TYPES.find(x=>x.id===code)||M.models.find(x=>x.id===code)):null;
   M.label=code=>{const templates=B.role==='EMPLOYEE'?(B.employeePortalData?.templates||[]):M.isCompanyLoaded()?M.models:[];const t=templates.find(t=>(t.id||t.code)===code);return t?.displayCode||t?.display_code||code;};
+  M.description=code=>{const t=B.role==='EMPLOYEE'?(B.employeePortalData?.templates||[]).find(t=>(t.id||t.code)===code):M.isCompanyLoaded()?M.models.find(t=>t.id===code):null,label=M.label(code);return t?.name&&t.name!==label?`${label} · ${t.name}`:label;};
   M.activeCodes=()=>typeof TYPES==='undefined'?[]:TYPES.map(x=>x.id);
   M.knownCodes=()=>M.isCompanyLoaded()?M.models.map(x=>x.id):M.activeCodes();
   M.apply=(rows,companyId)=>{
