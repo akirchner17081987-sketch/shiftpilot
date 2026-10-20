@@ -136,3 +136,8 @@ test('9h settings render the real duration, 45-hour five-day week and 22-duty mo
  const ot=body.innerHTML.split('data-ot-day-settings>')[1].split('</section>')[0];
  assert.match(ot,/OT1 \/ OT2 \/ OT3 · 9 Stunden/);assert.match(ot,/45 Planungsstunden/);assert.match(ot,/22 volle 9-Stunden-Dienste/);assert.doesNotMatch(ot,/10.Stunden|50 Planungsstunden/);
 });
+
+test('a new company has an empty rules view without values from defaults or another company',()=>{
+ const {ctx,body}=fixture();ctx.SFBackend.companyId='new';ctx.SFBackend.planningPolicyCompanyId='new';ctx.document.querySelector=()=>({textContent:'Sicherheitsmanufaktur'});ctx.SFCompliance.policy={solidPlanningRules:{timezone:'Europe/Berlin'}};
+ ctx.SFPlanningRuleSettings.render(body);assert.match(body.innerHTML,/Sicherheitsmanufaktur/);assert.match(body.innerHTML,/noch keine zusätzlichen Planungsregeln/);assert.doesNotMatch(body.innerHTML,/private-alpha|value="|OT1|OT2|OT3|190|220/);
+});

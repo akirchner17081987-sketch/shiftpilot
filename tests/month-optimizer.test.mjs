@@ -77,7 +77,7 @@ test('individual checkbox remains usable in week view and checking it selects mo
 test('unrelated ten-hour models do not disable individual eight-hour planning',()=>{
  const {c,id}=harness();c.TYPES=[{id:'SD',start:'14:00',end:'22:00'},{id:'ND',start:'22:00',end:'06:00'},{id:'OT',start:'06:00',end:'16:00'}];
  c.plannedAssignmentHours=a=>a.type==='OT'?10:8;c.SFAutoPlanWorkspace.render();assert.equal(id('autoIndividualBlocks').disabled,false);
- c.plannedAssignmentHours=a=>a.type==='ND'?10:8;c.SFAutoPlanWorkspace.render();assert.equal(id('autoIndividualBlocks').disabled,true);assert.match(id('autoIndividualBlocksHint').textContent,/8-Stunden-Schichten SD und ND/);
+ c.plannedAssignmentHours=a=>a.type==='ND'?10:8;c.SFAutoPlanWorkspace.render();assert.equal(id('autoIndividualBlocks').disabled,true);assert.match(id('autoIndividualBlocksHint').textContent,/Schichtmodelle dieses Unternehmens nicht verfügbar/);assert.equal(id('autoBlocksOption').hidden,true);
 });
 
 test('individual optimization reports one cumulative work count across both search phases',async()=>{

@@ -205,3 +205,5 @@ html[data-sf-theme="light"] .sf-auto-preview-dialog input[type="date"]{color-sch
 
 .sf-plan-table-scroll td{white-space:nowrap}
 .sf-plan-comparison [data-plan-changes] table{min-width:650px}
+
+.sf-auto-rule[hidden]{display:none!important}

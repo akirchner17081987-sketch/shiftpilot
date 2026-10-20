@@ -57,6 +57,9 @@
   function rulesView(b){
     const ctx=ruleContext();if(!ctx){b.innerHTML='<p role="status">Die Planungsregeln des ausgewählten Unternehmens werden geladen. Bitte nach Abschluss des Ladens erneut öffnen.</p>';return}
     const {B,rules}=ctx,confirmed=window.SFSolidPlanningCore?.confirmed(rules),editable=confirmed&&['OWNER','ADMIN'].includes(B.role),company=document.querySelector('.company-card b')?.textContent||'Ausgewähltes Unternehmen';
+    if(!Object.keys(rules).some(key=>key!=='timezone')&&!(Number(ctx.C?.policy?.monthlyPlanningMaxHours)>0)&&!(Number(ctx.C?.policy?.monthlyPlanningMaxShifts)>0)){
+      b.innerHTML=`<div class="sf-rule-view"><div class="sf-rule-company"><b>${esc(company)}</b><p>Für dieses Unternehmen sind noch keine zusätzlichen Planungsregeln hinterlegt.</p><small>Die Schichtmodelle dieses Unternehmens, persönliche Mitarbeiterangaben, Freigaben und Abwesenheiten werden weiterhin berücksichtigt.</small></div></div>`;return;
+    }
     const fields=visibleRuleFields(ctx),input=([key,label,fallback,min,max])=>`<label><span>${esc(label)}</span><input type="number" data-rule-key="${key}" value="${esc(ruleValue(ctx,key,fallback))}" min="${min}" max="${max}" step="1" required ${editable?'':'disabled'}><small>${min}–${max}</small></label>`;
     const groups=[['Allgemeine Stunden- und Monatsgrenzen',fields.filter(x=>['hours','ten'].includes(x[5]))],['Allgemeine Arbeitsblöcke und Erholung',fields.filter(x=>x[5]==='recovery')],['Schichtmodelle bis 8 Stunden',fields.filter(x=>x[5]==='eight')],['Ziele der Auto-Planung',fields.filter(x=>x[5]==='goals')]].filter(([,f])=>f.length);
     const weekday=days=>(days||[1,2,3,4,5,6,7]).map(x=>['','Mo','Di','Mi','Do','Fr','Sa','So'][x]).join(', '),models=window.SFShiftModels.models.filter(t=>t.active),teams=window.SFPlanningTeams?.companyId===B.companyId?window.SFPlanningTeams.rules:[];

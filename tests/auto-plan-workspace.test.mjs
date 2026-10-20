@@ -283,7 +283,7 @@ test('rules overview follows the current company while the start strip describes
  assert.match(id('autoRuleText').innerHTML,/Keine zusätzliche feste Anzahl/);assert.match(id('autoStartHint').textContent,/offene Position/);assert.doesNotMatch(id('autoStartHint').textContent,/Verbindlich:|Monats-SOLL/);
  c.window.SFCompliance.policy={monthlyPlanningMaxHours:184,solidPlanningRules:{enabled:true,maxConsecutiveShifts:4}};c.renderAutoPlanning();
  assert.match(id('autoRuleValues').innerHTML,/184 h\/Monat/);assert.doesNotMatch(id('autoRuleValues').innerHTML,/200|180|55/);assert.equal(id('autoRuleDetails').open,true);
- c.window.SFCompliance.policy={};c.renderAutoPlanning();assert.equal(id('autoRuleGoals').hidden,true);assert.doesNotMatch(id('autoRuleText').innerHTML,/184|200/);
+ c.window.SFCompliance.policy={};c.renderAutoPlanning();assert.equal(id('autoRuleGoals').hidden,true);assert.doesNotMatch(id('autoRuleText').innerHTML,/184|200/);assert.match(id('autoRuleValues').innerHTML,/noch keine zusätzlichen Planungsregeln/);assert.doesNotMatch(id('autoHoursHint').textContent,/Monatsgrenzen/);
 });
 
 test('rhythm-based policy removes weekend goals from the overview, including a stale numeric target',()=>{

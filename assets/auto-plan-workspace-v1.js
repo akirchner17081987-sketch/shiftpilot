@@ -85,7 +85,9 @@
     const month=confirmed?rules.monthlyMaxHours??(rules.monthlyHoursOnly?200:190):Number(company.monthlyPlanningMaxHours);
     if(month>0)values.push(`Automatisch max. ${month} h/Monat`);
     if(confirmed)values.push(`Max. ${rules.maxCalendarWeekHours??40} h/Kalenderwoche`);
-    html(el('autoRuleValues'),values.length?values.map(v=>`<span>${esc(v)}</span>`).join(''):'Die hinterlegten Unternehmensregeln gelten.');
+    const configured=enabled||Number(company.monthlyPlanningMaxHours)>0||Number(company.monthlyPlanningMaxShifts)>0;
+    text('autoHoursHint',configured?'Die Wochenlimits dieses Unternehmens und der Mitarbeiter berücksichtigen. Hinterlegte Monatsgrenzen und verbindliche Schichtvorgaben werden zusätzlich geprüft.':'Die im Mitarbeiterprofil hinterlegten Wochenlimits berücksichtigen.');
+    html(el('autoRuleValues'),values.length?values.map(v=>`<span>${esc(v)}</span>`).join(''):configured?'Es gelten die hinterlegten Regeln dieses Unternehmens.':'Für dieses Unternehmen sind noch keine zusätzlichen Planungsregeln hinterlegt.');
     renderRuleCards(rules,company,core,confirmed);
     const goals=el('autoRuleGoals');if(goals)goals.hidden=!enabled;
     if(enabled){const weekends=core?.weekendTarget?.(rules)||0,items=[['Bevorzugter Nachtblock',`${rules.preferredNightBlockLength||3} Nächte`],['Gleichmäßige Belastung',`${rules.rollingWeekTargetHours||40} h als Ziel in rollierenden 7 Tagen`]];if(weekends>0)items.push(['Zusätzliche freie Wochenenden',`${weekends} pro Monat`]);html(el('autoRuleGoalText'),`<dl>${items.map(([label,value])=>`<div><dt>${esc(label)}</dt><dd>${esc(value)}</dd></div>`).join('')}</dl><p>Diese Ziele werden angestrebt. Abweichungen erscheinen im Planungsergebnis.</p>`);}

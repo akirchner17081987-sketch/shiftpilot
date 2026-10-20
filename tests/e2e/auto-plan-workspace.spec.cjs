@@ -343,7 +343,7 @@ test('individual checkbox clicks and keyboard switches from week to month while 
  await page.getByText('Individuelle Blockplanung im Monat',{exact:true}).click();await expect(page.locator('#autoIndividualBlocks')).toBeChecked();await expect(page.locator('#autoPlanPeriod')).toHaveValue('month');await expect(page.locator('#autoPlanMonthField')).toBeVisible();await expect(page.locator('#autoPlanMonth')).toHaveValue('2027-01');
  await page.locator('#autoIndividualBlocks').uncheck();await expect(page.locator('#autoIndividualBlocks')).not.toBeChecked();await expect(page.locator('#autoPlanPeriod')).toHaveValue('month');
  await page.locator('#autoPlanPeriod').selectOption('week');await page.locator('#autoIndividualBlocks').press('Space');await expect(page.locator('#autoPlanPeriod')).toHaveValue('month');await expect(page.locator('#autoIndividualBlocks')).toBeChecked();expect(await page.evaluate(()=>saveCalls)).toBe(0);expect(await page.evaluate(()=>assignments.length)).toBe(0);
- await page.evaluate(()=>{TYPES.find(t=>t.id==='ND').end='08:00';plannedAssignmentHours=a=>a.type==='ND'?10:8;renderAutoPlanning()});await expect(page.locator('#autoIndividualBlocks')).toBeDisabled();await expect(page.locator('#autoIndividualBlocksHint')).toContainText('8-Stunden-Schichten SD und ND');
+ await page.evaluate(()=>{TYPES.find(t=>t.id==='ND').end='08:00';plannedAssignmentHours=a=>a.type==='ND'?10:8;renderAutoPlanning()});await expect(page.locator('#autoIndividualBlocks')).toBeDisabled();await expect(page.locator('#autoIndividualBlocksHint')).toContainText('Schichtmodelle dieses Unternehmens nicht verfügbar');await expect(page.locator('#autoBlocksOption')).toBeHidden();
 });
 
 

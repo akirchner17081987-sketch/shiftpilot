@@ -178,9 +178,9 @@ test('fixed options show status text while valid legacy controls return after a 
  run('renderAutoPlanning()');assert.equal(el('autoRespectHours').hidden,true);assert.equal(el('autoRespectHours').checked,true);assert.equal(el('autoRespectHours').disabled,true);assert.equal(el('autoHoursStatus').textContent,'Verbindlich aktiv');
  assert.equal(el('autoIndividualBlocks').hidden,true);assert.equal(el('autoBlocksStatus').textContent,'Automatisch durch Planungsregeln gesteuert');assert.equal(el('autoBlocksTitle').textContent,'Arbeitsblöcke und Erholung');assert.equal(el('optimizeAutoMonthBtn').hidden,true);
  c.SFCompliance.policy.solidPlanningRules={};run('renderAutoPlanning()');assert.equal(el('autoRespectHours').hidden,false);assert.equal(el('autoRespectHours').disabled,false);assert.equal(el('autoHoursStatus').hidden,true);
- assert.equal(el('autoBlocksStatus').textContent,'Für dieses Schichtmodell nicht verfügbar');assert.equal(el('optimizeAutoMonthBtn').hidden,false);
+ assert.equal(el('autoBlocksStatus').textContent,'Für dieses Schichtmodell nicht verfügbar');assert.equal(el('autoBlocksOption').hidden,true);assert.equal(el('optimizeAutoMonthBtn').hidden,false);
  c.TYPES=[{id:'SD',start:'14:00',end:'22:00'},{id:'ND',start:'22:00',end:'06:00'}];c.plannedAssignmentHours=()=>8;run('renderAutoPlanning()');
- assert.equal(el('autoIndividualBlocks').hidden,false);assert.equal(el('autoIndividualBlocks').disabled,false);assert.equal(el('autoBlocksStatus').hidden,true);assert.equal(el('autoBlocksTitle').textContent,'Individuelle Blockplanung im Monat');
+ assert.equal(el('autoBlocksOption').hidden,false);assert.equal(el('autoIndividualBlocks').hidden,false);assert.equal(el('autoIndividualBlocks').disabled,false);assert.equal(el('autoBlocksStatus').hidden,true);assert.equal(el('autoBlocksTitle').textContent,'Individuelle Blockplanung im Monat');
  c.employees.forEach(e=>e.shifts=['SD','ND']);run('renderAutoPlanning()');assert.equal(el('optimizeAutoMonthBtn').hidden,true,'individual primary action already optimizes');
  el('autoIndividualBlocks').checked=false;run('renderAutoPlanning()');assert.equal(el('optimizeAutoMonthBtn').hidden,false,'legacy fill-only mode retains the distinct draft optimizer');
  assert.equal(c.assignments.length,0);
