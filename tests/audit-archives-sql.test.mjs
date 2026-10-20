@@ -105,7 +105,7 @@ test('signed audit archive: restore originals, scopes, tampering, duplicates, pr
    for(const [name,text] of [['manifest.json',claim.head],...parts.map(p=>['part-'+p.part+'.json',p.data])])await db.query('insert into storage.objects(bucket_id,name,metadata) values($1,$2,$3)', ['audit-archives',claim.prefix+name,JSON.stringify({size:Buffer.byteLength(text)})]);
    await db.exec('set role service_role');assert.equal((await worker('complete',finish)).ok,true);
    await db.exec('reset role');assert.equal((await db.query('select count(*)::int n from private.audit_archive_parts where archive_id=$1',[row.archive_id])).rows[0].n,0);
-   await actor();if(parts.length)assert.equal((await call('part',{archive_id:row.archive_id,part:0})).storage,true);
+   await actor();if(parts.length){await assert.rejects(call('part',{archive_id:row.archive_id,part:0}),/neu laden/);assert.equal((await call('part',{archive_id:row.archive_id,part:0,storage_v:1})).storage,true);}
    await assert.rejects(db.query("select public.server_audit_archive_storage('claim',$1,$2,'{}')",[row.archive_id,row.token]),/permission denied/);
    await db.exec('reset role');await db.query('update private.audit_archive_epochs set generation=gen_random_uuid() where company_id=$1',[C]);await actor();
    await assert.rejects(call('open',{archive_id:row.archive_id}),/Datenschutzbereinigung/);

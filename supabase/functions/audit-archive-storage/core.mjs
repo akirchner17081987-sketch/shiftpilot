@@ -40,7 +40,7 @@ export async function transferArchive(admin,id,token){
 }
 export async function authorizedPart(caller,admin,{company_id,archive_id,part}){
  if(!Number.isInteger(part)||part<0)throw Error('Ungültiges Archivpaket');
- const access=async action=>unwrap(await caller.rpc('manager_audit_archive',{p_action:action,p_company_id:company_id,p_args:{archive_id,part}}));
+ const access=async action=>unwrap(await caller.rpc('manager_audit_archive',{p_action:action,p_company_id:company_id,p_args:{archive_id,part,storage_v:1}}));
  const first=await access('part');
  if(!first?.storage)return first;
  const info=await access('open'),descriptor=info.manifest.parts[part];

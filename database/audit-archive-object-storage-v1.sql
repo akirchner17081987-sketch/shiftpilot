@@ -174,6 +174,7 @@ begin
   if action_='open' then return jsonb_build_object('manifest',archive_.manifest,'signature',archive_.signature); end if;
   -- Erasure processing can scrub stored payloads. Never export a stale or altered signature as valid.
   if exists(select 1 from private.audit_archive_transfers t where t.archive_id=archive_.id and t.state='READY') then
+   if coalesce((args_->>'storage_v')::integer,0)<>1 then raise exception 'Bitte SchichtFunk neu laden, um das ausgelagerte Archiv herunterzuladen.'; end if;
    part_:=(args_->>'part')::integer;
    if part_ is null or part_<0 or archive_.manifest->'parts'->part_ is null then raise exception 'Ungültiges Archivpaket'; end if;
    return jsonb_build_object('part',part_,'storage',true,'archive_id',archive_.id);
