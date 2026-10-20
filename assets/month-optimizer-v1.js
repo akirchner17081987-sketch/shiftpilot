@@ -72,6 +72,7 @@
     setStatus('autoRespectHours','autoHoursOption','autoHoursStatus',hoursFixed,'Verbindlich aktiv');
     setStatus('autoIndividualBlocks','autoBlocksOption','autoBlocksStatus',automatic||blocksUnavailable,automatic?'Automatisch durch Planungsregeln gesteuert':'Für dieses Schichtmodell nicht verfügbar');
     const blockRow=el('autoBlocksOption');if(blockRow)blockRow.hidden=!automatic&&blocksUnavailable;
+    const blockHint=el('autoIndividualBlocksHint');if(automatic&&blockHint)blockHint.textContent='Arbeitsblöcke und Erholung werden nach den hinterlegten Regeln dieses Unternehmens geplant.';
     el('autoBlocksStatus')?.classList?.toggle('is-unavailable',blocksUnavailable&&!automatic);
     const title=el('autoBlocksTitle');if(title)title.textContent=automatic?'Arbeitsblöcke und Erholung':'Individuelle Blockplanung im Monat';
   }
