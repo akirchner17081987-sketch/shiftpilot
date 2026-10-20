@@ -28,6 +28,7 @@ jobs:
           node-version: '24.x'
           cache: npm
       - run: npm ci
+      - run: node --test tests/audit-archive-storage.test.mjs tests/audit-archives-sql.test.mjs tests/audit-archives-ui.test.mjs
       - run: npm test
       - run: npm run build
       - run: npm run test:ionos

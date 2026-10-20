@@ -38,11 +38,11 @@ test('signed audit archive: restore originals, scopes, tampering, duplicates, pr
    create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
    create table storage.objects(id uuid default gen_random_uuid(),bucket_id text,name text,metadata jsonb);
    alter table storage.objects enable row level security;
-   create function net.http_post(url text,headers jsonb,body jsonb,timeout_milliseconds integer)returns bigint language sql as $select 1::bigint$;
-   create function auth.role()returns text language sql stable as $select current_setting('qa.role',true)$;
-   create function private.sf_retry_push_dispatches()returns integer language sql as $select 0$;
+   create function net.http_post(url text,headers jsonb,body jsonb,timeout_milliseconds integer)returns bigint language sql as $$select 1::bigint$$;
+   create function auth.role()returns text language sql stable as $$select current_setting('qa.role',true)$$;
+   create function private.sf_retry_push_dispatches()returns integer language sql as $$select 0$$;
 
-   create or replace function cron.schedule(text,text,text)returns bigint language plpgsql as $begin insert into cron.job values($1,$2,$3) on conflict(jobname) do update set schedule=excluded.schedule,command=excluded.command;return 1;end$;
+   create or replace function cron.schedule(text,text,text)returns bigint language plpgsql as $$begin insert into cron.job values($1,$2,$3) on conflict(jobname) do update set schedule=excluded.schedule,command=excluded.command;return 1;end$$;
   `);await db.exec(storageSql);await actor();
   let info,parts;
   await t.test('export includes all pages and retains integers above JS safe precision as opaque text',async()=>{
