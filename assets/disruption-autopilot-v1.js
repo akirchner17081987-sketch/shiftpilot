@@ -50,6 +50,7 @@
     async function load(initial=false){
       const seq=++sequence;m.querySelector('.sf-disruption-error').textContent='';m.querySelector('[data-commit]')?.setAttribute('disabled','');
       const options=initial?{action:'PREVIEW',mode:'REMAINING'}:{action:'PREVIEW',mode:m.querySelector('[data-mode]').value,from_local:m.querySelector('[data-from]').value,version};
+      if(!initial)m.querySelector('[data-from-label]').hidden=options.mode==='WHOLE';
       try{
         const result=await rpc('manager_disruption_replacement',{p_company_id:ctx.value.company,p_assignment_id:dbId,p_options:options});if(!ctx.valid()||seq!==sequence||!m.isConnected)return;
         if(!result?.assignment||!Array.isArray(result.candidates))throw Error('Die Ersatzsuche hat keine gültigen Daten geliefert. Bitte erneut laden.');

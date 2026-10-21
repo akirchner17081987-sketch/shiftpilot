@@ -22,6 +22,6 @@ Isolierte PostgreSQL-Tests mit aktuellen bestehenden Dienst-/Rhythmus-/Veröffen
 ## Freigabestand
 
 - Migration 20261021193144 ist auf der Produktionsdatenbank angewendet.
-- Gesamtsuite: 1.208 Tests bestanden; 13 neue fokussierte Prüfungen bestehen auch nach den letzten Anpassungen. Statischer Build erfolgreich.
+- Gesamtsuite: 1.208 Tests bestanden; 14 neue fokussierte Prüfungen bestehen auch nach den letzten Anpassungen. Statischer Build erfolgreich.
 - Rollback-Test mit ausschließlich synthetischem Unternehmen/Personal auf dem vollständigen Produktionsschema bestanden: laufende Teilablösung mit unveränderten Ist-Zeiten, neuer veröffentlichter Ersatzdienst, Wiederholung desselben Vorgangs, ausstehender Betriebsrat und Abbruch. Alle Testdaten zurückgerollt.
 - Sicherheitsberater: RLS ohne Client-Policy für die neue private Tabelle ist absichtlich sperrend; keine neuen öffentlichen Definer-Funktionen.
