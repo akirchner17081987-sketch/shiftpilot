@@ -8,6 +8,8 @@ In Auto-Planung → Automatikmodus dieses Unternehmens stellen OWNER/ADMIN den m
 
 PREVIEW bereitet einen Vorschlag vor. DRAFT speichert nur bei vollständiger Pflichtbesetzung, null kritischen Lücken, bestandenen Abschlussprüfungen und maximal einer Schicht Stundenabstand zwischen gleichem SOLL. Die abschließende Datenbanktransaktion prüft erneut Berechtigungen, Fingerprint, unveränderliche Dienste und alle bisherigen Planungsregeln. Bei einem Fehler wird die ganze Übernahme zurückgerollt und REVIEW angezeigt. Veröffentlichung bleibt separat; veröffentlichte oder abgeschlossene Monate werden nicht automatisch geändert.
 
+Bei einem einzelnen Monat startet sowohl „Vorschläge erstellen“ als auch „Monat optimieren“ für angemeldete Planer den geprüften, dauerhaft gespeicherten Serverlauf. Der Status bleibt nach dem Schließen des Browsers erhalten; ein fertiger Vorschlag öffnet sich beim nächsten Laden automatisch. Offene Pflichtpositionen, Regelkonflikte oder ein Stundenabstand über einer Dienstlänge sperren die Übernahme als Entwurf. Der Plan wird durch die Vorschau nicht veröffentlicht.
+
 ## Berechnung und Fairness
 
 Die bestehende Suche arbeitet weiter mit durch den Eingabeaufbau zugelassenen Optionen. Zusätzliche begrenzte Suchen ersetzen bis zu drei Blöcke oder bilden längere Tauschketten. Flexible Blöcke dürfen in bereits einzeln zugelassene Optionen aufgeteilt werden; verbindliche vollständige Arbeits-/Freiblöcke bleiben unteilbar. Basisdienste sind immer unveränderlich. Ein erschöpftes Suchbudget ist kein Unmöglichkeitsnachweis und es wird keine globale Optimalität zugesichert.

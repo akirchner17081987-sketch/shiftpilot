@@ -175,6 +175,7 @@
     finally{busy=false;controls.forEach(x=>x.node.disabled=x.disabled);renderAutoPlanning();if(result&&typeof CustomEvent==='function')document.dispatchEvent(new CustomEvent('sf:planning-analysis-ready',{detail:{dates,assignments:[...result.base,...autoPlanPreview]}}));}
   }
   async function optimize(){
+    if(el('autoPlanPeriod')?.value==='month'&&Number(el('autoPlanMonthCount')?.value||1)===1&&window.SFAutonomousPlanning?.available())return window.SFAutonomousPlanning.runSelectedMonth();
     if(solidEnabled())return optimizeSolidPeriod();
     if(busy||autoPlanApplying||el('autoPlanPeriod')?.value!=='month')return;
     const company=B.companyId,dates=autoPlanningDates(),month=dates[0].slice(0,7);busy=true;result=null;autoPlanPreview=[];autoPlanAnalyzed=false;
