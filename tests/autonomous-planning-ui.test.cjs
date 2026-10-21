@@ -14,3 +14,24 @@ test('the main monthly planning button starts the checked server run and opens i
  phase='READY';await w.SFAutonomousPlanning.load(true);await Promise.resolve();await Promise.resolve();assert.ok(calls.some(c=>c.p_action==='RESULT'&&c.p_run_id==='new-run'));assert.deepEqual(opened,[{id:'checked-job',canApply:true}]);assert.equal(w.localStorage.getItem('sf_autonomy_primary_one_owner'),null);
  run.id='review-run';phase='QUEUED';await w.SFMonthOptimizer.optimize();phase='REVIEW';await w.SFAutonomousPlanning.load(true);await Promise.resolve();await Promise.resolve();assert.deepEqual(opened.at(-1),{id:'checked-job',canApply:false});assert.equal(w.localStorage.getItem('sf_autonomy_primary_one_owner'),null);
  }finally{await w.happyDOM.abort();w.close();}});
+
+test('active planning shows the linked worker checkpoint and never leaks it across companies',async()=>{const {Window}=await import('happy-dom');const w=new Window({url:'https://example.test'});try{
+ w.document.body.innerHTML='<section id="view-auto"><input id="autoPlanMonth" value="2027-01"><div class="sf-auto-start"></div></section>';
+ const config={enabled:false,mode:'PREVIEW',run_day:20,run_time:'06:00',lead_months:1,month_count:1,on_changes:false,history_months:3,revision:0};
+ const run={id:'one-run',source:'MANUAL',first_month:'2027-01-01',status:'CALCULATING',background_job_id:'job-one'};
+ const calls=[];let progress=15,hold=false,release;
+ w.SFBackend={ready:true,user:{id:'owner'},companyId:'one',role:'OWNER',client:{rpc:async(name,args)=>{calls.push({name,...args});if(name==='get_background_auto_plan'){
+  if(hold)return new Promise(resolve=>release=resolve);
+  return {data:{id:'job-one',company_id:'one',status:'RUNNING',progress,label:'Monat 1 von 1 planen',detail:`2027-01 · ${progress}/48 Verteilungen geprüft`}};
+ }return {data:{config,can_edit:true,runs:args.p_company_id==='one'?[{...run}]:[]}};}}};
+ w.SFAutoPlanWorkspace={render(){}};w.setInterval=()=>0;const originalTimeout=w.setTimeout.bind(w);w.setTimeout=(fn,ms)=>ms===10000?0:originalTimeout(fn,ms);
+ w.eval(fs.readFileSync('assets/autonomous-planning-v1.js','utf8'));w.SFAutonomousPlanning.render();await w.happyDOM.whenAsyncComplete();
+ assert.deepEqual(calls.find(c=>c.name==='get_background_auto_plan'),{name:'get_background_auto_plan',p_company_id:'one',p_job_id:'job-one'});
+ assert.equal(w.document.querySelector('.sf-autonomy-progress progress').value,15);
+ assert.match(w.document.querySelector('[data-autonomy-runs]').textContent,/15 %.*Monat 1 von 1 planen.*15\/48 Verteilungen geprüft/);
+ w.document.getElementById('sfAutonomyDay').value='17';w.document.getElementById('sfAutonomyDay').dispatchEvent(new w.Event('input',{bubbles:true}));
+ progress=23;await w.SFAutonomousPlanning.load(true);assert.equal(w.document.querySelector('.sf-autonomy-progress progress').value,23);assert.equal(w.document.getElementById('sfAutonomyDay').value,'17');
+ hold=true;const pending=w.SFAutonomousPlanning.load(true);for(let i=0;i<10&&!release;i++)await Promise.resolve();assert.equal(typeof release,'function');
+ w.SFBackend.companyId='two';w.SFAutonomousPlanning.render();release({data:{id:'job-one',company_id:'one',status:'RUNNING',progress:100,label:'Alte Firma'}});await pending;await w.happyDOM.whenAsyncComplete();
+ assert.equal(w.SFAutonomousPlanning.getState()?.runs.length,0);assert.doesNotMatch(w.document.querySelector('[data-autonomy-runs]').textContent,/Alte Firma|100 %/);
+ }finally{await w.happyDOM.abort();w.close();}});
