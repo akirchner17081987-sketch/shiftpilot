@@ -2658,6 +2658,18 @@
       "area": "Planungsassistent und Optimierung",
       "category": "auto",
       "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/auto-plan-repair-core-v1.js",
+      "area": "Automatische Nachbesserung und Abschlussprüfung",
+      "category": "auto",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/auto-plan-assurance-v1.js",
+      "area": "Automatische Nachbesserung und Abschlussprüfung",
+      "category": "auto",
+      "kind": "feature-or-support"
     }
   ],
   "categoryCoverage": [
@@ -3214,6 +3226,15 @@
         "assets/auto-plan-preview-editor-v1.js",
         "assets/auto-plan-workspace-v1.js"
       ]
+    },
+    {
+      "category": "auto",
+      "question": "Welche Regeln nutzt die Auto-Planung?",
+      "sources": [
+        "assets/auto-plan-repair-core-v1.js",
+        "assets/auto-plan-assurance-v1.js",
+        "docs/auto-plan-assurance.md"
+      ]
     }
   ],
   "runtimeEntry": {
@@ -3226,10 +3247,10 @@
     "date": "2026-10-21",
     "baselineArticleCount": 211,
     "addedArticleCount": 41,
-    "correctedArticleCount": 8,
+    "correctedArticleCount": 19,
     "articleCount": 252,
     "categoryCount": 22,
-    "assetJavaScriptCount": 223
+    "assetJavaScriptCount": 225
   },
   "incrementalUpdate": {
     "date": "2026-10-20",

@@ -8,6 +8,9 @@ on:
       - assets/individual-month-planner-v1.js
       - tests/individual-month-planner.test.mjs
       - tests/fixtures/individual-january-2027.json
+      - assets/auto-plan-repair-core-v1.js
+      - assets/auto-plan-assurance-v1.js
+      - tests/auto-plan-assurance.test.cjs
       - assets/month-optimizer-core-v1.js
       - assets/month-optimizer-v1.js
       - tests/month-optimizer.test.mjs
@@ -36,7 +39,7 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - run: node --test tests/planning-hours-balance.test.cjs tests/individual-month-planner.test.mjs tests/month-optimizer.test.mjs tests/auto-plan-workspace.test.mjs tests/schedule-publication-period.test.mjs tests/background-auto-plan.test.cjs
+      - run: node --test tests/auto-plan-assurance.test.cjs tests/planning-hours-balance.test.cjs tests/individual-month-planner.test.mjs tests/month-optimizer.test.mjs tests/auto-plan-workspace.test.mjs tests/schedule-publication-period.test.mjs tests/background-auto-plan.test.cjs
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test tests/e2e/auto-plan-workspace.spec.cjs tests/e2e/schedule-publication-period.spec.cjs
       - uses: actions/upload-artifact@v4

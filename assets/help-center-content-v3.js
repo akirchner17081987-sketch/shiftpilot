@@ -554,7 +554,7 @@ window.SFHelpContent = {
       ],
       [
         "Welche Regeln nutzt die Auto-Planung?",
-        "Die Auto-Planung prüft Aktivstatus, Schichtfreigaben, Qualifikationen, Abwesenheiten, Doppelbelegungen, SOLL-Stärken und verbindliche Mitarbeiter- und Teamregeln. Es gelten die für das ausgewählte Unternehmen geschützten Planungsregeln. Konflikte bleiben sichtbar und werden nicht durch eine automatische Besetzung übergangen."
+        "Die Auto-Planung prüft Aktivstatus, Schichtfreigaben, Qualifikationen, Abwesenheiten, Doppelbelegungen, SOLL-Stärken und verbindliche Mitarbeiter- und Teamregeln. Es gelten die für das ausgewählte Unternehmen geschützten Planungsregeln. Konflikte bleiben sichtbar und werden nicht durch eine automatische Besetzung übergangen. Die einfache Automatik versucht verbleibende Pflichtlücken zusätzlich durch zulässige Umbesetzungen mit Ersatzbesetzung zu schließen. Bei gleichem Monats-SOLL werden ähnliche Planstunden angestrebt; Teilzeit wird anteilig berücksichtigt. Die Abschlussanzeige prüft alle vorgeschlagenen Dienste zusammen und nennt Regelkonflikte, offene Pflichtpositionen und Stundenabstände. Fehlende Prüfmodule oder geänderte Daten geben einen Vorschlag nicht frei. Entscheide über die verbleibenden Ausnahmen und bestätige den geprüften Entwurf; die Veröffentlichung bleibt gesondert. Eine mathematisch optimale oder vollständig besetzte Lösung kann bei begrenzten Kapazitäten nicht garantiert werden."
       ],
       [
         "Werden Vorschläge sofort übernommen?",
