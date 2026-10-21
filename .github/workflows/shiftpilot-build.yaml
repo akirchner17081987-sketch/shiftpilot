@@ -50,6 +50,7 @@ jobs:
       - name: Verify browser workflows and complete exports
         run: |
           npx playwright install --with-deps chromium
+          node tests/browser/company-profile-qa.cjs
           node tests/browser/access-mfa-matrix-qa.cjs
           node tests/browser/qr-pin-qa.cjs
           node tests/browser/qr-desktop-qa.cjs
@@ -69,7 +70,6 @@ jobs:
           node tests/browser/manual-range-planning-qa.cjs
           node tests/browser/disruption-replacement-qa.cjs
           node tests/browser/location-geocode-qa.cjs
-          node tests/browser/company-profile-qa.cjs
           npx playwright test tests/e2e/auto-plan-workspace.spec.cjs --grep "equal 180-hour targets|automatic repair|final audit" --retries=0
 
 # Please do not touch the following action
