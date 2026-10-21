@@ -10,12 +10,12 @@
   const maximum=Number(policy.monthly_planning_max_hours)||220,full=/^Vollzeit(?:\s+180)?$/i.test(e.employment||'')&&target>=180;
   return {...person,monthLimit:full?maximum:Math.min(maximum,target),calendarLimit:maximum,maxMonthlyShifts:Number(policy.monthly_planning_max_shifts)||1e9,weeklyLimit:weekly};
  }
- function build(snapshot){
+ function build(snapshot,employeeIds=null){
   if(snapshot.version!==1||!snapshot.company||!snapshot.fingerprint||!Array.isArray(snapshot.months)||!snapshot.months.length)throw Error('Ungültiger Server-Datenstand.');
-  const policy=snapshot.policy,storedRules=policy.solid_planning_rules||{},zone=snapshot.timezone||'Europe/Berlin',rules={...storedRules,timezone:zone},types=snapshot.types.filter(t=>t.active!==false),base=snapshot.base.filter(active),groups=new Map(),byType=new Map(types.map(t=>[t.id,t]));
+  const policy=snapshot.policy,storedRules=policy.solid_planning_rules||{},zone=snapshot.timezone||'Europe/Berlin',rules={...storedRules,timezone:zone},types=snapshot.types.filter(t=>t.active!==false),history=snapshot.base.filter(active),margin=Math.max(8,...snapshot.employees.map(e=>Number(meta(e,'maxConsecutive'))||0))+1,base=history.filter(a=>a.date>=S.plus(snapshot.months[0]+'-01',-margin)&&a.date<S.plus(nextMonth(snapshot.months.at(-1))+'-01',margin)),groups=new Map(),byType=new Map(types.map(t=>[t.id,t]));
   for(const t of types)if(t.coverageGroup){const list=groups.get(t.coverageGroup)||[];list.push(t);groups.set(t.coverageGroup,list);}
   for(const list of groups.values())if(list.some(t=>t.start!==list[0].start||t.end!==list[0].end))throw Error('Gemeinsame Besetzung mit unterschiedlichen Zeitfenstern benötigt eine individuelle Prüfung.');
-  const people=snapshot.employees.map(e=>limits(e,types,policy)),eligible=new Map(),raw=new Map(snapshot.demand.map(d=>[d.date+'|'+d.type,Number(d.count)||0]));
+  const people=snapshot.employees.map(e=>limits(e,types,policy)),ownBase=new Map(people.map(e=>[String(e.id),base.filter(a=>String(a.employeeId)===String(e.id)).map(a=>S.duty(a,rules))])),eligible=new Map(),raw=new Map(snapshot.demand.map(d=>[d.date+'|'+d.type,Number(d.count)||0]));
   for(const a of snapshot.candidates){const k=a.date+'|'+a.type,list=eligible.get(k)||new Set();list.add(String(a.employeeId));eligible.set(k,list);}
   const source=snapshot.rhythms||[],rhythms=new Map(source.map(r=>[String(r.employeeId)+'|'+r.date,r]));
   const resources=new Map(),slots=[];
@@ -38,8 +38,8 @@
    }
    const eight=types.some(t=>t.id==='SD'&&S.duty({date:dates[0],type:t.id,start:t.start,end:t.end},rules).hours===8)&&types.some(t=>t.id==='ND'&&S.duty({date:dates[0],type:t.id,start:t.start,end:t.end},rules).hours===8);
    const crew=people.map(e=>{const individual=!rules.enabled&&eight&&!meta(e,'planningTeam')&&(meta(e,'rhythmMode')||'off')==='off'&&e.shifts.length&&e.shifts.every(s=>['SD','ND','FD-WE'].includes(s));return {...e,individual,maxConsecutive:individual?Math.min(5,e.maxConsecutive||5):e.maxConsecutive||Number(S.employeeRules(e,rules).maxConsecutiveShifts)||4,monthLimit:individual?Math.min(e.monthLimit,/^Vollzeit(?:\s+180)?$/i.test(e.employment||'')?Math.floor((e.target+4)/8)*8:Math.floor(e.target/8)*8):e.monthLimit};});
-   for(const e of crew){const choices=choicesBy.get(String(e.id));
-    for(const date of dates){const options=[],seen=new Set(),accept=rows=>!S.errors(e,[...base,...reserved,...rows],rules,rows.map(a=>a.date)).length,excluded=d=>snapshot.unavailableDays?.some(x=>String(x.employeeId)===String(e.id)&&x.date===d);
+   for(const e of crew){if(employeeIds&&!employeeIds.map(String).includes(String(e.id)))continue;const choices=choicesBy.get(String(e.id));
+    for(const date of dates){const options=[],seen=new Set(),accept=rows=>!S.errors(e,[...ownBase.get(String(e.id)),...reserved.filter(a=>String(a.employeeId)===String(e.id)),...rows],rules,rows.map(a=>a.date)).length,excluded=d=>snapshot.unavailableDays?.some(x=>String(x.employeeId)===String(e.id)&&x.date===d);
      const fixed=rules.enabled?S.workRestOptions(e,date,choices,dates,[...base,...reserved],excluded,accept,rules):null;
      if(fixed){if(fixed.options.length)optionGroups.push({id:e.id+'|'+date,employee:e,block:true,fullWorkRest:true,options:fixed.options});continue;}
      const remember=rows=>{if(!rows.length||options.length>=128)return;const key=rows.map(a=>a.date+a.type).join(';');if(seen.has(key)||!accept(rows))return;if(e.individual&&!I.personValid({base:base.filter(a=>String(a.employeeId)===String(e.id)),start:Math.floor(Date.parse(month+'-01T12:00Z')/86400000),end:Math.floor(Date.parse(nextMonth(month)+'-01T12:00Z')/86400000)-1,respectHours:true},e,rows))return;seen.add(key);options.push(rows);};
@@ -49,11 +49,15 @@
     }
    }
    const critical=[];for(const [key,s] of resources){if(month&&!s.date.startsWith(month))continue;let minimum=0;for(const r of rules.criticalShifts||[])if(s.alternatives.includes(r.code)&&(!r.weekdays?.length||r.weekdays.includes(S.weekday(s.date))))minimum=Math.max(minimum,Number(r.minimum)||0);if((rules.criticalCoverageGroups||[]).includes(s.coverageGroup))minimum=s.total;if(s.coverageGroup==='OT-DAY')minimum=S.rosterDay(s.date,rules)?S.rosterMinimum(rules):0;const filled=s.total-s.count+reserved.filter(a=>a.resource===key).length;if(minimum>filled)critical.push([key,minimum-filled]);}
-   return {month:month||snapshot.months[0],employees:crew,base:[...base,...reserved],preferenceBase:base,reserved,groups:optionGroups,capacities:[...capacities],criticalCapacities:critical,solidRules:storedRules,timezone:zone,searchIterations:48,criticalPeriod:!month,criticalOnly,respectHours:true,fairDistribution:true,maxShiftHours:Number(policy.standard_max_shift_hours)||10,minRestHours:Number(policy.standard_min_rest_hours)||11,wishes:snapshot.wishes||[],learned:snapshot.learned||[],individualConstraints:true,historyMonths:snapshot.historyMonths??3};
+   return {month:month||snapshot.months[0],employees:crew,base:[...base,...reserved],preferenceBase:history,reserved,groups:optionGroups,capacities:[...capacities],criticalCapacities:critical,solidRules:storedRules,timezone:zone,searchIterations:48,criticalPeriod:!month,criticalOnly,respectHours:true,fairDistribution:true,maxShiftHours:Number(policy.standard_max_shift_hours)||10,minRestHours:Number(policy.standard_min_rest_hours)||11,wishes:snapshot.wishes||[],learned:snapshot.learned||[],individualConstraints:true,historyMonths:snapshot.historyMonths??3};
   }
   const months=snapshot.months,monthInputs=months.map(m=>B.pack(input(m))),minimumInput=B.pack(input(null,true));
-  const metadata={company:snapshot.company,month:months[0],months,dates:[...new Set(snapshot.demand.map(d=>d.date))].sort(),fingerprint:snapshot.fingerprint,base,movable:snapshot.movable,beforeOpen:slots.length,originalValid:false,beforeHours:people.map(e=>[String(e.id),snapshot.original.filter(a=>String(a.employeeId)===String(e.id)&&months.includes(a.date.slice(0,7))).reduce((n,a)=>n+S.duty(a,rules).hours,0)]),eligibility:[...resources].map(([resource,s])=>({resource,employeeIds:[...new Set(snapshot.candidates.filter(a=>a.date===s.date&&s.alternatives.includes(a.type)).map(a=>String(a.employeeId)))]})),requirements:[...resources].map(([key,s])=>({resource:key,date:s.date,type:s.type,alternatives:s.alternatives,total:s.total})),demandHours:[...resources.values()].reduce((n,s)=>{const t=byType.get(s.type);return n+s.total*S.duty({date:s.date,type:t.id,start:t.start,end:t.end},rules).hours;},0),autonomousRunId:snapshot.runId};
+  const metadata={company:snapshot.company,month:months[0],months,dates:[...new Set(snapshot.demand.map(d=>d.date))].sort(),fingerprint:snapshot.fingerprint,base:history,movable:snapshot.movable,beforeOpen:slots.length,originalValid:false,beforeHours:people.map(e=>[String(e.id),snapshot.original.filter(a=>String(a.employeeId)===String(e.id)&&months.includes(a.date.slice(0,7))).reduce((n,a)=>n+S.duty(a,rules).hours,0)]),eligibility:[...resources].map(([resource,s])=>({resource,employeeIds:[...new Set(snapshot.candidates.filter(a=>a.date===s.date&&s.alternatives.includes(a.type)).map(a=>String(a.employeeId)))]})),requirements:[...resources].map(([key,s])=>({resource:key,date:s.date,type:s.type,alternatives:s.alternatives,total:s.total})),demandHours:[...resources.values()].reduce((n,s)=>{const t=byType.get(s.type);return n+s.total*S.duty({date:s.date,type:t.id,start:t.start,end:t.end},rules).hours;},0),autonomousRunId:snapshot.runId};
   return B.compactPayload({version:1,months,minimumInput,monthInputs,metadata});
+ }
+ function mergeEmployeeParts(parts){
+  if(!parts.length)throw Error('Keine vorbereiteten Mitarbeiter vorhanden.');const first=parts[0],merge=inputs=>{const result={...inputs[0],candidates:[],groups:[]};for(const input of inputs){if(input.month!==result.month)throw Error('Mitarbeiterteile gehören zu verschiedenen Monaten.');const offset=result.candidates.length;result.candidates.push(...input.candidates);result.groups.push(...input.groups.map(g=>({...g,options:g.options.map(o=>o.map(i=>i+offset))})));}return result;};
+  return {...first,minimumInput:merge(parts.map(p=>p.minimumInput)),monthInputs:[merge(parts.map(p=>p.monthInputs[0]))]};
  }
  function combine(parts,snapshot){
   if(parts.length!==snapshot.months.length)throw Error('Die vorbereiteten Monate sind unvollständig.');
@@ -80,5 +84,5 @@
   const diagnosis=R.diagnose({slots,eligible:slot=>(payload.metadata.eligibility||[]).find(r=>r.resource===slot.resource)?.employeeIds||[],searchLimited:quality.some(q=>q.searchLimited)});
   return {open,critical,errors:errors.length,spread,maximumShift:shift,diagnosis,canApply:!open&&!critical&&!errors.length&&spread<=shift+.001,checked:output.preview.length};
  }
- return{build,combine,assess,limits,nextMonth};
+ return{build,mergeEmployeeParts,combine,assess,limits,nextMonth};
 });

@@ -33,7 +33,7 @@ insert into public.employees values('${eid}','${cid}','local','1','Mitarbeiter',
 insert into public.shift_templates values(gen_random_uuid(),'${cid}','TAG','08:00','16:00',true,1,'required',0,null,false,array[1,2,3,4,5,6,7],null,null);
 insert into public.company_compliance_policy(company_id,standard_max_shift_hours,monthly_planning_max_hours,monthly_planning_max_shifts,solid_planning_rules) values('${cid}',10,220,null,'{"enabled":false}');insert into public.global_staffing_requirements values('${cid}','TAG',1);
 select set_config('request.jwt.claim.sub','${uid}',false);`;
-const files=['20261021220527_autonomous_planning_control.sql','20261021221503_autonomous_planning_snapshot.sql','20261021223612_autonomous_planning_company_rotation.sql','20261021223812_autonomous_planning_rest_policy.sql'];
+const files=['20261021223024_autonomous_planning_control.sql','20261021223025_autonomous_planning_snapshot.sql','20261021223705_autonomous_planning_company_rotation.sql','20261021223855_autonomous_planning_rest_policy.sql','20261021224755_autonomous_planning_preparation_chunks.sql'];
 test('autonomous controls, authoritative snapshot, worker leases and atomic DRAFT application stay company scoped',async()=>{const db=new PGlite();try{await db.exec(bootstrap);for(const file of files)await db.exec(fs.readFileSync('supabase/migrations/'+file,'utf8'));
  const rpc=async(action,config=null,run=null,company=cid)=> (await db.query("select public.autonomous_planning_control($1,$2,$3::jsonb,$4,'2027-01-01') v",[company,action,JSON.stringify(config),run])).rows[0].v;
  let state=await rpc('GET');assert.equal(state.config.enabled,false);assert.equal(state.can_edit,true);await assert.rejects(()=>rpc('GET',null,null,other),/Planungsrechte/);
@@ -44,6 +44,8 @@ test('autonomous controls, authoritative snapshot, worker leases and atomic DRAF
  await assert.rejects(()=>claim('dddddddd-dddd-4ddd-8ddd-dddddddddddd'),/Workerzugang/);let lease=await claim(stored.token);assert.equal(lease.phase,'PREPARING');assert.equal(await claim(stored.token),null);
  const p={months:['2027-01'],metadata:{company:cid,autonomousRunId:run.id,fingerprint:'snapshot',movable:[]}};
  const finish=async(part,payload,summary,error=null)=>(await db.query('select private.sf_autonomy_finish($1,$2,$3,$4,$5,$6,$7,$8) v',[run.id,stored.token,lease.lease,lease.revision,part,payload,summary,error])).rows[0].v;
+ await db.query("update private.autonomous_planning_runs set context=jsonb_set(context,'{employees}',(select jsonb_agg(jsonb_build_object('id','part-'||i)) from generate_series(1,4) i)) where id=$1",[run.id]);
+ const chunk={preparation:true,month:'2027-01',offset:3,part:{metadata:{company:cid,fingerprint:'snapshot'}}};assert.equal(await finish(chunk,null,null),true);lease=await claim(stored.token);assert.equal(lease.snapshot.preparation.offset,3);assert.equal(lease.parts.length,0);
  assert.equal(await finish(null,p,null),true);assert.equal(await finish(null,p,null),false);
  stored=(await db.query('select * from private.autonomous_planning_runs where id=$1',[run.id])).rows[0];assert.equal(stored.status,'CALCULATING');
  const result={preview:[{employeeId:'local',date:'2027-01-04',type:'TAG',start:'08:00',end:'16:00'}]};await db.query("update private.background_auto_plan_jobs set status='SUCCEEDED',result=$2 where id=$1",[stored.background_job_id,result]);await db.query('select private.sf_autonomy_tick()');lease=await claim(stored.token);const ok={checked:1,canApply:true,open:0,critical:0,errors:0,spread:0};await finish(null,null,ok);
