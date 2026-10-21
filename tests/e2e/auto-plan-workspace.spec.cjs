@@ -80,6 +80,9 @@ for(const theme of ['dark','light'])test(`preview editor changes, removes, resto
  await expect(page.locator('#sfPreviewEmployee option:not(:disabled)')).toHaveCount(1);await page.keyboard.press('Escape');
  await page.getByRole('button',{name:new RegExp(first.date+' · Dienst ändern')}).click();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);if(theme==='light')expect(await page.locator('#sfPreviewTo').evaluate(e=>{const s=getComputedStyle(e);return s.color===s.webkitTextFillColor})).toBe(true);await page.screenshot({path:test.info().outputPath('preview-dialog-'+theme+'.png'),fullPage:true});
+ // Employee-row editing deliberately locks the employee. The general editor
+ // used by suggestion actions is the supported route for reassignment.
+ await expect(page.locator('#sfPreviewEmployee')).toHaveAttribute('type','hidden');await expect(page.locator('#sfPreviewEmployee')).toHaveValue(first.employeeId);await page.keyboard.press('Escape');await page.evaluate(id=>SFAutoPlanPreviewEditor.open({id}),first.id);
  await page.locator('#sfPreviewEmployee').selectOption(other);await page.getByRole('button',{name:'In Vorplanung übernehmen',exact:true}).click();
  expect(await page.evaluate(()=>assignments.length)).toBe(0);expect(await page.evaluate(date=>autoPlanPreview.find(a=>a.date===date).employeeId,first.date)).toBe(other);
  await page.getByRole('button',{name:new RegExp(first.date+' · Dienst ändern')}).click();await page.getByRole('button',{name:'Nur diesen Dienst entfernen',exact:true}).click();
