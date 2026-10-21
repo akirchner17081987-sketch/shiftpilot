@@ -100,7 +100,7 @@
         const locations = new Map((profile?.sites || []).map(site => [site.id, site]));
         return { ...current, sites: current.sites.map(site => {
           const location = locations.get(site.id);
-          return { ...site, code: location?.code || site.code || '', address: location?.address || '', longitude: location?.longitude, latitude: location?.latitude };
+          return { ...site, code: location?.code || site.code || '', address: location?.address || '', longitude: location?.longitude, latitude: location?.latitude, geocode_address:location?.geocode_address, geocode_status:location?.geocode_status, geocode_source:location?.geocode_source };
         }) };
       },
       select: id => window.SFPlanningTimeline?.mapData?.() ? window.SFPlanningTimeline.select(id) : window.SFToday?.selectSite?.(id) ?? false,
@@ -516,6 +516,7 @@
     shell.append(popup, dock); shell.classList.add('sf-orbit'); applyMotion(); refresh();
     document.addEventListener('click', event => { if (openGroup && !dock.contains(event.target) && !popup.contains(event.target)) close(); });
     document.addEventListener('pointerdown', event => siteOrbit?.dismissOutside(event.target));
+    document.addEventListener('sf:company-profile-change', () => siteOrbit?.sync());
     document.addEventListener('keydown', event => { if (event.key === 'Escape' && openGroup) { event.preventDefault(); close(true); } });
     document.addEventListener('change', event => { if (event.target.matches('select[data-orbit-motion]')) setMotion(event.target.value); });
     window.addEventListener('resize', positionPopup); window.visualViewport?.addEventListener('resize', positionPopup);

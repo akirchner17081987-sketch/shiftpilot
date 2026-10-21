@@ -1,0 +1,35 @@
+name: Company location geocoding
+on:
+  push:
+    branches: [codex/ionos-migration]
+    paths: ['assets/location-map-*', assets/company-profile-v1.js, 'supabase/functions/location-geocode/**', 'tests/location-geocode*', tests/browser/location-geocode-qa.cjs, .github/workflows/location-geocode-checks.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  locations:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: node --test tests/location-geocode.test.mjs tests/location-geocode-sql.test.mjs tests/location-geocode-ui.test.cjs tests/location-map.test.cjs tests/company-profile.test.cjs
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/browser/location-geocode-qa.cjs
+      - run: node tests/browser/company-profile-qa.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: company-location-geocoding
+          path: |
+            test-results/location-geocode/
+            test-results/company-profile/
+          retention-days: 7

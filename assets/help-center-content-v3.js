@@ -208,7 +208,7 @@ window.SFHelpContent = {
       ],
       [
         "Warum fehlt ein Standortpunkt auf der Karte?",
-        "Die Karte zeigt nur die Standorte des ausgewählten Unternehmens und setzt Punkte ausschließlich an verifizierte Adresspositionen. Nicht verortete Standorte bleiben als Auswahl mit „Kartenposition nicht verifiziert“ erreichbar. Prüfen Sie das Unternehmen sowie Adresse und Standortstatus unter Einstellungen → Unternehmen → Standorte. Eine gespeicherte Adresse allein garantiert noch keinen verifizierten Kartenpunkt. „Alle Standorte“ setzt den Standortfilter zurück. Unbekannte oder veraltete Anwesenheitsdaten sind kein Nachweis, dass dort niemand arbeitet."
+        "Die Karte zeigt nur die Standorte des ausgewählten Unternehmens und setzt Punkte ausschließlich an verifizierte Adresspositionen. Nicht verortete Standorte bleiben als Auswahl mit „Kartenposition nicht verifiziert“ erreichbar. Prüfen Sie das Unternehmen sowie Adresse und Standortstatus unter Einstellungen → Unternehmen → Standorte. Neue und geänderte Objektadressen werden beim Öffnen des Unternehmens automatisch geprüft und die Position unternehmensbezogen gespeichert. Benötigt werden Straße, Hausnummer, Postleitzahl und Ort. Unvollständige oder mehrdeutige Adressen erhalten keinen geschätzten Kartenpunkt; der Prüfstatus steht bei den Standorten. Der Adressdienst erhält ausschließlich die Objektadresse, keine Mitarbeiter- oder Kontaktdaten. Adresspositionen aus Nominatim verwenden OpenStreetMap-Daten; die Quellenangabe steht an der Karte. „Alle Standorte“ setzt den Standortfilter zurück. Unbekannte oder veraltete Anwesenheitsdaten sind kein Nachweis, dass dort niemand arbeitet."
       ],
       [
         "Was zeigt die Globus-Zeitachse?",

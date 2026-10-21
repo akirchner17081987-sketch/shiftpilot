@@ -205,3 +205,5 @@
 @keyframes sf-night-site-breathe{0%{transform:scale(.8);opacity:.55}65%,100%{transform:scale(2.05);opacity:0}}
 @keyframes sf-night-connector-light{0%{stroke-dashoffset:0;opacity:0}15%{opacity:.95}85%{opacity:.75}100%{stroke-dashoffset:-100;opacity:0}}
 @media(prefers-reduced-motion:reduce){.sf-location-map .sf-site-breathe{animation:none!important;opacity:.3}.sf-location-map .sf-label-spark{animation:none!important;opacity:0!important}}
+
+.sf-location-map .sf-map-footer{flex-wrap:wrap;gap:8px}.sf-location-map .sf-geocode-attribution{font-size:11px;line-height:1.4;color:inherit;opacity:.8;margin-left:auto;white-space:normal}.sf-location-map .sf-geocode-attribution[hidden]{display:none}

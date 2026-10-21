@@ -5,7 +5,7 @@ const employee = team => ({id:'own',company_id:'company',auth_user_id:'user',sta
 test('login targets the assigned business address for each employee, independently of their home city and planning team',()=>{
   for (const [name,address] of [['Leipzig','Nonnenstraße 21'],['Recklinghausen','Westring 45 - 45659 Recklinghausen']]) {
     const site=resolve({...employee(name),city:name==='Leipzig'?'Recklinghausen':'Leipzig'});
-    assert.equal(site.name,name);assert.deepEqual(site.coordinates,geo.resolve({name,address}));
+    assert.equal(site.name,name);assert.deepEqual(site.coordinates,geo.resolve({name,address,longitude:name==='Leipzig'?12.3419772:7.1795349,latitude:name==='Leipzig'?51.3278275:51.6085523}));
   }
 });
 test('unassigned, ambiguous and inactive employees never dive into an invented workplace',()=>{
