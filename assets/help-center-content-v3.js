@@ -1153,3 +1153,5 @@ window.SFHelpContent = {
   },
   "reviewedAt": "2026-10-13"
 };
+
+window.SFHelpContent.articles.auto.push(["Wie läuft die Auto-Planung selbständig bei geschlossenem Browser?", "In der Auto-Planung öffnen Inhaber oder Administratoren den Bereich „Automatikmodus dieses Unternehmens“. Dort aktivieren sie einen monatlichen Termin, einen Zeitraum von bis zu drei Monaten und auf Wunsch die erneute Planung nach relevanten Änderungen. Vorschläge bleiben zur Prüfung bereit; im Modus „Entwurf automatisch speichern“ werden nur vollständig besetzte, regelkonforme und ausreichend ausgeglichene Ergebnisse als Entwurf übernommen. Veröffentlichte und abgeschlossene Monate bleiben geschützt. Ein manueller Testlauf erstellt immer einen Vorschlag. Stundenunterschiede aus veröffentlichten Vormonaten und bereits berechneten Folgemonaten beeinflussen die faire Verteilung vorsichtig; SOLL und Zeitkonten bleiben unverändert. Offene Engpässe und Prüfprobleme sind im Laufstatus sichtbar. Die Veröffentlichung erfolgt separat."]);

@@ -31,16 +31,22 @@
   }
   return {score:Math.max(-12,Math.min(12,score)),reasons:[...new Set(reasons)]};
  }
- function optimizer(wishes,people,base,month,zone='Europe/Berlin',learned=[]){
-  const first=month.slice(0,7)+'-01',last=S.plus(monthNext(first),-1),histFrom=new Date(Date.UTC(+first.slice(0,4),+first.slice(5,7)-4,1)).toISOString().slice(0,10),history=new Map(),groups=new Map();
+ function optimizer(wishes,people,base,month,zone='Europe/Berlin',learned=[],historyMonths=3){
+  const first=month.slice(0,7)+'-01',last=S.plus(monthNext(first),-1),histFrom=new Date(Date.UTC(+first.slice(0,4),+first.slice(5,7)-1-Math.max(0,Math.min(6,Number(historyMonths)||0)),1)).toISOString().slice(0,10),history=new Map(),groups=new Map();
   for(const e of people){const h=workload(base.filter(a=>String(a.employeeId)===String(e.id)&&(a.status==='PUBLISHED'||a._dbStatus==='PUBLISHED')&&!!(a.publishedAt||a.published_at)),histFrom,S.plus(first,-1),zone);history.set(String(e.id),h);const key=[...(e.shifts||[])].sort().join('|'),list=groups.get(key)||[];list.push(String(e.id));groups.set(key,list)}
   const comparisons=new Map();for(const ids of groups.values()){const hours=ids.reduce((n,id)=>n+history.get(id).hours,0),night=ids.reduce((n,id)=>n+history.get(id).night,0),weekend=ids.reduce((n,id)=>n+history.get(id).weekend,0);for(const id of ids)comparisons.set(id,{peers:ids.length,night:hours?night/hours:0,weekend:hours?weekend/hours:0});}
+  const hourCarry={},targets=new Map(people.map(e=>[String(e.id),Number(e.target??e.monthlyHours??String((e.qualifications||[]).find(q=>String(q).startsWith('__sp:monthlyHours='))||'').split('=')[1])||(/^Vollzeit/i.test(e.employment||'')?180:Number(e.weeklyHours||40)*4.348)]));
+  for(const ids of groups.values()){
+   const observed=ids.map(id=>{const rows=base.filter(a=>String(a.employeeId)===id&&(a.status==='PUBLISHED'||a._dbStatus==='PUBLISHED')&&!!(a.publishedAt||a.published_at)&&a.date>=histFrom&&a.date<first),months=new Set(rows.map(a=>a.date.slice(0,7))).size,target=targets.get(id),h=history.get(id);return{id,months,target,delta:months?h.hours/months-target:0,cap:rows.length?Math.max(...rows.map(a=>{const x=span(a,zone);return Math.min(24,(x.end-x.start)/H);}))/2:0};}).filter(e=>e.months&&e.target>0);
+   const ratio=observed.reduce((n,e)=>n+e.delta,0)/Math.max(1,observed.reduce((n,e)=>n+e.target,0));
+   for(const e of observed)hourCarry[e.id]=Math.max(-e.cap,Math.min(e.cap,e.delta-e.target*ratio));
+  }
   const memo=new Map(),effect=(e,option)=>{const key=String(e.id)+'|'+option.map(a=>a.date+a.type+a.start+a.end).join(';');if(memo.has(key))return memo.get(key);let n=preferenceEffect(wishes,e.id,option,zone).score;const h=history.get(String(e.id)),avg=comparisons.get(String(e.id));if(h?.hours&&avg?.peers>1){const load=workload(option,first,last,zone);n-=(h.night/h.hours-avg.night)*load.night*2+(h.weekend/h.hours-avg.weekend)*load.weekend*2;}memo.set(key,n);return n};
   return {
    accept:(e,own,option)=>option.every(a=>!conflict(wishes,e.id,a,zone)),
    preferenceScore:(e,own,option)=>effect(e,option)+(learned.length?learnedEffect(learned,e.id,[...base,...own],option).score:0),
    preferencePenalty:rows=>-rows.filter(a=>a.date>=first&&a.date<=last).reduce((n,a)=>n+effect(people.find(e=>String(e.id)===String(a.employeeId))||{id:a.employeeId},[a]),0)-(learned.length?rows.filter(a=>a.date>=first&&a.date<=last).reduce((n,a)=>n+learnedEffect(learned,a.employeeId,rows,[a]).score,0):0),
-   learned, wishes
+   learned, wishes, hourCarry
   };
  }
  return{days,monthNext,span,overlap,conflict,workload,decisions,report,preferenceEffect,learnedConfig,learnedEffect,optimizer,protectedStatus,activeStatus};

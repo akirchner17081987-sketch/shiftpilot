@@ -11,7 +11,8 @@ function planningBase(input){
 function start(input,iterations=12){return {version:1,inputKey:input._checkpointKey||input.month,phase:'critical',iterations,iteration:0,rng:20270101,component:0,key:0,minimum:[],beam:[{records:[],missing:0}],best:null,quality:null};}
 function context(input,cp){
   if(cp.version!==1||(input._checkpointKey||input.month)!==cp.inputKey)throw Error('Checkpoint does not match input snapshot');
-  input={...input,...(W?.optimizer?W.optimizer(input.wishes||[],input.employees,input.preferenceBase||input.base,input.month,input.solidRules.timezone,input.learned||[]):{})};
+  input={...input,...(W?.optimizer?W.optimizer(input.wishes||[],input.employees,input.preferenceBase||input.base,input.month,input.solidRules.timezone,input.learned||[],input.historyMonths??3):{})};
+  if(input.employees.some(e=>e.balanceCarry)){const cap=Math.max(0,...input.groups.flatMap(g=>g.options.flatMap(o=>o.map(a=>S.duty(a,input.solidRules).hours))))/2;input.hourCarry={...input.hourCarry};for(const e of input.employees)input.hourCarry[String(e.id)]=Math.max(-cap,Math.min(cap,(input.hourCarry[String(e.id)]||0)+(e.balanceCarry||0)));}
   // History remains available to fairness; conflict checks need the planned months
   // and adjacent recovery days, including duties carried across month boundaries.
   input={...input,base:planningBase(input)};
@@ -59,7 +60,7 @@ function context(input,cp){
     if(cp.phase==='iteration-end'){const s=fillState||C.state(p,decode(cp.records)),v=C.solidQuality(p,s);if(C.solidBetter(v,cp.quality)){cp.best=cp.records.map(ref=>[...ref]);cp.quality=v;}fillState=null;cp.iteration++;cp.phase='iteration-start';return true;}
     throw Error('Unknown checkpoint phase');
   }
-  function result(){if(cp.phase!=='done')throw Error('Job not complete');const balanced=C.balanceRecords(p,C.state(p,decode(cp.best||[])),allowed),records=balanced.records;cp.best=encode(records);cp.quality=C.solidQuality(p,balanced);return {preview:records.flatMap(r=>r.option.map(a=>({...a,blockId:r.group.id}))),quality:cp.quality,remaining:[...balanced.remaining]};}
+  function result(){if(cp.phase!=='done')throw Error('Job not complete');const balanced=C.refineRecords(p,C.state(p,decode(cp.best||[])),allowed),records=balanced.records;cp.best=encode(records);cp.quality={...C.solidQuality(p,balanced),searchLimited:!!balanced.searchLimited};return {preview:records.flatMap(r=>r.option.map(a=>({...a,blockId:r.group.id}))),quality:cp.quality,remaining:[...balanced.remaining]};}
   return{step,result};
 }
 return{start,context,planningBase};

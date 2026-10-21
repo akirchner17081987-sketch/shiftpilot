@@ -4,12 +4,12 @@
   // Compare both under- and over-allocation relative to the personal target.
   // With equal targets, every accepted transfer reduces the spread in hours.
   const hoursCost=(hours,target)=>target>0?(hours-target)**2/target:0;
-  function balancePreview({employees,base=[],preview,target,hours,canMove,movable=()=>true,maxChecks=6000,maxMoves=96,maxComparisons=150000}){
+  function balancePreview({employees,base=[],preview,target,hours,carry=()=>0,canMove,movable=()=>true,maxChecks=6000,maxMoves=96,maxComparisons=150000}){
     let rows=preview.slice(),checks=0,moves=0,comparisons=0;const people=new Map(employees.map(e=>[String(e.id),e])),totals=new Map(),key=(id,month)=>String(id)+'|'+month;
     for(const a of [...base,...rows]){const k=key(a.employeeId,a.date.slice(0,7));totals.set(k,(totals.get(k)||0)+hours(a));}
     while(moves<maxMoves&&checks<maxChecks&&comparisons<maxComparisons){let chosen=null;
       search:for(let i=0;i<rows.length;i++){const a=rows[i],owner=people.get(String(a.employeeId));if(!owner||!movable(a,owner))continue;const month=a.date.slice(0,7),fromKey=key(owner.id,month),from=totals.get(fromKey)||0,fromTarget=target(owner,month),duration=hours(a);if(!(fromTarget>0&&duration>0))continue;
-        for(const e of employees){if(comparisons>=maxComparisons||checks>=maxChecks)break search;comparisons++;if(String(e.id)===String(owner.id))continue;const toKey=key(e.id,month),to=totals.get(toKey)||0,toTarget=target(e,month);if(!(toTarget>0))continue;const gain=hoursCost(from,fromTarget)+hoursCost(to,toTarget)-hoursCost(from-duration,fromTarget)-hoursCost(to+duration,toTarget);if(gain>1e-6&&(!chosen||gain>chosen.gain+1e-6)){
+        for(const e of employees){if(comparisons>=maxComparisons||checks>=maxChecks)break search;comparisons++;if(String(e.id)===String(owner.id))continue;const toKey=key(e.id,month),to=totals.get(toKey)||0,toTarget=target(e,month);if(!(toTarget>0))continue;const gain=hoursCost(from+carry(owner,month),fromTarget)+hoursCost(to+carry(e,month),toTarget)-hoursCost(from-duration+carry(owner,month),fromTarget)-hoursCost(to+duration+carry(e,month),toTarget);if(gain>1e-6&&(!chosen||gain>chosen.gain+1e-6)){
           checks++;const other=rows.filter((_,n)=>n!==i);if(canMove(a,e,other,owner))chosen={i,a,e,fromKey,toKey,from,to,duration,gain};
         }}
       }
@@ -54,6 +54,7 @@
     if(Number.isFinite(e.calendarLimit)){const start=p.solidRules?solid.instant(month+'-01','00:00',p.solidRules.timezone):+new Date(month+'-01T00:00:00'),end=new Date(month+'-01T12:00:00Z');end.setUTCMonth(end.getUTCMonth()+1);const finish=p.solidRules?solid.instant(end.toISOString().slice(0,10),'00:00',p.solidRules.timezone):+new Date(end.toISOString().slice(0,10)+'T00:00:00');const h=[...x.duties,...option].reduce((n,a)=>n+Math.max(0,Math.min(a.endMs,finish)-Math.max(a.startMs,start))/hour,0);if(h>e.calendarLimit+.000001)return false;}
     if(!solid?.confirmed(p.solidRules)&&p.respectHours&&e.weeklyLimit>0)for(const [w,h]of option.weeks)if((x.weeks.get(w)||0)+h>e.weeklyLimit+.000001)return false;
     if(p.accept&&!p.accept(e,x.duties,option))return false;
+    if(p.individualConstraints&&e.individual){const first=Math.floor(Date.parse(p.month+'-01T12:00Z')/86400000),next=new Date(p.month+'-01T12:00Z');next.setUTCMonth(next.getUTCMonth()+1);if(!individual.personValid({base:[],start:first,end:Math.floor(+next/86400000)-1,respectHours:p.respectHours},e,[...x.duties,...option]))return false;}
     if(p.solidRules&&!solid.canAdd(e,x.byDay,option,p.solidRules))return false;
     const addedDays=new Set(),addedByDay=new Map(option.map(a=>[a.day,a]));
     const configuredDuration=Number(p.maxShiftHours),maxDuration=Number.isFinite(configuredDuration)&&configuredDuration>0?configuredDuration:10;
@@ -61,16 +62,18 @@
       for(const day of [a.day-1,a.day+1]){const b=x.byDay.get(day)||addedByDay.get(day);if(!b)continue;
         if(a.day+1===b.day&&!transition(a.type,b.type,p.solidRules)||b.day+1===a.day&&!transition(b.type,a.type,p.solidRules))return false;
         if(a.startMs<b.endMs&&a.endMs>b.startMs)return false;
-        const rest=a.startMs>=b.endMs?(a.startMs-b.endMs)/hour:(b.startMs-a.endMs)/hour;if(rest<11-.000001)return false;
+        const rest=a.startMs>=b.endMs?(a.startMs-b.endMs)/hour:(b.startMs-a.endMs)/hour;if(rest<Math.max(11,Number(p.minRestHours)||11)-.000001)return false;
       }
     }
     if(e.maxConsecutive>0)for(const day of addedDays){let count=1;for(const direction of [-1,1])for(let d=day+direction;x.days.has(d)||addedDays.has(d);d+=direction){if(++count>e.maxConsecutive)return false}}
     return true;
   }
-  function quality(p,s){let deficit=0,squared=0,extra=0,imbalance=0;for(const e of p.people.values()){const h=s.people.get(String(e.id)).hours,d=Math.max(0,e.target-h);deficit+=d;squared+=d*d/Math.max(1,e.target);extra+=Math.max(0,h-e.target);imbalance+=hoursCost(h,e.target)}return{open:[...s.remaining.values()].reduce((n,x)=>n+x,0),deficit,squared,extra,imbalance:p.fairDistribution===false?0:imbalance,preferencePenalty:p.preferencePenalty?.([...p.base,...s.records.flatMap(r=>r.option)])||0}}
+  const personCost=(p,h,e)=>hoursCost(h+(Number(p.hourCarry?.[String(e.id)]??e.balanceCarry)||0),e.target);
+  function quality(p,s){let deficit=0,squared=0,extra=0,imbalance=0;for(const e of p.people.values()){const h=s.people.get(String(e.id)).hours,d=Math.max(0,e.target-h);deficit+=d;squared+=d*d/Math.max(1,e.target);extra+=Math.max(0,h-e.target);imbalance+=personCost(p,h,e)}return{open:[...s.remaining.values()].reduce((n,x)=>n+x,0),deficit,squared,extra,imbalance:p.fairDistribution===false?0:imbalance,preferencePenalty:p.preferencePenalty?.([...p.base,...s.records.flatMap(r=>r.option)])||0}}
   const better=(a,b)=>!b||a.open<b.open||a.open===b.open&&(a.imbalance<b.imbalance-1e-6||Math.abs(a.imbalance-b.imbalance)<1e-6&&(a.deficit<b.deficit-.000001||Math.abs(a.deficit-b.deficit)<.000001&&(a.squared+a.preferencePenalty)<(b.squared+b.preferencePenalty)-.000001));
   // Only substitute options already approved by the input builder. Base duties,
   // complete-block requirements, permissions and the solver's hard checks stay intact.
+  function validIndividual(p,e,all){if(!p.individualConstraints||!e.individual)return true;const next=new Date(p.month+'-01T12:00Z');next.setUTCMonth(next.getUTCMonth()+1);return individual.personValid({base:[],start:Math.floor(Date.parse(p.month+'-01T12:00Z')/86400000),end:Math.floor(+next/86400000)-1,respectHours:p.respectHours},e,all.filter(a=>String(a.employeeId)===String(e.id)));}
   function balanceRecords(p,initial,allowed=(s,r)=>feasible(p,s,r.group,r.option),maxChecks=3000){
     if(p.fairDistribution===false||p.criticalOnly)return initial;
     const signature=o=>o.map(a=>[a.resource,a.type,a.start,a.end].join('|')).sort().join(';'),options=new Map();
@@ -78,17 +81,93 @@
     let current=initial,checks=0;
     for(let pass=0;pass<64&&checks<maxChecks;pass++){let changed=false;const before=p.solidRules?solidQuality(p,current):quality(p,current);
       for(const old of current.records){const from=old.group.employee,fromHours=current.people.get(String(from.id)).hours;
-        for(const next of options.get(signature(old.option))||[]){if(String(from.id)===String(next.group.employee.id)||current.used.has(next.group.id))continue;const to=next.group.employee,toHours=current.people.get(String(to.id)).hours,d=old.option.hours,gain=hoursCost(fromHours,from.target)+hoursCost(toHours,to.target)-hoursCost(fromHours-d,from.target)-hoursCost(toHours+d,to.target);if(gain<1e-6)continue;if(++checks>maxChecks)return current;
+        for(const next of options.get(signature(old.option))||[]){if(String(from.id)===String(next.group.employee.id)||current.used.has(next.group.id))continue;const to=next.group.employee,toHours=current.people.get(String(to.id)).hours,d=old.option.hours,gain=personCost(p,fromHours,from)+personCost(p,toHours,to)-personCost(p,fromHours-d,from)-personCost(p,toHours+d,to);if(gain<1e-6)continue;if(++checks>maxChecks)return current;
           const trial=state(p,current.records.filter(r=>r!==old));if(!allowed(trial,next))continue;commit(trial,next,p.month);
           if(p.solidRules&&solid.errors(from,[...p.base,...trial.records.flatMap(r=>r.option)],p.solidRules,old.option.map(a=>a.date)).length)continue;
+          if(!validIndividual(p,from,[...p.base,...trial.records.flatMap(r=>r.option)]))continue;
           const after=p.solidRules?solidQuality(p,trial):quality(p,trial);if(!(p.solidRules?solidBetter(after,before):better(after,before)))continue;
           current=trial;changed=true;break;
         }if(changed)break;
-      }if(!changed)break;
-    }return current;
+      }
+      if(!changed){
+        // Split a flexible block only into options independently approved by the
+        // builder. Required complete work/rest blocks remain indivisible.
+        for(const old of current.records){if(old.group.fullWorkRest||old.option.length<2||old.option.length>6)continue;
+          const key=a=>[a.resource,a.type,a.start,a.end].join('|'),wanted=new Set(old.option.map(key)),replacements=[];
+          for(const group of p.groups)for(const option of group.options)if(option.every(a=>wanted.has(key(a))))replacements.push({group,option});
+          function partition(s,left,depth){if(!left.size){const all=[...p.base,...s.records.flatMap(r=>r.option)],from=old.group.employee;if(!validIndividual(p,from,all)||p.solidRules&&solid.errors(from,all,p.solidRules,old.option.map(a=>a.date)).length)return null;const q=p.solidRules?solidQuality(p,s):quality(p,s);return (p.solidRules?solidBetter(q,before):better(q,before))?s:null;}if(depth>6||checks>=maxChecks)return null;
+            const first=[...left][0],list=replacements.filter(r=>!s.used.has(r.group.id)&&r.option.some(a=>key(a)===first)&&r.option.every(a=>left.has(key(a)))).sort((a,b)=>s.people.get(String(a.group.employee.id)).hours-s.people.get(String(b.group.employee.id)).hours||a.option.length-b.option.length);
+            const perPerson=new Map(),bounded=list.filter(r=>{const id=String(r.group.employee.id),n=perPerson.get(id)||0;perPerson.set(id,n+1);return n<4;});
+          for(const r of bounded){if(++checks>maxChecks)return null;if(!allowed(s,r))continue;const next=state(p,s.records);commit(next,r,p.month);const remaining=new Set(left);for(const a of r.option)remaining.delete(key(a));const found=partition(next,remaining,depth+1);if(found)return found;}return null;
+          }
+          const found=partition(state(p,current.records.filter(r=>r!==old)),wanted,0);if(found){current=found;changed=true;break;}if(checks>=maxChecks)break;
+        }
+      }
+      if(!changed)break;
+    }current.searchLimited=!!initial.searchLimited;return current;
   }
   function random(seed){let n=seed||1;return()=>{n=(Math.imul(1664525,n)+1013904223)>>>0;return n/4294967296}}
-  const fairOptionGain=(p,s,r)=>{if(p.fairDistribution===false)return 0;const e=r.group.employee,h=s.people.get(String(e.id)).hours;return hoursCost(h,e.target)-hoursCost(h+r.option.hours,e.target);};
+  // Search combinations of approved whole options, evicting at most three blocks.
+  // Unchanged/base duties are never candidates for eviction. The best incumbent
+  // survives an exhausted search; a budget limit is not an infeasibility proof.
+  function repairRecords(p,initial,allowed=(s,r)=>feasible(p,s,r.group,r.option),{maxChecks=180,maxNodes=900,maxDepth=3}={}){
+    if(!initial||p.criticalOnly)return initial;
+    const evaluate=s=>p.solidRules?solidQuality(p,s):quality(p,s),isBetter=p.solidRules?solidBetter:better,options=new Map();
+    for(const group of p.groups)for(const option of group.options)for(const key of new Set(option.map(a=>a.resource))){const list=options.get(key)||[];list.push({group,option});options.set(key,list);}
+    let current=initial,checks=0,nodes=0,improvements=0;
+    for(let pass=0;pass<6&&checks<maxChecks&&nodes<maxNodes;pass++){
+      const before=evaluate(current),roots=[...current.remaining].filter(([key,n])=>n>0&&!key.endsWith('|OT-DAY')).sort((a,b)=>(options.get(a[0])?.length||0)-(options.get(b[0])?.length||0));let found=null;
+      for(const [root] of roots){
+        const goal=new Map(current.remaining);goal.set(root,goal.get(root)-1);const original=new Set(current.records);
+        function search(s,depth,removed){
+          if(++nodes>maxNodes||checks>=maxChecks)return null;
+          const unmet=[...goal].filter(([key,n])=>(s.remaining.get(key)||0)>n).sort((a,b)=>(options.get(a[0])?.length||0)-(options.get(b[0])?.length||0));
+          if(!unmet.length){
+            const all=[...p.base,...s.records.flatMap(r=>r.option)];
+            if(p.solidRules)for(const id of new Set([...removed].map(r=>String(r.group.employee.id)))){const e=p.people.get(id);if(solid.errors(e,all,p.solidRules,all.filter(a=>String(a.employeeId)===id).map(a=>a.date)).length)return null;}
+            for(const id of new Set([...removed].map(r=>String(r.group.employee.id))))if(!validIndividual(p,p.people.get(id),all))return null;
+            return isBetter(evaluate(s),before)?s:null;
+          }
+          const [key]=unmet[0];
+          for(const r of (options.get(key)||[]).slice(0,40)){
+            if(checks++>=maxChecks)return null;
+            if(!s.used.has(r.group.id)&&allowed(s,r)){const next=state(p,s.records);commit(next,r,p.month);const result=search(next,depth,removed);if(result)return result;}
+            if(depth<=0)continue;
+            const own=s.records.filter(old=>original.has(old)&&!removed.has(old)&&String(old.group.employee.id)===String(r.group.employee.id)&&!old.option.some(a=>a.resource.endsWith('|OT-DAY'))).sort((a,b)=>Number(b.option.some(x=>r.option.some(y=>x.date===y.date)))-Number(a.option.some(x=>r.option.some(y=>x.date===y.date))));
+            for(const old of own.slice(0,10)){if(++nodes>maxNodes||checks++>=maxChecks)return null;const next=state(p,s.records.filter(x=>x!==old));if(next.used.has(r.group.id)||!allowed(next,r))continue;commit(next,r,p.month);const result=search(next,depth-1,new Set([...removed,old]));if(result)return result;}
+          }return null;
+        }
+        found=search(current,maxDepth,new Set());if(found||nodes>=maxNodes||checks>=maxChecks)break;
+      }
+      if(!found)break;current=found;improvements++;
+    }
+    current.search={checks,nodes,improvements,limited:checks>=maxChecks||nodes>=maxNodes};current.searchLimited=!!initial.searchLimited||current.search.limited;return current;
+  }
+  // A small deterministic beam considers the whole month, independently of the
+  // incumbent. Large inputs keep the existing checkpoint search and repair path.
+  function globalBeam(p,initial,allowed=(s,r)=>feasible(p,s,r.group,r.option)){
+    if(p.criticalOnly||p.people.size>20||p.capacity.size>100||p.groups.length>1400||quality(p,initial).open===0)return initial;
+    const by=new Map();for(const group of p.groups)for(const option of group.options)for(const key of new Set(option.map(a=>a.resource))){const list=by.get(key)||[];list.push({group,option});by.set(key,list);}
+    if([...p.capacity.keys()].some(k=>k.endsWith('|OT-DAY')))return initial;
+    const keys=[...p.capacity.keys()].sort(),past=[],width=16,maxChecks=12000;let beam=[state(p)],checks=0,limited=false;
+    for(const key of keys){past.push(key);let layer=beam;
+      for(let n=0;n<(p.capacity.get(key)||0);n++){
+        const next=[];
+        for(const s of layer){next.push(s);if((s.remaining.get(key)||0)<=0)continue;
+          const list=(by.get(key)||[]).filter(r=>!s.used.has(r.group.id)).sort((a,b)=>b.option.length-a.option.length||s.people.get(String(a.group.employee.id)).hours-s.people.get(String(b.group.employee.id)).hours);
+          const perPerson=new Map(),bounded=list.filter(r=>{const id=String(r.group.employee.id),n=perPerson.get(id)||0;perPerson.set(id,n+1);return n<4;});
+          for(const r of bounded){if(++checks>maxChecks){limited=true;break;}if(!allowed(s,r))continue;const t=state(p,s.records);commit(t,r,p.month);next.push(t);}if(limited)break;
+        }
+        const seen=new Set(),rank=s=>{const q=quality(p,s);return {s,past:past.reduce((n,k)=>n+Math.max(0,s.remaining.get(k)||0),0),critical:[...p.criticalCapacity.keys()].reduce((n,k)=>n+criticalOpen(p,s,k),0),q};};
+        layer=next.map(rank).sort((a,b)=>a.past-b.past||a.critical-b.critical||a.q.open-b.q.open||a.q.imbalance-b.q.imbalance).filter(x=>{const k=x.s.records.map(r=>r.group.id+':'+r.option.map(a=>a.date+a.type).join(',')).sort().join(';');if(seen.has(k))return false;seen.add(k);return true;}).slice(0,width).map(x=>x.s);if(limited)break;
+      }
+      beam=layer;if(limited)break;
+    }
+    let best=initial,q=p.solidRules?solidQuality(p,best):quality(p,best);for(const s of beam){const v=p.solidRules?solidQuality(p,s):quality(p,s);if((p.solidRules?solidBetter(v,q):better(v,q))){best=s;q=v;}}
+    best.searchLimited=limited;return best;
+  }
+  function refineRecords(p,initial,allowed=(s,r)=>feasible(p,s,r.group,r.option)){let best=globalBeam(p,initial,allowed);for(let i=0;i<3;i++){const previous=quality(p,best).open;best=balanceRecords(p,repairRecords(p,best,allowed),allowed);if(quality(p,best).open===0||i>0&&quality(p,best).open>=previous)break;}return best;}
+  const fairOptionGain=(p,s,r)=>{if(p.fairDistribution===false)return 0;const e=r.group.employee,h=s.people.get(String(e.id)).hours;return personCost(p,h,e)-personCost(p,h+r.option.hours,e);};
   function fill(p,retained,seed,variant){
     const s=state(p,retained),rng=random(seed),bias=new Map(p.groups.map(g=>[g.id,.8+rng()*.4]));
     const weights=[[32,1],[70,.35],[12,2],[45,1.4]][variant%4];
@@ -110,7 +189,7 @@
       if(i>=8&&best){const drop=.12+(i%5)*.08;retained=best.records.filter(()=>rng()>drop)}
       const s=fill(p,retained,101+i*7919,i),v=quality(p,s);if(better(v,q)){best=s;q=v}progress({iteration:i+1,iterations,...q});await yieldStep();
     }
-    best=balanceRecords(p,best);q=quality(p,best);
+    best=refineRecords(p,best);q={...quality(p,best),searchLimited:!!best.searchLimited};
     const rows=[...p.people.values()].map(e=>{const planned=best.people.get(String(e.id)).hours;return{employeeId:e.id,target:e.target,planned,missing:Math.max(0,e.target-planned),extra:Math.max(0,planned-e.target)}});
     return{records:best.records,preview:best.records.flatMap(r=>r.option.map(a=>({...a,blockId:r.group.block?r.group.id:undefined}))),remaining:[...best.remaining],quality:q,rows};
   }
@@ -209,7 +288,7 @@
       }
       const v=solidQuality(p,s);if(solidBetter(v,q)){best=s;q=v}progress({iteration:i+1,iterations,...q});await yieldStep();
     }
-    best=balanceRecords(p,best,allowed);q=solidQuality(p,best);
+    best=refineRecords(p,best,allowed);q={...solidQuality(p,best),searchLimited:!!best.searchLimited};
     return{preview:best.records.flatMap(r=>r.option.map(a=>({...a,blockId:r.group.id}))),quality:q,records:best.records,remaining:[...best.remaining]};
   }
   async function optimize(input,options={}){
@@ -226,6 +305,6 @@
     const open=input.capacities.reduce((n,[key,count])=>n+Math.max(0,count-(used.get(key)||0)),0);
     return{preview,individualInput:freeInput,quality:{...found.quality,open},rows:input.employees.map(e=>{const hours=all.filter(a=>String(a.employeeId)===String(e.id)&&a.date.startsWith(input.month)).reduce((n,a)=>n+duty(a).hours,0);return{employeeId:e.id,target:e.target,planned:hours,missing:Math.max(0,e.target-hours),extra:Math.max(0,hours-e.target)}})};
   }
-  return{optimize,prepare,feasible,state,quality,duty,week,hoursCost,balancePreview,checkpointPrimitives:{fairOptionGain,balanceRecords,rosterChoice,commit,solidQuality,solidBetter,criticalOpen,teamLeaderBlockPenalty,teamLeaderOptionScore,teamLeaderTarget,teamLeaderWeekSeed}};
+  return{optimize,prepare,feasible,state,quality,duty,week,hoursCost,balancePreview,checkpointPrimitives:{fairOptionGain,balanceRecords,repairRecords,globalBeam,refineRecords,rosterChoice,commit,solidQuality,solidBetter,criticalOpen,teamLeaderBlockPenalty,teamLeaderOptionScore,teamLeaderTarget,teamLeaderWeekSeed}};
 });
 

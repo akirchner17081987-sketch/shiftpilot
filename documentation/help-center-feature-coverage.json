@@ -1,5 +1,5 @@
 {
-  "reviewedAt": "2026-10-21",
+  "reviewedAt": "2026-10-22",
   "sourceCommit": "80485ff3eb6e003ab4cd1f329f118118d0d103bc",
   "addedArticles": [
     {
@@ -1314,6 +1314,15 @@
         "assets/manual-rhythm-exceptions-v1.js",
         "assets/compliance-core-v2.js",
         "assets/compliance-workflow-v2.js"
+      ]
+    },
+    {
+      "category": "auto",
+      "question": "Wie läuft die Auto-Planung selbständig bei geschlossenem Browser?",
+      "sources": [
+        "assets/autonomous-planning-v1.js",
+        "assets/autonomous-planning-core-v1.js",
+        "docs/autonomous-planning.md"
       ]
     }
   ],
@@ -2670,6 +2679,18 @@
       "area": "Automatische Nachbesserung und Abschlussprüfung",
       "category": "auto",
       "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/autonomous-planning-core-v1.js",
+      "area": "Selbständige Planung und Monatsausgleich",
+      "category": "auto",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/autonomous-planning-v1.js",
+      "area": "Selbständige Planung und Monatsausgleich",
+      "category": "auto",
+      "kind": "feature-or-support"
     }
   ],
   "categoryCoverage": [
@@ -2837,7 +2858,8 @@
         "Welche aufsteigenden und absteigenden Schichtwechsel sind erlaubt?",
         "Welche bestehenden Dienste berücksichtigt ein neu geplanter Monat?",
         "Wie lernt die Planung aus meinen Dienstkorrekturen?",
-        "Wie verteile ich Arbeitsblöcke als versetzte Treppe?"
+        "Wie verteile ich Arbeitsblöcke als versetzte Treppe?",
+        "Wie läuft die Auto-Planung selbständig bei geschlossenem Browser?"
       ]
     },
     {
@@ -3244,13 +3266,13 @@
     "entry": "index.html"
   },
   "currentAudit": {
-    "date": "2026-10-21",
+    "date": "2026-10-22",
     "baselineArticleCount": 211,
-    "addedArticleCount": 41,
+    "addedArticleCount": 42,
     "correctedArticleCount": 19,
-    "articleCount": 252,
+    "articleCount": 253,
     "categoryCount": 22,
-    "assetJavaScriptCount": 225
+    "assetJavaScriptCount": 227
   },
   "incrementalUpdate": {
     "date": "2026-10-20",

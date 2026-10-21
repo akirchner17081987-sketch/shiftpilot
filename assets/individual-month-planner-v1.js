@@ -161,7 +161,7 @@
         missing = Math.max(0, e.target - hours);
       deficit += missing;
       extra += Math.max(0, hours - e.target);
-      shape += (p.fairDistribution===false?missing:hours-e.target) ** 2 / Math.max(1, e.target);
+      shape += (p.fairDistribution===false?missing:hours+(Number(p.hourCarry?.[String(e.id)]??e.balanceCarry)||0)-e.target) ** 2 / Math.max(1, e.target);
       const morning = own.filter(a => a.morning).length,
         bounds = p.morningBounds.get(String(e.id));
       if (bounds) {

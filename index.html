@@ -478,7 +478,7 @@ function autoPlanningDates(){
   const mode=document.getElementById('autoPlanPeriod')?.value||'week';
   if(mode==='month'){
     const value=document.getElementById('autoPlanMonth')?.value||iso(new Date()).slice(0,7),[year,month]=value.split('-').map(Number),last=new Date(year,month,0).getDate();
-    const count=window.SFCompliance?.policy?.solidPlanningRules?.enabled?Math.max(1,Math.min(12,Number(document.getElementById('autoPlanMonthCount')?.value)||1)):1,dates=[];for(let n=0;n<count;n++){const d=new Date(Date.UTC(year,month-1+n,1)),y=d.getUTCFullYear(),m=d.getUTCMonth()+1,length=new Date(Date.UTC(y,m,0)).getUTCDate();for(let i=1;i<=length;i++)dates.push(`${y}-${String(m).padStart(2,'0')}-${String(i).padStart(2,'0')}`)}return dates
+    const prepared=window.SFMonthOptimizer?.getResult?.(),count=prepared?.solid&&prepared.company===window.SFBackend?.companyId&&prepared.month===value?prepared.months.length:window.SFCompliance?.policy?.solidPlanningRules?.enabled?Math.max(1,Math.min(12,Number(document.getElementById('autoPlanMonthCount')?.value)||1)):1,dates=[];for(let n=0;n<count;n++){const d=new Date(Date.UTC(year,month-1+n,1)),y=d.getUTCFullYear(),m=d.getUTCMonth()+1,length=new Date(Date.UTC(y,m,0)).getUTCDate();for(let i=1;i<=length;i++)dates.push(`${y}-${String(m).padStart(2,'0')}-${String(i).padStart(2,'0')}`)}return dates
   }
   if(mode==='date')return[document.getElementById('autoPlanDate')?.value||iso(new Date())];
   const value=document.getElementById('autoPlanWeekDate')?.value||iso(weekStart),monday=autoMonday(value);
@@ -565,7 +565,8 @@ function autoBlockBundle(slot,candidate,pending,simulated){
 function balanceAutoPlanHours(base=assignments,preview=autoPlanPreview,excluded=new Set()){
   const core=window.SFMonthOptimizerCore;if(!core?.balancePreview||document.getElementById('autoFairDistribution')?.checked===false)return preview;
   const original=assignments;try{assignments=base;const policy=window.SFCompliance?.policy?.solidPlanningRules,solid=window.SFSolidPlanningCore;
-    return core.balancePreview({employees:employees.filter(e=>e.status==='active'&&!e.deletedAt),base,preview,target:employeeMonthlyTarget,hours:plannedAssignmentHours,
+    const carryMaps=new Map([...new Set(preview.map(a=>a.date.slice(0,7)))].map(month=>[month,window.SFWishPlanning?.optimizer(month,employees,base)?.hourCarry||{}]));
+    return core.balancePreview({carry:(e,month)=>carryMaps.get(month)?.[String(e.id)]||0,employees:employees.filter(e=>e.status==='active'&&!e.deletedAt),base,preview,target:employeeMonthlyTarget,hours:plannedAssignmentHours,
       movable:(a,e)=>{const r=window.sfRhythmCheck?.(e,a.type,a.date);return !excluded.has(String(e.id))&&!a.rhythmOverride&&!a._dbId&&!a.publishedAt&&!a._marketApproved&&!(r?.mode==='required'&&r.expected&&!['ALLE','FREI'].includes(r.expected));},
       canMove:(a,e,other,owner)=>{if(excluded.has(String(e.id))||e.startDate&&a.date<e.startDate||e.contractEnd&&a.date>e.contractEnd)return false;const t=typeById(a.type);if(a.start!==t?.start||a.end!==t?.end)return false;if(!autoEligibleEmployees(a.type,a.date,other).some(c=>String(c.e.id)===String(e.id)))return false;
         const all=[...base,...other,{...a,employeeId:e.id}];
@@ -1087,17 +1088,18 @@ table th,table td{font-size:13px;line-height:1.35}
 <script defer src="assets/planning-teams-v1.js?v=20261004-fd-split1&csp=20261017-1"></script>
 <link rel="stylesheet" href="assets/open-shift-marketplace-v1.css?v=20261001-market1">
 <script defer src="assets/open-shift-marketplace-v1.js?v=20261002-sharedtl2&csp=20261017-1"></script>
-<script defer src="assets/individual-month-planner-v1.js?v=20261008-solid-auto3&csp=20261017-1&hoursbalance=20261021-2"></script>
-<script defer src="assets/month-optimizer-core-v1.js?v=20261020-duration9h1&wish=20261010-1&personnel=20261012-1&progress=20261011-1&csp=20261017-1&shiftduration=20261021-1&hoursbalance=20261021-2"></script>
+<script defer src="assets/individual-month-planner-v1.js?v=20261022-autonomy1"></script>
+<script defer src="assets/month-optimizer-core-v1.js?v=20261022-autonomy1"></script>
 <script defer src="assets/auto-plan-workspace-v1.js?v=20261020-company-rules1&personnel=20261012-1&progress=20261011-1&csp=20261017-1&rulesview=20261017-compact1&weekends=20261017-rhythm1&rulecards=20261017-1&review=20261017-1&otmin=20261019-1&companyscope=20261020-1&shiftlabels=20261021-1&shiftduration=20261021-1"></script>
 <script defer src="assets/auto-plan-progress-v1.js?v=bg1-20261013-startfix1&csp=20261017-1"></script>
-<script defer src="assets/solid-planning-resume-v1.js?v=20261015-ot200-1&csp=20261017-1&lernen=20261020-1&hoursbalance=20261021-2"></script>
-<script defer src="assets/background-auto-plan-core-v1.js?v=20261014-fixed-cycle1&csp=20261017-1&otmin=20261019-1&lernen=20261020-1&shiftduration=20261021-1&hoursbalance=20261021-2"></script>
-<script defer src="assets/month-optimizer-v1.js?v=20261020-company-rules2&otsettings=20261012-2&preplan=20261012-1&csp=20261017-1&rulesview=20261017-compact1&weekends=20261017-rhythm1&optionstatus=20261017-1&singleplan=20261017-1&review=20261017-1&otmin=20261019-1&lernen=20261020-1&companyscope=20261020-1&shiftduration=20261021-1&manualrhythm=20261021-1&savedPreview=20261021-1&manualPriority=20261021-1&shorterBlocks=20261021-1&rangePlanning=20261021-1&locationGeocoding=20261021-1&hoursbalance=20261021-2"></script>
+<script defer src="assets/solid-planning-resume-v1.js?v=20261022-autonomy1"></script>
+<script defer src="assets/background-auto-plan-core-v1.js?v=20261022-autonomy1"></script>
+<script defer src="assets/month-optimizer-v1.js?v=20261022-autonomy1"></script>
 <script defer src="assets/auto-plan-preview-editor-v1.js?v=20261021-range1&csp=20261017-1&monthly=20261017-200h"></script>
-<script defer src="assets/background-auto-plan-v1.js?v=20261012-background1&csp=20261017-1"></script>
-<script defer src="assets/auto-plan-repair-core-v1.js?v=20261021-1"></script>
-<script defer src="assets/auto-plan-assurance-v1.js?v=20261021-2"></script>
+<script defer src="assets/background-auto-plan-v1.js?v=20261022-autonomy1"></script>
+<script defer src="assets/auto-plan-repair-core-v1.js?v=20261022-autonomy1"></script>
+<script defer src="assets/auto-plan-assurance-v1.js?v=20261022-autonomy1"></script>
+<script defer src="assets/autonomous-planning-v1.js?v=20261022-autonomy1"></script>
 <script defer src="assets/planning-assistant-insights-v1.js?v=20261009-1&csp=20261017-1&engpass=20261020-1&vorausschau=20261020-1&auftraege=20261020-1&profile=20261020-1"></script>
 <script defer src="assets/planning-assistant-workflows-v1.js?auftraege=20261020-1&profile=20261020-1"></script>
 <script defer src="assets/planning-assistant-core-v1.js?v=20261016-audit1&billing=20261016-2&csp=20261017-1&engpass=20261020-1&vorausschau=20261020-1&auftraege=20261020-1&profile=20261020-1&lernen=20261020-1"></script>
@@ -1196,7 +1198,7 @@ table th,table td{font-size:13px;line-height:1.35}
 }
 </style>
 <div class="sf-help-backdrop" id="sfHelpModal" hidden><section class="sf-help" role="dialog" aria-modal="true" aria-labelledby="sfHelpTitle"><header class="sf-help-head"><div><div class="sf-help-kicker">SCHICHTFUNK HILFE-CENTER</div><h2 id="sfHelpTitle">Wie können wir helfen?</h2></div><div class="sf-help-search"><input id="sfHelpSearch" type="search" placeholder="Problem oder Funktion suchen ..." aria-label="Hilfe durchsuchen"><button class="sf-help-clear" id="sfHelpClear" type="button" aria-label="Suche leeren">×</button></div><button class="sf-help-close" id="sfHelpClose" type="button" aria-label="Hilfe schließen">×</button></header><nav class="sf-help-nav" id="sfHelpNav" aria-label="Hilfekategorien"></nav><main class="sf-help-main"><h3 id="sfHelpCategoryTitle"></h3><p id="sfHelpCategoryIntro"></p><div class="sf-help-results" id="sfHelpResults"></div></main><footer class="sf-help-foot"><span>Die Hilfe verändert keine Daten.</span><span><strong>ESC</strong> schließen · <strong>Strg/Cmd + K</strong> Suche</span></footer></section></div>
-<script defer src="assets/help-center-content-v3.js?v=20261016-help-audit1&amp;auditArchives=20261020-storage1&evidence=20261020-1&messages=20261018-emoji1&leave=20261018-1&portal=20261017-2&entry=20261017-1&assistant=20261016-1&security=20261016-pin-visible1&billing=20261016-2&billing=20261016-2&csp=20261017-1&weekends=20261017-rhythm1&review=20261017-1&handoverReminders=20261018-1&engpass=20261020-1&vorausschau=20261020-1&auftraege=20261020-1&profile=20261020-1&lernen=20261020-1&stagger=20261021-1&manualrhythm=20261021-1&savedPreview=20261021-1&manualPriority=20261021-1&shorterBlocks=20261021-1&rangePlanning=20261021-1&locationGeocoding=20261021-1&assurance=20261021-1"></script>
+<script defer src="assets/help-center-content-v3.js?v=20261016-help-audit1&amp;autonomy=20261022&amp;auditArchives=20261020-storage1&evidence=20261020-1&messages=20261018-emoji1&leave=20261018-1&portal=20261017-2&entry=20261017-1&assistant=20261016-1&security=20261016-pin-visible1&billing=20261016-2&billing=20261016-2&csp=20261017-1&weekends=20261017-rhythm1&review=20261017-1&handoverReminders=20261018-1&engpass=20261020-1&vorausschau=20261020-1&auftraege=20261020-1&profile=20261020-1&lernen=20261020-1&stagger=20261021-1&manualrhythm=20261021-1&savedPreview=20261021-1&manualPriority=20261021-1&shorterBlocks=20261021-1&rangePlanning=20261021-1&locationGeocoding=20261021-1&assurance=20261021-1"></script>
 <link rel="stylesheet" href="assets/help-center-guides-v1.css?v=20260930-1">
 <script defer src="assets/help-center-guides-v1.js?v=20261009-qrperiods1&company=20261010-1&security=20261016-pin-visible1&billing=20261016-2&csp=20261017-1"></script>
 <script defer id="schichtfunk-help-center-v2-js" src="assets/help-center-renderer-v2.js?v=20261012-help-audit1&csp=20261017-1"></script>
@@ -1209,7 +1211,7 @@ table th,table td{font-size:13px;line-height:1.35}
 <script defer src="assets/today-workspace-core-v1.js?v=20261010-today1&orbit=20261016-actions2&csp=20261017-1"></script>
 <script defer src="assets/today-workspace-v3.js?v=20261010-today1&orbit=20261016-actions2&csp=20261017-1"></script>
 <link rel="stylesheet" href="assets/staffing-simulator-v1.css?v=20261010-sim1">
-<script defer src="assets/wish-planning-core-v1.js?v=20261010-wish1&csp=20261017-1&lernen=20261020-1"></script>
+<script defer src="assets/wish-planning-core-v1.js?v=20261022-autonomy1"></script>
 <script defer src="assets/staffing-simulator-core-v1.js?v=20261014-fixed-cycle1&wish=20261010-1&csp=20261017-1&shiftduration=20261021-1"></script>
 <script defer src="assets/staffing-simulator-v1.js?v=20261014-fixed-week1&csp=20261017-1&shiftduration=20261021-1"></script>
 <link rel="stylesheet" href="assets/wish-planning-v1.css?v=20261010-wish1">

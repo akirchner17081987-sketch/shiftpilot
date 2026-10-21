@@ -3,7 +3,7 @@
  'use strict';if(window.SFBackgroundPlanning)return;
  const B=window.SFBackend=window.SFBackend||{},el=id=>document.getElementById(id),roles=['OWNER','ADMIN','PLANNER','DISPATCHER'];
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const available=()=>!!(B.ready&&B.client?.rpc&&B.user?.id&&B.companyId&&roles.includes(B.role)&&window.SFCompliance?.policy?.solidPlanningRules?.enabled&&!B.client.__sfDemoLocalClientV1&&sessionStorage.getItem('sf_demo_session_v1')!=='active');
+ const available=()=>!!(B.ready&&B.client?.rpc&&B.user?.id&&B.companyId&&roles.includes(B.role)&&window.SFCompliance?.policy?.solidPlanningRules&&!B.client.__sfDemoLocalClientV1&&sessionStorage.getItem('sf_demo_session_v1')!=='active');
  const identity=()=>available()?B.companyId+'|'+B.user.id:'';
  let owner='',job=null,timer=null,watch=null,loading=false,sequence=0,seen='';
  const running=j=>['QUEUED','RUNNING'].includes(j?.status);
