@@ -13,6 +13,7 @@ const f=window.fixture,clone=v=>structuredClone(v);window.SFBackend={ready:false
  if(name==='manager_company_profile_history')return {data:[{id:'audit1',event_type:'COMPANY_PROFILE_UPDATED',actor_name:'QA Owner',created_at:'2026-10-10T10:05:00Z',old_values:{name:'Before'},new_values:{name:f.profile.name},metadata:{logo_changed:true}}]};
  if(name==='manager_manage_shift_model'){const m=args.p_model;f.templates[0]={...f.templates[0],name:m.name,default_start:m.start,default_end:m.end,css_class:m.color,site_id:m.site_id};return {data:{model:clone(f.templates[0])}}};
  if(name==='manager_list_time_qr_terminals')return {data:clone(f.terminals)};
+ if(name==='manager_qr_desktop_access')return {data:f.terminals.map(t=>({id:t.id,desktop_enabled:false}))};
  if(name==='manager_set_time_qr_terminal_site'){f.terminals[0].site_id=args.p_site_id;return {data:{id:f.terminals[0].id,site_id:args.p_site_id}}};
  if(name==='manager_create_time_qr_terminal_at_site'){const t={id:'terminal2',name:args.p_name,location_note:args.p_location_note,site_id:args.p_site_id,is_active:false};f.terminals.push(t);return {data:{...t,qr_path:'/qr-time.html?qa=true'}}};
  if(name==='employee_my_company_profile')return {data:{company_id:SFBackend.companyId,name:f.profile.name,display_location:f.profile.display_location,contacts:f.profile.contacts.filter(x=>x.visible_to_employees)}};

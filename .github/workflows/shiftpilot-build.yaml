@@ -68,6 +68,7 @@ jobs:
           node tests/browser/manual-week-planning-qa.cjs
           node tests/browser/manual-range-planning-qa.cjs
           node tests/browser/location-geocode-qa.cjs
+          node tests/browser/company-profile-qa.cjs
 
 # Please do not touch the following action
       - name: Store deployment content

@@ -2,7 +2,7 @@ name: Company location geocoding
 on:
   push:
     branches: [codex/ionos-migration]
-    paths: ['assets/location-map-*', assets/company-profile-v1.js, 'supabase/functions/location-geocode/**', 'tests/location-geocode*', tests/browser/location-geocode-qa.cjs, .github/workflows/location-geocode-checks.yml]
+    paths: ['assets/location-map-*', assets/company-profile-v1.js, 'supabase/functions/location-geocode/**', 'tests/location-geocode*', tests/browser/location-geocode-qa.cjs, tests/browser/company-profile-qa.cjs, .github/workflows/location-geocode-checks.yml]
   workflow_dispatch:
 permissions:
   contents: read
