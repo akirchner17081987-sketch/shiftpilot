@@ -2983,7 +2983,10 @@
       "name": "Störfall-Autopilot",
       "questions": [
         "Wie melde ich einen akuten Ausfall?",
-        "Was geschieht nach einer Zusage?"
+        "Wie ersetze ich einen laufenden Dienst?",
+        "Kann ich eine bereits besprochene Vertretung direkt eintragen?",
+        "Wer wird mit Top 3 angefragt?",
+        "Warum sehe ich keine Ersatzkräfte?"
       ]
     },
     {
@@ -3222,9 +3225,9 @@
   "currentAudit": {
     "date": "2026-10-21",
     "baselineArticleCount": 211,
-    "addedArticleCount": 38,
+    "addedArticleCount": 41,
     "correctedArticleCount": 8,
-    "articleCount": 249,
+    "articleCount": 252,
     "categoryCount": 22,
     "assetJavaScriptCount": 223
   },

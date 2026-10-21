@@ -1,0 +1,32 @@
+name: Disruption replacement checks
+on:
+  push:
+    branches: [codex/ionos-migration]
+    paths: ['assets/disruption-autopilot-v1.js', 'assets/compliance-workflow-v2.js', 'supabase/migrations/*disruption_replacement*', 'tests/disruption-replacement*', 'tests/sql/disruption*', tests/browser/disruption-replacement-qa.cjs, .github/workflows/disruption-replacement-checks.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  replacement:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: node --test tests/disruption-replacement-sql.test.mjs tests/disruption-replacement-ui.test.cjs
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/browser/disruption-replacement-qa.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: disruption-replacement-browser
+          path: test-results/disruption-replacement/
+          retention-days: 7

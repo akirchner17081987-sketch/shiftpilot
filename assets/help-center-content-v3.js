@@ -910,14 +910,11 @@ window.SFHelpContent = {
       ]
     ],
     "disruptions": [
-      [
-        "Wie melde ich einen akuten Ausfall?",
-        "Öffne Störfall-Autopilot und melde den betroffenen Dienst über den Ausfall-Dialog. Wähle die Störfallart, zum Beispiel Krankmeldung oder Nicht erschienen, und starte den Störfall. Prüfe die angebotenen Ersatzkräfte und sende eine einzelne Anfrage oder Top 3 anfragen."
-      ],
-      [
-        "Was geschieht nach einer Zusage?",
-        "Eine Ersatzanfrage kann verbindlich angenommen oder abgelehnt werden. Die erste gültige Zusage übernimmt den Ersatzdienst; weitere Anfragen werden entsprechend geschlossen. Prüfe danach den Vorgangsstatus und den Dienstplan. Bleibt kein geeigneter Ersatz, bleibt der Ausfall offen. Beenden schließt den Störfall ohne Ersatz und zieht offene Anfragen zurück."
-      ]
+      ["Wie melde ich einen akuten Ausfall?", "Öffne einen veröffentlichten Dienst und wähle Ausfall / Ersatz. Der Dienst und der betroffene Mitarbeiter sind vorausgewählt. Alternativ öffne Störfall-Autopilot und Störfall melden. Grund und Störfallart erfassen. Nur Störfall melden speichert den Ausfall ohne Ersatzbesetzung. Digitale Einzelanfragen und Top 3 anfragen stehen für zukünftige Dienste mit geeigneten Portalnutzern bereit."],
+      ["Wie ersetze ich einen laufenden Dienst?", "Unter Ausfall / Ersatz stehen Teilablösung und Restdienst nach vollständigem Ausfall zur Wahl. Zeitpunkt in der angezeigten Unternehmenszeitzone und Pause der Ersatzkraft festlegen. Bei Teilablösung bleibt der bisherige Abschnitt beim ursprünglichen Mitarbeiter. Zeitbuchungen werden nicht übertragen; offene Buchungen zuerst abschließen. Ein fehlender Abschnitt vor Beginn des Ersatzdienstes bleibt als Lücke bestehen. Verbindliche Schichtzeiten und weitere Regeln werden weiterhin geprüft."],
+      ["Kann ich eine bereits besprochene Vertretung direkt eintragen?", "Ersatzkraft wählen, Grund eingeben, die persönliche oder telefonische Zusage ausdrücklich bestätigen und dokumentieren. Auch aktive Mitarbeiter ohne Portalzugang sind auswählbar. Eine Abweichung vom Rhythmus muss gesondert bestätigt werden. Ersatz übernehmen speichert den gesamten Vorgang; falls weitere Freigaben oder Veröffentlichungsrechte fehlen, bleibt der Plan bis zur Freigabe unverändert. Freigaben öffnen führt zum Änderungsbereich."],
+      ["Wer wird mit Top 3 angefragt?", "Top 3 berücksichtigt ausschließlich bisher nicht angefragte geeignete Personen. Abgelehnte, abgelaufene und zurückgezogene Anfragen werden übersprungen. Erneut anfragen ist nur einzeln nach ausdrücklicher Bestätigung möglich. Bereits offene Anfragen warten auf Antwort. Nach einer gültigen Zusage werden weitere offene Anfragen geschlossen. Ist eine Betriebsratsfreigabe hinterlegt, muss die Disposition die Zusage über Ersatz übernehmen mit den erforderlichen Freigaben abschließen."],
+      ["Warum sehe ich keine Ersatzkräfte?", "Ein Ladefehler wird mit Erneut laden angezeigt und bedeutet nicht, dass niemand verfügbar ist. Die Anzeige unterscheidet ausstehende Antworten, fehlende digital erreichbare Ersatzkräfte und laufende Dienste. Über Ersatz übernehmen sind Mitarbeiter ohne Portalzugang erreichbar; gesperrte Personen zeigen ihren Prüfgrund. Beenden schließt den Störfall ohne Ersatz und verhindert die spätere Anwendung einer ausstehenden Ersatzübernahme."]
     ],
     "personnel": [
       [
