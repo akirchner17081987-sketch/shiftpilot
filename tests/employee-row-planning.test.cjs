@@ -97,3 +97,18 @@ test('ordinary preview application retains manually confirmed rhythm metadata an
  w.autoPlanPreview=[original];await w.applyAutoPlanPreview();assert.equal(w.assignments.length,1,w.notice.join(' '));assert.equal(w.assignments[0].rhythmOverride.reason,original.rhythmOverride.reason);assert.equal(w.assignments[0].rhythmOverride.previewKey,undefined);assert.equal(w.autoPlanPreview.length,0);
  }finally{await close();}
 });
+
+test('shorter rhythm blocks are valid in every company while exceeding the maximum still blocks',async()=>{
+ const {w,close}=await setup();try{
+ w.eval(fs.readFileSync('assets/solid-planning-core-v1.js','utf8'));
+ w.autoPlanningDates=()=>['2027-01-04','2027-01-05','2027-01-06','2027-01-07','2027-01-08'];
+ w.SFCompliance.policy.solidPlanningRules={enabled:true,confirmedRulesVersion:2,timezone:'Europe/Berlin',maxConsecutiveShifts:4,maxConsecutiveNightShifts:4,maxCalendarWeekHours:100,minBlockRestHours:0,minFreeCalendarDays:0};
+ const rule={mode:'required',pattern:['ALLE','ALLE','ALLE','ALLE','FREI']};w.SFRhythm={config:()=>rule,check:()=>({expected:'ALLE',index:0})};
+ const duty=(date,i)=>({id:'short-'+i,employeeId:'one',type:'T',date,start:'06:00',end:'14:00'});
+ for(const company of ['company-one','company-two'])for(const count of [1,2,3,4]){
+  w.SFBackend.companyId=company;w.autoPlanPreview=w.autoPlanningDates().slice(0,count).map(duty);w.SFAutoPlanPreviewEditor.decorate();
+  assert.equal(w.SFAutoPlanPreviewEditor.reviewIssues().length,0,company+' / '+count+' duties');assert.equal(await w.SFAutoPlanWorkspace.confirmApply(),true);
+ }
+ w.autoPlanPreview=w.autoPlanningDates().map(duty);assert.match(w.SFAutoPlanPreviewEditor.check(w.autoPlanPreview,[w.autoPlanPreview.at(-1)]).join(' '),/4 Dienste|vier Dienste|4 aufeinanderfolgende/);
+ }finally{await close();}
+});

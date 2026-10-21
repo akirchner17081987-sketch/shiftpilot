@@ -54,7 +54,7 @@
  }
  function reviewIssues(){
   if(!autoPlanAnalyzed||autoPlanApplied)return[];
-  const rows=[...base(),...autoPlanPreview].filter(active),dates=autoPlanningDates(),selected=new Set(dates),out=[],S=window.SFSolidPlanningCore;
+  const rows=[...base(),...autoPlanPreview].filter(active),dates=autoPlanningDates(),out=[],S=window.SFSolidPlanningCore;
   if(revision)out.push(...check(autoPlanPreview,autoPlanPreview.filter(a=>a.rhythmOverride),dates));
   if(prepared()?.needsReplan)out.push('Ein gespeicherter Dienst wurde geändert. Bitte die Vorplanung vor der Übernahme neu berechnen.');
   if(prepared()?.solid&&prepared().criticalOpen)out.push('Verbindliche Pflichtbesetzung: noch '+prepared().criticalOpen+' Positionen offen.');
@@ -63,17 +63,7 @@
    const rule=window.SFRhythm?.config(e);if(!rule||rule.mode!=='required')continue;
    const fixed=S?.fixedWeeklyRoster?.(e,policy());
    if(fixed){const missing=dates.filter(d=>fixed.weekdays.includes(new Date(d+'T12:00:00').getDay()||7)&&(!e.startDate||d>=e.startDate)&&(!e.contractEnd||d<=e.contractEnd)&&!absent(e.id,d)&&!rows.some(a=>same(a.employeeId,e.id)&&a.date===d&&a.type===fixed.code));if(missing.length)out.push(label(e)+': '+missing.length+' feste '+fixed.code+'-Dienste fehlen (z. B. '+missing[0]+').');}
-   if(rule.team||!rule.pattern.includes('ALLE')||!rule.pattern.includes('FREI')||rule.pattern.some(x=>!['ALLE','FREI'].includes(x)))continue;
-   const seen=new Set(),n=rule.pattern.length;
-   for(const a of rows.filter(a=>same(a.employeeId,e.id)&&selected.has(a.date)&&!['OT1','OT2','OT3'].includes(a.type))){
-    const r=window.SFRhythm.check(e,a.type,a.date);if(r.expected!=='ALLE')continue;let before=0,after=0;
-    while(before<n-1&&rule.pattern[(r.index-before-1+n)%n]==='ALLE')before++;
-    while(after<n-1&&rule.pattern[(r.index+after+1)%n]==='ALLE')after++;
-    const start=plus(a.date,-before);if(seen.has(start))continue;seen.add(start);
-    const block=Array.from({length:before+after+1},(_,i)=>plus(start,i)).filter(d=>selected.has(d)&&(!e.startDate||d>=e.startDate)&&(!e.contractEnd||d<=e.contractEnd)&&!absent(e.id,d));
-    const missing=block.filter(d=>!rows.some(b=>same(b.employeeId,e.id)&&b.date===d&&!['OT1','OT2','OT3'].includes(b.type)));
-    if(missing.length)out.push(label(e)+': Arbeitsblock ab '+start+' unvollständig ('+(block.length-missing.length)+'/'+block.length+' Dienste).');
-   }
+
   }
   return out;
  }
