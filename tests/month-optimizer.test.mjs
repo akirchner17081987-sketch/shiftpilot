@@ -99,3 +99,12 @@ test('editing an already saved duty refreshes its base row and blocks stale opti
  await c.applyAutoPlanPreview();assert.equal(c.saves,undefined);assert.match(c.toast.copy,/neu berechnen/);assert.equal(run('JSON.stringify(autoPlanPreview)'),before);
  c.assignments=c.assignments.filter(a=>a.id!=='01');c.SFMonthOptimizer.savedAssignmentChanged('01');assert.ok(!result.base.some(a=>a.id==='01'));
 });
+
+test('optimized bulk apply transmits manual rhythm exceptions and retains them after hydration',async()=>{
+ const {c,run}=harness();c.SFCompliance={policy:{solidPlanningRules:{}},isWeekPublished:()=>false};await c.SFMonthOptimizer.optimize();const prepared=c.SFMonthOptimizer.getResult(),a=run('autoPlanPreview[0]');
+ Object.assign(c.SFBackend,{ready:true,role:'PLANNER',empDb:new Map([['a','db-a'],['b','db-b']]),asgDb:new Map(c.assignments.map(x=>[x.id,'db-'+x.id]))});c.SFPlanningRuleSettings={context:()=>({})};c.SFCompliance={policy:{solidPlanningRules:{}},isWeekPublished:()=>false};
+ c.sfRhythmCheck=(e,t,d)=>({mode:'required',allowed:d!==a.date,expected:d===a.date?'FREI':'ALLE'});vm.runInContext(read('assets/manual-rhythm-exceptions-v1.js'),Object.assign(c,{sessionStorage:{getItem:()=>null}}));
+ a.rhythmOverride=c.SFManualRhythm.previewOverride(a);assert.ok(a.rhythmOverride);let checks=0,payload;c.SFAutoPlanPreviewEditor={check:(rows,changed)=>{checks++;assert.equal(c.SFManualRhythm.isPreviewOverride(changed[0]),true);return[];}};
+ c.SFBackend.client={rpc:async(name,args)=>{assert.equal(name,'apply_month_optimization');payload=args;return{data:{created:args.p_assignments.length}};}};c.SFBackend.hydrate=async()=>{c.assignments=payload.p_assignments.map(x=>({employeeId:x.employee_id,rhythmOverride:x.rhythm_override}));};
+ await c.applyAutoPlanPreview();assert.ok(payload,c.toast?.copy);assert.equal(checks,1);const saved=payload.p_assignments.find(x=>x.rhythm_override);assert.equal(saved.rhythm_override.reason,a.rhythmOverride.reason);assert.deepEqual(Object.keys(saved.rhythm_override),['reason']);assert.ok(c.assignments.some(x=>x.rhythmOverride?.reason===a.rhythmOverride.reason));
+});

@@ -71,3 +71,29 @@ test('saved duty edits never destroy pending proposals, and an optimized snapsho
  w.SFAutoPlanPreviewEditor.decorate();$('[data-auto-employee="one"] td button').click();$('#spEditStart').value='07:00';$('#spSaveAssign').click();assert.equal(w.autoPlanPreview.length,1);assert.equal(w.autoPlanPreview[0].id,'proposal');assert.equal(result.needsReplan,true);assert.equal(result.base[0].start,'07:00');assert.match(w.SFAutoPlanPreviewEditor.reviewIssues()[0],/neu berechnen/);assert.equal(await w.SFAutoPlanWorkspace.confirmApply(),false);
  }finally{await close();}
 });
+
+test('manual preview duty wins over rhythm-free, preserves the exception through undo and still blocks other conflicts',async()=>{
+ const {w,$,submit,close}=await setup();try{
+ Object.assign(w.SFBackend,{ready:true,role:'PLANNER',planningPolicyCompanyId:'company-one'});w.SFPlanningRuleSettings={context:()=>w.SFBackend.planningPolicyCompanyId===w.SFBackend.companyId?{}:null};
+ w.sfRhythmCheck=()=>({mode:'required',allowed:false,expected:'FREI',reason:'Rhythmus erwartet einen freien Tag'});
+ w.SFCompliance.check=(e,t,d,s,end,ignore,options={})=>({hard:options.manualRhythm?[]:['Verbindliche Schichtregel: Rhythmus erwartet einen freien Tag'],soft:[]});
+ w.eval(fs.readFileSync('assets/manual-rhythm-exceptions-v1.js','utf8'));
+ $('[data-auto-employee="one"] td button').click();assert.equal($('[type=submit]').disabled,false);assert.match($('#sfPreviewRhythmNote').textContent,/bewusst/);submit();
+ assert.equal(!!$('.sf-auto-preview-dialog'),false,$('#sfPreviewEditError')?.textContent);const a=w.autoPlanPreview[0];assert.equal(w.SFManualRhythm.isPreviewOverride(a),true);assert.equal(w.SFAutoPlanPreviewEditor.check(w.autoPlanPreview,[a]).length,0);assert.equal(w.SFAutoPlanPreviewEditor.reviewIssues().length,0);
+ assert.match(w.SFAutoPlanPreviewEditor.check([{...a,rhythmOverride:null}],[{...a,rhythmOverride:null}]).join(' '),/Rhythmus/);assert.equal(w.sfRhythmCheck().allowed,false);
+ w.absent=()=>true;assert.match(w.SFAutoPlanPreviewEditor.check(w.autoPlanPreview,[a]).join(' '),/abwesend/);w.absent=()=>false;w.SFAutoPlanPreviewEditor.undo();assert.equal(w.autoPlanPreview.length,0);
+ w.SFCompliance.policy.solidPlanningRules.manualRhythmExceptions=false;$('[data-auto-employee="one"] td button').click();assert.equal($('[type=submit]').disabled,false);submit();assert.equal(w.autoPlanPreview.length,1);
+ }finally{await close();}
+});
+
+test('ordinary preview application retains manually confirmed rhythm metadata and rejects an unconfirmed automatic row',async()=>{
+ const {w,$,submit,close}=await setup();try{
+ Object.assign(w.SFBackend,{ready:true,role:'PLANNER'});w.SFPlanningRuleSettings={context:()=>({})};w.sfRhythmCheck=()=>({mode:'required',allowed:false,expected:'FREI',reason:'Rhythmus erwartet einen freien Tag'});
+ w.SFCompliance.check=(e,t,d,s,end,ignore,options={})=>({hard:options.manualRhythm?[]:['Rhythmus erwartet einen freien Tag'],soft:[]});w.eval(fs.readFileSync('assets/manual-rhythm-exceptions-v1.js','utf8'));
+ $('[data-auto-employee="one"] td button').click();submit();const original=w.autoPlanPreview[0];
+ const source=fs.readFileSync('index.html','utf8');w.eval(source.slice(source.indexOf('async function applyAutoPlanPreview(){'),source.indexOf('function runAutoPlan(){',source.indexOf('async function applyAutoPlanPreview(){')))+';window.applyAutoPlanPreview=applyAutoPlanPreview;');
+ w.autoEligibleEmployees=()=>[];w.saveAll=()=>{};w.renderCalendar=()=>{};w.autoMonday=()=>new Date('2027-01-04T12:00Z');w.SFBackend.sync=async()=>{};
+ w.autoPlanPreview=[{...original,rhythmOverride:null}];await w.applyAutoPlanPreview();assert.equal(w.assignments.length,0);assert.match(w.notice.join(' '),/nicht mehr verfügbar/);
+ w.autoPlanPreview=[original];await w.applyAutoPlanPreview();assert.equal(w.assignments.length,1,w.notice.join(' '));assert.equal(w.assignments[0].rhythmOverride.reason,original.rhythmOverride.reason);assert.equal(w.assignments[0].rhythmOverride.previewKey,undefined);assert.equal(w.autoPlanPreview.length,0);
+ }finally{await close();}
+});
