@@ -1,0 +1,32 @@
+name: Calendar month layout checks
+on:
+  push:
+    branches: [codex/ionos-migration]
+    paths: [assets/manual-week-planning-v1.css, assets/schedule-month-view-v1.js, tests/browser/manual-week-planning-qa.cjs, .github/workflows/calendar-month-layout-checks.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  calendar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: node --test tests/calendar-view-switch.test.mjs tests/date-month-controls.test.mjs
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/browser/manual-week-planning-qa.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: calendar-month-layout
+          path: test-results/manual-week/
+          retention-days: 7
