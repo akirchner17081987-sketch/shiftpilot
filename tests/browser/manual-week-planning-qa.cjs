@@ -47,7 +47,7 @@ await page.evaluate(()=>{qa.readOnly=true;renderCalendar()});assert.equal(await 
 // Reproduce the reported month navigation bug using the real absence banner module.
 // The existing fixture deliberately has no service connection; no RPC/write is possible.
 await page.evaluate(()=>{qa.readOnly=false;SFCompliance.policy.monthlyPlanningMaxHours=0;SFCompliance.publications={};assignments=['2026-09-28','2026-12-28','2027-02-01'].map((date,i)=>({id:'layout-conflict-'+i,employeeId:'e3',type:'FD',date,start:'06:00',end:'14:00'}));absences=[{employeeId:'e3',type:'Urlaub',startDate:'2026-09-01',endDate:'2027-03-31',status:'Genehmigt',fullDay:true}];});
-await page.addScriptTag({url:url+'/assets/supabase-absence-planning-guard-v2.js'});
+await page.addScriptTag({path:path.join(root,'assets/supabase-absence-planning-guard-v2.js')});
 const monthGeometry=async()=>{
  await page.waitForFunction(()=>{const keys=currentWeekDates().map(iso),expected=assignments.some(a=>keys.includes(a.date)&&SFBackend.absencePlanning.assignmentConflict(a));return !!document.getElementById('sfAbsencePlanBanner')===expected;});
  const g=await page.evaluate(()=>{const workspace=document.querySelector('.sf-manual-workspace').getBoundingClientRect(),calendar=document.querySelector('.calendar').getBoundingClientRect(),banner=document.getElementById('sfAbsencePlanBanner')?.getBoundingClientRect();return{workspace:workspace.toJSON(),calendar:calendar.toJSON(),banner:banner?.toJSON(),horizontal:document.documentElement.scrollWidth>innerWidth+2};});
