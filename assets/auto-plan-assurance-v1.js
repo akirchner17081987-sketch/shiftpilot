@@ -38,7 +38,7 @@
   }
   function audit(){
     const prepared=window.SFMonthOptimizer?.getResult?.(),base=(prepared?.base||assignments).filter(active),preview=autoPlanPreview,dates=autoPlanningDates(),policy=window.SFCompliance?.policy;
-    const key=JSON.stringify([window.SFBackend?.companyId,base,preview,dates,employees,TYPES,policy,typeof absences==='undefined'?[]:absences,typeof globalSoll==='undefined'?{}:globalSoll,typeof dailySoll==='undefined'?{}:dailySoll,el('autoRespectHours')?.checked,window.SFWishPlanning?.signature?.(),window.SFShiftModels?.models,!!window.SFAutoPlanGuard,!!window.sfRhythmCheck,!!window.SFCompliance?.check,!!window.SFAutoPlanPreviewEditor?.check,!!prepared?.needsReplan]);
+    const key=JSON.stringify([window.SFBackend?.companyId,!!window.SFBackend?.ready,base,preview,dates,employees,TYPES,policy,typeof absences==='undefined'?[]:absences,typeof globalSoll==='undefined'?{}:globalSoll,typeof dailySoll==='undefined'?{}:dailySoll,el('autoRespectHours')?.checked,window.SFWishPlanning?.signature?.(),window.SFShiftModels?.models,!!window.SFAutoPlanGuard,!!window.sfRhythmCheck,!!window.SFCompliance?.check,!!window.SFAutoPlanPreviewEditor?.check,!!prepared?.needsReplan]);
     if(cached?.key===key)return cached;
     const errors=[],unknown=[],selected=new Set(dates);
     if(!window.SFAutoPlanGuard?.passesTimeRules||!window.sfRhythmCheck||window.SFBackend?.ready&&!window.SFCompliance?.check)unknown.push('Zeit-, Rhythmus- oder Regelprüfung ist noch nicht geladen. Bitte die Seite neu laden.');

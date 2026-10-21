@@ -37,3 +37,7 @@ test('repair never changes fixed explicit rhythms, database-backed rows or anoth
  const{c,run}=harness();c.generateAutoPlanPreview();assert.equal(c.SFAutoPlanAssurance.audit().repair.closed,1);c.SFBackend.companyId='two';assert.equal(c.SFAutoPlanAssurance.audit().repair,null);
  const original=[{id:'saved',_dbId:'database',employeeId:'flex',date:'2027-01-01',type:'A',start:'06:00',end:'14:00'}];assert.equal(c.SFAutoPlanAssurance.repair([],original).length,1);assert.equal(original[0].employeeId,'flex');
 });
+
+test('candidate selection automatically excludes deleted staff and dates outside employment',()=>{
+ const{c}=harness();c.employees[0].startDate='2027-02-01';c.employees[1].contractEnd='2026-12-31';assert.equal(c.autoEligibleEmployees('A','2027-01-01').length,0);delete c.employees[1].contractEnd;c.employees[1].deletedAt='2026-12-01';assert.equal(c.autoEligibleEmployees('A','2027-01-01').length,0);
+});
