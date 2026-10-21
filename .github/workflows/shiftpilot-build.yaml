@@ -66,6 +66,7 @@ jobs:
           node tests/browser/entry-globe-transform-qa.cjs
           node tests/browser/portal-entry-routing-qa.cjs
           node tests/browser/manual-week-planning-qa.cjs
+          node tests/browser/manual-range-planning-qa.cjs
 
 # Please do not touch the following action
       - name: Store deployment content

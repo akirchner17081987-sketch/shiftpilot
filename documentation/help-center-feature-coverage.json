@@ -2652,6 +2652,12 @@
       "category": "schedule",
       "area": "Bewusste manuelle Rhythmusausnahme je Dienst",
       "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/manual-range-planning-v1.js",
+      "area": "Planungsassistent und Optimierung",
+      "category": "auto",
+      "kind": "feature-or-support"
     }
   ],
   "categoryCoverage": [
@@ -3220,7 +3226,7 @@
     "correctedArticleCount": 8,
     "articleCount": 249,
     "categoryCount": 22,
-    "assetJavaScriptCount": 222
+    "assetJavaScriptCount": 223
   },
   "incrementalUpdate": {
     "date": "2026-10-20",
