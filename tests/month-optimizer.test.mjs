@@ -92,3 +92,10 @@ test('month optimizer honors company twelve-hour limit instead of a fixed ten-ho
  assert.equal((await core.optimize({...input,maxShiftHours:12},{iterations:1})).preview.length,1);
  assert.equal((await core.optimize({...input,maxShiftHours:11.75},{iterations:1})).preview.length,0);
 });
+
+test('editing an already saved duty refreshes its base row and blocks stale optimized application without losing proposals',async()=>{
+ const {c,run}=harness();c.assignments[0].note='freiwillig';await c.SFMonthOptimizer.optimize();const result=c.SFMonthOptimizer.getResult(),before=run('JSON.stringify(autoPlanPreview)');assert.ok(result.base.some(a=>a.id==='01'));
+ c.assignments[0].start='07:00';c.assignments[0].end='15:00';c.SFMonthOptimizer.savedAssignmentChanged('01');assert.equal(result.needsReplan,true);assert.equal(result.base.find(a=>a.id==='01').start,'07:00');assert.equal(run('JSON.stringify(autoPlanPreview)'),before);
+ await c.applyAutoPlanPreview();assert.equal(c.saves,undefined);assert.match(c.toast.copy,/neu berechnen/);assert.equal(run('JSON.stringify(autoPlanPreview)'),before);
+ c.assignments=c.assignments.filter(a=>a.id!=='01');c.SFMonthOptimizer.savedAssignmentChanged('01');assert.ok(!result.base.some(a=>a.id==='01'));
+});
