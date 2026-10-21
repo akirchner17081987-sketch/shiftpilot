@@ -1,0 +1,35 @@
+name: Mehrere Tage mit der Maus planen
+on:
+  push:
+    branches: [main, codex/ionos-migration]
+    paths:
+      - assets/manual-range-planning-v1.js
+      - assets/auto-plan-preview-editor-v1.js
+      - tests/manual-range-planning.test.cjs
+      - tests/browser/manual-range-planning-qa.cjs
+      - .github/workflows/manual-range-planning-checks.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: node --test tests/manual-range-planning.test.cjs tests/employee-row-planning.test.cjs
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/browser/manual-range-planning-qa.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: manual-range-results
+          path: test-results/manual-range/
