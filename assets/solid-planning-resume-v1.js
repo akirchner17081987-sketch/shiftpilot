@@ -19,6 +19,7 @@ function context(input,cp){
   p.groups.forEach((group,gi)=>group.options.forEach((option,oi)=>{const r={group,option},ref=[gi,oi];refMap.set(option,ref);for(const key of new Set(option.map(a=>a.resource))){const list=byResource.get(key)||[];list.push(r);byResource.set(key,list)}}));
   const encode=records=>records.map(r=>refMap.get(r.option));
   const decode=records=>records.map(([gi,oi])=>({group:p.groups[gi],option:p.groups[gi].options[oi]}));
+  if(cp.best&&cp.quality?.imbalance==null)cp.quality=C.solidQuality(p,C.state(p,decode(cp.best)));
   function allowed(s,r){if(!C.feasible(p,s,r.group,r.option))return false;const all=[...p.base,...s.records.flatMap(x=>x.option),...r.option];for(const a of r.option){const need=(p.required||((d,c,r)=>S.required(d,c,r,p.solidRules)))(a.date,a.type,all);if(need!==null&&all.filter(b=>b.date===a.date&&b.type===a.type).length>need)return false}for(const rule of p.solidRules.conditionalStaffing||[])for(const a of r.option.filter(a=>a.type===rule.sourceShift)){const date=S.plus(a.date,-rule.sourceDayOffset),count=all.filter(b=>b.date===date&&b.type===rule.shift).length;if(count>(p.required||((d,c,r)=>S.required(d,c,r,p.solidRules)))(date,rule.shift,all))return false}return true;}
   function seeded(records){const s=C.state(p);for(const r of decode(records))if(!r.option.some(a=>a.resource.endsWith('|OT-DAY'))&&allowed(s,r))C.commit(s,r,p.month);return s;}
   const random=()=>{cp.rng=(Math.imul(1664525,cp.rng)+1013904223)>>>0;return cp.rng/4294967296;};
@@ -52,13 +53,13 @@ function context(input,cp){
       if(cp.cursor===cp.order.length){if(cp.changed){cp.cursor=0;cp.changed=false;}else cp.phase='iteration-end';return true;}
       const resource=cp.order[cp.cursor++],s=fillState||(fillState=C.state(p,decode(cp.records)));
       if((s.remaining.get(resource)||0)<1)return true;let chosen=resource.endsWith('|OT-DAY')?C.rosterChoice(p,s,byResource.get(resource)||[],allowed):null,score=-Infinity;
-      for(const r of resource.endsWith('|OT-DAY')?[]:byResource.get(resource)||[]){if(s.used.has(r.group.id)||!allowed(s,r))continue;const x=s.people.get(String(r.group.employee.id)),deficit=Math.max(0,r.group.employee.target-x.hours),same=r.option.every(a=>a.start===r.option[0].start),v=C.teamLeaderOptionScore(p,s,r)+(p.preferenceScore?.(r.group.employee,x.duties,r.option)||0)+r.option.reduce((n,a)=>n+(C.criticalOpen(p,s,a.resource)>0?100:1),0)*10+Math.min(deficit,r.option.hours)*.15+(same?2:0)-(r.option.length===4&&r.option[0].start>='18:00'&&S.employeeRules(r.group.employee,p.solidRules).preferredNightBlockLength!==4?4:0)-(r.option.length===1?4:0)+random()*3;if(v>score){chosen=r;score=v}}
+      for(const r of resource.endsWith('|OT-DAY')?[]:byResource.get(resource)||[]){if(s.used.has(r.group.id)||!allowed(s,r))continue;const x=s.people.get(String(r.group.employee.id)),deficit=Math.max(0,r.group.employee.target-x.hours),same=r.option.every(a=>a.start===r.option[0].start),v=C.fairOptionGain(p,s,r)*.5+C.teamLeaderOptionScore(p,s,r)+(p.preferenceScore?.(r.group.employee,x.duties,r.option)||0)+r.option.reduce((n,a)=>n+(C.criticalOpen(p,s,a.resource)>0?100:1),0)*10+Math.min(deficit,r.option.hours)*.15+(same?2:0)-(r.option.length===4&&r.option[0].start>='18:00'&&S.employeeRules(r.group.employee,p.solidRules).preferredNightBlockLength!==4?4:0)-(r.option.length===1?4:0)+random()*3;if(v>score){chosen=r;score=v}}
       if(chosen){C.commit(s,chosen,p.month);cp.records=encode(s.records);cp.changed=true;}return true;
     }
     if(cp.phase==='iteration-end'){const s=fillState||C.state(p,decode(cp.records)),v=C.solidQuality(p,s);if(C.solidBetter(v,cp.quality)){cp.best=cp.records.map(ref=>[...ref]);cp.quality=v;}fillState=null;cp.iteration++;cp.phase='iteration-start';return true;}
     throw Error('Unknown checkpoint phase');
   }
-  function result(){if(cp.phase!=='done')throw Error('Job not complete');const records=decode(cp.best||[]);return {preview:records.flatMap(r=>r.option.map(a=>({...a,blockId:r.group.id}))),quality:cp.quality,remaining:[...C.state(p,records).remaining]};}
+  function result(){if(cp.phase!=='done')throw Error('Job not complete');const balanced=C.balanceRecords(p,C.state(p,decode(cp.best||[])),allowed),records=balanced.records;cp.best=encode(records);cp.quality=C.solidQuality(p,balanced);return {preview:records.flatMap(r=>r.option.map(a=>({...a,blockId:r.group.id}))),quality:cp.quality,remaining:[...balanced.remaining]};}
   return{step,result};
 }
 return{start,context,planningBase};

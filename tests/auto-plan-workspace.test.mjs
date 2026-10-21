@@ -199,13 +199,13 @@ test('workrest information tracks the block while hours, absences and required f
  assert.equal(c.autoEligibleEmployees('FD','2026-12-05').length,0);assert.equal(c.autoWorkBlock(c.employees[0],'OT1','2026-12-02',c.assignments),null);
  c.plannedMonthlyHoursForEmployee=e=>e==='block'?180:80;assert.equal(c.autoEligibleEmployees('FD','2026-12-02')[0].e.id,'new');
 });
-test('complete workrest blocks are reserved together and a missing middle-day demand prevents isolated shifts',()=>{
+test('workrest prefers a complete block and permits shorter safe duties when demand or the personal ceiling requires it',()=>{
  const {c,id,run}=harness();vm.runInNewContext(read('assets/employee-rhythm-v1.js'),c);id('autoPlanPeriod').value='month';c.employees[0]={...c.employees[0],maxWeeklyHours:50,rhythmMode:'required',rhythmStart:'2026-12-01',rhythmPattern:'ALLE, ALLE, ALLE, ALLE, FREI, FREI, FREI, ALLE, ALLE, ALLE, FREI, FREI'};
  c.plannedMonthlyHoursForEmployee=(id,date,sim=[])=>[...c.assignments,...sim].filter(a=>a.employeeId===id&&a.date.startsWith(date.slice(0,7))).length*8;
  c.getSoll=date=>Number(date>='2026-12-01'&&date<='2026-12-04');c.generateAutoPlanPreview();assert.equal(run('autoPlanPreview.length'),4);assert.equal(new Set(Array.from(run('autoPlanPreview')).map(x=>x.blockId)).size,1);
  c.removeAutoSuggestion(1);assert.equal(run('autoPlanPreview.length'),0);assert.equal(run('autoPlanUnresolved.length'),4);
- c.getSoll=date=>Number(['2026-12-01','2026-12-03','2026-12-04'].includes(date));c.generateAutoPlanPreview();assert.equal(run('autoPlanPreview.length'),0);assert.equal(run('autoPlanUnresolved.length'),3);
- c.getSoll=date=>Number(date>='2026-12-01'&&date<='2026-12-04');c.employees[0].employment='Teilzeit';c.employeeMonthlyTarget=()=>24;c.generateAutoPlanPreview();assert.equal(run('autoPlanPreview.length'),0);
+ c.getSoll=date=>Number(['2026-12-01','2026-12-03','2026-12-04'].includes(date));c.generateAutoPlanPreview();assert.equal(run('autoPlanPreview.length'),3);assert.equal(run('autoPlanUnresolved.length'),0);
+ c.getSoll=date=>Number(date>='2026-12-01'&&date<='2026-12-04');c.employees[0].employment='Teilzeit';c.employeeMonthlyTarget=()=>24;c.generateAutoPlanPreview();assert.equal(run('autoPlanPreview.length'),3);assert.equal(run('autoPlanUnresolved.length'),1);
 });
 test('O3 cannot go back to O1/O2/TL on the following day, even when twelve hours rest would suffice',()=>{
  const {c}=harness();c.TYPES=['O1','O2','O3','TL-LE','TL-RE'].map(id=>({id,start:id==='O1'?'18:00':id==='O3'?'22:00':'20:00',end:id==='O1'?'04:00':id==='O3'?'08:00':'06:00'}));vm.runInNewContext(read('assets/supabase-auto-plan-guard-v1.js'),c);const guard=c.window.SFAutoPlanGuard;

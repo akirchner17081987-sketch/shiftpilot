@@ -20,6 +20,18 @@ async function openRuleSection(page,key){
 }
 async function previewEditor(page){await page.addScriptTag({content:read('assets/auto-plan-preview-editor-v1.js')});await page.evaluate(()=>renderAutoPlanning());}
 async function completeApply(page){await expect(page.locator('#sfAutoApplyTitle')).toHaveText('Entwurf übernommen');await page.locator('.sf-auto-apply [data-close]').click();}
+for(const theme of ['dark','light'])test(`equal 180-hour targets balance twelve-hour January duties without saving in ${theme}`,async({page})=>{
+ await fixture(page,theme);const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.evaluate(()=>{
+  const anchors=['2026-10-19','2026-10-18','2026-10-10','2026-10-15','2026-10-11','2026-10-19'];
+  employees=anchors.map((start,i)=>({id:String(i),first:'Test',last:'Person '+i,status:'active',employment:'Vollzeit',weeklyHours:40,maxWeeklyHours:60,monthlyHours:180,maxConsecutiveShifts:i===5?6:4,shifts:['TS','N'],rhythmMode:i===5?'off':'required',rhythmStart:start,rhythmPattern:'ALLE,ALLE,ALLE,ALLE,FREI,FREI,FREI,ALLE,ALLE,ALLE,FREI,FREI'}));
+  TYPES=[{id:'TS',name:'Tagdienst',start:'06:00',end:'18:00'},{id:'N',name:'Nachtdienst',start:'18:00',end:'06:00'}];SFCompliance.policy={monthlyPlanningMaxHours:220,standardMaxShiftHours:12};employeeMonthlyTarget=e=>e.monthlyHours;plannedAssignmentHours=()=>12;plannedMonthlyHoursForEmployee=(id,date,sim=[])=>[...assignments,...sim].filter(a=>a.employeeId===id&&a.date.startsWith(date.slice(0,7))).length*12;getSoll=(date,type)=>date.startsWith('2027-01')?(type==='TS'?2:1):0;
+ });
+ await page.locator('#autoPlanMonth').fill('2027-01');await page.locator('#autoPlanMonth').dispatchEvent('change');await generatePreview(page);
+ const result=await page.evaluate(()=>({hours:employees.map(e=>autoPlanPreview.filter(a=>a.employeeId===e.id).length*12).sort((a,b)=>a-b),open:autoPlanUnresolved.length,saved:saveCalls,assignments:assignments.length,valid:autoPlanPreview.every(a=>SFAutoPlanGuard.passesTimeRules(a.employeeId,a.type,a.date,autoPlanPreview.filter(b=>b!==a)))}));
+ expect(result).toEqual({hours:[180,180,180,192,192,192],open:0,saved:0,assignments:0,valid:true});await expect(page.locator('.sf-auto-draft-summary')).toContainText('1.116 h');expect(errors).toEqual([]);
+ await page.locator('#autoStaircase').screenshot({path:test.info().outputPath('balanced-january-'+theme+'.png')});
+});
 for(const theme of ['dark','light'])test(`draft apply shows pending save, elapsed time and completion without duplicate writes in ${theme}`,async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));await fixture(page,theme);
  await page.evaluate(()=>{autoPlanPreview=[{id:'p',employeeId:'test',date:'2026-12-01',type:'FD',start:'06:00',end:'14:00'}];autoPlanAnalyzed=true;SFBackend.ready=true;SFBackend.syncCalls=0;SFBackend.sync=()=>{SFBackend.syncCalls++;return new Promise(resolve=>window.releaseApplySave=resolve);};renderAutoPlanning();});
