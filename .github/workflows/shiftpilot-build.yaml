@@ -49,7 +49,7 @@ jobs:
 
       - name: Verify browser workflows and complete exports
         run: |
-          npx playwright install --with-deps chromium
+          npx playwright install chromium
           node tests/browser/company-profile-qa.cjs
           node tests/browser/access-mfa-matrix-qa.cjs
           node tests/browser/qr-pin-qa.cjs
