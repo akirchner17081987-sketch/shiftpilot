@@ -23,7 +23,7 @@
     bar.setAttribute('aria-valuetext',failed?'Planung abgebrochen':percent===null?'Fortschritt noch nicht messbar':percent+' Prozent');bar.firstElementChild.style.width=percent===null?'35%':percent+'%';elapsed();
   }
   function start(){if(active)return false;active=true;started=Date.now();percent=null;clearInterval(timer);host()?.classList.remove('is-error','is-done');el('view-auto')?.setAttribute('aria-busy','true');draw('Auto-Planung wird vorbereitet','Daten, Wünsche und geschützte Dienste werden geprüft.',null);timer=setInterval(elapsed,1000);return true;}
-  function phase(label,detail=''){draw(label,detail,null);}
+  function phase(label,detail=''){if(!active)start();draw(label,detail,null);}
   function update({completed,total,label,detail}){const valid=Number.isFinite(completed)&&Number.isFinite(total)&&total>0;draw(label,detail,valid?Math.min(99,Math.max(percent||0,Math.floor(completed/total*100))):null);}
   function message(label,detail=''){draw(label,detail);}
   function finish(error){active=false;clearInterval(timer);timer=null;el('view-auto')?.removeAttribute('aria-busy');host()?.classList.toggle('is-error',!!error);host()?.classList.toggle('is-done',!error);draw(error?'Planung konnte nicht abgeschlossen werden':'Planung abgeschlossen',error||'Die Vorschläge sind bereit zur Prüfung. Eine Übernahme erfolgt erst nach deiner Bestätigung.',error?null:100);}
