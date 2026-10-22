@@ -1,0 +1,64 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {PGlite} from '@electric-sql/pglite';
+
+const migration=fs.readFileSync(new URL('../supabase/migrations/20261022145215_shift_model_delete_with_assignments.sql',import.meta.url),'utf8');
+
+test('assigned model deletion requires owner, exact confirmation and leaves other companies intact',async()=>{
+ const db=new PGlite();
+ try{
+  await db.exec(`create role anon;create role authenticated;create schema auth;create schema private;
+   create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('test.user_id',true),'')::uuid$$;
+   create table companies(id uuid,timezone text);create table company_members(company_id uuid,user_id uuid,status text,role text);
+   create table shift_templates(id uuid primary key default gen_random_uuid(),company_id uuid,code text,active boolean);
+   create table shift_assignments(id uuid primary key default gen_random_uuid(),company_id uuid,shift_code text,status text,starts_at timestamptz);
+   create table time_entries(assignment_id uuid references shift_assignments(id) on delete cascade,company_id uuid,actual_start timestamptz,actual_end timestamptz,status text,confirmed_at timestamptz,submitted_at timestamptz,employee_note text,manager_note text);
+   create table time_qr_punches(assignment_id uuid);create table time_qr_breaks(assignment_id uuid);
+   create table time_month_closures(company_id uuid,month_start date,status text);
+   create function private.sf_is_time_month_closed(c uuid,d date) returns boolean language sql stable as $$select exists(select 1 from public.time_month_closures where company_id=c and month_start=date_trunc('month',d)::date and status='CLOSED')$$;
+   create table shift_handovers(company_id uuid,shift_code text);
+   create table company_planning_teams(company_id uuid,pattern text[]);
+   create table company_compliance_policy(company_id uuid,solid_planning_rules jsonb);
+   create table shift_change_requests(company_id uuid,assignment_id uuid references shift_assignments(id) on delete restrict,old_snapshot jsonb,proposed_snapshot jsonb);
+   create table open_shift_market_offers(id uuid primary key default gen_random_uuid(),company_id uuid,shift_code text);
+   create table open_shift_market_claims(company_id uuid,assignment_id uuid references shift_assignments(id),offer_id uuid references open_shift_market_offers(id));
+   create table planning_wishes(company_id uuid,shift_code text);
+   create table employees(company_id uuid,shift_permissions text[],qualifications text[]);
+   create table plan_publications(company_id uuid,week_start date);
+   create table datev_lodas_rules(company_id uuid,source_key text);
+   create table global_staffing_requirements(company_id uuid,shift_code text);
+   create table daily_staffing_overrides(company_id uuid,shift_code text);
+   create table audit_events(company_id uuid,event_type text,entity_type text,actor_id uuid,actor_role text,metadata jsonb);
+   create function protect_model() returns trigger language plpgsql as $$begin if exists(select 1 from public.shift_assignments where company_id=old.company_id and shift_code=old.code) or exists(select 1 from public.employees where company_id=old.company_id and old.code=any(shift_permissions)) then raise exception 'model still referenced'; end if;return old;end$$;
+   create trigger protect_model_delete before delete on shift_templates for each row execute function protect_model();`);
+  await db.exec(migration);
+  const co='11111111-1111-1111-1111-111111111111',other='22222222-2222-2222-2222-222222222222',user='aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+  await db.query("select set_config('test.user_id',$1,false)",[user]);
+  await db.query("insert into companies values($1,'Europe/Berlin'),($2,'Europe/Berlin')",[co,other]);
+  await db.query("insert into company_members values($1,$2,'ACTIVE','OWNER')",[co,user]);
+  await db.query("insert into shift_templates(company_id,code,active) values($1,'A',true),($1,'B',false),($2,'A',true)",[co,other]);
+  await db.query("insert into shift_assignments(company_id,shift_code,status,starts_at) values($1,'A','DRAFT','2027-01-04T07:00:00Z'),($1,'A','PUBLISHED','2027-01-05T07:00:00Z'),($1,'B','DRAFT','2026-08-04T07:00:00Z'),($2,'A','DRAFT','2027-01-04T07:00:00Z')",[co,other]);
+  await db.query("insert into time_entries(assignment_id,company_id,status,actual_start,actual_end) select id,company_id,'confirmed',starts_at,starts_at+interval '8 hours' from shift_assignments where company_id=$1 and shift_code='A' limit 1",[co]);
+  await db.query("insert into employees values($1,array['A'],array['A']),($2,array['A'],array['A'])",[co,other]);
+  await db.query("insert into shift_change_requests(company_id,assignment_id,old_snapshot) select company_id,id,'{\"type\":\"A\"}'::jsonb from shift_assignments where company_id=$1 and shift_code='A' limit 1",[co]);
+  await db.query("insert into open_shift_market_offers(company_id,shift_code) values($1,'A')",[co]);
+  await db.query("insert into open_shift_market_claims(company_id,assignment_id,offer_id) select $1,(select id from shift_assignments where company_id=$1 and shift_code='A' limit 1),id from open_shift_market_offers where company_id=$1",[co]);
+  await db.query("insert into time_month_closures values($1,'2026-08-01','CLOSED')",[co]);
+  const call=async(c,code,confirm=null,expected=null)=>(await db.query('select manager_delete_shift_model_with_duties($1,$2,$3,$4) result',[c,code,confirm,expected])).rows[0].result;
+  const preview=await call(co,'A');assert.equal(preview.total,2);assert.equal(preview.published,1);assert.equal(preview.recordedTimeEntries,1);assert.equal(preview.requests,1);assert.equal(preview.marketOffers,1);assert.equal(preview.canDelete,true);
+  await assert.rejects(call(co,'A','LÖSCHEN B',preview),/Bestätigungstext/);
+  await assert.rejects(call(other,'A'),/Nur Inhaber/);
+  await assert.rejects(call(co,'A','LÖSCHEN A',{...preview,total:1}),/Vorschau erneut/);
+  const removed=await call(co,'A','LÖSCHEN A',preview);assert.equal(removed.deletedAssignments,2);
+  assert.equal((await db.query('select count(*)::int n from time_entries where company_id=$1',[co])).rows[0].n,0);
+  assert.equal((await db.query("select count(*)::int n from shift_assignments where company_id=$1 and shift_code='A'",[co])).rows[0].n,0);
+  assert.equal((await db.query('select count(*)::int n from shift_change_requests where company_id=$1',[co])).rows[0].n,0);
+  assert.equal((await db.query('select count(*)::int n from open_shift_market_claims where company_id=$1',[co])).rows[0].n,0);
+  assert.equal((await db.query("select count(*)::int n from shift_assignments where company_id=$1 and shift_code='A'",[other])).rows[0].n,1);
+  assert.deepEqual((await db.query('select shift_permissions from employees where company_id=$1',[co])).rows[0].shift_permissions,[]);
+  assert.deepEqual((await db.query('select shift_permissions from employees where company_id=$1',[other])).rows[0].shift_permissions,['A']);
+  const blocked=await call(co,'B');assert.equal(blocked.canDelete,false);assert.equal(blocked.closedAssignments,1);
+  await assert.rejects(call(co,'B','LÖSCHEN B',blocked),/Abgeschlossene Monate/);
+ }finally{await db.close()}
+});

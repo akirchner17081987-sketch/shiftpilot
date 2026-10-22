@@ -8,6 +8,7 @@
   const demo=()=>sessionStorage.getItem('sf_demo_session_v1')==='active';
   M.isCompanyLoaded=()=>!demo()&&!!B.companyId&&M.companyId===B.companyId;
   M.canManage=()=>M.isCompanyLoaded()&&B.ready&&['OWNER','ADMIN','PLANNER','DISPATCHER'].includes(B.role);
+  M.canForceDelete=()=>M.canManage()&&['OWNER','ADMIN'].includes(B.role);
   M.find=code=>M.isCompanyLoaded()?(TYPES.find(x=>x.id===code)||M.models.find(x=>x.id===code)):null;
   M.label=code=>{const templates=B.role==='EMPLOYEE'?(B.employeePortalData?.templates||[]):M.isCompanyLoaded()?M.models:[];const t=templates.find(t=>(t.id||t.code)===code);return t?.displayCode||t?.display_code||code;};
   M.description=code=>{const t=B.role==='EMPLOYEE'?(B.employeePortalData?.templates||[]).find(t=>(t.id||t.code)===code):M.isCompanyLoaded()?M.models.find(t=>t.id===code):null,label=M.label(code);return t?.name&&t.name!==label?`${label} · ${t.name}`:label;};
@@ -112,12 +113,15 @@
   }
   M.perform=async(action,model)=>{
     if(!M.canManage())throw Error('Für dieses Unternehmen fehlen aktive Planungsrechte.');
+    if(action==='FORCE_DELETE'&&model.companyId!==B.companyId)throw Error('Das Unternehmen wurde inzwischen gewechselt. Bitte öffne die Löschvorschau erneut.');
     if(M.busy||B.companySwitching||B.syncing||B.bootPromise)throw Error('Daten werden noch gespeichert oder geladen. Bitte versuche es gleich erneut.');
-    const payload=['REMOVE','PURGE'].includes(action)?{code:model.code}:M.validate(model),companyId=B.companyId;
+    const payload=['REMOVE','PURGE'].includes(action)?{code:model.code}:action==='FORCE_DELETE'?model:M.validate(model),companyId=B.companyId;
     M.busy=true;B.shiftModelSaving=true;let committed=false;
     try{
       if(B.syncTimer){clearTimeout(B.syncTimer);B.syncTimer=null;await B.sync();if(B.lastSyncError)throw B.lastSyncError;}
-      const q=action==='PURGE'
+      const q=action==='FORCE_DELETE'
+        ?await B.client.rpc('manager_delete_shift_model_with_duties',{p_company_id:companyId,p_code:payload.code,p_confirmation:payload.confirmation,p_expected:payload.expected})
+        :action==='PURGE'
         ?await B.client.rpc('manager_archived_shift_model',{p_company_id:companyId,p_code:payload.code,p_action:'PURGE'})
         :action==='UPDATE_SHARED'
         ?await B.client.rpc('manager_manage_shared_shift_model',{p_company_id:companyId,p_model:payload})
@@ -136,7 +140,7 @@
       .sf-model-removed{margin-top:16px;color:var(--muted);font-size:12px}.sf-model-removed summary{cursor:pointer;padding:10px 0}.sf-model-removed-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid var(--line);flex-wrap:wrap}.sf-model-removed-actions{display:flex;gap:8px;flex-wrap:wrap}
       .sf-model-shade{position:fixed;inset:0;z-index:45000;display:grid;place-items:center;padding:18px;background:rgba(0,0,0,.55)}
       .sf-model-dialog{width:min(540px,100%);max-height:90dvh;overflow:auto;box-sizing:border-box;padding:22px;border:1px solid var(--line,#29455e);border-radius:16px;background:var(--panel,#0d1928);color:var(--text,#edf6ff);box-shadow:0 24px 90px rgba(0,0,0,.45)}
-      .sf-model-dialog h2{margin:0 0 8px;font-size:21px}.sf-model-dialog p{color:var(--muted);line-height:1.5;font-size:13px}.sf-model-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}.sf-model-fields label{font-size:12px}.sf-model-fields label span{display:block;margin-bottom:6px}.sf-model-fields input,.sf-model-fields select{box-sizing:border-box;width:100%;min-height:44px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);padding:9px}
+      .sf-model-dialog h2{margin:0 0 8px;font-size:21px}.sf-model-dialog p{color:var(--muted);line-height:1.5;font-size:13px}.sf-model-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}.sf-model-fields label{font-size:12px}.sf-model-fields label span{display:block;margin-bottom:6px}.sf-model-fields input,.sf-model-fields select,.sf-model-dialog input[data-sf-delete-confirm]{box-sizing:border-box;width:100%;min-height:44px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);padding:9px}
       .sf-model-error{color:#ef7484;font-size:13px;line-height:1.5;margin-top:12px}.sf-model-footer{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:18px}.sf-model-footer button{min-height:44px}
       @media(max-width:650px){.sf-set-shifts{grid-template-columns:1fr}}
       @media(max-width:540px){.sf-model-dialog{padding:16px}.sf-model-fields{grid-template-columns:1fr}.sf-model-footer button{flex:1}}
@@ -192,11 +196,39 @@
   };
   M.remove=code=>{
     const model=M.find(code);if(!model||!M.canManage()||M.busy)return;
-    const d=dialog('Schichtmodell löschen',`<p>„${esc(model.name)}“ (${esc((window.SFShiftModels?.label?.(code)||code))}) aus diesem Unternehmen entfernen?</p><p>Bereits verwendete Modelle werden archiviert. Vorhandene Dienste und Zeiteinträge bleiben erhalten. Neue Einplanungen mit diesem Modell sind anschließend nicht mehr möglich.</p><div class="sf-model-error" role="alert"></div><div class="sf-model-footer"><button type="button" class="ghost" data-cancel>Abbrechen</button><button type="button" class="danger" data-remove>Schichtmodell löschen</button></div>`);
+    const d=dialog('Schichtmodell löschen',`<p>„${esc(model.name)}“ (${esc((window.SFShiftModels?.label?.(code)||code))}) aus diesem Unternehmen entfernen?</p><p>Beim normalen Entfernen bleiben vorhandene Dienste und Zeiteinträge erhalten; das Modell wird bei Verwendung archiviert.</p><div class="sf-model-error" role="alert"></div><div class="sf-model-footer"><button type="button" class="ghost" data-cancel>Abbrechen</button><button type="button" class="danger" data-remove>Schichtmodell löschen</button>${M.canForceDelete()?'<button type="button" class="danger" data-force>Mit Diensten endgültig löschen…</button>':''}</div>`);
     d.shade.querySelector('[data-remove]').onclick=async()=>{
       d.setSaving(true);
       try{const result=await M.perform('REMOVE',{code});d.setSaving(false);d.close();window.showSaveToast?.('Schichtmodell entfernt',result?.archived?'Bestehende Dienste bleiben erhalten. Das Modell kann später wiederhergestellt werden.':'Das unbenutzte Schichtmodell wurde gelöscht.');}
       catch(err){d.setSaving(false);d.shade.querySelector('[role=alert]').textContent=err.message||'Das Modell konnte nicht entfernt werden.';}
+    };
+    d.shade.querySelector('[data-force]')?.addEventListener('click',()=>{d.close();M.forceDelete(code)});
+  };
+  M.forceDelete=async code=>{
+    const model=M.find(code);if(!model||!M.canForceDelete()||M.busy)return;
+    const companyId=B.companyId;
+    let preview;
+    try{
+      const q=await B.client.rpc('manager_delete_shift_model_with_duties',{p_company_id:companyId,p_code:code,p_confirmation:null,p_expected:null});
+      if(q.error)throw q.error;
+      if(B.companyId!==companyId)throw Error('Das Unternehmen wurde inzwischen gewechselt. Bitte lade die Seite neu.');
+      preview=q.data;
+    }catch(err){window.showSaveToast?.('Prüfung fehlgeschlagen',err.message||'Die betroffenen Dienste konnten nicht geprüft werden.');return;}
+    const name=esc(model.name),label=esc(M.label(code));
+    if(!preview.canDelete){
+      const reasons=[[preview.closedAssignments,'Dienste in abgeschlossenen Monaten'],[preview.qrAssignments,'Dienste mit QR-Nachweisen'],[preview.handovers,'Schichtübergaben'],[preview.teamRhythms,'feste Teamrhythmen'],[preview.individualRhythms,'individuelle Rhythmen'],[preview.policyReferences,'Planungsregel mit diesem Kürzel']].filter(([n])=>Number(n)>0).map(([n,title])=>`${Number(n)} ${title}`).join(', ');
+      dialog('Endgültige Löschung gesperrt',`<p>„${name}“ (${label}) kann derzeit nicht mit allen Diensten gelöscht werden: ${esc(reasons)}.</p><p>Abgeschlossene Monate und QR-Nachweise bleiben geschützt. Passe die genannten Rhythmen und Planungsregeln vorher an.</p><div class="sf-model-footer"><button type="button" class="primary" data-cancel>Verstanden</button></div>`);
+      return;
+    }
+    const expected=`LÖSCHEN ${code}`;
+    const d=dialog('Modell und Dienste endgültig löschen',`<p>„${name}“ (${label}) und alle zugehörigen Dienste dieses Unternehmens werden endgültig entfernt.</p><p><b>${Number(preview.total)} Dienste</b> (${Number(preview.draft)} Entwürfe, ${Number(preview.published)} veröffentlichte), <b>${Number(preview.timeEntries)} Zeiteinträge, davon ${Number(preview.recordedTimeEntries)} mit erfassten Zeiten</b>, ${Number(preview.requests)} Änderungsanträge und ${Number(preview.marketOffers)} Marktplatzangebote sind betroffen. Mitarbeiterfreigaben und Besetzungsregeln dieses Modells werden entfernt. Audit-Einträge bleiben nachvollziehbar.</p><label>Zur Bestätigung <b>${esc(expected)}</b> eingeben<input type="text" data-sf-delete-confirm autocomplete="off" aria-label="Löschbestätigung"></label><div class="sf-model-error" role="alert"></div><div class="sf-model-footer"><button type="button" class="ghost" data-cancel>Abbrechen</button><button type="button" class="danger" data-force-confirm disabled>Endgültig löschen</button></div>`);
+    const input=d.shade.querySelector('[data-sf-delete-confirm]'),button=d.shade.querySelector('[data-force-confirm]');
+    input.oninput=()=>button.disabled=input.value!==expected;
+    button.onclick=async()=>{
+      if(input.value!==expected)return;
+      d.setSaving(true);
+      try{const result=await M.perform('FORCE_DELETE',{companyId,code,confirmation:input.value,expected:preview});d.setSaving(false);d.close();window.showSaveToast?.('Schichtmodell endgültig gelöscht',`${Number(result.deletedAssignments)} Dienste dieses Unternehmens wurden entfernt.`);}
+      catch(err){d.setSaving(false);button.disabled=input.value!==expected;d.shade.querySelector('[role=alert]').textContent=err.message||'Die Löschung ist fehlgeschlagen.';}
     };
   };
   M.purge=async code=>{
@@ -238,9 +270,9 @@
     const removed=M.isCompanyLoaded()?M.models.filter(x=>!x.active):[];
     if(removed.length){
       const details=document.createElement('details');details.className='sf-model-removed';
-      details.innerHTML=`<summary>Entfernte Schichtmodelle (${removed.length})</summary><p>Modelle mit bestehenden Verknüpfungen bleiben für die Historie archiviert. Unbenutzte Modelle können endgültig gelöscht werden.</p>${removed.map(x=>`<div class="sf-model-removed-row"><span><b>${esc(M.label(x.id))}</b> · ${esc(x.name)}</span>${M.canManage()?`<span class="sf-model-removed-actions"><button type="button" class="ghost" data-restore="${esc(x.id)}">Wiederherstellen</button><button type="button" class="danger" data-purge="${esc(x.id)}">Endgültig löschen</button></span>`:''}</div>`).join('')}`;
+      details.innerHTML=`<summary>Entfernte Schichtmodelle (${removed.length})</summary><p>Modelle ohne Verknüpfungen können gelöscht werden. Inhaber und Administratoren können auch belegte Modelle samt offenen Diensten endgültig entfernen.</p>${removed.map(x=>`<div class="sf-model-removed-row"><span><b>${esc(M.label(x.id))}</b> · ${esc(x.name)}</span>${M.canManage()?`<span class="sf-model-removed-actions"><button type="button" class="ghost" data-restore="${esc(x.id)}">Wiederherstellen</button><button type="button" class="danger" data-purge="${esc(x.id)}">Endgültig löschen</button></span>`:''}</div>`).join('')}`;
       details.querySelectorAll('[data-restore]').forEach(b=>b.onclick=()=>M.openEditor(b.dataset.restore));
-      details.querySelectorAll('[data-purge]').forEach(b=>b.onclick=()=>M.purge(b.dataset.purge));list.after(details);
+      details.querySelectorAll('[data-purge]').forEach(b=>b.onclick=()=>M.canForceDelete()?M.forceDelete(b.dataset.purge):M.purge(b.dataset.purge));list.after(details);
     }
     host.querySelectorAll('#sfSaveShiftSettings,#sfSaveDailySoll,#sfResetDailySoll,[data-sf-start],[data-sf-end],[data-sf-soll],[data-sf-day]').forEach(el=>el.disabled=!M.canManage()||M.busy);
     for(const row of list.querySelectorAll('.sf-set-shift')){const code=row.querySelector('[data-sf-start]')?.dataset.sfStart,t=M.find(code);if(!t)continue;const e=staff().find(e=>String(e._dbId||e.id)===String(t.responsibleEmployeeId));if(t.planningMode==='optional'){const input=row.querySelector('[data-sf-soll]');input.value='0';input.disabled=true;}if(['OT1','OT2'].includes(t.id)&&M.find('OT2')?.morningOtMinimum){const note=document.createElement('small');note.textContent='Ab 3 O3 am vorherigen Abend bis 08:00 Uhr: statt OT1 + OT2 werden 2× OT2 geplant.';row.firstElementChild.appendChild(note);}if(t.planningMode==='optional'||t.responsibleOnly){const note=document.createElement('small');note.textContent=(t.planningMode==='optional'?`Optional · Wunsch ${t.optionalStaffing}`:'Pflichtbesetzung')+(t.responsibleOnly?` · Nur ${e?e.first+' '+e.last:'Zuständiger fehlt'}`:'');row.firstElementChild.appendChild(note);}}

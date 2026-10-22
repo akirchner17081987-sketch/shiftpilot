@@ -11,7 +11,7 @@ async function fixture(page){
   await page.addScriptTag({content:`
     window.TYPES=[];window.selectedType=null;window.globalSoll={};window.dailySoll={};window.employees=[{id:'legacy-f',_dbId:'florian-a',first:'Florian',last:'Weiß',status:'active',shifts:['F8','QA']},{id:'legacy-b',_dbId:'other-a',first:'Andere',last:'Person',status:'active',shifts:['F8']}];window.DAYS=['Mo','Di','Mi','Do','Fr','Sa','So'];window.weekStart=new Date('2026-09-28T12:00:00');window.iso=d=>d.toISOString().slice(0,10);window.addDays=(d,n)=>new Date(+d+n*86400000);window.store={get:()=>null,set(){}};window.saveAll=()=>{};window.showSaveToast=()=>{};window.renderCalendar=()=>{};window.renderLibrary=()=>{};window.currentWeekDates=()=>Array.from({length:7},(_,i)=>addDays(weekStart,i));
     const data={a:[{code:'F8',name:'Frühdienst',active:true,default_start:'06:00:00',default_end:'14:00:00',css_class:'teal'}],b:[{code:'B8',name:'Modell Unternehmen 2',active:true,default_start:'08:00:00',default_end:'16:00:00',css_class:'blue'}]};
-    window.fixtureData=data;window.SFBackend={ready:true,role:'OWNER',companyId:'a',account(){},client:{from(table){let company;return{select(){return this},delete(){return this},in(){return this},upsert(rows){window.savedDailyRows=rows;return this},eq(k,v){if(k==='company_id')company=v;return this},order(){return this},then(resolve){resolve({data:table==='shift_templates'?data[company]:[]})}}},async rpc(name,args){window.lastModelPayload=args.p_model;window.lastModelRpc=name;const rows=data[args.p_company_id],m=args.p_model,old=rows.find(x=>x.code===m?.code);if(name==='manager_archived_shift_model'){const usage={assignments:args.p_code==='F8'?2:0,changes:0,employees:0,payroll:0};if(args.p_action==='PURGE'&&!usage.assignments)rows.splice(rows.findIndex(x=>x.code===args.p_code),1);return{data:{...usage,deleted:args.p_action==='PURGE'&&!usage.assignments}}}if(name==='manager_manage_shared_shift_model'){for(const row of rows.filter(x=>x.coverage_group===old.coverage_group)){row.default_start=m.start;row.default_end=m.end;row.coverage_required=m.soll;}return{data:{updated_models:rows.filter(x=>x.coverage_group===old.coverage_group).length}}}if(args.p_action==='REMOVE'){if(m.code==='F8')old.active=false;else rows.splice(rows.indexOf(old),1);return{data:{archived:m.code==='F8'}}}const next={...m,code:m.code,name:m.name,default_start:m.start,default_end:m.end,css_class:m.color,active:true};if(old)Object.assign(old,next);else rows.push(next);return{data:{model:next}}}}};
+    window.fixtureData=data;window.SFBackend={ready:true,role:'OWNER',companyId:'a',account(){},client:{from(table){let company;return{select(){return this},delete(){return this},in(){return this},upsert(rows){window.savedDailyRows=rows;return this},eq(k,v){if(k==='company_id')company=v;return this},order(){return this},then(resolve){resolve({data:table==='shift_templates'?data[company]:[]})}}},async rpc(name,args){window.lastModelPayload=args.p_model;window.lastModelRpc=name;const rows=data[args.p_company_id],m=args.p_model,old=rows.find(x=>x.code===m?.code);if(name==='manager_delete_shift_model_with_duties'){const used=args.p_code==='F8',usage={code:args.p_code,active:rows.find(x=>x.code===args.p_code)?.active,total:used?2:args.p_code==='N8'?2:0,draft:used?1:args.p_code==='N8'?2:0,published:used?1:0,timeEntries:used?1:0,recordedTimeEntries:used?1:0,qrAssignments:0,closedAssignments:used?1:0,handovers:0,teamRhythms:0,requests:0,marketOffers:0,wishes:0,employeePermissions:0,canDelete:!used};if(args.p_confirmation){rows.splice(rows.findIndex(x=>x.code===args.p_code),1);return{data:{...usage,deleted:true,deletedAssignments:usage.total}}}return{data:usage}}if(name==='manager_archived_shift_model'){const usage={assignments:args.p_code==='F8'?2:0,changes:0,employees:0,payroll:0};if(args.p_action==='PURGE'&&!usage.assignments)rows.splice(rows.findIndex(x=>x.code===args.p_code),1);return{data:{...usage,deleted:args.p_action==='PURGE'&&!usage.assignments}}}if(name==='manager_manage_shared_shift_model'){for(const row of rows.filter(x=>x.coverage_group===old.coverage_group)){row.default_start=m.start;row.default_end=m.end;row.coverage_required=m.soll;}return{data:{updated_models:rows.filter(x=>x.coverage_group===old.coverage_group).length}}}if(args.p_action==='REMOVE'){if(m.code==='F8')old.active=false;else rows.splice(rows.indexOf(old),1);return{data:{archived:m.code==='F8'}}}const next={...m,code:m.code,name:m.name,default_start:m.start,default_end:m.end,css_class:m.color,active:true};if(old)Object.assign(old,next);else rows.push(next);return{data:{model:next}}}}};
     window.selectFixtureCompany=id=>{SFBackend.companyId=id;SFShiftModels.apply(data[id],id);SFSettingsV2.refreshPlanning()};
   `});
   await page.addScriptTag({content:moduleSource});await page.evaluate(()=>SFShiftModels.apply([{code:'F8',name:'Frühdienst',active:true,default_start:'06:00',default_end:'14:00',css_class:'teal'}],'a'));
@@ -36,15 +36,39 @@ test('archived models explain historical links and allow confirmed deletion when
  await fixture(page);await page.getByRole('button',{name:'F8 löschen',exact:true}).click();await page.getByRole('button',{name:'Schichtmodell löschen',exact:true}).click();
  await page.getByText('Entfernte Schichtmodelle (1)',{exact:true}).click();
  await page.getByRole('button',{name:'Endgültig löschen',exact:true}).click();
- await expect(page.getByRole('dialog')).toContainText('2 Dienste');
+ await expect(page.getByRole('dialog')).toContainText('1 Dienste in abgeschlossenen Monaten');
  await expect(page.getByRole('dialog').getByRole('button',{name:'Endgültig löschen'})).toHaveCount(0);
  await page.getByRole('button',{name:'Verstanden'}).click();
  await page.evaluate(()=>{fixtureData.a.push({code:'FD',name:'Frühdienst alt',active:false,default_start:'06:00',default_end:'14:00',css_class:'teal'});SFShiftModels.apply(fixtureData.a,'a');SFSettingsV2.refreshPlanning()});
  await page.getByText('Entfernte Schichtmodelle (2)',{exact:true}).click();
- await page.locator('[data-purge="FD"]').click();await expect(page.getByRole('dialog')).toContainText('nicht mehr mit Diensten');
- await page.getByRole('dialog').getByRole('button',{name:'Endgültig löschen'}).click();
+ await page.locator('[data-purge="FD"]').click();await expect(page.getByRole('dialog')).toContainText('0 Dienste');
+ await page.getByLabel('Löschbestätigung').fill('LÖSCHEN FD');await page.getByRole('dialog').getByRole('button',{name:'Endgültig löschen'}).click();
  await expect(page.getByText('Entfernte Schichtmodelle (1)',{exact:true})).toBeVisible();
  await expect(page.locator('[data-purge="FD"]')).toHaveCount(0);
+});
+test('owner can delete an assigned model after reviewing counts and typing its code',async({page})=>{
+ await fixture(page);await page.getByRole('button',{name:'＋ Schichtmodell hinzufügen',exact:true}).click();
+ const d=page.getByRole('dialog');await d.getByLabel('Kürzel',{exact:true}).fill('N8');await d.getByLabel('Name',{exact:true}).fill('Nachtdienst');await d.getByRole('button',{name:'Schichtmodell hinzufügen'}).click();
+ await page.getByRole('button',{name:'N8 löschen',exact:true}).click();await page.getByRole('button',{name:'Mit Diensten endgültig löschen…'}).click();
+ await expect(page.getByRole('dialog')).toContainText('2 Dienste');
+ await expect(page.getByRole('dialog').getByRole('button',{name:'Endgültig löschen'})).toBeDisabled();
+ await page.getByLabel('Löschbestätigung').fill('LÖSCHEN N8');await page.getByRole('dialog').getByRole('button',{name:'Endgültig löschen'}).click();
+ await expect(page.getByRole('button',{name:'N8 löschen',exact:true})).toHaveCount(0);
+ await page.evaluate(()=>{SFBackend.role='PLANNER';SFSettingsV2.refreshPlanning()});
+ await expect(page.getByRole('button',{name:'F8 löschen',exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'F8 löschen',exact:true}).click();
+ await expect(page.getByRole('button',{name:'Mit Diensten endgültig löschen…'})).toHaveCount(0);
+});
+test('an open deletion preview cannot delete after switching companies',async({page})=>{
+ await fixture(page);await page.getByRole('button',{name:'＋ Schichtmodell hinzufügen',exact:true}).click();
+ const d=page.getByRole('dialog');await d.getByLabel('Kürzel',{exact:true}).fill('N8');await d.getByLabel('Name',{exact:true}).fill('Nachtdienst');await d.getByRole('button',{name:'Schichtmodell hinzufügen'}).click();
+ await page.getByRole('button',{name:'N8 löschen',exact:true}).click();await page.getByRole('button',{name:'Mit Diensten endgültig löschen…'}).click();
+ await page.getByLabel('Löschbestätigung').fill('LÖSCHEN N8');
+ await page.evaluate(()=>selectFixtureCompany('b'));
+ await page.getByRole('dialog').getByRole('button',{name:'Endgültig löschen'}).click();
+ await expect(page.getByRole('dialog')).toContainText('Das Unternehmen wurde inzwischen gewechselt');
+ expect(await page.evaluate(()=>fixtureData.a.some(x=>x.code==='N8'))).toBe(true);
+ expect(await page.evaluate(()=>fixtureData.b.some(x=>x.code==='B8'))).toBe(true);
 });
 test('optional QA editor persists responsibility and daily optional/off/required choices',async({page})=>{
   await fixture(page);await page.getByRole('button',{name:'＋ Schichtmodell hinzufügen',exact:true}).click();
