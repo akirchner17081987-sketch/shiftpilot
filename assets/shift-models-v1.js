@@ -88,7 +88,7 @@
     if(!Number.isInteger(model.soll)||model.soll<0||model.soll>99)throw Error('Die SOLL-Stärke muss eine ganze Zahl zwischen 0 und 99 sein.');
     if(!palette[model.color])throw Error('Bitte eine gültige Farbe auswählen.');
     const current=M.find(model.code),planningMode=model.planning_mode??current?.planningMode??'required',optionalStaffing=model.optional_staffing??current?.optionalStaffing??0,responsible=model.responsible_employee_id===undefined?(current?.responsibleEmployeeId||null):model.responsible_employee_id,only=model.responsible_only??current?.responsibleOnly??false,days=model.optional_weekdays??current?.optionalWeekdays??[1,2,3,4,5,6,7];
-    if(current?.coverageGroup&&(model.start!==current.start||model.end!==current.end||planningMode!=='required'))throw Error('Die gemeinsame Leitung benötigt identische Zeiten und Pflichtbesetzung für alle verbundenen TL-Modelle.');
+    if(current?.coverageGroup&&(planningMode!=='required'||model.soll<1))throw Error('Die gemeinsame Leitung benötigt eine Pflichtbesetzung von mindestens einem TL. Die Zeiten und die SOLL-Stärke werden gemeinsam geändert.');
     if(!['required','optional'].includes(planningMode)||!Number.isInteger(optionalStaffing)||optionalStaffing<0||optionalStaffing>99||(planningMode==='optional'&&optionalStaffing<1))throw Error('Bitte eine gültige Planungsart und optionale Wunschbesetzung angeben.');
     if(only&&(!responsible||(planningMode==='optional'&&optionalStaffing>1)))throw Error('Bei exklusiver Zuständigkeit ist ein Mitarbeiter und höchstens eine optionale Besetzung erforderlich.');
     if(responsible&&!staff().some(e=>String(e._dbId||e.id)===String(responsible)&&e.status==='active'))throw Error('Bitte einen aktiven Mitarbeiter dieses Unternehmens auswählen.');
@@ -117,7 +117,9 @@
     M.busy=true;B.shiftModelSaving=true;let committed=false;
     try{
       if(B.syncTimer){clearTimeout(B.syncTimer);B.syncTimer=null;await B.sync();if(B.lastSyncError)throw B.lastSyncError;}
-      const q=await B.client.rpc('manager_manage_shift_model',{p_company_id:companyId,p_action:action,p_model:payload});
+      const q=action==='UPDATE_SHARED'
+        ?await B.client.rpc('manager_manage_shared_shift_model',{p_company_id:companyId,p_model:payload})
+        :await B.client.rpc('manager_manage_shift_model',{p_company_id:companyId,p_action:action,p_model:payload});
       if(q.error)throw q.error;
       committed=true;await reload(companyId);return q.data;
     }catch(error){if(committed)throw Error('Das Schichtmodell wurde gespeichert. Bitte lade die Seite neu, um die aktuelle Liste zu sehen.');throw error;}
@@ -158,15 +160,15 @@
     const companyId=B.companyId;
     try{await window.SFCompanyProfile?.load()}catch(e){window.showSaveToast?.('Standorte konnten nicht geladen werden',e.message);return;}
     if(companyId!==B.companyId||!M.canManage())return;
-    const existing=code?M.find(code):null,action=!existing?'CREATE':existing.active?'UPDATE':'RESTORE';
+    const existing=code?M.find(code):null,action=!existing?'CREATE':!existing.active?'RESTORE':existing.coverageGroup?'UPDATE_SHARED':'UPDATE';
     const d=dialog(existing?(existing.active?'Schichtmodell bearbeiten':'Schichtmodell wiederherstellen'):'Schichtmodell hinzufügen',`
       <p>Das Modell gilt nur für das aktuell ausgewählte Unternehmen. Zeiten über Mitternacht sind möglich.</p>
       <form id="sfModelForm"><div class="sf-model-fields">
         <label><span>Kürzel</span><input id="sfModelCode" maxlength="20" required placeholder="z. B. F8" value="${esc(existing?.displayCode||existing?.id||'')}"></label>
         <label><span>Name</span><input id="sfModelName" maxlength="80" required placeholder="z. B. Frühdienst 8 Stunden" value="${esc(existing?.name||'')}"></label>
-        <label><span>Beginn</span><input id="sfModelStart" type="time" ${existing?.coverageGroup?'readonly':''} required value="${esc(existing?.start||'06:00')}"></label>
-        <label><span>Ende</span><input id="sfModelEnd" type="time" ${existing?.coverageGroup?'readonly':''} required value="${esc(existing?.end||'14:00')}"></label>
-        <label><span>SOLL-Stärke</span><input id="sfModelSoll" type="number" min="0" max="99" step="1" required value="${Number(existing&&globalSoll[existing.id]||0)}"></label>
+        <label><span>Beginn</span><input id="sfModelStart" type="time" required value="${esc(existing?.start||'06:00')}"></label>
+        <label><span>Ende</span><input id="sfModelEnd" type="time" required value="${esc(existing?.end||'14:00')}"></label>
+        <label><span>SOLL-Stärke</span><input id="sfModelSoll" type="number" min="${existing?.coverageGroup?1:0}" max="99" step="1" required value="${Number(existing?.coverageGroup?existing.coverageRequired:existing&&globalSoll[existing.id]||0)}"></label>
         <label><span>Farbe</span><select id="sfModelColor" aria-label="Farbe">${Object.entries(palette).map(([id,label])=>`<option value="${id}" ${id===(existing?.cls||'teal')?'selected':''}>${label}</option>`).join('')}</select></label>
         ${window.SFCompanyProfile?`<label><span>Unternehmensstandort</span><select id="sfModelSite">${window.SFCompanyProfile.siteOptions(existing?.siteId)}</select></label>`:''}
         <label><span>Planungsart</span><select id="sfModelMode" aria-label="Planungsart"><option value="required">Pflichtbesetzung</option><option value="optional" ${existing?.planningMode==='optional'?'selected':''}>Optional · nach Pflichtdiensten</option></select></label>
@@ -174,7 +176,7 @@
         <label><span>Zuständiger Mitarbeiter</span><select id="sfModelResponsible" aria-label="Zuständiger Mitarbeiter"><option value="">Keine feste Zuständigkeit</option>${staff().filter(e=>e.status==='active').map(e=>`<option value="${esc(e._dbId||e.id)}" ${String(existing?.responsibleEmployeeId)===String(e._dbId||e.id)?'selected':''}>${esc(e.first+' '+e.last)}</option>`).join('')}</select></label>
         <label><span>Zuweisung</span><select id="sfModelOnly" aria-label="Zuweisung"><option value="false">Alle mit Schichtfreigabe</option><option value="true" ${existing?.responsibleOnly?'selected':''}>Nur zuständiger Mitarbeiter</option></select></label>
         <fieldset style="grid-column:1/-1;border:1px solid var(--line);border-radius:8px;padding:10px"><legend>Reguläre Einsatztage</legend><div style="display:flex;gap:12px;flex-wrap:wrap">${['Mo','Di','Mi','Do','Fr','Sa','So'].map((day,i)=>`<label style="display:flex;align-items:center;gap:4px"><input type="checkbox" data-sf-optional-day value="${i+1}" ${(existing?.optionalWeekdays||[1,2,3,4,5,6,7]).includes(i+1)?'checked':''} style="width:18px;min-height:18px">${day}</label>`).join('')}</div></fieldset>
-        <p id="sfModelRuleHelp" style="grid-column:1/-1;margin:0">${existing?.coverageGroup?`Gemeinsame Mindestbesetzung ${esc(existing.coverageGroup)}: ${existing.coverageRequired} TL insgesamt. Ein TL deckt beide Standorte ab; ein zweiter TL ist möglich. Gemeinsame Tageswerte stehen unter „Abweichende SOLL-Stärken“. `:''}Die Standardbesetzung gilt an den ausgewählten Einsatztagen. An anderen Tagen entsteht kein regulärer Bedarf. Tageswerte ermöglichen einzelne Ausnahmen. Pflichtdienste haben Vorrang; optionale Schichten dürfen frei bleiben. Freigaben, Rhythmus, Stunden und Ruhezeiten gelten weiterhin.</p>
+        <p id="sfModelRuleHelp" style="grid-column:1/-1;margin:0">${existing?.coverageGroup?`Gemeinsame Mindestbesetzung ${esc(existing.coverageGroup)}: ${existing.coverageRequired} TL insgesamt. Beginn, Ende und SOLL-Stärke werden für alle verbundenen Modelle dieses Unternehmens gemeinsam geändert. Name, Kürzel, Farbe, Einsatzort und Einsatztage gelten nur für dieses Modell. Vorhandene Dienste behalten ihre bereits gespeicherten Zeiten. `:''}Die Standardbesetzung gilt an den ausgewählten Einsatztagen. An anderen Tagen entsteht kein regulärer Bedarf. Tageswerte ermöglichen einzelne Ausnahmen. Pflichtdienste haben Vorrang; optionale Schichten dürfen frei bleiben. Freigaben, Rhythmus, Stunden und Ruhezeiten gelten weiterhin.</p>
       </div><div class="sf-model-error" role="alert"></div><div class="sf-model-footer"><button type="button" class="ghost" data-cancel>Abbrechen</button><button type="submit" class="primary">${action==='CREATE'?'Schichtmodell hinzufügen':action==='RESTORE'?'Wiederherstellen':'Änderungen speichern'}</button></div></form>`);
     const val=id=>d.shade.querySelector('#'+id).value;
     d.shade.querySelector('form').onsubmit=async e=>{
@@ -184,7 +186,7 @@
         d.setSaving(false);d.close();window.showSaveToast?.('Schichtmodell gespeichert','Das Modell ist im aktuellen Unternehmen verfügbar.');
       }catch(err){d.setSaving(false);syncMode();error.textContent=err.message||'Das Modell konnte nicht gespeichert werden.';}
     };
-    const mode=d.shade.querySelector('#sfModelMode'),syncMode=()=>{const optional=mode.value==='optional',shared=!!existing?.coverageGroup;mode.disabled=shared;d.shade.querySelector('#sfModelSoll').disabled=optional||shared;if(shared)d.shade.querySelector('#sfModelSoll').value=existing.coverageRequired;if(optional)d.shade.querySelector('#sfModelSoll').value='0';d.shade.querySelector('#sfModelOptional').disabled=!optional;};mode.onchange=syncMode;syncMode();
+    const mode=d.shade.querySelector('#sfModelMode'),syncMode=()=>{const optional=mode.value==='optional',shared=!!existing?.coverageGroup;mode.disabled=shared;d.shade.querySelector('#sfModelSoll').disabled=optional;if(optional)d.shade.querySelector('#sfModelSoll').value='0';d.shade.querySelector('#sfModelOptional').disabled=!optional;};mode.onchange=syncMode;syncMode();
   };
   M.remove=code=>{
     const model=M.find(code);if(!model||!M.canManage()||M.busy)return;
@@ -217,7 +219,7 @@
     host.querySelectorAll('#sfSaveShiftSettings,#sfSaveDailySoll,#sfResetDailySoll,[data-sf-start],[data-sf-end],[data-sf-soll],[data-sf-day]').forEach(el=>el.disabled=!M.canManage()||M.busy);
     for(const row of list.querySelectorAll('.sf-set-shift')){const code=row.querySelector('[data-sf-start]')?.dataset.sfStart,t=M.find(code);if(!t)continue;const e=staff().find(e=>String(e._dbId||e.id)===String(t.responsibleEmployeeId));if(t.planningMode==='optional'){const input=row.querySelector('[data-sf-soll]');input.value='0';input.disabled=true;}if(['OT1','OT2'].includes(t.id)&&M.find('OT2')?.morningOtMinimum){const note=document.createElement('small');note.textContent='Ab 3 O3 am vorherigen Abend bis 08:00 Uhr: statt OT1 + OT2 werden 2× OT2 geplant.';row.firstElementChild.appendChild(note);}if(t.planningMode==='optional'||t.responsibleOnly){const note=document.createElement('small');note.textContent=(t.planningMode==='optional'?`Optional · Wunsch ${t.optionalStaffing}`:'Pflichtbesetzung')+(t.responsibleOnly?` · Nur ${e?e.first+' '+e.last:'Zuständiger fehlt'}`:'');row.firstElementChild.appendChild(note);}}
     for(const row of list.querySelectorAll('.sf-set-shift')){const t=M.find(row.querySelector('[data-sf-start]')?.dataset.sfStart);if(t&&t.optionalWeekdays.length<7){const note=document.createElement('small');note.textContent=t.optionalWeekdays.join(',')==='1,2,3,4,5'?'Einsatztage: Mo–Fr':'Einsatztage: '+t.optionalWeekdays.map(d=>['Mo','Di','Mi','Do','Fr','Sa','So'][d-1]).join(', ');row.firstElementChild.appendChild(note);}}
-    for(const row of list.querySelectorAll('.sf-set-shift')){const t=M.find(row.querySelector('[data-sf-start]')?.dataset.sfStart);if(t?.coverageGroup){const note=document.createElement('small');note.textContent=`Gemeinsame Leitung ${t.coverageGroup} · SOLL ${t.coverageRequired} insgesamt · zweiter TL möglich`;row.firstElementChild.appendChild(note);for(const input of row.querySelectorAll('[data-sf-start],[data-sf-end],[data-sf-soll]'))input.disabled=true;row.querySelector('[data-sf-soll]').value=t.coverageRequired;}}
+    for(const row of list.querySelectorAll('.sf-set-shift')){const t=M.find(row.querySelector('[data-sf-start]')?.dataset.sfStart);if(t?.coverageGroup){const note=document.createElement('small');note.textContent=`Gemeinsame Leitung ${t.coverageGroup} · Zeit und SOLL werden für alle verbundenen Modelle zusammen geändert.`;row.firstElementChild.appendChild(note);row.querySelector('[data-sf-soll]').value=t.coverageRequired;row.querySelector('[data-sf-soll]').min='1';}}
   };
   const update=B.updateState;B.updateState=function(){const r=update?.apply(this,arguments);if(B.ready)window.SFSettingsV2?.refreshPlanning();return r;};
 })();

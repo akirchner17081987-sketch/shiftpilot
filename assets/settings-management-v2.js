@@ -136,7 +136,53 @@
   const otWeekendMinimum=()=>window.SFSolidPlanningCore?.otWeekendMinimum?.(window.SFCompliance?.policy?.solidPlanningRules)||0;
   function planningTypes(){return TYPES.filter(t=>{const g=window.SFShiftModels?.coverageGroup?.(t.id);return !g||g.representative===t.id})}
   function planning(b){b.innerHTML=`<div id="sfSetError" class="sf-set-error" role="alert"></div><div class="sf-set-grid">${shiftDurationCard()}<section class="sf-set-card full"><h3>Schichtmodelle und Standardwerte</h3><p>Zeiten gelten für neue Einplanungen. Bereits individuell geänderte Dienste bleiben unverändert.</p><div class="sf-set-shifts">${TYPES.map(t=>`<div class="sf-set-shift"><div><b>${esc((window.SFShiftModels?.label?.(t.id)||t.id))}</b><small>${esc(t.name||t.id)}</small></div><label>Beginn<input type="time" data-sf-start="${esc(t.id)}" value="${esc(t.start)}"></label><label>Ende<input type="time" data-sf-end="${esc(t.id)}" value="${esc(t.end)}"></label><label>SOLL<input type="number" min="${t.id==='OT'?otWeekendMinimum():0}" max="99" data-sf-soll="${esc(t.id)}" value="${Math.max(Number(globalSoll[t.id]||0),t.id==='OT'?otWeekendMinimum():0)}">${t.id==='OT'&&otWeekendMinimum()>0?`<small>Sa & So: mindestens ${otWeekendMinimum()} OT je Tag, verbindlich.</small>`:''}</label></div>`).join('')}</div><div class="sf-set-actions"><button class="primary" id="sfSaveShiftSettings">Schichtwerte speichern</button></div></section><section class="sf-set-card full"><h3>Abweichende SOLL-Stärken</h3><p>Leere Felder übernehmen die Standardbesetzung an den regulären Einsatztagen. Tageswerte erlauben einzelne Ausnahmen. Optionale Modelle: Optional = bei freier Kapazität, Aus = keine automatische Besetzung, Pflicht = verbindlich besetzen. Gemeinsame Leitung LE/RE: Der Tageswert gilt insgesamt für beide Standorte. Die Angaben gelten für die im Dienstplan gewählte Woche.</p><div class="sf-set-days">${DAYS.map((d,i)=>{const date=iso(addDays(weekStart,i));return `<div class="sf-set-day"><div class="sf-set-day-head"><b>${d}</b><small>${new Date(date+'T00:00:00').toLocaleDateString('de-DE')}</small></div><div class="sf-set-day-values">${planningTypes().map(t=>{const g=window.SFShiftModels?.coverageGroup?.(t.id),value=g?Math.max(...g.active.map(x=>dailySoll[date]?.[x.id]).filter(x=>x!=null),-1):dailySoll[date]?.[t.id]??'';const dayValue=g&&value<0?'':value;return `<label>${esc(g?g.label+' insgesamt':t.id)}${t.planningMode==='optional'?`<select aria-label="${esc((window.SFShiftModels?.label?.(t.id)||t.id))} am ${date}" data-sf-day="${date}" data-sf-type="${esc(t.id)}"><option value="" ${value===''?'selected':''}>Optional</option><option value="0" ${value===0?'selected':''}>Aus</option><option value="1" ${value===1?'selected':''}>Pflicht</option>${Number(value)>1?`<option value="${Number(value)}" selected>Pflicht (${Number(value)})</option>`:''}</select>`:`<input type="number" min="0" max="99" data-sf-day="${date}" data-sf-type="${esc(t.id)}" value="${dayValue}" placeholder="${Number(g?window.SFShiftModels.coverageTarget(date,t.id):window.SFShiftModels?.requiredSoll?.(date,t.id,globalSoll[t.id]||0)??globalSoll[t.id]??0)}">`}</label>`}).join('')}</div></div>`}).join('')}</div><div class="sf-set-actions"><button class="ghost" id="sfResetDailySoll">Woche zurücksetzen</button><button class="primary" id="sfSaveDailySoll">Tageswerte speichern</button></div></section></div>`;b.querySelector('#sfSaveShiftSettings').onclick=savePlanning;b.querySelector('#sfSaveDailySoll').onclick=saveDaily;b.querySelector('#sfResetDailySoll').onclick=resetDaily;window.SFShiftModels?.enhance(b);window.SFPlanningTeams?.enhance(b);bindShiftDuration(b);window.SFRhythmStaggering?.enhance(b);window.SFManualRhythm?.enhance(b)}
-  async function savePlanning(){const err=document.getElementById('sfSetError'),rows=[];for(const t of TYPES){const start=document.querySelector(`[data-sf-start="${t.id}"]`).value,end=document.querySelector(`[data-sf-end="${t.id}"]`).value,soll=Number(document.querySelector(`[data-sf-soll="${t.id}"]`).value);if(!start||!end||!Number.isFinite(soll)||soll<0||(t.id==='OT'&&soll<otWeekendMinimum())){err.textContent=`Bitte gültige Werte für ${(window.SFShiftModels?.label?.(t.id)||t.id)} eintragen.`;err.classList.add('show');return}t.start=start;t.end=end;globalSoll[t.id]=t.planningMode==='optional'?0:soll;rows.push({code:t.id,start,end})}store.set('shiftTimes',Object.fromEntries(TYPES.map(t=>[t.id,{start:t.start,end:t.end}])));saveAll();const B=window.SFBackend;if(B?.ready&&B.client){for(const r of rows){const q=await B.client.from('shift_templates').update({default_start:r.start,default_end:r.end}).eq('company_id',B.companyId).eq('code',r.code);if(q.error){err.textContent=q.error.message;err.classList.add('show');return}}}renderLibrary?.();window.SFShiftModels?.invalidate();renderCalendar?.();showSaveToast?.('Planungseinstellungen gespeichert','Schichtzeiten und globale SOLL-Stärken wurden übernommen.')}
+  async function savePlanning(){
+    const B=window.SFBackend,M=window.SFShiftModels,companyId=B?.companyId;
+    const button=document.getElementById('sfSaveShiftSettings');
+    const showError=message=>{const err=document.getElementById('sfSetError');if(err){err.textContent=message;err.classList.add('show')}};
+    const rows=[];
+    for(const t of TYPES){
+      const start=document.querySelector(`[data-sf-start="${t.id}"]`)?.value;
+      const end=document.querySelector(`[data-sf-end="${t.id}"]`)?.value;
+      const soll=Number(document.querySelector(`[data-sf-soll="${t.id}"]`)?.value);
+      if(!/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(start||'')||!/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(end||'')||start===end||!Number.isInteger(soll)||soll<0||soll>99||t.coverageGroup&&soll<1||t.id==='OT'&&soll<otWeekendMinimum()){
+        showError(`Bitte gültige Werte für ${(M?.label?.(t.id)||t.id)} eintragen.`);return;
+      }
+      rows.push({code:t.id,start,end,soll:t.planningMode==='optional'?0:soll,group:t.coverageGroup||null});
+    }
+    if(B?.ready&&B.client){
+      if(!M?.canManage?.()){showError('Für dieses Unternehmen fehlen aktive Planungsrechte.');return;}
+      const updates=[],groups=new Map();
+      for(const r of rows){
+        const t=M.find(r.code);if(!t)continue;
+        const changed=t.start!==r.start||t.end!==r.end||Number(t.coverageGroup?t.coverageRequired:globalSoll[r.code]||0)!==r.soll;
+        if(!changed)continue;
+        if(r.group){
+          const previous=groups.get(r.group);
+          if(previous&&(previous.start!==r.start||previous.end!==r.end||previous.soll!==r.soll)){
+            showError(`Für ${r.group} wurden unterschiedliche Zeiten oder SOLL-Werte eingegeben. Bitte einen gemeinsamen Wert wählen.`);return;
+          }
+          groups.set(r.group,r);
+        }else updates.push(r);
+      }
+      updates.push(...groups.values());
+      if(button)button.disabled=true;
+      try{
+        for(const r of updates){
+          if(B.companyId!==companyId)throw Error('Das Unternehmen wurde gewechselt. Bitte die Einstellungen neu laden.');
+          const t=M.find(r.code);
+          const payload={code:t.id,display_code:t.displayCode||t.id,name:t.name,start:r.start,end:r.end,soll:r.soll,color:t.cls,planning_mode:t.planningMode,optional_staffing:t.optionalStaffing,responsible_employee_id:t.responsibleEmployeeId||null,responsible_only:t.responsibleOnly,optional_weekdays:t.optionalWeekdays,site_id:t.siteId||null};
+          await M.perform(r.group?'UPDATE_SHARED':'UPDATE',payload);
+        }
+        if(B.companyId===companyId)window.showSaveToast?.('Planungseinstellungen gespeichert',updates.length?'Schichtzeiten und SOLL-Stärken wurden übernommen.':'Alle Schichtwerte sind bereits gespeichert.');
+      }catch(error){if(B.companyId===companyId)showError((error.message||String(error))+(updates.length>1?' Bitte die Schichtwerte neu laden, falls zuvor einzelne Änderungen gespeichert wurden.':''));}
+      finally{if(button?.isConnected)button.disabled=!M.canManage();}
+      return;
+    }
+    for(const r of rows){const t=TYPES.find(x=>x.id===r.code);t.start=r.start;t.end=r.end;globalSoll[t.id]=r.soll;}
+    store.set('shiftTimes',Object.fromEntries(TYPES.map(t=>[t.id,{start:t.start,end:t.end}])));
+    saveAll();renderLibrary?.();M?.invalidate?.();renderCalendar?.();showSaveToast?.('Planungseinstellungen gespeichert','Schichtzeiten und globale SOLL-Stärken wurden übernommen.');
+  }
   async function saveDaily(){for(const i of document.querySelectorAll('[data-sf-day][data-sf-type]')){if(i.dataset.sfType==='OT'&&window.SFSolidPlanningCore?.weekday(i.dataset.sfDay)>5&&i.value!==''&&Number(i.value)<otWeekendMinimum())return showSaveToast?.('Tageswert nicht gespeichert',`Samstags und sonntags sind mindestens ${otWeekendMinimum()} OT-Mitarbeiter verbindlich.`);}const dates=currentWeekDates().map(iso);document.querySelectorAll('[data-sf-day][data-sf-type]').forEach(i=>{const d=i.dataset.sfDay,t=i.dataset.sfType;(dailySoll[d]||(dailySoll[d]={}));const g=window.SFShiftModels?.coverageGroup?.(t);if(g)g.active.forEach(x=>delete dailySoll[d][x.id]);if(i.value==='')delete dailySoll[d][t];else dailySoll[d][t]=Number(i.value)});saveAll();const B=window.SFBackend;if(B?.ready&&B.client){let q=await B.client.from('daily_staffing_overrides').delete().eq('company_id',B.companyId).in('work_date',dates);if(q.error)return showSaveToast?.('Speichern fehlgeschlagen',q.error.message);const rows=dates.flatMap(work_date=>Object.entries(dailySoll[work_date]||{}).map(([shift_code,required_count])=>({company_id:B.companyId,work_date,shift_code,required_count:Number(required_count)})));if(rows.length){q=await B.client.from('daily_staffing_overrides').upsert(rows,{onConflict:'company_id,work_date,shift_code'});if(q.error)return showSaveToast?.('Speichern fehlgeschlagen',q.error.message)}}window.SFShiftModels?.invalidate();renderCalendar?.();showSaveToast?.('Tageswerte gespeichert','Die Abweichungen dieser Woche wurden übernommen.')}
   async function resetDaily(){if(!confirm('Alle abweichenden SOLL-Werte dieser Woche zurücksetzen?'))return;const dates=currentWeekDates().map(iso);dates.forEach(d=>delete dailySoll[d]);saveAll();const B=window.SFBackend;if(B?.ready&&B.client){const q=await B.client.from('daily_staffing_overrides').delete().eq('company_id',B.companyId).in('work_date',dates);if(q.error)return showSaveToast?.('Zurücksetzen fehlgeschlagen',q.error.message)}planning(document.getElementById('sfSettingBody'));window.SFShiftModels?.invalidate();renderCalendar?.();showSaveToast?.('Woche zurückgesetzt','Es gelten wieder die globalen SOLL-Stärken.')}
 
