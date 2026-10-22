@@ -11,7 +11,7 @@ test('the main monthly planning button starts the checked server run and opens i
  w.eval(fs.readFileSync('assets/autonomous-planning-v1.js','utf8'));w.SFAutonomousPlanning.render();await w.happyDOM.whenAsyncComplete();w.eval(fs.readFileSync('assets/month-optimizer-v1.js','utf8'));
  w.SFMonthOptimizer.restoreBackground=async(job,inside,assurance)=>{opened.push({id:job.id,canApply:assurance.canApply})};
  await w.generateAutoPlanPreview();assert.equal(legacy,0);assert.equal(cleared,1);assert.equal(calls.at(-1).p_action,'RUN');assert.equal(calls.at(-1).p_month,'2027-01-01');assert.equal(w.localStorage.getItem('sf_autonomy_primary_one_owner'),'new-run');
- const live=w.document.getElementById('sfAutonomyLiveStatus');assert.equal(live.hidden,false);assert.match(live.textContent,/Vorbereitung wartet.*Januar 2027.*wartet auf die nächste Verarbeitung/);assert.equal(live.querySelector('progress').hasAttribute('value'),false);assert.equal(w.document.getElementById('generateAutoPlanBtn').disabled,true);
+ const live=w.document.getElementById('sfAutonomyLiveStatus');assert.equal(live.hidden,false);assert.match(live.textContent,/Januar 2027.*Wartet auf Vorbereitung.*Vorbereitung beginnt/);assert.equal(live.querySelector('[role=progressbar]').hasAttribute('aria-valuenow'),false);assert.equal(live.querySelector('.is-indeterminate [data-live-fill]').style.width,'100%');assert.equal(w.document.getElementById('generateAutoPlanBtn').disabled,true);
  phase='READY';await w.SFAutonomousPlanning.load(true);await Promise.resolve();await Promise.resolve();assert.equal(live.hidden,true);assert.equal(w.document.getElementById('generateAutoPlanBtn').disabled,false);assert.ok(calls.some(c=>c.p_action==='RESULT'&&c.p_run_id==='new-run'));assert.deepEqual(opened,[{id:'checked-job',canApply:true}]);assert.equal(w.localStorage.getItem('sf_autonomy_primary_one_owner'),null);
  run.id='review-run';phase='QUEUED';await w.SFMonthOptimizer.optimize();phase='REVIEW';await w.SFAutonomousPlanning.load(true);await Promise.resolve();await Promise.resolve();assert.deepEqual(opened.at(-1),{id:'checked-job',canApply:false});assert.equal(w.localStorage.getItem('sf_autonomy_primary_one_owner'),null);
  }finally{await w.happyDOM.abort();w.close();}});
@@ -28,11 +28,11 @@ test('active planning shows the linked worker checkpoint and never leaks it acro
  w.SFAutoPlanWorkspace={render(){}};w.setInterval=()=>0;const originalTimeout=w.setTimeout.bind(w);w.setTimeout=(fn,ms)=>ms===10000?0:originalTimeout(fn,ms);
  w.eval(fs.readFileSync('assets/autonomous-planning-v1.js','utf8'));w.SFAutonomousPlanning.render();await w.happyDOM.whenAsyncComplete();
  assert.deepEqual(calls.find(c=>c.name==='get_background_auto_plan'),{name:'get_background_auto_plan',p_company_id:'one',p_job_id:'job-one'});
- assert.equal(w.document.querySelector('.sf-autonomy-progress progress').value,15);
- assert.equal(w.document.querySelector('#sfAutonomyLiveStatus progress').value,15);
+ assert.match(w.document.querySelector('.sf-autonomy-progress').textContent,/15 %/);
+ const liveBar=w.document.querySelector('#sfAutonomyLiveStatus [role=progressbar]'),liveFill=liveBar.querySelector('[data-live-fill]');assert.equal(liveBar.getAttribute('aria-valuenow'),'15');assert.equal(liveFill.style.width,'15%');
  assert.match(w.document.querySelector('[data-autonomy-runs]').textContent,/15 %.*Monat 1 von 1 planen.*15\/48 Verteilungen geprüft/);
  w.document.getElementById('sfAutonomyDay').value='17';w.document.getElementById('sfAutonomyDay').dispatchEvent(new w.Event('input',{bubbles:true}));
- progress=23;await w.SFAutonomousPlanning.load(true);assert.equal(w.document.querySelector('.sf-autonomy-progress progress').value,23);assert.equal(w.document.getElementById('sfAutonomyDay').value,'17');
+ progress=23;await w.SFAutonomousPlanning.load(true);assert.match(w.document.querySelector('.sf-autonomy-progress').textContent,/23 %/);assert.equal(w.document.querySelector('#sfAutonomyLiveStatus [data-live-fill]'),liveFill);assert.equal(liveFill.style.width,'23%');assert.equal(w.document.getElementById('sfAutonomyDay').value,'17');
  hold=true;const pending=w.SFAutonomousPlanning.load(true);for(let i=0;i<10&&!release;i++)await Promise.resolve();assert.equal(typeof release,'function');
  w.SFBackend.companyId='two';w.SFAutonomousPlanning.render();release({data:{id:'job-one',company_id:'one',status:'RUNNING',progress:100,label:'Alte Firma'}});await pending;await w.happyDOM.whenAsyncComplete();
  assert.equal(w.SFAutonomousPlanning.getState()?.runs.length,0);assert.doesNotMatch(w.document.querySelector('[data-autonomy-runs]').textContent,/Alte Firma|100 %/);

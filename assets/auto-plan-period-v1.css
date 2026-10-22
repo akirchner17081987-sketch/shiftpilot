@@ -228,9 +228,27 @@ html[data-sf-theme="light"] #sfAutonomousPlanning input,html[data-sf-theme="ligh
 #sfAutonomousPlanning [data-autonomy-runs] button{margin-top:12px}
 #sfAutonomousPlanning .sf-autonomy-progress{display:grid;gap:7px;margin-top:9px}
 #sfAutonomousPlanning .sf-autonomy-progress strong{color:var(--text)}
-#sfAutonomousPlanning .sf-autonomy-progress progress{display:block;width:100%;height:11px;accent-color:var(--teal)}
-#sfAutonomyLiveStatus{margin:14px 0 0;border-color:color-mix(in srgb,var(--teal) 55%,var(--line));background:color-mix(in srgb,var(--teal) 7%,var(--panel))}
+#sfAutonomyLiveStatus{margin:14px 0 0;padding:20px 22px;border-color:color-mix(in srgb,var(--teal) 42%,var(--line));background:linear-gradient(135deg,color-mix(in srgb,var(--teal) 8%,var(--panel)),var(--panel) 70%);box-shadow:0 8px 26px rgba(0,0,0,.08)}
 #sfAutonomyLiveStatus[hidden]{display:none!important}
-#sfAutonomyLiveStatus progress{display:block;width:100%;height:12px;margin-top:12px;accent-color:var(--teal)}
+#sfAutonomyLiveStatus .sf-autonomy-live-head{display:flex;justify-content:space-between;align-items:center;gap:16px}
+#sfAutonomyLiveStatus .sf-autonomy-live-head small{display:block;color:var(--muted);font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px}
+#sfAutonomyLiveStatus .sf-autonomy-live-head b{display:block;font-size:17px;line-height:1.35}
+#sfAutonomyLiveStatus .sf-autonomy-live-badge{border:1px solid color-mix(in srgb,var(--teal) 46%,var(--line));border-radius:999px;padding:6px 11px;font-size:12px;font-weight:700;color:var(--text);background:color-mix(in srgb,var(--teal) 13%,var(--panel));white-space:nowrap}
+#sfAutonomyLiveStatus [data-live-description]{font-size:13px;line-height:1.6;margin:12px 0 0;color:var(--text)}
+#sfAutonomyLiveStatus .sf-autonomy-live-track{height:7px;margin-top:17px;border-radius:999px;background:color-mix(in srgb,var(--teal) 12%,var(--line));overflow:hidden}
+#sfAutonomyLiveStatus [data-live-fill]{display:block;height:100%;width:0;border-radius:inherit;background:linear-gradient(90deg,color-mix(in srgb,var(--teal) 70%,#fff),var(--teal));transition:width 1100ms ease-out}
+#sfAutonomyLiveStatus .is-indeterminate [data-live-fill]{width:100%;opacity:.45;animation:sf-autonomy-calm 4s ease-in-out infinite alternate}
+@keyframes sf-autonomy-calm{from{opacity:.28}to{opacity:.62}}
+#sfAutonomyLiveStatus .sf-autonomy-live-foot{display:flex;justify-content:space-between;gap:12px;margin-top:7px;color:var(--muted)}
+#sfAutonomyLiveStatus .sf-autonomy-live-foot small{font-size:12px;line-height:1.5}
+#sfAutonomyLiveStatus .sf-autonomy-live-foot strong{font-size:12px;color:var(--text);white-space:nowrap}
+#sfAutonomyLiveStatus .sf-autonomy-live-foot strong[hidden]{display:none}
+#sfAutonomyLiveStatus .sf-autonomy-live-stages{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;list-style:none;padding:14px 0 0;margin:16px 0 0;border-top:1px solid var(--line)}
+#sfAutonomyLiveStatus .sf-autonomy-live-stages li{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:7px}
+#sfAutonomyLiveStatus .sf-autonomy-live-stages li:before{content:'';flex:none;width:7px;height:7px;border-radius:50%;background:var(--line)}
+#sfAutonomyLiveStatus .sf-autonomy-live-stages li.is-done:before,#sfAutonomyLiveStatus .sf-autonomy-live-stages li.is-current:before{background:var(--teal)}
+#sfAutonomyLiveStatus .sf-autonomy-live-stages li.is-current{font-weight:700;color:var(--text)}
+@media(max-width:600px){#sfAutonomyLiveStatus{padding:17px}#sfAutonomyLiveStatus .sf-autonomy-live-head{align-items:flex-start;flex-direction:column;gap:9px}#sfAutonomyLiveStatus .sf-autonomy-live-stages{gap:4px}#sfAutonomyLiveStatus .sf-autonomy-live-stages li{font-size:10px;gap:4px}}
+@media(prefers-reduced-motion:reduce){#sfAutonomyLiveStatus [data-live-fill]{transition:none}#sfAutonomyLiveStatus .is-indeterminate [data-live-fill]{animation:none;opacity:.45}}
 @media(max-width:900px){#sfAutonomousPlanning .sf-auto-period-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){#sfAutonomousPlanning .sf-auto-period-grid{grid-template-columns:1fr}#sfAutonomousPlanning>.sf-auto-rule-card-body{padding:4px 14px 14px}#sfAutonomousPlanning>summary>span{float:none;display:block;margin-top:5px}#sfAutonomousPlanning .sf-auto-actions{display:grid}#sfAutonomousPlanning .sf-auto-actions button{width:100%}}
