@@ -229,5 +229,8 @@ html[data-sf-theme="light"] #sfAutonomousPlanning input,html[data-sf-theme="ligh
 #sfAutonomousPlanning .sf-autonomy-progress{display:grid;gap:7px;margin-top:9px}
 #sfAutonomousPlanning .sf-autonomy-progress strong{color:var(--text)}
 #sfAutonomousPlanning .sf-autonomy-progress progress{display:block;width:100%;height:11px;accent-color:var(--teal)}
+#sfAutonomyLiveStatus{margin:14px 0 0;border-color:color-mix(in srgb,var(--teal) 55%,var(--line));background:color-mix(in srgb,var(--teal) 7%,var(--panel))}
+#sfAutonomyLiveStatus[hidden]{display:none!important}
+#sfAutonomyLiveStatus progress{display:block;width:100%;height:12px;margin-top:12px;accent-color:var(--teal)}
 @media(max-width:900px){#sfAutonomousPlanning .sf-auto-period-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){#sfAutonomousPlanning .sf-auto-period-grid{grid-template-columns:1fr}#sfAutonomousPlanning>.sf-auto-rule-card-body{padding:4px 14px 14px}#sfAutonomousPlanning>summary>span{float:none;display:block;margin-top:5px}#sfAutonomousPlanning .sf-auto-actions{display:grid}#sfAutonomousPlanning .sf-auto-actions button{width:100%}}
