@@ -32,3 +32,15 @@ test('inline settings and editor allow shared time changes and send one company-
   assert.deepEqual(rows.map(x=>x.default_start),['18:00:00','18:00:00']);
  }finally{w.happyDOM.abort()}
 });
+
+test('production HTML updates both script URLs for browsers with cached old assets',()=>{
+ const w=new Window({url:'https://schichtfunk.de'});
+ try{
+  const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
+  w.document.write(html);
+  for(const name of ['shift-models-v1.js','settings-management-v2.js']){
+   const src=w.document.querySelector(`script[src*="${name}"]`)?.src;
+   assert.ok(src?.includes('sharededit=20261022-1'),`${name} needs the new version inside src`);
+  }
+ }finally{w.happyDOM.abort()}
+});
