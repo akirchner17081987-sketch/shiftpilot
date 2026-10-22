@@ -119,6 +119,23 @@ test('preview editor accepts a shorter work block without warning and still supp
  await page.getByRole('button',{name:'Dienst hinzufügen',exact:true}).click();await page.locator('#sfPreviewFrom').fill('2026-12-01');await page.locator('#sfPreviewTo').fill('2026-12-03');await page.locator('#sfPreviewTo').dispatchEvent('change');await page.locator('#sfPreviewEmployee').selectOption('e');await page.getByRole('button',{name:'In Vorplanung übernehmen',exact:true}).click();
  expect(await page.evaluate(()=>autoPlanPreview.length)).toBe(3);expect(await page.evaluate(()=>assignments.length)).toBe(0);await expect(page.locator('#applyAutoPlanBtn')).toBeEnabled();
 });
+test('preview editor explains a blocked overnight work block instead of showing an active submit action',async({page})=>{
+ await fixture(page);await page.locator('#autoPlanMonth').fill('2027-01');await page.locator('#autoPlanMonth').dispatchEvent('change');
+ await page.evaluate(()=>{
+  employees=[{id:'e',personnelNo:'2046',first:'Dennis',last:'Klima',status:'active',employment:'Vollzeit',shifts:['O2'],weeklyHours:40,maxWeeklyHours:55,monthlyHours:180}];
+  TYPES=[{id:'O2',name:'O2',start:'20:00',end:'06:00'}];getSoll=d=>Number(d>='2027-01-07'&&d<='2027-01-09');plannedAssignmentHours=()=>10;
+  assignments=[{id:'previous',employeeId:'e',date:'2027-01-04',type:'O2',start:'20:00',end:'06:00'}];
+  SFCompliance={policy:{solidPlanningRules:{enabled:true,confirmedRulesVersion:2,timezone:'Europe/Berlin',maxConsecutiveShifts:4,maxConsecutiveNightShifts:4,minFreeCalendarDays:2,minNightRecoveryCalendarDays:2,minBlockRestHours:48,maxCalendarWeekHours:55}}};autoPlanAnalyzed=true;renderAutoPlanning();
+ });
+ await page.addScriptTag({content:read('assets/compliance-core-v2.js')});await previewEditor(page);
+ await page.evaluate(()=>SFAutoPlanPreviewEditor.open({dates:['2027-01-07','2027-01-08','2027-01-09'],employeeId:'e',rowEmployee:true}));
+ await expect(page.locator('#sfPreviewEditError')).toContainText('Übernahme gesperrt:');
+ await expect(page.locator('#sfPreviewEditError')).toContainText('zwei vollständig freie Kalendertage und 48 Stunden Ruhe');
+ await expect(page.locator('#sfPreviewEditError')).toContainText('anderen Mitarbeiter');
+ const submit=page.getByRole('button',{name:'Nicht übernehmbar – Regel prüfen'});await expect(submit).toBeDisabled();
+ expect(await submit.evaluate(e=>Number(getComputedStyle(e).opacity))).toBeLessThan(1);
+ expect(await page.evaluate(()=>autoPlanPreview.length)).toBe(0);
+});
 test('preview editor edits a monthly replacement without counting the old draft twice',async({page})=>{
  await fixture(page);await page.evaluate(()=>{employees=['a','b'].map(id=>({id,first:'Test',last:id,status:'active',employment:'Teilzeit',shifts:['FD'],weeklyHours:40,monthlyHours:16}));employeeMonthlyTarget=e=>e.monthlyHours;getSoll=date=>Number(date==='2026-12-01'||date==='2026-12-02');assignments=[1,2].map(n=>({id:'old'+n,date:'2026-12-0'+n,type:'FD',employeeId:'a',start:'06:00',end:'14:00'}));});
  await page.locator('#optimizeAutoMonthBtn').click();await expect(page.locator('#autoSuggestionCount')).toHaveText('2');await previewEditor(page);
