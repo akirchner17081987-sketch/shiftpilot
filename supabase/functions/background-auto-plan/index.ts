@@ -31,7 +31,9 @@ Deno.serve(async req => {
   try {
     const policy = await admin.from("company_compliance_policy").select("standard_max_shift_hours").eq("company_id", job.payload.metadata.company).single();
     if (policy.error || !policy.data) throw new Error("Die Schichtdauer des Unternehmens konnte nicht geladen werden.");
-    const input = core.withShiftDurationLimit(core.withServerWishes(job.payload, job.server_wishes), Number(policy.data.standard_max_shift_hours));
+    const scopedBlockRecovery = job.payload.metadata.company === "ee0e5c9d-d5ae-48e6-abff-37c179a01929";
+    const prepared = core.withShiftDurationLimit(core.withServerWishes(job.payload, job.server_wishes), Number(policy.data.standard_max_shift_hours));
+    const input = { ...prepared, minimumInput: { ...prepared.minimumInput, scopedBlockRecovery }, monthInputs: prepared.monthInputs.map((month: any) => ({ ...month, scopedBlockRecovery })) };
     checkpoint = checkpoint || core.start(input);
     const run = core.context(input, checkpoint), slice = performance.now();
     // Leave headroom for preparation, JSON, database calls and cold starts. Each

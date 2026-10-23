@@ -12,7 +12,7 @@ test('Secontec 9h block recovery exchanges occupied TL days and preserves all ma
  for(const e of employees)assert.equal(S.errors(e,planned,input.solidRules).length,0);
  const elsewhere=core.prepare({...input,scopedBlockRecovery:false});assert.equal(core.checkpointPrimitives.repairBlockExchanges(elsewhere,core.state(elsewhere)).records.length,0);
  const packed=C.pack(input);assert.equal(packed.scopedBlockRecovery,true);assert.equal(C.unpack(packed).scopedBlockRecovery,true);
- const forged={version:1,months:['2027-01'],minimumInput:packed,monthInputs:[packed],metadata:{company:'elsewhere'}};assert.throws(()=>C.check(forged),/gehört nicht zu diesem Unternehmen/);
+ const forged={version:1,months:['2027-01'],minimumInput:packed,monthInputs:[packed],metadata:{company:'elsewhere'}};assert.doesNotThrow(()=>C.check(forged)); // The authenticated worker overrides the client flag by tenant.
 });
 function input(month='2027-01'){
  const employees=['a','b','c'].map(id=>({id,first:'private',email:'private@example.test',target:40,monthLimit:40,calendarLimit:40,maxMonthlyShifts:4,weeklyLimit:40,maxConsecutive:4,shifts:['OT2'],personnelNo:id})),dates=[4,5,6,7,8].map(n=>month+'-'+String(n).padStart(2,'0'));
