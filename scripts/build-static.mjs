@@ -18,6 +18,23 @@ await Promise.all(files.map(file => cp(new URL(file, root), new URL(file, output
 await cp(new URL('assets/', root), new URL('assets/', output), { recursive: true });
 const externalScripts=await hardenStaticCsp(output);
 
+// Every directly loaded module/style belongs to this build's exact contents.
+// Stable filenames with an older manual version must not reuse stale HTTP caches.
+for (const page of files.filter(file=>file.endsWith('.html'))) {
+  const target=new URL(page,output);
+  let html=await readFile(target,'utf8');
+  const tags=[...html.matchAll(/<(?:script|link)\b[^>]*(?:src|href)="([^"]+)"[^>]*>/g)];
+  for (const match of tags) {
+    const url=new URL(match[1],'https://build.invalid/');
+    if(url.origin!=='https://build.invalid'||!url.pathname.startsWith('/assets/')||! /\.(?:m?js|css)$/.test(url.pathname))continue;
+    const content=await readFile(new URL('.'+url.pathname,output));
+    url.searchParams.set('sfv',createHash('sha256').update(content).digest('hex').slice(0,16));
+    const reference=url.pathname+url.search;
+    html=html.replace(match[0],match[0].replace(match[1],reference));
+  }
+  await writeFile(target,html);
+}
+
 // Content-based release ID: identical output has the same ID, including local QA.
 async function fingerprint(directory, prefix='') {
   const parts=[];

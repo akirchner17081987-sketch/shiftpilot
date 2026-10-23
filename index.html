@@ -12,10 +12,12 @@
 <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png" />
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
 <link rel="manifest" href="/site.webmanifest" />
+<link rel="stylesheet" href="/assets/pwa-runtime-v1.css?v=20261023-1">
+<script defer src="/assets/pwa-runtime-v1.js?v=20261023-1"></script>
 <link rel="stylesheet" href="assets/sf-entry-v2.css?v=20261013-fade1">
 <script defer src="assets/sf-entry-v2.js?v=20261018-dive1&csp=20261017-1"></script>
 <link rel="stylesheet" href="assets/sf-entry-access-v1.css?v=20261022-centered-login1">
-<script defer src="assets/sf-entry-access-v1.js?v=20261018-dive1&csp=20261017-1"></script>
+<script defer src="assets/sf-entry-access-v1.js?v=20261023-push-portal1&csp=20261017-1"></script>
 <link rel="preload" as="image" href="assets/earth-surface-original-v2.webp?v=20261018-smooth1">
 <script defer src="assets/globe-surface-v1.js?v=20261018-smooth1"></script>
 <script defer src="assets/region-atlas-v1.js?v=20261019-entry-night1"></script>
@@ -407,7 +409,7 @@ function renderEmployeeAbsences(){const el=document.getElementById('employeeAbse
 function selectEmployee(id){selectedEmployeeId=id;const e=employees.find(x=>x.id===id);if(!e)return;document.getElementById('formTitle').textContent='Mitarbeiter bearbeiten';for(const [id2,val] of [['firstName',e.first],['lastName',e.last],['personnelNo',e.personnelNo],['role',e.role||'Sicherheitsmitarbeiter'],['employment',e.employment],['weeklyHours',e.weeklyHours],['startDate',e.startDate],['contractEnd',e.contractEnd],['status',e.status],['birthDate',e.birthDate],['email',e.email],['phone',e.phone],['address',e.address],['zip',e.zip],['city',e.city],['note',e.note]])document.getElementById(id2).value=val??'';renderShiftChecks(e.shifts||[]);renderQualificationChecks(e.qualifications||[]);renderEmployeeSummary(e);renderEmployeeAbsences()}
 function renderShiftChecks(selected=[]){document.getElementById('shiftChecks').innerHTML=TYPES.map(t=>`<label class="check"><input type="checkbox" value="${t.id}" ${selected.includes(t.id)?'checked':''}>${(window.SFShiftModels?.label?.(t.id)||t.id)}</label>`).join('')}
 function clearEmployeeForm(){selectedEmployeeId=null;['firstName','lastName','personnelNo','email','phone','address','zip','city','birthDate','startDate','contractEnd','note'].forEach(id=>document.getElementById(id).value='');document.getElementById('weeklyHours').value=40;document.getElementById('role').value='Sicherheitsmitarbeiter';document.getElementById('employment').value='Vollzeit';document.getElementById('status').value='active';renderShiftChecks([]);renderQualificationChecks([]);renderEmployeeSummary(null);renderEmployeeAbsences();document.getElementById('formTitle').textContent='Mitarbeiter anlegen'}
-function showSaveToast(title='Mitarbeiter erfolgreich gespeichert',text='Die Mitarbeiterdaten wurden übernommen.'){const toast=document.getElementById('saveToast');if(!toast)return;document.getElementById('saveToastTitle').textContent=title;document.getElementById('saveToastText').textContent=text;toast.classList.add('show');clearTimeout(window.__saveToastTimer);window.__saveToastTimer=setTimeout(()=>toast.classList.remove('show'),2800)}
+function showSaveToast(title='Mitarbeiter erfolgreich gespeichert',text='Die Mitarbeiterdaten wurden übernommen.'){const toast=document.getElementById('saveToast');if(!toast)return;toast.setAttribute('aria-hidden','false');document.getElementById('saveToastTitle').textContent=title;document.getElementById('saveToastText').textContent=text;toast.classList.add('show');clearTimeout(window.__saveToastTimer);window.__saveToastTimer=setTimeout(()=>{toast.classList.remove('show');toast.setAttribute('aria-hidden','true');document.getElementById('saveToastTitle').textContent='';document.getElementById('saveToastText').textContent=''},2800)}
 function saveEmployee(){const data={first:firstName.value.trim(),last:lastName.value.trim(),personnelNo:personnelNo.value.trim(),role:role.value,employment:employment.value,weeklyHours:Number(weeklyHours.value||0),startDate:startDate.value,contractEnd:contractEnd.value,status:status.value,birthDate:birthDate.value,email:email.value.trim(),phone:phone.value.trim(),address:address.value.trim(),zip:zip.value.trim(),city:city.value.trim(),note:note.value.trim(),shifts:[...document.querySelectorAll('#shiftChecks input:checked')].map(x=>x.value),qualifications:[...document.querySelectorAll('#qualificationChecks input:checked')].map(x=>x.value)};if(!data.first||!data.last){alert('Bitte Vor- und Nachname eintragen.');return}if(data.personnelNo&&employees.some(e=>e.id!==selectedEmployeeId&&e.personnelNo.toLowerCase()===data.personnelNo.toLowerCase())){alert('Diese Personalnummer ist bereits vergeben.');return}if(data.email&&employees.some(e=>e.id!==selectedEmployeeId&&(e.email||'').toLowerCase()===data.email.toLowerCase())){alert('Diese E-Mail-Adresse ist bereits einem Mitarbeiter zugeordnet.');return}const isNew=!selectedEmployeeId;if(selectedEmployeeId){Object.assign(employees.find(e=>e.id===selectedEmployeeId),data)}else{data.id='e'+Date.now();employees.push(data);selectedEmployeeId=data.id}saveAll();renderEmployees();renderPlanEmployeePool();updateStats();selectEmployee(selectedEmployeeId);showSaveToast(isNew?'Mitarbeiter erfolgreich angelegt':'Änderungen gespeichert',isNew?`${data.first} ${data.last} wurde dem Team hinzugefügt.`:`Die Daten von ${data.first} ${data.last} wurden aktualisiert.`)}
 function deleteEmployee(){if(!selectedEmployeeId)return;if(!confirm('Mitarbeiter wirklich löschen?'))return;employees=employees.filter(e=>e.id!==selectedEmployeeId);assignments=assignments.filter(a=>a.employeeId!==selectedEmployeeId);absences=absences.filter(a=>a.employeeId!==selectedEmployeeId);saveAll();clearEmployeeForm();renderEmployees();renderPlanEmployeePool();renderCalendar();updateStats();showSaveToast('Mitarbeiter gelöscht','Der Mitarbeiter und seine zugehörigen Planungsdaten wurden entfernt.')}
 function addAbsenceForSelected(){if(!selectedEmployeeId){alert('Bitte zuerst einen Mitarbeiter auswählen.');return}const emp=employees.find(e=>e.id===selectedEmployeeId);const date=prompt('Datum der Abwesenheit (YYYY-MM-DD):',iso(new Date()));if(!date)return;const type=prompt('Art der Abwesenheit:','Urlaub')||'Abwesend';absences.push({id:'a'+Date.now(),employeeId:emp.id,date,type});saveAll();renderEmployeeAbsences();renderAbsenceDashboard();renderCalendar();showSaveToast('Abwesenheit gespeichert',`${(window.SFShiftModels?.label?.(type)||type)} für ${emp.first} ${emp.last} am ${date} wurde eingetragen.`)}
@@ -662,9 +664,9 @@ function renderAbsenceDashboard(){const panel=document.getElementById('absencePa
 renderAbsence=function(){renderAbsenceDashboard()};
 
 </script>
-  <div id="saveToast" class="save-toast" role="status" aria-live="polite">
-    <div class="toast-icon">✓</div>
-    <div><div id="saveToastTitle">Mitarbeiter erfolgreich gespeichert</div><small id="saveToastText">Die Mitarbeiterdaten wurden übernommen.</small></div>
+  <div id="saveToast" class="save-toast" role="status" aria-live="polite" aria-hidden="true">
+    <div class="toast-icon" aria-hidden="true">✓</div>
+    <div><div id="saveToastTitle"></div><small id="saveToastText"></small></div>
   </div>
 
 <!-- REAL_DASHBOARD_PREVIEW_FUNCTIONS -->
@@ -1095,7 +1097,7 @@ table th,table td{font-size:13px;line-height:1.35}
 <script defer src="assets/solid-planning-resume-v1.js?v=20261023-secontec9h-recovery1"></script>
 <script defer src="assets/background-auto-plan-core-v1.js?v=20261023-secontec9h-recovery1"></script>
 <script defer src="assets/month-optimizer-v1.js?v=20261022-autonomy3"></script>
-<script defer src="assets/auto-plan-preview-editor-v1.js?v=20261023-range-delete1&csp=20261017-1&monthly=20261017-200h"></script>
+<script defer src="assets/auto-plan-preview-editor-v1.js?v=20261024-range-delete2&csp=20261017-1&monthly=20261017-200h"></script>
 <script defer src="assets/background-auto-plan-v1.js?v=20261023-live1"></script>
 <script defer src="assets/auto-plan-repair-core-v1.js?v=20261022-autonomy1"></script>
 <script defer src="assets/auto-plan-assurance-v1.js?v=20261022-autonomy1"></script>
@@ -1242,6 +1244,6 @@ table th,table td{font-size:13px;line-height:1.35}
 <script defer src="assets/rhythm-staggering-core-v1.js?v=20261021-1"></script>
 <script defer src="assets/rhythm-staggering-v1.js?v=20261021-1"></script>
 <script defer src="assets/manual-rhythm-exceptions-v1.js?v=20261021-range1"></script>
-<script defer src="assets/manual-range-planning-v1.js?v=20261023-range2"></script>
+<script defer src="assets/manual-range-planning-v1.js?v=20261024-range-delete2"></script>
 </body>
 </html>

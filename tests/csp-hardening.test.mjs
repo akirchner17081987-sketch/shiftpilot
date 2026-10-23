@@ -25,6 +25,14 @@ test('all deployed pages contain only existing local script files; extracted mod
   }
  }assert.equal(count,13);
 });
+test('built script and stylesheet references change with their actual contents',async()=>{
+ for(const page of pages){const html=await read('dist/'+page);
+  for(const match of html.matchAll(/<(?:script|link)\b[^>]*(?:src|href)="([^"]+)"[^>]*>/g)){
+   const url=new URL(match[1],'https://fixture.invalid/');if(!url.pathname.startsWith('/assets/')||! /\.(?:m?js|css)$/.test(url.pathname))continue;
+   assert.equal(url.searchParams.get('sfv'),createHash('sha256').update(await readFile(new URL('dist'+url.pathname,root))).digest('hex').slice(0,16),url.pathname);
+  }
+ }
+});
 test('client libraries and license notices match the pinned npm-integrity manifest',async()=>{
  const manifest=JSON.parse(await read('assets/vendor/client-libraries.json'));assert.equal(manifest.length,5);
  for(const row of manifest){for(const [name,digest] of [[row.file,row.sha256],[row.licenseFile,row.licenseSha256]])assert.equal(createHash('sha256').update(await readFile(new URL('assets/vendor/'+name,root))).digest('hex'),digest);assert.match(row.npmIntegrity,/^sha512-/);}
