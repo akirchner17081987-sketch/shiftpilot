@@ -38,7 +38,12 @@ Deno.serve(async req => {
     const run = core.context(input, checkpoint), slice = performance.now();
     // Leave headroom for preparation, JSON, database calls and cold starts. Each
     // saved call can be retried after a lease expires without losing prior work.
-    do { steps++; if (!run.step()) break; } while (checkpoint.stage !== "done" && performance.now() - slice < 700 && steps < 1000);
+    do {
+      const recovering = checkpoint.solver?.phase === "block-recovery";
+      steps++; if (!run.step()) break;
+      // One bounded exchange per invocation keeps CPU use below the Edge limit.
+      if (recovering || checkpoint.solver?.phase === "block-recovery") break;
+    } while (checkpoint.stage !== "done" && performance.now() - slice < 700 && steps < 1000);
     progress = run.progress();
     if (checkpoint.stage === "done") output = run.result();
   } catch (error) {
