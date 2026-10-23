@@ -15,15 +15,18 @@
     window.SFPwaRuntime={offlinePage:true};return;
   }
   const current=document.querySelector('meta[name="sf-release"]')?.content||'';
-  let registration=null,busy=false,available=false,failed=false,restored=false,restoreTimer=null,lastWorkerCheck=0;
+  let registration=null,busy=false,available=false,failed=false,restored=false,restoreTimer=null,lastWorkerCheck=0,lastMode='',dismissedMode='';
   const banner=document.createElement('section');banner.id='sfPwaStatus';banner.hidden=true;
   banner.setAttribute('aria-label','Verbindung und Updates');
   const copy=document.createElement('span');copy.setAttribute('role','status');copy.setAttribute('aria-live','polite');
-  const action=document.createElement('button');action.type='button';banner.append(copy,action);document.body.appendChild(banner);
+  const action=document.createElement('button');action.type='button';
+  const dismiss=document.createElement('button');dismiss.type='button';dismiss.className='sf-pwa-dismiss';dismiss.textContent='×';dismiss.setAttribute('aria-label','Hinweis ausblenden');
+  banner.append(copy,action,dismiss);document.body.appendChild(banner);
   function paint(){
     const offline=navigator.onLine===false;
     const mode=offline?'offline':failed?'unreachable':available?'update':restored?'online':'';
-    banner.hidden=!mode;banner.dataset.mode=mode;
+    if(mode!==lastMode){dismissedMode='';lastMode=mode;}
+    banner.hidden=!mode||dismissedMode===mode;banner.dataset.mode=mode;
     const text=mode==='offline'?'Offline. Neue Änderungen und Zeitbuchungen benötigen eine Verbindung.':mode==='unreachable'?'SchichtFunk ist derzeit nicht erreichbar. Bitte prüfe die Verbindung.':mode==='update'?'Neue Version verfügbar. Bitte speichere offene Änderungen vor dem Neuladen.':mode==='online'?'Verbindung zu SchichtFunk wiederhergestellt.':'';
     if(copy.textContent!==text)copy.textContent=text;
     action.hidden=mode==='online'||!mode;action.textContent=mode==='update'?'Neu laden':'Erneut prüfen';action.disabled=busy;
@@ -33,8 +36,10 @@
     busy=true;paint();const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),8000);
     try{
       const response=await fetch('/pwa-release.json',{cache:'no-store',credentials:'omit',signal:controller.signal});
-      if(!response.ok)throw new Error('release unavailable');
-      const release=await response.json();if(!/^[a-f0-9]{20}$/.test(release.version||''))throw new Error('invalid release');
+      if(!response.ok){if(response.status>=500)throw new Error('service unavailable');failed=false;return;}
+      const release=await response.json().catch(()=>null);
+      // A missing/malformed version marker is not evidence of a connection outage.
+      if(!/^[a-f0-9]{20}$/.test(release?.version||'')){failed=false;return;}
       available=!!current&&release.version!==current;
       if(failed){restored=true;clearTimeout(restoreTimer);restoreTimer=setTimeout(()=>{restored=false;paint()},5000)}
       failed=false;
@@ -43,6 +48,7 @@
     finally{clearTimeout(timer);busy=false;paint()}
   }
   action.addEventListener('click',()=>{if(available&&!failed&&navigator.onLine!==false)location.reload();else void check()});
+  dismiss.addEventListener('click',()=>{dismissedMode=lastMode;paint();});
   window.addEventListener('offline',paint);
   window.addEventListener('online',()=>{failed=true;paint();void check()});
   window.addEventListener('focus',()=>{void check()});

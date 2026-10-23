@@ -51,12 +51,12 @@ function runtime({offline=false,offlinePage=false,path='/',version='a'.repeat(20
   const dom=new Window({url:'https://schichtfunk.de'+path});
   dom.document.head.innerHTML='<meta name="sf-release" content="'+version+'">';
   if(offlinePage){dom.document.body.setAttribute('data-sf-offline-page','');dom.document.body.innerHTML='<p id="sfOfflineMessage"></p><button id="sfOfflineRetry">Erneut versuchen</button>';}
-  const timers=[],intervals=[],calls=[];let remote=version,fail=false,hidden=false,reloads=0,replaces=0,registrations=0;
+  const timers=[],intervals=[],calls=[];let remote=version,fail=false,hidden=false,reloads=0,replaces=0,registrations=0,status=200;
   const navigator={onLine:!offline,serviceWorker:{register:async()=>{registrations++;return {update:async()=>{}};}}};
   const window={isSecureContext:true,addEventListener:dom.addEventListener.bind(dom)};
   Object.defineProperty(dom.document,'hidden',{get:()=>hidden});
-  vm.runInNewContext(read('assets/pwa-runtime-v1.js'),{window,document:dom.document,navigator,location:{pathname:path,reload(){reloads++},replace(){replaces++}},AbortController,Date,clearTimeout(){},setTimeout:(fn,ms)=>{timers.push({fn,ms});return timers.length},setInterval:(fn,ms)=>{intervals.push({fn,ms});return intervals.length},fetch:async(url,options)=>{calls.push({url,options});if(fail)throw Error('connection');return {ok:true,json:async()=>({version:remote})}}});
-  return {dom,window,navigator,timers,intervals,calls,setRemote:value=>remote=value,setFailed:value=>fail=value,setHidden:value=>hidden=value,get reloads(){return reloads;},get replacements(){return replaces;},get registrations(){return registrations;}};
+  vm.runInNewContext(read('assets/pwa-runtime-v1.js'),{window,document:dom.document,navigator,location:{pathname:path,reload(){reloads++},replace(){replaces++}},AbortController,Date,clearTimeout(){},setTimeout:(fn,ms)=>{timers.push({fn,ms});return timers.length},setInterval:(fn,ms)=>{intervals.push({fn,ms});return intervals.length},fetch:async(url,options)=>{calls.push({url,options});if(fail)throw Error('connection');return {ok:status===200,status,json:async()=>({version:remote})}}});
+  return {dom,window,navigator,timers,intervals,calls,setStatus:value=>status=value,setRemote:value=>remote=value,setFailed:value=>fail=value,setHidden:value=>hidden=value,get reloads(){return reloads;},get replacements(){return replaces;},get registrations(){return registrations;}};
 }
 test('a release change offers reload without interrupting open work',async()=>{
   const r=runtime();await tick();assert.equal(r.dom.document.getElementById('sfPwaStatus').hidden,true);
@@ -73,6 +73,12 @@ test('offline and unreachable states are visible globally; retry recovers and hi
   r.navigator.onLine=true;r.setFailed(false);banner.querySelector('button').click();await tick();assert.equal(banner.dataset.mode,'online');
   r.setHidden(true);const count=r.calls.length;r.intervals.forEach(t=>t.fn());await tick();assert.equal(r.calls.length,count);
   await r.dom.happyDOM.close();
+});
+test('a missing release marker does not claim an outage; notices can be dismissed until the state changes',async()=>{
+  const r=runtime();await tick();r.setStatus(404);await r.window.SFPwaRuntime.check();const banner=r.dom.document.getElementById('sfPwaStatus');assert.equal(banner.hidden,true);
+  r.setStatus(200);r.setRemote('b'.repeat(20));await r.window.SFPwaRuntime.check();assert.equal(banner.hidden,false);
+  banner.querySelector('.sf-pwa-dismiss').click();assert.equal(banner.hidden,true);await r.window.SFPwaRuntime.check();assert.equal(banner.hidden,true);
+  r.navigator.onLine=false;r.dom.dispatchEvent(new r.dom.Event('offline'));assert.equal(banner.hidden,false);assert.equal(banner.dataset.mode,'offline');await r.dom.happyDOM.close();
 });
 test('the offline screen retries the original URL without authentication, storage writes or polling',async()=>{
   const r=runtime({offline:true,offlinePage:true,path:'/qr-time'});assert.match(r.dom.document.getElementById('sfOfflineMessage').textContent,/offline/);

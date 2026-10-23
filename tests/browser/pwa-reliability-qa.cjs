@@ -10,7 +10,7 @@ async function main(){
     if(url.pathname==='/pwa-release.json'){res.setHeader('Content-Type','application/json');return res.end(JSON.stringify({version:published}));}
     if(url.pathname==='/'){
       res.setHeader('Content-Type','text/html');
-      return res.end('<!doctype html><html lang="de"><head><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="sf-release" content="'+current+'"><link rel="stylesheet" href="/assets/pwa-runtime-v1.css"><script defer src="/assets/pwa-runtime-v1.js"></script></head><body><main><h1>Test-Arbeitsbereich</h1><label>Notiz <input id="draft"></label></main></body></html>');
+      return res.end('<!doctype html><html lang="de"><head><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="sf-release" content="'+current+'"><link rel="stylesheet" href="/assets/pwa-runtime-v1.css"><script defer src="/assets/pwa-runtime-v1.js"></script></head><body><button style="position:fixed;top:12px;right:12px" type="button">Hilfe</button><main><h1>Test-Arbeitsbereich</h1><label>Notiz <input id="draft"></label></main></body></html>');
     }
     const file=path.resolve(dist,'.'+url.pathname);
     if(!file.startsWith(dist+path.sep)||!fs.existsSync(file)){res.statusCode=404;return res.end();}
@@ -28,9 +28,11 @@ async function main(){
     await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
     await page.getByRole('button',{name:'Neu laden',exact:true}).waitFor({state:'visible'});
     assert.equal(await page.getByLabel('Notiz').inputValue(),'Offene Änderung');
+    await page.getByRole('button',{name:'Hilfe',exact:true}).click();
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'update banner fits '+width);
     await context.setOffline(true);await page.getByText('Offline. Neue Änderungen und Zeitbuchungen benötigen eine Verbindung.',{exact:true}).waitFor({state:'visible'});
     await context.setOffline(false);await page.getByRole('button',{name:'Neu laden',exact:true}).waitFor({state:'visible'});
+    await page.getByRole('button',{name:'Hinweis ausblenden',exact:true}).click();await page.locator('#sfPwaStatus').waitFor({state:'hidden'});
     await page.goto(origin+'/offline.html');await page.getByRole('heading',{name:'SchichtFunk ist gerade nicht erreichbar.',exact:true}).waitFor({state:'visible'});
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'offline screen fits '+width);
     const height=await page.getByRole('button',{name:'Erneut versuchen',exact:true}).evaluate(el=>el.getBoundingClientRect().height);assert.ok(height>=44,'touch target');
