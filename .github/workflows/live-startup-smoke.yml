@@ -1,0 +1,28 @@
+name: SchichtFunk Live-Start schreibgeschützt prüfen
+on:
+  push:
+    branches: [codex/ionos-migration]
+    paths:
+      - tests/browser/live-startup-smoke.cjs
+      - .github/workflows/live-startup-smoke.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  live-startup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install chromium
+      - run: node tests/browser/live-startup-smoke.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: SchichtFunk-Live-Start
+          path: test-results/live-startup/
