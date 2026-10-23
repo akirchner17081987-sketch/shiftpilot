@@ -76,6 +76,17 @@ test('PostgreSQL enforces scoped exceptions, reason, stale versions, rest and au
  await assert.rejects(db.query("insert into shift_assignments(company_id,employee_id,shift_code,starts_at,ends_at,status) values($1,$2,'T','2027-01-09T05:00Z','2027-01-09T13:00Z','DRAFT')",[company,employee]),/vier Dienste|40 Stunden/);
  await assert.rejects(db.query("update shift_assignments set starts_at=starts_at+interval '1 day',ends_at=ends_at+interval '1 day' where id=$1",[savedFive[0].id]),/ursprünglichen Dienst/);
  assert.equal((await db.query('select count(*)::int n from shift_assignments')).rows[0].n,5);
+ // The individual-month RPC must accept the same explicit five-night block.
+ await db.exec('reset role');await db.exec('delete from shift_assignments');
+ const individualFive=fs.readdirSync('supabase/migrations').find(f=>f.endsWith('_manual_five_day_individual_blocks.sql'));await db.exec(read('supabase/migrations/'+individualFive));
+ await db.exec(sqlFunction(read('supabase/migrations/20261004121341_individual_month_block_validation.sql'),'public.apply_individual_month_optimization'));
+ await db.query("update employees set shift_permissions=array['ND'] where id=$1",[employee]);await db.query("insert into shift_templates(id,company_id,code,active,default_start,default_end,optional_weekdays) values(gen_random_uuid(),$1,'ND',true,'22:00','06:00',array[1,2,3,4,5,6,7])",[company]);await db.query("insert into global_staffing_requirements values($1,'ND',1)",[company]);await db.exec('set role authenticated');
+ const nights=marked.map((a,i)=>({...a,legacy_id:'night-'+i,shift_code:'ND',starts_at:'2027-01-0'+(i+4)+'T21:00Z',ends_at:'2027-01-0'+(i+5)+'T05:00Z'}));
+ assert.equal((await db.query("select public.apply_individual_month_optimization($1,'2027-01-01','fixture',array[]::uuid[],$2,true,$3::uuid[]) result",[company,nights,[employee]])).rows[0].result.created,5);
+ await db.query("update shift_assignments set status='CANCELLED' where legacy_id='night-4'");await db.query("select private.sf_validate_individual_month($1,'2027-01-01',$2::uuid[])",[company,[employee]]);
+ await db.exec('reset role');await db.query("update company_members set role='EMPLOYEE' where company_id=$1",[company]);await db.exec('set role authenticated');
+ await assert.rejects(db.query("insert into shift_assignments(company_id,employee_id,shift_code,starts_at,ends_at,status,rhythm_override) values($1,$2,'ND','2027-01-20T21:00Z','2027-01-21T05:00Z','DRAFT',$3)",[company,employee,{reason:'Not authorized',workBlockDays:5,blockStart:'2027-01-20',blockEnd:'2027-01-24'}]),/Planungsberechtigte/);
+
  }finally{await db.close();}
 });
 

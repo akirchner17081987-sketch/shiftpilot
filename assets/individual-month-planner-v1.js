@@ -2,9 +2,9 @@
 
 // Individuelle 8-Stunden-Monatsplanung. Verbindliche Rhythmen bleiben im bisherigen Optimierer.
 (function (root, factory) {
-  const api = factory();
+  const api = factory(typeof module === 'object' && module.exports ? require('./solid-planning-core-v1.js') : root.SFSolidPlanningCore);
   if (typeof module === 'object' && module.exports) module.exports = api;else root.SFIndividualMonthPlanner = api;
-})(typeof window !== 'undefined' ? window : globalThis, function () {
+})(typeof window !== 'undefined' ? window : globalThis, function (solid) {
   const DAY = 86400000,
     HOUR = 3600000;
   const day = d => Math.floor(Date.parse(d + 'T12:00:00Z') / DAY);
@@ -120,7 +120,7 @@
     }
     for (const block of blocks) {
       if (!block.some(a => a.day >= p.start && a.day <= p.end)) continue;
-      if (block.length > e.maxConsecutive) return false;
+      if (block.length > e.maxConsecutive && !solid?.manualFiveDayBlock(block,e)) return false;
       if (block.length === 1 && block[0].day < p.end && block[0].day >= p.start) return false;
     }
     const nights = [];
@@ -128,7 +128,7 @@
       if (nights.length && nights.at(-1).at(-1).day + 1 === a.day) nights.at(-1).push(a);else nights.push([a]);
     }
     for (const block of nights) {
-      if (block.some(a => a.day >= p.start && a.day <= p.end) && (block.length < 2 || block.length > 4)) return false;
+      if (block.some(a => a.day >= p.start && a.day <= p.end) && (block.length < 2 || block.length > 4 && !solid?.manualFiveDayBlock(block,e))) return false;
       if (block[0].day > p.end + 1 || block.at(-1).day < p.start - 3) continue;
       if (seen.has(block[0].day - 1)) return false;
       for (let offset = 1; offset <= 3; offset++) if (seen.has(block.at(-1).day + offset)) return false;

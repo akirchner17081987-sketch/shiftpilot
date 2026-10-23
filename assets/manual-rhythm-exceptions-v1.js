@@ -18,6 +18,7 @@
  }
  const blockScope=a=>a?.rhythmOverride?.workBlockDays===5&&/^\d{4}-\d{2}-\d{2}$/.test(a.rhythmOverride.blockStart||'')&&new Date(Date.parse(a.rhythmOverride.blockStart+'T12:00Z')+4*86400000).toISOString().slice(0,10)===a.rhythmOverride.blockEnd&&a.date>=a.rhythmOverride.blockStart&&a.date<=a.rhythmOverride.blockEnd;
  const isPreviewOverride=a=>!!a?.rhythmOverride?.reason&&a.rhythmOverride.previewKey===previewKey(a)&&canOverride()&&(blockScope(a)||!!previewOverride(a));
+ const isPreviewBlockMember=(a,rows)=>rows.some(b=>String(b.employeeId)===String(a.employeeId)&&isPreviewOverride(b)&&blockScope(b)&&a.date>=b.rhythmOverride.blockStart&&a.date<=b.rhythmOverride.blockEnd);
  const previewPayload=a=>isPreviewOverride(a)?{reason:a.rhythmOverride.reason,...(blockScope(a)?{workBlockDays:5,blockStart:a.rhythmOverride.blockStart,blockEnd:a.rhythmOverride.blockEnd}:{})}:null;
  function available(){if(busy||B.teamRhythmSaving||B.employeeStatusSaving||B.shiftModelSaving||B.planningRulesSaving||B.autoPlanApplying||B.schedulePublishing||B.syncing||B.bootPromise||B.companySwitching)throw Error('Bitte laufende Speicherung oder Planung abwarten.');}
  async function flush(){if(B.syncTimer){clearTimeout(B.syncTimer);B.syncTimer=null;await B.sync();if(B.lastSyncError)throw B.lastSyncError;}}
@@ -47,7 +48,7 @@
   finally{busy=false;B.teamRhythmSaving=false;}
  }
  function enhance(host){if(!context()||isDemo()||!host?.querySelector('.sf-set-grid'))return;host.querySelector('#sfManualRhythmSetting')?.remove();const card=document.createElement('section');card.id='sfManualRhythmSetting';card.className='sf-set-card full';card.innerHTML='<h3>Manuelle Rhythmusausnahmen</h3><p>In allen Unternehmen haben bewusst manuell gesetzte Dienste Vorrang vor einem freien Tag im Mitarbeiter- oder Teamrhythmus. In der Vorplanung bestätigt „In Vorplanung übernehmen“ die dokumentierte Ausnahme. Im Dienstplan kann die Ausnahme mit „Trotzdem einplanen“ begründet werden. Die Auto-Planung beachtet weiterhin den Rhythmus. Schichtfreigaben, Abwesenheiten, Überschneidungen und Erholungsprüfungen bleiben aktiv.</p>';host.querySelector('.sf-set-grid').prepend(card);}
- window.SFManualRhythm={enabled,canOverride,matches,previewOverride,previewBlockOverride,isPreviewOverride,previewPayload,confirm,persistDraft,saveSetting,enhance,clear(){document.getElementById('sfManualRhythmDialog')?.remove();},isBusy:()=>busy};
+ window.SFManualRhythm={enabled,canOverride,matches,previewOverride,previewBlockOverride,isPreviewOverride,isPreviewBlockMember,previewPayload,confirm,persistDraft,saveSetting,enhance,clear(){document.getElementById('sfManualRhythmDialog')?.remove();},isBusy:()=>busy};
  if(C){C.manualCheck=(e,type,date,start,end,ignoreId=null)=>C.check(e,type,date,start,end,ignoreId,{manualRhythm:true});window.spAssignmentConflict=C.manualCheck;}
  window.SFSettingsV2?.refreshPlanning();
 })();

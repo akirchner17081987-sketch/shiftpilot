@@ -15,7 +15,7 @@ const html=`<!doctype html><html lang="de"><head><meta charset="utf-8"><meta nam
  // A manual five-day block is explicit; the normal automatic limit stays four.
  await page.evaluate(()=>{SFCompliance.policy.solidPlanningRules={enabled:true,confirmedRulesVersion:2,timezone:'Europe/Berlin',maxConsecutiveShifts:4,maxConsecutiveNightShifts:3};});
  await page.locator('#sfAutoPreviewTools [data-add]').click();await page.locator('#sfPreviewTo').fill(dates[4]);await page.locator('#sfPreviewTo').press('Tab');
- assert.equal(await page.locator('#sfPreviewEmployee option[value="one"]').isDisabled(),true,'unconfirmed five-day block remains unavailable');
+ assert.equal(await page.locator('#sfPreviewEmployee option[value="one"]').evaluate(o=>o.disabled),true,'unconfirmed five-day block remains unavailable');
  await page.locator('#sfPreviewFiveDays').check();await page.locator('#sfPreviewEmployee').selectOption('one');await page.locator('#sfPreviewEmployee').press('Tab');
  await page.locator('#sfPreviewEditForm [type=submit]').click();await page.waitForFunction(()=>autoPlanPreview.length===5);
  assert.equal(await page.evaluate(()=>assignments.length),0);assert.ok(await page.evaluate(()=>autoPlanPreview.every(a=>SFManualRhythm.isPreviewOverride(a)&&a.rhythmOverride.workBlockDays===5)));await page.screenshot({path:path.join(out,label+'-five-day-preview.png'),fullPage:true});

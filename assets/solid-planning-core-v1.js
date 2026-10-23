@@ -194,5 +194,5 @@
   }return out;
  }
  const penalty=m=>m.nightBlocksOverPreferred*8+m.missingFreeWeekends*35+m.rollingWeekExcessHours*.3+m.startTimeChanges*3+m.isolatedDuties*4;
- return{transitionError,allowsTransition,fixedWeeklyRoster,workRestOptions,otDayHoliday,otCodes,otRoster,rosterEmployee,rosterMinimum,rosterMissing,rosterDaysOff,rosterDay,employeeRules,otDayEmployee,weeklyLimit,summary,plus,weekday,instant,interval,duty,errors,canAdd,required,metrics,penalty,confirmed,limits,countsTowardCap,night,localDate,weekKey,weekendTarget,otWeekendMinimum};
+ return{manualFiveDayBlock,transitionError,allowsTransition,fixedWeeklyRoster,workRestOptions,otDayHoliday,otCodes,otRoster,rosterEmployee,rosterMinimum,rosterMissing,rosterDaysOff,rosterDay,employeeRules,otDayEmployee,weeklyLimit,summary,plus,weekday,instant,interval,duty,errors,canAdd,required,metrics,penalty,confirmed,limits,countsTowardCap,night,localDate,weekKey,weekendTarget,otWeekendMinimum};
 });

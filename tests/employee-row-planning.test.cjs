@@ -127,10 +127,10 @@ test('manual five-day option survives review and draft application, preserves au
  const automatic=confirmed.map(a=>({...a,rhythmOverride:null}));assert.match(w.SFAutoPlanPreviewEditor.check(automatic,automatic).join(' '),/vier Dienste/);
  w.absent=()=>true;assert.match(w.SFAutoPlanPreviewEditor.check(confirmed,confirmed).join(' '),/abwesend/);w.absent=()=>false;
  w.SFBackend.companyId='other';assert.match(w.SFAutoPlanPreviewEditor.check(confirmed,confirmed).join(' '),/erneut bestätigt/);w.SFBackend.companyId='company-one';
- w.SFAutoPlanPreviewEditor.undo();assert.equal(w.autoPlanPreview.length,0);w.autoPlanPreview=confirmed;
+ w.SFAutoPlanPreviewEditor.undo();assert.equal(w.autoPlanPreview.length,0);w.autoPlanPreview=confirmed.map((a,i)=>({...a,rhythmOverride:i===4?a.rhythmOverride:null}));
  const source=fs.readFileSync('index.html','utf8');w.eval(source.slice(source.indexOf('async function applyAutoPlanPreview(){'),source.indexOf('function runAutoPlan(){',source.indexOf('async function applyAutoPlanPreview(){')))+';window.applyAutoPlanPreview=applyAutoPlanPreview;');
  w.autoEligibleEmployees=()=>[];w.saveAll=()=>{};w.renderCalendar=()=>{};w.autoMonday=()=>new Date('2027-01-04T12:00Z');w.SFBackend.sync=async()=>{};
- w.eval(fs.readFileSync('assets/supabase-auto-plan-guard-v1.js','utf8'));await w.applyAutoPlanPreview();assert.equal(w.assignments.length,5,w.notice.join(' '));assert.ok(w.assignments.every(a=>a.rhythmOverride.workBlockDays===5&&a.rhythmOverride.blockStart===dates[0]&&!a.rhythmOverride.previewKey));
+ w.eval(fs.readFileSync('assets/supabase-auto-plan-guard-v1.js','utf8'));await w.applyAutoPlanPreview();assert.equal(w.assignments.length,5,w.notice.join(' '));assert.equal(w.assignments[4].rhythmOverride.workBlockDays,5);assert.equal(w.assignments[4].rhythmOverride.blockStart,dates[0]);assert.equal(w.assignments[4].rhythmOverride.previewKey,undefined);assert.ok(w.assignments.slice(0,4).every(a=>!a.rhythmOverride),'a manually added fifth day confirms the block without changing its first four duties');
  }finally{await close();}
 });
 

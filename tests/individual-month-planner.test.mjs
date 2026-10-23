@@ -88,3 +88,15 @@ test('protected coverage counts toward the daily staffing floor rather than dema
  const input=minimal({base:[assignment('protected-a','2027-01-04'),assignment('protected-b','2027-01-04')]});input.capacities=[['2027-01-04|SD',4]];
  const p=planner.prepare(input),q=planner.score(p,new Map([['test',[planner.duty(assignment('test','2027-01-04'))]]]));assert.equal(q.thin,1,'two protected and one proposed require one more for a floor of four');
 });
+
+test('manual five-day block is retained by individual validation without relaxing ordinary proposals',()=>{
+ const employee={id:'manual',maxConsecutive:4,monthLimit:184,maxMonthlyShifts:23,weeklyLimit:40},dates=['2027-01-04','2027-01-05','2027-01-06','2027-01-07','2027-01-08'];
+ const input={base:[],start:Math.floor(Date.parse(dates[0]+'T12:00Z')/86400000),end:Math.floor(Date.parse('2027-01-31T12:00Z')/86400000),respectHours:true};
+ for(const night of [false,true]){
+  const rows=dates.map(date=>({employeeId:employee.id,type:night?'ND':'SD',date,start:night?'22:00':'14:00',end:night?'06:00':'22:00'}));
+  assert.equal(planner.personValid(input,employee,rows),false);
+  const a=rows.at(-1);a.rhythmOverride={reason:'Zusätzlicher Bedarf',workBlockDays:5,blockStart:dates[0],blockEnd:dates[4],previewKey:JSON.stringify(['company',a.employeeId,a.type,a.date,a.start,a.end])};
+  assert.equal(planner.personValid(input,employee,rows),true);
+  assert.equal(planner.personValid(input,employee,[...rows,{...a,date:'2027-01-09',rhythmOverride:null}]),false);
+ }
+});
