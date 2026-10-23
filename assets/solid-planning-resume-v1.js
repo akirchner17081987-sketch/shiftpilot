@@ -54,7 +54,7 @@ function context(input,cp){
       if(cp.cursor===cp.order.length){if(cp.changed){cp.cursor=0;cp.changed=false;}else cp.phase='iteration-end';return true;}
       const resource=cp.order[cp.cursor++],s=fillState||(fillState=C.state(p,decode(cp.records)));
       if((s.remaining.get(resource)||0)<1)return true;let chosen=resource.endsWith('|OT-DAY')?C.rosterChoice(p,s,byResource.get(resource)||[],allowed):null,score=-Infinity;
-      for(const r of resource.endsWith('|OT-DAY')?[]:byResource.get(resource)||[]){if(s.used.has(r.group.id)||!allowed(s,r))continue;const x=s.people.get(String(r.group.employee.id)),deficit=Math.max(0,r.group.employee.target-x.hours),same=r.option.every(a=>a.start===r.option[0].start),v=C.fairOptionGain(p,s,r)*.5+C.teamLeaderOptionScore(p,s,r)+(p.preferenceScore?.(r.group.employee,x.duties,r.option)||0)+r.option.reduce((n,a)=>n+(C.criticalOpen(p,s,a.resource)>0?100:1),0)*10+Math.min(deficit,r.option.hours)*.15+(same?2:0)-(r.option.length===4&&r.option[0].start>='18:00'&&S.employeeRules(r.group.employee,p.solidRules).preferredNightBlockLength!==4?4:0)-(r.option.length===1?4:0)+random()*3;if(v>score){chosen=r;score=v}}
+      for(const r of resource.endsWith('|OT-DAY')?[]:byResource.get(resource)||[]){if(s.used.has(r.group.id)||!allowed(s,r))continue;const x=s.people.get(String(r.group.employee.id)),deficit=Math.max(0,r.group.employee.target-x.hours),same=r.option.every(a=>a.start===r.option[0].start),otPreferred=Number(p.solidRules.otDailyPreferredBlockLength)||0,otBonus=otPreferred>1&&r.option.length>1&&r.option.every(a=>a.type==='OT')?Math.min(r.option.length,otPreferred)*6:0,v=C.fairOptionGain(p,s,r)*.5+C.teamLeaderOptionScore(p,s,r)+(p.preferenceScore?.(r.group.employee,x.duties,r.option)||0)+r.option.reduce((n,a)=>n+(C.criticalOpen(p,s,a.resource)>0?100:1),0)*10+otBonus+Math.min(deficit,r.option.hours)*.15+(same?2:0)-(r.option.length===4&&r.option[0].start>='18:00'&&S.employeeRules(r.group.employee,p.solidRules).preferredNightBlockLength!==4?4:0)-(r.option.length===1?4:0)+random()*3;if(v>score){chosen=r;score=v}}
       if(chosen){C.commit(s,chosen,p.month);cp.records=encode(s.records);cp.changed=true;}return true;
     }
     if(cp.phase==='iteration-end'){const s=fillState||C.state(p,decode(cp.records)),v=C.solidQuality(p,s);if(C.solidBetter(v,cp.quality)){cp.best=cp.records.map(ref=>[...ref]);cp.quality=v;}fillState=null;cp.iteration++;cp.phase='iteration-start';return true;}
@@ -71,7 +71,9 @@ function context(input,cp){
         cp.refinePass++;cp.refineImproved=false;const s=C.state(p,decode(cp.refined));cp.refineRoots=[...s.remaining].filter(([,n])=>n>0).sort((a,b)=>(byResource.get(a[0])?.length||0)-(byResource.get(b[0])?.length||0)).map(([key])=>key);cp.refineCursor=0;return true;}
       const key=cp.refineRoots[cp.refineCursor++],s=C.state(p,decode(cp.refined));s.searchLimited=cp.refineLimited;
       if((s.remaining.get(key)||0)<1)return true;
-      const improved=C.repairBlockExchanges(p,s,allowed,{roots:[key],maxChecks:5000,maxNodes:1800,passes:1});
+      // One unavailable employee can make a root impossible. Keep each durable
+      // search step below the Edge Function CPU budget and retain the best plan.
+      const improved=C.repairBlockExchanges(p,s,allowed,{roots:[key],maxChecks:160,maxNodes:80,passes:1});
       cp.refineLimited=!!improved.searchLimited;if(improved.records.length!==s.records.length||C.solidBetter(C.solidQuality(p,improved),C.solidQuality(p,s))){cp.refined=encode(improved.records);cp.refineImproved=true;}
       return true;
     }
