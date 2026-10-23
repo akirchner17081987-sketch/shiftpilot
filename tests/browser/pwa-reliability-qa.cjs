@@ -30,8 +30,13 @@ async function main(){
     assert.equal(await page.getByLabel('Notiz').inputValue(),'Offene Änderung');
     await page.getByRole('button',{name:'Hilfe',exact:true}).click();
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'update banner fits '+width);
-    await context.setOffline(true);await page.getByText('Offline. Neue Änderungen und Zeitbuchungen benötigen eine Verbindung.',{exact:true}).waitFor({state:'visible'});
-    await context.setOffline(false);await page.getByRole('button',{name:'Neu laden',exact:true}).waitFor({state:'visible'});
+    // Headless Chromium can keep navigator.onLine=true when the driver blocks
+    // requests. Verify the actual failed connection as well as native offline.
+    await context.setOffline(true);await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+    await page.locator('#sfPwaStatus[data-mode="offline"],#sfPwaStatus[data-mode="unreachable"]').waitFor({state:'visible'});
+    assert.equal(await page.getByLabel('Notiz').inputValue(),'Offene Änderung');
+    await context.setOffline(false);await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+    await page.getByRole('button',{name:'Neu laden',exact:true}).waitFor({state:'visible'});
     await page.getByRole('button',{name:'Hinweis ausblenden',exact:true}).click();await page.locator('#sfPwaStatus').waitFor({state:'hidden'});
     await page.goto(origin+'/offline.html');await page.getByRole('heading',{name:'SchichtFunk ist gerade nicht erreichbar.',exact:true}).waitFor({state:'visible'});
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'offline screen fits '+width);
