@@ -5,10 +5,12 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 const root=path.resolve(__dirname,'../..'),read=p=>fs.readFileSync(path.join(root,p),'utf8');
 const html=read('dist/index.html'),overlay=html.slice(html.indexOf('<div id="sfEntryOverlay"'),html.indexOf('<section id="landingPage">')).replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,'');
 (async()=>{const browser=await chromium.launch({headless:true});let checks=0;try{
- for(const width of [390,1440])for(const area of ['mitarbeiter','verwaltung']){
+ for(const width of [390,1440])for(const scenario of ['mitarbeiter','verwaltung','employee-push','test-push']){
+  const push=scenario.endsWith('-push'),area=push?'mitarbeiter':scenario;
   const context=await browser.newContext({viewport:{width,height:1000},reducedMotion:'reduce'}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.route('**/*',r=>r.fulfill({contentType:'text/html; charset=utf-8',body:'<!doctype html><html lang="de"><head><meta charset="utf-8"></head><body>'+overlay+'<section id="landingPage"></section><div id="appShell" style="display:none"><div class="side-bottom"><div class="user-row"><small></small></div></div><main id="managerWorkspace">Verwaltung</main></div></body></html>'}));
-  await page.goto('https://portal-entry.invalid/');await page.addStyleTag({content:read('assets/sf-entry-v2.css')+read('assets/sf-entry-access-v1.css')});
+  await page.goto('https://portal-entry.invalid/'+(push?'?sf_push_view='+(scenario==='test-push'?'overview':'employee-shifts')+'#app':''));
+  if(scenario==='test-push')await page.evaluate(()=>localStorage.setItem('sf_entry_area','mitarbeiter'));await page.addStyleTag({content:read('assets/sf-entry-v2.css')+read('assets/sf-entry-access-v1.css')});
   await page.evaluate(()=>{window.openApp=()=>{};});
   for(const file of ['sf-entry-v2','sf-entry-access-v1','supabase-auth-errors-v1','supabase-auth-v1'])await page.addScriptTag({content:read('assets/'+file+'.js')});
   await page.evaluate(()=>{
@@ -21,7 +23,9 @@ const html=read('dist/index.html'),overlay=html.slice(html.indexOf('<div id="sfE
   });
   for(const file of ['supabase-employee-access-v1','supabase-employee-access-guard-v1','time-only-access-v1','access-profiles-v1'])await page.addScriptTag({content:read('assets/'+file+'.js')});
   await page.evaluate(()=>SFBackend.authDialog('login'));
-  await page.locator('[data-entry-area="'+area+'"]').click();await page.locator('#sfEmail').fill('dual-role@example.invalid');await page.locator('#sfPassword').fill('synthetic-password');await page.locator('#sfAuthSubmit').click();await page.waitForFunction(()=>SFBackend.ready);
+  if(!push)await page.locator('[data-entry-area="'+area+'"]').click();
+  if(push){await page.evaluate(()=>SFBackend.boot(qa.session));}else{await page.locator('#sfEmail').fill('dual-role@example.invalid');await page.locator('#sfPassword').fill('synthetic-password');await page.locator('#sfAuthSubmit').click();}
+  await page.waitForFunction(()=>SFBackend.ready);
   const state=await page.evaluate(()=>({role:SFBackend.role,accessRole:SFBackend.accessRole,canPlan:SFBackend.can('plan'),canManageTime:SFBackend.can('manageTime'),scope:SFBackend.personnelConversationEmployeeIds,employee:SFBackend.employeePortalData?.employee?.id,calls:qa.calls,managerBoot:qa.managerBoot}));
   assert.equal(new URL(page.url()).searchParams.get('bereich'),area);checks++;
   if(area==='mitarbeiter'){

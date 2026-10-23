@@ -8,12 +8,14 @@ const read = name => fs.readFileSync(new URL('../' + name, import.meta.url), 'ut
 const index = read('index.html');
 const overlay = index.slice(index.indexOf('<div id="sfEntryOverlay"'), index.indexOf('<section id="landingPage">'));
 const source = read('assets/sf-entry-access-v1.js');
-function launch(path, {displayMode = false, ios = false} = {}) {
+function launch(path, {displayMode = false, ios = false, rememberedArea = null, storageBlocked = false} = {}) {
   const dom = new Window();
   dom.document.body.innerHTML = overlay;
   const location = new URL(path, 'https://schichtfunk.de');
   const history = {state: null, replaceState(state, _, path) { location.href = new URL(path, location).href; }};
-  const window = {navigator: {standalone: ios}, matchMedia: query => ({matches: query === '(display-mode: standalone)' ? displayMode : true})};
+  const storage = new Map(rememberedArea ? [['sf_entry_area', rememberedArea]] : []);
+  const localStorage = {getItem: key => { if (storageBlocked) throw Error('blocked'); return storage.get(key) || null; }, setItem: (key, value) => { if (storageBlocked) throw Error('blocked'); storage.set(key, value); }};
+  const window = {localStorage, navigator: {standalone: ios}, matchMedia: query => ({matches: query === '(display-mode: standalone)' ? displayMode : true})};
   vm.runInNewContext(source, {window, document: dom.document, location, history, URL, URLSearchParams});
   window.SFEntryAccess.mount(null);
   return {document: dom.document, location, window};
@@ -56,4 +58,30 @@ test('PWA startup preserves password recovery and invitation parameters', () => 
   const path = '/?reset=1&invite=example#access_token=example&type=recovery';
   const {location} = launch(path, {ios: true});
   assert.equal(location.pathname + location.search + location.hash, path);
+});
+
+for (const mode of [{ios:true}, {displayMode:true}, {}]) {
+  for (const view of ['employee-shifts','employee-handover','employee-dashboard']) test(`personal push resolves employee workspace before auth: ${view} ${JSON.stringify(mode)}`, () => {
+    const {location,window} = launch('/?sf_push_view='+view+'&sf_push_notification=example#app', {...mode,rememberedArea:'verwaltung'});
+    assert.equal(location.searchParams.get('bereich'),'mitarbeiter');
+    assert.equal(location.searchParams.get('sf_push_view'),view);
+    assert.equal(location.searchParams.get('sf_push_notification'),'example');
+    assert.equal(window.SFEntryAccess.isChoosing(),false);
+  });
+  for (const area of ['mitarbeiter','verwaltung','zeitkonto']) test(`generic test push follows selected ${area}: ${JSON.stringify(mode)}`, () => {
+    const {location}=launch('/?sf_push_view=overview#app',{...mode,rememberedArea:area});
+    assert.equal(location.searchParams.get('bereich'),area);
+  });
+}
+test('remembered employee area never bypasses ordinary PWA area selection', () => {
+  for (const path of ['/','/#app']) assert.equal(launch(path,{ios:true,rememberedArea:'mitarbeiter'}).window.SFEntryAccess.isChoosing(),true);
+});
+test('explicit management link takes precedence over stored employee preference', () => {
+  assert.equal(launch('/?bereich=verwaltung&sf_push_view=overview#app',{rememberedArea:'mitarbeiter'}).location.searchParams.get('bereich'),'verwaltung');
+});
+test('storage failure does not prevent personal push routing', () => {
+  assert.equal(launch('/?sf_push_view=employee-shifts#app',{ios:true,storageBlocked:true}).location.searchParams.get('bereich'),'mitarbeiter');
+});
+test('an unrelated management push does not reuse an employee preference', () => {
+  assert.equal(launch('/?sf_push_view=reports#app',{rememberedArea:'mitarbeiter'}).location.searchParams.get('bereich'),'verwaltung');
 });

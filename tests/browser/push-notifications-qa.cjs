@@ -26,6 +26,10 @@ const source=fs.readFileSync(path.join(__dirname,'../../assets/push-notification
   await card.locator('[data-sf-push-enable]').click();await card.locator('[data-sf-push-test]').waitFor();
   assert.equal(await page.evaluate(()=>qa.permissionRequests),1);
   await card.locator('[data-sf-push-test]').click();await page.waitForFunction(()=>qa.calls.includes('send_push_test'));
+  assert.equal(await page.evaluate(()=>localStorage.getItem('sf_entry_area')),'mitarbeiter');
+  await page.evaluate(()=>{qa.views=[];SFBackend.openEmployeePortal=()=>qa.views.push('open');SFBackend.employeePortalNavigate=view=>qa.views.push(view);history.replaceState(null,'','/?sf_push_view=overview&bereich=mitarbeiter#app');dispatchEvent(new Event('focus'))});
+  await page.waitForFunction(()=>qa.views.includes('dashboard'));
+  assert.equal(await page.evaluate(()=>location.search),'?bereich=mitarbeiter');
   await card.locator('[data-sf-push-disable]').click();await page.waitForFunction(()=>qa.calls.includes('unsubscribe'));
   assert.equal(await page.evaluate(()=>qa.serverId),null);
   await page.evaluate(()=>{Notification.permission='default';qa.mode='denied'});

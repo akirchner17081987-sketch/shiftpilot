@@ -12,12 +12,25 @@
   const names = {mitarbeiter:'Mitarbeiterportal', verwaltung:'Verwaltung', zeitkonto:'Zeiterfassung'};
   const allowed = new Set(['mitarbeiter','verwaltung','zeit','zeitkonto']);
   const params = new URLSearchParams(location.search);
+  const pushView = params.get('sf_push_view');
+  let rememberedArea = null;
+  try { rememberedArea = window.localStorage.getItem('sf_entry_area'); } catch (_) { /* Storage may be unavailable. */ }
+  // Resolve the workspace before session restoration chooses a membership role.
+  // Employee links are explicit; generic test pushes follow this device's selection.
+  const pushArea = pushView?.startsWith('employee-') ? 'mitarbeiter'
+    : pushView === 'overview' && ['mitarbeiter','verwaltung','zeitkonto'].includes(rememberedArea) ? rememberedArea
+    : pushView ? 'verwaltung' : null;
   // Older installations retain /#app as their launch URL. In the installed
   // app that legacy default must open the chooser; explicit area links still work.
   const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-  const legacyPwaStart = standalone && location.hash === '#app' && !allowed.has(params.get('bereich'));
-  let area = allowed.has(params.get('bereich')) ? params.get('bereich') : location.hash === '#app' && !legacyPwaStart ? 'verwaltung' : null;
-  if (legacyPwaStart) setAddress();
+  const legacyPwaStart = standalone && location.hash === '#app' && !allowed.has(params.get('bereich')) && !pushArea;
+  let area = allowed.has(params.get('bereich')) ? params.get('bereich') : pushArea || (location.hash === '#app' && !legacyPwaStart ? 'verwaltung' : null);
+  if (legacyPwaStart || pushArea) setAddress();
+  rememberArea();
+  function rememberArea() {
+    if (!allowed.has(area)) return;
+    try { window.localStorage.setItem('sf_entry_area', area); } catch (_) { /* Navigation works without storage. */ }
+  }
   let ready = false, switching = false, lastSelection = null, scannerPromise = null;
   root.classList.add('sf-entry-access-enabled');
 
@@ -69,6 +82,7 @@
       await animate(outgoing,[{opacity:1,transform:'translateX(0) scale(1)',filter:'blur(0px)'},{opacity:0,transform:'translateX(-14px) scale(.985)',filter:'blur(3px)'}],{duration:260,easing:'ease-in'});
       if (!root.isConnected || root.inert) return;
       area = next;
+      rememberArea();
       if (window.SFBackend) window.SFBackend.pendingView = next === 'zeitkonto' ? 'time' : 'overview';
       const password = document.getElementById('sfPassword');if (password) password.value = '';
       const message = document.getElementById('sfAuthMsg');if (message) { message.textContent = '';message.className = 'sf-auth-msg'; }
