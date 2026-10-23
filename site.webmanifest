@@ -4,7 +4,7 @@
   "short_name": "SchichtFunk",
   "description": "Dienstplanung, Mitarbeiterportal und Arbeitszeiten mit SchichtFunk.",
   "lang": "de",
-  "start_url": "/#app",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
@@ -35,8 +35,8 @@
     {
       "name": "SchichtFunk öffnen",
       "short_name": "Öffnen",
-      "description": "Direkt zur SchichtFunk Anwendung",
-      "url": "/#app",
+      "description": "Zur Auswahl der SchichtFunk Bereiche",
+      "url": "/",
       "icons": [
         {
           "src": "/assets/schichtfunk-app-icon-192.png",

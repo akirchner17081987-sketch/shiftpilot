@@ -12,7 +12,12 @@
   const names = {mitarbeiter:'Mitarbeiterportal', verwaltung:'Verwaltung', zeitkonto:'Zeiterfassung'};
   const allowed = new Set(['mitarbeiter','verwaltung','zeit','zeitkonto']);
   const params = new URLSearchParams(location.search);
-  let area = allowed.has(params.get('bereich')) ? params.get('bereich') : location.hash === '#app' ? 'verwaltung' : null;
+  // Older installations retain /#app as their launch URL. In the installed
+  // app that legacy default must open the chooser; explicit area links still work.
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  const legacyPwaStart = standalone && location.hash === '#app' && !allowed.has(params.get('bereich'));
+  let area = allowed.has(params.get('bereich')) ? params.get('bereich') : location.hash === '#app' && !legacyPwaStart ? 'verwaltung' : null;
+  if (legacyPwaStart) setAddress();
   let ready = false, switching = false, lastSelection = null, scannerPromise = null;
   root.classList.add('sf-entry-access-enabled');
 

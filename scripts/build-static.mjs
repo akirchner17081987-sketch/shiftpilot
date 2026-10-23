@@ -35,7 +35,7 @@ for (const file of requiredOutput) {
 const builtIndex = await readFile(new URL('index.html', output), 'utf8');
 if (!/rel="manifest" href="\/site\.webmanifest"/.test(builtIndex)) throw new Error('Static index does not reference the PWA manifest.');
 const builtManifest = JSON.parse(await readFile(new URL('site.webmanifest', output), 'utf8'));
-if (builtManifest.start_url !== '/#app' || builtManifest.scope !== '/') throw new Error('PWA manifest start URL or scope is invalid.');
+if (builtManifest.start_url !== '/' || builtManifest.scope !== '/') throw new Error('PWA manifest start URL or scope is invalid.');
 
 async function sizeOf(path) {
   const entry = await stat(path);
