@@ -1,6 +1,19 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const C=require('../assets/background-auto-plan-core-v1.js'),R=require('../assets/solid-planning-resume-v1.js'),core=require('../assets/month-optimizer-core-v1.js'),S=require('../assets/solid-planning-core-v1.js');
 const rules={enabled:true,timezone:'Europe/Berlin',maxConsecutiveShifts:4,minFreeStartDays:2,minBlockRestHours:48,preferredNightBlockLength:3,minFreeWeekendsPerMonth:1,rollingWeekTargetHours:40,conditionalStaffing:[]};
+test('Secontec 9h block recovery exchanges occupied TL days and preserves all mandatory positions',()=>{
+ const dates=['2027-01-23','2027-01-24','2027-01-25'],employees=['37','a','b','c','d'].map(id=>({id,target:162,monthLimit:162,calendarLimit:162,weeklyLimit:55,maxConsecutive:4,shifts:['TL']})),row=(id,date)=>({employeeId:id,date,type:'TL',start:'21:00',end:'06:00',resource:date+'|TL'});
+ const make=(id,days,fullWorkRest=false)=>({id:id+'|'+days[0],employee:employees.find(e=>e.id===id),fullWorkRest,options:[days.map(day=>row(id,day))]});
+ const input={month:'2027-01',employees,base:[],groups:[make('37',dates,true),make('a',[dates[0]]),make('b',[dates[2]]),make('c',[dates[0]]),make('d',[dates[2]])],capacities:dates.map(d=>[d+'|TL',1]),criticalCapacities:[],scopedBlockRecovery:true,solidRules:{...rules,confirmedRulesVersion:2,minFreeCalendarDays:2,minNightRecoveryCalendarDays:2,maxConsecutiveNightShifts:4,maxCalendarWeekHours:55,minFreeWeekendsPerMonth:0}};
+ const p=core.prepare(input),incumbent=core.state(p,[{group:p.groups[1],option:p.groups[1].options[0]},{group:p.groups[2],option:p.groups[2].options[0]}]);
+ const recovered=core.checkpointPrimitives.repairBlockExchanges(p,incumbent);
+ assert.equal(core.checkpointPrimitives.solidQuality(p,incumbent).open,1);assert.equal(core.checkpointPrimitives.solidQuality(p,recovered).open,0);
+ const planned=recovered.records.flatMap(r=>r.option);assert.deepEqual(planned.filter(a=>a.employeeId==='37').map(a=>a.date),dates);
+ for(const e of employees)assert.equal(S.errors(e,planned,input.solidRules).length,0);
+ const elsewhere=core.prepare({...input,scopedBlockRecovery:false});assert.equal(core.checkpointPrimitives.repairBlockExchanges(elsewhere,core.state(elsewhere)).records.length,0);
+ const packed=C.pack(input);assert.equal(packed.scopedBlockRecovery,true);assert.equal(C.unpack(packed).scopedBlockRecovery,true);
+ const forged={version:1,months:['2027-01'],minimumInput:packed,monthInputs:[packed],metadata:{company:'elsewhere'}};assert.throws(()=>C.check(forged),/gehört nicht zu diesem Unternehmen/);
+});
 function input(month='2027-01'){
  const employees=['a','b','c'].map(id=>({id,first:'private',email:'private@example.test',target:40,monthLimit:40,calendarLimit:40,maxMonthlyShifts:4,weeklyLimit:40,maxConsecutive:4,shifts:['OT2'],personnelNo:id})),dates=[4,5,6,7,8].map(n=>month+'-'+String(n).padStart(2,'0'));
  const row=(e,date)=>({employeeId:e.id,date,type:'OT2',start:'08:00',end:'18:00',resource:date+'|OT2'}),groups=employees.flatMap(employee=>dates.map(date=>({id:employee.id+'|'+date,employee,options:[[row(employee,date)]]})));

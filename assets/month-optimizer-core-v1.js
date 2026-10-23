@@ -143,6 +143,42 @@
     }
     current.search={checks,nodes,improvements,limited:checks>=maxChecks||nodes>=maxNodes};current.searchLimited=!!initial.searchLimited||current.search.limited;return current;
   }
+  // A whole work/rest block can cover an open day while its other days are
+  // occupied by different employees. Exchange the conflicting blocks as a
+  // unit, and accept a result only after every displaced mandatory position
+  // has been restored and every affected employee passes the hard rules.
+  function repairBlockExchanges(p,initial,allowed=(s,r)=>feasible(p,s,r.group,r.option)){
+    if(!p.scopedBlockRecovery||p.criticalOnly||!initial)return initial;
+    const byResource=new Map();for(const group of p.groups)for(const option of group.options)for(const key of new Set(option.map(a=>a.resource))){const list=byResource.get(key)||[];list.push({group,option});byResource.set(key,list)}
+    let best=initial,checks=0,nodes=0,improvements=0,limited=false;
+    const maxChecks=12000,maxNodes=2200,maxDepth=4,maxVictims=4;
+    const score=s=>solidQuality(p,s),betterState=(a,b)=>solidBetter(score(a),score(b));
+    function validRemoved(s,removed){const all=[...p.base,...s.records.flatMap(r=>r.option)];for(const id of removed){const e=p.people.get(id);if(!e||!validIndividual(p,e,all)||p.solidRules&&solid.errors(e,all,p.solidRules,all.filter(a=>String(a.employeeId)===id).map(a=>a.date)).length)return false}return true}
+    function search(s,goal,depth,removed,seen){if(++nodes>maxNodes){limited=true;return null}const missing=[...goal].filter(([key,n])=>(s.remaining.get(key)||0)>n).sort((a,b)=>(byResource.get(a[0])?.length||0)-(byResource.get(b[0])?.length||0));
+      if(!missing.length)return validRemoved(s,removed)&&betterState(s,best)?s:null;
+      if(depth<=0)return null;
+      const [key]=missing[0],choices=byResource.get(key)||[];
+      for(const r of choices){if(++checks>maxChecks){limited=true;return null}if(s.used.has(r.group.id))continue;
+        const occupied=[];for(const key of new Set(r.option.map(a=>a.resource))){if((s.remaining.get(key)||0)>0)continue;const owners=s.records.filter(old=>old.option.some(b=>b.resource===key));if(owners.length)occupied.push(owners)}
+        const person=String(r.group.employee.id),near=s.records.filter(old=>String(old.group.employee.id)===person&&old.option.some(a=>r.option.some(b=>Math.abs(a.day-b.day)<=8)));
+        // Try the direct placement first. Then evict a bounded set of affected
+        // blocks, including occupied resources belonging to other employees.
+        let victimSets=[[]];for(const owners of occupied){const next=[];for(const victims of victimSets){if(owners.some(old=>victims.includes(old))){next.push(victims);continue}for(const old of owners){if(victims.length<maxVictims)next.push([...victims,old]);if(next.length>=48)break}if(next.length>=48)break}victimSets=next;if(!victimSets.length)break}
+        victimSets=[...victimSets,...victimSets.flatMap(victims=>near.filter(old=>!victims.includes(old)&&victims.length<maxVictims).map(old=>[...victims,old]))];
+        for(const victims of victimSets){const signature=r.group.id+'|'+r.option.map(a=>a.resource).join(',')+'|'+victims.map(v=>v.group.id).sort().join(',')+'|'+depth;if(seen.has(signature))continue;seen.add(signature);
+          const next=state(p,s.records.filter(old=>!victims.includes(old)));if(!allowed(next,r))continue;commit(next,r,p.month);
+          const affected=new Set(removed);for(const old of victims)affected.add(String(old.group.employee.id));
+          const found=search(next,goal,depth-1,affected,seen);if(found)return found;
+          if(limited)return null;
+        }
+      }return null;
+    }
+    for(let pass=0;pass<4;pass++){let found=null;const roots=[...best.remaining].filter(([key,n])=>n>0).sort((a,b)=>(byResource.get(a[0])?.length||0)-(byResource.get(b[0])?.length||0));
+      for(const [key]of roots){const goal=new Map(best.remaining);goal.set(key,goal.get(key)-1);found=search(best,goal,maxDepth,new Set(),new Set());if(found||limited)break}
+      if(!found)break;best=found;improvements++;if(score(best).open===0)break;
+    }
+    best.searchLimited=!!initial.searchLimited||limited;best.blockRecovery={checks,nodes,improvements,limited};return best;
+  }
   // A small deterministic beam considers the whole month, independently of the
   // incumbent. Large inputs keep the existing checkpoint search and repair path.
   function globalBeam(p,initial,allowed=(s,r)=>feasible(p,s,r.group,r.option)){
@@ -166,7 +202,7 @@
     let best=initial,q=p.solidRules?solidQuality(p,best):quality(p,best);for(const s of beam){const v=p.solidRules?solidQuality(p,s):quality(p,s);if((p.solidRules?solidBetter(v,q):better(v,q))){best=s;q=v;}}
     best.searchLimited=limited;return best;
   }
-  function refineRecords(p,initial,allowed=(s,r)=>feasible(p,s,r.group,r.option)){let best=globalBeam(p,initial,allowed);for(let i=0;i<3;i++){const previous=quality(p,best).open;best=balanceRecords(p,repairRecords(p,best,allowed),allowed);if(quality(p,best).open===0||i>0&&quality(p,best).open>=previous)break;}return best;}
+  function refineRecords(p,initial,allowed=(s,r)=>feasible(p,s,r.group,r.option)){let best=globalBeam(p,initial,allowed);for(let i=0;i<3;i++){const previous=quality(p,best).open;best=balanceRecords(p,repairRecords(p,best,allowed),allowed);if(quality(p,best).open===0||i>0&&quality(p,best).open>=previous)break;}return repairBlockExchanges(p,best,allowed);}
   const fairOptionGain=(p,s,r)=>{if(p.fairDistribution===false)return 0;const e=r.group.employee,h=s.people.get(String(e.id)).hours;return personCost(p,h,e)-personCost(p,h+r.option.hours,e);};
   function fill(p,retained,seed,variant){
     const s=state(p,retained),rng=random(seed),bias=new Map(p.groups.map(g=>[g.id,.8+rng()*.4]));
@@ -305,6 +341,6 @@
     const open=input.capacities.reduce((n,[key,count])=>n+Math.max(0,count-(used.get(key)||0)),0);
     return{preview,individualInput:freeInput,quality:{...found.quality,open},rows:input.employees.map(e=>{const hours=all.filter(a=>String(a.employeeId)===String(e.id)&&a.date.startsWith(input.month)).reduce((n,a)=>n+duty(a).hours,0);return{employeeId:e.id,target:e.target,planned:hours,missing:Math.max(0,e.target-hours),extra:Math.max(0,hours-e.target)}})};
   }
-  return{optimize,prepare,feasible,state,quality,duty,week,hoursCost,balancePreview,checkpointPrimitives:{fairOptionGain,balanceRecords,repairRecords,globalBeam,refineRecords,rosterChoice,commit,solidQuality,solidBetter,criticalOpen,teamLeaderBlockPenalty,teamLeaderOptionScore,teamLeaderTarget,teamLeaderWeekSeed}};
+  return{optimize,prepare,feasible,state,quality,duty,week,hoursCost,balancePreview,checkpointPrimitives:{fairOptionGain,balanceRecords,repairRecords,repairBlockExchanges,globalBeam,refineRecords,rosterChoice,commit,solidQuality,solidBetter,criticalOpen,teamLeaderBlockPenalty,teamLeaderOptionScore,teamLeaderTarget,teamLeaderWeekSeed}};
 });
 
