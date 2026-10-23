@@ -318,7 +318,7 @@ test('all JavaScript assets pass the Node syntax check', () => {
     .filter(path => !/^https?:/i.test(path));
 
   for (const script of [...new Set(scripts)]) {
-    execFileSync(process.execPath, ['--check', resolve(root, script)], { stdio: 'pipe' });
+    execFileSync(process.execPath, ['--check', resolve(root, script.replace(/^\//, ''))], { stdio: 'pipe' });
   }
 });
 

@@ -2691,6 +2691,12 @@
       "area": "Selbständige Planung und Monatsausgleich",
       "category": "auto",
       "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/pwa-runtime-v1.js",
+      "area": "PWA, Verbindung, Offline-Start und verfügbare Updates",
+      "category": "portal",
+      "kind": "feature-or-support"
     }
   ],
   "categoryCoverage": [
@@ -3272,7 +3278,7 @@
     "correctedArticleCount": 19,
     "articleCount": 253,
     "categoryCount": 22,
-    "assetJavaScriptCount": 227
+    "assetJavaScriptCount": 228
   },
   "incrementalUpdate": {
     "date": "2026-10-20",

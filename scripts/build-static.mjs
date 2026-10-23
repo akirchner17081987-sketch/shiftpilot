@@ -1,4 +1,5 @@
-import { cp, mkdir, readdir, readFile, rm, stat } from 'node:fs/promises';
+import { cp, mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { hardenStaticCsp } from './harden-static-csp.mjs';
@@ -8,7 +9,7 @@ const output = new URL('../dist/', import.meta.url);
 const files = [
   '.htaccess', 'index.html', 'demo.html', 'demo-abschluss.html',
   'qr-time.html', 'impressum.html', 'datenschutz.html',
-  'schichtfunk-sw.js', 'site.webmanifest', 'favicon.ico'
+  'schichtfunk-sw.js', 'site.webmanifest', 'favicon.ico', 'offline.html'
 ];
 
 await rm(output, { recursive: true, force: true });
@@ -17,10 +18,31 @@ await Promise.all(files.map(file => cp(new URL(file, root), new URL(file, output
 await cp(new URL('assets/', root), new URL('assets/', output), { recursive: true });
 const externalScripts=await hardenStaticCsp(output);
 
+// Content-based release ID: identical output has the same ID, including local QA.
+async function fingerprint(directory, prefix='') {
+  const parts=[];
+  for(const name of (await readdir(directory)).sort()){
+    const path=new URL(name,directory),entry=await stat(path);
+    if(entry.isDirectory())parts.push(...await fingerprint(new URL(name+'/',directory),prefix+name+'/'));
+    else parts.push(prefix+name,await readFile(path));
+  }
+  return parts;
+}
+const releaseHash=createHash('sha256');
+for(const part of await fingerprint(output))releaseHash.update(part);
+const version=releaseHash.digest('hex').slice(0,20);
+await writeFile(new URL('pwa-release.json',output),JSON.stringify({version})+'\n');
+for(const page of ['index.html','qr-time.html']){
+  const file=new URL(page,output),html=await readFile(file,'utf8');
+  await writeFile(file,html.replace('</head>','<meta name="sf-release" content="'+version+'">\n</head>'));
+}
+const workerFile=new URL('schichtfunk-sw.js',output);
+await writeFile(workerFile,(await readFile(workerFile,'utf8')).replace("const RELEASE='source';","const RELEASE='"+version+"';"));
+
 const requiredOutput = [
   '.htaccess', 'index.html', 'demo.html', 'demo-abschluss.html',
   'qr-time.html', 'impressum.html', 'datenschutz.html',
-  'schichtfunk-sw.js', 'site.webmanifest', 'favicon.ico',
+  'schichtfunk-sw.js', 'site.webmanifest', 'favicon.ico', 'offline.html', 'pwa-release.json',
   'assets/schichtfunk-app-icon-192.png',
   'assets/schichtfunk-app-icon-512.png',
   'assets/schichtfunk-app-icon-maskable-512.png',

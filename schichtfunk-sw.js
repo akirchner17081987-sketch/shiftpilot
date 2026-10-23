@@ -1,8 +1,10 @@
-// SchichtFunk – sicherer PWA App-Shell + Web Push Service Worker V9
-const CACHE='schichtfunk-shell-v9-csp';
+// SchichtFunk – public offline screen; no cached application HTML or business data.
+const RELEASE='source';
+const CACHE='schichtfunk-shell-v10-pwa-'+RELEASE;
 const STATIC=[
-  '/index.html',
-  '/site.webmanifest',
+  '/offline.html',
+  '/assets/pwa-runtime-v1.css',
+  '/assets/pwa-runtime-v1.js',
   '/assets/schichtfunk-logo.svg',
   '/assets/schichtfunk-app-icon-192.png',
   '/assets/schichtfunk-app-icon-512.png',
@@ -10,7 +12,7 @@ const STATIC=[
 ];
 
 self.addEventListener('install',event=>{
-  event.waitUntil(caches.open(CACHE).then(cache=>Promise.all(STATIC.map(url=>cache.add(url).catch(()=>null)))).then(()=>self.skipWaiting()));
+  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(STATIC.map(path=>new Request(new URL(path,self.location.origin),{cache:'reload'})))).then(()=>self.skipWaiting()));
 });
 
 self.addEventListener('activate',event=>{
@@ -30,10 +32,23 @@ self.addEventListener('fetch',event=>{
   if(url.origin!==self.location.origin)return;
 
   // Nie API-Antworten oder geheime QR-Terminal-URLs cachen.
-  if(url.pathname.startsWith('/api/')||url.pathname==='/qr-time'||url.pathname==='/qr-time.html')return;
+  if(url.pathname.startsWith('/api/'))return;
+  if((url.pathname==='/qr-time'||url.pathname==='/qr-time.html')&&request.mode!=='navigate')return;
 
   if(request.mode==='navigate'){
-    event.respondWith(fetch(request).catch(()=>caches.match('/index.html').then(r=>r||Response.error())));
+    event.respondWith((async()=>{
+      const controller=new AbortController();
+      const timer=setTimeout(()=>controller.abort(),10000);
+      try{return await fetch(request,{cache:'no-cache',signal:controller.signal})}
+      catch{return (await caches.open(CACHE)).match('/offline.html').then(r=>r||Response.error())}
+      finally{clearTimeout(timer)}
+    })());
+    return;
+  }
+
+  // The install manifest and release marker must never come from an old cache.
+  if(url.pathname==='/site.webmanifest'||url.pathname==='/pwa-release.json'){
+    event.respondWith(fetch(request,{cache:'no-store'}).catch(()=>Response.error()));
     return;
   }
 
@@ -44,12 +59,12 @@ self.addEventListener('fetch',event=>{
   const cspCritical=url.pathname==='/assets/csp-actions-v1.js'||url.pathname.startsWith('/assets/vendor/')||url.pathname.startsWith('/assets/page-');
   // Kritische Laufzeit-Integrationen immer zuerst aus dem Netz holen. So kann ein
   // installierter PWA-Cache keine Sicherheits-, Push- oder Mobile-Korrektur verdecken.
-  const networkFirst=cspCritical||/\/(supabase-[^/]+|conflict-plausibility-v1|access-profiles-v1|time-only-access-v1|team-admin-v1|time-workspace-v2|qr-manager-correction-v1|qr-independent-report-v1|navigation-compat-v1|employee-mobile-pwa-v1|push-notifications-v1|employee-wage-preview-v1)\.js$/.test(url.pathname);
+  const networkFirst=cspCritical||/\.(?:m?js|css)$/.test(url.pathname);
   if(networkFirst){
     event.respondWith(caches.open(CACHE).then(async cache=>{
       try{
         const response=await fetch(request,{cache:'no-cache'});
-        if(mayCache(response))cache.put(request,response.clone());
+        if(mayCache(response)){try{await cache.put(request,response.clone())}catch{}}
         return response;
       }catch{
         return (await cache.match(request))||Response.error();
@@ -60,8 +75,8 @@ self.addEventListener('fetch',event=>{
 
   event.respondWith(caches.open(CACHE).then(async cache=>{
     const cached=await cache.match(request);
-    const refresh=fetch(request).then(response=>{
-      if(mayCache(response))cache.put(request,response.clone());
+    const refresh=fetch(request).then(async response=>{
+      if(mayCache(response)){try{await cache.put(request,response.clone())}catch{}}
       return response;
     }).catch(()=>null);
     if(cached){event.waitUntil(refresh);return cached}

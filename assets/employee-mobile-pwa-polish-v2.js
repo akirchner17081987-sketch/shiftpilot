@@ -9,6 +9,7 @@
   let sheetOpener=null;
   let pendingView='';
   let keyboardTimer=null;
+  let mountPending=false;
 
   const isEmployee=()=>B.role==='EMPLOYEE';
   const isDemo=()=>sessionStorage.getItem('sf_demo_session_v1')==='active';
@@ -123,7 +124,8 @@
     banner.classList.toggle('visible',offline||pending);
     banner.classList.toggle('offline',offline);
     const copy=banner.querySelector('span');
-    if(copy)copy.textContent=offline?'Offline – keine Netzwerkverbindung. Bereits angezeigte Inhalte können sichtbar bleiben; neue Änderungen erst nach Wiederverbindung durchführen.':'Cloud-Verbindung wird hergestellt …';
+    const message=offline?'Offline – keine Netzwerkverbindung. Bereits angezeigte Inhalte können sichtbar bleiben; neue Änderungen erst nach Wiederverbindung durchführen.':'Cloud-Verbindung wird hergestellt …';
+    if(copy&&copy.textContent!==message)copy.textContent=message;
   }
 
   function wrapWideContent(){
@@ -179,7 +181,7 @@
   }
 
   function mount(){
-    if(!isEmployee())return false;
+    if(!isEmployee()||document.hidden)return false;
     const p=portal();if(!p)return false;
     css();
     p.classList.toggle('sf-pwa-standalone',isStandalone());
@@ -209,7 +211,7 @@
   MOBILE.addEventListener?.('change',()=>{if(!MOBILE.matches)closeSheet();mount();});
 
   const observer=new MutationObserver(records=>{
-    if(!isEmployee())return;
+    if(!isEmployee()||document.hidden)return;
     let needsMount=false,sheetChanged=false,viewChanged=false;
     for(const record of records){
       if(record.type==='attributes'&&record.attributeName==='class'&&record.target.id==='sfEmployeeMobileMore')sheetChanged=true;
@@ -218,11 +220,11 @@
     }
     if(sheetChanged)syncSheet();
     if(viewChanged){restoreScroll(activeView());updateNetwork()}
-    if(needsMount)requestAnimationFrame(mount);
+    if(needsMount&&!mountPending){mountPending=true;requestAnimationFrame(()=>{mountPending=false;if(!document.hidden)mount()});}
   });
   observer.observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['class','data-sf-portal-active']});
 
   css();
   setTimeout(mount,0);setTimeout(mount,600);setTimeout(mount,1600);
-  setInterval(()=>{if(isEmployee()){updateNetwork();wrapWideContent()}},4000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)mount()});
 })();

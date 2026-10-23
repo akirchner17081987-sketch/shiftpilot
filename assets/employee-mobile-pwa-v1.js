@@ -154,14 +154,9 @@
   }
 
   function mount(){
-    if(!isEmployee())return false;
+    if(!isEmployee()||document.hidden)return false;
     const portal=document.getElementById('sfEmployeePortal');if(!portal)return false;css();
     portal.classList.add('sf-employee-mobile-pwa');ensureDock(portal);ensureMore(portal);ensureInstall(portal);updateActive(portal);return true;
-  }
-
-  async function registerServiceWorker(){
-    if(!('serviceWorker' in navigator)||!window.isSecureContext)return;
-    try{await navigator.serviceWorker.register('/schichtfunk-sw.js',{scope:'/'});}catch(e){console.debug('[SchichtFunk PWA]',e?.message||e)}
   }
 
   window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;mount()});
@@ -175,13 +170,13 @@
   },true);
 
   const observer=new MutationObserver(records=>{
-    if(!isEmployee())return;
+    if(!isEmployee()||document.hidden)return;
     const portal=document.getElementById('sfEmployeePortal');if(!portal)return;
     const activeChanged=records.some(r=>r.type==='attributes'&&r.target===portal&&r.attributeName==='data-sf-portal-active');
     mount();if(activeChanged)updateActive(portal);
   });
   observer.observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['data-sf-portal-active']});
 
-  registerServiceWorker();
-  setTimeout(mount,500);setTimeout(mount,1500);setInterval(()=>{if(isEmployee())mount()},5000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)mount()});
+  setTimeout(mount,500);setTimeout(mount,1500);
 })();

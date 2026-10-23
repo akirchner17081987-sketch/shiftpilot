@@ -1,7 +1,7 @@
 import {createHash} from 'node:crypto';
 import {readFile,writeFile,readdir} from 'node:fs/promises';
 
-export const pages=['index.html','demo.html','demo-abschluss.html','qr-time.html','impressum.html','datenschutz.html'];
+export const pages=['index.html','demo.html','demo-abschluss.html','qr-time.html','impressum.html','datenschutz.html','offline.html'];
 const hash=text=>createHash('sha256').update(text).digest('hex').slice(0,24);
 export async function hardenStaticCsp(output){
  let extracted=0;

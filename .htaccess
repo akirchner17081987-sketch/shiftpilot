@@ -23,6 +23,9 @@ RewriteRule ^ /index.html [END]
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
   Header always set Permissions-Policy "camera=(self), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()"
   Header always unset X-Powered-By
+  <Files "pwa-release.json">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+  </Files>
   <FilesMatch "^(schichtfunk-sw\.js|site\.webmanifest|.*\.html)$">
     Header set Cache-Control "no-cache, no-store, must-revalidate"
   </FilesMatch>

@@ -33,5 +33,5 @@ test('client libraries and license notices match the pinned npm-integrity manife
 test('external actions are fixed functions with no executable-text compiler and preserve explicit assignment identity',async()=>{
  const code=await read('assets/csp-actions-v1.js');assert.doesNotMatch(code,/\beval\s*\(|new\s+Function\s*\(|\bFunction\s*\(/);assert.match(code,/startsWith\(type\+'-'\)/);
  for(const name of ['assignment-quick-delete-v1.js','supabase-absence-planning-guard-v2.js','supabase-legacy-review-v1.js','compliance-ui-v2.js']){const s=await read('assets/'+name);assert.match(s,/dataset\.assignmentId/);assert.doesNotMatch(s,/getAttribute\('onclick'\)/);}
- const sw=await read('schichtfunk-sw.js');assert.match(sw,/schichtfunk-shell-v9-csp/);assert.match(sw,/const networkFirst=cspCritical\|\|/);
+ const sw=await read('schichtfunk-sw.js');assert.match(sw,/schichtfunk-shell-v10-pwa/);assert.match(sw,/const networkFirst=cspCritical\|\|/);
 });
