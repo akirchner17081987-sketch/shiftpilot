@@ -151,14 +151,15 @@
     if(!p.scopedBlockRecovery||p.criticalOnly||!initial)return initial;
     const byResource=new Map();for(const group of p.groups)for(const option of group.options)for(const key of new Set(option.map(a=>a.resource))){const list=byResource.get(key)||[];list.push({group,option});byResource.set(key,list)}
     let best=initial,checks=0,nodes=0,improvements=0,limited=false;
-    const maxChecks=12000,maxNodes=2200,maxDepth=4,maxVictims=4;
+    const maxChecks=100000,maxNodes=40000,maxRootChecks=5000,maxRootNodes=1800,maxDepth=4,maxVictims=4;
     const score=s=>solidQuality(p,s),betterState=(a,b)=>solidBetter(score(a),score(b));
     function validRemoved(s,removed){const all=[...p.base,...s.records.flatMap(r=>r.option)];for(const id of removed){const e=p.people.get(id);if(!e||!validIndividual(p,e,all)||p.solidRules&&solid.errors(e,all,p.solidRules,all.filter(a=>String(a.employeeId)===id).map(a=>a.date)).length)return false}return true}
-    function search(s,goal,depth,removed,seen){if(++nodes>maxNodes){limited=true;return null}const missing=[...goal].filter(([key,n])=>(s.remaining.get(key)||0)>n).sort((a,b)=>(byResource.get(a[0])?.length||0)-(byResource.get(b[0])?.length||0));
+    let rootChecks=0,rootNodes=0,rootLimited=false;
+    function search(s,goal,depth,removed,seen){nodes++;rootNodes++;if(nodes>maxNodes){limited=true;return null}if(rootNodes>maxRootNodes){rootLimited=true;return null}const missing=[...goal].filter(([key,n])=>(s.remaining.get(key)||0)>n).sort((a,b)=>(byResource.get(a[0])?.length||0)-(byResource.get(b[0])?.length||0));
       if(!missing.length)return validRemoved(s,removed)&&betterState(s,best)?s:null;
       if(depth<=0)return null;
       const [key]=missing[0],choices=byResource.get(key)||[];
-      for(const r of choices){if(++checks>maxChecks){limited=true;return null}if(s.used.has(r.group.id))continue;
+      for(const r of choices){checks++;rootChecks++;if(checks>maxChecks){limited=true;return null}if(rootChecks>maxRootChecks){rootLimited=true;return null}if(s.used.has(r.group.id))continue;
         const occupied=[];for(const key of new Set(r.option.map(a=>a.resource))){if((s.remaining.get(key)||0)>0)continue;const owners=s.records.filter(old=>old.option.some(b=>b.resource===key));if(owners.length)occupied.push(owners)}
         const person=String(r.group.employee.id),near=s.records.filter(old=>String(old.group.employee.id)===person&&old.option.some(a=>r.option.some(b=>Math.abs(a.day-b.day)<=8)));
         // Try the direct placement first. Then evict a bounded set of affected
@@ -169,12 +170,12 @@
           const next=state(p,s.records.filter(old=>!victims.includes(old)));if(!allowed(next,r))continue;commit(next,r,p.month);
           const affected=new Set(removed);for(const old of victims)affected.add(String(old.group.employee.id));
           const found=search(next,goal,depth-1,affected,seen);if(found)return found;
-          if(limited)return null;
+          if(rootLimited||checks>=maxChecks||nodes>=maxNodes)return null;
         }
       }return null;
     }
     for(let pass=0;pass<4;pass++){let found=null;const roots=[...best.remaining].filter(([key,n])=>n>0).sort((a,b)=>(byResource.get(a[0])?.length||0)-(byResource.get(b[0])?.length||0));
-      for(const [key]of roots){const goal=new Map(best.remaining);goal.set(key,goal.get(key)-1);found=search(best,goal,maxDepth,new Set(),new Set());if(found||limited)break}
+      for(const [key]of roots){rootChecks=0;rootNodes=0;rootLimited=false;const goal=new Map(best.remaining);goal.set(key,goal.get(key)-1);found=search(best,goal,maxDepth,new Set(),new Set());if(rootLimited)limited=true;if(found||checks>=maxChecks||nodes>=maxNodes)break}
       if(!found)break;best=found;improvements++;if(score(best).open===0)break;
     }
     best.searchLimited=!!initial.searchLimited||limited;best.blockRecovery={checks,nodes,improvements,limited};return best;
