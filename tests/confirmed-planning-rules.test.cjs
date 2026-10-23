@@ -56,3 +56,16 @@ test('night recovery spans month changes and daylight saving uses real hours',()
  assert.equal(s.errors(e,[a('2027-01-31','ND','22:00','06:00'),a('2027-02-05')],p).length,0);
  assert.equal((s.interval('2027-03-27','22:00','08:00',p.timezone).end-s.interval('2027-03-27','22:00','08:00',p.timezone).start)/3600000,9);
 });
+
+test('confirmed manual five-day window permits day and night blocks, retained shorter blocks and no sixth day',()=>{
+ const B=require('../assets/background-auto-plan-core-v1.js');
+ for(const type of ['FD','ND']){
+  const rows=[4,5,6,7,8].map(n=>a('2027-01-0'+n,type,type==='ND'?'22:00':'06:00',type==='ND'?'06:00':'14:00'));
+  assert.ok(s.errors(e,rows,p).length,'ordinary automatic rows keep the existing maximum');
+  for(const row of rows)row.rhythmOverride={reason:'Manuell bestätigt',workBlockDays:5,blockStart:rows[0].date,blockEnd:rows[4].date,previewKey:JSON.stringify(['company',row.employeeId,row.type,row.date,row.start,row.end])};
+  assert.deepEqual(s.errors(e,rows,p),[]);assert.deepEqual(s.errors(e,rows.slice(0,4),p),[],'removing a confirmed duty remains possible');
+  assert.ok(s.errors(e,[...rows,a('2027-01-09',type,type==='ND'?'22:00':'06:00',type==='ND'?'06:00':'14:00')],p).length);
+  const packed=B.pack({employees:[e],base:rows,groups:[],capacities:[],solidRules:p});assert.deepEqual(packed.base.map(a=>a.rhythmOverride),rows.map(a=>a.rhythmOverride),'background planning preserves confirmed existing blocks');
+  const stale=rows.map(a=>({...a,start:'20:00',end:'04:00'}));assert.ok(s.errors(e,stale,p).some(x=>/vier Dienste/.test(x.message)),'copied confirmation cannot move duty times');
+ }
+});

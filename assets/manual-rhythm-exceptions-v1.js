@@ -9,8 +9,16 @@
  // Preview confirmations bind to the exact duty and company; automatic eligibility stays strict.
  const previewKey=a=>JSON.stringify([B.companyId,String(a.employeeId),a.type,a.date,a.start,a.end]);
  function previewOverride(a){const e=employees.find(e=>String(e.id)===String(a.employeeId)),r=e&&window.sfRhythmCheck?.(e,a.type,a.date);return canOverride()&&r?.mode==='required'&&!r.allowed&&r.expected?{reason:'Manuell in der Vorplanung eingeplant; Rhythmusvorgabe bewusst übersteuert.',previewKey:previewKey(a)}:null;}
- const isPreviewOverride=a=>!!a?.rhythmOverride?.reason&&a.rhythmOverride.previewKey===previewKey(a)&&!!previewOverride(a);
- const previewPayload=a=>isPreviewOverride(a)?{reason:a.rhythmOverride.reason}:null;
+ function previewBlockOverride(a,rows){
+  if(!canOverride())return null;
+  const dates=[...new Set(rows.filter(b=>String(b.employeeId)===String(a.employeeId)&&b.status!=='CANCELLED'&&b._dbStatus!=='CANCELLED').map(b=>b.date))].sort(),plus=(d,n)=>new Date(Date.parse(d+'T12:00Z')+n*86400000).toISOString().slice(0,10);let first=a.date,last=a.date;
+  while(dates.includes(plus(first,-1)))first=plus(first,-1);while(dates.includes(plus(last,1)))last=plus(last,1);
+  if(plus(first,4)!==last)return null;
+  return {reason:'Fünf Tage am Stück manuell in der Vorplanung bestätigt.',previewKey:previewKey(a),workBlockDays:5,blockStart:first,blockEnd:last};
+ }
+ const blockScope=a=>a?.rhythmOverride?.workBlockDays===5&&/^\d{4}-\d{2}-\d{2}$/.test(a.rhythmOverride.blockStart||'')&&new Date(Date.parse(a.rhythmOverride.blockStart+'T12:00Z')+4*86400000).toISOString().slice(0,10)===a.rhythmOverride.blockEnd&&a.date>=a.rhythmOverride.blockStart&&a.date<=a.rhythmOverride.blockEnd;
+ const isPreviewOverride=a=>!!a?.rhythmOverride?.reason&&a.rhythmOverride.previewKey===previewKey(a)&&canOverride()&&(blockScope(a)||!!previewOverride(a));
+ const previewPayload=a=>isPreviewOverride(a)?{reason:a.rhythmOverride.reason,...(blockScope(a)?{workBlockDays:5,blockStart:a.rhythmOverride.blockStart,blockEnd:a.rhythmOverride.blockEnd}:{})}:null;
  function available(){if(busy||B.teamRhythmSaving||B.employeeStatusSaving||B.shiftModelSaving||B.planningRulesSaving||B.autoPlanApplying||B.schedulePublishing||B.syncing||B.bootPromise||B.companySwitching)throw Error('Bitte laufende Speicherung oder Planung abwarten.');}
  async function flush(){if(B.syncTimer){clearTimeout(B.syncTimer);B.syncTimer=null;await B.sync();if(B.lastSyncError)throw B.lastSyncError;}}
  function styles(){if(document.getElementById('sfManualRhythmCss'))return;const s=document.createElement('style');s.id='sfManualRhythmCss';s.textContent='.sf-rhythm-backdrop{position:fixed;inset:0;z-index:15000;display:grid;place-items:center;padding:16px;background:rgba(2,8,15,.75);backdrop-filter:blur(5px)}.sf-rhythm-dialog{width:min(560px,100%);max-height:calc(100dvh - 32px);overflow:auto;background:var(--panel,#101d2d);color:var(--text,#f4f8ff);border:1px solid var(--line,#294159);border-radius:14px;padding:22px}.sf-rhythm-dialog h2{font-size:21px;margin:0 0 12px}.sf-rhythm-dialog p,.sf-rhythm-dialog small{color:var(--muted,#a5b8cb);line-height:1.55}.sf-rhythm-dialog label{display:block;margin:16px 0}.sf-rhythm-dialog textarea{display:block;width:100%;box-sizing:border-box;min-height:95px;margin-top:8px;background:var(--bg,#08111f);color:var(--text,#fff);border:1px solid var(--line,#294159);border-radius:8px;padding:10px}.sf-rhythm-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}.sf-rhythm-actions button{min-height:44px}.sf-rhythm-exception-badge{font-size:10px;color:var(--amber,#ffbd4f);border:1px solid currentColor;border-radius:5px;padding:2px 4px}.sf-rhythm-dialog [role=status]{white-space:pre-line}@media(max-width:520px){.sf-rhythm-dialog{padding:16px}.sf-rhythm-actions button{width:100%}}';document.head.append(s);}
@@ -39,7 +47,7 @@
   finally{busy=false;B.teamRhythmSaving=false;}
  }
  function enhance(host){if(!context()||isDemo()||!host?.querySelector('.sf-set-grid'))return;host.querySelector('#sfManualRhythmSetting')?.remove();const card=document.createElement('section');card.id='sfManualRhythmSetting';card.className='sf-set-card full';card.innerHTML='<h3>Manuelle Rhythmusausnahmen</h3><p>In allen Unternehmen haben bewusst manuell gesetzte Dienste Vorrang vor einem freien Tag im Mitarbeiter- oder Teamrhythmus. In der Vorplanung bestätigt „In Vorplanung übernehmen“ die dokumentierte Ausnahme. Im Dienstplan kann die Ausnahme mit „Trotzdem einplanen“ begründet werden. Die Auto-Planung beachtet weiterhin den Rhythmus. Schichtfreigaben, Abwesenheiten, Überschneidungen und Erholungsprüfungen bleiben aktiv.</p>';host.querySelector('.sf-set-grid').prepend(card);}
- window.SFManualRhythm={enabled,canOverride,matches,previewOverride,isPreviewOverride,previewPayload,confirm,persistDraft,saveSetting,enhance,clear(){document.getElementById('sfManualRhythmDialog')?.remove();},isBusy:()=>busy};
+ window.SFManualRhythm={enabled,canOverride,matches,previewOverride,previewBlockOverride,isPreviewOverride,previewPayload,confirm,persistDraft,saveSetting,enhance,clear(){document.getElementById('sfManualRhythmDialog')?.remove();},isBusy:()=>busy};
  if(C){C.manualCheck=(e,type,date,start,end,ignoreId=null)=>C.check(e,type,date,start,end,ignoreId,{manualRhythm:true});window.spAssignmentConflict=C.manualCheck;}
  window.SFSettingsV2?.refreshPlanning();
 })();

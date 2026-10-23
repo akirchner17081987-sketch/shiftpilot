@@ -46,6 +46,36 @@ test('PostgreSQL enforces scoped exceptions, reason, stale versions, rest and au
  const ordinary='dddddddd-dddd-4ddd-8ddd-dddddddddddd';await db.query('insert into shift_change_requests(id,company_id,employee_id,action,status,compliance_status,requires_employee_approval,requires_works_council,proposed_snapshot) values($1,$2,$3,\'CREATE\',\'READY_TO_APPLY\',\'GREEN\',false,false,$4)',[ordinary,company,employee,{...proposed,startsAt:'2027-01-11T05:00Z',endsAt:'2027-01-11T13:00Z',rhythmOverride:null}]);const ordinaryId=(await db.query('select apply_shift_change($1) id',[ordinary])).rows[0].id;assert.equal((await db.query('select rhythm_override from shift_assignments where id=$1',[ordinaryId])).rows[0].rhythm_override,null,'normal published changes accept JSON null');
  const off=(await db.query('select manager_set_manual_rhythm_exceptions($1,false,true) p',[company])).rows[0].p;assert.equal(off.solid_planning_rules.preserved,7);const universal=(await call({key:'universal',start:'2027-01-13T05:00Z',end:'2027-01-13T13:00Z'})).rows[0].row;assert.equal(universal.rhythm_override.expected,'FREI','obsolete disabled settings cannot block manual duty priority');await db.query('update shift_assignments set note=\'Confirmed exception retained\' where id=$1',[saved.id]);assert.ok((await db.query('select rhythm_override from shift_assignments where id=$1',[saved.id])).rows[0].rhythm_override);
  await db.exec('reset role');await db.query("update company_members set role='PLANNER' where company_id=$1",[company]);await db.exec('set role authenticated');await assert.rejects(db.query('select manager_set_manual_rhythm_exceptions($1,true,false)',[company]),/Inhaber/);
+
+ // Exercise the actual monthly apply RPC and deferred database guards using synthetic rows only.
+ await db.exec('reset role');await db.exec('delete from shift_assignments');
+ await db.exec(sqlFunction(read('supabase/migrations/20261015195558_forward_only_shift_transitions.sql'),'private.sf_descending_shift_error'));
+ await db.exec(sqlFunction(read('supabase/migrations/20261014000254_teamleader_four_night_blocks.sql'),'private.sf_employee_planning_rules'));
+ await db.exec(sqlFunction(read('supabase/migrations/20261008192049_solid_auto_planning_rules.sql'),'private.sf_guard_solid_recovery'));
+ const five=fs.readdirSync('supabase/migrations').find(f=>f.endsWith('_manual_five_day_preview_blocks.sql'));await db.exec(read('supabase/migrations/'+five));
+ await db.exec(`create constraint trigger shift_assignments_solid_recovery after insert or update or delete on public.shift_assignments deferrable initially deferred for each row execute function private.sf_guard_solid_recovery();
+ create function private.sf_morning_ot_switch(uuid,date,text) returns boolean language sql as $$select false$$;
+ create table daily_staffing_overrides(company_id uuid,work_date date,shift_code text,required_count int);
+ create table global_staffing_requirements(company_id uuid,shift_code text,required_count int);
+ create function private.sf_assert_month_planning_limits(uuid,uuid,date,uuid default null,timestamptz default null,timestamptz default null) returns void language sql as $$select$$;
+ create function private.sf_assert_solid_critical_coverage(uuid,date) returns void language sql as $$select$$;
+ create function private.sf_solid_conditional_required(uuid,date,text) returns int language sql as $$select null::int$$;
+ create or replace function private.sf_month_optimization_snapshot(company_ uuid,month_ date) returns jsonb language sql as $$select '{"fingerprint":"fixture","protectedIds":[]}'::jsonb$$;
+ alter table company_compliance_policy add monthly_planning_max_hours numeric default 220;
+ grant all on daily_staffing_overrides,global_staffing_requirements to authenticated;`);
+ await db.query("update employees set qualifications=array['__sp:maxConsecutive=4'],employment='Vollzeit',weekly_hours=40 where id=$1",[employee]);
+ await db.query("update company_compliance_policy set solid_planning_rules=$1 where company_id=$2",[{enabled:true,confirmedRulesVersion:2,maxConsecutiveShifts:4,maxConsecutiveNightShifts:3},company]);
+ await db.query("insert into global_staffing_requirements values($1,'T',1)",[company]);await db.exec('set role authenticated');
+ const rows=[4,5,6,7,8].map(n=>({employee_id:employee,shift_code:'T',starts_at:'2027-01-0'+n+'T05:00Z',ends_at:'2027-01-0'+n+'T13:00Z',legacy_id:'five-'+n}));
+ const apply=rs=>db.query("select private.sf_apply_month_optimization($1,'2027-01-01','fixture',array[]::uuid[],$2,true) result",[company,rs]);
+ await assert.rejects(apply(rows),/Maximum aufeinanderfolgender|vier Dienste/);assert.equal((await db.query('select count(*)::int n from shift_assignments')).rows[0].n,0,'failed automatic proposal is atomic');
+ const marked=rows.map(a=>({...a,rhythm_override:{reason:'Zusätzlicher Personalbedarf',workBlockDays:5,blockStart:'2027-01-04',blockEnd:'2027-01-08'}}));
+ assert.equal((await apply(marked)).rows[0].result.created,5);const savedFive=(await db.query('select * from shift_assignments order by starts_at')).rows;assert.ok(savedFive.every(a=>a.rhythm_override.workBlockDays===5&&a.rhythm_override.actor_id===actor));
+ const input=savedFive.map(a=>({starts_at:a.starts_at,ends_at:a.ends_at,shift_code:a.shift_code,rhythm_override:a.rhythm_override}));
+ const errors=(await db.query("select private.sf_confirmed_rule_errors($1,'Europe/Berlin',$2,null,40) errors",[input,{enabled:true,confirmedRulesVersion:2}])).rows[0].errors;assert.deepEqual(errors,[]);
+ await assert.rejects(db.query("insert into shift_assignments(company_id,employee_id,shift_code,starts_at,ends_at,status) values($1,$2,'T','2027-01-09T05:00Z','2027-01-09T13:00Z','DRAFT')",[company,employee]),/vier Dienste|40 Stunden/);
+ await assert.rejects(db.query("update shift_assignments set starts_at=starts_at+interval '1 day',ends_at=ends_at+interval '1 day' where id=$1",[savedFive[0].id]),/ursprünglichen Dienst/);
+ assert.equal((await db.query('select count(*)::int n from shift_assignments')).rows[0].n,5);
  }finally{await db.close();}
 });
 

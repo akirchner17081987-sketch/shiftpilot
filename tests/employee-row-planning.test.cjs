@@ -112,3 +112,39 @@ test('shorter rhythm blocks are valid in every company while exceeding the maxim
  w.autoPlanPreview=w.autoPlanningDates().map(duty);assert.match(w.SFAutoPlanPreviewEditor.check(w.autoPlanPreview,[w.autoPlanPreview.at(-1)]).join(' '),/4 Dienste|vier Dienste|4 aufeinanderfolgende/);
  }finally{await close();}
 });
+
+test('manual five-day option survives review and draft application, preserves automatic limits and remains tenant-bound',async()=>{
+ const {w,$,submit,close}=await setup();try{
+ const dates=['2027-01-04','2027-01-05','2027-01-06','2027-01-07','2027-01-08'];w.autoPlanningDates=()=>dates;
+ Object.assign(w.SFBackend,{ready:true,role:'PLANNER'});w.SFPlanningRuleSettings={context:()=>({})};
+ Object.assign(w.employees[0],{employment:'Vollzeit',weeklyHours:40,monthlyHours:180});
+ w.eval(fs.readFileSync('assets/solid-planning-core-v1.js','utf8'));w.eval(fs.readFileSync('assets/manual-rhythm-exceptions-v1.js','utf8'));
+ w.SFCompliance.policy.solidPlanningRules={enabled:true,confirmedRulesVersion:2,timezone:'Europe/Berlin',maxConsecutiveShifts:4,maxConsecutiveNightShifts:3};
+ w.SFAutoPlanPreviewEditor.open({employeeId:'one',rowEmployee:true,dates});assert.match($('#sfPreviewEditError').textContent,/vier Dienste/);assert.equal($('[type=submit]').disabled,true);
+ $('#sfPreviewFiveDays').checked=true;$('#sfPreviewFiveDays').dispatchEvent(new w.Event('change'));assert.equal($('[type=submit]').disabled,false,$('#sfPreviewEditError').textContent);submit();
+ assert.equal(w.autoPlanPreview.length,5);assert.equal(w.assignments.length,0);const confirmed=w.autoPlanPreview.map(a=>({...a}));assert.ok(confirmed.every(a=>w.SFManualRhythm.isPreviewOverride(a)));
+ assert.equal(w.SFAutoPlanPreviewEditor.reviewIssues().length,0);assert.equal(w.SFAutoPlanPreviewEditor.check(confirmed,confirmed).length,0);
+ const automatic=confirmed.map(a=>({...a,rhythmOverride:null}));assert.match(w.SFAutoPlanPreviewEditor.check(automatic,automatic).join(' '),/vier Dienste/);
+ w.absent=()=>true;assert.match(w.SFAutoPlanPreviewEditor.check(confirmed,confirmed).join(' '),/abwesend/);w.absent=()=>false;
+ w.SFBackend.companyId='other';assert.match(w.SFAutoPlanPreviewEditor.check(confirmed,confirmed).join(' '),/erneut bestätigt/);w.SFBackend.companyId='company-one';
+ w.SFAutoPlanPreviewEditor.undo();assert.equal(w.autoPlanPreview.length,0);w.autoPlanPreview=confirmed;
+ const source=fs.readFileSync('index.html','utf8');w.eval(source.slice(source.indexOf('async function applyAutoPlanPreview(){'),source.indexOf('function runAutoPlan(){',source.indexOf('async function applyAutoPlanPreview(){')))+';window.applyAutoPlanPreview=applyAutoPlanPreview;');
+ w.autoEligibleEmployees=()=>[];w.saveAll=()=>{};w.renderCalendar=()=>{};w.autoMonday=()=>new Date('2027-01-04T12:00Z');w.SFBackend.sync=async()=>{};
+ w.eval(fs.readFileSync('assets/supabase-auto-plan-guard-v1.js','utf8'));await w.applyAutoPlanPreview();assert.equal(w.assignments.length,5,w.notice.join(' '));assert.ok(w.assignments.every(a=>a.rhythmOverride.workBlockDays===5&&a.rhythmOverride.blockStart===dates[0]&&!a.rhythmOverride.previewKey));
+ }finally{await close();}
+});
+
+test('real compliance checks honor only the exact manual five-day duty and preserve rest, weekly limits and sixth-day rejection',async()=>{
+ const {w,close}=await setup();try{
+ Object.assign(w.SFBackend,{ready:true,role:'PLANNER'});w.SFPlanningRuleSettings={context:()=>({})};w.absences=[];w.sfRhythmCheck=()=>({allowed:true});w.store={get:(k,f)=>f,set(){}};
+ for(const f of ['assets/solid-planning-core-v1.js','assets/compliance-core-v2.js','assets/manual-rhythm-exceptions-v1.js'])w.eval(fs.readFileSync(f,'utf8'));
+ const e=w.employees[0];Object.assign(e,{employment:'Vollzeit',weeklyHours:40,monthlyHours:180});w.assignmentsFor=()=>[];
+ const p=w.SFCompliance.policy.solidPlanningRules={enabled:true,confirmedRulesVersion:2,timezone:'Europe/Berlin'};
+ const rows=[4,5,6,7,8].map(n=>({id:String(n),employeeId:e.id,type:'T',date:'2027-01-0'+n,start:'06:00',end:'14:00'})),a=rows.at(-1);a.rhythmOverride=w.SFManualRhythm.previewBlockOverride(a,rows);w.assignments=rows.slice(0,4);
+ assert.deepEqual([...w.SFCompliance.check(e,a.type,a.date,a.start,a.end,null,{manualBlockOverride:a.rhythmOverride}).hard],[]);
+ assert.match(w.SFCompliance.check(e,a.type,a.date,a.start,a.end).hard.join(' '),/vier Dienste/);
+ const six=[...rows,{...a,date:'2027-01-09',id:'six',rhythmOverride:null}];assert.match(w.SFSolidPlanningCore.errors(e,six,p).map(x=>x.message).join(' '),/vier Dienste/);
+ p.maxCalendarWeekHours=32;assert.match(w.SFCompliance.check(e,a.type,a.date,a.start,a.end,null,{manualBlockOverride:a.rhythmOverride}).hard.join(' '),/32 Stunden/);p.maxCalendarWeekHours=40;
+ rows[3].start='18:00';rows[3].end='23:00';assert.match(w.SFCompliance.check(e,a.type,a.date,a.start,a.end,null,{manualBlockOverride:a.rhythmOverride}).hard.join(' '),/Ruhezeit/);
+ }finally{await close();}
+});

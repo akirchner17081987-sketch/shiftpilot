@@ -65,19 +65,27 @@
   if(p.monthlyHoursOnly){const cap=otOnly?otMaximum:monthMax;return{eightHourModel:eight,monthLimit:full?cap:Math.min(cap,target),calendarLimit:full?cap:Math.min(cap,target),maxMonthlyShifts:Infinity,weeklyLimit:weeklyLimit(e,p)};}
   return{eightHourModel:eight,monthLimit:fixed?fixed.monthlyMaxHours:otOnly?otMaximum:full?(eight?eightMax:monthMax):Math.min(monthMax,target),calendarLimit:fixed?fixed.monthlyMaxHours:otOnly?otMaximum:full?monthMax:Math.min(monthMax,target),maxMonthlyShifts:fixed?fixed.maxMonthlyShifts:otOnly?Math.floor(otMaximum/Math.max(1,...allowed.map(modelHours))):eight?eightCount:tenCount,weeklyLimit:weeklyLimit(e,p)};
  }
+ // A manual exception is bound to one exact five-day block and one confirmed duty.
+ function manualFiveDayBlock(block,e){
+  if(!block.length||block.length>5)return false;
+  return block.some(a=>{const r=a.rhythmOverride;if(r?.workBlockDays!==5||!r.reason||!/^\d{4}-\d{2}-\d{2}$/.test(r.blockStart||'')||plus(r.blockStart,4)!==r.blockEnd||r.blockStart>block[0].date||r.blockEnd<block.at(-1).date)return false;
+   if(r.previewKey){try{const k=JSON.parse(r.previewKey);return JSON.stringify(k.slice(1))===JSON.stringify([String(a.employeeId),a.type,a.date,a.start,a.end]);}catch{return false}}
+   return !!r.actor_id&&String(r.employee_id)===String(e._dbId||e.id)&&r.shift_code===a.type&&Date.parse(r.starts_at)===a.startMs&&Date.parse(r.ends_at)===a.endMs;
+  });
+ }
  function confirmedErrors(e,rows,p,affected){
   const weekCap=weeklyLimit(e,p);p=employeeRules(e,p);
   const maxBlock=Number(p.maxConsecutiveShifts)||4,maxNight=Number(p.maxConsecutiveNightShifts)||3,freeDays=p.minFreeCalendarDays??2,nightFree=p.minNightRecoveryCalendarDays??3,restHours=Number(p.minBlockRestHours)||48;
   const own=rows.filter(active).filter(a=>String(a.employeeId)===String(e.id)).map(a=>duty(a,p)).sort((a,b)=>a.startMs-b.startMs),wanted=affected&&new Set(affected),out=[],touch=b=>!wanted||b.some(a=>wanted.has(a.date)),push=(date,message)=>out.push({date,employeeId:e.id,message}),blocks=[];
   for(const a of own){const b=blocks.at(-1);if(b&&(b.at(-1).date===a.date||plus(b.at(-1).date,1)===a.date))b.push(a);else blocks.push([a])}
-  for(let i=0;i<blocks.length;i++){const b=blocks[i],prev=blocks[i-1];if(touch(b)&&b.length>maxBlock)push(b[0].date,maxBlock===4?'Höchstens vier Dienste am Stück.':`Höchstens ${maxBlock} Dienste am Stück.`);
+  for(let i=0;i<blocks.length;i++){const b=blocks[i],prev=blocks[i-1];if(touch(b)&&b.length>maxBlock&&!manualFiveDayBlock(b,e))push(b[0].date,maxBlock===4?'Höchstens vier Dienste am Stück.':`Höchstens ${maxBlock} Dienste am Stück.`);
    if(prev&&(touch(b)||touch(prev))){const last=prev.at(-1),free=Math.round((Date.parse(b[0].date)-Date.parse(localDate(last.endMs-1,p)))/D)-1,rest=(b[0].startMs-last.endMs)/H;
     const requiredFree=prev.length===3&&prev.every(night)&&p.threeNightBlockRecoveryFullCalendarDays!=null?Math.min(freeDays,Number(p.threeNightBlockRecoveryFullCalendarDays)):freeDays;
     if(free<requiredFree||rest<restHours-1e-6)push(b[0].date,requiredFree===2&&restHours===48?'Zwischen Arbeitsblöcken mindestens zwei vollständig freie Kalendertage und 48 Stunden Ruhe.':`Zwischen Arbeitsblöcken mindestens ${requiredFree} vollständig freie Kalendertage und ${restHours} Stunden Ruhe.`);
    }
   }
   const nights=[];for(const a of own.filter(night)){const b=nights.at(-1);if(b&&plus(b.at(-1).date,1)===a.date)b.push(a);else nights.push([a])}
-  for(const b of nights){if(touch(b)&&b.length>maxNight)push(b[0].date,maxNight===3?'Höchstens drei Nachtdienste am Stück.':`Höchstens ${maxNight} Nachtdienste am Stück.`);const last=b.at(-1),next=own.find(a=>a.startMs>=last.endMs&&a.date>last.date);
+  for(const b of nights){if(touch(b)&&b.length>maxNight&&!manualFiveDayBlock(b,e))push(b[0].date,maxNight===3?'Höchstens drei Nachtdienste am Stück.':`Höchstens ${maxNight} Nachtdienste am Stück.`);const last=b.at(-1),next=own.find(a=>a.startMs>=last.endMs&&a.date>last.date);
    if(next&&(touch(b)||!wanted||wanted.has(next.date))){const free=Math.round((Date.parse(next.date)-Date.parse(localDate(last.endMs-1,p)))/D)-1;const requiredNightFree=b.length===3&&p.threeNightBlockRecoveryFullCalendarDays!=null?Math.min(nightFree,Number(p.threeNightBlockRecoveryFullCalendarDays)):nightFree;if(free<requiredNightFree)push(next.date,requiredNightFree===3?'Nach einem Nachtblock mindestens drei vollständig freie Kalendertage.':`Nach einem Nachtblock mindestens ${requiredNightFree} vollständig freie Kalendertage.`);}
   }
   for(let i=1;i<own.length;i++){const a=own[i-1],b=own[i];if(wanted&&!wanted.has(a.date)&&!wanted.has(b.date))continue;if(b.startMs-a.endMs<11*H-1e-6)push(b.date,'Mindestens 11 Stunden Ruhezeit.');if(plus(a.date,1)===b.date){const message=transitionError(a.type,b.type,p);if(message)push(b.date,message);}}
@@ -92,7 +100,7 @@
   const dates=[...by.keys()].sort(),blocks=[];for(const date of dates){const last=blocks.at(-1);if(last&&plus(last.at(-1).date,1)===date)last.push(by.get(date));else blocks.push([by.get(date)])}
   const wanted=affected&&new Set(affected),out=[],touch=b=>!wanted||b.some(a=>wanted.has(a.date));
   for(let i=0;i<blocks.length;i++){const b=blocks[i],previous=blocks[i-1],last=b.at(-1),first=b[0];
-   if(touch(b)&&b.length>(p.maxConsecutiveShifts||4))out.push({date:first.date,employeeId:e.id,message:'Höchstens vier Dienste am Stück.'});
+   if(touch(b)&&b.length>(p.maxConsecutiveShifts||4)&&!manualFiveDayBlock(b,e))out.push({date:first.date,employeeId:e.id,message:'Höchstens vier Dienste am Stück.'});
    if(previous&&(touch(b)||touch(previous))){const left=previous.at(-1),free=Math.round((Date.parse(first.date)-Date.parse(left.date))/D)-1,rest=(first.startMs-left.endMs)/H,short=(p.shortBlockRecoveryPersonnelNos||[]).includes(String(e.personnelNo))&&previous.length<=(p.shortBlockMaximum||2)&&previous.every(a=>['OT1','OT2','OT3'].includes(a.type));
     if(free<(short?1:p.minFreeStartDays||2)||rest<(short?11:p.minBlockRestHours||48)-1e-6)out.push({date:first.date,employeeId:e.id,message:short?'Nach kurzen OT-Blöcken mindestens ein freier Tag und 11 Stunden Ruhe.':'Zwischen Arbeitsblöcken mindestens zwei freie Starttage und 48 Stunden Ruhe.'});
    }
