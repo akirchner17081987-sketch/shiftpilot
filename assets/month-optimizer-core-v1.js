@@ -147,11 +147,11 @@
   // occupied by different employees. Exchange the conflicting blocks as a
   // unit, and accept a result only after every displaced mandatory position
   // has been restored and every affected employee passes the hard rules.
-  function repairBlockExchanges(p,initial,allowed=(s,r)=>feasible(p,s,r.group,r.option)){
+  function repairBlockExchanges(p,initial,allowed=(s,r)=>feasible(p,s,r.group,r.option),scope={}){
     if(!p.scopedBlockRecovery||p.criticalOnly||!initial)return initial;
     const byResource=new Map();for(const group of p.groups)for(const option of group.options)for(const key of new Set(option.map(a=>a.resource))){const list=byResource.get(key)||[];list.push({group,option});byResource.set(key,list)}
     let best=initial,checks=0,nodes=0,improvements=0,limited=false;
-    const maxChecks=100000,maxNodes=40000,maxRootChecks=5000,maxRootNodes=1800,maxDepth=4,maxVictims=4;
+    const maxChecks=scope.maxChecks??100000,maxNodes=scope.maxNodes??40000,maxRootChecks=5000,maxRootNodes=1800,maxDepth=4,maxVictims=4;
     const score=s=>solidQuality(p,s),betterState=(a,b)=>solidBetter(score(a),score(b));
     function validRemoved(s,removed){const all=[...p.base,...s.records.flatMap(r=>r.option)];for(const id of removed){const e=p.people.get(id);if(!e||!validIndividual(p,e,all)||p.solidRules&&solid.errors(e,all,p.solidRules,all.filter(a=>String(a.employeeId)===id).map(a=>a.date)).length)return false}return true}
     let rootChecks=0,rootNodes=0,rootLimited=false;
@@ -174,7 +174,7 @@
         }
       }return null;
     }
-    for(let pass=0;pass<4;pass++){let found=null;const roots=[...best.remaining].filter(([key,n])=>n>0).sort((a,b)=>(byResource.get(a[0])?.length||0)-(byResource.get(b[0])?.length||0));
+    for(let pass=0;pass<(scope.passes??4);pass++){let found=null;const roots=[...best.remaining].filter(([key,n])=>n>0&&(!scope.roots||scope.roots.includes(key))).sort((a,b)=>(byResource.get(a[0])?.length||0)-(byResource.get(b[0])?.length||0));
       for(const [key]of roots){rootChecks=0;rootNodes=0;rootLimited=false;const goal=new Map(best.remaining);goal.set(key,goal.get(key)-1);found=search(best,goal,maxDepth,new Set(),new Set());if(rootLimited)limited=true;if(found||checks>=maxChecks||nodes>=maxNodes)break}
       if(!found)break;best=found;improvements++;if(score(best).open===0)break;
     }
