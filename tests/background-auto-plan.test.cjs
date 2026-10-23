@@ -14,6 +14,15 @@ test('Secontec 9h block recovery exchanges occupied TL days and preserves all ma
  const packed=C.pack(input);assert.equal(packed.scopedBlockRecovery,true);assert.equal(C.unpack(packed).scopedBlockRecovery,true);
  const forged={version:1,months:['2027-01'],minimumInput:packed,monthInputs:[packed],metadata:{company:'elsewhere'}};assert.doesNotThrow(()=>C.check(forged)); // The authenticated worker overrides the client flag by tenant.
 });
+test('scoped background recovery checkpoints each whole-block exchange before returning a result',()=>{
+ const dates=['2027-01-23','2027-01-24','2027-01-25'],employees=['leader','a','b'].map(id=>({id,target:162,monthLimit:162,calendarLimit:162,weeklyLimit:55,maxConsecutive:4,shifts:['TL']}));
+ const row=(id,date)=>({employeeId:id,date,type:'TL',start:'21:00',end:'06:00',resource:date+'|TL'});
+ const groups=[{id:'leader',employee:employees[0],fullWorkRest:true,options:[dates.map(d=>row('leader',d))]},...['a','b'].map((id,i)=>({id,employee:employees[i+1],options:[[row(id,dates[i*2])]]}))];
+ const input={month:'2027-01',employees,base:[],groups,capacities:dates.map(d=>[d+'|TL',1]),criticalCapacities:[],scopedBlockRecovery:true,solidRules:{...rules,confirmedRulesVersion:2,minFreeCalendarDays:2,minNightRecoveryCalendarDays:2,maxConsecutiveNightShifts:4,maxCalendarWeekHours:55,minFreeWeekendsPerMonth:0}};
+ let cp=R.start(input,1);cp.phase='refine';cp.iteration=1;cp.best=[[1,0],[2,0]];
+ let sawCheckpoint=false;for(let n=0;n<20&&cp.phase!=='done';n++){R.context(input,cp).step();if(cp.phase==='block-recovery'){sawCheckpoint=true;assert.ok(Array.isArray(cp.refined));}cp=JSON.parse(JSON.stringify(cp));}
+ assert.equal(cp.phase,'done');assert.equal(sawCheckpoint,true);const found=R.context(input,cp).result();assert.equal(found.quality.open,0);assert.deepEqual(found.preview.filter(a=>a.employeeId==='leader').map(a=>a.date),dates);
+});
 function input(month='2027-01'){
  const employees=['a','b','c'].map(id=>({id,first:'private',email:'private@example.test',target:40,monthLimit:40,calendarLimit:40,maxMonthlyShifts:4,weeklyLimit:40,maxConsecutive:4,shifts:['OT2'],personnelNo:id})),dates=[4,5,6,7,8].map(n=>month+'-'+String(n).padStart(2,'0'));
  const row=(e,date)=>({employeeId:e.id,date,type:'OT2',start:'08:00',end:'18:00',resource:date+'|OT2'}),groups=employees.flatMap(employee=>dates.map(date=>({id:employee.id+'|'+date,employee,options:[[row(employee,date)]]})));
