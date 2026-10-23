@@ -44,7 +44,7 @@ function context(input,cp){
       if(++cp.key===component.keys.length){if(p.solidRules.teamLeaderMinimumMonthlyHours!=null&&cp.components.length===1)cp.minimumVariants=cp.beam.slice(0,12).map(b=>b.records);cp.minimum.push(...cp.beam[0].records);cp.component++;cp.key=0;cp.beam=[{records:[],missing:0}];}return true;
     }
     if(cp.phase==='iteration-start'){
-      if(cp.iteration>=cp.iterations){cp.phase='done';return true;}
+      if(cp.iteration>=cp.iterations){cp.phase=p.scopedBlockRecovery&&!input.criticalOnly?'refine':'done';return true;}
       const i=cp.iteration,seed=[];for(const bundle of input.seedBlocks||[]){const group=p.groups.find(g=>g.id===bundle.id);if(group){const option=group.options.find(o=>o.length===bundle.rows.length&&o.every((a,n)=>a.type===bundle.rows[n].type));if(option)seed.push({group,option});}}
       const alternative=cp.minimumVariants?.[Math.floor(i/2)%cp.minimumVariants.length]||cp.minimum,records=p.solidRules.teamLeaderMinimumMonthlyHours!=null&&i<7?encode(C.teamLeaderWeekSeed(p,byResource,allowed,i)):cp.minimumVariants&&i%2===0?alternative:i===0?cp.minimum:i===1?encode(seed):i%4===0?cp.minimum:encode(decode(cp.best).filter(r=>r.option.some(a=>(p.criticalCapacity.has(a.resource)&&!a.resource.endsWith('|OT-DAY')))||random()>.12+(i%3)*.08));
       const s=seeded(records),priority=key=>{if(key.endsWith('|OT-DAY'))return 3;if(C.criticalOpen(p,s,key)>0)return 0;const code=key.split('|')[1],rules=p.solidRules.conditionalStaffing||[];if(rules.some(r=>r.sourceShift===code))return 1;if(rules.some(r=>r.shift===code))return 3;return p.criticalCapacity.has(key)?4:2;};
@@ -58,9 +58,26 @@ function context(input,cp){
       if(chosen){C.commit(s,chosen,p.month);cp.records=encode(s.records);cp.changed=true;}return true;
     }
     if(cp.phase==='iteration-end'){const s=fillState||C.state(p,decode(cp.records)),v=C.solidQuality(p,s);if(C.solidBetter(v,cp.quality)){cp.best=cp.records.map(ref=>[...ref]);cp.quality=v;}fillState=null;cp.iteration++;cp.phase='iteration-start';return true;}
+    if(cp.phase==='refine'){
+      // Keep the expensive whole-block exchange outside result(), so each
+      // recovered gap can be saved before the Edge Function's CPU limit.
+      const refined=C.refineRecords({...p,scopedBlockRecovery:false},C.state(p,decode(cp.best||[])),allowed);
+      cp.refined=encode(refined.records);cp.refineLimited=!!refined.searchLimited;cp.refinePass=0;cp.refineImproved=false;
+      cp.refineRoots=[...refined.remaining].filter(([,n])=>n>0).sort((a,b)=>(byResource.get(a[0])?.length||0)-(byResource.get(b[0])?.length||0)).map(([key])=>key);
+      cp.refineCursor=0;cp.phase='block-recovery';return true;
+    }
+    if(cp.phase==='block-recovery'){
+      if(cp.refineCursor>=cp.refineRoots.length){if(!cp.refineImproved||cp.refinePass>=3){cp.phase='done';return true;}
+        cp.refinePass++;cp.refineImproved=false;const s=C.state(p,decode(cp.refined));cp.refineRoots=[...s.remaining].filter(([,n])=>n>0).sort((a,b)=>(byResource.get(a[0])?.length||0)-(byResource.get(b[0])?.length||0)).map(([key])=>key);cp.refineCursor=0;return true;}
+      const key=cp.refineRoots[cp.refineCursor++],s=C.state(p,decode(cp.refined));s.searchLimited=cp.refineLimited;
+      if((s.remaining.get(key)||0)<1)return true;
+      const improved=C.repairBlockExchanges(p,s,allowed,{roots:[key],maxChecks:5000,maxNodes:1800,passes:1});
+      cp.refineLimited=!!improved.searchLimited;if(improved.records.length!==s.records.length||C.solidBetter(C.solidQuality(p,improved),C.solidQuality(p,s))){cp.refined=encode(improved.records);cp.refineImproved=true;}
+      return true;
+    }
     throw Error('Unknown checkpoint phase');
   }
-  function result(){if(cp.phase!=='done')throw Error('Job not complete');const balanced=C.refineRecords(p,C.state(p,decode(cp.best||[])),allowed),records=balanced.records;cp.best=encode(records);cp.quality={...C.solidQuality(p,balanced),searchLimited:!!balanced.searchLimited};return {preview:records.flatMap(r=>r.option.map(a=>({...a,blockId:r.group.id}))),quality:cp.quality,remaining:[...balanced.remaining]};}
+  function result(){if(cp.phase!=='done')throw Error('Job not complete');const balanced=cp.refined?C.state(p,decode(cp.refined)):C.refineRecords(p,C.state(p,decode(cp.best||[])),allowed),records=balanced.records;cp.best=encode(records);cp.quality={...C.solidQuality(p,balanced),searchLimited:!!(cp.refineLimited||balanced.searchLimited)};return {preview:records.flatMap(r=>r.option.map(a=>({...a,blockId:r.group.id}))),quality:cp.quality,remaining:[...balanced.remaining]};}
   return{step,result};
 }
 return{start,context,planningBase};
