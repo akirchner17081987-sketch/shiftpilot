@@ -2703,6 +2703,12 @@
       "area": "Fortsetzbare erweiterte Blocksuche und geprüfter Monatsausgleich",
       "category": "auto",
       "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/planning-continuity-core-v1.js",
+      "area": "Geschützte Vorschläge, gezielte Nachplanung und SOLL-Erklärungen",
+      "category": "auto",
+      "kind": "feature-or-support"
     }
   ],
   "categoryCoverage": [
@@ -3298,7 +3304,7 @@
     "correctedArticleCount": 20,
     "articleCount": 253,
     "categoryCount": 22,
-    "assetJavaScriptCount": 229
+    "assetJavaScriptCount": 230
   },
   "incrementalUpdate": {
     "date": "2026-10-24",

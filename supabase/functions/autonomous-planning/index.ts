@@ -9,6 +9,7 @@ import "../../../assets/solid-planning-resume-v1.js";
 import "../../../assets/block-exchange-core-v1.js";
 import "../../../assets/background-auto-plan-core-v1.js";
 import "../../../assets/auto-plan-repair-core-v1.js";
+import "../../../assets/planning-continuity-core-v1.js";
 import "../../../assets/autonomous-planning-core-v1.js";
 const A=(globalThis as any).SFAutonomousPlanningCore;
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -23,7 +24,7 @@ Deno.serve(async req=>{
  try{
   if(job.phase==="ASSESSING")summary=A.assess(job.payload,job.result);
   else{const snap=job.snapshot,index=job.parts.length,month=snap.months[index];if(!month)throw Error("Die Vorbereitung ist bereits vollständig.");const offset=snap.preparation?.offset||0,selected=snap.employees.slice(offset,offset+3).map((e:any)=>e.id),prepared=A.build({...snap,scopedBlockRecovery:snap.company==="ee0e5c9d-d5ae-48e6-abff-37c179a01929",months:[month],demand:snap.demand.filter((d:any)=>d.date.startsWith(month)),candidates:snap.candidates.filter((a:any)=>a.date.startsWith(month)),rhythms:snap.rhythms.filter((a:any)=>a.date.startsWith(month))},selected);part=snap.preparation?.part?A.mergeEmployeeParts([snap.preparation.part,prepared]):prepared;
-   if(offset+3<snap.employees.length)part={preparation:true,month,offset:offset+3,part};else if(index+1===snap.months.length)payload=A.combine([...job.parts,part],snap);}
+   if(offset+3<snap.employees.length)part={preparation:true,month,offset:offset+3,part};else if(index+1===snap.months.length)payload=A.withContinuity(A.combine([...job.parts,part],snap),snap);}
  }catch(e){error=String((e as Error)?.message||"Automatiklauf nicht abgeschlossen").slice(0,700);}
  const save=await db.rpc("finish_autonomous_planning",{p_run_id:id,p_token:token,p_lease:job.lease,p_revision:job.revision,p_part:part,p_payload:payload,p_summary:summary,p_error:error});if(save.error)return json({error:"STEP_NOT_SAVED"},503);
  return json({committed:save.data,phase:job.phase,failed:!!error});

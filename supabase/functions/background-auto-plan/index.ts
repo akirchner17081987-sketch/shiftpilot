@@ -8,9 +8,13 @@ import "../../../assets/wish-planning-core-v1.js";
 import "../../../assets/solid-planning-resume-v1.js";
 import "../../../assets/block-exchange-core-v1.js";
 import "../../../assets/background-auto-plan-core-v1.js";
+import "../../../assets/auto-plan-repair-core-v1.js";
+import "../../../assets/planning-continuity-core-v1.js";
+import "../../../assets/autonomous-planning-core-v1.js";
 import {loadBlockSolver} from "../_shared/block-solver-runtime.ts";
 
 const core = (globalThis as any).SFBackgroundAutoPlanCore;
+const A=(globalThis as any).SFAutonomousPlanningCore;
 const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -35,24 +39,45 @@ Deno.serve(async req => {
     if (policy.error || !policy.data) throw new Error("Die Schichtdauer des Unternehmens konnte nicht geladen werden.");
     const scopedBlockRecovery = job.payload.metadata.company === "ee0e5c9d-d5ae-48e6-abff-37c179a01929";
     const prepared = core.withShiftDurationLimit(core.withServerWishes(job.payload, job.server_wishes), Number(policy.data.standard_max_shift_hours));
-    const input = { ...prepared, enhancedBlockSearch:true, minimumInput: { ...prepared.minimumInput, scopedBlockRecovery }, monthInputs: prepared.monthInputs.map((month: any) => ({ ...month, scopedBlockRecovery })) };
+    const repairLevel=checkpoint?.repairLevel||0;
+    const scoped=A.repairPayload(prepared,repairLevel);
+    const input = { ...scoped, enhancedBlockSearch:true, minimumInput: { ...scoped.minimumInput, scopedBlockRecovery }, monthInputs: scoped.monthInputs.map((month: any) => ({ ...month, scopedBlockRecovery })) };
     checkpoint = checkpoint || core.start(input);
-    const run = core.context(input, checkpoint), slice = performance.now();
+    const reuse=prepared.metadata.continuity?.reusable&&!checkpoint.repairBest&&!checkpoint.skipReuse;
+    const run = reuse?null:core.context(input, checkpoint), slice = performance.now();
+    let audited:any=null;
     // Leave headroom for preparation, JSON, database calls and cold starts. Each
     // saved call can be retried after a lease expires without losing prior work.
-    if(checkpoint.stage==='exchange'){
+    if(reuse){
+      const previous=prepared.metadata.continuity.reusable;
+      output={version:1,preview:previous.preview,quality:previous.quality,months:prepared.months,metadata:prepared.metadata,repairScope:{level:0,locked:previous.preview.length,reused:true}};
+      // Repeat the independent audit after attaching server-confirmed wishes.
+      audited=A.assess(prepared,output);
+      if(audited.canApply){checkpoint.stage='done';checkpoint.proposed=output.preview;checkpoint.quality=output.quality;checkpoint.monthIndex=prepared.months.length;}
+      else{output=null;checkpoint.skipReuse=true;}
+    }else if(checkpoint.stage==='exchange'){
       // One solver slice per durable invocation. Its bounded synchronous CPU
       // time leaves headroom for cold starts, model checks and serialization.
-      try{if(checkpoint.exchange.status==='searching')run.exchangeStep(await loadBlockSolver());else run.exchangeStep(null);}catch(error){run.stopExchange((error as Error)?.message||'Zusätzliche Suche nicht verfügbar; bester Vorschlag bleibt erhalten.');}
+      try{if(checkpoint.exchange.status==='searching')run!.exchangeStep(await loadBlockSolver());else run!.exchangeStep(null);}catch(error){run!.stopExchange((error as Error)?.message||'Zusätzliche Suche nicht verfügbar; bester Vorschlag bleibt erhalten.');}
       steps++;
     }else do {
       const recovering = checkpoint.solver?.phase === "block-recovery";
-      steps++; if (!run.step()) break;
+      steps++; if (!run!.step()) break;
       // One bounded exchange per invocation keeps CPU use below the Edge limit.
       if (recovering || checkpoint.solver?.phase === "block-recovery" || checkpoint.stage==='exchange') break;
     } while (checkpoint.stage !== "done" && performance.now() - slice < 700 && steps < 1000);
-    progress = run.progress();
-    if (checkpoint.stage === "done") output = run.result();
+    progress = core.progress(input,checkpoint);
+    if (checkpoint.stage === "done") {
+      output=output||run!.result();output.repairScope=output.repairScope||input.metadata.repairScope||null;
+      if(prepared.metadata.continuity){
+      const candidate={result:output,audit:audited||A.assess(prepared,output)},old=checkpoint.repairBest;
+      const best=old&&A.compare(old.audit,candidate.audit)<=0?old:candidate;
+      if(!candidate.audit.canApply&&prepared.metadata.continuity?.affectedDates?.length&&repairLevel<2){
+        checkpoint={...core.start(A.repairPayload(prepared,repairLevel+1)),repairLevel:repairLevel+1,repairBest:best,skipReuse:checkpoint.skipReuse};output=null;
+        progress={percent:1,label:'Reparaturbereich erweitern',detail:'Der kleinere Reparaturversuch bleibt gespeichert. Weitere benachbarte Blöcke werden geprüft.'};
+      }else output=best.result;
+      }
+    }
   } catch (error) {
     failure = String((error as Error)?.message || "Die Planung konnte nicht abgeschlossen werden.").slice(0, 1000);
     progress = { label: "Planung nicht abgeschlossen", detail: "Bitte den Auftrag prüfen und bei Bedarf neu starten." };

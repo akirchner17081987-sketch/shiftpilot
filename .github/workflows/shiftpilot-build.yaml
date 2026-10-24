@@ -71,6 +71,7 @@ jobs:
           node tests/browser/manual-range-planning-qa.cjs
           node tests/browser/disruption-replacement-qa.cjs
           node tests/browser/location-geocode-qa.cjs
+          node tests/browser/planning-continuity-qa.cjs
           npx playwright test tests/e2e/auto-plan-workspace.spec.cjs --grep "equal 180-hour targets|automatic repair|final audit" --retries=0
 
 # Please do not touch the following action
