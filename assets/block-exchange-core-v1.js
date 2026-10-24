@@ -20,6 +20,9 @@ function recoveryEnd(rows,e,p,minStart){
  while(S.instant(after(until+1),String(Math.floor(minStart/60)).padStart(2,'0')+':'+String(minStart%60).padStart(2,'0'),rules.timezone)<rest-1)until++;return until;
 }
 function canonical(rows){const groups=new Map();for(const a of rows){const id=String(a.employeeId),list=groups.get(id)||[];list.push(a);groups.set(id,list);}const blocks=[];for(const list of groups.values()){let block;for(const a of list.sort((a,b)=>a.date.localeCompare(b.date))){if(!block||a.date!==S.plus(block.at(-1).date,1)){block=[];blocks.push(block);}block.push(a);}}return blocks;}
+function peerPairs(p){const buckets=new Map(),pairs=[];for(const e of p.people.values()){const k=JSON.stringify([e.target,[...new Set(e.shifts||[])].sort()]),list=buckets.get(k)||[];list.push(String(e.id));buckets.set(k,list);}for(const list of buckets.values())for(let i=0;i<list.length;i++)for(let j=i+1;j<list.length;j++)pairs.push([list[i],list[j]]);return pairs;}
+function peerQuality(p,s){const limit=Math.max(0,...p.base.map(a=>a.hours||0),...s.records.flatMap(r=>r.option.map(a=>a.hours))),gaps=peerPairs(p).map(([a,b])=>Math.abs(s.people.get(a).hours-s.people.get(b).hours));return{peerSpread:Math.max(0,...gaps),peerExcess:gaps.reduce((n,g)=>n+Math.max(0,g-limit),0)};}
+function better(a,b){for(const k of ['critical','priorityDeficit','open','teamLeaderDeficit','peerExcess','imbalance','priorityPenalty','penalty','deficit']){const x=Number(a[k])||0,y=Number(b[k])||0;if(x<y-1e-6)return true;if(x>y+1e-6)return false;}return false;}
 function start(input,preview){
  const cp={version:1,pass:0,best:[],working:[],fixed:[],original:copyRows(preview),lastImprovement:0,initialOpen:0,improvements:0,maxPasses:96,status:'searching'};
  if(!S.confirmed(input.solidRules)||(input.solidRules.conditionalStaffing||[]).length||input.capacities.some(([k])=>k.endsWith('|OT-DAY'))||input.groups.reduce((n,g)=>n+g.options.length,0)>12000||input.capacities.length>200){cp.status='unsupported';return cp;}
@@ -40,7 +43,7 @@ function start(input,preview){
 function context(input,cp){
  if(cp.version!==1)throw Error('Unbekannter Blocktausch-Zwischenstand.');
  if(cp.status==='unsupported')return{step:()=>false,result:()=>({preview:cp.original,quality:null})};
- const p=prepared(input,cp.fixed),excluded=new Set(cp.excluded||excludedPeople(p)),cols=columns(p,excluded),state=indices=>M.state(p,indices.map(i=>cols[i])),score=indices=>C.solidQuality(p,state(indices));
+ const p=prepared(input,cp.fixed),excluded=new Set(cp.excluded||excludedPeople(p)),cols=columns(p,excluded),state=indices=>M.state(p,indices.map(i=>cols[i])),score=indices=>{const s=state(indices);return{...C.solidQuality(p,s),...peerQuality(p,s)};};
  const initial=()=>({preview:cp.fixed.concat(cp.best.flatMap(i=>cols[i].option.map(a=>({...a,blockId:cols[i].group.id})))),quality:{...score(cp.best),searchLimited:cp.status!=='optimal',blockExchange:{passes:cp.pass,improvements:cp.improvements,closed:Math.max(0,cp.initialOpen-score(cp.best).open),status:cp.status}}});
  if(cp.status!=='searching')return{result:initial,step:()=>false};
  const crew=[...p.people.values()].filter(e=>cols.some(c=>String(c.group.employee.id)===String(e.id))),N=cols.length,monthStart=S.instant(p.month+'-01','00:00',p.solidRules.timezone),next=new Date(p.month+'-01T12:00:00Z');next.setUTCMonth(next.getUTCMonth()+1);const monthEnd=S.instant(next.toISOString().slice(0,10),'00:00',p.solidRules.timezone);
@@ -53,7 +56,7 @@ function context(input,cp){
  const resources=[...p.capacity].filter(([,n])=>n>0).sort(([a],[b])=>a.localeCompare(b)),slacks=[];
  const bestState=state(cp.best);
  for(const [resource,need]of resources){const critical=p.criticalCapacity.get(resource)||0,slack=variable(1e6,need),criticalIndex=critical?variable(1e9,C.criticalOpen(p,bestState,resource)):null;slacks.push({resource,index:slack,need,criticalIndex});const terms=cols.flatMap((c,i)=>{const n=c.option.filter(a=>a.resource===resource).length;return n?[[i,n]]:[];});constraint([...terms,[slack,1]],need,need);if(critical)constraint([...terms,[criticalIndex,1]],critical,1e30);}
- const levels=[];
+ const levels=[],peerSlacks=[];
  for(const e of crew){
   const own=cols.flatMap((c,i)=>String(c.group.employee.id)===String(e.id)?[i]:[]),base=baseState.people.get(String(e.id)),rules=S.employeeRules(e,p.solidRules),first=Math.min(...own.map(i=>cols[i].rows[0].day)),last=Math.max(...own.map(i=>cols[i].rows.at(-1).day))+10,minStart=Math.min(...own.flatMap(i=>cols[i].rows.map(a=>Number(a.start.slice(0,2))*60+Number(a.start.slice(3,5)))));
   const intervals=new Map(own.map(i=>[i,[cols[i].rows[0].day,recoveryEnd(cols[i].rows,e,p,minStart)]]));
@@ -66,9 +69,11 @@ function context(input,cp){
   const weeks=new Set(own.flatMap(i=>cols[i].rows.flatMap(a=>[S.weekKey(a.date),S.weekKey(S.localDate(a.endMs-1,rules))])));
   for(const week of weeks){const begin=S.instant(week,'00:00',rules.timezone),end=S.instant(S.plus(week,7),'00:00',rules.timezone),clip=a=>Math.max(0,Math.min(a.endMs,end)-Math.max(a.startMs,begin))/H,used=base.duties.reduce((n,a)=>n+clip(a),0);constraint(own.map(i=>[i,cols[i].option.reduce((n,a)=>n+clip(a),0)]),0,Math.max(0,S.weeklyLimit(e,rules)-used));}
  }
+ const shiftLimit=Math.max(0,...p.base.map(a=>a.hours||0),...cols.flatMap(c=>c.rows.map(a=>a.hours)));
+ for(const [a,b]of peerPairs(p)){const delta=baseState.people.get(a).hours-baseState.people.get(b).hours,z=variable(20,Math.ceil(Math.max(p.people.get(a).monthLimit,p.people.get(b).monthLimit))+1),terms=cols.flatMap((c,i)=>{const id=String(c.group.employee.id);return id===a?[[i,c.option.hours]]:id===b?[[i,-c.option.hours]]:[];});peerSlacks.push({a,b,index:z});constraint([...terms,[z,-1]],-1e30,shiftLimit-delta);constraint([...terms.map(([i,v])=>[i,-v]),[z,-1]],-1e30,shiftLimit+delta);}
  for(const terms of entries){for(const [r,v]of terms){indices.push(r);values.push(v);}starts.push(indices.length);}
  const model={numCols:cost.length,numRows:rowLo.length,sense:1,colCost:cost,colLower:lo,colUpper:hi,rowLower:rowLo,rowUpper:rowHi,integrality:integer,matrix:{format:'csc',numCols:cost.length,numRows:rowLo.length,starts,indices,values}};
- function vector(selected){const x=cost.map(()=>0);selected.forEach(i=>x[i]=1);const s=state(selected);for(const a of slacks){x[a.index]=Math.max(0,s.remaining.get(a.resource)||0);if(a.criticalIndex!==null)x[a.criticalIndex]=C.criticalOpen(p,s,a.resource);}for(const a of levels){const units=Math.round((s.people.get(a.id).hours-a.baseHours)/quantum);for(let n=0;n<a.indices.length;n++)x[a.indices[n]]=Number(n<units);}return x;}
+ function vector(selected){const x=cost.map(()=>0);selected.forEach(i=>x[i]=1);const s=state(selected);for(const a of slacks){x[a.index]=Math.max(0,s.remaining.get(a.resource)||0);if(a.criticalIndex!==null)x[a.criticalIndex]=C.criticalOpen(p,s,a.resource);}for(const a of levels){const units=Math.round((s.people.get(a.id).hours-a.baseHours)/quantum);for(let n=0;n<a.indices.length;n++)x[a.indices[n]]=Number(n<units);}for(const a of peerSlacks)x[a.index]=Math.ceil(Math.max(0,Math.abs(s.people.get(a.a).hours-s.people.get(a.b).hours)-shiftLimit)-1e-6);return x;}
  function valid(selected){
   if(selected.some(i=>!Number.isInteger(i)||i<0||i>=N)||new Set(selected).size!==selected.length)return false;
   const records=selected.map(i=>cols[i]),all=[...p.base,...records.flatMap(r=>r.option)];
@@ -89,14 +94,15 @@ function context(input,cp){
    const leaders=pool.filter(e=>C.teamLeaderTarget(e,p)>0),under=leaders.slice().sort((a,b)=>(C.teamLeaderTarget(b,p)-workingState.people.get(String(b.id)).hours)-(C.teamLeaderTarget(a,p)-workingState.people.get(String(a.id)).hours))[0],other=leaders.find(e=>e!==under);
    const preferred=[under,other].filter(Boolean);for(let i=preferred.length-1;i>=0;i--){const at=pool.indexOf(preferred[i]);pool.splice(at,1);pool.unshift(preferred[i]);}
   }
+  else if(workingQuality.open===0&&cp.pass%2===0){const worst=peerPairs(p).sort(([a,b],[c,d])=>Math.abs(workingState.people.get(c).hours-workingState.people.get(d).hours)-Math.abs(workingState.people.get(a).hours-workingState.people.get(b).hours))[0];if(worst&&Math.abs(workingState.people.get(worst[0]).hours-workingState.people.get(worst[1]).hours)>shiftLimit+1e-6)for(const id of worst.slice().reverse()){const at=pool.findIndex(e=>String(e.id)===id);if(at>=0)pool.unshift(...pool.splice(at,1));}}
   const chosen=new Set(pool.slice(0,Math.min(pool.length,4+cp.pass%5)).map(e=>String(e.id))),x=vector(cp.working),lower=lo.slice(),upper=hi.slice();
   for(let i=0;i<N;i++)if(!chosen.has(String(cols[i].group.employee.id)))lower[i]=upper[i]=x[i];for(const a of levels)if(!chosen.has(a.id))for(const i of a.indices)lower[i]=upper[i]=x[i];
   let solver;try{solver=highs.createModel({...model,colLower:lower,colUpper:upper});solver.options.set({output_flag:false,presolve:'on',time_limit:Math.max(.05,Math.min(.5,seconds)),mip_rel_gap:0,random_seed:cp.pass});solver.setSolution({colValue:x});solver.run();
    if(solver.info.get('primal_solution_status')===2){const y=Array.from(solver.getSolution().colValue),selected=y.slice(0,N).flatMap((v,i)=>v>.5?[i]:[]),obj=v=>v.reduce((n,x,i)=>n+x*cost[i],0);
-    if(y.every((v,i)=>!integer[i]||Math.abs(v-Math.round(v))<1e-5)&&obj(y)<=obj(x)+1e-5&&valid(selected)){cp.working=selected;const q=score(selected),before=score(cp.best);if(C.solidBetter(q,before)){cp.best=selected.slice();cp.lastImprovement=cp.pass;cp.improvements++;}}
+    if(y.every((v,i)=>!integer[i]||Math.abs(v-Math.round(v))<1e-5)&&obj(y)<=obj(x)+1e-5&&valid(selected)){cp.working=selected;const q=score(selected),before=score(cp.best);if(better(q,before)){cp.best=selected.slice();cp.lastImprovement=cp.pass;cp.improvements++;}}
    }
   }finally{solver?.dispose();}
-  cp.pass++;const best=score(cp.best);if(cp.pass>=cp.maxPasses||best.open===0&&best.critical===0&&best.priorityDeficit===0&&best.teamLeaderDeficit<1e-6&&cp.pass-cp.lastImprovement>=12)cp.status=cp.pass>=cp.maxPasses?'limited':'complete';return true;
+  cp.pass++;const best=score(cp.best);if(cp.pass>=cp.maxPasses||best.open===0&&best.critical===0&&best.priorityDeficit===0&&best.teamLeaderDeficit<1e-6&&best.peerExcess<1e-6&&cp.pass-cp.lastImprovement>=12)cp.status=cp.pass>=cp.maxPasses?'limited':'complete';return true;
  }
  return{step,result:initial,model,columns:cols.length};
 }
