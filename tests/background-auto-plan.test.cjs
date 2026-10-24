@@ -1,10 +1,11 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const C=require('../assets/background-auto-plan-core-v1.js'),R=require('../assets/solid-planning-resume-v1.js'),core=require('../assets/month-optimizer-core-v1.js'),S=require('../assets/solid-planning-core-v1.js');
 const rules={enabled:true,timezone:'Europe/Berlin',maxConsecutiveShifts:4,minFreeStartDays:2,minBlockRestHours:48,preferredNightBlockLength:3,minFreeWeekendsPerMonth:1,rollingWeekTargetHours:40,conditionalStaffing:[]};
-test('Secontec 9h block recovery exchanges occupied TL days and preserves all mandatory positions',()=>{
- const dates=['2027-01-23','2027-01-24','2027-01-25'],employees=['37','a','b','c','d'].map(id=>({id,target:162,monthLimit:162,calendarLimit:162,weeklyLimit:55,maxConsecutive:4,shifts:['TL']})),row=(id,date)=>({employeeId:id,date,type:'TL',start:'21:00',end:'06:00',resource:date+'|TL'});
+test('shared block recovery exchanges occupied TL days and preserves all mandatory positions',()=>{
+ for(const [month,code,start,end,hours] of [['2027-02','FD','06:00','14:00',8],['2027-04','TL','21:00','06:00',9],['2028-02','N','18:00','06:00',12]]){
+ const dates=[23,24,25].map(day=>month+'-'+day),employees=['37','a','b','c','d'].map(id=>({id,target:162,monthLimit:162,calendarLimit:162,weeklyLimit:55,maxConsecutive:4,shifts:[code]})),row=(id,date)=>({employeeId:id,date,type:code,start,end,resource:date+'|'+code});
  const make=(id,days,fullWorkRest=false)=>({id:id+'|'+days[0],employee:employees.find(e=>e.id===id),fullWorkRest,options:[days.map(day=>row(id,day))]});
- const input={month:'2027-01',employees,base:[],groups:[make('37',dates,true),make('a',[dates[0]]),make('b',[dates[2]]),make('c',[dates[0]]),make('d',[dates[2]])],capacities:dates.map(d=>[d+'|TL',1]),criticalCapacities:[],scopedBlockRecovery:true,solidRules:{...rules,confirmedRulesVersion:2,minFreeCalendarDays:2,minNightRecoveryCalendarDays:2,maxConsecutiveNightShifts:4,maxCalendarWeekHours:55,minFreeWeekendsPerMonth:0}};
+ const input={month,maxShiftHours:hours,employees,base:[],groups:[make('37',dates,true),make('a',[dates[0]]),make('b',[dates[2]]),make('c',[dates[0]]),make('d',[dates[2]])],capacities:dates.map(d=>[d+'|'+code,1]),criticalCapacities:[],scopedBlockRecovery:true,solidRules:{...rules,confirmedRulesVersion:2,minFreeCalendarDays:2,minNightRecoveryCalendarDays:2,maxConsecutiveNightShifts:4,maxCalendarWeekHours:55,minFreeWeekendsPerMonth:0}};
  const p=core.prepare(input),incumbent=core.state(p,[{group:p.groups[1],option:p.groups[1].options[0]},{group:p.groups[2],option:p.groups[2].options[0]}]);
  const recovered=core.checkpointPrimitives.repairBlockExchanges(p,incumbent);
  assert.equal(core.checkpointPrimitives.solidQuality(p,incumbent).open,1);assert.equal(core.checkpointPrimitives.solidQuality(p,recovered).open,0);
@@ -12,7 +13,8 @@ test('Secontec 9h block recovery exchanges occupied TL days and preserves all ma
  for(const e of employees)assert.equal(S.errors(e,planned,input.solidRules).length,0);
  const elsewhere=core.prepare({...input,scopedBlockRecovery:false});assert.equal(core.checkpointPrimitives.repairBlockExchanges(elsewhere,core.state(elsewhere)).records.length,0);
  const packed=C.pack(input);assert.equal(packed.scopedBlockRecovery,true);assert.equal(C.unpack(packed).scopedBlockRecovery,true);
- const forged={version:1,months:['2027-01'],minimumInput:packed,monthInputs:[packed],metadata:{company:'elsewhere'}};assert.doesNotThrow(()=>C.check(forged)); // The authenticated worker overrides the client flag by tenant.
+ const forged={version:1,months:[month],minimumInput:packed,monthInputs:[packed],metadata:{company:'elsewhere'}};assert.doesNotThrow(()=>C.check(forged)); // The authenticated worker enables shared recovery while retaining company-specific input rules.
+ }
 });
 test('scoped background recovery checkpoints each whole-block exchange before returning a result',()=>{
  const dates=['2027-01-23','2027-01-24','2027-01-25'],employees=['leader','a','b'].map(id=>({id,target:162,monthLimit:162,calendarLimit:162,weeklyLimit:55,maxConsecutive:4,shifts:['TL']}));

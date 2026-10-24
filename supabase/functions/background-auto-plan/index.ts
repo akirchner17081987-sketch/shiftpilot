@@ -37,7 +37,8 @@ Deno.serve(async req => {
   try {
     const policy = await admin.from("company_compliance_policy").select("standard_max_shift_hours").eq("company_id", job.payload.metadata.company).single();
     if (policy.error || !policy.data) throw new Error("Die Schichtdauer des Unternehmens konnte nicht geladen werden.");
-    const scopedBlockRecovery = job.payload.metadata.company === "ee0e5c9d-d5ae-48e6-abff-37c179a01929";
+    // Shared search capability; eligibility and hard rules come from this job's company.
+    const scopedBlockRecovery = true;
     const prepared = core.withShiftDurationLimit(core.withServerWishes(job.payload, job.server_wishes), Number(policy.data.standard_max_shift_hours));
     const repairLevel=checkpoint?.repairLevel||0;
     const scoped=A.repairPayload(prepared,repairLevel);

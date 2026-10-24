@@ -1,6 +1,6 @@
 # Selbständige Auto-Planung
 
-Stand: 24.10.2026. Unternehmensübergreifende Funktion; bestehende Firmen bleiben zunächst deaktiviert.
+Stand: 24.10.2026. Gemeinsame Planungsengine für alle bestehenden und neuen Unternehmen. Machbarkeitsprüfung, Planungsziele, historischer Ausgleich, geschützte Vorschläge, lokale Blocktauschketten und die zusätzliche Solver-Blocksuche sind nicht an eine Firmen-ID gebunden. Eingaben, Bedarf, Schichtzeiten, Mitarbeiterfreigaben, Rhythmen und harte Grenzen stammen ausschließlich aus dem jeweiligen Unternehmen. Besondere OT-, Personalnummern- oder Teamleiterregeln werden nicht auf andere Unternehmen übertragen. Der monatliche Hintergrundbetrieb bleibt je Unternehmen einstellbar; die Bereitstellung aktiviert weder Zeitpläne noch automatische Speicherung oder Veröffentlichung.
 
 ## Bedienung
 
