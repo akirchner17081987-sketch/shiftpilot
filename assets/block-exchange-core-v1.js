@@ -6,7 +6,7 @@
 const C=M.checkpointPrimitives,H=3600000,D=86400000,key=a=>[a.employeeId,a.date,a.type,a.start,a.end].join('|'),signature=rows=>rows.map(key).sort().join(';'),day=date=>Math.floor(Date.parse(date+'T12:00:00Z')/D),gcd=(a,b)=>b?gcd(b,a%b):a;
 const copyRows=rows=>rows.map(a=>Object.fromEntries(['id','_dbId','employeeId','date','type','start','end','resource','blockId','rhythmOverride'].filter(k=>a[k]!==undefined).map(k=>[k,a[k]])));
 function prepared(input,fixed=[]){
- const wishes=W.optimizer(input.wishes||[],input.employees,input.preferenceBase||input.base,input.month,input.timezone||input.solidRules.timezone,input.learned||[],input.historyMonths??3),capacity=new Map(input.capacities),critical=new Map(input.criticalCapacities||[]);
+ const wishes=W.optimizer(input.wishes||[],input.employees,input.preferenceBase||input.base,input.month,input.timezone||input.solidRules.timezone,input.learned||[],input.historyMonths??3,input.solidRules),capacity=new Map(input.capacities),critical=new Map(input.criticalCapacities||[]);
  for(const a of fixed){capacity.set(a.resource,(capacity.get(a.resource)||0)-1);if(critical.has(a.resource))critical.set(a.resource,Math.max(0,critical.get(a.resource)-1));}
  return M.prepare({...input,...wishes,base:[...input.base,...fixed],capacities:[...capacity],criticalCapacities:[...critical]});
 }

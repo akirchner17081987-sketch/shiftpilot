@@ -11,7 +11,7 @@ function planningBase(input){
 function start(input,iterations=12){return {version:1,inputKey:input._checkpointKey||input.month,phase:'critical',iterations,iteration:0,rng:input.searchSeed||20270101,component:0,key:0,minimum:[],beam:[{records:[],missing:0}],best:null,quality:null};}
 function context(input,cp){
   if(cp.version!==1||(input._checkpointKey||input.month)!==cp.inputKey)throw Error('Checkpoint does not match input snapshot');
-  input={...input,...(W?.optimizer?W.optimizer(input.wishes||[],input.employees,input.preferenceBase||input.base,input.month,input.solidRules.timezone,input.learned||[],input.historyMonths??3):{})};
+  input={...input,...(W?.optimizer?W.optimizer(input.wishes||[],input.employees,input.preferenceBase||input.base,input.month,input.solidRules.timezone,input.learned||[],input.historyMonths??3,input.solidRules):{})};
   if(input.employees.some(e=>e.balanceCarry)){const cap=Math.max(0,...input.groups.flatMap(g=>g.options.flatMap(o=>o.map(a=>S.duty(a,input.solidRules).hours))))/2;input.hourCarry={...input.hourCarry};for(const e of input.employees)input.hourCarry[String(e.id)]=Math.max(-cap,Math.min(cap,(input.hourCarry[String(e.id)]||0)+(e.balanceCarry||0)));}
   // History remains available to fairness; conflict checks need the planned months
   // and adjacent recovery days, including duties carried across month boundaries.
