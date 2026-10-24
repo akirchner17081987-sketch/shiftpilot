@@ -40,12 +40,12 @@
     return{...input,people,base,capacity,groups,potential,criticalCapacity};
   }
   function state(p,records=[]){
-    const s={remaining:new Map(p.capacity),people:new Map(),used:new Set(),records:[],confirmedRules:solid?.confirmed(p.solidRules)};
-    for(const e of p.people.values())s.people.set(String(e.id),{hours:0,monthDuties:0,months:new Map(),weeks:new Map(),duties:[],days:new Set(),byDay:new Map()});
+    const s={remaining:new Map(p.capacity),people:new Map(),used:new Set(),records:[],confirmedRules:solid?.confirmed(p.solidRules),burdenEnabled:p._burdenEnabled??=(Array.from(p.people.values()).some(e=>e.weekendCarry!=null||e.nightCarry!=null))};
+    for(const e of p.people.values())s.people.set(String(e.id),{hours:0,monthDuties:0,months:new Map(),burdens:new Map(),weeks:new Map(),duties:[],days:new Set(),byDay:new Map()});
     for(const a of p.base)addDuty(s,a,p.month);
     for(const r of records)commit(s,r,p.month);return s;
   }
-  function addDuty(s,a,month){const e=s.people.get(String(a.employeeId));if(!e)return;e.duties.push(a);e.days.add(a.day);e.byDay.set(a.day,a);const key=a.date.slice(0,7),m=e.months.get(key)||{hours:0,count:0};m.hours+=a.hours;if(!s.confirmedRules||solid.countsTowardCap(a))m.count++;e.months.set(key,m);if(key===month){e.hours=m.hours;e.monthDuties=m.count;}e.weeks.set(a.week,(e.weeks.get(a.week)||0)+a.hours)}
+  function addDuty(s,a,month){const e=s.people.get(String(a.employeeId));if(!e)return;e.duties.push(a);e.days.add(a.day);e.byDay.set(a.day,a);const key=a.date.slice(0,7),m=e.months.get(key)||{hours:0,count:0};m.hours+=a.hours;if(!s.confirmedRules||solid.countsTowardCap(a))m.count++;e.months.set(key,m);if(s.burdenEnabled){const burden=e.burdens.get(key)||{weekends:0,nights:0},weekday=solid?.weekday?.(a.date)??(new Date(a.date+'T12:00:00Z').getUTCDay()||7);burden.weekends+=Number(weekday>=6);burden.nights+=Number(a.start>='18:00'||a.end<=a.start);e.burdens.set(key,burden);}if(key===month){e.hours=m.hours;e.monthDuties=m.count;}e.weeks.set(a.week,(e.weeks.get(a.week)||0)+a.hours)}
   function commit(s,r,month){s.used.add(r.group.id);s.records.push(r);for(const a of r.option){s.remaining.set(a.resource,s.remaining.get(a.resource)-1);addDuty(s,a,month)}}
   function feasible(p,s,g,option){
     const e=g.employee,x=s.people.get(String(e.id));if(!x)return false;
@@ -69,8 +69,9 @@
     if(e.maxConsecutive>0)for(const day of addedDays){let count=1;for(const direction of [-1,1])for(let d=day+direction;x.days.has(d)||addedDays.has(d);d+=direction){if(++count>e.maxConsecutive)return false}}
     return true;
   }
-  const personCost=(p,h,e)=>hoursCost(h+(Number(p.hourCarry?.[String(e.id)]??e.balanceCarry)||0),e.target);
-  function quality(p,s){let deficit=0,squared=0,extra=0,imbalance=0;for(const e of p.people.values()){const h=s.people.get(String(e.id)).hours,d=Math.max(0,e.target-h);deficit+=d;squared+=d*d/Math.max(1,e.target);extra+=Math.max(0,h-e.target);imbalance+=personCost(p,h,e)}return{open:[...s.remaining.values()].reduce((n,x)=>n+x,0),deficit,squared,extra,imbalance:p.fairDistribution===false?0:imbalance,preferencePenalty:p.preferencePenalty?.([...p.base,...s.records.flatMap(r=>r.option)])||0}}
+  const goalWeights=p=>p.planningGoal==='HOURS'?[2,.5]:p.planningGoal==='WISHES'?[.25,2]:[1,1];
+  const personCost=(p,h,e)=>hoursCost(h+(Number(p.hourCarry?.[String(e.id)]??e.balanceCarry)||0),e.target)*goalWeights(p)[0];
+  function quality(p,s){let deficit=0,squared=0,extra=0,imbalance=0,burdenPenalty=0;const burdenEnabled=p._burdenEnabled??=(Array.from(p.people.values()).some(e=>e.weekendCarry!=null||e.nightCarry!=null)),peers=burdenEnabled?new Map():null;for(const e of p.people.values()){const x=s.people.get(String(e.id)),h=x.hours,d=Math.max(0,e.target-h);deficit+=d;squared+=d*d/Math.max(1,e.target);extra+=Math.max(0,h-e.target);imbalance+=personCost(p,h,e);if(peers){const group=JSON.stringify([e.target,[...new Set(e.shifts||[])].sort()]),list=peers.get(group)||[],current=x.burdens.get(p.month)||{weekends:0,nights:0};list.push({weekends:current.weekends+(Number(e.weekendCarry)||0),nights:current.nights+(Number(e.nightCarry)||0)});peers.set(group,list);}}for(const list of peers?.values()||[])if(list.length>1){const weekendMean=list.reduce((n,x)=>n+x.weekends,0)/list.length,nightMean=list.reduce((n,x)=>n+x.nights,0)/list.length;for(const x of list)burdenPenalty+=2*goalWeights(p)[0]*((x.weekends-weekendMean)**2+(x.nights-nightMean)**2);}const preferencePenalty=(p.preferencePenalty?.([...p.base,...s.records.flatMap(r=>r.option)])||0)*goalWeights(p)[1];return{open:[...s.remaining.values()].reduce((n,x)=>n+x,0),deficit,squared,extra,imbalance:p.fairDistribution===false?0:imbalance+(p.planningGoal==='WISHES'?preferencePenalty:0),burdenPenalty:p.fairDistribution===false?0:burdenPenalty,preferencePenalty}}
   const better=(a,b)=>!b||a.open<b.open||a.open===b.open&&(a.imbalance<b.imbalance-1e-6||Math.abs(a.imbalance-b.imbalance)<1e-6&&(a.deficit<b.deficit-.000001||Math.abs(a.deficit-b.deficit)<.000001&&(a.squared+a.preferencePenalty)<(b.squared+b.preferencePenalty)-.000001));
   // Only substitute options already approved by the input builder. Base duties,
   // complete-block requirements, permissions and the solver's hard checks stay intact.
@@ -213,7 +214,7 @@
     while(true){let chosen=null,best=-Infinity;
       for(const g of p.groups){if(s.used.has(g.id))continue;const current=s.people.get(String(g.employee.id)),target=Math.max(1,g.employee.target),deficit=Math.max(0,target-current.hours),urgency=deficit/target;
         for(const option of g.options){if(!feasible(p,s,g,option))continue;const hours=option.hours,scarcity=option.reduce((n,a)=>n+1/Math.max(1,p.potential.get(a.resource)?.size||1),0),same=option.every(a=>a.type===option[0].type),permissions=Math.max(1,g.employee.permissions||1);
-          const score=(p.preferenceScore?.(g.employee,current.duties,option)||0)+(scarcity*weights[0]+Math.min(deficit,hours)*urgency*weights[1]+option.length*.8+otDailyBlockBonus(p,option)+(same?.6:0)+hours*.05/permissions-(hours>deficit?(hours-deficit)*2:0)+fairOptionGain(p,s,{group:g,option})*.5)*bias.get(g.id);
+          const score=(p.preferenceScore?.(g.employee,current.duties,option)||0)*goalWeights(p)[1]+(scarcity*weights[0]+Math.min(deficit,hours)*urgency*weights[1]+option.length*.8+otDailyBlockBonus(p,option)+(same?.6:0)+hours*.05/permissions-(hours>deficit?(hours-deficit)*2:0)+fairOptionGain(p,s,{group:g,option})*.5)*bias.get(g.id);
           if(score>best){best=score;chosen={group:g,option}}
         }
       }
@@ -304,7 +305,7 @@
       for(const e of leaders){if(!working(e,date)||s.people.get(String(e.id)).days.has(Math.floor(Date.parse(date+'T12:00:00Z')/86400000)))continue;const list=[...byResource.entries()].filter(([key])=>key.startsWith(date+'|')&&!p.criticalCapacity.has(key)).flatMap(([key])=>candidates(key)).filter(r=>String(r.group.employee.id)===String(e.id)&&r.option[0].start>='18:00').sort((a,b)=>['O2','O1','O3'].indexOf(a.option[0].type)-['O2','O1','O3'].indexOf(b.option[0].type));if(list.length)commit(s,list[0],p.month);}
     }return s.records;
   }
-  const solidBetter=(a,b)=>{if(!b)return true;for(const key of ['critical','priorityDeficit','open','teamLeaderDeficit','imbalance','priorityPenalty','penalty','deficit']){const av=key==='imbalance'?(a.imbalance??a.squared):(a[key]||0),bv=key==='imbalance'?(b.imbalance??b.squared):(b[key]||0);if(av<bv-1e-6)return true;if(av>bv+1e-6)return false}return false;};
+  const solidBetter=(a,b)=>{if(!b)return true;for(const key of ['critical','priorityDeficit','open','teamLeaderDeficit','imbalance','burdenPenalty','priorityPenalty','penalty','deficit']){const av=key==='imbalance'?(a.imbalance??a.squared):(a[key]||0),bv=key==='imbalance'?(b.imbalance??b.squared):(b[key]||0);if(av<bv-1e-6)return true;if(av>bv+1e-6)return false}return false;};
   // Assign the entire three-person day together. Greedy individual picks can leave
   // only an OT3 -> OT1 transition (10 hours rest) for the last available employee.
   function rosterChoice(p,s,candidates,allowed){

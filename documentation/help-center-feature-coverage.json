@@ -1324,6 +1324,15 @@
         "assets/autonomous-planning-core-v1.js",
         "docs/autonomous-planning.md"
       ]
+    },
+    {
+      "category": "auto",
+      "question": "Wie funktionieren Vorprüfung, Planungsziele und Verbesserung?",
+      "sources": [
+        "assets/autonomous-planning-v1.js",
+        "assets/planning-continuity-core-v1.js",
+        "docs/autonomous-planning.md"
+      ]
     }
   ],
   "moduleInventory": [
@@ -2877,7 +2886,8 @@
         "Welche bestehenden Dienste berücksichtigt ein neu geplanter Monat?",
         "Wie lernt die Planung aus meinen Dienstkorrekturen?",
         "Wie verteile ich Arbeitsblöcke als versetzte Treppe?",
-        "Wie läuft die Auto-Planung selbständig bei geschlossenem Browser?"
+        "Wie läuft die Auto-Planung selbständig bei geschlossenem Browser?",
+        "Wie funktionieren Vorprüfung, Planungsziele und Verbesserung?"
       ]
     },
     {
@@ -3300,9 +3310,9 @@
   "currentAudit": {
     "date": "2026-10-24",
     "baselineArticleCount": 211,
-    "addedArticleCount": 42,
+    "addedArticleCount": 43,
     "correctedArticleCount": 20,
-    "articleCount": 253,
+    "articleCount": 254,
     "categoryCount": 22,
     "assetJavaScriptCount": 230
   },

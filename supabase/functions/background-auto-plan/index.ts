@@ -70,8 +70,10 @@ Deno.serve(async req => {
     if (checkpoint.stage === "done") {
       output=output||run!.result();output.repairScope=output.repairScope||input.metadata.repairScope||null;
       if(prepared.metadata.continuity){
-      const candidate={result:output,audit:audited||A.assess(prepared,output)},old=checkpoint.repairBest;
-      const best=old&&A.compare(old.audit,candidate.audit)<=0?old:candidate;
+      const candidate={result:output,audit:audited||A.assess(prepared,output)},incumbent:any=prepared.metadata.continuity?.improve&&prepared.metadata.continuity.incumbent?{result:{version:1,preview:prepared.metadata.continuity.incumbent.preview,quality:prepared.metadata.continuity.incumbent.quality,months:prepared.months,metadata:prepared.metadata,repairScope:{level:0,locked:prepared.metadata.continuity.incumbent.preview.length,reused:true}},audit:null}:null;
+      if(incumbent){incumbent.audit=A.assess(prepared,incumbent.result);if(!incumbent.audit.canApply)incumbent.audit=null;}
+      const old=checkpoint.repairBest||incumbent?.audit&&incumbent;
+      const best=old&&A.compare(old.audit,candidate.audit,prepared.metadata.continuity?.improve)<=0?old:candidate;
       if(!candidate.audit.canApply&&prepared.metadata.continuity?.affectedDates?.length&&repairLevel<2){
         checkpoint={...core.start(A.repairPayload(prepared,repairLevel+1)),repairLevel:repairLevel+1,repairBest:best,skipReuse:checkpoint.skipReuse};output=null;
         progress={percent:1,label:'Reparaturbereich erweitern',detail:'Der kleinere Reparaturversuch bleibt gespeichert. Weitere benachbarte Blöcke werden geprüft.'};
