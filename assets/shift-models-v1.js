@@ -60,7 +60,14 @@
     for(const a of all){if(a.type!=='O3'||a.date!==day||a.status==='CANCELLED')continue;const t=M.find(a.type),s=new Date(a.date+'T'+(a.start||t?.start||'22:00')+':00'),e=new Date(a.date+'T'+(a.end||t?.end||'08:00')+':00');if(e<=s)e.setDate(e.getDate()+1);if(s<=start&&e>=end)seen.add(String(a.employeeId))}
     return seen.size>=minimum;
   };
-  M.rawRequired=(date,code,fallback)=>{if(['OT1','OT2','OT3'].includes(code)&&window.SFSolidPlanningCore?.otDayHoliday(date,window.SFCompliance?.policy?.solidPlanningRules))return 0;const override=typeof dailySoll==='undefined'?null:dailySoll[date]?.[code],t=M.find(code);if(code==='OT'&&window.SFOtPolicy?.configured()){if(!window.SFOtPolicy.applies(date))return 0;return override!=null?Number(override):t?.planningMode==='optional'?0:Number(fallback)||0;}if(t?.strictWeekdays&&!t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7))return 0;return override!=null?Number(override):t&&(t.planningMode==='optional'||!t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7))?0:fallback};
+  M.rawRequired=(date,code,fallback)=>{
+    const rules=window.SFCompliance?.policy?.solidPlanningRules,core=window.SFSolidPlanningCore;
+    if(['OT1','OT2','OT3'].includes(code)&&core?.otDayHoliday(date,rules))return 0;
+    const override=typeof dailySoll==='undefined'?null:dailySoll[date]?.[code],t=M.find(code),floor=core?.dailyStaffingMinimum?.(date,code,rules)||0,minimum=value=>floor>0?Math.max(Number(value)||0,floor):value;
+    if(code==='OT'&&window.SFOtPolicy?.configured()){if(!window.SFOtPolicy.applies(date))return 0;return minimum(override!=null?Number(override):t?.planningMode==='optional'?0:Number(fallback)||0);}
+    if(t?.strictWeekdays&&!t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7))return minimum(0);
+    return minimum(override!=null?Number(override):t&&(t.planningMode==='optional'||!t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7))?0:fallback);
+  };
   M.requiredSoll=(date,code,fallback,simulated=[])=>{let all;const current=()=>all??(all=[...(typeof assignments==='undefined'?[]:assignments),...simulated].filter(a=>a.status!=='CANCELLED'&&a._dbStatus!=='CANCELLED'));const rules=window.SFCompliance?.policy?.solidPlanningRules;if(rules?.enabled&&window.SFSolidPlanningCore){const rule=(rules.conditionalStaffing||[]).find(r=>r.shift===code),rows=(rule||code==='OT2'&&window.SFSolidPlanningCore.otRoster(rules))?current().map(a=>({...a,start:a.start||M.find(a.type)?.start,end:a.end||M.find(a.type)?.end})):[],need=window.SFSolidPlanningCore.required(date,code,rows,rules);if(need!==null)return need;}const g=M.coverageInfo(date,code,simulated);if(g){const own=current().filter(a=>a.date===date&&a.type===code&&a.status!=='CANCELLED').length;return own+(g.representative===code?g.missing:0)}
     const raw=M.rawRequired(date,code,fallback);
     if(['OT1','OT2'].includes(code)&&M.find('OT2')?.morningOtMinimum&&M.morningOtSwitch(date,current())){

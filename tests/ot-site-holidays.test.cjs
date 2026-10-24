@@ -53,3 +53,14 @@ test('holiday exclusion wins over explicit day demand and distinguishes a normal
  vm.runInNewContext(fs.readFileSync(require.resolve('../assets/shift-models-v1.js'),'utf8'),c);const m=c.window.SFShiftModels;m.apply(['OT1','OT2','OT3','OT'].map(code=>({code,active:true,default_start:'08:00',default_end:'18:00',optional_weekdays:code==='OT'?[6,7]:[1,2,3,4,5]})),'co');
  for(const code of ['OT1','OT2','OT3']){assert.equal(m.requiredSoll('2027-01-01',code,5),0);assert.equal(m.allowsEmployee(code,{team:'Leipzig'},'2027-01-01'),false);}assert.equal(m.requiredSoll('2027-01-01','OT',3),3);assert.equal(m.rawRequired('2027-01-04','OT2',1),1);assert.equal(api.isHoliday('2027-01-02',['DE']),false);assert.equal(api.isHoliday('2027-03-08',['DE','SN','NW']),false);
 });
+
+
+test('daily 9h OT rule keeps all January days at three and remains company-specific',()=>{
+ const c=browser();c.window.SFBackend={companyId:'daily'};c.sessionStorage={getItem:()=>null};c.TYPES=[];c.selectedType=null;c.globalSoll={OT:3};c.dailySoll={'2027-01-04':{OT:0}};c.document.getElementById=()=>null;
+ vm.runInNewContext(fs.readFileSync(require.resolve('../assets/solid-planning-core-v1.js'),'utf8'),c);
+ Object.assign(c.window.SFCompliance.policy.solidPlanningRules,{enabled:true,otDailyMinimumStaffing:3,criticalShifts:[{code:'OT',minimum:3,weekdays:[1,2,3,4,5,6,7]}]});
+ vm.runInNewContext(fs.readFileSync(require.resolve('../assets/shift-models-v1.js'),'utf8'),c);c.window.SFShiftModels.apply([{code:'OT',active:true,default_start:'07:00',default_end:'16:00',optional_weekdays:[1,2,3,4,5,6,7]}],'daily');
+ for(let day=1;day<=31;day++){const date='2027-01-'+String(day).padStart(2,'0');assert.equal(c.window.SFOtPolicy.applies(date,{team:'Leipzig'}),true);assert.equal(c.window.SFShiftModels.requiredSoll(date,'OT',3),3,date);assert.equal(c.window.SFShiftModels.rawRequired(date,'OT',3),3,date);}
+ assert.equal(c.window.SFOtPolicy.applies('2027-02-30'),false);c.dailySoll['2027-01-04'].OT=5;assert.equal(c.window.SFShiftModels.requiredSoll('2027-01-04','OT',3),5,'higher explicit demand remains visible');
+ delete c.window.SFCompliance.policy.solidPlanningRules.otDailyMinimumStaffing;c.window.SFCompliance.policy.solidPlanningRules.criticalShifts=[{code:'OT',minimum:3,weekdays:[6,7]}];assert.equal(c.window.SFOtPolicy.applies('2027-01-04'),false);assert.equal(c.window.SFShiftModels.requiredSoll('2027-01-04','OT',3),0,'ordinary company retains weekend/holiday rule');
+});

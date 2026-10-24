@@ -10,16 +10,17 @@
     const site=typeof employee==='string'?employee:employee?.team??(stored?stored.slice(10):'');
     return api.siteState(site,mapping);
   };
-  const applies=(date,employee)=>api.applies(date,employee==null?Object.values(rules()||{Berlin:'BE'}):[stateFor(employee)]);
-  root.SFOtPolicy={...api,stateFor,applies,configured:()=>!!rules()};
+  const daily=()=>Math.max(0,Number(root.SFCompliance?.policy?.solidPlanningRules?.otDailyMinimumStaffing)||0);
+  const applies=(date,employee)=>daily()>0&&api.isValidDate(date)||api.applies(date,employee==null?Object.values(rules()||{Berlin:'BE'}):[stateFor(employee)]);
+  root.SFOtPolicy={...api,stateFor,applies,configured:()=>!!rules()||daily()>0};
   root.schichtFunkOtApplies=applies;
   function installPolicy(){
     if(typeof root.getSoll!=='function'||root.getSoll.__otPolicy)return false;
     const original=root.getSoll,wrapped=function(date,type){
       if(['OT1','OT2','OT3'].includes(String(type).toUpperCase())&&root.SFSolidPlanningCore?.otDayHoliday(date,root.SFCompliance?.policy?.solidPlanningRules))return 0;
       if(String(type).toUpperCase()==='OT'&&!applies(date))return 0;
-      const value=original.apply(this,arguments),core=root.SFSolidPlanningCore;
-      return String(type).toUpperCase()==='OT'&&core?.weekday(date)>5?Math.max(Number(value)||0,core.otWeekendMinimum?.(root.SFCompliance?.policy?.solidPlanningRules)||0):value;
+      const core=root.SFSolidPlanningCore,value=Math.max(Number(original.apply(this,arguments))||0,core?.dailyStaffingMinimum?.(date,String(type).toUpperCase(),root.SFCompliance?.policy?.solidPlanningRules)||0);
+      return String(type).toUpperCase()==='OT'&&(daily()>0||core?.weekday(date)>5)?Math.max(Number(value)||0,daily(),core?.otWeekendMinimum?.(root.SFCompliance?.policy?.solidPlanningRules)||0):value;
     };
     wrapped.__otPolicy=true;wrapped.__original=original;root.getSoll=wrapped;return true;
   }
@@ -28,7 +29,7 @@
     let note=settings.querySelector('.sp-ot-policy-hint');
     if(!note){const target=[...settings.querySelectorAll('input[data-soll], label, .setting-row, .section-box, .card')].find(el=>/\bOT\b/.test(el.textContent||''));if(!target)return;note=document.createElement('div');note.className='sp-ot-policy-hint';target.insertAdjacentElement('afterend',note);}
     const minimum=root.SFSolidPlanningCore?.otWeekendMinimum?.(root.SFCompliance?.policy?.solidPlanningRules)||0;
-    note.innerHTML=(minimum?`<b>Feste OT-Wochenendregel</b><span>Samstag und Sonntag: jeweils mindestens ${minimum} unterschiedliche OT-Mitarbeiter. Niedrigere Tageswerte heben diese Pflicht nicht auf.</span>`:'')+(rules()?'<b>OT-Regel</b><span>OT gilt samstags, sonntags und an gesetzlichen Feiertagen am hinterlegten Einsatzort: Leipzig (Sachsen), Recklinghausen (NRW). An bundesweiten Feiertagen sowie Feiertagen in Sachsen oder NRW entfällt der Pflichtbedarf für OT1/OT2/OT3; stattdessen gilt die normale OT-Besetzung.</span>':'<b>OT-Regel</b><span>OT gilt samstags, sonntags und an den für dieses Unternehmen hinterlegten Feiertagen.</span>');
+    note.innerHTML=daily()?`<b>Tägliche OT-Pflichtbesetzung</b><span>Jeden Tag mindestens ${daily()} unterschiedliche OT-Mitarbeiter, auch werktags und an Feiertagen.</span>`:(minimum?`<b>Feste OT-Wochenendregel</b><span>Samstag und Sonntag: jeweils mindestens ${minimum} unterschiedliche OT-Mitarbeiter. Niedrigere Tageswerte heben diese Pflicht nicht auf.</span>`:'')+(rules()?'<b>OT-Regel</b><span>OT gilt samstags, sonntags und an gesetzlichen Feiertagen am hinterlegten Einsatzort: Leipzig (Sachsen), Recklinghausen (NRW). An bundesweiten Feiertagen sowie Feiertagen in Sachsen oder NRW entfällt der Pflichtbedarf für OT1/OT2/OT3; stattdessen gilt die normale OT-Besetzung.</span>':'<b>OT-Regel</b><span>OT gilt samstags, sonntags und an den für dieses Unternehmen hinterlegten Feiertagen.</span>');
   }
   function init(){
     let tries=0;const timer=setInterval(()=>{tries++;const ok=installPolicy();addSettingsHint();if(ok||tries>30){clearInterval(timer);root.renderCalendar?.();root.updateStats?.();}},100);
@@ -50,5 +51,5 @@
   function siteState(site,mapping={Leipzig:'SN',Recklinghausen:'NW'}){const key=String(site||'').trim().toLocaleLowerCase('de-DE');return Object.entries(mapping).find(([name])=>name.toLocaleLowerCase('de-DE')===key)?.[1]||'DE';}
   function applies(value,states=['DE']){const d=date(value);if(!d)return false;if([0,6].includes(d.getUTCDay()))return true;return (Array.isArray(states)?states:[states]).some(state=>holidays(d.getUTCFullYear(),state).has(iso(d)));}
   function isHoliday(value,states=['DE']){const d=date(value);if(!d)return false;return (Array.isArray(states)?states:[states]).some(state=>holidays(d.getUTCFullYear(),state).has(iso(d)));}
-  return {holidays,siteState,applies,isHoliday};
+  return {holidays,siteState,applies,isHoliday,isValidDate:value=>!!date(value)};
 });
