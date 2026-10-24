@@ -24,7 +24,7 @@ function peerPairs(p){const buckets=new Map(),pairs=[];for(const e of p.people.v
 function peerQuality(p,s){const limit=Math.max(0,...p.base.map(a=>a.hours||0),...s.records.flatMap(r=>r.option.map(a=>a.hours))),gaps=peerPairs(p).map(([a,b])=>Math.abs(s.people.get(a).hours-s.people.get(b).hours));return{peerSpread:Math.max(0,...gaps),peerExcess:gaps.reduce((n,g)=>n+Math.max(0,g-limit),0)};}
 function better(a,b){for(const k of ['critical','priorityDeficit','open','teamLeaderDeficit','peerExcess','imbalance','priorityPenalty','penalty','deficit']){const x=Number(a[k])||0,y=Number(b[k])||0;if(x<y-1e-6)return true;if(x>y+1e-6)return false;}return false;}
 function start(input,preview){
- const cp={version:1,pass:0,best:[],working:[],fixed:[],original:copyRows(preview),lastImprovement:0,initialOpen:0,improvements:0,maxPasses:96,status:'searching'};
+ const cp={version:1,pass:0,best:[],working:[],fixed:[],original:copyRows(preview),lastImprovement:0,initialOpen:0,improvements:0,maxPasses:256,status:'searching'};
  if(!S.confirmed(input.solidRules)||(input.solidRules.conditionalStaffing||[]).length||input.capacities.some(([k])=>k.endsWith('|OT-DAY'))||input.groups.reduce((n,g)=>n+g.options.length,0)>12000||input.capacities.length>200){cp.status='unsupported';return cp;}
  const p=prepared(input),excluded=excludedPeople(p);
  let cols=columns(p,excluded),by=new Map(cols.map((c,i)=>[c.sig,i]));
@@ -84,7 +84,7 @@ function context(input,cp){
   for(const r of records){if(!M.feasible(audit,s,r.group,r.option))return false;C.commit(s,r,p.month);}
   return [...s.remaining.values()].every(n=>n>=0);
  }
- function step(highs,seconds=.35){
+ function step(highs,seconds=.5){
   if(cp.status!=='searching')return false;
   let seed=7919*cp.pass+71;const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;},pool=crew.slice();for(let i=pool.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
   const workingState=state(cp.working),workingQuality=C.solidQuality(p,workingState);
