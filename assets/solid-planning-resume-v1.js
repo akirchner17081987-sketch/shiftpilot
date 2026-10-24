@@ -34,13 +34,16 @@ function context(input,cp){
       const key=component.keys[cp.key],candidates=[],seen=new Set();
       for(const r of byResource.get(key)||[]){if(r.option.length!==1&&!r.group.fullWorkRest)continue;const a=r.option[0],id=String(a.employeeId)+'|'+a.start+'|'+a.end;if(seen.has(id))continue;seen.add(id);candidates.push(r)}
       if(p.preferenceScore)candidates.sort((a,b)=>p.preferenceScore(b.group.employee,[],b.option)-p.preferenceScore(a.group.employee,[],a.option));
-      const next=[];for(const b of cp.beam){const s=C.state(p,decode(b.records)),need=C.criticalOpen(p,s,key);
+      const work=cp.criticalWork||(cp.criticalWork={index:0,pool:[]}),next=[];
+      const batch=cp.beam.slice(work.index,work.index+2);for(const b of batch){const s=C.state(p,decode(b.records)),need=C.criticalOpen(p,s,key);
         function choose(s,at,left){if(!left||at===candidates.length){next.push({records:encode(s.records),missing:b.missing+left});return}for(let i=at;i<candidates.length;i++){const r=candidates[i];if(s.used.has(r.group.id)||!allowed(s,r))continue;const n=C.state(p,s.records);C.commit(n,r,p.month);choose(n,i+1,left-1)}next.push({records:encode(s.records),missing:b.missing+left});}
         choose(s,0,need);
       }
-      const date=key.split('|')[0],day=Math.floor(Date.parse(date+'T12:00:00Z')/86400000),unique=new Map();
-      for(const b of next){const s=C.state(p,decode(b.records));const signature=component.ids.map(id=>{const x=s.people.get(id),month=x.months.get(date.slice(0,7))||{hours:0,count:0};return id+':'+month.hours+':'+month.count+':'+x.duties.filter(a=>a.day>=day-8&&a.day<=day).map(a=>a.date+a.type).sort().join(',')}).join(';');const previous=unique.get(signature);if(!previous||b.missing<previous.missing)unique.set(signature,b);}
-      cp.beam=[...unique.values()].sort((a,b)=>a.missing-b.missing||(a.teamLeaderBlockPenalty??=C.teamLeaderBlockPenalty(p,decode(a.records)))-(b.teamLeaderBlockPenalty??=C.teamLeaderBlockPenalty(p,decode(b.records)))||(p.preferencePenalty?.([...p.base,...decode(a.records).flatMap(r=>r.option)])||0)-(p.preferencePenalty?.([...p.base,...decode(b.records).flatMap(r=>r.option)])||0)||a.records.length-b.records.length).slice(0,p.criticalBeamWidth||96);
+      const date=key.split('|')[0],day=Math.floor(Date.parse(date+'T12:00:00Z')/86400000),unique=new Map(work.pool.map(b=>[b.signature,b]));
+      for(const b of next){const s=C.state(p,decode(b.records));const signature=component.ids.map(id=>{const x=s.people.get(id),month=x.months.get(date.slice(0,7))||{hours:0,count:0};return id+':'+month.hours+':'+month.count+':'+x.duties.filter(a=>a.day>=day-8&&a.day<=day).map(a=>a.date+a.type).sort().join(',')}).join(';');const previous=unique.get(signature);if(!previous||b.missing<previous.missing)unique.set(signature,{...b,signature});}
+      work.pool=[...unique.values()].sort((a,b)=>a.missing-b.missing||(a.teamLeaderBlockPenalty??=C.teamLeaderBlockPenalty(p,decode(a.records)))-(b.teamLeaderBlockPenalty??=C.teamLeaderBlockPenalty(p,decode(b.records)))||(p.preferencePenalty?.([...p.base,...decode(a.records).flatMap(r=>r.option)])||0)-(p.preferencePenalty?.([...p.base,...decode(b.records).flatMap(r=>r.option)])||0)||a.records.length-b.records.length).slice(0,p.criticalBeamWidth||96);
+      work.index+=batch.length;if(work.index<cp.beam.length)return true;
+      cp.beam=work.pool.map(({signature,...b})=>b);delete cp.criticalWork;
       if(++cp.key===component.keys.length){if(p.solidRules.teamLeaderMinimumMonthlyHours!=null&&cp.components.length===1)cp.minimumVariants=cp.beam.slice(0,12).map(b=>b.records);cp.minimum.push(...cp.beam[0].records);cp.component++;cp.key=0;cp.beam=[{records:[],missing:0}];}return true;
     }
     if(cp.phase==='iteration-start'){

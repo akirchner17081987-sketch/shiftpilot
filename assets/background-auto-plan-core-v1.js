@@ -78,7 +78,7 @@
  }
  function progress(payload,cp){
   if(cp.stage==='done')return {percent:100,label:'Planung abgeschlossen',detail:'Die Vorschläge sind zur Prüfung bereit.'};
-  if(cp.stage==='minimum'){const total=cp.solver?.components?.reduce((n,c)=>n+c.keys.length,0)||1,done=cp.solver?.components?.slice(0,cp.solver.component).reduce((n,c)=>n+c.keys.length,0)+(cp.solver?.key||0);return {percent:Math.min(15,Math.floor((done||0)/total*15)),label:'Pflichtbesetzung verteilen',detail:'OT, OT2 und Leitung · '+(done||0)+'/'+total+' Pflichtpositionen geprüft'};}
+  if(cp.stage==='minimum'){const total=cp.solver?.components?.reduce((n,c)=>n+c.keys.length,0)||1,done=cp.solver?.components?.slice(0,cp.solver.component).reduce((n,c)=>n+c.keys.length,0)+(cp.solver?.key||0);return {percent:Math.min(15,Math.floor((done||0)/total*15)),label:'Pflichtbesetzung verteilen',detail:'OT, OT2 und Leitung · '+(done||0)+'/'+total+' Pflichtpositionen geprüft'+(cp.solver?.criticalWork?' · Varianten '+cp.solver.criticalWork.index+'/'+cp.solver.beam.length:'' )};}
   if(cp.stage==='exchange')return{percent:99,label:'Arbeitsblöcke gemeinsam optimieren',detail:payload.months[cp.monthIndex]+' · '+cp.exchange.pass+'/'+cp.exchange.maxPasses+' Tauschvarianten geprüft · bester geprüfter Vorschlag bleibt erhalten'};
   if(cp.solver?.phase==='refine'||cp.solver?.phase==='block-recovery')return {percent:99,label:'Arbeitsblöcke nachbessern',detail:payload.months[cp.monthIndex]+' · '+(cp.solver.refineCursor||0)+'/'+(cp.solver.refineRoots?.length||0)+' offene Positionen geprüft'};
   const iterations=cp.solver?.iterations||12,fraction=(cp.solver?.iteration||0)/iterations;
