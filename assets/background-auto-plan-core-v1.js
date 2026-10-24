@@ -1,5 +1,5 @@
 // The worker and browser share the same immutable input format and planning rules.
-(function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory(require('./solid-planning-resume-v1.js'),require('./solid-planning-core-v1.js'));else root.SFBackgroundAutoPlanCore=factory(root.SFSolidPlanningResume,root.SFSolidPlanningCore)})(typeof window==='undefined'?globalThis:window,function(R,S){
+(function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory(require('./solid-planning-resume-v1.js'),require('./solid-planning-core-v1.js'),require('./block-exchange-core-v1.js'));else root.SFBackgroundAutoPlanCore=factory(root.SFSolidPlanningResume,root.SFSolidPlanningCore,root.SFBlockExchangeCore)})(typeof window==='undefined'?globalThis:window,function(R,S,E){
  'use strict';
  const version=1;
  const rowKey=a=>[a.employeeId,a.date,a.type,a.start,a.end].join('|');
@@ -55,14 +55,22 @@
  function context(payload,cp){
   if(cp.version!==version)throw Error('Der gespeicherte Auftrag verwendet eine andere Version. Bitte neu starten.');
   if(cp.stage==='done')return {step:()=>false,progress:()=>progress(payload,cp),result:()=>result(payload,cp)};
-  const input=materialize(payload,cp);cp.solver=cp.solver||R.start(input,Math.max(input.solidRules.teamLeaderMinimumMonthlyHours!=null&&!input.criticalOnly?24:12,Math.min(48,Number(input.searchIterations)||12)));let runner=R.context(input,cp.solver);
+  const input=materialize(payload,cp);
+  function acceptMonth(found){const month=payload.months[cp.monthIndex];cp.proposed=unique([...cp.proposed,...(payload.monthInputs[cp.monthIndex].solidRules.teamLeaderMinimumMonthlyHours!=null?[]:cp.minimum.filter(a=>a.date.startsWith(month))),...(payload.monthInputs[cp.monthIndex].reserved||[]),...found.preview]);cp.quality.push(found.quality);cp.exchange=null;cp.pendingQuality=null;cp.solver=null;if(++cp.monthIndex===payload.months.length){cp.stage='done';return true;}cp.stage='month';return false;}
+  if(cp.stage==='exchange'){
+   if(!E)throw Error('Die erweiterte Blocksuche ist nicht geladen.');const exchange=E.context(input,cp.exchange);
+   const finish=()=>{const found=exchange.result();return acceptMonth({...found,quality:found.quality||{...cp.pendingQuality,blockExchange:{status:cp.exchange.status,passes:cp.exchange.pass,reason:cp.exchange.reason||null}}});};
+   return{step:()=>false,exchangeStep:highs=>{if(cp.exchange.status==='searching')exchange.step(highs);if(cp.exchange.status!=='searching')return finish();return false;},stopExchange:reason=>{cp.exchange.status='unavailable';cp.exchange.reason=String(reason).slice(0,160);return finish();},progress:()=>progress(payload,cp),result:()=>result(payload,cp)};
+  }
+  cp.solver=cp.solver||R.start(input,Math.max(input.solidRules.teamLeaderMinimumMonthlyHours!=null&&!input.criticalOnly?24:12,Math.min(48,Number(input.searchIterations)||12)));let runner=R.context(input,cp.solver);
   function step(){
    if(cp.stage==='done')return false;
    runner.step();cp.steps++;
    if(cp.solver.phase==='done'){
     const found=runner.result();
     if(cp.stage==='minimum'){cp.minimum=unique([...(payload.minimumInput.reserved||[]),...found.preview]);cp.stage='month';}
-    else{const month=payload.months[cp.monthIndex];cp.proposed=unique([...cp.proposed,...(payload.monthInputs[cp.monthIndex].solidRules.teamLeaderMinimumMonthlyHours!=null?[]:cp.minimum.filter(a=>a.date.startsWith(month))),...(payload.monthInputs[cp.monthIndex].reserved||[]),...found.preview]);cp.quality.push(found.quality);if(++cp.monthIndex===payload.months.length){cp.stage='done';cp.solver=null;return true;}}
+    else if(payload.enhancedBlockSearch&&E){cp.exchange=E.start(input,found.preview);cp.pendingQuality=found.quality;cp.stage='exchange';cp.solver=null;return false;}
+    else if(acceptMonth(found))return true;
     cp.solver=null;return false; // Rebuild only at the next invocation, with the new immutable stage input.
    }return true;
   }
@@ -71,6 +79,7 @@
  function progress(payload,cp){
   if(cp.stage==='done')return {percent:100,label:'Planung abgeschlossen',detail:'Die Vorschläge sind zur Prüfung bereit.'};
   if(cp.stage==='minimum'){const total=cp.solver?.components?.reduce((n,c)=>n+c.keys.length,0)||1,done=cp.solver?.components?.slice(0,cp.solver.component).reduce((n,c)=>n+c.keys.length,0)+(cp.solver?.key||0);return {percent:Math.min(15,Math.floor((done||0)/total*15)),label:'Pflichtbesetzung verteilen',detail:'OT, OT2 und Leitung · '+(done||0)+'/'+total+' Pflichtpositionen geprüft'};}
+  if(cp.stage==='exchange')return{percent:99,label:'Arbeitsblöcke gemeinsam optimieren',detail:payload.months[cp.monthIndex]+' · '+cp.exchange.pass+'/'+cp.exchange.maxPasses+' Tauschvarianten geprüft · bester geprüfter Vorschlag bleibt erhalten'};
   if(cp.solver?.phase==='refine'||cp.solver?.phase==='block-recovery')return {percent:99,label:'Arbeitsblöcke nachbessern',detail:payload.months[cp.monthIndex]+' · '+(cp.solver.refineCursor||0)+'/'+(cp.solver.refineRoots?.length||0)+' offene Positionen geprüft'};
   const iterations=cp.solver?.iterations||12,fraction=(cp.solver?.iteration||0)/iterations;
   return {percent:Math.min(99,15+Math.floor((cp.monthIndex+fraction)/payload.months.length*84)),label:'Monat '+(cp.monthIndex+1)+' von '+payload.months.length+' planen',detail:payload.months[cp.monthIndex]+' · '+(cp.solver?.iteration||0)+'/'+iterations+' Verteilungen geprüft'+(cp.solver?.phase==='fill'?' · '+cp.solver.cursor+'/'+cp.solver.order.length+' Schichtpositionen':'' )};

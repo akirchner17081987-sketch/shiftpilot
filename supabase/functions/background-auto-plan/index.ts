@@ -6,7 +6,9 @@ import "../../../assets/individual-month-planner-v1.js";
 import "../../../assets/month-optimizer-core-v1.js";
 import "../../../assets/wish-planning-core-v1.js";
 import "../../../assets/solid-planning-resume-v1.js";
+import "../../../assets/block-exchange-core-v1.js";
 import "../../../assets/background-auto-plan-core-v1.js";
+import {loadBlockSolver} from "../_shared/block-solver-runtime.ts";
 
 const core = (globalThis as any).SFBackgroundAutoPlanCore;
 const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
@@ -33,16 +35,21 @@ Deno.serve(async req => {
     if (policy.error || !policy.data) throw new Error("Die Schichtdauer des Unternehmens konnte nicht geladen werden.");
     const scopedBlockRecovery = job.payload.metadata.company === "ee0e5c9d-d5ae-48e6-abff-37c179a01929";
     const prepared = core.withShiftDurationLimit(core.withServerWishes(job.payload, job.server_wishes), Number(policy.data.standard_max_shift_hours));
-    const input = { ...prepared, minimumInput: { ...prepared.minimumInput, scopedBlockRecovery }, monthInputs: prepared.monthInputs.map((month: any) => ({ ...month, scopedBlockRecovery })) };
+    const input = { ...prepared, enhancedBlockSearch:true, minimumInput: { ...prepared.minimumInput, scopedBlockRecovery }, monthInputs: prepared.monthInputs.map((month: any) => ({ ...month, scopedBlockRecovery })) };
     checkpoint = checkpoint || core.start(input);
     const run = core.context(input, checkpoint), slice = performance.now();
     // Leave headroom for preparation, JSON, database calls and cold starts. Each
     // saved call can be retried after a lease expires without losing prior work.
-    do {
+    if(checkpoint.stage==='exchange'){
+      // One solver slice per durable invocation. Its bounded synchronous CPU
+      // time leaves headroom for cold starts, model checks and serialization.
+      try{if(checkpoint.exchange.status==='searching')run.exchangeStep(await loadBlockSolver());else run.exchangeStep(null);}catch(error){run.stopExchange((error as Error)?.message||'Zusätzliche Suche nicht verfügbar; bester Vorschlag bleibt erhalten.');}
+      steps++;
+    }else do {
       const recovering = checkpoint.solver?.phase === "block-recovery";
       steps++; if (!run.step()) break;
       // One bounded exchange per invocation keeps CPU use below the Edge limit.
-      if (recovering || checkpoint.solver?.phase === "block-recovery") break;
+      if (recovering || checkpoint.solver?.phase === "block-recovery" || checkpoint.stage==='exchange') break;
     } while (checkpoint.stage !== "done" && performance.now() - slice < 700 && steps < 1000);
     progress = run.progress();
     if (checkpoint.stage === "done") output = run.result();

@@ -6,6 +6,7 @@ import "../../../assets/individual-month-planner-v1.js";
 import "../../../assets/month-optimizer-core-v1.js";
 import "../../../assets/wish-planning-core-v1.js";
 import "../../../assets/solid-planning-resume-v1.js";
+import "../../../assets/block-exchange-core-v1.js";
 import "../../../assets/background-auto-plan-core-v1.js";
 import "../../../assets/auto-plan-repair-core-v1.js";
 import "../../../assets/autonomous-planning-core-v1.js";

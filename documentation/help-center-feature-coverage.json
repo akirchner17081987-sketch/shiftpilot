@@ -1,5 +1,5 @@
 {
-  "reviewedAt": "2026-10-22",
+  "reviewedAt": "2026-10-24",
   "sourceCommit": "80485ff3eb6e003ab4cd1f329f118118d0d103bc",
   "addedArticles": [
     {
@@ -2697,6 +2697,12 @@
       "area": "PWA, Verbindung, Offline-Start und verfügbare Updates",
       "category": "portal",
       "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/block-exchange-core-v1.js",
+      "area": "Fortsetzbare erweiterte Blocksuche und geprüfter Monatsausgleich",
+      "category": "auto",
+      "kind": "feature-or-support"
     }
   ],
   "categoryCoverage": [
@@ -3261,7 +3267,21 @@
       "sources": [
         "assets/auto-plan-repair-core-v1.js",
         "assets/auto-plan-assurance-v1.js",
-        "docs/auto-plan-assurance.md"
+        "docs/auto-plan-assurance.md",
+        "assets/block-exchange-core-v1.js",
+        "assets/autonomous-planning-v1.js",
+        "supabase/functions/background-auto-plan/index.ts",
+        "tests/automatic-block-exchange.test.cjs"
+      ]
+    },
+    {
+      "category": "auto",
+      "question": "Was bedeutet der Fortschrittsbalken der Auto-Planung?",
+      "sources": [
+        "assets/block-exchange-core-v1.js",
+        "assets/autonomous-planning-v1.js",
+        "supabase/functions/background-auto-plan/index.ts",
+        "tests/automatic-block-exchange.test.cjs"
       ]
     }
   ],
@@ -3272,16 +3292,16 @@
     "entry": "index.html"
   },
   "currentAudit": {
-    "date": "2026-10-22",
+    "date": "2026-10-24",
     "baselineArticleCount": 211,
     "addedArticleCount": 42,
-    "correctedArticleCount": 19,
+    "correctedArticleCount": 20,
     "articleCount": 253,
     "categoryCount": 22,
-    "assetJavaScriptCount": 228
+    "assetJavaScriptCount": 229
   },
   "incrementalUpdate": {
-    "date": "2026-10-20",
-    "description": "Engpasslöser, Fragenübersicht, Frühwarnung, Urlaubsfolgen und Dienständerungsvorschau ergänzt. Planungsaufträge, geführte Monatsplanung, Mehrmonatsausgleich und Rücknahme ergänzt. Zentrale Planungsprofile, automatischer Änderungscheck und Variantenvergleich ergänzt. Nachweise selbst einreichen, gezielte Anforderung, Prüfung und atomare Übernahme ergänzt."
+    "date": "2026-10-24",
+    "description": "Automatische fortsetzbare Blocksuche, gemeinsame Umverteilung mehrerer Mitarbeiter, unabhängige Regelprüfung und verständlicher Ergebnisstatus ergänzt."
   }
 }
