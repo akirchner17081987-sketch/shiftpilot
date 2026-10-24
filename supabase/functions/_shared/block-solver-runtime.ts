@@ -12,7 +12,13 @@ export function loadBlockSolver():Promise<any>{
   if(bytes.byteLength!==3531401)throw Error("Die Blocksuche-Datei ist unvollständig.");
   const digest=Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",bytes))).map(v=>v.toString(16).padStart(2,"0")).join("");
   if(digest!==SHA256)throw Error("Die Version der Blocksuche-Datei stimmt nicht überein.");
-  return await loadHighs({wasmBinary:new Uint8Array(bytes),print(){},printErr(){}});
+  // This pinned loader's wasmBinary option is not wired through its generated
+  // Emscripten bootstrap. Instantiate the verified bytes explicitly so the
+  // worker never attempts to read a non-existent npm cache file instead.
+  const compiled=await WebAssembly.compile(bytes);
+  return await loadHighs({instantiateWasm(imports:WebAssembly.Imports,receive:(instance:WebAssembly.Instance)=>void){
+   const instance=new WebAssembly.Instance(compiled,imports);receive(instance);return instance.exports;
+  },print(){},printErr(){}} as any);
  })().catch(error=>{loaded=null;throw error;});
  return loaded;
 }
