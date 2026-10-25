@@ -101,3 +101,8 @@ test('a lost timed break response keeps its original duration and exact request'
  assert.equal(h.get('breakRemaining').textContent,'10:00');assert.equal(h.punches(),1);
  assert.equal(h.requests.at(-2).plannedMinutes,10);assert.equal(h.requests.at(-1).requestId,h.requests.at(-2).requestId);
 });
+
+test('choosing a duration does not reset elapsed attendance to an old server snapshot',async()=>{
+ const h=fixture('RUNNING');await h.login();await h.advance(65000);const before=h.get('attendanceTotal').textContent;
+ await h.click('break10');assert.equal(h.get('attendanceTotal').textContent,before);await h.advance(1000);assert.equal(h.get('attendanceTotal').textContent,'05:01:06');
+});

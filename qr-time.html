@@ -41,6 +41,12 @@ async function call(action,extra={}){
   finally{clearTimeout(timer);controllers.delete(controller)}
 }
 
+function showBreakPushHint(status=currentStatus){
+  const state=status?.state;
+  const timed=state==='BREAK'?status.break_timer?.planned_minutes:plannedMinutes;
+  $('breakPushHint').hidden=!timed||!['RUNNING','BREAK'].includes(state);
+  $('breakPushHint').textContent=status?.break_push_available?'Erinnerung ca. 2 Minuten vor Ablauf an deine Geräte mit aktiviertem SchichtFunk-Push.':'Für die Push-Erinnerung bitte Push im Mitarbeiterportal auf deinem Gerät aktivieren. Die Pause kannst du trotzdem starten.';
+}
 function updateLiveTotals(){
   if(!currentStatus)return;
   const now=displayNow();
@@ -80,9 +86,7 @@ function show(status){
   $('stateDetail').textContent=state==='BREAK'?'Nach der Pause auf „Pause beenden“ tippen. Bei Dienstende beendet „Arbeitszeit beenden“ auch die laufende Pause.':state==='RUNNING'?'Pause oder Dienstende mit einem Tipp buchen.':'Es ist keine Arbeitszeit offen.';
   $('start').hidden=state!=='READY';$('pauseStart').hidden=state!=='RUNNING'||breaks.length>=10;$('pauseEnd').hidden=state!=='BREAK';$('end').hidden=state!=='RUNNING'&&state!=='BREAK';
   $('breakChoice').hidden=state!=='RUNNING'||breaks.length>=10;
-  const timed=state==='BREAK'?status.break_timer?.planned_minutes:plannedMinutes;
-  $('breakPushHint').hidden=!timed||!['RUNNING','BREAK'].includes(state);
-  $('breakPushHint').textContent=status.break_push_available?'Erinnerung ca. 2 Minuten vor Ablauf an deine Geräte mit aktiviertem SchichtFunk-Push.':'Für die Push-Erinnerung bitte Push im Mitarbeiterportal auf deinem Gerät aktivieren. Die Pause kannst du trotzdem starten.';
+  showBreakPushHint(status);
   if(state==='RUNNING'&&breaks.length>=10)$('stateDetail').textContent='Zehn Pausen erfasst. Arbeitszeit kann beendet werden.';
 }
 function unverified(){
@@ -173,7 +177,7 @@ for(const [id,minutes] of breakChoices)$(id).addEventListener('click',()=>{
   if(busy||needsStatus||pendingBooking)return;
   plannedMinutes=minutes;
   for(const [button,value] of breakChoices)$(button).setAttribute?.('aria-pressed',String(value===minutes));
-  if(currentStatus)show(currentStatus);
+  showBreakPushHint();
 });
 $('statusRefresh').addEventListener('click',refreshStatus);
 $('retryBooking').addEventListener('click',()=>{if(pendingBooking)action(pendingBooking.action)});
