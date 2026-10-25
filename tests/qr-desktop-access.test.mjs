@@ -136,6 +136,62 @@ test('desktop PIN transport and QR share the real PostgreSQL booking engine',asy
    assert.equal(await scalar('select count(*)::int v from public.time_qr_independent_events'),4);
    await assert.rejects(desktop('STATUS',pcSession,{terminal:foreignId}),/abgelaufen/);
   });
+  await t.test('optional break timers survive device changes and replay, send once and cancel safely',async()=>{
+   await db.exec('begin');
+   try{
+    await db.exec(`alter table employees add column auth_user_id uuid;
+     update employees set auth_user_id='${O}',access_status='ACTIVE' where id='${E}';
+     create table public.push_subscriptions(user_id uuid,enabled boolean);
+     insert into push_subscriptions values('${O}',true);
+     create table public.notifications(id uuid primary key default gen_random_uuid(),company_id uuid,user_id uuid,employee_id uuid,kind text,title text,message text,link_view text,entity_type text,entity_id uuid,metadata jsonb);
+     create schema cron;
+     create function cron.schedule(text,text,text) returns bigint language sql as $$select 1::bigint$$;`);
+    const active=read('supabase/migrations/20261018100412_push_active_recipient_guard.sql');
+    await db.exec(active.slice(active.indexOf('create or replace function private.sf_push_recipient_active'),active.indexOf('create or replace function public.server_push_recipient_active')));
+    const timerMigration=fs.readdirSync(new URL('../supabase/migrations/',import.meta.url)).find(f=>f.endsWith('_qr_break_timer_reminders.sql'));
+    await db.exec(read('supabase/migrations/'+timerMigration));
+    const timer=(action='STATUS',minutes=null,request=token(),pc=false,session=pcSession)=>scalar('select public.qr_break_timer_request($1,$2,$3,$4,$5,$6) v',[pc?null:terminal,pc?terminalId:null,session,action,request,minutes]);
+    const denied=async(fn,re)=>{await db.exec('savepoint denied');try{await assert.rejects(fn,re)}finally{await db.exec('rollback to savepoint denied;release savepoint denied')}};
+    for(const role of ['anon','authenticated']){await db.exec('set role '+role);await denied(()=>timer(),/permission denied/);await root()}
+    await denied(()=>timer('BREAK_START',9),/auswählen/);
+    await denied(()=>timer('STATUS',10),/auswählen/);
+    await denied(()=>timer('STATUS',null,token(),false,token()),/abgelaufen/);
+    await timer('CLOCK_IN');
+    for(const minutes of [10,15,20,null]){
+     const request=token(),start=await timer('BREAK_START',minutes,request);
+     assert.equal(start.break_timer.planned_minutes,minutes);assert.equal(start.break_push_available,true);
+     if(minutes!==null)assert.equal(Date.parse(start.break_timer.ends_at)-Date.parse(start.break_timer.started_at),minutes*60000);
+     else assert.equal(start.break_timer.ends_at,null);
+     const replay=await timer('BREAK_START',minutes===10?20:10,request,true);
+     assert.equal(replay.replayed,true);assert.equal(replay.break_timer.planned_minutes,minutes);
+     assert.equal((await timer('STATUS',null,token(),true)).break_timer.planned_minutes,minutes);
+     assert.equal(await scalar('select private.sf_run_qr_break_reminders() v'),0);
+     if(minutes!==null){
+      await db.query("update time_qr_independent_breaks set started_at=clock_timestamp()-make_interval(mins=>$1)+interval '119 seconds' where ended_at is null",[minutes]);
+      assert.equal(await scalar('select private.sf_run_qr_break_reminders() v'),1);
+      assert.equal(await scalar('select private.sf_run_qr_break_reminders() v'),0);
+      const notification=await scalar('select id v from notifications order by ctid desc limit 1');
+      assert.ok(await scalar('select public.server_qr_break_reminder_expiry($1) v',[notification]));
+      await timer('BREAK_END');
+      assert.equal(await scalar('select public.server_qr_break_reminder_expiry($1) v',[notification]),null);
+     }else{await db.exec("update time_qr_independent_breaks set started_at=clock_timestamp()-interval '1 hour' where ended_at is null");assert.equal(await scalar('select private.sf_run_qr_break_reminders() v'),0);await timer('BREAK_END')}
+    }
+    assert.equal(await scalar('select count(*)::int v from notifications'),3);
+    // End before the reminder window: no later notification.
+    await timer('BREAK_START',10);await timer('BREAK_END');assert.equal(await scalar('select private.sf_run_qr_break_reminders() v'),0);
+    // Already elapsed targets do not create stale push, nor end a pause.
+    await timer('BREAK_START',10);await db.exec("update time_qr_independent_breaks set started_at=clock_timestamp()-interval '11 minutes' where ended_at is null");
+    assert.equal(await scalar('select private.sf_run_qr_break_reminders() v'),0);
+    assert.equal((await timer()).state,'BREAK');await timer('BREAK_END');
+    // Disabled users and devices cannot receive reminders even when due.
+    await timer('BREAK_START',10);await db.exec("update time_qr_independent_breaks set started_at=clock_timestamp()-interval '8 minutes 1 second' where ended_at is null;update push_subscriptions set enabled=false");
+    assert.equal(await scalar('select private.sf_run_qr_break_reminders() v'),0);
+    await db.exec("update push_subscriptions set enabled=true;update company_members set status='DISABLED' where user_id='"+O+"'");
+    assert.equal(await scalar('select private.sf_run_qr_break_reminders() v'),0);
+    await db.exec("update company_members set status='ACTIVE' where user_id='"+O+"'");
+    const renewed=token();await desktop('LOGIN',renewed);await timer('CLOCK_OUT',null,token(),false,renewed);assert.equal(await scalar('select private.sf_run_qr_break_reminders() v'),0);
+   }finally{await db.exec('rollback');await root()}
+  });
   await t.test('company PIN enforcement and PIN reset never reopen the desktop date route',async()=>{
    await db.exec('begin');
    try{
