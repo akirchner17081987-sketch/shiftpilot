@@ -45,21 +45,37 @@
     for(const a of p.base)addDuty(s,a,p.month);
     for(const r of records)commit(s,r,p.month);return s;
   }
-  function addDuty(s,a,month){const e=s.people.get(String(a.employeeId));if(!e)return;e.duties.push(a);e.days.add(a.day);e.byDay.set(a.day,a);const key=a.date.slice(0,7),m=e.months.get(key)||{hours:0,count:0};m.hours+=a.hours;if(!s.confirmedRules||solid.countsTowardCap(a))m.count++;e.months.set(key,m);if(s.burdenEnabled){const burden=e.burdens.get(key)||{weekends:0,nights:0,holidays:0},weekday=solid?.weekday?.(a.date)??(new Date(a.date+'T12:00:00Z').getUTCDay()||7);burden.weekends+=Number(weekday>=6);burden.nights+=Number(a.start>='18:00'||a.end<=a.start);burden.holidays+=Number(solid.holiday(a.date,s.employeeInfo.get(String(a.employeeId))||{},s.policy));e.burdens.set(key,burden);}if(key===month){e.hours=m.hours;e.monthDuties=m.count;}e.weeks.set(a.week,(e.weeks.get(a.week)||0)+a.hours)}
+  function addDuty(s,a,month){const e=s.people.get(String(a.employeeId));if(!e)return;e._revision=(e._revision||0)+1;e.duties.push(a);e.days.add(a.day);e.byDay.set(a.day,a);const key=a.date.slice(0,7),m=e.months.get(key)||{hours:0,count:0};m.hours+=a.hours;if(!s.confirmedRules||solid.countsTowardCap(a))m.count++;e.months.set(key,m);if(s.burdenEnabled){const burden=e.burdens.get(key)||{weekends:0,nights:0,holidays:0},weekday=solid?.weekday?.(a.date)??(new Date(a.date+'T12:00:00Z').getUTCDay()||7);burden.weekends+=Number(weekday>=6);burden.nights+=Number(a.start>='18:00'||a.end<=a.start);burden.holidays+=Number(solid.holiday(a.date,s.employeeInfo.get(String(a.employeeId))||{},s.policy));e.burdens.set(key,burden);}if(key===month){e.hours=m.hours;e.monthDuties=m.count;}e.weeks.set(a.week,(e.weeks.get(a.week)||0)+a.hours)}
   function commit(s,r,month){s.used.add(r.group.id);s.records.push(r);for(const a of r.option){s.remaining.set(a.resource,s.remaining.get(a.resource)-1);addDuty(s,a,month)}}
+  // Branch from an immutable search node: only the employee receiving a duty
+  // needs mutable personal indexes. Other employees share their unchanged state.
+  function forkState(s,employeeId){
+    const id=String(employeeId),x=s.people.get(id);if(!x)throw Error('Unknown planning employee');
+    const people=new Map(s.people);people.set(id,{...x,months:new Map([...x.months].map(([k,v])=>[k,{...v}])),burdens:new Map([...x.burdens].map(([k,v])=>[k,{...v}])),weeks:new Map(x.weeks),duties:x.duties.slice(),days:new Set(x.days),byDay:new Map(x.byDay)});
+    return {...s,remaining:new Map(s.remaining),used:new Set(s.used),records:s.records.slice(),people};
+  }
   function feasible(p,s,g,option){
-    const e=g.employee,x=s.people.get(String(e.id));if(!x)return false;
+    const x=s.people.get(String(g.employee.id));if(!x||option.some(a=>(s.remaining.get(a.resource)||0)<1))return false;
+    // This cache is local to one prepared, immutable company snapshot. Capacity
+    // stays outside it; committing any personal duty advances the revision.
+    const cache=p._personFeasibility||(p._personFeasibility=new WeakMap());let entry=cache.get(x);
+    if(!entry||entry.revision!==x._revision){entry={revision:x._revision,options:new WeakMap()};cache.set(x,entry);}
+    if(entry.options.has(option))return entry.options.get(option);
+    const valid=personFeasible(p,x,g,option);entry.options.set(option,valid);return valid;
+  }
+  function personFeasible(p,x,g,option){
+    const e=g.employee;
     const month=p.criticalPeriod?option[0].date.slice(0,7):p.month,current=p.criticalPeriod?(x.months.get(month)||{hours:0,count:0}):{hours:x.hours,count:x.monthDuties};
     const priority=priorityRule(e,p);if(priority&&(option.some(a=>a.type!==priority.code)||current.hours+option.hours>employeeShiftTarget(e,p)+.000001))return false;
     if(current.hours+option.hours>e.monthLimit+.000001||current.count+option.filter(a=>a.date.startsWith(month)).length>(e.maxMonthlyShifts??Infinity))return false;
-    if(Number.isFinite(e.calendarLimit)){const start=p.solidRules?solid.instant(month+'-01','00:00',p.solidRules.timezone):+new Date(month+'-01T00:00:00'),end=new Date(month+'-01T12:00:00Z');end.setUTCMonth(end.getUTCMonth()+1);const finish=p.solidRules?solid.instant(end.toISOString().slice(0,10),'00:00',p.solidRules.timezone):+new Date(end.toISOString().slice(0,10)+'T00:00:00');const h=[...x.duties,...option].reduce((n,a)=>n+Math.max(0,Math.min(a.endMs,finish)-Math.max(a.startMs,start))/hour,0);if(h>e.calendarLimit+.000001)return false;}
+    if(Number.isFinite(e.calendarLimit)){const start=p.solidRules?solid.instant(month+'-01','00:00',p.solidRules.timezone):+new Date(month+'-01T00:00:00'),end=new Date(month+'-01T12:00:00Z');end.setUTCMonth(end.getUTCMonth()+1);const finish=p.solidRules?solid.instant(end.toISOString().slice(0,10),'00:00',p.solidRules.timezone):+new Date(end.toISOString().slice(0,10)+'T00:00:00');const cache=p._calendarHours||(p._calendarHours=new WeakMap());let saved=cache.get(x);if(!saved||saved.revision!==x._revision){saved={revision:x._revision,months:new Map()};cache.set(x,saved);}let current=saved.months.get(month);if(current===undefined){current=x.duties.reduce((n,a)=>n+Math.max(0,Math.min(a.endMs,finish)-Math.max(a.startMs,start))/hour,0);saved.months.set(month,current);}const h=current+option.reduce((n,a)=>n+Math.max(0,Math.min(a.endMs,finish)-Math.max(a.startMs,start))/hour,0);if(h>e.calendarLimit+.000001)return false;}
     if(!solid?.confirmed(p.solidRules)&&p.respectHours&&e.weeklyLimit>0)for(const [w,h]of option.weeks)if((x.weeks.get(w)||0)+h>e.weeklyLimit+.000001)return false;
     if(p.accept&&!p.accept(e,x.duties,option))return false;
     if(p.individualConstraints&&e.individual){const first=Math.floor(Date.parse(p.month+'-01T12:00Z')/86400000),next=new Date(p.month+'-01T12:00Z');next.setUTCMonth(next.getUTCMonth()+1);if(!individual.personValid({base:[],start:first,end:Math.floor(+next/86400000)-1,respectHours:p.respectHours},e,[...x.duties,...option]))return false;}
     if(p.solidRules&&!solid.canAdd(e,x.byDay,option,p.solidRules))return false;
     const addedDays=new Set(),addedByDay=new Map(option.map(a=>[a.day,a]));
     const configuredDuration=Number(p.maxShiftHours),maxDuration=Number.isFinite(configuredDuration)&&configuredDuration>0?configuredDuration:10;
-    for(const a of option){if((s.remaining.get(a.resource)||0)<1||x.days.has(a.day)||addedDays.has(a.day)||a.hours>maxDuration+.000001)return false;addedDays.add(a.day);
+    for(const a of option){if(x.days.has(a.day)||addedDays.has(a.day)||a.hours>maxDuration+.000001)return false;addedDays.add(a.day);
       for(const day of [a.day-1,a.day+1]){const b=x.byDay.get(day)||addedByDay.get(day);if(!b)continue;
         if(a.day+1===b.day&&!transition(a.type,b.type,p.solidRules)||b.day+1===a.day&&!transition(b.type,a.type,p.solidRules))return false;
         if(a.startMs<b.endMs&&a.endMs>b.startMs)return false;
@@ -362,6 +378,6 @@
     const open=input.capacities.reduce((n,[key,count])=>n+Math.max(0,count-(used.get(key)||0)),0);
     return{preview,individualInput:freeInput,quality:{...found.quality,open},rows:input.employees.map(e=>{const hours=all.filter(a=>String(a.employeeId)===String(e.id)&&a.date.startsWith(input.month)).reduce((n,a)=>n+duty(a).hours,0);return{employeeId:e.id,target:e.target,planned:hours,missing:Math.max(0,e.target-hours),extra:Math.max(0,hours-e.target)}})};
   }
-  return{optimize,prepare,feasible,state,quality,duty,week,hoursCost,balancePreview,checkpointPrimitives:{priorityRule,monthlyPrioritySeed,fairOptionGain,balanceRecords,repairRecords,repairBlockExchanges,globalBeam,refineRecords,rosterChoice,commit,solidQuality,solidBetter,criticalOpen,teamLeaderBlockPenalty,teamLeaderOptionScore,teamLeaderTarget,teamLeaderWeekSeed}};
+  return{optimize,prepare,feasible,state,forkState,quality,duty,week,hoursCost,balancePreview,checkpointPrimitives:{priorityRule,monthlyPrioritySeed,fairOptionGain,balanceRecords,repairRecords,repairBlockExchanges,globalBeam,refineRecords,rosterChoice,commit,solidQuality,solidBetter,criticalOpen,teamLeaderBlockPenalty,teamLeaderOptionScore,teamLeaderTarget,teamLeaderWeekSeed}};
 });
 
