@@ -89,6 +89,13 @@ Deno.serve(async req => {
       }else output=best.result;
       }
     }
+    if(output){
+      const assessment=A.assess(prepared,output);
+      if(!assessment.canApply){
+        const pending=(assessment.hours?.rows||[]).filter((row:any)=>row.missing>(row.tolerance??0)+.001&&!row.approvedDeviation).length;
+        progress={percent:100,label:assessment.open||assessment.critical?'Entwurf mit offenen Pflichtdiensten':'Entwurf mit prüfpflichtigen Zielabweichungen',detail:assessment.open||assessment.critical?`${assessment.open} Pflichtpositionen offen · ${pending} SOLL-Abweichungen prüfen`:`Alle Pflichtpositionen besetzt · ${pending} SOLL-Abweichungen und die Verteilung prüfen`};
+      }
+    }
     computeMs=Math.round(performance.now()-computeStarted);
   } catch (error) {
     if(computeStarted)computeMs=Math.round(performance.now()-computeStarted);else preparationMs=Math.round(performance.now()-started);

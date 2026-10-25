@@ -24,7 +24,7 @@ function peerPairs(p){const buckets=new Map(),pairs=[];for(const e of p.people.v
 function peerQuality(p,s){const limit=Math.max(0,...p.base.map(a=>a.hours||0),...s.records.flatMap(r=>r.option.map(a=>a.hours))),gaps=peerPairs(p).map(([a,b])=>Math.abs(s.people.get(a).hours-s.people.get(b).hours));return{peerSpread:Math.max(0,...gaps),peerExcess:gaps.reduce((n,g)=>n+Math.max(0,g-limit),0)};}
 function better(a,b){for(const k of ['leaderOpen','critical','priorityDeficit','open','peerExcess','teamLeaderDeficit','imbalance','priorityPenalty','penalty','deficit']){const x=Number(a[k])||0,y=Number(b[k])||0;if(x<y-1e-6)return true;if(x>y+1e-6)return false;}return false;}
 function start(input,preview){
- const cp={version:1,pass:0,best:[],working:[],fixed:[],original:copyRows(preview),lastImprovement:0,initialOpen:0,improvements:0,maxPasses:256,status:'searching'};
+ const cp={version:1,pass:0,best:[],working:[],fixed:[],original:copyRows(preview),lastImprovement:0,initialOpen:0,improvements:0,maxPasses:128,status:'searching'};
  if(!S.confirmed(input.solidRules)||(input.solidRules.conditionalStaffing||[]).length||input.capacities.some(([k])=>k.endsWith('|OT-DAY'))||input.groups.reduce((n,g)=>n+g.options.length,0)>12000||input.capacities.length>200){cp.status='unsupported';return cp;}
  const p=prepared(input),excluded=excludedPeople(p);
  let cols=columns(p,excluded),by=new Map(cols.map((c,i)=>[c.sig,i]));
@@ -102,7 +102,7 @@ function context(input,cp){
     if(y.every((v,i)=>!integer[i]||Math.abs(v-Math.round(v))<1e-5)&&obj(y)<=obj(x)+1e-5&&valid(selected)){cp.working=selected;const q=score(selected),before=score(cp.best);if(better(q,before)){cp.best=selected.slice();cp.lastImprovement=cp.pass;cp.improvements++;}}
    }
   }finally{solver?.dispose();}
-  cp.pass++;const best=score(cp.best);if(cp.pass>=cp.maxPasses||best.open===0&&best.critical===0&&best.priorityDeficit===0&&best.teamLeaderDeficit<1e-6&&best.peerExcess<1e-6&&cp.pass-cp.lastImprovement>=12)cp.status=cp.pass>=cp.maxPasses?'limited':'complete';return true;
+  cp.pass++;const best=score(cp.best),allTargets=best.priorityDeficit===0&&best.teamLeaderDeficit<1e-6&&best.peerExcess<1e-6;if(cp.pass>=cp.maxPasses||best.open===0&&best.critical===0&&cp.pass-cp.lastImprovement>=(allTargets?12:48))cp.status=cp.pass>=cp.maxPasses?'limited':'complete';return true;
  }
  return{step,result:initial,model,columns:cols.length};
 }

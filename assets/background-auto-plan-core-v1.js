@@ -62,7 +62,8 @@
    const finish=()=>{const found=exchange.result();return acceptMonth({...found,quality:found.quality||{...cp.pendingQuality,blockExchange:{status:cp.exchange.status,passes:cp.exchange.pass,reason:cp.exchange.reason||null}}});};
    return{step:()=>false,exchangeStep:highs=>{if(cp.exchange.status==='searching')exchange.step(highs);if(cp.exchange.status!=='searching')return finish();return false;},stopExchange:reason=>{cp.exchange.status='unavailable';cp.exchange.reason=String(reason).slice(0,160);return finish();},progress:()=>progress(payload,cp),result:()=>result(payload,cp)};
   }
-  cp.solver=cp.solver||R.start(input,Math.max(input.solidRules.teamLeaderMinimumMonthlyHours!=null&&!input.criticalOnly?24:12,Math.min(48,Number(input.searchIterations)||12)));let runner=R.context(input,cp.solver);
+  const jointNightSearch=payload.enhancedBlockSearch&&payload.months.length===1&&!input.criticalOnly&&input.solidRules.teamLeaderMinimumMonthlyHours==null&&input.criticalCapacities?.some(([key,n])=>n>0&&key.endsWith('|TL'));
+  cp.solver=cp.solver||R.start(input,jointNightSearch?4:Math.max(input.solidRules.teamLeaderMinimumMonthlyHours!=null&&!input.criticalOnly?24:12,Math.min(48,Number(input.searchIterations)||12)));let runner=R.context(input,cp.solver);
   function step(){
    if(cp.stage==='done')return false;
    runner.step();cp.steps++;

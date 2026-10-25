@@ -83,3 +83,6 @@ test('month progress reports the ongoing critical search and an incomplete draft
  const progress=C.progress(p,cp);assert.match(progress.label,/Pflichtbesetzung/);assert.match(progress.detail,/1\/2.*Varianten 48\/96/);assert.ok(progress.percent>15&&progress.percent<40);
  cp.stage='done';cp.quality=[{critical:12}];assert.match(C.progress(p,cp).label,/offenen Pflichtdiensten/);assert.match(C.progress(p,cp).detail,/12 Pflichtpositionen/);
 });
+test('single-month night staffing uses four starts before the joint block exchange',()=>{
+ const p=payload();p.enhancedBlockSearch=true;p.monthInputs[0].criticalCapacities=[['2027-01-04|TL',1]];const cp=C.start(p);C.context(p,cp);assert.equal(cp.stage,'month');assert.equal(cp.solver.iterations,4);
+});
