@@ -53,7 +53,7 @@ Deno.serve(async req => {
     const prepared = core.withShiftDurationLimit(core.withServerWishes(job.payload, job.server_wishes), Number(policy.data.standard_max_shift_hours));
     const repairLevel=checkpoint?.repairLevel||0;
     const scoped=A.repairPayload(prepared,repairLevel);
-    const input = { ...scoped, boundedSearch, enhancedBlockSearch:!boundedSearch, minimumInput: { ...scoped.minimumInput, scopedBlockRecovery, boundedSearch, criticalBeamWidth:boundedSearch?16:undefined }, monthInputs: scoped.monthInputs.map((month: any) => ({ ...month, scopedBlockRecovery, boundedSearch, criticalBeamWidth:boundedSearch?16:undefined })) };
+    const input = { ...scoped, boundedSearch, enhancedBlockSearch:true, minimumInput: { ...scoped.minimumInput, scopedBlockRecovery, boundedSearch, criticalBeamWidth:boundedSearch?16:undefined }, monthInputs: scoped.monthInputs.map((month: any) => ({ ...month, scopedBlockRecovery, boundedSearch, criticalBeamWidth:boundedSearch?16:undefined })) };
     checkpoint = checkpoint || core.start(input);
     if(boundedSearch){checkpoint.boundedSearch=true;checkpoint.deadlineAt ||= (Number.isFinite(startedAt)?startedAt:Date.now())+105000;}
     const reuse=prepared.metadata.continuity?.reusable&&!checkpoint.repairBest&&!checkpoint.skipReuse;
@@ -72,7 +72,15 @@ Deno.serve(async req => {
     }else if(checkpoint.stage==='exchange'){
       // One solver slice per durable invocation. Its bounded synchronous CPU
       // time leaves headroom for cold starts, model checks and serialization.
-      try{if(checkpoint.exchange.status==='searching')run!.exchangeStep(await loadBlockSolver());else run!.exchangeStep(null);}catch(error){run!.stopExchange((error as Error)?.message||'Zusätzliche Suche nicht verfügbar; bester Vorschlag bleibt erhalten.');}
+      try{
+        if(boundedSearch&&Date.now()>=checkpoint.deadlineAt-2000)run!.limitExchange();
+        else if(checkpoint.exchange.status==='searching'){
+          const highs=await loadBlockSolver();
+          if(boundedSearch&&Date.now()>=checkpoint.deadlineAt-2000)run!.limitExchange();
+          else run!.exchangeStep(highs);
+        }
+        else run!.exchangeStep(null);
+      }catch(error){run!.stopExchange((error as Error)?.message||'Zusätzliche Suche nicht verfügbar; bester Vorschlag bleibt erhalten.');}
       steps++;
     }else if(boundedSearch&&(checkpoint.stage==='month'||checkpoint.stage==='minimum')&&Date.now()>=checkpoint.deadlineAt){
       checkpoint.timeLimited=true;

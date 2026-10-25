@@ -60,7 +60,7 @@
   if(cp.stage==='exchange'){
    if(!E)throw Error('Die erweiterte Blocksuche ist nicht geladen.');const exchange=E.context(input,cp.exchange);
    const finish=()=>{const found=exchange.result();return acceptMonth({...found,quality:found.quality||{...cp.pendingQuality,blockExchange:{status:cp.exchange.status,passes:cp.exchange.pass,reason:cp.exchange.reason||null}}});};
-   return{step:()=>false,exchangeStep:highs=>{if(cp.exchange.status==='searching')exchange.step(highs);if(cp.exchange.status!=='searching')return finish();return false;},stopExchange:reason=>{cp.exchange.status='unavailable';cp.exchange.reason=String(reason).slice(0,160);return finish();},progress:()=>progress(payload,cp),result:()=>result(payload,cp)};
+   return{step:()=>false,exchangeStep:highs=>{if(cp.exchange.status==='searching')exchange.step(highs,payload.boundedSearch?.18:.5);if(cp.exchange.status!=='searching')return finish();return false;},limitExchange:()=>{cp.exchange.status='limited';cp.exchange.reason='Zeitbudget der automatischen Blockreparatur erreicht.';return finish();},stopExchange:reason=>{cp.exchange.status='unavailable';cp.exchange.reason=String(reason).slice(0,160);return finish();},progress:()=>progress(payload,cp),result:()=>result(payload,cp)};
   }
   const jointNightSearch=payload.enhancedBlockSearch&&payload.months.length===1&&!input.criticalOnly&&input.solidRules.teamLeaderMinimumMonthlyHours==null&&input.criticalCapacities?.some(([key,n])=>n>0&&key.endsWith('|TL'));
   cp.solver=cp.solver||R.start(input,payload.boundedSearch?1:jointNightSearch?4:Math.max(input.solidRules.teamLeaderMinimumMonthlyHours!=null&&!input.criticalOnly?24:12,Math.min(48,Number(input.searchIterations)||12)));let runner=R.context(input,cp.solver);
@@ -70,7 +70,7 @@
    if(cp.solver.phase==='done'){
     const found=runner.result();
     if(cp.stage==='minimum'){cp.minimum=unique([...(payload.minimumInput.reserved||[]),...found.preview]);cp.stage='month';}
-    else if(payload.enhancedBlockSearch&&!payload.boundedSearch&&E){cp.exchange=E.start(input,found.preview);cp.pendingQuality=found.quality;cp.stage='exchange';cp.solver=null;return false;}
+    else if(payload.enhancedBlockSearch&&E&&(!payload.boundedSearch||found.quality?.open>0)&&(!payload.boundedSearch||!cp.deadlineAt||Date.now()<cp.deadlineAt-3000)){cp.exchange=E.start(input,found.preview);if(payload.boundedSearch)cp.exchange.maxPasses=Math.min(cp.exchange.maxPasses,40);cp.pendingQuality=found.quality;cp.stage='exchange';cp.solver=null;return false;}
     else if(acceptMonth(found))return true;
     cp.solver=null;return false; // Rebuild only at the next invocation, with the new immutable stage input.
    }return true;
