@@ -109,3 +109,10 @@ test('the bounded planner still fills a feasible monthly roster without a deadli
  assert.equal(result.preview.length,10);
  for(const employee of p.monthInputs[0].employees)assert.deepEqual(S.errors(employee,result.preview,rules),[]);
 });
+test('a multi-month deadline returns a clearly limited result for every requested month',()=>{
+ const a=input(),b=input('2027-02'),minimum={...a,criticalPeriod:true,groups:[...a.groups,...b.groups],capacities:[...a.capacities,...b.capacities],criticalCapacities:[...a.criticalCapacities,...b.criticalCapacities]};
+ const p={version:1,boundedSearch:true,months:[a.month,b.month],minimumInput:C.pack(minimum),monthInputs:[C.pack(a),C.pack(b)],metadata:{company:'one'}};
+ const cp=C.start(p);for(let n=0;n<=p.months.length&&cp.stage!=='done';n++)C.context(p,cp).finishEarly();
+ assert.equal(cp.stage,'done');assert.deepEqual(C.result(p,cp).months,p.months);
+ assert.equal(cp.quality.length,2);assert.ok(cp.quality.every(q=>q.searchLimited));
+});

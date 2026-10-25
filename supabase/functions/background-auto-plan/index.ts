@@ -74,8 +74,11 @@ Deno.serve(async req => {
       // time leaves headroom for cold starts, model checks and serialization.
       try{if(checkpoint.exchange.status==='searching')run!.exchangeStep(await loadBlockSolver());else run!.exchangeStep(null);}catch(error){run!.stopExchange((error as Error)?.message||'Zusätzliche Suche nicht verfügbar; bester Vorschlag bleibt erhalten.');}
       steps++;
-    }else if(boundedSearch&&checkpoint.stage==='month'&&Date.now()>=checkpoint.deadlineAt){
-      run!.finishEarly();steps++;
+    }else if(boundedSearch&&(checkpoint.stage==='month'||checkpoint.stage==='minimum')&&Date.now()>=checkpoint.deadlineAt){
+      checkpoint.timeLimited=true;
+      for(let n=0;n<=input.months.length&&checkpoint.stage!=='done';n++){
+        const partial=core.context(input,checkpoint);partial.finishEarly();steps++;
+      }
     }else {
       if(checkpoint.solver?.phase==='fill')console.info(JSON.stringify({event:'auto_plan_fill_enter',job_id:id,revision:job.revision,cursor:checkpoint.solver.cursor,records:checkpoint.solver.records?.length||0}));
       do {
@@ -105,6 +108,7 @@ Deno.serve(async req => {
         const pending=(assessment.hours?.rows||[]).filter((row:any)=>row.missing>(row.tolerance??0)+.001&&!row.approvedDeviation).length;
         progress={percent:100,label:assessment.open||assessment.critical?'Entwurf mit offenen Pflichtdiensten':'Entwurf mit prüfpflichtigen Zielabweichungen',detail:assessment.open||assessment.critical?`${assessment.open} Pflichtpositionen offen · ${pending} SOLL-Abweichungen prüfen`:`Alle Pflichtpositionen besetzt · ${pending} SOLL-Abweichungen und die Verteilung prüfen`};
       }
+      if(checkpoint.timeLimited)progress={...progress,label:'Zeitbudget erreicht · Entwurf prüfen',detail:'Zeitbudget erreicht · '+progress.detail};
     }
     computeMs=Math.round(performance.now()-computeStarted);
   } catch (error) {

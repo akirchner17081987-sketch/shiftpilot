@@ -76,6 +76,11 @@
    }return true;
   }
   function finishEarly(){
+   if(cp.stage==='minimum'){
+    const found=runner.finishEarly();
+    cp.minimum=unique([...(payload.minimumInput.reserved||[]),...found.preview]);cp.stage='month';cp.solver=null;
+    return false;
+   }
    if(cp.stage!=='month')return false;
    const found=runner.finishEarly();
    return acceptMonth(found);
