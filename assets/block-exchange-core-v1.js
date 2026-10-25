@@ -7,8 +7,12 @@ const C=M.checkpointPrimitives,H=3600000,D=86400000,key=a=>[a.employeeId,a.date,
 const copyRows=rows=>rows.map(a=>Object.fromEntries(['id','_dbId','employeeId','date','type','start','end','resource','blockId','rhythmOverride'].filter(k=>a[k]!==undefined).map(k=>[k,a[k]])));
 function prepared(input,fixed=[]){
  const wishes=W.optimizer(input.wishes||[],input.employees,input.preferenceBase||input.base,input.month,input.timezone||input.solidRules.timezone,input.learned||[],input.historyMonths??3,input.solidRules),capacity=new Map(input.capacities),critical=new Map(input.criticalCapacities||[]);
- for(const a of fixed){capacity.set(a.resource,(capacity.get(a.resource)||0)-1);if(critical.has(a.resource))critical.set(a.resource,Math.max(0,critical.get(a.resource)-1));}
- return M.prepare({...input,...wishes,base:[...input.base,...fixed],capacities:[...capacity],criticalCapacities:[...critical]});
+ // A reserved duty can be present in both input.base and the visible preview.
+ // Keep it in the returned preview, but count it only once in capacity and
+ // employee checks when the repair search freezes that employee.
+ const baseKeys=new Set(input.base.map(key)),additional=fixed.filter(a=>!baseKeys.has(key(a)));
+ for(const a of additional){capacity.set(a.resource,(capacity.get(a.resource)||0)-1);if(critical.has(a.resource))critical.set(a.resource,Math.max(0,critical.get(a.resource)-1));}
+ return M.prepare({...input,...wishes,base:[...input.base,...additional],capacities:[...capacity],criticalCapacities:[...critical]});
 }
 function excludedPeople(p){const ids=new Set();for(const e of p.people.values())if(C.priorityRule(e,p)||!p.groups.some(g=>String(g.employee.id)===String(e.id)))ids.add(String(e.id));return ids;}
 function columns(p,excluded){const out=[],seen=new Set(),base=M.state(p);p.groups.forEach((group,gi)=>{if(excluded.has(String(group.employee.id)))return;group.options.forEach((option,oi)=>{const rows=option.slice().sort((a,b)=>a.date.localeCompare(b.date)),sig=signature(rows);if(seen.has(sig)||!rows.length||rows.some((a,i)=>(p.capacity.get(a.resource)||0)<1||!a.date.startsWith(p.month)||i&&(a.date!==S.plus(rows[i-1].date,1)||a.startMs<rows[i-1].endMs+Math.max(11,Number(p.minRestHours)||11)*H-1))||p.accept&&!p.accept(group.employee,[],option)||base.people.get(String(group.employee.id)).duties.length&&!M.feasible(p,base,group,option))return;seen.add(sig);out.push({group,option,rows,ref:[gi,oi],sig});});});return out;}
