@@ -32,7 +32,8 @@
   return {score:Math.max(-12,Math.min(12,score)),reasons:[...new Set(reasons)]};
  }
  function optimizer(wishes,people,base,month,zone='Europe/Berlin',learned=[],historyMonths=3,rules={}){
-  const first=month.slice(0,7)+'-01',last=S.plus(monthNext(first),-1),histFrom=new Date(Date.UTC(+first.slice(0,4),+first.slice(5,7)-1-Math.max(0,Math.min(6,Number(historyMonths)||0)),1)).toISOString().slice(0,10),history=new Map(),groups=new Map();
+  const first=month.slice(0,7)+'-01',last=S.plus(monthNext(first),-1),histFrom=new Date(Date.UTC(+first.slice(0,4),+first.slice(5,7)-1-Math.max(0,Math.min(6,Number(historyMonths)||0)),1)).toISOString().slice(0,10),history=new Map(),groups=new Map(),peopleById=new Map(people.map(e=>[String(e.id),e])),wishesById=new Map();
+  for(const w of wishes){const id=String(w.employee_id),list=wishesById.get(id)||[];list.push(w);wishesById.set(id,list)}
   for(const e of people){const h=workload(base.filter(a=>String(a.employeeId)===String(e.id)&&(a.status==='PUBLISHED'||a._dbStatus==='PUBLISHED')&&!!(a.publishedAt||a.published_at)),histFrom,S.plus(first,-1),zone);history.set(String(e.id),h);const key=[...(e.shifts||[])].sort().join('|'),list=groups.get(key)||[];list.push(String(e.id));groups.set(key,list)}
   const comparisons=new Map();for(const ids of groups.values()){const hours=ids.reduce((n,id)=>n+history.get(id).hours,0),night=ids.reduce((n,id)=>n+history.get(id).night,0),weekend=ids.reduce((n,id)=>n+history.get(id).weekend,0);for(const id of ids)comparisons.set(id,{peers:ids.length,night:hours?night/hours:0,weekend:hours?weekend/hours:0});}
   const hourCarry={},targets=new Map(people.map(e=>[String(e.id),Number(e.target??e.monthlyHours??String((e.qualifications||[]).find(q=>String(q).startsWith('__sp:monthlyHours='))||'').split('=')[1])||(/^Vollzeit/i.test(e.employment||'')?180:Number(e.weeklyHours||40)*4.348)]));
@@ -41,11 +42,12 @@
    const ratio=observed.reduce((n,e)=>n+e.delta,0)/Math.max(1,observed.reduce((n,e)=>n+e.target,0));
    for(const e of observed)hourCarry[e.id]=Math.max(-e.cap,Math.min(e.cap,e.delta-e.target*ratio));
   }
-  const memo=new Map(),effect=(e,option)=>{const key=String(e.id)+'|'+option.map(a=>a.date+a.type+a.start+a.end).join(';');if(memo.has(key))return memo.get(key);let n=preferenceEffect(wishes,e.id,option,zone).score;const h=history.get(String(e.id)),avg=comparisons.get(String(e.id));if(h?.hours&&avg?.peers>1){const load=workload(option,first,last,zone);n-=(h.night/h.hours-avg.night)*load.night*2+(h.weekend/h.hours-avg.weekend)*load.weekend*2;}memo.set(key,n);return n};
+  const memo=new Map(),effect=(e,option,key=String(e.id)+'|'+option.map(a=>a.date+a.type+a.start+a.end).join(';'))=>{if(memo.has(key))return memo.get(key);let n=preferenceEffect(wishesById.get(String(e.id))||[],e.id,option,zone).score;const h=history.get(String(e.id)),avg=comparisons.get(String(e.id));if(h?.hours&&avg?.peers>1){const load=workload(option,first,last,zone);n-=(h.night/h.hours-avg.night)*load.night*2+(h.weekend/h.hours-avg.weekend)*load.weekend*2;}memo.set(key,n);return n};
+  const rowScore=a=>{const id=String(a.employeeId),key=id+'|'+a.date+a.type+a.start+a.end;return effect(peopleById.get(id)||{id},[a],key)};
   return {
-   accept:(e,own,option)=>option.every(a=>!conflict(wishes,e.id,a,zone)&&(!rules.approvedShiftWishesBinding||!wishes.some(w=>String(w.employee_id)===String(e.id)&&w.kind==='SHIFT'&&w.status==='ACCEPTED'&&a.date>=w.start_date&&a.date<=w.end_date&&a.type!==w.shift_code))),
+   accept:(e,own,option)=>{const ownWishes=wishesById.get(String(e.id))||[];return option.every(a=>!conflict(ownWishes,e.id,a,zone)&&(!rules.approvedShiftWishesBinding||!ownWishes.some(w=>w.kind==='SHIFT'&&w.status==='ACCEPTED'&&a.date>=w.start_date&&a.date<=w.end_date&&a.type!==w.shift_code)))},
    preferenceScore:(e,own,option)=>effect(e,option)+(learned.length?learnedEffect(learned,e.id,[...base,...own],option).score:0),
-   preferencePenalty:rows=>-rows.filter(a=>a.date>=first&&a.date<=last).reduce((n,a)=>n+effect(people.find(e=>String(e.id)===String(a.employeeId))||{id:a.employeeId},[a]),0)-(learned.length?rows.filter(a=>a.date>=first&&a.date<=last).reduce((n,a)=>n+learnedEffect(learned,a.employeeId,rows,[a]).score,0):0),
+   preferencePenalty:rows=>{const current=rows.filter(a=>a.date>=first&&a.date<=last);return-current.reduce((n,a)=>n+rowScore(a),0)-(learned.length?current.reduce((n,a)=>n+learnedEffect(learned,a.employeeId,rows,[a]).score,0):0)},
    learned, wishes, hourCarry:rules.hourBalanceCarry===false?{}:hourCarry
   };
  }

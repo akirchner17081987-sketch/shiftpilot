@@ -28,13 +28,20 @@ Deno.serve(async req => {
   try { id = (await req.json()).job_id; } catch { return json({ error: "INVALID_REQUEST" }, 400); }
   if (!uuid.test(id)) return json({ error: "INVALID_REQUEST" }, 400);
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false, autoRefreshToken: false } });
+  const requestStarted = performance.now();
   const claimed = await admin.rpc("claim_background_auto_plan", { p_job_id: id, p_worker_token: token });
+  const claimMs = Math.round(performance.now() - requestStarted);
   if (claimed.error) return json({ error: "UNAUTHENTICATED" }, 401);
   const job = claimed.data;
   if (!job) return json({ status: "NOT_CLAIMED" });
   const started = performance.now();
+  const stageBefore=job.checkpoint?.stage||"new";
+  const intervalMs=(value: string | null | undefined)=>{const stamp=Date.parse(value||"");return Number.isFinite(stamp)?Math.max(0,Date.now()-stamp):null;};
+  const betweenStepsMs=intervalMs(job.previous_update_at),dispatchMs=intervalMs(job.dispatched_at);
+  let preparationMs=0,computeMs=0,computeStarted=0;
   let checkpoint = job.checkpoint, output = null, failure = null, progress = null, steps = 0;
   try {
+    const preparationStarted=performance.now();
     const policy = await admin.from("company_compliance_policy").select("standard_max_shift_hours").eq("company_id", job.payload.metadata.company).single();
     if (policy.error || !policy.data) throw new Error("Die Schichtdauer des Unternehmens konnte nicht geladen werden.");
     // Shared search capability; eligibility and hard rules come from this job's company.
@@ -46,6 +53,7 @@ Deno.serve(async req => {
     checkpoint = checkpoint || core.start(input);
     const reuse=prepared.metadata.continuity?.reusable&&!checkpoint.repairBest&&!checkpoint.skipReuse;
     const run = reuse?null:core.context(input, checkpoint), slice = performance.now();
+    preparationMs=Math.round(slice-preparationStarted);computeStarted=slice;
     let audited:any=null;
     // Leave headroom for preparation, JSON, database calls and cold starts. Each
     // saved call can be retried after a lease expires without losing prior work.
@@ -81,12 +89,15 @@ Deno.serve(async req => {
       }else output=best.result;
       }
     }
+    computeMs=Math.round(performance.now()-computeStarted);
   } catch (error) {
+    if(computeStarted)computeMs=Math.round(performance.now()-computeStarted);else preparationMs=Math.round(performance.now()-started);
     failure = String((error as Error)?.message || "Die Planung konnte nicht abgeschlossen werden.").slice(0, 1000);
     progress = { label: "Planung nicht abgeschlossen", detail: "Bitte den Auftrag prüfen und bei Bedarf neu starten." };
   }
+  const saveStarted=performance.now();
   const saved = await admin.rpc("save_background_auto_plan_step", { p_job_id: id, p_lease: job.lease, p_revision: job.revision, p_checkpoint: checkpoint, p_progress: progress, p_result: output, p_error: failure });
   if (saved.error) return json({ error: "CHECKPOINT_NOT_SAVED" }, 503);
-  console.info(JSON.stringify({ job_id: id, revision: job.revision, steps, stage: checkpoint?.stage, elapsed_ms: Math.round(performance.now() - started), region: Deno.env.get("SB_REGION"), committed: saved.data }));
+  console.info(JSON.stringify({ event:"auto_plan_slice",job_id:id,revision:job.revision,steps,stage_before:stageBefore,stage_after:checkpoint?.stage,phase:checkpoint?.solver?.phase||null,percent:progress?.percent??null,timing_ms:{claim:claimMs,preparation:preparationMs,compute:computeMs,save:Math.round(performance.now()-saveStarted),between_steps:betweenStepsMs,dispatch:dispatchMs,total:Math.round(performance.now()-requestStarted)},region:Deno.env.get("SB_REGION"),committed:saved.data }));
   return json({ committed: saved.data, finished: !!output, failed: !!failure });
 });

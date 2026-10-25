@@ -34,13 +34,15 @@ function context(input,cp){
       const key=component.keys[cp.key],candidates=[],seen=new Set();
       for(const r of byResource.get(key)||[]){if(r.option.length!==1&&!r.group.fullWorkRest)continue;const a=r.option[0],id=String(a.employeeId)+'|'+a.start+'|'+a.end;if(seen.has(id))continue;seen.add(id);candidates.push(r)}
       if(p.preferenceScore)candidates.sort((a,b)=>p.preferenceScore(b.group.employee,[],b.option)-p.preferenceScore(a.group.employee,[],a.option));
-      const work=cp.criticalWork||(cp.criticalWork={index:0,pool:[]}),next=[];
+      const work=cp.criticalWork||(cp.criticalWork={index:0,pool:[]}),next=[],date=key.split('|')[0],day=Math.floor(Date.parse(date+'T12:00:00Z')/86400000);
+      const fragment=(s,id)=>{const x=s.people.get(id),month=x.months.get(date.slice(0,7))||{hours:0,count:0};return id+':'+month.hours+':'+month.count+':'+x.duties.filter(a=>a.day>=day-8&&a.day<=day).map(a=>a.date+a.type).sort().join(',')};
       const batch=cp.beam.slice(work.index,work.index+2);for(const b of batch){const s=C.state(p,decode(b.records)),need=C.criticalOpen(p,s,key);
-        function choose(s,at,left){if(!left||at===candidates.length){next.push({records:encode(s.records),missing:b.missing+left,_state:s});return}for(let i=at;i<candidates.length;i++){const r=candidates[i];if(s.used.has(r.group.id)||!allowed(s,r))continue;const n=C.forkState(s,r.group.employee.id);C.commit(n,r,p.month);choose(n,i+1,left-1)}next.push({records:encode(s.records),missing:b.missing+left,_state:s});}
+        const baseline=component.ids.map(id=>fragment(s,id)),touched=new Set(),signature=()=>component.ids.map((id,i)=>touched.has(id)?fragment(s,id):baseline[i]).join(';');
+        function choose(s,at,left){if(!left||at===candidates.length){next.push({records:encode(s.records),missing:b.missing+left,signature:signature()});return}for(let i=at;i<candidates.length;i++){const r=candidates[i];if(s.used.has(r.group.id)||!allowed(s,r))continue;const ids=[...new Set(r.option.map(a=>String(a.employeeId)))],added=ids.filter(id=>!touched.has(id));for(const id of added)touched.add(id);let undo;try{undo=C.commitReversible(p,s,r,p.month);choose(s,i+1,left-1)}finally{undo?.();for(const id of added)touched.delete(id)}}next.push({records:encode(s.records),missing:b.missing+left,signature:signature()});}
         choose(s,0,need);
       }
-      const date=key.split('|')[0],day=Math.floor(Date.parse(date+'T12:00:00Z')/86400000),unique=new Map(work.pool.map(b=>[b.signature,b]));
-      for(const b of next){const s=b._state||C.state(p,decode(b.records));const signature=component.ids.map(id=>{const x=s.people.get(id),month=x.months.get(date.slice(0,7))||{hours:0,count:0};return id+':'+month.hours+':'+month.count+':'+x.duties.filter(a=>a.day>=day-8&&a.day<=day).map(a=>a.date+a.type).sort().join(',')}).join(';');const previous=unique.get(signature);if(!previous||b.missing<previous.missing)unique.set(signature,{records:b.records,missing:b.missing,signature});}
+      const unique=new Map(work.pool.map(b=>[b.signature,b]));
+      for(const b of next){const previous=unique.get(b.signature);if(!previous||b.missing<previous.missing)unique.set(b.signature,b);}
       // Sorting compares the same partial plan many times. Persist its scores
       // with the checkpoint so resumed batches do not score it again.
       const leaderPenalty=b=>b.teamLeaderBlockPenalty??=C.teamLeaderBlockPenalty(p,decode(b.records));

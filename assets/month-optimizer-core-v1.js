@@ -47,6 +47,19 @@
   }
   function addDuty(s,a,month){const e=s.people.get(String(a.employeeId));if(!e)return;e._revision=(e._revision||0)+1;e.duties.push(a);e.days.add(a.day);e.byDay.set(a.day,a);const key=a.date.slice(0,7),m=e.months.get(key)||{hours:0,count:0};m.hours+=a.hours;if(!s.confirmedRules||solid.countsTowardCap(a))m.count++;e.months.set(key,m);if(s.burdenEnabled){const burden=e.burdens.get(key)||{weekends:0,nights:0,holidays:0},weekday=solid?.weekday?.(a.date)??(new Date(a.date+'T12:00:00Z').getUTCDay()||7);burden.weekends+=Number(weekday>=6);burden.nights+=Number(a.start>='18:00'||a.end<=a.start);burden.holidays+=Number(solid.holiday(a.date,s.employeeInfo.get(String(a.employeeId))||{},s.policy));e.burdens.set(key,burden);}if(key===month){e.hours=m.hours;e.monthDuties=m.count;}e.weeks.set(a.week,(e.weeks.get(a.week)||0)+a.hours)}
   function commit(s,r,month){s.used.add(r.group.id);s.records.push(r);for(const a of r.option){s.remaining.set(a.resource,s.remaining.get(a.resource)-1);addDuty(s,a,month)}}
+  // Explore a candidate in place, then restore every affected index and the
+  // corresponding personal caches for the parent branch.
+  function commitReversible(p,s,r,month){
+    const saved=(map,keys,copy=v=>v)=>[...new Set(keys)].map(key=>[key,map.has(key),map.has(key)&&!(map instanceof Set)?copy(map.get(key)):undefined]);
+    const restore=(map,entries)=>{for(const [key,had,value]of entries)if(had){if(map instanceof Set)map.add(key);else map.set(key,value);}else map.delete(key);};
+    const remaining=saved(s.remaining,r.option.map(a=>a.resource)),used=s.used.has(r.group.id),length=s.records.length,people=[];
+    for(const id of new Set(r.option.map(a=>String(a.employeeId)))){
+      const x=s.people.get(id);if(!x)continue;const duties=r.option.filter(a=>String(a.employeeId)===id);
+      people.push({x,hours:x.hours,monthDuties:x.monthDuties,length:x.duties.length,revision:x._revision,hadRevision:Object.hasOwn(x,'_revision'),feasibility:p._personFeasibility?.get(x),calendar:p._calendarHours?.get(x),days:saved(x.days,duties.map(a=>a.day)),byDay:saved(x.byDay,duties.map(a=>a.day)),months:saved(x.months,duties.map(a=>a.date.slice(0,7)),v=>({...v})),burdens:saved(x.burdens,duties.map(a=>a.date.slice(0,7)),v=>({...v})),weeks:saved(x.weeks,duties.map(a=>a.week))});
+    }
+    commit(s,r,month);
+    return()=>{s.records.length=length;if(!used)s.used.delete(r.group.id);restore(s.remaining,remaining);for(const prior of people){const x=prior.x;x.hours=prior.hours;x.monthDuties=prior.monthDuties;x.duties.length=prior.length;restore(x.days,prior.days);restore(x.byDay,prior.byDay);restore(x.months,prior.months);restore(x.burdens,prior.burdens);restore(x.weeks,prior.weeks);if(prior.hadRevision)x._revision=prior.revision;else delete x._revision;for(const [cache,entry]of [[p._personFeasibility,prior.feasibility],[p._calendarHours,prior.calendar]])if(cache){if(entry)cache.set(x,entry);else cache.delete(x);}}};
+  }
   // Branch from an immutable search node: only the employee receiving a duty
   // needs mutable personal indexes. Other employees share their unchanged state.
   function forkState(s,employeeId){
@@ -381,6 +394,6 @@
     const open=input.capacities.reduce((n,[key,count])=>n+Math.max(0,count-(used.get(key)||0)),0);
     return{preview,individualInput:freeInput,quality:{...found.quality,open},rows:input.employees.map(e=>{const hours=all.filter(a=>String(a.employeeId)===String(e.id)&&a.date.startsWith(input.month)).reduce((n,a)=>n+duty(a).hours,0);return{employeeId:e.id,target:e.target,planned:hours,missing:Math.max(0,e.target-hours),extra:Math.max(0,hours-e.target)}})};
   }
-  return{optimize,prepare,feasible,state,forkState,quality,duty,week,hoursCost,balancePreview,checkpointPrimitives:{priorityRule,monthlyPrioritySeed,fairOptionGain,balanceRecords,repairRecords,repairBlockExchanges,globalBeam,refineRecords,rosterChoice,commit,solidQuality,solidBetter,criticalOpen,teamLeaderBlockPenalty,teamLeaderOptionScore,teamLeaderTarget,teamLeaderWeekSeed}};
+  return{optimize,prepare,feasible,state,forkState,quality,duty,week,hoursCost,balancePreview,checkpointPrimitives:{priorityRule,monthlyPrioritySeed,fairOptionGain,balanceRecords,repairRecords,repairBlockExchanges,globalBeam,refineRecords,rosterChoice,commit,commitReversible,solidQuality,solidBetter,criticalOpen,teamLeaderBlockPenalty,teamLeaderOptionScore,teamLeaderTarget,teamLeaderWeekSeed}};
 });
 

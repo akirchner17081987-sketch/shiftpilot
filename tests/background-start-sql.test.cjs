@@ -1,5 +1,5 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{PGlite}=require('@electric-sql/pglite');
-const root=path.resolve(__dirname,'..'),migration=fs.readFileSync(path.join(root,'supabase/migrations/20261013032457_background_plan_start_payload_efficiency.sql'),'utf8');
+const root=path.resolve(__dirname,'..'),migration=fs.readFileSync(path.join(root,'supabase/migrations/20261013032457_background_plan_start_payload_efficiency.sql'),'utf8'),timingMigration=fs.readFileSync(path.join(root,'supabase/migrations/20261025004711_background_plan_timing.sql'),'utf8');
 const cid='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',uid='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',eid='cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 const bootstrap=`create schema private;create schema auth;create role anon;create role authenticated;create role service_role;
 create function auth.uid() returns uuid language sql as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
@@ -24,9 +24,10 @@ insert into public.planning_wishes values(gen_random_uuid(),'${cid}','${eid}','S
 select set_config('request.jwt.claim.sub','${uid}',false);`;
 function payload(){const input={solidRules:{enabled:true},employees:[{id:'local-employee'}],groups:[],candidates:[],wishes:[]};return{version:1,months:['2027-01'],minimumInput:input,monthInputs:[input],metadata:{company:cid,fingerprint:'snapshot'}};}
 test('start keeps the solver graph immutable, stores server wishes separately and enforces tenant/rule/employee guards',async()=>{
- const db=new PGlite();try{await db.exec(bootstrap);await db.exec(migration);const original=payload(),start=p=>db.query('select private.sf_start_background_auto_plan($1,gen_random_uuid(),$2::jsonb) as job',[cid,JSON.stringify(p)]);const r=await start(original);const id=r.rows[0].job.id;
+ const db=new PGlite();try{await db.exec(bootstrap);await db.exec(migration);await db.exec(timingMigration);const original=payload(),start=p=>db.query('select private.sf_start_background_auto_plan($1,gen_random_uuid(),$2::jsonb) as job',[cid,JSON.stringify(p)]);const r=await start(original);const id=r.rows[0].job.id;
  const stored=(await db.query('select payload,server_wishes,worker_token from private.background_auto_plan_jobs where id=$1',[id])).rows[0];assert.deepEqual(stored.payload,original);assert.equal(stored.server_wishes[0].comment,undefined);assert.equal(stored.server_wishes[0].employee_id,'local-employee');
- const claimed=(await db.query('select private.sf_claim_background_auto_plan($1,$2) as job',[id,stored.worker_token])).rows[0].job;assert.deepEqual(claimed.server_wishes,stored.server_wishes);assert.deepEqual(claimed.payload,original);
+ await db.query("update private.background_auto_plan_jobs set dispatched_at=now()-interval '2 seconds' where id=$1",[id]);
+ const claimed=(await db.query('select private.sf_claim_background_auto_plan($1,$2) as job',[id,stored.worker_token])).rows[0].job;assert.deepEqual(claimed.server_wishes,stored.server_wishes);assert.deepEqual(claimed.payload,original);assert.ok(Date.parse(claimed.previous_update_at)>0);assert.ok(Date.parse(claimed.dispatched_at)>0);
  await assert.rejects(()=>db.query('select private.sf_claim_background_auto_plan($1,gen_random_uuid())',[id]),/Ungültiger Workerzugang/);
  await db.query("update private.background_auto_plan_jobs set status='CANCELLED' where id=$1",[id]);
  const wrong=payload();wrong.monthInputs[0]={...wrong.monthInputs[0],employees:[{id:'foreign-employee'}]};await assert.rejects(()=>start(wrong),/Mitarbeiter gehört/);
