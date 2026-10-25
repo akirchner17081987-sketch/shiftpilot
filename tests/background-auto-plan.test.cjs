@@ -78,6 +78,12 @@ test('wide critical search saves bounded beam slices and resumes inside one staf
  const before=JSON.parse(JSON.stringify(cp));assert.deepEqual(before.criticalWork.pool,cp.criticalWork.pool);function finish(state,serialize){let steps=0;while(state.phase!=='done'){R.context(input,state).step();if(serialize)state=JSON.parse(JSON.stringify(state));assert.ok(++steps<200);}return R.context(input,state).result();}
  const uninterrupted=finish(cp,false),resumed=finish(before,true);assert.deepEqual(resumed,uninterrupted);assert.equal(resumed.preview.length,6);assert.equal(resumed.quality.critical,0);
 });
+test('wide fill selection resumes across checkpoints without changing the chosen duty',()=>{
+ const date='2030-02-04',employees=Array.from({length:10},(_,i)=>({id:'fill-'+i,target:160,monthLimit:200,weeklyLimit:55,shifts:['DAY']})),input={month:'2030-02',employees,base:[],respectHours:true,solidRules:rules,capacities:[[date+'|DAY',1]],criticalCapacities:[],groups:employees.map(e=>({id:e.id+'|'+date,employee:e,options:[[{employeeId:e.id,date,type:'DAY',start:'07:00',end:'15:00',resource:date+'|DAY'}]]}))};
+ const cp=R.start(input,1);cp.phase='iteration-start';R.context(input,cp).step();R.context(input,cp).step();assert.equal(cp.fillWork.index,4);const resumed=JSON.parse(JSON.stringify(cp));
+ function finish(state,serialize){let steps=0;while(state.phase!=='done'){R.context(input,state).step();if(serialize)state=JSON.parse(JSON.stringify(state));assert.ok(++steps<200);}return R.context(input,state).result();}
+ assert.deepEqual(finish(resumed,true),finish(cp,false));
+});
 test('month progress reports the ongoing critical search and an incomplete draft explicitly',()=>{
  const p=payload(),cp=C.start(p);assert.equal(cp.stage,'month');cp.solver={phase:'critical',component:0,key:1,components:[{keys:['2027-01-01|TL','2027-01-02|TL']}],beam:Array(96).fill(null),criticalWork:{index:48}};
  const progress=C.progress(p,cp);assert.match(progress.label,/Pflichtbesetzung/);assert.match(progress.detail,/1\/2.*Varianten 48\/96/);assert.ok(progress.percent>15&&progress.percent<40);

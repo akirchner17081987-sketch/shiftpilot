@@ -69,12 +69,15 @@ Deno.serve(async req => {
       // time leaves headroom for cold starts, model checks and serialization.
       try{if(checkpoint.exchange.status==='searching')run!.exchangeStep(await loadBlockSolver());else run!.exchangeStep(null);}catch(error){run!.stopExchange((error as Error)?.message||'Zusätzliche Suche nicht verfügbar; bester Vorschlag bleibt erhalten.');}
       steps++;
-    }else do {
+    }else {
+      if(checkpoint.solver?.phase==='fill')console.info(JSON.stringify({event:'auto_plan_fill_enter',job_id:id,revision:job.revision,cursor:checkpoint.solver.cursor,records:checkpoint.solver.records?.length||0}));
+      do {
       const recovering = checkpoint.solver?.phase === "block-recovery";
       steps++; if (!run!.step()) break;
       // One bounded exchange per invocation keeps CPU use below the Edge limit.
       if (recovering || checkpoint.solver?.phase === "block-recovery" || checkpoint.stage==='exchange') break;
-    } while (checkpoint.stage !== "done" && performance.now() - slice < 700 && steps < 1000);
+      } while (checkpoint.stage !== "done" && performance.now() - slice < (checkpoint.solver?.phase==='fill'?300:700) && steps < (checkpoint.solver?.phase==='fill'?64:1000));
+    }
     progress = core.progress(input,checkpoint);
     if (checkpoint.stage === "done") {
       output=output||run!.result();output.repairScope=output.repairScope||input.metadata.repairScope||null;
