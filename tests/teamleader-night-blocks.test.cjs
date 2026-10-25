@@ -33,6 +33,7 @@ test('leader two full recovery days allow Monday restart, Sunday stays blocked a
 });
 test('monthly leader targets improve selection without sacrificing critical coverage',()=>{
  const better=core.checkpointPrimitives.solidBetter,a={critical:0,open:0,penalty:100,deficit:40,teamLeaderDeficit:0},b={critical:0,open:0,penalty:0,deficit:40,teamLeaderDeficit:10};assert.equal(better(a,b),true);assert.equal(better({...a,critical:1},b),false);
+ assert.equal(better({...a,leaderOpen:0,critical:13,open:13},{...b,leaderOpen:12,critical:12,open:12}),true);
 });
 test('new SQL recovery override is role-scoped and preserves ordinary and OT settings',async()=>{
  const db=new PGlite();try{await db.exec(`create schema private;create table public.employees(id uuid,company_id uuid,role text,employment text,weekly_hours numeric,qualifications text[],shift_permissions text[]);create function private.sf_month_meta(q text[],k text) returns text language sql as $$select null::text$$;`);

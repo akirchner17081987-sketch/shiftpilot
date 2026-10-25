@@ -73,8 +73,13 @@ test('wide critical search saves bounded beam slices and resumes inside one staf
  const dates=['2030-02-04','2030-02-05'],employees=Array.from({length:10},(_,i)=>({id:'fixture-'+i,target:160,monthLimit:200,weeklyLimit:55,shifts:['DAY']}));
  const input={month:'2030-02',employees,base:[],respectHours:true,solidRules:rules,criticalOnly:true,capacities:dates.map(d=>[d+'|DAY',3]),criticalCapacities:dates.map(d=>[d+'|DAY',3]),groups:employees.flatMap(e=>dates.map(date=>({id:e.id+'|'+date,employee:e,options:[[{employeeId:e.id,date,type:'DAY',start:'07:00',end:'15:00',resource:date+'|DAY'}]]})))};
  let cp=R.start(input);R.context(input,cp).step();assert.equal(cp.key,1);assert.equal(cp.beam.length,96);
- R.context(input,cp).step();assert.equal(cp.key,1);assert.equal(cp.criticalWork.index,2);assert.ok(cp.criticalWork.pool.length<=96);
+ R.context(input,cp).step();assert.equal(cp.key,1);assert.equal(cp.criticalWork.index,8);assert.ok(cp.criticalWork.pool.length<=96);
  assert.ok(cp.criticalWork.pool.some(b=>Number.isFinite(b.teamLeaderBlockPenalty)&&Number.isFinite(b.preferencePenalty)));
  const before=JSON.parse(JSON.stringify(cp));assert.deepEqual(before.criticalWork.pool,cp.criticalWork.pool);function finish(state,serialize){let steps=0;while(state.phase!=='done'){R.context(input,state).step();if(serialize)state=JSON.parse(JSON.stringify(state));assert.ok(++steps<200);}return R.context(input,state).result();}
  const uninterrupted=finish(cp,false),resumed=finish(before,true);assert.deepEqual(resumed,uninterrupted);assert.equal(resumed.preview.length,6);assert.equal(resumed.quality.critical,0);
+});
+test('month progress reports the ongoing critical search and an incomplete draft explicitly',()=>{
+ const p=payload(),cp=C.start(p);assert.equal(cp.stage,'month');cp.solver={phase:'critical',component:0,key:1,components:[{keys:['2027-01-01|TL','2027-01-02|TL']}],beam:Array(96).fill(null),criticalWork:{index:48}};
+ const progress=C.progress(p,cp);assert.match(progress.label,/Pflichtbesetzung/);assert.match(progress.detail,/1\/2.*Varianten 48\/96/);assert.ok(progress.percent>15&&progress.percent<40);
+ cp.stage='done';cp.quality=[{critical:12}];assert.match(C.progress(p,cp).label,/offenen Pflichtdiensten/);assert.match(C.progress(p,cp).detail,/12 Pflichtpositionen/);
 });

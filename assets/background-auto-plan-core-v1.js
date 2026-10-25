@@ -37,7 +37,7 @@
   for(const input of [payload.minimumInput,...payload.monthInputs]){if(!Array.isArray(input.employees)||input.employees.length>300||!Array.isArray(input.groups)||input.groups.length>12000||!Array.isArray(input.candidates)||input.candidates.length>40000||!Array.isArray(input.capacities)||input.capacities.length>12000)throw Error('Der Planungsauftrag ist zu groß. Bitte einen kürzeren Zeitraum wählen.');const ids=new Set(input.employees.map(e=>String(e.id)));if(input.groups.some(g=>!ids.has(String(g.employeeId))||!Array.isArray(g.options)||g.options.length>128||g.options.some(o=>!Array.isArray(o)||o.length>6||o.some(i=>!Number.isInteger(i)||i<0||i>=input.candidates.length))))throw Error('Ungültige Mitarbeiter oder Schichtoptionen.');}
   return true;
  }
- function start(payload){check(payload);return {version,stage:'minimum',monthIndex:0,solver:null,minimum:[],proposed:[],quality:[],steps:0};}
+ function start(payload){check(payload);return {version,stage:payload.months.length===1?'month':'minimum',monthIndex:0,solver:null,minimum:[],proposed:[],quality:[],steps:0};}
  function materialize(payload,cp){
   if(cp.stage==='minimum'){
    const input=unpack(payload.minimumInput),critical=new Set(input.criticalCapacities.map(([key])=>key));
@@ -77,12 +77,14 @@
   return {step,progress:()=>progress(payload,cp),result:()=>result(payload,cp)};
  }
  function progress(payload,cp){
-  if(cp.stage==='done')return {percent:100,label:'Planung abgeschlossen',detail:'Die Vorschläge sind zur Prüfung bereit.'};
+  if(cp.stage==='done'){const missing=(cp.quality||[]).reduce((n,q)=>n+(q?.critical||0),0);return missing?{percent:100,label:'Entwurf mit offenen Pflichtdiensten',detail:missing+' Pflichtpositionen sind noch unbesetzt. Der Entwurf muss geprüft werden.'}:{percent:100,label:'Planung abgeschlossen',detail:'Die Vorschläge sind zur Prüfung bereit.'};}
   if(cp.stage==='minimum'){const total=cp.solver?.components?.reduce((n,c)=>n+c.keys.length,0)||1,done=cp.solver?.components?.slice(0,cp.solver.component).reduce((n,c)=>n+c.keys.length,0)+(cp.solver?.key||0);return {percent:Math.min(15,Math.floor((done||0)/total*15)),label:'Pflichtbesetzung verteilen',detail:'Pflichtschichten · '+(done||0)+'/'+total+' Pflichtpositionen geprüft'+(cp.solver?.criticalWork?' · Varianten '+cp.solver.criticalWork.index+'/'+cp.solver.beam.length:'' )};}
-  if(cp.stage==='exchange')return{percent:99,label:'Arbeitsblöcke gemeinsam optimieren',detail:payload.months[cp.monthIndex]+' · '+cp.exchange.pass+'/'+cp.exchange.maxPasses+' Tauschvarianten geprüft · bester geprüfter Vorschlag bleibt erhalten'};
-  if(cp.solver?.phase==='refine'||cp.solver?.phase==='block-recovery')return {percent:99,label:'Arbeitsblöcke nachbessern',detail:payload.months[cp.monthIndex]+' · '+(cp.solver.refineCursor||0)+'/'+(cp.solver.refineRoots?.length||0)+' offene Positionen geprüft'};
+  const position=fraction=>Math.min(99,15+Math.floor((cp.monthIndex+fraction)/payload.months.length*84));
+  if(cp.stage==='exchange')return{percent:position(.99),label:'Arbeitsblöcke gemeinsam optimieren',detail:payload.months[cp.monthIndex]+' · '+cp.exchange.pass+'/'+cp.exchange.maxPasses+' Tauschvarianten geprüft · bester geprüfter Vorschlag bleibt erhalten'};
+  if(cp.solver?.phase==='refine'||cp.solver?.phase==='block-recovery')return {percent:position(.95),label:'Arbeitsblöcke nachbessern',detail:payload.months[cp.monthIndex]+' · '+(cp.solver.refineCursor||0)+'/'+(cp.solver.refineRoots?.length||0)+' offene Positionen geprüft'};
+  if(cp.solver?.phase==='critical'){const solver=cp.solver,total=solver.components?.reduce((n,c)=>n+c.keys.length,0)||1,done=(solver.components?.slice(0,solver.component).reduce((n,c)=>n+c.keys.length,0)||0)+(solver.key||0),work=solver.criticalWork,partial=work?work.index/Math.max(1,solver.beam?.length||1):0;return{percent:position(.25*(done+partial)/total),label:'Pflichtbesetzung im Monat prüfen',detail:payload.months[cp.monthIndex]+' · '+done+'/'+total+' Pflichtpositionen geprüft'+(work?' · Varianten '+work.index+'/'+solver.beam.length:'')};}
   const iterations=cp.solver?.iterations||12,fraction=(cp.solver?.iteration||0)/iterations;
-  return {percent:Math.min(99,15+Math.floor((cp.monthIndex+fraction)/payload.months.length*84)),label:'Monat '+(cp.monthIndex+1)+' von '+payload.months.length+' planen',detail:payload.months[cp.monthIndex]+' · '+(cp.solver?.iteration||0)+'/'+iterations+' Verteilungen geprüft'+(cp.solver?.phase==='fill'?' · '+cp.solver.cursor+'/'+cp.solver.order.length+' Schichtpositionen':'' )};
+  return {percent:position(.25+fraction*.7),label:'Monat '+(cp.monthIndex+1)+' von '+payload.months.length+' planen',detail:payload.months[cp.monthIndex]+' · '+(cp.solver?.iteration||0)+'/'+iterations+' Verteilungen geprüft'+(cp.solver?.phase==='fill'?' · '+cp.solver.cursor+'/'+cp.solver.order.length+' Schichtpositionen':'' )};
  }
  function result(payload,cp){if(cp.stage!=='done')throw Error('Der Auftrag ist noch nicht abgeschlossen.');return {version,preview:cp.proposed,quality:cp.quality,months:payload.months,metadata:payload.metadata};}
  return {version,pack,unpack,withServerWishes,withShiftDurationLimit,compactPayload,check,start,context,progress,result,unique,rowKey};
