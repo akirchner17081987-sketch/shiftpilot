@@ -69,7 +69,7 @@ Deno.serve(async req => {
       output={version:1,preview:previous.preview,quality:previous.quality,months:prepared.months,metadata:prepared.metadata,repairScope:{level:0,locked:previous.preview.length,reused:true}};
       // Repeat the independent audit after attaching server-confirmed wishes.
       audited=A.assess(prepared,output);
-      if(audited.canApply){checkpoint.stage='done';checkpoint.proposed=output.preview;checkpoint.quality=output.quality;checkpoint.monthIndex=prepared.months.length;}
+      if(audited.canPreserve){checkpoint.stage='done';checkpoint.proposed=output.preview;checkpoint.quality=output.quality;checkpoint.monthIndex=prepared.months.length;}
       else{output=null;checkpoint.skipReuse=true;}
     }else if(checkpoint.stage==='exchange'){
       // One solver slice per durable invocation. Its bounded synchronous CPU
@@ -103,10 +103,10 @@ Deno.serve(async req => {
       output=output||run!.result();output.repairScope=output.repairScope||input.metadata.repairScope||null;
       if(prepared.metadata.continuity){
       const candidate={result:output,audit:audited||A.assess(prepared,output)},incumbent:any=prepared.metadata.continuity?.improve&&prepared.metadata.continuity.incumbent?{result:{version:1,preview:prepared.metadata.continuity.incumbent.preview,quality:prepared.metadata.continuity.incumbent.quality,months:prepared.months,metadata:prepared.metadata,repairScope:{level:0,locked:prepared.metadata.continuity.incumbent.preview.length,reused:true}},audit:null}:null;
-      if(incumbent){incumbent.audit=A.assess(prepared,incumbent.result);if(!incumbent.audit.canApply)incumbent.audit=null;}
+      if(incumbent){incumbent.audit=A.assess(prepared,incumbent.result);if(!incumbent.audit.canPreserve)incumbent.audit=null;}
       const old=checkpoint.repairBest||incumbent?.audit&&incumbent;
       const best=old&&A.compare(old.audit,candidate.audit,prepared.metadata.continuity?.improve)<=0?old:candidate;
-      if(!boundedSearch&&!candidate.audit.canApply&&prepared.metadata.continuity?.affectedDates?.length&&repairLevel<2){
+      if(!boundedSearch&&!candidate.audit.canPreserve&&prepared.metadata.continuity?.affectedDates?.length&&repairLevel<2){
         checkpoint={...core.start(A.repairPayload(prepared,repairLevel+1)),repairLevel:repairLevel+1,repairBest:best,skipReuse:checkpoint.skipReuse};output=null;
         progress={percent:1,label:'Reparaturbereich erweitern',detail:'Der kleinere Reparaturversuch bleibt gespeichert. Weitere benachbarte Blöcke werden geprüft.'};
       }else output=best.result;

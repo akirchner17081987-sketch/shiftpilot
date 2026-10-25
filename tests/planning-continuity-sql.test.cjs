@@ -12,3 +12,18 @@ test('best compatible proposal survives newer worse results and the history limi
  for(const fn of ['private.sf_autonomy_best(uuid,date,integer,text)','private.sf_autonomy_preferred(uuid,jsonb)','private.sf_autonomy_snapshot_before_continuity(uuid,date,integer,uuid,integer)','private.sf_autonomy_control_before_continuity(uuid,text,jsonb,uuid,date)','private.sf_autonomy_control_before_goals(uuid,text,jsonb,uuid,date)'])assert.equal((await db.query("select has_function_privilege('authenticated',$1,'EXECUTE') v",[fn])).rows[0].v,false);
  await assert.rejects(()=>db.query("select private.sf_autonomy_best($1,'2027-01-01',1,null)",[other]),/Planungsrechte/);await db.query("select set_config('request.jwt.claim.sub','',false)");await assert.rejects(()=>get(),/Planungsrechte/);
  }finally{await db.close();}});
+test('a complete REVIEW draft outranks a newer incomplete draft without becoming READY',async()=>{
+ const db=new PGlite();try{
+  await db.exec(bootstrap);for(const f of files)await db.exec(fs.readFileSync('supabase/migrations/'+f,'utf8'));
+  const make=async(status,summary,days)=>{
+   const job=(await db.query("insert into private.background_auto_plan_jobs(company_id,status,fingerprint,payload,result) values($1,'SUCCEEDED','snapshot','{}',$2) returning id",[cid,{preview:days.map(date=>({employeeId:'local',date,type:'TAG',start:'08:00',end:'16:00'})),quality:[]}])).rows[0].id;
+   return(await db.query("insert into private.autonomous_planning_runs(company_id,actor_id,source,schedule_key,first_month,month_count,status,settings_revision,background_job_id,summary) values($1,$2,'MANUAL',$3,'2027-01-01',1,$4,0,$5,$6) returning id",[cid,uid,'soft-'+job,status,job,summary])).rows[0].id;
+  };
+  const complete=await make('REVIEW',{checked:2,open:0,critical:0,errors:1,spread:0,maximumShift:8,canApply:false,canPreserve:true,hours:{rows:[{missing:16,tolerance:8,approvedDeviation:false}]}},['2027-01-04','2027-01-05']);
+  await make('REVIEW',{checked:1,open:1,critical:1,errors:0,spread:0,maximumShift:8,canApply:false,canPreserve:false},['2027-01-04']);
+  const data=(await db.query("select public.autonomous_planning_control($1,'GET',null,null,'2027-01-01') v",[cid])).rows[0].v;
+  assert.equal(data.best_run.id,complete);assert.equal(data.best_run.status,'REVIEW');
+  assert.equal((await db.query("select private.sf_autonomy_best($1,'2027-01-01',1,'snapshot') v",[cid])).rows[0].v,complete);
+  assert.equal((await db.query("select private.sf_autonomy_best($1,'2027-01-01',1,'changed') v",[cid])).rows[0].v,null);
+ }finally{await db.close();}
+});
