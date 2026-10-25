@@ -334,6 +334,13 @@
     return null;
   }
   const priorityAllocationSeed=(p,minimum,allowed)=>{const initial=priorityStartingRecords(p,minimum),roster=orderedRosterSeed(p,initial,allowed);return monthlyPrioritySeed(p,roster?[...initial,...roster]:initial,allowed);};
+  function restoreOrderedRoster(p,records,allowed){
+    const code=orderedPriorityRules(p)[0]?.code;if(!code)return null;
+    const changed=records.filter(r=>r.option.some(a=>a.type===code));
+    if(changed.some(r=>r.option.some(a=>a.type!==code)||!orderedPriorityRules(p).some(rule=>String(rule.employeeId)===String(r.group.employee._dbId||r.group.employee.id))))return null;
+    const kept=records.filter(r=>!changed.includes(r)),roster=orderedRosterSeed(p,kept,allowed);
+    return roster?state(p,[...kept,...roster]):null;
+  }
   const priorityDeficit=(p,s)=>[...p.people.values()].reduce((n,e)=>n+(priorityRule(e,p)?Math.max(0,employeeShiftTarget(e,p)-s.people.get(String(e.id)).hours):0),0);
   const priorityPenalty=(p,s)=>[...p.people.values()].reduce((n,e)=>{const r=priorityRule(e,p);if(!r||orderedPriorityRules(p).includes(r)&&!r.preferredWeekdays?.length)return n;return n+s.people.get(String(e.id)).duties.filter(a=>a.date.startsWith(p.month)&&!(r.preferredWeekdays||[1,2,3,4]).includes(solid.weekday(a.date))).length},0);
   function monthlyPrioritySeed(p,initial,allowed){
@@ -417,7 +424,8 @@
       }
       const v=solidQuality(p,s);if(solidBetter(v,q)){best=s;q=v}progress({iteration:i+1,iterations,...q});await yieldStep();
     }
-    best=refineRecords(p,best,allowed);q={...solidQuality(p,best),searchLimited:!!best.searchLimited};
+    const refined=refineRecords(p,best,allowed);if(solidBetter(solidQuality(p,refined),solidQuality(p,best)))best=refined;
+    best=restoreOrderedRoster(p,best.records,allowed)||best;q={...solidQuality(p,best),searchLimited:!!best.searchLimited};
     return{preview:best.records.flatMap(r=>r.option.map(a=>({...a,blockId:r.group.id}))),quality:q,records:best.records,remaining:[...best.remaining]};
   }
   async function optimize(input,options={}){
@@ -434,6 +442,6 @@
     const open=input.capacities.reduce((n,[key,count])=>n+Math.max(0,count-(used.get(key)||0)),0);
     return{preview,individualInput:freeInput,quality:{...found.quality,open},rows:input.employees.map(e=>{const hours=all.filter(a=>String(a.employeeId)===String(e.id)&&a.date.startsWith(input.month)).reduce((n,a)=>n+duty(a).hours,0);return{employeeId:e.id,target:e.target,planned:hours,missing:Math.max(0,e.target-hours),extra:Math.max(0,hours-e.target)}})};
   }
-  return{optimize,prepare,feasible,state,forkState,quality,duty,week,hoursCost,balancePreview,checkpointPrimitives:{priorityRule,priorityStartingRecords,orderedRosterSeed,priorityAllocationSeed,monthlyPrioritySeed,fairOptionGain,balanceRecords,repairRecords,repairBlockExchanges,globalBeam,refineRecords,rosterChoice,commit,commitReversible,solidQuality,solidBetter,criticalOpen,teamLeaderBlockPenalty,teamLeaderOptionScore,teamLeaderTarget,teamLeaderWeekSeed}};
+  return{optimize,prepare,feasible,state,forkState,quality,duty,week,hoursCost,balancePreview,checkpointPrimitives:{priorityRule,priorityStartingRecords,orderedRosterSeed,priorityAllocationSeed,restoreOrderedRoster,monthlyPrioritySeed,fairOptionGain,balanceRecords,repairRecords,repairBlockExchanges,globalBeam,refineRecords,rosterChoice,commit,commitReversible,solidQuality,solidBetter,criticalOpen,teamLeaderBlockPenalty,teamLeaderOptionScore,teamLeaderTarget,teamLeaderWeekSeed}};
 });
 

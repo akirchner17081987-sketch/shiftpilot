@@ -72,8 +72,9 @@ function context(input,cp){
       // Keep the expensive whole-block exchange outside result(), so each
       // recovered gap can be saved before the Edge Function's CPU limit.
       const refined=C.refineRecords({...p,scopedBlockRecovery:false},C.state(p,decode(cp.best||[])),allowed);
-      cp.refined=encode(refined.records);cp.refineLimited=!!refined.searchLimited;cp.refinePass=0;cp.refineImproved=false;
-      cp.refineRoots=[...refined.remaining].filter(([,n])=>n>0).sort((a,b)=>(byResource.get(a[0])?.length||0)-(byResource.get(b[0])?.length||0)).map(([key])=>key);
+      const incumbent=C.state(p,decode(cp.best||[])),selected=C.solidBetter(C.solidQuality(p,refined),C.solidQuality(p,incumbent))?refined:incumbent;
+      cp.refined=encode(selected.records);cp.refineLimited=!!selected.searchLimited;cp.refinePass=0;cp.refineImproved=false;
+      cp.refineRoots=[...selected.remaining].filter(([,n])=>n>0).sort((a,b)=>(byResource.get(a[0])?.length||0)-(byResource.get(b[0])?.length||0)).map(([key])=>key);
       cp.refineCursor=0;cp.phase='block-recovery';return true;
     }
     if(cp.phase==='block-recovery'){
@@ -84,12 +85,12 @@ function context(input,cp){
       // One unavailable employee can make a root impossible. Keep each durable
       // search step below the Edge Function CPU budget and retain the best plan.
       const improved=C.repairBlockExchanges(p,s,allowed,{roots:[key],maxChecks:160,maxNodes:80,passes:1});
-      cp.refineLimited=!!improved.searchLimited;if(improved.records.length!==s.records.length||C.solidBetter(C.solidQuality(p,improved),C.solidQuality(p,s))){cp.refined=encode(improved.records);cp.refineImproved=true;}
+      cp.refineLimited=!!improved.searchLimited;if(C.solidBetter(C.solidQuality(p,improved),C.solidQuality(p,s))){cp.refined=encode(improved.records);cp.refineImproved=true;}
       return true;
     }
     throw Error('Unknown checkpoint phase');
   }
-  function result(){if(cp.phase!=='done')throw Error('Job not complete');const balanced=cp.refined?C.state(p,decode(cp.refined)):C.refineRecords(p,C.state(p,decode(cp.best||[])),allowed),records=balanced.records;cp.best=encode(records);cp.quality={...C.solidQuality(p,balanced),searchLimited:!!(cp.refineLimited||balanced.searchLimited)};return {preview:records.flatMap(r=>r.option.map(a=>({...a,blockId:r.group.id}))),quality:cp.quality,remaining:[...balanced.remaining]};}
+  function result(){if(cp.phase!=='done')throw Error('Job not complete');let balanced=cp.refined?C.state(p,decode(cp.refined)):C.refineRecords(p,C.state(p,decode(cp.best||[])),allowed);const restored=C.restoreOrderedRoster(p,balanced.records,allowed);if(restored){restored.searchLimited=balanced.searchLimited;balanced=restored;}const records=balanced.records;cp.best=encode(records);cp.quality={...C.solidQuality(p,balanced),searchLimited:!!(cp.refineLimited||balanced.searchLimited)};return {preview:records.flatMap(r=>r.option.map(a=>({...a,blockId:r.group.id}))),quality:cp.quality,remaining:[...balanced.remaining]};}
   return{step,result};
 }
 return{start,context,planningBase};

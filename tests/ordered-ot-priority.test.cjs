@@ -27,3 +27,14 @@ test('resumable optimizer preserves OT priority across serialized checkpoints',(
  while(cp.phase!=='done'){R.context(input,cp).step();assert.ok(++steps<10000,'checkpoint search terminates');}
  verify(input,R.context(input,cp).result().preview);
 });
+test('final repair restores the ordered roster after a valid later-ranked allocation',()=>{
+ const input=month(),C=M.checkpointPrimitives,p=M.prepare(input),reverse={...input,solidRules:{...input.solidRules,orderedMonthlyShiftEmployees:[...input.solidRules.orderedMonthlyShiftEmployees].reverse()}},other=M.prepare(reverse);
+ const wrong=C.orderedRosterSeed(other,[],(s,r)=>M.feasible(other,s,r.group,r.option));
+ assert.equal(wrong.flatMap(r=>r.option).filter(a=>a.employeeId==='E').length,20);
+ const restored=C.restoreOrderedRoster(p,wrong,(s,r)=>M.feasible(p,s,r.group,r.option));
+ assert.ok(restored,'a complete valid ranked replacement exists');
+ verify(input,restored.records.flatMap(r=>r.option));
+ const refs=wrong.map(r=>{const gi=other.groups.indexOf(r.group);return[gi,r.group.options.indexOf(r.option)]});
+ const checkpoint=R.start(input,1);checkpoint.phase='done';checkpoint.best=refs;checkpoint.refined=refs;
+ verify(input,R.context(input,checkpoint).result().preview);
+});
