@@ -335,7 +335,7 @@
   }
   const priorityAllocationSeed=(p,minimum,allowed)=>{const initial=priorityStartingRecords(p,minimum),roster=orderedRosterSeed(p,initial,allowed);return monthlyPrioritySeed(p,roster?[...initial,...roster]:initial,allowed);};
   const priorityDeficit=(p,s)=>[...p.people.values()].reduce((n,e)=>n+(priorityRule(e,p)?Math.max(0,employeeShiftTarget(e,p)-s.people.get(String(e.id)).hours):0),0);
-  const priorityPenalty=(p,s)=>[...p.people.values()].reduce((n,e)=>{const r=priorityRule(e,p);return n+(r?s.people.get(String(e.id)).duties.filter(a=>a.date.startsWith(p.month)&&!(r.preferredWeekdays||[1,2,3,4]).includes(solid.weekday(a.date))).length:0)},0);
+  const priorityPenalty=(p,s)=>[...p.people.values()].reduce((n,e)=>{const r=priorityRule(e,p);if(!r||orderedPriorityRules(p).includes(r)&&!r.preferredWeekdays?.length)return n;return n+s.people.get(String(e.id)).duties.filter(a=>a.date.startsWith(p.month)&&!(r.preferredWeekdays||[1,2,3,4]).includes(solid.weekday(a.date))).length},0);
   function monthlyPrioritySeed(p,initial,allowed){
     if(p.criticalOnly||p.criticalPeriod||!(p.solidRules?.priorityMonthlyEmployees?.length||orderedPriorityRules(p).length))return initial;
     let records=initial;
