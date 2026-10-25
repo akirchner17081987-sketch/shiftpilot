@@ -18,7 +18,7 @@
   // The cancel control remains usable while the planning form is locked.
   node.querySelectorAll('button').forEach(b=>b.disabled=false);
  }
- function progress(j){job=j;render();const p=window.SFAutoPlanProgress;if(running(j)){if(!p?.isBusy())p?.start();p?.setStartedAt?.(j.created_at);p?.update({completed:j.progress||0,total:100,label:j.label||'Hintergrundplanung läuft',detail:j.detail||'Der Fortschritt ist auf dem Server gespeichert.'});}}
+ function progress(j){job=j;render();const p=window.SFAutoPlanProgress;if(running(j)){if(!p?.isBusy())p?.start();p?.setStartedAt?.(j.created_at);const at=Date.parse(j.updated_at||''),seconds=Number.isFinite(at)?Math.max(0,Math.floor((Date.now()-at)/1000)):null,age=seconds===null?'Warte auf die erste Server-Rückmeldung.':'Letzte Server-Rückmeldung '+(seconds<10?'gerade eben':'vor '+(seconds<60?Math.floor(seconds/10)*10+' Sekunden':Math.floor(seconds/60)+' Min.'))+(seconds>=45?' · Noch kein neuer Status; die Verbindung wird weiter geprüft.':'');p?.update({completed:j.progress||0,total:100,label:j.label||'Hintergrundplanung läuft',detail:(j.detail||'Der Fortschritt ist auf dem Server gespeichert.')+' · '+age});}}
  function stopWatch(error){clearTimeout(timer);timer=null;const old=watch;watch=null;if(old)old.reject(error||Error('Die Anzeige wurde getrennt. Der gespeicherte Auftrag läuft weiter.'));}
  function schedule(delay=1500){clearTimeout(timer);timer=null;if(watch&&!document.hidden)timer=setTimeout(poll,delay);}
  async function poll(){

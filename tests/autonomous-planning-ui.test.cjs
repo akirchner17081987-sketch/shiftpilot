@@ -16,7 +16,7 @@ test('the main monthly planning button starts the checked server run and opens i
  w.document.body.innerHTML='<section id="view-auto"><input id="autoPlanPeriod" value="month"><input id="autoPlanMonth" value="2027-01"><input id="autoPlanMonthCount" value="1"><div class="sf-auto-start"><button id="generateAutoPlanBtn">Zeitraum mit Erholungsregeln planen</button></div></section>';
  const config={enabled:false,mode:'PREVIEW',run_day:20,run_time:'06:00',lead_months:1,month_count:1,on_changes:false,history_months:3,revision:0},run={id:'new-run',source:'MANUAL',first_month:'2027-01-01',status:'QUEUED',background_job_id:null};let phase='QUEUED',legacy=0,cleared=0;const calls=[],opened=[];
  w.SFBackend={ready:true,user:{id:'owner'},companyId:'one',role:'OWNER',client:{rpc:async(name,args)=>{calls.push(args);if(args.p_action==='RESULT')return {data:{id:'checked-job',company_id:'one',result:{preview:[]}}};return {data:{config,can_edit:true,runs:args.p_action==='RUN'||phase==='READY'||phase==='REVIEW'?[{...run,status:phase,background_job_id:['READY','REVIEW'].includes(phase)?'checked-job':null,summary:{canApply:phase==='READY',open:phase==='REVIEW'?1:0}}]:[]}};}}};
- w.SFAutoPlanWorkspace={render(){}};w.generateAutoPlanPreview=()=>{legacy++};w.clearAutoPlanPreview=()=>{cleared++};w.setInterval=()=>0;const originalTimeout=w.setTimeout.bind(w);w.setTimeout=(fn,ms)=>ms===10000?0:originalTimeout(fn,ms);
+ w.SFAutoPlanWorkspace={render(){}};w.generateAutoPlanPreview=()=>{legacy++};w.clearAutoPlanPreview=()=>{cleared++};w.setInterval=()=>0;const originalTimeout=w.setTimeout.bind(w);w.setTimeout=(fn,ms)=>ms===10000||ms===5000?0:originalTimeout(fn,ms);
  w.eval(fs.readFileSync('assets/autonomous-planning-v1.js','utf8'));w.SFAutonomousPlanning.render();await w.happyDOM.whenAsyncComplete();w.eval(fs.readFileSync('assets/month-optimizer-v1.js','utf8'));
  w.SFMonthOptimizer.restoreBackground=async(job,inside,assurance)=>{opened.push({id:job.id,canApply:assurance.canApply})};
  await w.generateAutoPlanPreview();assert.equal(legacy,0);assert.equal(cleared,0);assert.equal(calls.at(-1).p_action,'RUN');assert.equal(calls.at(-1).p_month,'2027-01-01');assert.equal(w.localStorage.getItem('sf_autonomy_primary_one_owner'),'new-run');
@@ -29,19 +29,21 @@ test('active planning shows the linked worker checkpoint and never leaks it acro
  w.document.body.innerHTML='<section id="view-auto"><input id="autoPlanMonth" value="2027-01"><div class="sf-auto-start"></div></section>';
  const config={enabled:false,mode:'PREVIEW',run_day:20,run_time:'06:00',lead_months:1,month_count:1,on_changes:false,history_months:3,revision:0};
  const run={id:'one-run',source:'MANUAL',first_month:'2027-01-01',status:'CALCULATING',background_job_id:'job-one'};
- const calls=[];let progress=15,hold=false,release;
+ const calls=[];let progress=15,hold=false,release,lastUpdate=new Date(Date.now()-65000).toISOString();
  w.SFBackend={ready:true,user:{id:'owner'},companyId:'one',role:'OWNER',client:{rpc:async(name,args)=>{calls.push({name,...args});if(name==='get_background_auto_plan'){
   if(hold)return new Promise(resolve=>release=resolve);
-  return {data:{id:'job-one',company_id:'one',status:'RUNNING',progress,label:'Monat 1 von 1 planen',detail:`2027-01 · ${progress}/48 Verteilungen geprüft`}};
+  return {data:{id:'job-one',company_id:'one',status:'RUNNING',progress,label:'Monat 1 von 1 planen',detail:`2027-01 · ${progress}/48 Verteilungen geprüft`,updated_at:lastUpdate}};
  }return {data:{config,can_edit:true,runs:args.p_company_id==='one'?[{...run}]:[]}};}}};
- w.SFAutoPlanWorkspace={render(){}};w.setInterval=()=>0;const originalTimeout=w.setTimeout.bind(w);w.setTimeout=(fn,ms)=>ms===10000?0:originalTimeout(fn,ms);
+ w.SFAutoPlanWorkspace={render(){}};w.setInterval=()=>0;const originalTimeout=w.setTimeout.bind(w);let pollDelay;w.setTimeout=(fn,ms)=>{if(ms===10000||ms===5000){pollDelay=ms;return 0;}return originalTimeout(fn,ms);};
  w.eval(fs.readFileSync('assets/autonomous-planning-v1.js','utf8'));w.SFAutonomousPlanning.render();await w.happyDOM.whenAsyncComplete();
  assert.deepEqual(calls.find(c=>c.name==='get_background_auto_plan'),{name:'get_background_auto_plan',p_company_id:'one',p_job_id:'job-one'});
  assert.match(w.document.querySelector('.sf-autonomy-progress').textContent,/15 %/);
  const liveBar=w.document.querySelector('#sfAutonomyLiveStatus [role=progressbar]'),liveFill=liveBar.querySelector('[data-live-fill]');assert.equal(liveBar.getAttribute('aria-valuenow'),'15');assert.equal(liveFill.style.width,'15%');
+ assert.equal(pollDelay,5000);
+ assert.match(w.document.querySelector('[data-live-heartbeat]').textContent,/Letzte Server-Rückmeldung vor 1 Min.*Noch kein neuer Status/);
  assert.match(w.document.querySelector('[data-autonomy-runs]').textContent,/15 %.*Monat 1 von 1 planen.*15\/48 Verteilungen geprüft/);
  w.document.getElementById('sfAutonomyDay').value='17';w.document.getElementById('sfAutonomyDay').dispatchEvent(new w.Event('input',{bubbles:true}));
- progress=23;await w.SFAutonomousPlanning.load(true);assert.match(w.document.querySelector('.sf-autonomy-progress').textContent,/23 %/);assert.equal(w.document.querySelector('#sfAutonomyLiveStatus [data-live-fill]'),liveFill);assert.equal(liveFill.style.width,'23%');assert.equal(w.document.getElementById('sfAutonomyDay').value,'17');
+ progress=23;lastUpdate=new Date().toISOString();await w.SFAutonomousPlanning.load(true);assert.match(w.document.querySelector('.sf-autonomy-progress').textContent,/23 %/);assert.equal(w.document.querySelector('#sfAutonomyLiveStatus [data-live-fill]'),liveFill);assert.equal(liveFill.style.width,'23%');assert.match(w.document.querySelector('[data-live-heartbeat]').textContent,/gerade eben/);assert.doesNotMatch(w.document.querySelector('[data-live-heartbeat]').textContent,/Noch kein neuer Status/);assert.equal(w.document.getElementById('sfAutonomyDay').value,'17');
  hold=true;const pending=w.SFAutonomousPlanning.load(true);for(let i=0;i<10&&!release;i++)await Promise.resolve();assert.equal(typeof release,'function');
  w.SFBackend.companyId='two';w.SFAutonomousPlanning.render();release({data:{id:'job-one',company_id:'one',status:'RUNNING',progress:100,label:'Alte Firma'}});await pending;await w.happyDOM.whenAsyncComplete();
  assert.equal(w.SFAutonomousPlanning.getState()?.runs.length,0);assert.doesNotMatch(w.document.querySelector('[data-autonomy-runs]').textContent,/Alte Firma|100 %/);

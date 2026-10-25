@@ -302,9 +302,12 @@
   function teamLeaderBlockPenalty(p,records){
     if(p.solidRules.teamLeaderPreferredNightBlockLength==null)return 0;
     const cache=p._teamLeaderBlockPenaltyCache||(p._teamLeaderBlockPenaltyCache=new WeakMap());if(cache.has(records))return cache.get(records);
-    let shortfall=0;const dates=new Set([...p.capacity.keys()].map(k=>k.slice(0,10)));
-    for(const e of p.people.values()){if(e.role!=='Teamleiter')continue;const preferred=Number(solid.employeeRules(e,p.solidRules).preferredNightBlockLength)||4,rows=[...p.base,...records.flatMap(r=>r.option)].filter(a=>String(a.employeeId)===String(e.id)&&a.start>='18:00'&&dates.has(a.date)).sort((a,b)=>a.date.localeCompare(b.date));let run=0,last=null;
-      for(const a of rows){if(last&&solid.plus(last,1)!==a.date){shortfall+=Math.max(0,preferred-run);run=0;}run++;last=a.date;}if(run)shortfall+=Math.max(0,preferred-run);
+    const index=p._teamLeaderPenaltyIndex||(p._teamLeaderPenaltyIndex=(()=>{const dates=new Set([...p.capacity.keys()].map(k=>k.slice(0,10))),leaders=new Map();for(const e of p.people.values())if(e.role==='Teamleiter')leaders.set(String(e.id),{preferred:Number(solid.employeeRules(e,p.solidRules).preferredNightBlockLength)||4,base:[]});for(const a of p.base)if(a.start>='18:00'&&dates.has(a.date))leaders.get(String(a.employeeId))?.base.push(a);return{dates,leaders};})());
+    const rows=new Map([...index.leaders].map(([id,leader])=>[id,leader.base.slice()]));
+    for(const r of records)for(const a of r.option)if(a.start>='18:00'&&index.dates.has(a.date))rows.get(String(a.employeeId))?.push(a);
+    let shortfall=0;
+    for(const [id,leader]of index.leaders){const duties=rows.get(id).sort((a,b)=>a.date.localeCompare(b.date));let run=0,last=null;
+      for(const a of duties){if(last&&solid.plus(last,1)!==a.date){shortfall+=Math.max(0,leader.preferred-run);run=0;}run++;last=a.date;}if(run)shortfall+=Math.max(0,leader.preferred-run);
     }cache.set(records,shortfall*10);return shortfall*10;
   }
   function teamLeaderOptionScore(p,s,r){const e=r.group.employee,x=s.people.get(String(e.id));if(!teamLeaderTarget(e,p))return 0;const minimum=Math.max(0,teamLeaderTarget(e,p)-x.hours),target=Math.max(0,e.target-x.hours),preferred=Number(solid.employeeRules(e,p.solidRules).preferredNightBlockLength)||4;return Math.min(minimum,r.option.hours)*5+Math.min(target,r.option.hours)*.5+(r.option.length===preferred&&r.option.every(a=>a.start>='18:00')?12:0);}
