@@ -74,6 +74,7 @@ test('wide critical search saves bounded beam slices and resumes inside one staf
  const input={month:'2030-02',employees,base:[],respectHours:true,solidRules:rules,criticalOnly:true,capacities:dates.map(d=>[d+'|DAY',3]),criticalCapacities:dates.map(d=>[d+'|DAY',3]),groups:employees.flatMap(e=>dates.map(date=>({id:e.id+'|'+date,employee:e,options:[[{employeeId:e.id,date,type:'DAY',start:'07:00',end:'15:00',resource:date+'|DAY'}]]})))};
  let cp=R.start(input);R.context(input,cp).step();assert.equal(cp.key,1);assert.equal(cp.beam.length,96);
  R.context(input,cp).step();assert.equal(cp.key,1);assert.equal(cp.criticalWork.index,2);assert.ok(cp.criticalWork.pool.length<=96);
- const before=JSON.parse(JSON.stringify(cp));function finish(state,serialize){let steps=0;while(state.phase!=='done'){R.context(input,state).step();if(serialize)state=JSON.parse(JSON.stringify(state));assert.ok(++steps<200);}return R.context(input,state).result();}
+ assert.ok(cp.criticalWork.pool.some(b=>Number.isFinite(b.teamLeaderBlockPenalty)&&Number.isFinite(b.preferencePenalty)));
+ const before=JSON.parse(JSON.stringify(cp));assert.deepEqual(before.criticalWork.pool,cp.criticalWork.pool);function finish(state,serialize){let steps=0;while(state.phase!=='done'){R.context(input,state).step();if(serialize)state=JSON.parse(JSON.stringify(state));assert.ok(++steps<200);}return R.context(input,state).result();}
  const uninterrupted=finish(cp,false),resumed=finish(before,true);assert.deepEqual(resumed,uninterrupted);assert.equal(resumed.preview.length,6);assert.equal(resumed.quality.critical,0);
 });

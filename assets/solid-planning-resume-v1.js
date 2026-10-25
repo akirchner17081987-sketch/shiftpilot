@@ -41,7 +41,11 @@ function context(input,cp){
       }
       const date=key.split('|')[0],day=Math.floor(Date.parse(date+'T12:00:00Z')/86400000),unique=new Map(work.pool.map(b=>[b.signature,b]));
       for(const b of next){const s=b._state||C.state(p,decode(b.records));const signature=component.ids.map(id=>{const x=s.people.get(id),month=x.months.get(date.slice(0,7))||{hours:0,count:0};return id+':'+month.hours+':'+month.count+':'+x.duties.filter(a=>a.day>=day-8&&a.day<=day).map(a=>a.date+a.type).sort().join(',')}).join(';');const previous=unique.get(signature);if(!previous||b.missing<previous.missing)unique.set(signature,{records:b.records,missing:b.missing,signature});}
-      work.pool=[...unique.values()].sort((a,b)=>a.missing-b.missing||(a.teamLeaderBlockPenalty??=C.teamLeaderBlockPenalty(p,decode(a.records)))-(b.teamLeaderBlockPenalty??=C.teamLeaderBlockPenalty(p,decode(b.records)))||(p.preferencePenalty?.([...p.base,...decode(a.records).flatMap(r=>r.option)])||0)-(p.preferencePenalty?.([...p.base,...decode(b.records).flatMap(r=>r.option)])||0)||a.records.length-b.records.length).slice(0,p.criticalBeamWidth||96);
+      // Sorting compares the same partial plan many times. Persist its scores
+      // with the checkpoint so resumed batches do not score it again.
+      const leaderPenalty=b=>b.teamLeaderBlockPenalty??=C.teamLeaderBlockPenalty(p,decode(b.records));
+      const wishPenalty=b=>b.preferencePenalty??=(p.preferencePenalty?.([...p.base,...decode(b.records).flatMap(r=>r.option)])||0);
+      work.pool=[...unique.values()].sort((a,b)=>a.missing-b.missing||leaderPenalty(a)-leaderPenalty(b)||wishPenalty(a)-wishPenalty(b)||a.records.length-b.records.length).slice(0,p.criticalBeamWidth||96);
       work.index+=batch.length;if(work.index<cp.beam.length)return true;
       cp.beam=work.pool.map(({signature,...b})=>b);delete cp.criticalWork;
       if(++cp.key===component.keys.length){if(p.solidRules.teamLeaderMinimumMonthlyHours!=null&&cp.components.length===1)cp.minimumVariants=cp.beam.slice(0,12).map(b=>b.records);cp.minimum.push(...cp.beam[0].records);cp.component++;cp.key=0;cp.beam=[{records:[],missing:0}];}return true;
