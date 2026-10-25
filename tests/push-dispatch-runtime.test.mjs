@@ -12,7 +12,7 @@ async function dispatch(options={}){
  const calls=[],marks=[],deleted=[];
  const notification={id,company_id:id,user_id:id,kind:'ABSENCE_CONFLICT',title:'Fiktiver Test',message:'Fiktive Nachricht',link_view:'employee-shifts',...options.notification};
  const admin={
-  async rpc(name,args){calls.push({name,args});if(name==='server_get_push_config')return {data:[{webhook_secret:'test-secret',vapid_public_key:'fake',vapid_private_key:'fake',vapid_subject:'https://schichtfunk.de/'}]};if(name==='server_push_recipient_active')return {data:options.active!==false,error:options.accessError};if(name==='server_handover_reminder_active')return {data:options.reminderActive!==false};if(name==='server_mark_push_dispatch')marks.push(args);return {data:true};},
+  async rpc(name,args){calls.push({name,args});if(name==='server_get_push_config')return {data:[{webhook_secret:'test-secret',vapid_public_key:'fake',vapid_private_key:'fake',vapid_subject:'https://schichtfunk.de/'}]};if(name==='server_push_recipient_active')return {data:options.active!==false,error:options.accessError};if(name==='server_qr_break_reminder_expiry')return {data:options.breakExpiry??null};if(name==='server_handover_reminder_active')return {data:options.reminderActive!==false};if(name==='server_mark_push_dispatch')marks.push(args);return {data:true};},
   from(table){let removing=false;const q={select(){return q},eq(){return q},delete(){removing=true;return q},in(k,v){deleted.push(...v);return Promise.resolve({error:null})},maybeSingle(){return Promise.resolve({data:table==='notifications'?(options.missing?null:notification):table==='employees'?{id}:null})},then(resolve,reject){return Promise.resolve({data:table==='push_subscriptions'?(options.subs??[sub(1)]):[]}).then(resolve,reject)}};return q;}
  };
  const context={Response,Request,Headers,URL,Uint8Array,AbortSignal,crypto,btoa,console,Deno:{env:{get:()=>undefined}},withSupabase:(_,handler)=>req=>handler(req,{supabaseAdmin:admin}),generateVapidKeys:()=>({}),
@@ -57,4 +57,14 @@ test('reminders recheck source before provider delivery and carry an authenticat
  const notification={kind:'HANDOVER_CRITICAL_OVERDUE',link_view:'employee-handover'};
  const resolved=await dispatch({notification,reminderActive:false});assert.equal(resolved.body.reason,'REMINDER_RESOLVED');assert.equal(resolved.calls.filter(x=>x.provider).length,0);
  const active=await dispatch({notification});const send=active.calls.find(x=>x.provider==='legacy');const link=new URL(send.payload.url,'https://schichtfunk.de');assert.equal(link.searchParams.get('sf_push_view'),'employee-handover');assert.equal(link.searchParams.get('sf_push_notification'),id);assert.equal(send.settings.urgency,'high');
+});
+
+test('break reminders expire, cancel, use short TTL and open time capture for every role',async()=>{
+ const notification={kind:'BREAK_ENDING'};
+ for(const breakExpiry of [null,new Date(Date.now()-1000).toISOString()]){const r=await dispatch({notification,breakExpiry});assert.equal(r.body.reason,'BREAK_ENDED_OR_EXPIRED');assert.equal(r.calls.filter(x=>x.provider).length,0)}
+ const apple={...sub(2,'https://web.push.apple.com/'),user_agent:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_4 like Mac OS X)'};
+ const r=await dispatch({notification,breakExpiry:new Date(Date.now()+90000).toISOString(),subs:[sub(1),apple]});
+ const legacy=r.calls.find(x=>x.provider==='legacy'),modern=r.calls.find(x=>x.provider==='apple');
+ assert.equal(r.body.status,'SENT');assert.ok(legacy.settings.ttl>0&&legacy.settings.ttl<=90);assert.equal(legacy.settings.urgency,'high');
+ assert.equal(legacy.payload.url,'/qr-time.html?entry=desktop');assert.equal(modern.payload.options.ttl,legacy.settings.ttl);assert.equal(modern.payload.data.notification.navigate,'https://schichtfunk.de/qr-time.html?entry=desktop');
 });

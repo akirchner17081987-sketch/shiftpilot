@@ -46,6 +46,7 @@ async function sendDeclarativeAppleBatch(
   payload:Record<string,unknown>,
   vapid:{publicKey:string;privateKey:string;subject:string},
   urgency:"normal"|"high",
+  ttl=86400,
 ){
   let delivered=0;
   const gone:string[]=[];
@@ -55,7 +56,7 @@ async function sendDeclarativeAppleBatch(
   const sendOne=async(subscription:StoredSubscription)=>{
     try{
       const request=await buildPushPayload(
-        {data:payload,options:{ttl:86400,urgency}},
+        {data:payload,options:{ttl,urgency}},
         {
           endpoint:subscription.endpoint,
           expirationTime:null,
@@ -157,16 +158,25 @@ const handler=withSupabase({auth:"none"},async(req,ctx)=>{
     if(reminderActive!==true){await mark("SKIPPED");return Response.json({ok:true,status:"SKIPPED",reason:"REMINDER_RESOLVED"})}
   }
 
+  let ttl=86400;
+  if(notification.kind==='BREAK_ENDING'){
+    const {data:expiresAt,error:expiryError}=await ctx.supabaseAdmin.rpc('server_qr_break_reminder_expiry',{p_notification_id:notificationId});
+    if(expiryError)throw expiryError;
+    ttl=Math.min(120,Math.floor((Date.parse(expiresAt||'')-Date.now())/1000));
+    if(!Number.isFinite(ttl)||ttl<=0){await mark('SKIPPED');return Response.json({ok:true,status:'SKIPPED',reason:'BREAK_ENDED_OR_EXPIRED'})}
+  }
+
   const origin=appOrigin();
   let relativeLink=notification.link_view?`/?sf_push_view=${encodeURIComponent(notification.link_view)}#app`:"/#app";
   if(notification.kind==='HANDOVER_PENDING'||notification.kind==='HANDOVER_CRITICAL_OVERDUE'){
     const link=new URL(relativeLink,origin);link.searchParams.set("sf_push_notification",notificationId);relativeLink=link.pathname+link.search+link.hash;
   }
+  if(notification.kind==='BREAK_ENDING')relativeLink='/qr-time.html?entry=desktop';
   const navigate=new URL(relativeLink,`${origin}/`).href;
   const tag=`sf-${notification.kind||"notice"}-${notification.entity_id||notification.id}`;
   const title=notification.title||"SchichtFunk";
   const message=notification.message||"Neue Benachrichtigung in SchichtFunk";
-  const urgency=new Set(["DISRUPTION_OFFER","ABSENCE_CONFLICT","TIME_ENTRY_CORRECTION","HANDOVER_CRITICAL_OVERDUE"]).has(notification.kind)?"high":"normal";
+  const urgency=new Set(["DISRUPTION_OFFER","ABSENCE_CONFLICT","TIME_ENTRY_CORRECTION","HANDOVER_CRITICAL_OVERDUE","BREAK_ENDING"]).has(notification.kind)?"high":"normal";
 
   // Nicht-Apple bzw. ältere Apple-Clients behalten den bewährten Legacy-Payload.
   const legacyPayload={title,body:message,url:relativeLink,tag};
@@ -208,7 +218,7 @@ const handler=withSupabase({auth:"none"},async(req,ctx)=>{
         standardSubs.map(s=>({endpoint:s.endpoint,keys:{p256dh:s.p256dh,auth:s.auth_key}})),
         legacyPayload,
         vapid,
-        {ttl:86400,urgency,concurrency:20,timeoutMs:12000},
+        {ttl,urgency,concurrency:20,timeoutMs:12000},
       );
       delivered+=Number(standardResult.delivered||0);
       goneEndpoints.push(...(standardResult.gone||[]).map((g:any)=>typeof g==="string"?g:g?.endpoint).filter(Boolean));
@@ -216,7 +226,7 @@ const handler=withSupabase({auth:"none"},async(req,ctx)=>{
     }
 
     if(declarativeSubs.length){
-      const declarativeResult=await sendDeclarativeAppleBatch(declarativeSubs,declarativePayload,vapid,urgency);
+      const declarativeResult=await sendDeclarativeAppleBatch(declarativeSubs,declarativePayload,vapid,urgency,ttl);
       delivered+=declarativeResult.delivered;
       goneEndpoints.push(...declarativeResult.gone);
       failures.push(...declarativeResult.failed);

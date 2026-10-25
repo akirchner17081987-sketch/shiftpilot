@@ -52,7 +52,7 @@ test('desktop rejects malformed terminal selection and missing credentials witho
 });
 test('desktop status and punches preserve session and request IDs through the shared RPC',async()=>{
  const h=fixture(),r=await h.send({action:'CLOCK_IN',qrToken:'',terminalId:'00000000-0000-4000-8000-000000000022',sessionToken:'b'.repeat(64),requestId:'c'.repeat(64)});
- assert.equal(r.status,200);assert.match(h.calls[0].url,/qr_desktop_request$/);assert.equal(h.calls[0].p_session_token,'b'.repeat(64));assert.equal(h.calls[0].p_request_id,'c'.repeat(64));assert.equal(h.calls[0].p_pin,null);
+ assert.equal(r.status,200);assert.match(h.calls[0].url,/qr_break_timer_request$/);assert.equal(h.calls[0].p_terminal_token,null);assert.equal(h.calls[0].p_session_token,'b'.repeat(64));assert.equal(h.calls[0].p_request_id,'c'.repeat(64));assert.equal(h.calls[0].p_planned_minutes,null);
 });
 
 test('desktop transition sends ISO date only to protected legacy login and returns no date or terminal secret',async()=>{
@@ -63,4 +63,9 @@ test('desktop transition sends ISO date only to protected legacy login and retur
 test('desktop transition denied by PIN policy never returns a usable session or retries another login',async()=>{
  const h=fixture({ok:false,error:'Bitte mit persönlicher PIN anmelden'}),r=await h.send({action:'LOGIN',qrToken:'',terminalId:'00000000-0000-4000-8000-000000000022',startDate:'2020-01-15'});
  assert.equal(r.status,401);assert.equal((await r.json()).sessionToken,undefined);assert.equal(h.calls.length,1);
+});
+
+test('timed and unlimited pauses use a strictly validated optional duration',async()=>{
+ for(const minutes of [10,15,20,null]){const h=fixture(),r=await h.send({action:'BREAK_START',sessionToken:'b'.repeat(64),requestId:'c'.repeat(64),plannedMinutes:minutes});assert.equal(r.status,200);assert.equal(h.calls[0].p_planned_minutes,minutes);assert.match(h.calls[0].url,/qr_break_timer_request$/)}
+ for(const minutes of [0,-1,2,9,11,60,'10',{},true]){const h=fixture(),r=await h.send({action:'BREAK_START',sessionToken:'b'.repeat(64),plannedMinutes:minutes});assert.equal(r.status,400);assert.equal(h.calls.length,0)}
 });

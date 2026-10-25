@@ -26,7 +26,7 @@ function fixture(initial='READY'){
         punches++;const stamp=new Date(now).toISOString();saved.set(body.requestId,{action,stamp});
         if(action==='CLOCK_IN')server={...server,state:'RUNNING',started_at:stamp,ended_at:null,breaks:[]};
         if(action==='CLOCK_OUT')server={...server,state:'READY',ended_at:stamp};
-        if(action==='BREAK_START'){server.state='BREAK';server.breaks.push({number:server.breaks.length+1,started_at:stamp,ended_at:null})}
+        if(action==='BREAK_START'){server.state='BREAK';server.break_timer={planned_minutes:body.plannedMinutes??null,started_at:stamp,ends_at:body.plannedMinutes?new Date(now+body.plannedMinutes*60000).toISOString():null};server.breaks.push({number:server.breaks.length+1,started_at:stamp,ended_at:null})}
         if(action==='BREAK_END'){server.state='RUNNING';server.breaks.at(-1).ended_at=stamp}
       }
       if(action===fail){fail='';throw new TypeError('Fiktiv: Antwort nach Speicherung verloren')}
@@ -79,4 +79,25 @@ test('foreground refresh stops a booking ended on another device',async()=>{
 test('logout aborts an in-flight request and late handlers cannot restore a clock view',async()=>{
   const h=fixture('RUNNING');await h.login();h.hang('CLOCK_OUT');const pending=h.click('end');await flush();await h.click('logout');await pending;
   assert.equal(h.get('clock').hidden,true);assert.equal(h.get('login').hidden,false);assert.equal(h.get('name').textContent,'');assert.equal(h.get('loginButton').disabled,false);
+});
+
+test('break choices are optional and each timed selection continues after target expiry',async()=>{
+ for(const minutes of [10,15,20]){
+  const h=fixture('RUNNING');await h.login();await h.click('break'+minutes);await h.click('pauseStart');
+  assert.equal(h.requests.at(-1).plannedMinutes,minutes);assert.equal(h.get('breakRemaining').textContent,String(minutes).padStart(2,'0')+':00');
+  assert.equal(h.get('breakChoice').hidden,true);const requests=h.requests.length;
+  await h.advance((minutes-2)*60000);assert.equal(h.get('breakRemaining').textContent,'02:00');assert.match(h.get('breakCountdownDetail').textContent,/endet bald/);
+  await h.advance(120000);assert.equal(h.get('breakRemaining').textContent,'00:00');assert.equal(h.get('state').textContent,'Pause läuft');assert.equal(h.requests.length,requests);
+  await h.click('pauseEnd');assert.equal(h.get('breakCountdown').hidden,true);assert.equal(h.get('state').textContent,'Arbeitszeit läuft');
+ }
+});
+test('unlimited is the default; switching back to infinity removes the planned reminder',async()=>{
+ const h=fixture('RUNNING');await h.login();await h.click('pauseStart');assert.equal(h.requests.at(-1).plannedMinutes,null);assert.equal(h.get('breakRemaining').textContent,'∞');
+ await h.advance(3600000);assert.equal(h.get('state').textContent,'Pause läuft');await h.click('pauseEnd');
+ await h.click('break15');await h.click('breakUnlimited');await h.click('pauseStart');assert.equal(h.requests.at(-1).plannedMinutes,null);
+});
+test('a lost timed break response keeps its original duration and exact request',async()=>{
+ const h=fixture('RUNNING');await h.login();await h.click('break10');h.loss('BREAK_START');await h.click('pauseStart');
+ assert.equal(h.get('breakRemaining').textContent,'10:00');assert.equal(h.punches(),1);
+ assert.equal(h.requests.at(-2).plannedMinutes,10);assert.equal(h.requests.at(-1).requestId,h.requests.at(-2).requestId);
 });

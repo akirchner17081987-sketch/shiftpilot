@@ -96,8 +96,12 @@ Deno.serve(async(req:Request)=>{
     if(!tokenPattern.test(sessionToken))return reply({ok:false,error:'Bitte erneut anmelden'},401,origin);
     const requestId=input.requestId==null?null:String(input.requestId).toLowerCase();
     if(requestId!==null&&!tokenPattern.test(requestId))return reply({ok:false,error:'Ungültige Anfragekennung'},400,origin);
-    const result=desktop?await desktopRequest(action,sessionToken,{p_request_id:requestId}):await rpc('qr_independent_action',{
-      p_terminal_token:qrToken,p_session_token:sessionToken,p_action:action,p_request_id:requestId
+    const plannedMinutes=input.plannedMinutes??null;
+    if(plannedMinutes!==null&&(!Number.isInteger(plannedMinutes)||![10,15,20].includes(plannedMinutes as number)||action!=='BREAK_START'))
+      return reply({ok:false,error:'Bitte 10, 15, 20 Minuten oder unbegrenzt auswählen'},400,origin);
+    const result=await rpc('qr_break_timer_request',{
+      p_terminal_token:desktop?null:qrToken,p_terminal_id:desktop?terminalId:null,
+      p_session_token:sessionToken,p_action:action,p_request_id:requestId,p_planned_minutes:plannedMinutes
     });
     return reply(result,200,origin);
   }catch(error){
