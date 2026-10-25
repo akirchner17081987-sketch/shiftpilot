@@ -109,6 +109,13 @@ test('the bounded planner still fills a feasible monthly roster without a deadli
  assert.equal(result.preview.length,10);
  for(const employee of p.monthInputs[0].employees)assert.deepEqual(S.errors(employee,result.preview,rules),[]);
 });
+test('staggered team selection survives saved critical and fill checkpoints',()=>{
+ const p=payload();p.boundedSearch=true;p.monthInputs[0].boundedSearch=true;p.monthInputs[0].criticalBeamWidth=4;
+ for(const employee of p.monthInputs[0].employees)employee.team='Leipzig';
+ const resumed=finish(p).result,cp=C.start(p);let n=0;
+ while(cp.stage!=='done'){const runner=C.context(p,cp);for(let i=0;i<20&&cp.stage!=='done';i++)if(!runner.step())break;assert.ok(++n<200);}
+ assert.deepEqual(C.result(p,cp),resumed);
+});
 test('a multi-month deadline returns a clearly limited result for every requested month',()=>{
  const a=input(),b=input('2027-02'),minimum={...a,criticalPeriod:true,groups:[...a.groups,...b.groups],capacities:[...a.capacities,...b.capacities],criticalCapacities:[...a.criticalCapacities,...b.criticalCapacities]};
  const p={version:1,boundedSearch:true,months:[a.month,b.month],minimumInput:C.pack(minimum),monthInputs:[C.pack(a),C.pack(b)],metadata:{company:'one'}};
