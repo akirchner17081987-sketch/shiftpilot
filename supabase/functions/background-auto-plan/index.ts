@@ -7,6 +7,7 @@ import "../../../assets/month-optimizer-core-v1.js";
 import "../../../assets/wish-planning-core-v1.js";
 import "../../../assets/solid-planning-resume-v1.js";
 import "../../../assets/block-exchange-core-v1.js";
+import "../../../assets/team-leader-balance-core-v1.js";
 import "../../../assets/background-auto-plan-core-v1.js";
 import "../../../assets/auto-plan-repair-core-v1.js";
 import "../../../assets/planning-continuity-core-v1.js";
@@ -15,6 +16,7 @@ import {loadBlockSolver} from "../_shared/block-solver-runtime.ts";
 
 const core = (globalThis as any).SFBackgroundAutoPlanCore;
 const A=(globalThis as any).SFAutonomousPlanningCore;
+const TL=(globalThis as any).SFTeamLeaderBalanceCore;
 const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -109,6 +111,27 @@ Deno.serve(async req => {
         progress={percent:1,label:'Reparaturbereich erweitern',detail:'Der kleinere Reparaturversuch bleibt gespeichert. Weitere benachbarte Blöcke werden geprüft.'};
       }else output=best.result;
       }
+    }
+    if(output&&!output.repairScope?.reused&&input.monthInputs.some((month:any)=>month.solidRules?.teamLeaderShiftBalance?.enabled)&&(!boundedSearch||Date.now()<(checkpoint.deadlineAt||0)+3000)){
+      try{
+        const highs=await loadBlockSolver();
+        const candidate={...output,preview:output.preview.slice(),quality:output.quality.map((q:any)=>({...q}))};
+        let changed=0;
+        for(let i=0;i<input.months.length;i++){
+          const month=input.months[i],source=core.unpack(input.monthInputs[i]);
+          if(!source.solidRules.teamLeaderShiftBalance?.enabled)continue;
+          const own=candidate.preview.filter((a:any)=>a.date.startsWith(month));
+          const balanced=TL.balance(source,own,highs,boundedSearch?1:2);
+          if(!balanced.changed)continue;
+          candidate.preview=candidate.preview.filter((a:any)=>!a.date.startsWith(month)).concat(balanced.preview);
+          candidate.quality[i]={...candidate.quality[i],teamLeaderBalance:{status:balanced.status,changed:balanced.changed,counts:balanced.counts}};
+          changed+=balanced.changed;
+        }
+        if(changed){
+          const before=A.assess(prepared,output),after=A.assess(prepared,candidate);
+          if(after.open<=before.open&&after.critical<=before.critical&&after.errors<=before.errors&&after.spread<=before.spread+.001){output=candidate;checkpoint.proposed=output.preview;checkpoint.quality=output.quality;}
+        }
+      }catch(error){console.info(JSON.stringify({event:'auto_plan_tl_balance_unavailable',job_id:id,reason:String((error as Error)?.message||error).slice(0,160)}));}
     }
     if(output){
       const assessment=A.assess(prepared,output);
