@@ -80,7 +80,7 @@ test('wide critical search saves bounded beam slices and resumes inside one staf
 });
 test('wide fill selection resumes across checkpoints without changing the chosen duty',()=>{
  const date='2030-02-04',employees=Array.from({length:10},(_,i)=>({id:'fill-'+i,target:160,monthLimit:200,weeklyLimit:55,shifts:['DAY']})),input={month:'2030-02',employees,base:[],respectHours:true,solidRules:rules,capacities:[[date+'|DAY',1]],criticalCapacities:[],groups:employees.map(e=>({id:e.id+'|'+date,employee:e,options:[[{employeeId:e.id,date,type:'DAY',start:'07:00',end:'15:00',resource:date+'|DAY'}]]}))};
- const cp=R.start(input,1);cp.phase='iteration-start';R.context(input,cp).step();R.context(input,cp).step();assert.equal(cp.fillWork.index,4);const resumed=JSON.parse(JSON.stringify(cp));
+ const cp=R.start(input,1);cp.phase='iteration-start';R.context(input,cp).step();R.context(input,cp).step();assert.equal(cp.fillWork.index,8);const resumed=JSON.parse(JSON.stringify(cp));
  function finish(state,serialize){let steps=0;while(state.phase!=='done'){R.context(input,state).step();if(serialize)state=JSON.parse(JSON.stringify(state));assert.ok(++steps<200);}return R.context(input,state).result();}
  assert.deepEqual(finish(resumed,true),finish(cp,false));
 });
@@ -91,4 +91,21 @@ test('month progress reports the ongoing critical search and an incomplete draft
 });
 test('single-month night staffing uses four starts before the joint block exchange',()=>{
  const p=payload();p.enhancedBlockSearch=true;p.monthInputs[0].criticalCapacities=[['2027-01-04|TL',1]];const cp=C.start(p);C.context(p,cp);assert.equal(cp.stage,'month');assert.equal(cp.solver.iterations,4);
+});
+test('the regular bounded planner keeps hard rules and returns a reviewable partial result at its deadline',()=>{
+ const p=payload();p.boundedSearch=true;p.monthInputs[0].boundedSearch=true;p.monthInputs[0].criticalBeamWidth=16;
+ const cp=C.start(p);let runner=C.context(p,cp);assert.equal(cp.solver.iterations,1);
+ runner.step();
+ const resumed=JSON.parse(JSON.stringify(cp));runner=C.context(p,resumed);
+ assert.equal(runner.finishEarly(),true);assert.equal(resumed.stage,'done');
+ const result=runner.result();assert.equal(result.months.length,1);assert.ok(result.quality[0].searchLimited);
+ assert.ok(result.quality[0].critical>0,'unfilled positions are explicitly reported');
+ for(const employee of p.monthInputs[0].employees)assert.deepEqual(S.errors(employee,result.preview,rules),[]);
+});
+test('the bounded planner still fills a feasible monthly roster without a deadline fallback',()=>{
+ const p=payload();p.boundedSearch=true;p.monthInputs[0].boundedSearch=true;p.monthInputs[0].criticalBeamWidth=16;
+ const {result,cp}=finish(p);
+ assert.equal(cp.stage,'done');assert.equal(result.quality[0].critical,0);
+ assert.equal(result.preview.length,10);
+ for(const employee of p.monthInputs[0].employees)assert.deepEqual(S.errors(employee,result.preview,rules),[]);
 });

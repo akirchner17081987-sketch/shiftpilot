@@ -65,8 +65,9 @@ function context(input,cp){
       const resource=cp.fillWork?.resource||cp.order[cp.cursor++],s=fillState||(fillState=C.state(p,decode(cp.records)));
       if((s.remaining.get(resource)||0)<1){delete cp.fillWork;return true;}
       const roster=resource.endsWith('|OT-DAY'),candidates=roster?[]:byResource.get(resource)||[],work=cp.fillWork||{resource,index:0,score:null,chosen:null};let chosen=roster?C.rosterChoice(p,s,byResource.get(resource)||[],allowed):null;
-      for(const r of candidates.slice(work.index,work.index+4)){if(s.used.has(r.group.id)||!allowed(s,r))continue;const x=s.people.get(String(r.group.employee.id)),deficit=Math.max(0,r.group.employee.target-x.hours),same=r.option.every(a=>a.start===r.option[0].start),otPreferred=Number(p.solidRules.otDailyPreferredBlockLength)||0,otBonus=otPreferred>1&&r.option.length>1&&r.option.every(a=>a.type==='OT')?Math.min(r.option.length,otPreferred)*6:0,v=C.fairOptionGain(p,s,r)*.5+C.teamLeaderOptionScore(p,s,r)+(p.preferenceScore?.(r.group.employee,x.duties,r.option)||0)*(p.planningGoal==='WISHES'?2:p.planningGoal==='HOURS'?.5:1)+r.option.reduce((n,a)=>n+(C.criticalOpen(p,s,a.resource)>0?100:1),0)*10+otBonus+Math.min(deficit,r.option.hours)*.15+(same?2:0)-(r.option.length===4&&r.option[0].start>='18:00'&&S.employeeRules(r.group.employee,p.solidRules).preferredNightBlockLength!==4?4:0)-(r.option.length===1?4:0)+random()*3;if(work.score===null||v>work.score){work.chosen=refMap.get(r.option);work.score=v}}
-      work.index+=Math.min(4,candidates.length-work.index);if(work.index<candidates.length){cp.fillWork=work;return true;}
+      const batchSize=8;
+      for(const r of candidates.slice(work.index,work.index+batchSize)){if(s.used.has(r.group.id)||!allowed(s,r))continue;const x=s.people.get(String(r.group.employee.id)),deficit=Math.max(0,r.group.employee.target-x.hours),same=r.option.every(a=>a.start===r.option[0].start),otPreferred=Number(p.solidRules.otDailyPreferredBlockLength)||0,otBonus=otPreferred>1&&r.option.length>1&&r.option.every(a=>a.type==='OT')?Math.min(r.option.length,otPreferred)*6:0,v=C.fairOptionGain(p,s,r)*.5+C.teamLeaderOptionScore(p,s,r)+(p.preferenceScore?.(r.group.employee,x.duties,r.option)||0)*(p.planningGoal==='WISHES'?2:p.planningGoal==='HOURS'?.5:1)+r.option.reduce((n,a)=>n+(C.criticalOpen(p,s,a.resource)>0?100:1),0)*10+otBonus+Math.min(deficit,r.option.hours)*.15+(same?2:0)-(r.option.length===4&&r.option[0].start>='18:00'&&S.employeeRules(r.group.employee,p.solidRules).preferredNightBlockLength!==4?4:0)-(r.option.length===1?4:0)+random()*3;if(work.score===null||v>work.score){work.chosen=refMap.get(r.option);work.score=v}}
+      work.index+=Math.min(batchSize,candidates.length-work.index);if(work.index<candidates.length){cp.fillWork=work;return true;}
       if(!roster&&work.chosen)chosen=decode([work.chosen])[0];delete cp.fillWork;
       if(chosen){C.commit(s,chosen,p.month);cp.records=encode(s.records);cp.changed=true;}return true;
     }
@@ -93,8 +94,17 @@ function context(input,cp){
     }
     throw Error('Unknown checkpoint phase');
   }
-  function result(){if(cp.phase!=='done')throw Error('Job not complete');let balanced=cp.refined?C.state(p,decode(cp.refined)):C.refineRecords(p,C.state(p,decode(cp.best||[])),allowed);const restored=C.restoreOrderedRoster(p,balanced.records,allowed);if(restored){restored.searchLimited=balanced.searchLimited;balanced=restored;}const records=balanced.records;cp.best=encode(records);cp.quality={...C.solidQuality(p,balanced),searchLimited:!!(cp.refineLimited||balanced.searchLimited)};return {preview:records.flatMap(r=>r.option.map(a=>({...a,blockId:r.group.id}))),quality:cp.quality,remaining:[...balanced.remaining]};}
-  return{step,result};
+  function finishEarly(){
+    if(cp.phase!=='done'){
+      const partial=cp.records?.length?cp.records:cp.phase==='critical'?[...cp.minimum,...(cp.beam?.[0]?.records||[])]:cp.minimum;
+      const selected=cp.best?C.state(p,decode(cp.best)):null,working=seeded(partial);
+      const best=selected&&C.solidBetter(C.solidQuality(p,selected),C.solidQuality(p,working))?selected:working;
+      cp.refined=encode(best.records);cp.best=cp.refined;cp.quality=C.solidQuality(p,best);cp.refineLimited=true;cp.phase='done';
+    }
+    return result();
+  }
+  function result(){if(cp.phase!=='done')throw Error('Job not complete');let balanced=cp.refined?C.state(p,decode(cp.refined)):input.boundedSearch?C.state(p,decode(cp.best||[])):C.refineRecords(p,C.state(p,decode(cp.best||[])),allowed);const restored=C.restoreOrderedRoster(p,balanced.records,allowed);if(restored){restored.searchLimited=balanced.searchLimited;balanced=restored;}const records=balanced.records;cp.best=encode(records);cp.quality={...C.solidQuality(p,balanced),searchLimited:!!(cp.refineLimited||balanced.searchLimited||input.boundedSearch)};return {preview:records.flatMap(r=>r.option.map(a=>({...a,blockId:r.group.id}))),quality:cp.quality,remaining:[...balanced.remaining]};}
+  return{step,result,finishEarly};
 }
 return{start,context,planningBase};
 });

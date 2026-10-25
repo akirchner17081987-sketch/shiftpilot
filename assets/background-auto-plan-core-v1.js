@@ -63,19 +63,24 @@
    return{step:()=>false,exchangeStep:highs=>{if(cp.exchange.status==='searching')exchange.step(highs);if(cp.exchange.status!=='searching')return finish();return false;},stopExchange:reason=>{cp.exchange.status='unavailable';cp.exchange.reason=String(reason).slice(0,160);return finish();},progress:()=>progress(payload,cp),result:()=>result(payload,cp)};
   }
   const jointNightSearch=payload.enhancedBlockSearch&&payload.months.length===1&&!input.criticalOnly&&input.solidRules.teamLeaderMinimumMonthlyHours==null&&input.criticalCapacities?.some(([key,n])=>n>0&&key.endsWith('|TL'));
-  cp.solver=cp.solver||R.start(input,jointNightSearch?4:Math.max(input.solidRules.teamLeaderMinimumMonthlyHours!=null&&!input.criticalOnly?24:12,Math.min(48,Number(input.searchIterations)||12)));let runner=R.context(input,cp.solver);
+  cp.solver=cp.solver||R.start(input,payload.boundedSearch?1:jointNightSearch?4:Math.max(input.solidRules.teamLeaderMinimumMonthlyHours!=null&&!input.criticalOnly?24:12,Math.min(48,Number(input.searchIterations)||12)));let runner=R.context(input,cp.solver);
   function step(){
    if(cp.stage==='done')return false;
    runner.step();cp.steps++;
    if(cp.solver.phase==='done'){
     const found=runner.result();
     if(cp.stage==='minimum'){cp.minimum=unique([...(payload.minimumInput.reserved||[]),...found.preview]);cp.stage='month';}
-    else if(payload.enhancedBlockSearch&&E){cp.exchange=E.start(input,found.preview);cp.pendingQuality=found.quality;cp.stage='exchange';cp.solver=null;return false;}
+    else if(payload.enhancedBlockSearch&&!payload.boundedSearch&&E){cp.exchange=E.start(input,found.preview);cp.pendingQuality=found.quality;cp.stage='exchange';cp.solver=null;return false;}
     else if(acceptMonth(found))return true;
     cp.solver=null;return false; // Rebuild only at the next invocation, with the new immutable stage input.
    }return true;
   }
-  return {step,progress:()=>progress(payload,cp),result:()=>result(payload,cp)};
+  function finishEarly(){
+   if(cp.stage!=='month')return false;
+   const found=runner.finishEarly();
+   return acceptMonth(found);
+  }
+  return {step,finishEarly,progress:()=>progress(payload,cp),result:()=>result(payload,cp)};
  }
  function progress(payload,cp){
   if(cp.stage==='done'){const missing=(cp.quality||[]).reduce((n,q)=>n+(q?.critical||0),0);return missing?{percent:100,label:'Entwurf mit offenen Pflichtdiensten',detail:missing+' Pflichtpositionen sind noch unbesetzt. Der Entwurf muss geprüft werden.'}:{percent:100,label:'Planung abgeschlossen',detail:'Die Vorschläge sind zur Prüfung bereit.'};}

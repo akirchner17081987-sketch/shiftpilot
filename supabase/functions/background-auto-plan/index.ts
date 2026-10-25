@@ -45,12 +45,17 @@ Deno.serve(async req => {
     const policy = await admin.from("company_compliance_policy").select("standard_max_shift_hours").eq("company_id", job.payload.metadata.company).single();
     if (policy.error || !policy.data) throw new Error("Die Schichtdauer des Unternehmens konnte nicht geladen werden.");
     // Shared search capability; eligibility and hard rules come from this job's company.
-    const scopedBlockRecovery = true;
+    // New jobs use one broad, rule-checked allocation. A legacy run which has
+    // already exceeded the budget returns its best saved draft on the next claim.
+    const startedAt=Date.parse(job.started_at||"");
+    const boundedSearch = checkpoint ? checkpoint.boundedSearch === true || Number.isFinite(startedAt)&&Date.now()-startedAt>120000 : true;
+    const scopedBlockRecovery = !boundedSearch;
     const prepared = core.withShiftDurationLimit(core.withServerWishes(job.payload, job.server_wishes), Number(policy.data.standard_max_shift_hours));
     const repairLevel=checkpoint?.repairLevel||0;
     const scoped=A.repairPayload(prepared,repairLevel);
-    const input = { ...scoped, enhancedBlockSearch:true, minimumInput: { ...scoped.minimumInput, scopedBlockRecovery }, monthInputs: scoped.monthInputs.map((month: any) => ({ ...month, scopedBlockRecovery })) };
+    const input = { ...scoped, boundedSearch, enhancedBlockSearch:!boundedSearch, minimumInput: { ...scoped.minimumInput, scopedBlockRecovery, boundedSearch, criticalBeamWidth:boundedSearch?16:undefined }, monthInputs: scoped.monthInputs.map((month: any) => ({ ...month, scopedBlockRecovery, boundedSearch, criticalBeamWidth:boundedSearch?16:undefined })) };
     checkpoint = checkpoint || core.start(input);
+    if(boundedSearch){checkpoint.boundedSearch=true;checkpoint.deadlineAt ||= (Number.isFinite(startedAt)?startedAt:Date.now())+105000;}
     const reuse=prepared.metadata.continuity?.reusable&&!checkpoint.repairBest&&!checkpoint.skipReuse;
     const run = reuse?null:core.context(input, checkpoint), slice = performance.now();
     preparationMs=Math.round(slice-preparationStarted);computeStarted=slice;
@@ -69,6 +74,8 @@ Deno.serve(async req => {
       // time leaves headroom for cold starts, model checks and serialization.
       try{if(checkpoint.exchange.status==='searching')run!.exchangeStep(await loadBlockSolver());else run!.exchangeStep(null);}catch(error){run!.stopExchange((error as Error)?.message||'Zusätzliche Suche nicht verfügbar; bester Vorschlag bleibt erhalten.');}
       steps++;
+    }else if(boundedSearch&&checkpoint.stage==='month'&&Date.now()>=checkpoint.deadlineAt){
+      run!.finishEarly();steps++;
     }else {
       if(checkpoint.solver?.phase==='fill')console.info(JSON.stringify({event:'auto_plan_fill_enter',job_id:id,revision:job.revision,cursor:checkpoint.solver.cursor,records:checkpoint.solver.records?.length||0}));
       do {
@@ -86,7 +93,7 @@ Deno.serve(async req => {
       if(incumbent){incumbent.audit=A.assess(prepared,incumbent.result);if(!incumbent.audit.canApply)incumbent.audit=null;}
       const old=checkpoint.repairBest||incumbent?.audit&&incumbent;
       const best=old&&A.compare(old.audit,candidate.audit,prepared.metadata.continuity?.improve)<=0?old:candidate;
-      if(!candidate.audit.canApply&&prepared.metadata.continuity?.affectedDates?.length&&repairLevel<2){
+      if(!boundedSearch&&!candidate.audit.canApply&&prepared.metadata.continuity?.affectedDates?.length&&repairLevel<2){
         checkpoint={...core.start(A.repairPayload(prepared,repairLevel+1)),repairLevel:repairLevel+1,repairBest:best,skipReuse:checkpoint.skipReuse};output=null;
         progress={percent:1,label:'Reparaturbereich erweitern',detail:'Der kleinere Reparaturversuch bleibt gespeichert. Weitere benachbarte Blöcke werden geprüft.'};
       }else output=best.result;
