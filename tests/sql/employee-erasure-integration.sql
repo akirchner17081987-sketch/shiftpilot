@@ -1,10 +1,16 @@
 -- Entirely fictitious companies, staff and bookings.
 create function public.assert_erasure(ok boolean,message text) returns void language plpgsql as $$begin if not coalesce(ok,false) then raise exception 'ASSERTION: %',message;end if;end$$;
 create function public.finish_database_erasure_for_test(job_id uuid,actor_id uuid) returns jsonb language plpgsql as $$
-declare result_ jsonb; attempts_ integer:=0;
+declare result_ jsonb; attempts_ integer:=0; percentage_ integer:=0;
 begin
  loop
   result_:=public.server_commit_employee_erasure(job_id,actor_id);attempts_:=attempts_+1;
+  perform public.assert_erasure(coalesce((result_->>'percentage')::int,0)>=percentage_ and coalesce((result_->>'percentage')::int,0)<100,'progress is monotonic and never complete before verification');
+  percentage_:=coalesce((result_->>'percentage')::int,0);
+  if to_regprocedure('public.owner_employee_erasure_progress(uuid,uuid)') is not null then
+  perform public.assert_erasure(coalesce((public.owner_employee_erasure_progress('20000000-0000-0000-0000-000000000001',
+   (select employee_id from private.employee_erasure_jobs where id=job_id))->>'percentage')::int,0)=percentage_,'owner polling returns the committed progress checkpoint');
+  end if;
   if (result_->>'database_done')::boolean then return result_;end if;
   if attempts_>1000 then raise exception 'ASSERTION: database erasure does not converge';end if;
   perform public.assert_erasure(not exists(select 1 from private.employee_erasure_context),'pending batch clears transaction context');

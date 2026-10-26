@@ -14,28 +14,42 @@
   const companyId=B.companyId;await flush();
   const q=await B.client.rpc('owner_employee_erasure_preview',{p_company_id:companyId,p_employee_id:employeeId});if(q.error)throw q.error;
   if(B.companyId!==companyId)throw Error('Das Unternehmen wurde gewechselt. Bitte die Übersicht erneut öffnen.');
-  return{...q.data,companyId,operationId:crypto.randomUUID()};
+  const snapshot={...q.data,companyId,operationId:crypto.randomUUID()};
+  if(snapshot.pending){try{const progress=await B.client.rpc('owner_employee_erasure_progress',{p_company_id:companyId,p_employee_id:employeeId});if(!progress.error)snapshot.progress=progress.data;}catch{}}
+  return snapshot;
  };
  D.commit=async(snapshot,name,ack)=>{
   if(!D.canErase()||B.companyId!==snapshot.companyId)throw Error('Das Unternehmen oder die Berechtigung hat sich geändert. Bitte erneut öffnen.');
   if(D.busy||!D.validConfirmation(snapshot,name,ack))throw Error('Bitte den vollständigen Namen eingeben und die Löschung bestätigen.');
   D.busy=true;B.employeeRemovalBusy=true;
+  let active=true,timer=null,percentage=Math.max(0,Math.min(99,Number(snapshot.progress?.percentage)||0));
+  const report=data=>{
+   if(!active)return;
+   percentage=data?.complete===true&&data?.verified===true?100:Math.max(percentage,Math.min(99,Math.floor(Number(data?.percentage)||0)));
+   try{snapshot.onProgress?.({...data,percentage});}catch{}
+  };
+  const poll=async()=>{
+   try{const result=await B.client.rpc('owner_employee_erasure_progress',{p_company_id:snapshot.companyId,p_employee_id:snapshot.employee_id});if(!result.error)report(result.data);}catch{}
+   if(active)timer=setTimeout(poll,2000);
+  };
+  report({phase:'PREPARATION',percentage});poll();
   try{
    let q;
    do{
    q=await B.client.functions.invoke('employee-erasure',{body:{companyId:snapshot.companyId,employeeId:snapshot.employee_id,
     operationId:snapshot.operationId,confirmation:name.trim(),acknowledged:true,fingerprint:snapshot.fingerprint}});
    if(q.error){let detail;try{detail=await q.error.context?.json();}catch{}throw Error(detail?.error||q.error.message||'Die Löschung wurde nicht abgeschlossen. Bitte erneut versuchen.');}
-   if(q.data?.pending===true)snapshot.onProgress?.(q.data);
+   if(q.data?.pending===true)report(q.data);
    }while(q.data?.pending===true);
    if(q.data?.complete!==true||q.data?.verified!==true)throw Error(q.data?.error||'Die abschließende Löschprüfung ist noch nicht abgeschlossen.');
+   report({...q.data,phase:'COMPLETE',percentage:100});
    B.clearLegacy?.();B.legacy={};B.hasLegacy=false;
    if(typeof selectedEmployeeId!=='undefined')selectedEmployeeId=null;
    if(typeof selectedPlanEmployeeId!=='undefined')selectedPlanEmployeeId=null;
    try{await B.hydrate();}catch{return{...q.data,reloadNeeded:true};}
    try{const channel=new BroadcastChannel('schichtfunk-employee-roster');channel.postMessage({companyId:snapshot.companyId});channel.close();}catch{}
    return q.data;
-  }finally{D.busy=false;B.employeeRemovalBusy=false;}
+  }finally{active=false;clearTimeout(timer);D.busy=false;B.employeeRemovalBusy=false;}
  };
  function css(){
   if(document.getElementById('sfEmployeeErasureCss'))return;
@@ -45,6 +59,7 @@
    .sf-erasure-dialog h2{font-size:22px;line-height:1.3;margin:0 0 12px}.sf-erasure-dialog p{margin:10px 0}.sf-erasure-dialog label{display:block;margin-top:14px}.sf-erasure-dialog input[type=text],.sf-erasure-dialog select{box-sizing:border-box;display:block;width:100%;min-height:46px;border-radius:8px;border:1px solid var(--line);background:var(--bg,#081522);color:var(--text);padding:10px;font-size:16px;margin-top:6px}.sf-erasure-dialog select{font-size:14px}
    .sf-erasure-counts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:16px 0}.sf-erasure-counts div{border:1px solid var(--line);border-radius:9px;padding:12px;overflow-wrap:anywhere}.sf-erasure-counts b{display:block;font-size:24px}.sf-erasure-counts span{font-size:14px}
    .sf-erasure-warning{border-left:3px solid #df6565;background:var(--bg);padding:10px 12px}.sf-erasure-ack{display:flex!important;align-items:flex-start;gap:10px}.sf-erasure-ack input{flex:none;width:20px;height:20px;margin:2px 0;accent-color:#c65757}.sf-erasure-error{color:#e77686;white-space:normal;overflow-wrap:anywhere;margin-top:12px}.sf-erasure-footer{display:flex;justify-content:flex-end;gap:9px;flex-wrap:wrap;margin-top:20px}.sf-erasure-footer button{min-height:44px;font-size:14px}.sf-erasure-footer button:disabled{opacity:.45;cursor:not-allowed}.sf-erasure-note{color:var(--muted);font-size:13px;line-height:1.5}.sf-erasure-entry{min-height:40px;font-size:13px}
+   #sfErasureConfirm[aria-busy=true],#sfErasureConfirm[data-complete=true]{opacity:1;color:var(--text,#eef5ff);font-weight:600;border-radius:8px;border-color:#c65757;background-image:linear-gradient(90deg,#df656550 var(--sf-erasure-progress,0%),transparent var(--sf-erasure-progress,0%));transition:background-color .2s}
    @media(max-width:480px){.sf-erasure-dialog{padding:16px}.sf-erasure-footer button{flex:1}.sf-erasure-dialog h2{font-size:20px}}
   `;document.head.appendChild(style);
  }
@@ -90,13 +105,15 @@
      button.onclick=async()=>{
       if(!D.validConfirmation(snapshot,name.value,ack.checked)||D.busy)return;
       snapshot.onProgress=progress=>{
-       const count=Number(progress.processed||0).toLocaleString('de-DE');
-       button.textContent=progress.phase==='AUDIT'?`Protokolle bereinigen · ${count} geprüft …`:
-        progress.phase==='VERIFY'?`Restdaten prüfen · ${count} geprüft …`:'Verknüpfte Daten bereinigen …';
+       snapshot.progress=progress;
+       const labels={PREPARATION:'Löschung vorbereiten',FILES:'Dateien entfernen',SHARED_DATA:'Verknüpfte Daten bereinigen',AUDIT:'Protokolle bereinigen',VERIFY:'Löschung prüfen',COMPLETE:'Vollständig gelöscht'};
+       button.textContent=`${labels[progress.phase]||'Mitarbeiterdaten löschen'} · ${progress.percentage} %`;
+       button.style.setProperty('--sf-erasure-progress',`${progress.percentage}%`);
+       button.dataset.complete=String(progress.complete===true&&progress.verified===true);
       };
-      shade.querySelectorAll('input,select,button').forEach(control=>control.disabled=true);error.textContent='';button.textContent='Dateien, Daten und Restbestand werden geprüft …';
-      try{const result=await D.commit(snapshot,name.value,ack.checked);close();window.showSaveToast?.('Vollständig gelöscht',result.reloadNeeded?'Die Löschung wurde bestätigt. Bitte die Seite neu laden.':'Alle zugehörigen Daten wurden entfernt und der Restbestand geprüft.');}
-      catch(failure){const message=failure.message||String(failure);error.textContent=/statement timeout/i.test(message)?'Ein Löschschritt hat zu lange gedauert. Bereits abgeschlossene Schritte bleiben gespeichert. Mit „Löschung erneut versuchen“ setzt du den Vorgang fort.':message;shade.querySelectorAll('input,select,button').forEach(control=>control.disabled=false);button.textContent='Löschung erneut versuchen';update();}
+      shade.querySelectorAll('input,select,button').forEach(control=>control.disabled=true);error.textContent='';button.setAttribute('aria-busy','true');button.setAttribute('aria-live','polite');button.setAttribute('aria-atomic','true');
+      try{const result=await D.commit(snapshot,name.value,ack.checked);button.removeAttribute('aria-busy');await new Promise(resolve=>setTimeout(resolve,300));close();window.showSaveToast?.('Vollständig gelöscht',result.reloadNeeded?'Die Löschung wurde bestätigt. Bitte die Seite neu laden.':'Alle zugehörigen Daten wurden entfernt und der Restbestand geprüft.');}
+      catch(failure){const message=failure.message||String(failure);error.textContent=/statement timeout/i.test(message)?'Ein Löschschritt hat zu lange gedauert. Bereits abgeschlossene Schritte bleiben gespeichert. Mit „Löschung fortsetzen“ setzt du den Vorgang fort.':message;button.removeAttribute('aria-busy');shade.querySelectorAll('input,select,button').forEach(control=>control.disabled=false);button.textContent=`Löschung fortsetzen · ${snapshot.progress?.percentage||0} %`;update();}
      };name.focus();
     }catch(failure){if(turn===serial){preview.textContent='Die Löschübersicht konnte nicht geladen werden.';error.textContent=failure.message||String(failure);}}
    };
