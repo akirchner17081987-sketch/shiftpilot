@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 27382)
-Total output lines: 3329
-
 {
   "reviewedAt": "2026-10-24",
   "sourceCommit": "80485ff3eb6e003ab4cd1f329f118118d0d103bc",
@@ -1649,7 +1646,304 @@ Total output lines: 3329
       "source": "assets/employee-qr-status-v1.js",
       "area": "QR-Terminals, Buchungen, Korrekturen, Pausen",
       "category": "qr",
-      "kind": "feature-or-su…2382 tokens truncated…s/scrollbar-design-v1.js",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/employee-removal-v1.js",
+      "area": "Mitarbeiter, Verfügbarkeit, persönliche Rhythmen und Entfernen",
+      "category": "employees",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/employee-rhythm-v1.js",
+      "area": "Mitarbeiter, Verfügbarkeit, persönliche Rhythmen und Entfernen",
+      "category": "employees",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/employee-shifts-month-v1.js",
+      "area": "Portal, eigene Dienste, Tausch und Rückmeldungen",
+      "category": "portal",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/employee-time-account-v2.js",
+      "area": "Stundenkonto und private Lohnvorschau",
+      "category": "portal",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/employee-wage-preview-v1.js",
+      "area": "Stundenkonto und private Lohnvorschau",
+      "category": "portal",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/help-center-content-v3.js",
+      "area": "Hilfe und Suche",
+      "category": "start",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/help-center-guides-v1.js",
+      "area": "Hilfe und Suche",
+      "category": "start",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/help-center-v1.js",
+      "area": "Hilfe und Suche",
+      "category": "start",
+      "kind": "support-or-legacy"
+    },
+    {
+      "source": "assets/individual-month-planner-v1.js",
+      "area": "Planungsassistent und Optimierung",
+      "category": "auto",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/landing-demo-cta-v1.js",
+      "area": "Demo und Beispielszenarien",
+      "category": "start",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/manager-schedule-time-layout-v1.js",
+      "area": "Zeiterfassung, zentrale Berechnung und Monatsabschluss",
+      "category": "time",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/manager-theme-v1.js",
+      "area": "Darstellung, mobile Navigation und App-Nutzung",
+      "category": "appearance",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/mobile-manager-navigation-v1.js",
+      "area": "Darstellung, mobile Navigation und App-Nutzung",
+      "category": "appearance",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/month-optimizer-core-v1.js",
+      "area": "Planungsassistent und Optimierung",
+      "category": "auto",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/month-optimizer-v1.js",
+      "area": "Planungsassistent und Optimierung",
+      "category": "auto",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/monthly-schedule-import-v1.js",
+      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "category": "schedule",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/navigation-compat-v1.js",
+      "area": "Darstellung, mobile Navigation und App-Nutzung",
+      "category": "appearance",
+      "kind": "support-or-legacy"
+    },
+    {
+      "source": "assets/noop-change-guard-v1.js",
+      "area": "Technische Datenanbindung und Schutzmechanismen",
+      "category": "trouble",
+      "kind": "support-or-legacy"
+    },
+    {
+      "source": "assets/o1s-integration-v1.js",
+      "area": "Schichtmodelle, Bedarf, Teams und Feiertagsregeln",
+      "category": "settings",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/open-shift-marketplace-v1.js",
+      "area": "Offene Dienste und freiwillige Übernahmen",
+      "category": "marketplace",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/ot-weekend-holiday-policy.js",
+      "area": "Schichtmodelle, Bedarf, Teams und Feiertagsregeln",
+      "category": "settings",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/planning-assistant-core-v1.js",
+      "area": "Planungsassistent: Erklärungen, Ersatz und Optimierung",
+      "category": "assistant",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/planning-assistant-v1.js",
+      "area": "Planungsassistent: Erklärungen, Ersatz und Optimierung",
+      "category": "assistant",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/planning-teams-v1.js",
+      "area": "Schichtmodelle, Bedarf, Teams und Feiertagsregeln",
+      "category": "settings",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/privacy-retention-ui-v1.js",
+      "area": "Datenschutz, Audit und vollständige Löschung",
+      "category": "access",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/publish-dialog-design-v1.js",
+      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "category": "schedule",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/push-notifications-v1.js",
+      "area": "Benachrichtigungen und Push",
+      "category": "portal",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/qa-integration-v1.js",
+      "area": "Technische Datenanbindung und Schutzmechanismen",
+      "category": "trouble",
+      "kind": "support-or-legacy"
+    },
+    {
+      "source": "assets/qr-independent-report-v1.js",
+      "area": "QR-Terminals, Buchungen, Korrekturen, Pausen",
+      "category": "qr",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/qr-manager-correction-v1.js",
+      "area": "QR-Terminals, Buchungen, Korrekturen, Pausen",
+      "category": "qr",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/qr-pause-total-v1.js",
+      "area": "QR-Terminals, Buchungen, Korrekturen, Pausen",
+      "category": "qr",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/readiness-traffic-light-v1.js",
+      "area": "Heute, Live-Besetzung und Einsatzbereitschaft",
+      "category": "overview",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/reports-final-v1.js",
+      "area": "DATEV und Monatsberichte",
+      "category": "reports",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/schedule-auto-plan-navigation-v1.js",
+      "area": "Planungsassistent und Optimierung",
+      "category": "auto",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/schedule-employee-display-v1.js",
+      "area": "Mitarbeiter, Verfügbarkeit, persönliche Rhythmen und Entfernen",
+      "category": "employees",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/schedule-employee-pool-polish-v1.js",
+      "area": "Mitarbeiter, Verfügbarkeit, persönliche Rhythmen und Entfernen",
+      "category": "employees",
+      "kind": "support-or-legacy"
+    },
+    {
+      "source": "assets/schedule-export-core-v1.js",
+      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "category": "schedule",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/schedule-export-v1.js",
+      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "category": "schedule",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/schedule-final-v1.js",
+      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "category": "schedule",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/schedule-month-view-v1.js",
+      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "category": "schedule",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/schedule-readability-v1.js",
+      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "category": "schedule",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/schedule-status-history-v1.js",
+      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "category": "schedule",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/schedule-toolbar-polish-v1.js",
+      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "category": "schedule",
+      "kind": "support-or-legacy"
+    },
+    {
+      "source": "assets/schedule-ux-v3.js",
+      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "category": "schedule",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/schedule-week-board-v2-phase1.js",
+      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "category": "schedule",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/schichtfunk-brand-cleanup-v2.js",
+      "area": "Darstellung, mobile Navigation und App-Nutzung",
+      "category": "appearance",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/schichtfunk-help-center-v1.js",
+      "area": "Hilfe und Suche",
+      "category": "start",
+      "kind": "support-or-legacy"
+    },
+    {
+      "source": "assets/schichtfunk-rebrand.js",
+      "area": "Darstellung, mobile Navigation und App-Nutzung",
+      "category": "appearance",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/schichtfunk-schedule-core-v1.js",
+      "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
+      "category": "schedule",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/scrollbar-design-v1.js",
       "area": "Darstellung, mobile Navigation und App-Nutzung",
       "category": "appearance",
       "kind": "feature-or-support"
