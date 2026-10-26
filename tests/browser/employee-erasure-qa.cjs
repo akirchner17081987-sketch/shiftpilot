@@ -46,7 +46,7 @@ const path = require('node:path');
    await page.waitForFunction(()=>document.querySelector('#sfErasureConfirm').textContent.includes('99 %'));
    assert(!(await progressButton.textContent()).includes('100 %'),'100% is reserved for verified completion');
    await progressButton.scrollIntoViewIfNeeded();
-   await page.screenshot({path:`/workspace/scratch/70320f0cafb6/erasure-progress-${width}.png`});
+   await page.screenshot({path:path.join(require('node:os').tmpdir(),`erasure-progress-${width}.png`)});
    await page.evaluate(()=>resolveDeletion());
    await page.getByRole('button',{name:'Vollständig gelöscht · 100 %'}).waitFor();
    await page.waitForFunction(()=>!document.querySelector('#sfEmployeeErasureDialog'));

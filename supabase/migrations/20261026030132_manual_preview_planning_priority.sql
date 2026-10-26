@@ -77,7 +77,7 @@ BEGIN
       coalesce((SELECT timezone FROM public.companies WHERE id=new.company_id),'Europe/Berlin')) THEN RAISE EXCEPTION 'Shift overlaps an approved absence'; END IF;
     RETURN new;
   END IF;
-  IF new.status<>'CANCELLED' 
+  IF new.status<>'CANCELLED'
     AND coalesce(current_setting('schichtfunk.legacy_import',true),'off')<>'on'
     AND (TG_OP='INSERT' OR new.company_id IS DISTINCT FROM old.company_id
       OR new.employee_id IS DISTINCT FROM old.employee_id OR new.starts_at IS DISTINCT FROM old.starts_at
