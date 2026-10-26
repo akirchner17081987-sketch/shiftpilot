@@ -17,10 +17,10 @@ test('a name and explicit acknowledgement are required before staging',()=>{
 });
 test('completion is returned only after file deletion, database deletion, login deletion and independent verification',async()=>{
  const b=backend();assert.equal((await runEmployeeErasure(b,request,'actor')).complete,true);
- assert.deepEqual(b.calls,['server_stage_employee_erasure','remove-files','server_commit_employee_erasure','delete-login','server_finish_employee_erasure']);
+ assert.deepEqual(b.calls,['server_stage_employee_erasure','server_record_employee_erasure_step','remove-files','server_record_employee_erasure_step','server_commit_employee_erasure','delete-login','server_record_employee_erasure_step','server_finish_employee_erasure']);
 });
 test('a storage failure leaves database deletion unstarted',async()=>{
- const b=backend({storageError:true});await assert.rejects(runEmployeeErasure(b,request,'actor'));assert.deepEqual(b.calls,['server_stage_employee_erasure','remove-files']);
+ const b=backend({storageError:true});await assert.rejects(runEmployeeErasure(b,request,'actor'));assert.deepEqual(b.calls,['server_stage_employee_erasure','server_record_employee_erasure_step','remove-files']);
 });
 test('remaining storage metadata prevents login deletion and success',async()=>{
  const b=backend({commitError:true});await assert.rejects(runEmployeeErasure(b,request,'actor'));assert(!b.calls.includes('delete-login'));assert(!b.calls.includes('server_finish_employee_erasure'));
@@ -30,7 +30,7 @@ test('a failed login deletion never reports completion',async()=>{
 });
 test('an interrupted external phase resumes without repeating committed database erasure',async()=>{
  const b=backend({databaseDone:true});assert.equal((await runEmployeeErasure(b,request,'actor')).verified,true);
- assert.deepEqual(b.calls,['server_stage_employee_erasure','delete-login','server_finish_employee_erasure']);
+ assert.deepEqual(b.calls,['server_stage_employee_erasure','server_record_employee_erasure_step','delete-login','server_record_employee_erasure_step','server_finish_employee_erasure']);
 });
 test('pending database batches never delete the login or report verified completion',async()=>{
  const b=backend(),original=b.rpc;
@@ -38,8 +38,8 @@ test('pending database batches never delete the login or report verified complet
   if(name==='server_commit_employee_erasure'){b.calls.push(name);return{data:{database_done:false,phase:'AUDIT',processed:500}};}
   return original(name,args);
  };
- assert.deepEqual(await runEmployeeErasure(b,request,'actor'),{complete:false,pending:true,phase:'AUDIT',processed:500});
- assert.equal(b.calls.filter(x=>x==='server_commit_employee_erasure').length,6);
+ assert.deepEqual(await runEmployeeErasure(b,request,'actor'),{database_done:false,complete:false,pending:true,phase:'AUDIT',processed:500});
+ assert.equal(b.calls.filter(x=>x==='server_commit_employee_erasure').length,8);
  assert(!b.calls.includes('delete-login'));
  assert(!b.calls.includes('server_finish_employee_erasure'));
 });
@@ -53,15 +53,20 @@ test('database batches resume and finish only after database_done is explicitly 
  assert.equal(b.calls.filter(x=>x==='server_commit_employee_erasure').length,3);
  assert.equal(b.calls.at(-1),'server_finish_employee_erasure');
 });
-test('independent verification resumes in bounded batches without claiming success',async()=>{
- const b=backend({databaseDone:true}),original=b.rpc;
- b.rpc=async(name,args)=>name==='server_finish_employee_erasure'?{data:{complete:false,pending:true,phase:'VERIFY',processed:12000}}:original(name,args);
- assert.deepEqual(await runEmployeeErasure(b,request,'actor'),{complete:false,pending:true,phase:'VERIFY',processed:12000});
- assert(!b.calls.includes('server_commit_employee_erasure'));
+test('pending responses preserve server progress and phase measurements',async()=>{
+ const b=backend(),original=b.rpc;
+ b.rpc=async(name,args)=>name==='server_commit_employee_erasure'?{data:{database_done:false,phase:'SHARED_DATA',percentage:48,phaseMs:{SHARED_DATA:2500}}}:original(name,args);
+ const result=await runEmployeeErasure(b,request,'actor');
+ assert.equal(result.percentage,48);assert.deepEqual(result.phaseMs,{SHARED_DATA:2500});assert.equal(result.pending,true);assert(!b.calls.includes('delete-login'));
 });
-test('a resumed final verification reports completion only after the independent check succeeds',async()=>{
- const b=backend({databaseDone:true}),original=b.rpc;let checks=0;
- b.rpc=async(name,args)=>name==='server_finish_employee_erasure'&&++checks<3?{data:{complete:false,pending:true,phase:'VERIFY',processed:checks*2000}}:original(name,args);
- assert.equal((await runEmployeeErasure(b,request,'actor')).verified,true);
- assert.equal(checks,3);
+test('verification continues in bounded batches and never reports pending work as complete',async()=>{
+ const b=backend({databaseDone:true}),original=b.rpc;
+ b.rpc=async(name,args)=>{
+  if(name==='server_finish_employee_erasure'){b.calls.push(name);return{data:{complete:false,pending:true,phase:'VERIFY',percentage:96}};}
+  return original(name,args);
+ };
+ const result=await runEmployeeErasure(b,request,'actor');
+ assert.equal(result.complete,false);assert.equal(result.percentage,96);
+ assert.equal(b.calls.filter(x=>x==='server_finish_employee_erasure').length,8);
+ assert.equal(b.calls.filter(x=>x==='delete-login').length,1);
 });
