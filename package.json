@@ -2,6 +2,7 @@
   "name": "schichtfunk",
   "private": true,
   "scripts": {
+    "test:employee-erasure": "node --test tests/employee-erasure.test.mjs tests/employee-erasure-catalog.test.mjs tests/employee-erasure-performance.test.mjs",
     "build": "node scripts/build-static.mjs",
     "test:ionos": "node --test tests/ionos-migration.test.mjs",
     "test:login-gate": "node --test tests/login-only-gate.test.mjs",
@@ -22,6 +23,7 @@
     "node": ">=18"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.11",
     "@playwright/test": "^1.55.1"
   }
 }
