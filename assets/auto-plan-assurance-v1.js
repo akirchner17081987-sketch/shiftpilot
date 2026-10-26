@@ -9,6 +9,8 @@
     if(!e||e.status!=='active'||e.deletedAt)return['Mitarbeiterprofil ist nicht aktiv.'];
     if(!t||t.active===false)return['Schichtmodell ist nicht aktiv.'];
     if(e.startDate&&a.date<e.startDate||e.contractEnd&&a.date>e.contractEnd)reasons.push('Außerhalb des Beschäftigungszeitraums.');
+    if(window.SFAutoPlanPreviewEditor?.isManual?.(a))return window.SFAutoPlanPreviewEditor.check([...other,a],[a]);
+    other=window.SFAutoPlanPreviewEditor?.automaticRows?.(other)||other;
     const start=a.start||t.start,end=a.end||t.end;
     if(start!==t.start||end!==t.end||a.rhythmOverride){
       if(!window.SFAutoPlanPreviewEditor?.check)reasons.push('Die Prüfung der individuellen Dienstzeiten ist nicht verfügbar.');
