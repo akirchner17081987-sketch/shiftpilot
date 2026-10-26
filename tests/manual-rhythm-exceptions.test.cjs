@@ -87,6 +87,40 @@ test('PostgreSQL enforces scoped exceptions, reason, stale versions, rest and au
  await db.exec('reset role');await db.query("update company_members set role='EMPLOYEE' where company_id=$1",[company]);await db.exec('set role authenticated');
  await assert.rejects(db.query("insert into shift_assignments(company_id,employee_id,shift_code,starts_at,ends_at,status,rhythm_override) values($1,$2,'ND','2027-01-20T21:00Z','2027-01-21T05:00Z','DRAFT',$3)",[company,employee,{reason:'Not authorized',workBlockDays:5,blockStart:'2027-01-20',blockEnd:'2027-01-24'}]),/Planungsberechtigte/);
 
+
+ // Upgrade the same isolated schema to current production functions, then exercise conscious manual planning.
+ await db.exec('reset role');await db.exec('delete from shift_assignments');
+ await db.query("update company_members set role='PLANNER' where company_id=$1",[company]);
+ await db.exec(`alter table company_compliance_policy add monthly_planning_max_shifts integer;
+ create table public.open_shift_market_claims(company_id uuid,assignment_id uuid,employee_id uuid,status text);
+ create function private.sf_planner_month_override(uuid,uuid) returns boolean language sql as $$select false$$;
+ grant select on open_shift_market_claims to authenticated;`);
+ await db.exec(sqlFunction(read('supabase/migrations/20261017100501_fulltime_180_target_200_auto_manual_override.sql'),'private.sf_confirmed_month_error'));
+ await db.exec(read('supabase/migrations/20261026030132_manual_preview_planning_priority.sql'));
+ await db.exec(`create trigger a1_month_planning_limits before insert or update on public.shift_assignments for each row execute function private.sf_guard_month_planning_limits();
+ create constraint trigger shift_assignments_confirmed_month_count after insert or update on public.shift_assignments deferrable initially deferred for each row execute function private.sf_guard_confirmed_month_count();`);
+ await db.query("update employees set employment='Teilzeit',weekly_hours=40,qualifications=array['__sp:monthlyHours=16','__sp:maxConsecutive=4'] where id=$1",[employee]);
+ await db.query("update company_compliance_policy set solid_planning_rules=$1 where company_id=$2",[{enabled:true,confirmedRulesVersion:2,maxConsecutiveShifts:4,maxConsecutiveNightShifts:4,maxCalendarWeekHours:40,minFreeCalendarDays:2,minBlockRestHours:48},company]);
+ await db.exec('set role authenticated');
+ const explicit=Array.from({length:8},(_,i)=>({employee_id:employee,shift_code:'ND',starts_at:`2027-01-${String(i+4).padStart(2,'0')}T21:00Z`,ends_at:`2027-01-${String(i+5).padStart(2,'0')}T05:00Z`,legacy_id:'explicit-'+i}));
+ await assert.rejects(apply(explicit),/Monats|monat|persönlich|vier Dienste|Stunden|Maximum/);
+ const intentional=explicit.map(a=>({...a,rhythm_override:{manualPlanning:true,reason:'Zusätzlicher Dienst bewusst geplant'}}));
+ assert.equal((await apply(intentional)).rows[0].result.created,8,'manual eight-night block ignores automatic hours, block and recovery caps');
+ const savedManual=(await db.query('select * from shift_assignments order by starts_at')).rows;
+ assert.ok(savedManual.every(a=>a.rhythm_override.manualPlanning===true&&a.rhythm_override.actor_id===actor&&a.rhythm_override.company_id===company));
+ await assert.rejects(db.query("select private.sf_assert_month_planning_limits($1,$2,'2027-01-01')",[company,employee]),/Stunden|Schichten|Monat|monat/,'future automatic planning counts existing manual duties');
+ await assert.rejects(db.query("update shift_assignments set starts_at=starts_at+interval '1 day',ends_at=ends_at+interval '1 day' where id=$1",[savedManual[0].id]),/ursprünglichen Dienst/);
+ await db.exec('delete from shift_assignments');
+ const mixed=explicit.map((a,i)=>({...a,rhythm_override:i<2?null:{manualPlanning:true,reason:'Bewusste Ergänzung'}}));
+ assert.equal((await apply(mixed)).rows[0].result.created,8,'strictly checked automatic duties and manual additions save atomically together');
+ assert.equal((await db.query('select count(*)::int n from shift_assignments where rhythm_override is not null')).rows[0].n,6);
+ await db.exec('delete from shift_assignments');
+ const shortRest=[{...intentional[0],starts_at:'2027-01-04T05:00Z',ends_at:'2027-01-04T18:00Z'}, {...intentional[1],starts_at:'2027-01-04T21:00Z',ends_at:'2027-01-05T05:00Z'}];
+ assert.equal((await apply(shortRest)).rows[0].result.created,2,'manual custom duration and less than eleven-hour rest are accepted');
+ await assert.rejects(apply([{...intentional[0],legacy_id:'overlapping',starts_at:'2027-01-04T06:00Z',ends_at:'2027-01-04T13:00Z'}]),/overlaps/);
+ await db.exec('reset role');await db.query("update company_members set role='EMPLOYEE' where company_id=$1",[company]);await db.exec('set role authenticated');
+ await assert.rejects(apply(intentional),/Planungsrechte/);
+
  }finally{await db.close();}
 });
 

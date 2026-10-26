@@ -68,13 +68,13 @@ for(const theme of ['dark','light'])test(`orange staffing vacancy selects qualif
  });await previewEditor(page);
  const cell=page.locator('[data-staffing-shift="FD"] td').first();await expect(cell).toHaveClass(/is-short/);
  await cell.getByRole('button').focus();await page.keyboard.press('Enter');await expect(page.getByRole('dialog')).toBeVisible();await expect(page.locator('#sfPreviewFrom')).toHaveValue('2026-12-01');await expect(page.locator('#sfPreviewTo')).toHaveValue('2026-12-01');await expect(page.locator('#sfPreviewShift')).toHaveValue('FD');await expect(page.locator('#sfPreviewSearch')).toBeFocused();
- await expect(page.locator('#sfPreviewEmployee option')).toHaveCount(3);await expect(page.locator('#sfPreviewEmployee')).not.toContainText('Urlaub');await page.locator('#sfPreviewUnavailable summary').click();await expect(page.locator('#sfPreviewUnavailable')).toContainText('Keine Freigabe');await expect(page.locator('#sfPreviewUnavailable')).toContainText('abwesend');await expect(page.locator('#sfPreviewUnavailable')).toContainText('freien Tag');
+ await expect(page.locator('#sfPreviewEmployee option')).toHaveCount(4);await expect(page.locator('#sfPreviewEmployee option[value="fixed"]')).toBeEnabled();await expect(page.locator('#sfPreviewEmployee')).not.toContainText('Urlaub');await page.locator('#sfPreviewUnavailable summary').click();await expect(page.locator('#sfPreviewUnavailable')).toContainText('Keine Freigabe');await expect(page.locator('#sfPreviewUnavailable')).toContainText('abwesend');await expect(page.locator('#sfPreviewUnavailable')).not.toContainText('freien Tag');
  await page.locator('#sfPreviewSearch').fill('niemand');await expect(page.getByRole('button',{name:'In Vorplanung übernehmen',exact:true})).toBeDisabled();await expect(page.locator('#sfPreviewCandidatesStatus')).toContainText('Keine passenden');await page.locator('#sfPreviewSearch').fill('Bob Passend');await expect(page.locator('#sfPreviewEmployee option')).toHaveCount(2);await page.locator('#sfPreviewSearch').fill('101');await expect(page.locator('#sfPreviewEmployee option')).toHaveCount(2);await page.locator('#sfPreviewEmployee').selectOption('bob');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);await page.screenshot({path:test.info().outputPath('vacancy-picker-'+theme+'.png'),fullPage:true});await page.getByRole('button',{name:'In Vorplanung übernehmen',exact:true}).click();await expect(cell).toContainText('IST 1');await expect(cell).toHaveClass(/is-short/);expect(await page.evaluate(()=>autoPlanPreview.map(a=>a.employeeId))).toEqual(['bob']);expect(await page.evaluate(()=>assignments.length)).toBe(0);expect(await page.evaluate(()=>saveCalls)).toBe(0);
  await cell.getByRole('button').click();await expect(page.locator('#sfPreviewEmployee option[value="bob"]')).toHaveCount(0);await expect(page.locator('#sfPreviewUnavailable')).toContainText('bereits ein Dienst');await page.locator('#sfPreviewEmployee').selectOption('alice');await page.getByRole('button',{name:'In Vorplanung übernehmen',exact:true}).click();await expect(cell).toHaveClass(/is-balanced/);await expect(cell).toContainText('IST 2');await expect(cell.locator('button')).toHaveCount(0);expect(await page.evaluate(()=>assignments.length)).toBe(0);
  await page.getByRole('button',{name:'Rückgängig',exact:true}).click();await expect(cell.getByRole('button')).toBeVisible();await cell.getByRole('button').click();await page.keyboard.press('Escape');await expect(cell.getByRole('button')).toBeFocused();expect(errors).toEqual([]);
 });
-test('orange shared leader vacancy selects the correct qualified TL alternative and enforces role and transitions',async({page})=>{
+test('orange shared leader vacancy selects the correct qualified TL alternative and enforces role while allowing conscious transition overrides',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));await fixture(page);await page.addScriptTag({content:read('assets/shift-models-v1.js')});
  await page.evaluate(()=>{
   SFShiftModels.apply(['TL-LE','TL-RE'].map(code=>({code,active:true,default_start:'20:00',default_end:'06:00',coverage_group:'TL LE/RE',coverage_required:1})),SFBackend.companyId);
@@ -82,7 +82,7 @@ test('orange shared leader vacancy selects the correct qualified TL alternative 
  });await previewEditor(page);
  const cell=page.locator('[data-staffing-group="TL LE/RE"] td').first();await expect(page.locator('[data-staffing-shift="TL-LE"] td').first().locator('button')).toHaveCount(0);await cell.getByRole('button').click();await expect(page.locator('#sfPreviewEmployee option[value="right"]')).toContainText('TL-RE');await expect(page.locator('#sfPreviewEmployee option[value="left"]')).toContainText('TL-LE');await expect(page.locator('#sfPreviewEmployee option[value="notleader"]')).toHaveCount(0);await expect(page.locator('#sfPreviewUnavailable')).toContainText('Leitungsrolle');await page.locator('#sfPreviewEmployee').selectOption('right');await page.getByRole('button',{name:'In Vorplanung übernehmen',exact:true}).click();await expect(cell).toContainText('IST 1');await expect(cell.locator('button')).toHaveCount(0);expect(await page.evaluate(()=>autoPlanPreview.map(a=>[a.employeeId,a.type,a.coverageGroup]))).toEqual([['right','TL-RE','TL LE/RE']]);expect(await page.evaluate(()=>assignments.length)).toBe(0);
  await page.getByRole('button',{name:'Rückgängig',exact:true}).click();await page.evaluate(()=>{SFCompliance={policy:{solidPlanningRules:{enabled:true,confirmedRulesVersion:2,timezone:'Europe/Berlin',preventLeaderToO1:true,maxCalendarWeekHours:55}}};TYPES.push({id:'O1',start:'18:00',end:'04:00',active:true,optionalWeekdays:[1,2,3,4,5,6,7]});employees=employees.filter(e=>e.id==='right');employees[0].shifts.push('O1');assignments=[{id:'next',employeeId:'right',date:'2026-12-02',type:'O1',start:'18:00',end:'04:00'}];getSoll=(d,t)=>Number(d==='2026-12-02'&&t==='O1');renderAutoPlanning();});
- await cell.getByRole('button').click();await expect(page.locator('#sfPreviewEmployee option')).toHaveCount(1);await expect(page.locator('#sfPreviewCandidatesStatus')).toContainText('kein Mitarbeiter');await expect(page.getByRole('button',{name:'In Vorplanung übernehmen',exact:true})).toBeDisabled();await expect(page.locator('#sfPreviewUnavailable')).toContainText('Nach TL-LE oder TL-RE');expect(errors).toEqual([]);
+ await cell.getByRole('button').click();await expect(page.locator('#sfPreviewEmployee option[value="right"]')).toBeEnabled();await page.locator('#sfPreviewEmployee').selectOption('right');await expect(page.getByRole('button',{name:'In Vorplanung übernehmen',exact:true})).toBeEnabled();expect(errors).toEqual([]);
 });
 
 for(const theme of ['dark','light'])test(`preview editor changes, removes, restores and adds duties before the confirmed save in ${theme}`,async({page})=>{
@@ -92,7 +92,7 @@ for(const theme of ['dark','light'])test(`preview editor changes, removes, resto
  const original=await page.evaluate(()=>JSON.stringify(autoPlanPreview)),first=await page.evaluate(()=>autoPlanPreview[0]),other=first.employeeId==='test'?'second':'test';
  await page.getByRole('button',{name:'Dienst hinzufügen',exact:true}).click();
  await page.locator('#sfPreviewFrom').fill('2026-12-03');await page.locator('#sfPreviewFrom').dispatchEvent('change');
- await expect(page.locator('#sfPreviewEmployee option:not(:disabled)')).toHaveCount(1);await page.keyboard.press('Escape');
+ await expect(page.locator('#sfPreviewEmployee option:not(:disabled)')).toHaveCount(3);await page.keyboard.press('Escape');
  await page.getByRole('button',{name:new RegExp(first.date+' · Dienst ändern')}).click();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);if(theme==='light')expect(await page.locator('#sfPreviewTo').evaluate(e=>{const s=getComputedStyle(e);return s.color===s.webkitTextFillColor})).toBe(true);await page.screenshot({path:test.info().outputPath('preview-dialog-'+theme+'.png'),fullPage:true});
  // Employee-row editing deliberately locks the employee. The general editor
@@ -119,7 +119,7 @@ test('preview editor accepts a shorter work block without warning and still supp
  await page.getByRole('button',{name:'Dienst hinzufügen',exact:true}).click();await page.locator('#sfPreviewFrom').fill('2026-12-01');await page.locator('#sfPreviewTo').fill('2026-12-03');await page.locator('#sfPreviewTo').dispatchEvent('change');await page.locator('#sfPreviewEmployee').selectOption('e');await page.getByRole('button',{name:'In Vorplanung übernehmen',exact:true}).click();
  expect(await page.evaluate(()=>autoPlanPreview.length)).toBe(3);expect(await page.evaluate(()=>assignments.length)).toBe(0);await expect(page.locator('#applyAutoPlanBtn')).toBeEnabled();
 });
-test('preview editor explains a blocked overnight work block instead of showing an active submit action',async({page})=>{
+test('preview editor accepts a consciously planned overnight block despite automatic recovery limits',async({page})=>{
  await fixture(page);await page.locator('#autoPlanMonth').fill('2027-01');await page.locator('#autoPlanMonth').dispatchEvent('change');
  await page.evaluate(()=>{
   employees=[{id:'e',personnelNo:'2046',first:'Dennis',last:'Klima',status:'active',employment:'Vollzeit',shifts:['O2'],weeklyHours:40,maxWeeklyHours:55,monthlyHours:180}];
@@ -129,12 +129,15 @@ test('preview editor explains a blocked overnight work block instead of showing 
  });
  await page.addScriptTag({content:read('assets/compliance-core-v2.js')});await previewEditor(page);
  await page.evaluate(()=>SFAutoPlanPreviewEditor.open({dates:['2027-01-07','2027-01-08','2027-01-09'],employeeId:'e',rowEmployee:true}));
- await expect(page.locator('#sfPreviewEditError')).toContainText('Übernahme gesperrt:');
- await expect(page.locator('#sfPreviewEditError')).toContainText('zwei vollständig freie Kalendertage und 48 Stunden Ruhe');
- await expect(page.locator('#sfPreviewEditError')).toContainText('anderen Mitarbeiter');
- const submit=page.getByRole('button',{name:'Nicht übernehmbar – Regel prüfen'});await expect(submit).toBeDisabled();
- expect(await submit.evaluate(e=>Number(getComputedStyle(e).opacity))).toBeLessThan(1);
- expect(await page.evaluate(()=>autoPlanPreview.length)).toBe(0);
+ await expect(page.locator('#sfPreviewEditError')).toBeEmpty();
+ await expect(page.locator('#sfPreviewFiveDays')).toHaveCount(0);
+ await expect(page.getByRole('button',{name:'In Vorplanung übernehmen',exact:true})).toBeEnabled();
+ await page.getByRole('button',{name:'In Vorplanung übernehmen',exact:true}).click();
+ expect(await page.evaluate(()=>autoPlanPreview.length)).toBe(3);
+ await expect(page.locator('#applyAutoPlanBtn')).toBeEnabled();
+ await page.locator('#applyAutoPlanBtn').click();await page.getByRole('button',{name:'Als Entwurf übernehmen',exact:true}).click();await completeApply(page);
+ expect(await page.evaluate(()=>assignments.length)).toBe(4);
+ expect(await page.evaluate(()=>assignments.filter(a=>a.rhythmOverride?.manualPlanning).length)).toBe(3);
 });
 test('preview editor edits a monthly replacement without counting the old draft twice',async({page})=>{
  await fixture(page);await page.evaluate(()=>{employees=['a','b'].map(id=>({id,first:'Test',last:id,status:'active',employment:'Teilzeit',shifts:['FD'],weeklyHours:40,monthlyHours:16}));employeeMonthlyTarget=e=>e.monthlyHours;getSoll=date=>Number(date==='2026-12-01'||date==='2026-12-02');assignments=[1,2].map(n=>({id:'old'+n,date:'2026-12-0'+n,type:'FD',employeeId:'a',start:'06:00',end:'14:00'}));});
@@ -180,7 +183,7 @@ test('OT monthly cap schedules staggered days off and retains coverage before co
  await generatePreview(page);expect(await page.evaluate(()=>employees.map(e=>autoPlanPreview.filter(a=>a.employeeId===e.id).length))).toEqual([20,20,20]);expect(await page.evaluate(()=>SFMonthOptimizer.getResult().criticalOpen)).toBe(0);
  const otRules=await openRuleSection(page,'ot');await expect(otRules.locator('dl > div').filter({has:page.getByText('Monatsobergrenze',{exact:true})}).locator('dd')).toHaveText('200 h');await expect(page.locator('#autoMonthHours')).toContainText('220 h SOLL / 200 h Obergrenze');await page.locator('#applyAutoPlanBtn').click();await page.getByRole('button',{name:'Als Entwurf übernehmen',exact:true}).click();await completeApply(page);expect(await page.evaluate(()=>assignments.filter(a=>['a','b','c'].includes(a.employeeId)).length)).toBe(60);expect(errors).toEqual([]);
 });
-for(const priorType of ['TL-RE','O2'])test(`preview editor blocks ${priorType} to O1 and permits ${priorType} to O2 on the next day`,async({page})=>{
+for(const priorType of ['TL-RE','O2'])test(`preview editor permits conscious ${priorType} transitions while automatic transition rules stay strict`,async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));await fixture(page);
  await page.evaluate((priorType)=>{
   employees=[{id:'leader',first:'Team',last:'Leitung',role:'Teamleiter',status:'active',employment:'Vollzeit',monthlyHours:180,weeklyHours:40,maxWeeklyHours:55,shifts:['TL-LE','TL-RE','O1','O2','O3']}];
@@ -189,7 +192,7 @@ for(const priorType of ['TL-RE','O2'])test(`preview editor blocks ${priorType} t
   getSoll=(date,type)=>Number(date==='2026-12-06'&&type===priorType||date==='2026-12-07'&&['O1','O2'].includes(type));SFCompliance={policy:{solidPlanningRules:{enabled:true,confirmedRulesVersion:2,timezone:'Europe/Berlin',preventLeaderToO1:true,preventDescendingShifts:true,maxCalendarWeekHours:55,maxConsecutiveShifts:4,maxConsecutiveNightShifts:4,minFreeCalendarDays:2,minNightRecoveryCalendarDays:2,minBlockRestHours:48}}};autoPlanAnalyzed=true;renderAutoPlanning();
  },priorType);await previewEditor(page);
  await page.getByRole('button',{name:'Dienst hinzufügen',exact:true}).click();await page.locator('#sfPreviewFrom').fill('2026-12-07');await page.locator('#sfPreviewTo').fill('2026-12-07');await page.locator('#sfPreviewShift').selectOption('O1');
- await expect(page.locator('#sfPreviewEmployee option[value="leader"]')).toHaveJSProperty('disabled',true);expect(await page.evaluate(()=>SFAutoPlanGuard.transitionConflict('leader','O1','2026-12-07'))).toContain(priorType==='TL-RE'?'Nach TL-LE oder TL-RE':'Absteigender Schichtwechsel O2 → O1');
+ await expect(page.locator('#sfPreviewEmployee option[value="leader"]')).toHaveJSProperty('disabled',false);expect(await page.evaluate(()=>SFAutoPlanGuard.transitionConflict('leader','O1','2026-12-07'))).toContain(priorType==='TL-RE'?'Nach TL-LE oder TL-RE':'Absteigender Schichtwechsel O2 → O1');
  await page.locator('#sfPreviewShift').selectOption('O2');await expect(page.locator('#sfPreviewEmployee option[value="leader"]')).toHaveJSProperty('disabled',false);await page.locator('#sfPreviewEmployee').selectOption('leader');await page.getByRole('button',{name:'In Vorplanung übernehmen',exact:true}).click();expect(await page.evaluate(()=>autoPlanPreview.map(a=>a.type))).toEqual(['O2']);
  await page.locator('#applyAutoPlanBtn').click();await page.getByRole('button',{name:'Als Entwurf übernehmen',exact:true}).click();await completeApply(page);expect(await page.evaluate(()=>assignments.map(a=>a.type))).toEqual([priorType,'O2']);expect(errors).toEqual([]);
 });
@@ -225,10 +228,10 @@ test('preview editor flags changed OT demand when a source night is removed',asy
  await page.evaluate(()=>removeAutoSuggestion(0));await expect(page.locator('#sfAutoPreviewTools')).toContainText('OT2: Die benötigte Besetzung ist bereits vollständig.');await expect(page.locator('#applyAutoPlanBtn')).toBeDisabled();expect(await page.evaluate(()=>assignments.length)).toBe(0);
  await page.getByRole('button',{name:'Rückgängig',exact:true}).click();await expect(page.locator('#applyAutoPlanBtn')).toBeEnabled();
 });
-test('preview editor preserves the fixed weekly rule and shows why an employee is unavailable',async({page})=>{
+test('preview editor permits a conscious fixed-weekly exception without changing the automatic rule',async({page})=>{
  await fixture(page);await page.evaluate(()=>{employees=[{id:'fixed',first:'Fest',last:'Person',status:'active',employment:'Vollzeit',shifts:['O3','FD'],weeklyHours:40,monthlyHours:180,rhythmMode:'required',rhythmStart:'2026-11-30',rhythmPattern:'O3,O3,O3,O3,FREI,FREI,FREI'}];TYPES.push({id:'O3',name:'O3',start:'22:00',end:'08:00'});getSoll=()=>1;autoPlanAnalyzed=true;renderAutoPlanning();});await previewEditor(page);
  await page.getByRole('button',{name:'Dienst hinzufügen',exact:true}).click();await page.locator('#sfPreviewFrom').fill('2026-12-04');await page.locator('#sfPreviewTo').fill('2026-12-04');await page.locator('#sfPreviewTo').dispatchEvent('change');
- await expect(page.locator('#sfPreviewEmployee option[value="fixed"]')).toHaveJSProperty('disabled',true);await expect(page.locator('#sfPreviewEmployee option[value="fixed"]')).toContainText('freien Tag');await page.keyboard.press('Escape');
+ await expect(page.locator('#sfPreviewEmployee option[value="fixed"]')).toHaveJSProperty('disabled',false);expect(await page.evaluate(()=>sfRhythmCheck(employees[0],'FD','2026-12-04').allowed)).toBe(false);await page.keyboard.press('Escape');
 });
 for(const theme of ['dark','light'])test(`clear month selection, preview review and confirmed draft in ${theme} theme`,async({page})=>{
  await fixture(page,theme);await expect(page.locator('#autoPlanWeekField')).toBeHidden();await expect(page.locator('#autoPlanDateField')).toBeHidden();await expect(page.locator('#autoPlanMonthField')).toBeVisible();await expect(page.locator('#autoPeriodRange')).toHaveText('Dezember 2026');await expect(page.locator('#autoPeriodDates')).toContainText('1.12.2026 bis 31.12.2026');await expect(page.locator('#autoStats')).toContainText('Analyse noch nicht gestartet');await expect(page.locator('#autoResults')).toBeHidden();const monthImage=await page.locator('#autoPlanMonth').evaluate(e=>getComputedStyle(e).backgroundImage);expect(monthImage).toContain('Dez.');if(theme==='light')expect(monthImage).toContain('%23172434');

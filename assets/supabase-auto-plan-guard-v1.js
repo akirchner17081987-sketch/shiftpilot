@@ -88,7 +88,7 @@
       if(typeof autoPlanPreview==='undefined'||!Array.isArray(autoPlanPreview))return baseApply.apply(this,arguments);
       const accepted=[],rejected=[];
       for(const x of autoPlanPreview){
-        if((window.SFManualRhythm?.isPreviewOverride(x)||window.SFManualRhythm?.isPreviewBlockMember?.(x,autoPlanPreview))?window.SFAutoPlanPreviewEditor&&!window.SFAutoPlanPreviewEditor.check(autoPlanPreview,[x]).length:passesTimeRules(x.employeeId,x.type,x.date,autoPlanPreview.filter(a=>a!==x)))accepted.push(x);else rejected.push(x);
+        if((window.SFAutoPlanPreviewEditor?.isManual?.(x)||window.SFManualRhythm?.isPreviewOverride(x)||window.SFManualRhythm?.isPreviewBlockMember?.(x,autoPlanPreview))?window.SFAutoPlanPreviewEditor&&!window.SFAutoPlanPreviewEditor.check(autoPlanPreview,[x]).length:passesTimeRules(x.employeeId,x.type,x.date,(window.SFAutoPlanPreviewEditor?.automaticRows?.(autoPlanPreview)||autoPlanPreview).filter(a=>a!==x)))accepted.push(x);else rejected.push(x);
       }
       if(rejected.length){
         const blocked=new Set(rejected.map(x=>x.blockId).filter(Boolean));
