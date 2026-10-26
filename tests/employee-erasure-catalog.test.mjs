@@ -36,6 +36,7 @@ test('catalog lookup preserves the full erasure plan and existing deletion safeg
   await db.exec(read('supabase/migrations/20261014031758_employee_erasure_large_planning_payloads.sql'));
   await db.exec(read('supabase/migrations/20261014032905_employee_erasure_reuse_guard_tokens.sql'));
   await db.exec(read('supabase/migrations/20261014034730_employee_erasure_resumable_database_batches.sql'));
+  await db.exec(read('supabase/migrations/20261026000704_employee_erasure_compiled_candidates.sql'));
   assert.deepEqual(await plan(), before, 'prepared lookup must preserve the preview fingerprint');
   const refs = ['30000000-0000-0000-0000-000000000001', '40000000-0000-0000-0000-000000000001', 'legacy_126', '126'];
   const names = ['Fixture Employee', 'Müller (Test)', 'Literal.%_\\\\Name'];
