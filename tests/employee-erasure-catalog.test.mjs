@@ -44,6 +44,7 @@ test('catalog lookup preserves the full erasure plan and existing deletion safeg
     ('91000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000001','{"note":"Unrelated archived result"}',null),
     ('91000000-0000-0000-0000-000000000003','20000000-0000-0000-0000-000000000002','{"note":"Fixture Employee"}','{}');`);
   await db.exec(read('supabase/migrations/20261026002347_employee_erasure_indexed_batches_progress.sql'));
+  await db.exec(read('supabase/migrations/20261026005108_employee_erasure_native_reference_terms.sql'));
   assert.equal((await db.query("select ready from private.employee_erasure_index_sources where table_name='erasure_test_documents'")).rows[0].ready,false);
   await db.exec("select set_config('request.jwt.claim.role','service_role',false)");
   for(let i=0;i<20;i++) {
@@ -53,9 +54,9 @@ test('catalog lookup preserves the full erasure plan and existing deletion safeg
   assert.equal((await db.query("select ready from private.employee_erasure_index_sources where table_name='erasure_test_documents'")).rows[0].ready,true);
   assert.equal((await db.query("select count(*)::int n from private.employee_erasure_reference_index where source_oid='private.erasure_test_documents'::regclass")).rows[0].n,3);
   await db.exec(`insert into private.erasure_test_documents(id,company_id,payload) values('91000000-0000-0000-0000-000000000004','20000000-0000-0000-0000-000000000001','{"note":"reference-insert"}');`);
-  assert.equal((await db.query("select terms @> array['reference insert'] indexed from private.employee_erasure_reference_index where row_id='91000000-0000-0000-0000-000000000004'")).rows[0].indexed,true);
+  assert.equal((await db.query("select terms @> array['reference','insert'] indexed from private.employee_erasure_reference_index where row_id='91000000-0000-0000-0000-000000000004'")).rows[0].indexed,true);
   await db.exec(`update private.erasure_test_documents set payload='{"note":"reference-update"}' where id='91000000-0000-0000-0000-000000000004';`);
-  const refreshed=(await db.query("select terms @> array['reference update'] updated, terms @> array['reference insert'] stale from private.employee_erasure_reference_index where row_id='91000000-0000-0000-0000-000000000004'")).rows[0];
+  const refreshed=(await db.query("select terms @> array['reference','update'] updated, terms @> array['reference','insert'] stale from private.employee_erasure_reference_index where row_id='91000000-0000-0000-0000-000000000004'")).rows[0];
   assert.deepEqual(refreshed,{updated:true,stale:false});
   await db.exec("delete from private.erasure_test_documents where id='91000000-0000-0000-0000-000000000004'");
   assert.equal((await db.query("select count(*)::int n from private.employee_erasure_reference_index where row_id='91000000-0000-0000-0000-000000000004'")).rows[0].n,0);
@@ -85,6 +86,9 @@ test('catalog lookup preserves the full erasure plan and existing deletion safeg
   for(const [value,ids,names] of [
    [{note:'prefix erasure-target suffix'},['erasure-target'],[]],
    ['Foo\nBar',[],['Foo\nBar']],
+   ['before\nBar',[],['Bar']],
+   ['\\nBar',[],['nBar']],
+   ['\u001fBar',[],['Bar']],
    [{'legacy-target':'private'},['legacy-target'],[]],
    [{note:'MÜLLER SCHMITT'},[],['Müller Schmitt']]
   ]) {
@@ -126,7 +130,7 @@ test('catalog lookup preserves the full erasure plan and existing deletion safeg
     delete from storage.objects;
     update private.employee_erasure_index_sources set json_columns=array['extra_payload','json_null','payload','result'] where table_name='erasure_test_documents';
     update private.employee_erasure_reference_index set uuid_prefixes='{}',terms='{}' where source_oid='private.erasure_test_documents'::regclass;
-    insert into private.employee_erasure_reference_index values('private.erasure_test_documents'::regclass,'91000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','{}','{}') on conflict do nothing;
+    insert into private.employee_erasure_reference_index(source_oid,row_id,company_id,uuid_prefixes,terms) values('private.erasure_test_documents'::regclass,'91000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','{}','{}') on conflict do nothing;
     perform public.finish_database_erasure_for_test((job_->>'job_id')::uuid,'10000000-0000-0000-0000-000000000001');
     for i in 1..100 loop
      begin
