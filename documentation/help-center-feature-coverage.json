@@ -1333,6 +1333,42 @@
         "assets/planning-continuity-core-v1.js",
         "docs/autonomous-planning.md"
       ]
+    },
+    {
+      "category": "qr",
+      "question": "Wie wähle ich 10, 15 oder 20 Minuten Pause oder unbegrenzt?",
+      "sources": [
+        "qr-time.html",
+        "supabase/migrations/20261025010345_qr_break_timer_reminders.sql",
+        "supabase/functions/push-dispatch/index.ts"
+      ]
+    },
+    {
+      "category": "qr",
+      "question": "Wann erhalte ich die Erinnerung vor dem Pausenende?",
+      "sources": [
+        "qr-time.html",
+        "supabase/migrations/20261025010345_qr_break_timer_reminders.sql",
+        "supabase/functions/push-dispatch/index.ts"
+      ]
+    },
+    {
+      "category": "qr",
+      "question": "Warum kommt meine Pausen-Erinnerung nicht an?",
+      "sources": [
+        "qr-time.html",
+        "supabase/migrations/20261025010345_qr_break_timer_reminders.sql",
+        "supabase/functions/push-dispatch/index.ts"
+      ]
+    },
+    {
+      "category": "qr",
+      "question": "Endet meine Pause automatisch nach der gewählten Dauer?",
+      "sources": [
+        "qr-time.html",
+        "supabase/migrations/20261025010345_qr_break_timer_reminders.sql",
+        "supabase/functions/push-dispatch/index.ts"
+      ]
     }
   ],
   "moduleInventory": [
@@ -2730,6 +2766,12 @@
       "area": "Planungszeitraum, aktueller Bedarfsvergleich und bestätigte Rhythmusausnahmen",
       "category": "schedule",
       "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/startup-script-guard-v1.js",
+      "category": "start",
+      "area": "Sicherer Start und begrenzte Script-Wiederherstellung",
+      "kind": "feature-or-support"
     }
   ],
   "categoryCoverage": [
@@ -2843,7 +2885,11 @@
         "Was zeigt die Live-Anzeige nach der QR-Anmeldung?",
         "Was passiert mit einer offenen Pause beim Dienstende?",
         "Wie korrigiert die Verwaltung eine QR-Buchung?",
-        "Was tue ich bei einer vergessenen QR-Abmeldung?"
+        "Was tue ich bei einer vergessenen QR-Abmeldung?",
+        "Wie wähle ich 10, 15 oder 20 Minuten Pause oder unbegrenzt?",
+        "Wann erhalte ich die Erinnerung vor dem Pausenende?",
+        "Warum kommt meine Pausen-Erinnerung nicht an?",
+        "Endet meine Pause automatisch nach der gewählten Dauer?"
       ]
     },
     {
@@ -3352,14 +3398,14 @@
   "currentAudit": {
     "date": "2026-10-27",
     "baselineArticleCount": 211,
-    "addedArticleCount": 43,
+    "addedArticleCount": 47,
     "correctedArticleCount": 23,
-    "articleCount": 254,
+    "articleCount": 258,
     "categoryCount": 22,
-    "assetJavaScriptCount": 232
+    "assetJavaScriptCount": 233
   },
   "incrementalUpdate": {
-    "date": "2026-10-24",
-    "description": "Automatische fortsetzbare Blocksuche, gemeinsame Umverteilung mehrerer Mitarbeiter, unabhängige Regelprüfung und verständlicher Ergebnisstatus ergänzt."
+    "date": "2026-10-27",
+    "description": "Pausenwahl, Zwei-Minuten-Erinnerung, Push-Voraussetzungen und manuelles Pausenende ergänzt; Startwiederherstellung dokumentiert."
   }
 }

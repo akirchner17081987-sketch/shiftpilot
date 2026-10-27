@@ -248,3 +248,10 @@ html:has(#sfEntryOverlay),body:has(#sfEntryOverlay){overflow:hidden}
 }
 
 
+
+/* Keep recovery in the visible access panel, including stalled deferred scripts. */
+#sfEntryOverlay.sf-startup-failed{pointer-events:auto!important;opacity:1!important;visibility:visible!important}
+#sfEntryOverlay.sf-startup-failed .sf-entry-access>:not([data-startup-script-error]){display:none!important}
+#sfEntryOverlay [data-startup-script-error]{position:relative;z-index:2;grid-area:1/1;width:100%;color:#ecf2f5;line-height:1.6}
+#sfEntryOverlay [data-startup-script-error] button{padding:12px 18px;border:1px solid #467b80;border-radius:10px;background:#0b2129;color:#ecf2f5}
+#sfEntryOverlay [data-startup-script-error] button:focus-visible{outline:2px solid #8ff5dd;outline-offset:4px}
