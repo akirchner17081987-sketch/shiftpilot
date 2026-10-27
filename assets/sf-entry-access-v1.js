@@ -1,6 +1,18 @@
 /* Selection is navigation only; existing roles, MFA and QR PIN checks remain authoritative. */
 (function () {
   'use strict';
+  const allowed = new Set(['mitarbeiter','verwaltung','zeit','zeitkonto']);
+  // Carry only a known area across public legal pages; never copy an auth URL.
+  function legalNavigation(area) {
+    const query=allowed.has(area)?'?bereich='+encodeURIComponent(area):'';
+    document.querySelectorAll('a[href]').forEach(link=>{
+      const raw=link.getAttribute('href');if(!raw||!/^\/(?:impressum|datenschutz)(?:\.html)?(?:[?#]|$)/.test(raw))return;
+      const url=new URL(raw,location.origin);if(url.origin!==location.origin)return;
+      link.setAttribute('href',url.pathname+query+url.hash);
+    });
+    document.querySelectorAll('[data-sf-entry-return]').forEach(link=>link.setAttribute('href','/'+query));
+  }
+  legalNavigation(new URLSearchParams(location.search).get('bereich'));
   const root = document.getElementById('sfEntryOverlay');
   const choice = document.getElementById('sfEntryChoice');
   const selected = document.getElementById('sfEntrySelected');
@@ -10,7 +22,6 @@
   if (!root || !choice || !selected || !slot || !time || !back) return;
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const names = {mitarbeiter:'Mitarbeiterportal', verwaltung:'Verwaltung', zeitkonto:'Zeiterfassung'};
-  const allowed = new Set(['mitarbeiter','verwaltung','zeit','zeitkonto']);
   const params = new URLSearchParams(location.search);
   const pushView = params.get('sf_push_view');
   let rememberedArea = null;
@@ -56,6 +67,7 @@
     time.hidden = area !== 'zeit';
     slot.hidden = area === null || area === 'zeit';
     labelAuth(document.getElementById('sfAuthBackdrop'));
+    legalNavigation(area);
   }
   function mount(auth) {
     if (!root.isConnected) return;
@@ -85,6 +97,9 @@
       rememberArea();
       if (window.SFBackend) window.SFBackend.pendingView = next === 'zeitkonto' ? 'time' : 'overview';
       const password = document.getElementById('sfPassword');if (password) password.value = '';
+      if(password)password.type='password';
+      for(const id of ['sfEmail','sfPassword'])document.getElementById(id)?.removeAttribute('aria-invalid');
+      const visibility=document.getElementById('sfPasswordVisibility');if(visibility){visibility.textContent='Anzeigen';visibility.setAttribute('aria-label','Passwort anzeigen');visibility.setAttribute('aria-pressed','false');}
       const message = document.getElementById('sfAuthMsg');if (message) { message.textContent = '';message.className = 'sf-auth-msg'; }
       render();setAddress();
       if (next && next !== 'zeit') window.SFEntryDive?.prepare();

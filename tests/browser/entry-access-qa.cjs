@@ -4,7 +4,7 @@ const {chromium}=require('playwright');
 const root=path.resolve(__dirname,'../..'),dist=path.join(root,'dist');
 const source=fs.readFileSync(path.join(dist,'index.html'),'utf8');
 const overlay=source.slice(source.indexOf('<div id="sfEntryOverlay"'),source.indexOf('<section id="landingPage">')).replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,'');
-const fixture=`window.qa={authCalls:0,cameraCalls:0,stopped:0};const B=window.SFBackend;B.client={auth:{signInWithPassword:async()=>{qa.authCalls++;return {error:new Error('Synthetic invalid credentials')}}}};B.showLoading=()=>{};B.hideLoading=()=>{};B.authDialog('login');`;
+const fixture=`window.qa={authCalls:0,resetCalls:0,cameraCalls:0,stopped:0};const B=window.SFBackend;B.client={auth:{signInWithPassword:async()=>{qa.authCalls++;return {error:new Error('Synthetic invalid credentials')}},resetPasswordForEmail:async()=>{qa.resetCalls++;return {error:null}}}};B.showLoading=()=>{};B.hideLoading=()=>{};B.authDialog('login');`;
 let server,browser,passed=0;
 const check=(actual,expected,message)=>{assert.equal(actual,expected,message);passed++};
 async function main(){
@@ -14,7 +14,7 @@ async function main(){
   if(url.pathname==='/'){
    res.setHeader('Content-Type','text/html');
    res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; media-src 'self' blob:; object-src 'none'; base-uri 'self'");
-   return res.end('<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/assets/sf-entry-v2.css"><link rel="stylesheet" href="/assets/sf-entry-access-v1.css"></head><body>'+overlay+['sf-entry-v2','sf-entry-access-v1','sf-entry-globe-v1','supabase-auth-v1'].map(n=>'<script defer src="/assets/'+n+'.js"></script>').join('')+'<script defer src="/qa-init.js"></script></body></html>');
+   return res.end('<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/assets/sf-entry-v2.css"><link rel="stylesheet" href="/assets/sf-entry-access-v1.css"></head><body>'+overlay+['sf-entry-v2','sf-entry-access-v1','sf-entry-globe-v1','supabase-auth-v1','supabase-password-reset-v1'].map(n=>'<script defer src="/assets/'+n+'.js"></script>').join('')+'<script defer src="/qa-init.js"></script></body></html>');
   }
   const route=url.pathname==='/qr-time'?'/qr-time.html':url.pathname;
   const file=path.resolve(dist,'.'+route);
@@ -36,12 +36,26 @@ async function main(){
    await page.locator('[data-entry-area="'+area+'"]').click();await page.locator('#sfEmail').waitFor({state:'visible'});
    check(await page.locator('#sfAuthTitle').innerText(),area==='mitarbeiter'?'Mitarbeiterportal':'Verwaltung');
    check(await page.evaluate(()=>originalAuth===document.getElementById('sfAuthBackdrop')),true,'same real form and listeners');
-   await page.locator('#sfEmail').fill('synthetic@example.invalid');await page.locator('#sfPassword').fill('synthetic-password');await page.locator('#sfAuthSubmit').click();
+   const callsBefore=await page.evaluate(()=>qa.authCalls);await page.locator('#sfEmail').fill('');await page.locator('#sfPassword').fill('');await page.locator('#sfAuthSubmit').click();
+   check(await page.locator('#sfEmail').getAttribute('aria-invalid'),'true','empty email is marked');check(await page.locator('#sfEmail').evaluate(n=>n===document.activeElement),true,'first invalid field receives focus');
+   await page.locator('#sfEmail').fill('invalid');await page.locator('#sfPassword').fill('synthetic-password');await page.locator('#sfAuthSubmit').click();check(await page.evaluate(()=>qa.authCalls),callsBefore,'invalid email never reaches auth');
+   await page.locator('#sfEmail').fill('synthetic@example.invalid');await page.locator('#sfPasswordVisibility').click();check(await page.locator('#sfPassword').getAttribute('type'),'text','explicit visibility control');await page.locator('#sfPasswordVisibility').click();check(await page.locator('#sfPassword').getAttribute('type'),'password','password is masked again');check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'no login overflow '+width);
+   await page.locator('#sfAuthSubmit').click();
    await page.waitForFunction(()=>document.getElementById('sfAuthMsg').textContent.length>0);
    await page.locator('#sfEntryBack').click();check(await page.locator('#sfPassword').inputValue(),'','password cleared on return');
    check(await page.evaluate(()=>SFBackend.role),null,'selection cannot grant a role');
   }
   check(await page.evaluate(()=>qa.authCalls),2,'real auth callback remains wired');
+  await page.locator('[data-entry-area="verwaltung"]').click();await page.locator('#sfEmail').waitFor({state:'visible'});
+  await page.getByRole('button',{name:'Passwort vergessen?',exact:true}).click();await page.getByRole('dialog',{name:'Passwort vergessen?',exact:true}).waitFor({state:'visible'});
+  check(await page.getByLabel('E-Mail',{exact:true}).evaluate(n=>n===document.activeElement),true,'recovery email is labelled and focused');
+  await page.keyboard.press('Shift+Tab');check(await page.locator('#sfResetSend').evaluate(n=>n===document.activeElement),true,'recovery focus wraps backwards');await page.keyboard.press('Tab');check(await page.locator('#sfResetEmail').evaluate(n=>n===document.activeElement),true,'recovery focus wraps forwards');
+  await page.locator('#sfResetEmail').fill('');await page.locator('#sfResetSend').click();check(await page.evaluate(()=>qa.resetCalls),0,'empty recovery never sends a request');
+  await page.keyboard.press('Escape');await page.waitForFunction(()=>document.activeElement.matches('.sf-forgot-link'));check(await page.locator('#sfPasswordResetBackdrop').count(),0,'Escape returns to login');
+  const legal=page.locator('#sfEntryOverlay .sf-entry-legal a').filter({hasText:'Impressum'});check(await legal.getAttribute('href'),'/impressum.html?bereich=verwaltung','legal link carries only the selected area');await legal.click();
+  await page.locator('[data-sf-entry-return].back').click();await page.locator('#sfEmail').waitFor({state:'visible'});check(await page.locator('#sfAuthTitle').innerText(),'Verwaltung','legal return restores the selected login');
+  await page.locator('#sfEntryBack').click();await page.locator('#sfEntryChoice').waitFor({state:'visible'});
+
   await page.locator('[data-entry-area="zeit"]').click();await page.locator('#sfEntryTime').waitFor({state:'visible'});
   check(await page.locator('#sfEmail').isVisible(),false,'QR entry does not show email');
   await page.locator('#sfEntryTimeAccount').click();check(await page.locator('#sfAuthTitle').innerText(),'Zeiterfassung');check(await page.evaluate(()=>SFBackend.pendingView),'time');

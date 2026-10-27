@@ -35,6 +35,7 @@
       .sf-reset-head h2{margin:4px 0;font-size:23px}.sf-reset-head p{margin:0;color:#8fa5bd;font-size:12px;line-height:1.5}
       .sf-reset-body{padding:20px 24px}.sf-reset-field{display:flex;flex-direction:column;gap:6px;margin:12px 0}
       .sf-reset-field label{font-size:11px;font-weight:800;color:#9eb3c9}.sf-reset-field input{background:#091624;border:1px solid #294159;color:#eef7ff;border-radius:10px;padding:11px 12px;outline:none}
+      .sf-reset-field input:focus-visible,.sf-reset-card button:focus-visible{outline:2px solid #70e8d4;outline-offset:3px}.sf-reset-field input[aria-invalid="true"]{border-color:#ed8193}
       .sf-reset-msg{display:none;margin-top:12px;padding:10px 12px;border-radius:9px;font-size:12px;line-height:1.45}.sf-reset-msg.show{display:block}.sf-reset-msg.good{background:#0e2d26;border:1px solid #216b59;color:#84ebd0}.sf-reset-msg.bad{background:#321822;border:1px solid #7a2d3c;color:#ff9aa8}
       .sf-reset-foot{display:flex;justify-content:flex-end;gap:8px;padding:16px 24px;border-top:1px solid #20364b}
       @media(max-width:520px){.sf-reset-foot{flex-direction:column-reverse}.sf-reset-foot button{width:100%}}
@@ -54,38 +55,57 @@
   function dialogShell(title,text,body,actions){
     css();close();
     const m=document.createElement('div');m.id='sfPasswordResetBackdrop';m.className='sf-reset-backdrop';
-    m.innerHTML=`<div class="sf-reset-card"><div class="sf-reset-head"><div class="eyebrow">SCHICHTFUNK ZUGANG</div><h2>${esc(title)}</h2><p>${esc(text)}</p></div><div class="sf-reset-body">${body}<div id="sfResetMsg" class="sf-reset-msg"></div></div><div class="sf-reset-foot">${actions}</div></div>`;
-    document.body.appendChild(m);return m;
+    m.innerHTML=`<div class="sf-reset-card" role="dialog" aria-modal="true" aria-labelledby="sfResetTitle" aria-describedby="sfResetDescription" tabindex="-1"><div class="sf-reset-head"><div class="eyebrow">SCHICHTFUNK ZUGANG</div><h2 id="sfResetTitle">${esc(title)}</h2><p id="sfResetDescription">${esc(text)}</p></div><div class="sf-reset-body">${body}<div id="sfResetMsg" class="sf-reset-msg" role="status" aria-live="polite" aria-atomic="true"></div></div><div class="sf-reset-foot">${actions}</div></div>`;
+    document.body.appendChild(m);
+    m.querySelectorAll('input').forEach(input=>{input.setAttribute('aria-describedby','sfResetMsg');input.addEventListener('input',()=>input.removeAttribute('aria-invalid'))});
+    m.addEventListener('keydown',event=>{
+      if(event.key==='Escape'){const cancel=m.querySelector('#sfResetCancel,#sfResetBackLogin');if(cancel){event.preventDefault();event.stopPropagation();cancel.click();}return;}
+      if(event.key!=='Tab')return;
+      const controls=[...m.querySelectorAll('input:not([disabled]),button:not([disabled]),a[href]')].filter(node=>!node.hidden&&node.type!=='hidden');
+      const first=controls[0],last=controls.at(-1);if(!first)return;
+      if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+      else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+    });
+    (m.querySelector('input,button')||m.querySelector('[role="dialog"]')).focus();return m;
+  }
+
+  function restoreLoginFocus(){
+    enhanceLogin();
+    const focus=()=>document.querySelector('#sfAuthBackdrop .sf-forgot-link')?.focus();
+    if(!document.getElementById('sfEntryOverlay')?.inert){focus();return;}
+    if(window.requestAnimationFrame)requestAnimationFrame(()=>requestAnimationFrame(focus));else setTimeout(focus,0);
   }
 
   B.passwordResetRequestDialog=function(prefill=''){
     B.closeAuth?.();
-    const m=dialogShell('Passwort vergessen?','Gib die E-Mail-Adresse deines SchichtFunk-Kontos ein. Wir senden dir einen Link zum Festlegen eines neuen Passworts.',`<div class="sf-reset-field"><label>E-Mail</label><input id="sfResetEmail" type="email" autocomplete="email" value="${esc(prefill)}"></div>`,`<button class="ghost" id="sfResetCancel">Zurück</button><button class="primary" id="sfResetSend">Reset-Link senden</button>`);
+    const m=dialogShell('Passwort vergessen?','Gib die E-Mail-Adresse deines SchichtFunk-Kontos ein. Wir senden dir einen Link zum Festlegen eines neuen Passworts.',`<div class="sf-reset-field"><label for="sfResetEmail">E-Mail</label><input id="sfResetEmail" name="email" type="email" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" required value="${esc(prefill)}"></div>`,`<button class="ghost" id="sfResetCancel">Zurück</button><button class="primary" id="sfResetSend">Reset-Link senden</button>`);
     const msg=m.querySelector('#sfResetMsg');
     const say=(text,kind)=>{msg.textContent=text;msg.className='sf-reset-msg show '+kind};
-    m.querySelector('#sfResetCancel').onclick=()=>{close();B.authDialog?.('login')};
+    m.querySelector('#sfResetCancel').onclick=()=>{const email=m.querySelector('#sfResetEmail').value;close();B.authDialog?.('login');const field=document.getElementById('sfEmail');if(field)field.value=email;restoreLoginFocus();};
     m.querySelector('#sfResetSend').onclick=async()=>{
-      const email=m.querySelector('#sfResetEmail').value.trim();
-      if(!email)return say('Bitte eine E-Mail-Adresse eingeben.','bad');
+      const button=m.querySelector('#sfResetSend'),field=m.querySelector('#sfResetEmail');if(button.disabled)return;
+      const email=field.value.trim();field.value=email;
+      if(!email||field.validity.typeMismatch){field.setAttribute('aria-invalid','true');say(!email?'Bitte eine E-Mail-Adresse eingeben.':'Bitte eine gültige E-Mail-Adresse eingeben.','bad');field.focus();return;}
+      button.disabled=true;let sent=false;
       try{
         B.showLoading?.('Reset-Link wird gesendet …');
         const {error}=await B.client.auth.resetPasswordForEmail(email,{redirectTo:PROD+'?'+RESET_PARAM+'=1'});
         if(error)throw error;
         B.hideLoading?.();
         say('Wenn für diese E-Mail ein SchichtFunk-Konto besteht, wurde ein Link zum Zurücksetzen des Passworts versendet. Bitte prüfe auch den Spam-Ordner.','good');
-        m.querySelector('#sfResetSend').disabled=true;
+        sent=true;
         m.querySelector('#sfResetSend').textContent='✓ E-Mail angefordert';
       }catch(e){
         B.hideLoading?.();say(B.friendlyAuthError?.(e,'Der Reset-Link konnte nicht angefordert werden. Bitte versuche es erneut.')||'Der Reset-Link konnte nicht angefordert werden.','bad');
-      }
+      }finally{if(!sent)button.disabled=false;}
     };
   };
 
   B.passwordResetNewDialog=function(){
     B.closeAuth?.();
     const recoveryFlow=recoveryFromUrl();
-    const accountFields=recoveryFlow?'':`<div class="sf-reset-field"><label>Aktuelles Passwort</label><input id="sfCurrentPassword" type="password" minlength="8" autocomplete="current-password"></div><div class="sf-reset-field"><label>Bestätigungscode (nur falls angefordert)</label><input id="sfPasswordNonce" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-stelliger Code"></div><button class="ghost" type="button" id="sfSendReauth">Bestätigungscode senden</button>`;
-    const m=dialogShell('Neues Passwort setzen','Lege jetzt ein neues Passwort mit mindestens 8 Zeichen fest. Verwende ein einzigartiges Passwort, das du nirgendwo sonst nutzt.',`${accountFields}<div class="sf-reset-field"><label>Neues Passwort</label><input id="sfNewPassword" type="password" minlength="8" autocomplete="new-password"></div><div class="sf-reset-field"><label>Passwort wiederholen</label><input id="sfNewPassword2" type="password" minlength="8" autocomplete="new-password"></div>`,`<button class="primary" id="sfSaveNewPassword">Passwort speichern</button>`);
+    const accountFields=recoveryFlow?'':`<div class="sf-reset-field"><label for="sfCurrentPassword">Aktuelles Passwort</label><input id="sfCurrentPassword" type="password" minlength="8" autocomplete="current-password"></div><div class="sf-reset-field"><label for="sfPasswordNonce">Bestätigungscode (nur falls angefordert)</label><input id="sfPasswordNonce" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-stelliger Code"></div><button class="ghost" type="button" id="sfSendReauth">Bestätigungscode senden</button>`;
+    const m=dialogShell('Neues Passwort setzen','Lege jetzt ein neues Passwort mit mindestens 8 Zeichen fest. Verwende ein einzigartiges Passwort, das du nirgendwo sonst nutzt.',`${accountFields}<div class="sf-reset-field"><label for="sfNewPassword">Neues Passwort</label><input id="sfNewPassword" type="password" minlength="8" autocomplete="new-password"></div><div class="sf-reset-field"><label for="sfNewPassword2">Passwort wiederholen</label><input id="sfNewPassword2" type="password" minlength="8" autocomplete="new-password"></div>`,`<button class="primary" id="sfSaveNewPassword">Passwort speichern</button>`);
     const msg=m.querySelector('#sfResetMsg');
     const say=(text,kind)=>{msg.textContent=text;msg.className='sf-reset-msg show '+kind};
     m.querySelector('#sfSendReauth')?.addEventListener('click',async event=>{
