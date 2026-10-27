@@ -37,13 +37,14 @@
   const types=data.models,active=types.filter(t=>t.active!==false),model=new Map(types.map(t=>[t.code,t])),overrides=new Map(data.daily.map(x=>[x.date+'|'+x.shift,Number(x.required)]));
   const siteMatch=r=>!filters.site||(filters.site==='unassigned'?!r.site_id:r.site_id===filters.site),shiftMatch=r=>!filters.shift||(filters.shift==='QR'?!r.shift:r.shift===filters.shift);
   const allAssignments=data.assignments.filter(a=>a.status!=='CANCELLED');
+  const planStatus=['DRAFT','PUBLISHED'].includes(filters.planStatus)?filters.planStatus:'',planAssignments=allAssignments.filter(a=>!planStatus||a.status===planStatus);
   const eligible=e=>(!filters.team||(filters.team==='none'?!e.team:e.team===filters.team))&&(!filters.employee||e.id===filters.employee)&&
     (!filters.shift||filters.shift==='QR'||e.shifts?.includes(filters.shift)||allAssignments.some(a=>a.employee_id===e.id&&a.shift===filters.shift));
   const people=data.employees.filter(eligible).filter(e=>filters.status==='all'||e.status==='active'||allAssignments.some(a=>a.employee_id===e.id&&a.date>=data.from&&a.date<=data.to)||[...data.times,...data.qr].some(t=>t.employee_id===e.id))
     .filter(e=>!filters.site||allAssignments.some(a=>a.employee_id===e.id&&a.date>=data.from&&a.date<=data.to&&siteMatch(a))||data.qr.some(q=>q.employee_id===e.id&&siteMatch(q))||data.sites.some(s=>s.id===filters.site&&s.name===e.site_name)||filters.site==='unassigned'&&e.status==='active'&&!(e.site_name&&data.sites.some(s=>s.name===e.site_name)))
     .sort((a,b)=>collator.compare(a.last,b.last)||collator.compare(a.first,b.first)||collator.compare(a.personnel_no,b.personnel_no)||collator.compare(a.id,b.id));
   const ids=new Set(people.map(e=>e.id)),scope=!!(filters.site||filters.shift),selected=a=>ids.has(a.employee_id)&&siteMatch(a)&&shiftMatch(a);
-  const assignments=allAssignments.filter(a=>a.date>=data.from&&a.date<=data.to&&selected(a)),absence=data.absences.filter(a=>ids.has(a.employee_id)&&a.from<=data.to&&a.to>=data.from),timeRows=[...data.times,...data.qr].filter(selected);
+  const assignments=planAssignments.filter(a=>a.date>=data.from&&a.date<=data.to&&selected(a)),absence=data.absences.filter(a=>ids.has(a.employee_id)&&a.from<=data.to&&a.to>=data.from),timeRows=[...data.times,...data.qr].filter(selected);
   const completed=timeRows.filter(r=>r.start&&r.end&&Date.parse(r.end)<=now&&['recorded','correction_requested','confirmed','qr_booked'].includes(r.status));
   const accepted=completed.filter(r=>['confirmed','qr_booked'].includes(r.status));
   const plannedMinutes=a=>Math.max(0,(Date.parse(a.end)-Date.parse(a.start))/M-Math.max(0,Number(a.break_minutes||0)));
@@ -65,7 +66,7 @@
    if(t.code==='OT'){if(!OT.applies(date,Object.values(data.rules.otHolidayStatesBySite||{Berlin:'BE'})))return 0;return override??(t.planning_mode==='optional'?0:Number(data.global[t.code]||0))}
    if(t.strict_weekdays&&!allowed.includes(dow))return 0;return override??(t.planning_mode==='optional'||!allowed.includes(dow)?0:Number(data.global[t.code]||0));
   }
-  const dutyRows=allAssignments.map(a=>({...a,type:a.shift,employeeId:a.employee_id,startMs:Date.parse(a.start),endMs:Date.parse(a.end)}));
+  const dutyRows=planAssignments.map(a=>({...a,type:a.shift,employeeId:a.employee_id,startMs:Date.parse(a.start),endMs:Date.parse(a.end)}));
   const cells=[],groups=new Set();
   const requested=filters.shift==='QR'?[]:active.filter(t=>(!filters.shift||t.code===filters.shift)&&siteMatch(t));
   for(const t of requested){const group=t.coverage_group,key=group||t.code;if(groups.has(key))continue;groups.add(key);
@@ -73,10 +74,10 @@
    for(const date of allDays){let required;
     if(group){const values=liveMembers.map(m=>overrides.get(date+'|'+m.code)).filter(v=>v!==undefined);required=values.length?Math.max(...values):liveMembers.some(m=>(m.optional_weekdays||[1,2,3,4,5,6,7]).includes(weekday(date)))?Number(t.coverage_required||0):0}
     else{required=S.required(date,t.code,dutyRows,{...data.rules,timezone:tz})??raw(date,t);
-     if(!data.rules.enabled&&['OT1','OT2'].includes(t.code)&&model.get('OT2')?.morning_ot_switch_min&&!overrides.has(date+'|OT1')&&!overrides.has(date+'|OT2')){const seen=new Set(allAssignments.filter(a=>a.shift==='O3'&&a.date===plus(date,-1)&&Date.parse(a.start)<=S.instant(date,'06:00',tz)&&Date.parse(a.end)>=S.instant(date,'08:00',tz)).map(a=>a.employee_id));if(seen.size>=model.get('OT2').morning_ot_switch_min){const own=allAssignments.filter(a=>a.date===date&&a.shift==='OT1').length;if(t.code==='OT1')required=Math.min(required,own);else required+=Math.max(0,raw(date,model.get('OT1'))-own)}}
+     if(!data.rules.enabled&&['OT1','OT2'].includes(t.code)&&model.get('OT2')?.morning_ot_switch_min&&!overrides.has(date+'|OT1')&&!overrides.has(date+'|OT2')){const seen=new Set(planAssignments.filter(a=>a.shift==='O3'&&a.date===plus(date,-1)&&Date.parse(a.start)<=S.instant(date,'06:00',tz)&&Date.parse(a.end)>=S.instant(date,'08:00',tz)).map(a=>a.employee_id));if(seen.size>=model.get('OT2').morning_ot_switch_min){const own=planAssignments.filter(a=>a.date===date&&a.shift==='OT1').length;if(t.code==='OT1')required=Math.min(required,own);else required+=Math.max(0,raw(date,model.get('OT1'))-own)}}
     }
     const start=S.instant(date,t.default_start.slice(0,5),tz),end=S.instant(t.default_end<=t.default_start?plus(date,1):date,t.default_end.slice(0,5),tz);
-    const bookings=allAssignments.filter(a=>a.date===date&&codes.includes(a.shift)&&(!group||Date.parse(a.start)<=start&&Date.parse(a.end)>=end));
+    const bookings=planAssignments.filter(a=>a.date===date&&codes.includes(a.shift)&&(!group||Date.parse(a.start)<=start&&Date.parse(a.end)>=end));
     const filled=new Set(bookings.map(a=>a.employee_id)).size,missing=Math.max(0,required-filled),wanted=t.planning_mode==='optional'&&(t.optional_weekdays||[1,2,3,4,5,6,7]).includes(weekday(date))?Number(t.optional_staffing||0):0;
     cells.push({date,key,code:t.code,label:group||t.code,codes,required,filled,missing,optional:wanted,optionalMissing:Math.max(0,wanted-filled),site_id:t.site_id,shared:!!group,state:required===0?'neutral':missing===0?'good':filled?'warn':'bad'});
    }
@@ -84,7 +85,7 @@
   const calendar=allDays.map(date=>{const own=cells.filter(c=>c.date===date),required=own.reduce((n,c)=>n+c.required,0),missing=own.reduce((n,c)=>n+c.missing,0);return{date,required,filled:required-missing,missing,ratio:required?1-missing/required:null,optionalMissing:own.reduce((n,c)=>n+c.optionalMissing,0),state:required===0?'neutral':missing===0?'good':missing<required?'warn':'bad'}});
   const alerts=cells.filter(c=>c.missing).map(c=>({kind:'coverage',date:c.date,shift:c.code,title:c.label+' · '+c.missing+' Positionen offen',detail:'Besetzt '+c.filled+' / Bedarf '+c.required+(c.shared?' · gemeinsame Besetzung':''),count:c.missing}));
   for(const a of assignments){const e=employeeRows.find(e=>e.id===a.employee_id);for(const off of absence.filter(b=>absenceOverlap(a,b)))alerts.push({kind:'absence',date:a.date,shift:a.shift,assignment:a.id,employee:e.id,title:e.name+' · Abwesenheitskonflikt',detail:a.shift+' überschneidet sich mit '+off.type,count:1});
-   if(data.can_time&&Date.parse(a.end)<=now){const te=data.times.find(t=>t.id===a.id);if(!te?.start&&!data.qr.some(q=>q.employee_id===a.employee_id&&q.end&&Date.parse(q.start)<=Date.parse(a.start)&&Date.parse(q.end)>=Date.parse(a.end)))alerts.push({kind:'missingTime',date:a.date,shift:a.shift,assignment:a.id,employee:e.id,title:e.name+' · Ist-Zeit fehlt',detail:a.shift+' ist beendet; Zeitmeldung prüfen.',count:1});}
+   if(a.status==='PUBLISHED'&&data.can_time&&Date.parse(a.end)<=now){const te=data.times.find(t=>t.id===a.id);if(!te?.start&&!data.qr.some(q=>q.employee_id===a.employee_id&&q.end&&Date.parse(q.start)<=Date.parse(a.start)&&Date.parse(q.end)>=Date.parse(a.end)))alerts.push({kind:'missingTime',date:a.date,shift:a.shift,assignment:a.id,employee:e.id,title:e.name+' · Ist-Zeit fehlt',detail:a.shift+' ist beendet; Zeitmeldung prüfen.',count:1});}
   }
   for(const t of data.can_time?timeRows:[]){const e=employeeRows.find(e=>e.id===t.employee_id);if(['recorded','correction_requested'].includes(t.status))alerts.push({kind:'review',date:t.date,assignment:t.id,employee:e.id,title:e.name+' · '+(t.status==='recorded'?'Zeit zur Prüfung':'Korrektur angefordert'),detail:t.shift+' · Zeiterfassung öffnen',count:1});if(t.status==='qr_running')alerts.push({kind:'running',date:today,employee:e.id,title:e.name+' · QR-Dienst läuft',detail:'Laufende Zeit wird noch nicht als abgeschlossene Arbeitszeit gezählt.',count:1});}
   alerts.sort((a,b)=>({absence:0,review:1,missingTime:2,coverage:3,running:4}[a.kind]-{absence:0,review:1,missingTime:2,coverage:3,running:4}[b.kind])||(a.date||'').localeCompare(b.date||'')||collator.compare(a.title,b.title));
