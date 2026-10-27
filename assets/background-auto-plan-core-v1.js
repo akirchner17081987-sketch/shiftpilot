@@ -59,7 +59,14 @@
   // Durable, per-month allocation and repair budgets. A slow first month must
   // not consume the later months' opportunity to be planned and repaired.
   cp.deadlineAt ||= cp.searchStartedAt+Math.min(3000000,Math.max(1,months)*480000);
-  if(cp.budgetMonth!==cp.monthIndex){cp.budgetMonth=cp.monthIndex;cp.monthStartedAt=now;cp.monthDeadlineAt=Math.min(cp.deadlineAt,now+Math.min(480000,(cp.deadlineAt-now)/Math.max(1,months-cp.monthIndex)));}
+  if(cp.budgetMonth!==cp.monthIndex){cp.budgetMonth=cp.monthIndex;cp.monthStartedAt=now;cp.monthExtensions=0;cp.monthDeadlineAt=Math.min(cp.deadlineAt,now+Math.min(480000,(cp.deadlineAt-now)/Math.max(1,months-cp.monthIndex)));}
+  // Do not stop immediately before full coverage while checked improvements
+  // are still being found. One bounded extension is available per month.
+  const exchange=cp.exchange;
+  if(now>=cp.monthDeadlineAt&&cp.stage==='exchange'&&exchange?.status==='searching'&&exchange.bestOpen>0&&exchange.bestOpen<=5&&exchange.improvements>0&&exchange.pass-exchange.lastImprovement<32&&!cp.monthExtensions){
+   const hard=cp.searchStartedAt+3000000;cp.deadlineAt=Math.min(hard,cp.deadlineAt+180000);
+   cp.monthDeadlineAt=Math.min(cp.deadlineAt,cp.monthDeadlineAt+180000);cp.monthExtensions=1;
+  }
   const deadlineAt=cp.monthDeadlineAt;
   return {deadlineAt,allocationExpired:now>=Math.min(cp.monthStartedAt+90000,cp.monthStartedAt+(deadlineAt-cp.monthStartedAt)*.3),expired:now>=deadlineAt};
  }
@@ -80,7 +87,7 @@
     if(stats&&cp.exchangeHistory)found.quality={...found.quality,blockExchange:{...stats,passes:history.passes+stats.passes,improvements:history.improvements+stats.improvements,globalPasses:history.globalPasses+(stats.globalPasses||0),closed:Math.max(0,history.initialOpen-found.quality.open),rounds:(cp.exchangeRounds||0)+1}};
     return acceptMonth({...found,quality:found.quality||{...cp.pendingQuality,blockExchange:{status:cp.exchange.status,passes:cp.exchange.pass,reason:cp.exchange.reason||null}}});
    };
-   return{step:()=>false,exchangeStep:(highs,seconds=(payload.adaptiveSearch ? .5 : payload.boundedSearch ? .18 : .5))=>{if(cp.exchange.status==='searching')exchange.step(highs,seconds);if(cp.exchange.status!=='searching')return finish();return false;},limitExchange:()=>{cp.exchange.status='limited';cp.exchange.reason='Zeitbudget der automatischen Blockreparatur erreicht.';return finish();},stopExchange:reason=>{cp.exchange.status='unavailable';cp.exchange.reason=String(reason).slice(0,160);return finish();},progress:()=>progress(payload,cp),result:()=>result(payload,cp)};
+   return{step:()=>false,exchangeStep:(highs,seconds=(payload.adaptiveSearch ? .4 : payload.boundedSearch ? .18 : .5))=>{if(cp.exchange.status==='searching')exchange.step(highs,seconds);if(cp.exchange.status!=='searching')return finish();return false;},limitExchange:()=>{cp.exchange.status='limited';cp.exchange.reason='Zeitbudget der automatischen Blockreparatur erreicht.';return finish();},stopExchange:reason=>{cp.exchange.status='unavailable';cp.exchange.reason=String(reason).slice(0,160);return finish();},progress:()=>progress(payload,cp),result:()=>result(payload,cp)};
   }
   const jointNightSearch=payload.enhancedBlockSearch&&payload.months.length===1&&!input.criticalOnly&&input.solidRules.teamLeaderMinimumMonthlyHours==null&&input.criticalCapacities?.some(([key,n])=>n>0&&key.endsWith('|TL'));
   if(!cp.solver){

@@ -8,7 +8,8 @@ For confirmed policies the first pass allocates scarce mandatory resources
 without enumerating the large daily critical beam first. It keeps priority and
 fixed rosters. Up to 90 seconds are reserved for initial allocation; remaining
 time is available for block repair. Every month receives its own budget, up to
-eight minutes. Large requests share a maximum 50-minute budget, below job expiry.
+eight minutes, with one additional three-minute extension when at most five
+positions remain and checked improvements are still being found. Large requests share a maximum 50-minute budget, below job expiry.
 Each invocation saves a serializable checkpoint. Closing the browser does not
 cancel the job. The worker performs a second bounded solver pass only when the
 first pass leaves CPU headroom.

@@ -141,3 +141,9 @@ test('a partial allocation enters joint block repair instead of being returned a
  const saved=JSON.parse(JSON.stringify(cp));C.context(p,saved).limitExchange();
  assert.equal(saved.stage,'done');assert.ok(C.result(p,saved).quality[0].open>0);
 });
+test('recent checked improvements near full coverage receive one bounded extension, not an endless search',()=>{
+ const p={...payload(),adaptiveSearch:true},cp=C.start(p),now=100000;C.searchBudget(p,cp,now);
+ const original=cp.monthDeadlineAt;cp.stage='exchange';cp.exchange={status:'searching',bestOpen:2,improvements:3,pass:40,lastImprovement:35};
+ let budget=C.searchBudget(p,cp,original+1);assert.equal(budget.expired,false);assert.equal(cp.monthExtensions,1);assert.equal(budget.deadlineAt,original+180000);
+ budget=C.searchBudget(p,cp,budget.deadlineAt+1);assert.equal(budget.expired,true);assert.equal(cp.monthExtensions,1);
+});
