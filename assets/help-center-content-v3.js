@@ -1156,3 +1156,23 @@ window.SFHelpContent = {
 
 window.SFHelpContent.articles.auto.push(["Wie läuft die Auto-Planung selbständig bei geschlossenem Browser?", "In der Auto-Planung öffnen Inhaber oder Administratoren den Bereich „Automatikmodus dieses Unternehmens“. Dort aktivieren sie einen monatlichen Termin, einen Zeitraum von bis zu drei Monaten und auf Wunsch die erneute Planung nach relevanten Änderungen. Vorschläge bleiben zur Prüfung bereit; im Modus „Entwurf automatisch speichern“ werden nur vollständig besetzte, regelkonforme und ausreichend ausgeglichene Ergebnisse als Entwurf übernommen. Veröffentlichte und abgeschlossene Monate bleiben geschützt. Ein manueller Testlauf erstellt immer einen Vorschlag. Stundenunterschiede aus veröffentlichten Vormonaten und bereits berechneten Folgemonaten beeinflussen die faire Verteilung vorsichtig; SOLL und Zeitkonten bleiben unverändert. Offene Engpässe und Prüfprobleme sind im Laufstatus sichtbar. Die Veröffentlichung erfolgt separat."]);
 window.SFHelpContent.articles.auto.push(["Wie funktionieren Vorprüfung, Planungsziele und Verbesserung?", "Beim Start eines Automatiklaufs berechnet die Vorprüfung Bedarf, SOLL und optimistisch verfügbare Stunden pro Monat. Mehr SOLL als angeforderte Dienste kann die Automatik allein nicht ausgleichen; verfügbare Kandidaten garantieren wegen Ruhezeiten und Blöcken noch keinen gültigen Plan. Unter Planungsziel wählen Sie Ausgewogen, Stundenausgleich oder Wünsche für die weichen Kriterien. Pflichtdienste, Zusagen und Grenzen bleiben bindend. „Bestehenden Vorschlag verbessern“ untersucht weitere Varianten und behält den bisher gültigen Vorschlag, solange keine bessere unabhängig geprüfte Verteilung gefunden wird. Gleich qualifizierte Kollegen werden über veröffentlichte Vormonate hinweg vorsichtig ausgeglichen. Der Lauf erzeugt nur einen Vorschlag und veröffentlicht keine Dienste."]);
+
+// Pausenwahl und Erinnerungen · 27.10.2026.
+window.SFHelpContent.articles.qr.push(...[
+  [
+    "Wie wähle ich 10, 15 oder 20 Minuten Pause oder unbegrenzt?",
+    "Während der Arbeitszeit können Sie vor „Pause beginnen“ freiwillig 10, 15 oder 20 Minuten wählen. Das Unendlichkeitszeichen ∞ ist die Voreinstellung ohne Zeitlimit und ohne Pausen-Erinnerung. Erst „Pause beginnen“ bucht den Pausenbeginn. Die gewählte Dauer beendet die Pause nicht automatisch."
+  ],
+  [
+    "Wann erhalte ich die Erinnerung vor dem Pausenende?",
+    "Bei 10, 15 oder 20 Minuten Pausendauer sendet SchichtFunk etwa 2 Minuten vor Ablauf eine Push-Erinnerung an Ihre Geräte mit aktiviertem SchichtFunk-Push. Der Erinnerungsdienst arbeitet auch bei geschlossenem Browser. Eine bereits beendete Pause oder eine abgelaufene Pausenzeit erzeugt keine verspätete Meldung. Bei ∞ ist keine Erinnerung vorgesehen."
+  ],
+  [
+    "Warum kommt meine Pausen-Erinnerung nicht an?",
+    "Aktivieren Sie Push-Mitteilungen im Mitarbeiterportal auf dem gewünschten Gerät und erlauben Sie Benachrichtigungen in den Website- oder App-Einstellungen. Auf dem iPhone oder iPad muss SchichtFunk als Web-App zum Home-Bildschirm hinzugefügt sein. Wählen Sie vor dem Pausenbeginn 10, 15 oder 20 Minuten. Bei unbegrenzter Pause ∞ erfolgt keine Erinnerung. Die Zustellung hängt auch von der Verbindung und den Geräte-Einstellungen ab."
+  ],
+  [
+    "Endet meine Pause automatisch nach der gewählten Dauer?",
+    "Nein. Der Countdown und die Erinnerung sind Hilfen. Beenden Sie die Pause ausdrücklich mit „Pause beenden“. Die Pause läuft auch nach Ablauf der gewählten Dauer weiter. „Arbeitszeit beenden“ schließt bei Dienstende eine noch laufende Pause zum selben Zeitpunkt. Pausen bleiben bezahlt und werden separat dokumentiert."
+  ]
+]);

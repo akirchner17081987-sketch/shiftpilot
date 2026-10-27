@@ -674,7 +674,7 @@ test('employee startup skips manager-only modules and detaches inactive applicat
   assert.match(moduleLoader, /B\.prepareManagerModules=\(\)=>B\.role==='EMPLOYEE'\?Promise\.resolve\(\)/);
   assert.match(moduleLoader, /B\.ensureManagerViewModules=view=>B\.role==='EMPLOYEE'\?Promise\.resolve\(\)/);
   assert.match(moduleLoader, /const present=file=>/);
-  assert.match(moduleLoader, /if\(present\(file\)\)\{next\(\);return\}/);
+  assert.match(moduleLoader, /window\.SFStartupScripts\.wait\(existing\)\.then\(next,fail\)/);
   assert.match(moduleLoader, /if\(i>=managerStart\)\{start\(\);return\}/);
   assert.match(employeeAccess, /const detachNonEmployeeShell=/);
   assert.match(employeeAccess, /detachNonEmployeeShell\(\);document\.getElementById\('sfEmployeePortal'\)/);

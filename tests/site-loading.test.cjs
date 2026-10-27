@@ -14,7 +14,7 @@ test('application scripts download without blocking the parser and each static m
 test('authentication waits for both base modules and the complete deferred page',async()=>{
  const scripts=[],calls=[];let ready;const pageReady=new Promise(r=>ready=r),document={scripts,createElement:()=>({}),body:{appendChild:s=>scripts.push(s)}};
  vm.runInNewContext(read('assets/conflict-plausibility-v1.js'),{window:{SFPageReady:pageReady,SFBackend:{init:()=>calls.push('init')}},document,location:{href:'https://schichtfunk.de/'},URL,console});
- scripts.forEach(s=>s.onload());assert.deepEqual(calls,[]);ready();await new Promise(r=>setImmediate(r));assert.deepEqual(calls,['init']);
+ for(let i=0;i<57;i++){scripts[i].onload();await new Promise(r=>setImmediate(r))}assert.deepEqual(calls,[]);ready();await new Promise(r=>setImmediate(r));assert.deepEqual(calls,['init']);
 });
 function navigation(demo){const scripts=[],styles=[],document={getElementById:()=>null,querySelector:()=>null,addEventListener(){},createElement:()=>({setAttribute(){}}),head:{appendChild:n=>(n.rel?styles:scripts).push(n)}};vm.runInNewContext(read('assets/navigation-compat-v1.js'),{window:{},document,sessionStorage:{getItem:()=>demo?'active':null},setTimeout(){},console});return{scripts,styles}}
 test('production does not request inactive demo-only modules',()=>{const {scripts}=navigation(false);assert.ok(scripts.length>15);assert.equal(scripts.filter(s=>/\/(demo-reset|demo-august|demo-datev|demo-qr)/.test(s.src)).length,0)});
