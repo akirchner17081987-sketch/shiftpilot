@@ -89,5 +89,7 @@ test('dashboard keeps unassigned demand visible under site filters and routes to
   assert.equal(w.document.getElementById('sfManualFilterShift').value,'');assert.equal(w.document.getElementById('sfManualOnlyOpen').checked,false);
   assert.equal(board.querySelector('.sf-today-focus').dataset.date,'2026-10-26');assert.equal(w.document.activeElement.dataset.type,'ND');
   rebuild();await w.happyDOM.whenAsyncComplete();assert.equal(board.querySelector('.sf-today-focus').dataset.type,'ND');
+  w.switchView('overview');d.as_of='2026-10-27T18:00:00Z';d.models[0].default_start='06:00';d.models[0].default_end='16:00';await w.SFToday.reload();
+  assert.match(w.document.querySelector('.sf-td-alert-when').textContent,/bereits beendet/);
  }finally{await w.happyDOM.abort();w.close();}
 });

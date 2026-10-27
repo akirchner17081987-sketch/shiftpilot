@@ -12,7 +12,7 @@
  const root=()=>document.getElementById('sfTodayWorkspace'),active=()=>document.getElementById('view-overview')?.classList.contains('active');
  const clock=v=>v==null?'–':new Intl.DateTimeFormat('de-DE',{timeZone:current?.timezone||'Europe/Berlin',hour:'2-digit',minute:'2-digit'}).format(new Date(v));
  const dated=v=>new Intl.DateTimeFormat('de-DE',{timeZone:current?.timezone||'Europe/Berlin',day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date(v));
- const coverageWhen=a=>`${dated(a.start)} · ${clock(a.start)}–${clock(a.end)}${C.localDate(a.start,result.tz)!==C.localDate(a.end,result.tz)?' am '+dated(a.end):''} · ${a.running?'läuft bereits'+(a.date!==result.date?' · aus Vortag':''):'beginnt heute'}`;
+ const coverageWhen=a=>`${dated(a.start)} · ${clock(a.start)}–${clock(a.end)}${C.localDate(a.start,result.tz)!==C.localDate(a.end,result.tz)?' am '+dated(a.end):''} · ${a.running?'läuft bereits'+(a.date!==result.date?' · aus Vortag':''):a.end<=result.now?'bereits beendet':'beginnt heute'}`;
  const duration=v=>{const m=Math.max(0,Math.floor(v||0));return Math.floor(m/60)+' Std. '+m%60+' Min.'};
  const scopeLabel=()=>state.site==='unassigned'?'Ohne Standortzuordnung':state.site?site(state.site):'Alle Standorte';
  const site=id=>current?.sites.find(s=>s.id===id)?.name||'Ohne Standortzuordnung';
