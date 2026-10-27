@@ -76,7 +76,10 @@
     const candidate={employeeId,startDate:start,endDate:end,fullDay:full,startTime:st,endTime:en};const overlap=rows().find(a=>String(a.id)!==String(editingId())&&String(a.employeeId)===String(employeeId)&&status(a)!=='Abgelehnt'&&overlaps(a,candidate));if(overlap)return fail(`Für diesen Mitarbeiter besteht bereits ${overlap.type} vom ${fmt(overlap.startDate||overlap.date)} bis ${fmt(overlap.endDate||overlap.date)}.`,'absStart');return{employeeId,start,end,full,st,en,note};
   }
   function enhanceModal(){
-    const modal=document.getElementById('absenceModal');if(!modal)return;styles();addFormError();const a=rows().find(x=>String(x.id)===String(editingId()));let meta=modal.querySelector('.sf-abs-v3-meta');if(!meta){meta=document.createElement('div');meta.className='sf-abs-v3-meta';modal.querySelector('.abs-modal-body')?.appendChild(meta)}meta.textContent=a?`Datensatz: ${a.type} · Status ${status(a)}${a._dbId?' · Cloud gespeichert':''}`:'Neue Abwesenheit – wird nach dem Speichern mit der Cloud synchronisiert.';
+    const modal=document.getElementById('absenceModal');if(!modal)return;styles();addFormError();
+    if(!editingId())modal.querySelector('#absenceModalTitle')?.replaceChildren(document.createTextNode('Abwesenheit eintragen'));
+    for(const id of ['absStart','absEnd','absStartTime','absEndTime','absStatus','absTime','absNote']){const field=document.getElementById(id),label=field?.closest('.abs-field')?.querySelector('label');if(label)label.htmlFor=id}
+    document.getElementById('absFullDay')?.setAttribute('aria-label','Ganztägige Abwesenheit');const a=rows().find(x=>String(x.id)===String(editingId()));let meta=modal.querySelector('.sf-abs-v3-meta');if(!meta){meta=document.createElement('div');meta.className='sf-abs-v3-meta';modal.querySelector('.abs-modal-body')?.appendChild(meta)}meta.textContent=a?`Datensatz: ${a.type} · Status ${status(a)}${a._dbId?' · Cloud gespeichert':''}`:'Neue Abwesenheit – wird nach dem Speichern mit der Cloud synchronisiert.';
     if(!canManage()){modal.querySelectorAll('input,select,textarea,.abs-type-card').forEach(x=>x.disabled=true);modal.querySelector('.abs-modal-foot .primary')?.remove();meta.classList.add('sf-abs-v3-readonly')}
   }
   const openBase=window.openAbsenceDialog;window.openAbsenceDialog=function(id){
