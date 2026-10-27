@@ -158,6 +158,12 @@ const handler=withSupabase({auth:"none"},async(req,ctx)=>{
     if(reminderActive!==true){await mark("SKIPPED");return Response.json({ok:true,status:"SKIPPED",reason:"REMINDER_RESOLVED"})}
   }
 
+  if(notification.kind==='AUTO_PLAN_FINISHED'){
+    const {data:planningAccess,error:planningError}=await ctx.supabaseAdmin.rpc('server_auto_plan_notification_active',{p_notification_id:notificationId});
+    if(planningError)throw planningError;
+    if(planningAccess!==true){await mark('SKIPPED');return Response.json({ok:true,status:'SKIPPED',reason:'PLANNING_ACCESS_REVOKED'})}
+  }
+
   let ttl=86400;
   if(notification.kind==='BREAK_ENDING'){
     const {data:expiresAt,error:expiryError}=await ctx.supabaseAdmin.rpc('server_qr_break_reminder_expiry',{p_notification_id:notificationId});
@@ -168,7 +174,7 @@ const handler=withSupabase({auth:"none"},async(req,ctx)=>{
 
   const origin=appOrigin();
   let relativeLink=notification.link_view?`/?sf_push_view=${encodeURIComponent(notification.link_view)}#app`:"/#app";
-  if(notification.kind==='HANDOVER_PENDING'||notification.kind==='HANDOVER_CRITICAL_OVERDUE'){
+  if(notification.kind==='AUTO_PLAN_FINISHED'||notification.kind==='HANDOVER_PENDING'||notification.kind==='HANDOVER_CRITICAL_OVERDUE'){
     const link=new URL(relativeLink,origin);link.searchParams.set("sf_push_notification",notificationId);relativeLink=link.pathname+link.search+link.hash;
   }
   if(notification.kind==='BREAK_ENDING')relativeLink='/qr-time.html?entry=desktop';

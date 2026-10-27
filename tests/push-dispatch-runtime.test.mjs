@@ -12,7 +12,7 @@ async function dispatch(options={}){
  const calls=[],marks=[],deleted=[];
  const notification={id,company_id:id,user_id:id,kind:'ABSENCE_CONFLICT',title:'Fiktiver Test',message:'Fiktive Nachricht',link_view:'employee-shifts',...options.notification};
  const admin={
-  async rpc(name,args){calls.push({name,args});if(name==='server_get_push_config')return {data:[{webhook_secret:'test-secret',vapid_public_key:'fake',vapid_private_key:'fake',vapid_subject:'https://schichtfunk.de/'}]};if(name==='server_push_recipient_active')return {data:options.active!==false,error:options.accessError};if(name==='server_qr_break_reminder_expiry')return {data:options.breakExpiry??null};if(name==='server_handover_reminder_active')return {data:options.reminderActive!==false};if(name==='server_mark_push_dispatch')marks.push(args);return {data:true};},
+  async rpc(name,args){calls.push({name,args});if(name==='server_get_push_config')return {data:[{webhook_secret:'test-secret',vapid_public_key:'fake',vapid_private_key:'fake',vapid_subject:'https://schichtfunk.de/'}]};if(name==='server_push_recipient_active')return {data:options.active!==false,error:options.accessError};if(name==='server_auto_plan_notification_active')return {data:options.planningActive!==false};if(name==='server_qr_break_reminder_expiry')return {data:options.breakExpiry??null};if(name==='server_handover_reminder_active')return {data:options.reminderActive!==false};if(name==='server_mark_push_dispatch')marks.push(args);return {data:true};},
   from(table){let removing=false;const q={select(){return q},eq(){return q},delete(){removing=true;return q},in(k,v){deleted.push(...v);return Promise.resolve({error:null})},maybeSingle(){return Promise.resolve({data:table==='notifications'?(options.missing?null:notification):table==='employees'?{id}:null})},then(resolve,reject){return Promise.resolve({data:table==='push_subscriptions'?(options.subs??[sub(1)]):[]}).then(resolve,reject)}};return q;}
  };
  const context={Response,Request,Headers,URL,Uint8Array,AbortSignal,crypto,btoa,console,Deno:{env:{get:()=>undefined}},withSupabase:(_,handler)=>req=>handler(req,{supabaseAdmin:admin}),generateVapidKeys:()=>({}),
@@ -68,3 +68,7 @@ test('break reminders expire, cancel, use short TTL and open time capture for ev
  assert.equal(r.body.status,'SENT');assert.ok(legacy.settings.ttl>0&&legacy.settings.ttl<=90);assert.equal(legacy.settings.urgency,'high');
  assert.equal(legacy.payload.url,'/qr-time.html?entry=desktop');assert.equal(modern.payload.options.ttl,legacy.settings.ttl);assert.equal(modern.payload.data.notification.navigate,'https://schichtfunk.de/qr-time.html?entry=desktop');
 });
+
+test('finished automatic plan push carries the notification ID for its checked proposal',async()=>{const r=await dispatch({notification:{kind:'AUTO_PLAN_FINISHED',link_view:'auto'}});assert.equal(r.body.status,'SENT');const send=r.calls.find(c=>c.provider==='legacy');assert.equal(send.payload.url,`/?sf_push_view=auto&sf_push_notification=${id}#app`);});
+
+test('finished-plan push rechecks revoked planning access before contacting any provider',async()=>{const r=await dispatch({planningActive:false,notification:{kind:'AUTO_PLAN_FINISHED',link_view:'auto'}});assert.equal(r.body.reason,'PLANNING_ACCESS_REVOKED');assert.equal(r.calls.filter(c=>c.provider).length,0);});

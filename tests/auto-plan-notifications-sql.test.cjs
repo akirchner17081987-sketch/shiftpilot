@@ -1,0 +1,43 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),{PGlite}=require('@electric-sql/pglite');
+const {cid,other,uid,bootstrap,files}=require('./fixtures/autonomous-db.cjs');
+const migration=()=>fs.readFileSync('supabase/migrations/'+fs.readdirSync('supabase/migrations').find(f=>f.endsWith('_auto_plan_completion_notifications.sql')),'utf8');
+test('completion recipients are opt-in, snapshotted, tenant-scoped, rechecked and notified once after final audit',async()=>{const db=new PGlite();try{
+ await db.exec(bootstrap);for(const file of files)await db.exec(fs.readFileSync('supabase/migrations/'+file,'utf8'));
+ await db.exec(`create table auth.users(id uuid primary key,email text,raw_user_meta_data jsonb default '{}');
+ alter table public.companies add column name text default 'Testbetrieb';alter table public.company_members add column access_role text default 'TEAM_LEAD';
+ alter table public.employees add column auth_user_id uuid;alter table public.employees add column first_name text;alter table public.employees add column last_name text;
+ create table public.push_subscriptions(user_id uuid,enabled boolean);
+ create table public.notifications(id uuid primary key default gen_random_uuid(),company_id uuid,user_id uuid,kind text,title text,message text,link_view text,entity_type text,entity_id uuid,metadata jsonb,unique(user_id,kind,entity_id));
+ create function private.sf_put_notification(uuid,uuid,uuid,text,text,text,text,text,uuid,jsonb) returns void language sql as $$insert into public.notifications(company_id,user_id,kind,title,message,link_view,entity_type,entity_id,metadata) values($1,$2,$4,$5,$6,$7,$8,$9,$10) on conflict(user_id,kind,entity_id) do update set message=excluded.message$$;
+ insert into auth.users(id,email) values('${uid}','owner@example.invalid');`);
+ await db.exec(migration());
+ const tl='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb1',outside='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb2',employee='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb3';
+ await db.query("insert into auth.users(id,email) values($1,'lead@example.invalid'),($2,'other@example.invalid'),($3,'employee@example.invalid')",[tl,outside,employee]);
+ await db.query("insert into public.company_members(company_id,user_id,status,role) values($1,$2,'ACTIVE','PLANNER'),($3,$4,'ACTIVE','OWNER'),($1,$5,'ACTIVE','TIME_TRACKING')",[cid,tl,other,outside,employee]);
+ const rpc=async(action,config=null)=> (await db.query("select public.autonomous_planning_control($1,$2,$3::jsonb,null,'2027-02-01') v",[cid,action,JSON.stringify(config)])).rows[0].v;
+ let state=await rpc('GET');assert.deepEqual(state.notifications.selected,[]);assert.equal(state.notifications.choices.length,2);assert.ok(state.notifications.choices.some(x=>x.user_id===uid&&x.self));
+ for(const ids of [[outside],[employee],['oops'],[null]])await assert.rejects(()=>rpc('NOTIFY_SAVE',{notify_user_ids:ids}),/Empfänger|empfänger/);
+ await assert.rejects(()=>rpc('NOTIFY_SAVE',{notify_user_ids:'bad'}),/empfänger/);
+ state=await rpc('NOTIFY_SAVE',{notify_user_ids:[uid,tl,tl]});assert.equal(state.notifications.selected.length,2);
+ state=await rpc('RUN',{notify_user_ids:[uid,tl],goal:'HOURS'});const id=state.runs[0].id;
+ assert.equal((await db.query('select notification_recipients,context from private.autonomous_planning_runs where id=$1',[id])).rows[0].context.planningGoal,'HOURS');
+ await rpc('NOTIFY_SAVE',{notify_user_ids:[]});assert.equal((await db.query('select cardinality(notification_recipients) n from private.autonomous_planning_runs where id=$1',[id])).rows[0].n,2);
+ await db.query("update private.autonomous_planning_runs set status='CALCULATING' where id=$1",[id]);await db.query('select private.sf_auto_plan_completion_dispatch()');assert.equal((await db.query('select count(*) n from public.notifications')).rows[0].n,0);
+ await db.query("update public.company_members set status='DISABLED' where user_id=$1",[tl]);
+ await db.query("update private.autonomous_planning_runs set status='REVIEW',summary=$2 where id=$1",[id,{checked:372,open:0,errors:12}]);
+ // A subsequent status transition in the same finalization must produce the final message only.
+ await db.query("update private.autonomous_planning_runs set status='APPLIED' where id=$1",[id]);await db.query('select private.sf_auto_plan_completion_dispatch()');
+ let notes=(await db.query('select * from public.notifications')).rows;assert.equal(notes.length,1);assert.equal(notes[0].user_id,uid);assert.match(notes[0].message,/02.2027.*12 Prüfpunkte.*Entwurf gespeichert/);assert.match(notes[0].title,/vollständig besetzt/);assert.equal(notes[0].metadata.run_id,id);
+ await db.query("update private.autonomous_planning_runs set status='REVIEW' where id=$1",[id]);await db.query('select private.sf_auto_plan_completion_dispatch()');assert.equal((await db.query('select count(*) n from public.notifications')).rows[0].n,1);
+ state=await rpc('RUN');const silent=state.runs[0].id;assert.equal((await db.query('select cardinality(notification_recipients) n from private.autonomous_planning_runs where id=$1',[silent])).rows[0].n,0);
+ await db.query("update private.autonomous_planning_runs set status='FAILED' where id=$1",[silent]);await db.query('select private.sf_auto_plan_completion_dispatch()');assert.equal((await db.query('select count(*) n from public.notifications')).rows[0].n,1);
+ // A provider/database error leaves a retryable outbox without losing the completed plan.
+ state=await rpc('RUN',{notify_user_ids:[uid]});const failed=state.runs[0].id;
+ await db.query("update private.autonomous_planning_runs set status='FAILED' where id=$1",[failed]);
+ await db.exec("create or replace function private.sf_put_notification(uuid,uuid,uuid,text,text,text,text,text,uuid,jsonb) returns void language plpgsql as $$begin raise exception 'delivery unavailable';end$$;");
+ await db.query('select private.sf_auto_plan_completion_dispatch()');let out=(await db.query('select * from private.auto_plan_completion_outbox where run_id=$1',[failed])).rows[0];assert.equal(out.processed_at,null);assert.equal(out.attempts,1);assert.match(out.last_error,/delivery unavailable/);
+ assert.equal((await db.query('select status from private.autonomous_planning_runs where id=$1',[failed])).rows[0].status,'FAILED');
+ for(const table of ['auto_plan_notification_preferences','auto_plan_completion_outbox'])assert.equal((await db.query("select has_table_privilege('authenticated',$1,'SELECT') v",['private.'+table])).rows[0].v,false);
+ for(const fn of ['private.sf_auto_plan_completion_dispatch()','private.sf_auto_plan_notification_options(uuid)','private.sf_autonomy_control_before_notifications(uuid,text,jsonb,uuid,date)'])assert.equal((await db.query("select has_function_privilege('authenticated',$1,'EXECUTE') v",[fn])).rows[0].v,false);
+ await db.query("select set_config('request.jwt.claim.sub',$1,false)",[outside]);await assert.rejects(()=>rpc('GET'),/Planungsrechte/);
+ }finally{await db.close();}});

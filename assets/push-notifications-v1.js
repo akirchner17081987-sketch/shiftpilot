@@ -166,6 +166,16 @@
 
   let handoverRouting=false;
   async function routePending(){let target=sessionStorage.getItem('sf_pending_push_view')||'';try{const u=new URL(location.href),q=u.searchParams.get('sf_push_view');const notification=u.searchParams.get('sf_push_notification');if(notification){sessionStorage.setItem('sf_pending_push_notification',notification);u.searchParams.delete('sf_push_notification')}if(q){target=q;sessionStorage.setItem('sf_pending_push_view',q);u.searchParams.delete('sf_push_view');history.replaceState(null,'',u.pathname+(u.search?u.search:'')+u.hash)}}catch{}if(!target||!B.role)return false;
+    if(target==='auto'&&sessionStorage.getItem('sf_pending_push_notification')){
+      if(handoverRouting||!B.client||!B.user?.id||!B.ready||!B.notifications?.navigate||!window.SFAutonomousPlanning?.openNotification)return false;
+      handoverRouting=true;const client=B.client,user=B.user.id,id=sessionStorage.getItem('sf_pending_push_notification');
+      try{const result=await client.from('notifications').select('id,entity_id,entity_type,metadata').eq('id',id).eq('user_id',user).maybeSingle();if(result.error)throw result.error;
+        if(client!==B.client||user!==B.user?.id)return false;
+        if(result.data?.entity_type!=='autonomous_planning_run'){sessionStorage.removeItem('sf_pending_push_notification');sessionStorage.removeItem('sf_pending_push_view');return true;}
+        const opened=await window.SFAutonomousPlanning.openNotification(result.data);if(!opened)return false;
+        sessionStorage.removeItem('sf_pending_push_notification');sessionStorage.removeItem('sf_pending_push_view');return true;
+      }catch(error){console.debug('[SchichtFunk Push] Planung öffnen',error?.message||error);return false;}finally{handoverRouting=false;}
+    }
     if(target==='handover'||target==='employee-handover'){
       if(handoverRouting||!B.client||!B.notifications?.navigate||!window.SFHandover?.openNotification)return false;
       handoverRouting=true;const client=B.client,user=B.user?.id,company=B.companyId,id=sessionStorage.getItem('sf_pending_push_notification');
