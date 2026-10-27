@@ -30,7 +30,9 @@ jobs:
       - run: npm ci
       - run: node --test tests/personnel-review.test.cjs tests/staffing-simulator.test.cjs tests/time-period-presets.test.mjs tests/datev-lodas-format.test.mjs tests/shift-handover.test.cjs
       - run: npx playwright install --with-deps chromium
-      - run: |
+      - env:
+          SF_QR_BROWSER_EXECUTABLE: /usr/bin/google-chrome
+        run: |
           node tests/browser/employee-profile-qa.cjs
           node tests/browser/staffing-simulator-qa.cjs
           node tests/browser/qr-period-views-qa.cjs
