@@ -91,7 +91,15 @@ function context(input,cp){
  cols.forEach(c=>variable(0.01+(cp.adaptive&&cp.coverageComplete?blockPenalty(c.rows,c.group,p)*.1:0)));
  const resources=[...p.capacity].filter(([,n])=>n>0).sort(([a],[b])=>a.localeCompare(b)),slacks=[];
  const bestState=state(cp.best);
- for(const [resource,need]of resources){const critical=p.criticalCapacity.get(resource)||0,slack=variable(1e6,need),criticalIndex=critical?variable(resource.endsWith('|TL')?1e10:1e9,C.criticalOpen(p,bestState,resource)):null;slacks.push({resource,index:slack,need,criticalIndex});const terms=cols.flatMap((c,i)=>{const n=c.option.filter(a=>a.resource===resource).length;return n?[[i,n]]:[];});constraint([...terms,[slack,1]],need,need);if(critical)constraint([...terms,[criticalIndex,1]],critical,1e30);}
+ for(const [resource,need]of resources){const critical=p.criticalCapacity.get(resource)||0,slack=variable(1e6,need),criticalIndex=critical?variable(resource.endsWith('|TL')?1e10:1e9,cp.adaptive?critical:C.criticalOpen(p,bestState,resource)):null;slacks.push({resource,index:slack,need,criticalIndex});const terms=cols.flatMap((c,i)=>{const n=c.option.filter(a=>a.resource===resource).length;return n?[[i,n]]:[];});constraint([...terms,[slack,1]],need,need);if(critical)constraint([...terms,[criticalIndex,1]],critical,1e30);}
+ // During an incomplete search a gap may move to a resource which is easier
+ // to fill next. Pin the total shortage, not every previously covered cell;
+ // otherwise an augmenting chain must fit into one small neighbourhood.
+ if(cp.adaptive){
+  const quality=C.solidQuality(p,bestState);
+  constraint(slacks.map(a=>[a.index,1]),0,quality.open);
+  constraint(slacks.filter(a=>a.criticalIndex!==null).map(a=>[a.criticalIndex,1]),0,quality.critical);
+ }
  const levels=[],peerSlacks=[];
  for(const e of crew){
   const own=cols.flatMap((c,i)=>String(c.group.employee.id)===String(e.id)?[i]:[]),base=baseState.people.get(String(e.id)),rules=S.employeeRules(e,p.solidRules),first=Math.min(...own.map(i=>cols[i].rows[0].day)),last=Math.max(...own.map(i=>cols[i].rows.at(-1).day))+10,minStart=Math.min(...own.flatMap(i=>cols[i].rows.map(a=>Number(a.start.slice(0,2))*60+Number(a.start.slice(3,5)))));

@@ -9,6 +9,20 @@ test('fixed-variable elimination preserves constraint bounds, warm starts and fu
  assert.equal(r.model.numCols,1);assert.deepEqual(r.model.rowLower,[0,0]);assert.deepEqual(r.model.rowUpper,[0,2]);assert.deepEqual(r.warm,[0]);
  assert.deepEqual(r.expand([1]),[1,1,0]);assert.deepEqual(r.expand([]),[]);assert.equal(JSON.stringify(model),before);
 });
+test('adaptive repair can move one gap along a replacement chain while the total shortage stays bounded',()=>{
+ const f=small();f.input.adaptiveSearch=true;f.input.groups[0].options.push(f.input.groups[0].options[0].slice(0,2));
+ f.input.criticalCapacities=f.input.capacities;
+ const cp=E.start(f.input,f.preview),c=E.context(f.input,cp),m=c.model,x=Array(m.numCols).fill(0);
+ x[1]=1;x[8]=1;x[9]=1;x[10]=1;x[11]=1;
+ const feasible=vector=>{
+  if(vector.some((v,i)=>v<m.colLower[i]-1e-6||v>m.colUpper[i]+1e-6))return false;
+  const rows=Array(m.numRows).fill(0);for(let i=0;i<m.numCols;i++)for(let k=m.matrix.starts[i];k<m.matrix.starts[i+1];k++)rows[m.matrix.indices[k]]+=vector[i]*m.matrix.values[k];
+  return rows.every((v,i)=>v>=m.rowLower[i]-1e-6&&v<=m.rowUpper[i]+1e-6);
+ };
+ assert.equal(feasible(x),true,'the same single vacancy can move from day 5 to day 6');
+ const worse=x.slice();worse[4]=1;worse[5]=1;assert.equal(feasible(worse),false,'two vacancies cannot replace the better incumbent');
+ const proposed=f.input.groups[0].options[1];assert.deepEqual(S.errors(f.input.employees[0],proposed,policy),[]);
+});
 function small({cap=27,wish=false,protectedDuty=false}={}){
  const employees=['a','b','c'].map((id,i)=>({id,target:i?9:27,monthLimit:i?9:cap,calendarLimit:i?9:cap,maxMonthlyShifts:100,weeklyLimit:55,maxWeeklyHours:55,weeklyHours:40,maxConsecutive:4,employment:'Vollzeit',shifts:['TL'],role:'Sicherheitsmitarbeiter'}));
  if(protectedDuty)employees.push({...employees[0],id:'protected',target:9});

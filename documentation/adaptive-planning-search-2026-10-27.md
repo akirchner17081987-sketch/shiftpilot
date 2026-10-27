@@ -28,7 +28,7 @@ Required indivisible work/rest options are excluded from this reconstruction.
 Missing or unauthorized candidates do not gain new permissions through repair.
 
 After an improving but incomplete round, the worker can rebuild the search from
-the best checked proposal twice. Rebuilding retains completed coverage and the
+the best checked proposal twice. Rebuilding retains at least the same total coverage and the
 original fixed/base duties. Conditional staffing which cannot be represented by
 the interval model uses the existing scoped, checked replacement search.
 
@@ -43,3 +43,8 @@ available as repair references. Every duty is rechecked against the new job,
 including server-confirmed wishes. A normal retry starts from that checked partial
 plan instead of discarding its completed coverage. Explicit full rebuilds retain
 their existing meaning. A reference never authorizes saving or publication.
+
+During an incomplete repair a vacancy may move along an augmenting chain. The
+total number of vacancies and critical vacancies is bounded by the checked
+incumbent. This permits multi-step repairs without requiring every chain to fit
+inside one neighbourhood. Complete coverage remains protected by a zero bound.
