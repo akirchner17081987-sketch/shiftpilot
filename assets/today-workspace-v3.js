@@ -92,13 +92,13 @@
   // A previously selected plan filter must not hide the requested duty.
   for(const [id,value]of [['sfManualFilterShift',''],['sfManualOnlyOpen',false]]){const input=document.getElementById(id);if(!input)continue;const field=id==='sfManualOnlyOpen'?'checked':'value';if(input[field]!==value){input[field]=value;input.dispatchEvent(new Event('change',{bubbles:true}))}}
   const host=document.getElementById('view-schedule');if(!host)return;
-  let focused=null,observer,timer,frame;
+  let focused=null,addedTabindex=false,observer,timer,frame;
   const mark=()=>{if(!allowed(c)||!host.classList.contains('active')){stopPlanFocus();return}
    const selectors=[local&&`[data-assignment-id="${CSS.escape(String(local))}"],[data-id="${CSS.escape(String(local))}"]`,shift&&`#sfWeekBoardV2 .sf-week-shift[data-date="${date}"][data-type="${CSS.escape(shift)}"]`,shift&&`[data-date="${date}"][data-type="${CSS.escape(shift)}"]`,`[data-date="${date}"]`].filter(Boolean);
    const el=selectors.flatMap(selector=>Array.from(host.querySelectorAll(selector))).find(el=>el.getClientRects().length);
-   if(!el||el===focused)return;focused=el;el.classList.add('sf-today-focus');el.setAttribute('tabindex','-1');el.focus({preventScroll:true});el.scrollIntoView({block:'center',inline:'center'});
+   if(!el||el===focused)return;focused?.classList.remove('sf-today-focus');if(addedTabindex)focused?.removeAttribute('tabindex');focused=el;addedTabindex=!el.matches('button,input,select,textarea,a[href],[tabindex]');el.classList.add('sf-today-focus');if(addedTabindex)el.setAttribute('tabindex','-1');el.focus({preventScroll:true});el.scrollIntoView({block:'center',inline:'center'});
   };
-  stopPlanFocus=()=>{observer?.disconnect();clearTimeout(timer);cancelAnimationFrame(frame);focused?.classList.remove('sf-today-focus');};
+  stopPlanFocus=()=>{observer?.disconnect();clearTimeout(timer);cancelAnimationFrame(frame);focused?.classList.remove('sf-today-focus');if(addedTabindex)focused?.removeAttribute('tabindex');};
   observer=new MutationObserver(mark);observer.observe(host,{childList:true,subtree:true});mark();frame=requestAnimationFrame(mark);timer=setTimeout(()=>stopPlanFocus(),8000);
  }
 

@@ -78,6 +78,7 @@ test('dashboard keeps unassigned demand visible under site filters and routes to
   w.setInterval=()=>0;const later=w.setTimeout.bind(w);w.setTimeout=(fn,ms)=>ms>=1000?0:later(fn,ms);
   w.HTMLElement.prototype.getClientRects=function(){return this.closest('#view-schedule')&&!w.document.getElementById('view-schedule').classList.contains('active')?[]:[{}]};
   w.HTMLElement.prototype.scrollIntoView=function(){this.dataset.scrolled='true'};
+  let stopHighlight;const beforeHighlightTimeout=w.setTimeout;w.setTimeout=(fn,ms)=>{if(ms===8000){stopHighlight=fn;return 0}return beforeHighlightTimeout(fn,ms)};
   w.weekStart=new w.Date();w.SchichtFunkCalendarView={setMode(){}};w.switchView=view=>w.document.querySelectorAll('section[id^="view-"]').forEach(e=>e.classList.toggle('active',e.id==='view-'+view));
   const board=w.document.getElementById('sfWeekBoardV2');const rebuild=()=>{board.innerHTML='<section class="sf-week-shift" data-date="2026-10-26" data-type="ND">Nachtdienst</section>'};w.renderCalendar=rebuild;
   w.eval(fs.readFileSync(path.join(__dirname,'../assets/today-workspace-v3.js'),'utf8'));await w.happyDOM.whenAsyncComplete();
@@ -87,7 +88,8 @@ test('dashboard keeps unassigned demand visible under site filters and routes to
   w.document.querySelector('[data-td-action="unassigned"]').click();assert.equal(w.document.getElementById('sfTodaySite').value,'unassigned');assert.equal(w.SFToday.getResult().summary.open,2);
   const index=w.SFToday.getResult().alerts.findIndex(a=>a.date==='2026-10-26');w.document.querySelector('[data-td-alert="'+index+'"]').click();
   assert.equal(w.document.getElementById('sfManualFilterShift').value,'');assert.equal(w.document.getElementById('sfManualOnlyOpen').checked,false);
-  assert.equal(board.querySelector('.sf-today-focus').dataset.date,'2026-10-26');assert.equal(w.document.activeElement.dataset.type,'ND');
+  assert.equal(board.querySelector('.sf-today-focus').dataset.date,'2026-10-26');assert.equal(w.document.activeElement.dataset.type,'ND');stopHighlight();assert.equal(board.querySelector('.sf-week-shift').hasAttribute('tabindex'),false);
+  w.switchView('overview');w.document.querySelector('[data-td-alert="'+index+'"]').click();
   rebuild();await w.happyDOM.whenAsyncComplete();assert.equal(board.querySelector('.sf-today-focus').dataset.type,'ND');
   w.switchView('overview');d.as_of='2026-10-27T18:00:00Z';d.models[0].default_start='06:00';d.models[0].default_end='16:00';await w.SFToday.reload();
   assert.match(w.document.querySelector('.sf-td-alert-when').textContent,/bereits beendet/);
