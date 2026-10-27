@@ -55,3 +55,24 @@ test('autonomous controls, authoritative snapshot, worker leases and atomic DRAF
  assert.equal((await db.query("select has_function_privilege('authenticated','public.claim_autonomous_planning(uuid,uuid)','EXECUTE') allowed")).rows[0].allowed,false);
  await db.query("update public.company_members set role='PLANNER' where user_id=$1",[uid]);await assert.rejects(()=>rpc('SAVE',{...cfg,revision:1}),/Inhaber/);await db.query("update public.company_members set status='INACTIVE' where user_id=$1",[uid]);await assert.rejects(()=>rpc('GET'),/Planungsrechte/);
  }finally{await db.close();}});
+test('server OT demand matches weekday holidays and invalidates pre-fix proposals only in affected periods',async()=>{
+ const db=new PGlite();try{
+  await db.exec(bootstrap);
+  await db.exec(`create function private.sf_month_optimization_snapshot(company_ uuid,month_ date) returns jsonb language plpgsql as $$begin perform private.sf_background_plan_authorize(company_);return jsonb_build_object('month',month_,'protectedIds','[]'::jsonb);end$$;
+   create or replace function private.sf_ot_day(uuid,date,uuid) returns boolean language sql as $$select extract(isodow from $2)>5 or $2='2027-01-01'::date$$;
+   create or replace function private.sf_ot_day_holiday(uuid,date) returns boolean language sql as $$select $2='2027-01-01'::date$$;`);
+  const migration=fs.readdirSync('supabase/migrations').find(f=>f.endsWith('_align_ot_holiday_planning_demand.sql'));await db.exec(fs.readFileSync('supabase/migrations/'+migration,'utf8'));
+  await db.query(`insert into public.shift_templates(id,company_id,code,default_start,default_end,active,sort_order,planning_mode,responsible_only,optional_weekdays) values(gen_random_uuid(),$1,'OT','08:00','18:00',true,2,'required',false,array[6,7])`,[cid]);
+  await db.query(`insert into public.global_staffing_requirements values($1,'OT',3)`,[cid]);
+  const fingerprint=async month=>(await db.query('select private.sf_preview_planning_period($1,$2,1)->>\'fingerprint\' value',[cid,month])).rows[0].value;
+  const janBefore=await fingerprint('2027-01-01'),febBefore=await fingerprint('2027-02-01');
+  await db.query(`update public.company_compliance_policy set solid_planning_rules='{"otHolidayStatesBySite":{"Leipzig":"SN"}}' where company_id=$1`,[cid]);
+  assert.notEqual(await fingerprint('2027-01-01'),janBefore,'pre-fix proposal cannot pass the period fingerprint');assert.equal(await fingerprint('2027-02-01'),febBefore,'unaffected period retains its fingerprint');
+  const snapshot=async company=>(await db.query(`select private.sf_autonomy_snapshot_before_continuity($1,'2027-01-01',1,null,0) value`,[company||cid])).rows[0].value;
+  let snap=await snapshot(),need=date=>snap.demand.find(d=>d.type==='OT'&&d.date===date).count;
+  assert.equal(need('2027-01-01'),3);assert.equal(need('2027-01-02'),3);assert.equal(need('2027-01-04'),0);assert.equal(snap.fingerprint,await fingerprint('2027-01-01'));
+  await db.query(`insert into public.daily_staffing_overrides values($1,'2027-01-01','OT',5)`,[cid]);snap=await snapshot();assert.equal(need('2027-01-01'),5);
+  await db.query(`update public.daily_staffing_overrides set required_count=0 where company_id=$1`,[cid]);snap=await snapshot();assert.equal(need('2027-01-01'),0,'explicit holiday override remains authoritative');
+  await assert.rejects(()=>snapshot(other),/Planungsrechte/);
+ }finally{await db.close();}
+});

@@ -282,7 +282,7 @@ html[data-sf-theme="light"] #sfEmployeePortal{
   <section id="view-schedule" class="view">
     <div class="page-head"><div><div class="eyebrow">DIENSTPLAN</div><h1>Wochenplanung</h1><p>Schichten planen, Mitarbeiter zuweisen und Besetzung kontrollieren.</p></div><div class="sf-week-head-actions"><button type="button" class="primary" id="sfManualPlanBtn">＋ Manuell planen</button><button class="ghost" id="autoPlanBtn">✦ Auto-Planung</button></div></div>
     <div class="stats">
-      <div class="stat"><div class="stat-icon">▣</div><div><small>Geplante Schichten</small><strong id="statShifts">0</strong><em>diese Woche</em></div></div>
+      <div class="stat"><div class="stat-icon">▣</div><div><small title="Unterschiedliche Kombinationen aus Datum und Schichtmodell; mehrere Mitarbeiter können denselben Termin besetzen.">Schichttermine</small><strong id="statShifts">0</strong><em>diese Woche</em></div></div>
       <div class="stat"><div class="stat-icon">♧</div><div><small>Eingeplante Mitarbeiter</small><strong id="statEmployees">0</strong><em id="availableTxt">von 24 verfügbar</em></div></div>
       <div class="stat"><div class="stat-icon">△</div><div><small>Offene Besetzungen</small><strong id="statOpen">0</strong><em style="color:var(--amber)">Mitarbeiter zuweisen</em></div></div>
       <div class="stat"><div class="stat-icon">◉</div><div><small>Abdeckung</small><strong id="statCoverage">0%</strong><em>nach SOLL-Stärke</em></div></div>
@@ -1245,5 +1245,6 @@ table th,table td{font-size:13px;line-height:1.35}
 <script defer src="assets/rhythm-staggering-v1.js?v=20261021-1"></script>
 <script defer src="assets/manual-rhythm-exceptions-v1.js?v=20261021-range1&manualPriority=20261026-1"></script>
 <script defer src="assets/manual-range-planning-v1.js?v=20261024-range-delete2"></script>
+<script defer src="assets/planning-context-v1.js?v=20261027-review1"></script>
 </body>
 </html>

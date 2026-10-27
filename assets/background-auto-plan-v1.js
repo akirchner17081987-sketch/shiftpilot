@@ -7,6 +7,7 @@
  const identity=()=>available()?B.companyId+'|'+B.user.id:'';
  let owner='',job=null,timer=null,watch=null,loading=false,sequence=0,seen='';
  const running=j=>['QUEUED','RUNNING'].includes(j?.status);
+ const selected=j=>el('autoPlanPeriod')?.value==='month'&&el('autoPlanMonth')?.value===String(j?.first_month||'').slice(0,7)&&Number(el('autoPlanMonthCount')?.value||1)===Number(j?.month_count||1);
  async function rpc(name,args){const who=identity();if(!who)throw Error('Bitte zuerst mit Planungsrechten anmelden.');const r=await B.client.rpc(name,args);if(who!==identity())throw Error('Der Unternehmenszugang wurde gewechselt. Der gespeicherte Auftrag läuft weiter.');if(r.error)throw r.error;return r.data;}
  function host(){let node=el('sfBackgroundPlanStatus');if(node)return node;const anchor=el('sfAutoProgress')||document.querySelector('#view-auto .sf-auto-start');if(!anchor)return null;node=document.createElement('section');node.id='sfBackgroundPlanStatus';node.className='sf-auto-status sf-background-plan';anchor.after(node);return node;}
  function render(){
@@ -37,14 +38,14 @@
  async function discard(id){if(!id)return;await rpc('cancel_background_auto_plan',{p_company_id:B.companyId,p_job_id:id});seen=id;if(job?.id===id)job=null;render();}
  async function discover(){
   if(loading||!available()||watch)return;const who=identity(),token=++sequence;loading=true;
-  try{const found=await rpc('get_background_auto_plan',{p_company_id:B.companyId,p_job_id:null});if(who!==identity()||token!==sequence)return;job=found;render();if(found&&found.id!==seen){seen=found.id;const activeRun=window.SFAutonomousPlanning?.getState?.()?.runs?.find(r=>['QUEUED','PREPARING','CALCULATING','ASSESS_QUEUED','ASSESSING'].includes(r.status)&&String(r.first_month).slice(0,7)===String(found.first_month).slice(0,7));if(activeRun&&activeRun.background_job_id!==found.id)return;if(running(found))void window.SFMonthOptimizer?.resumeBackground?.(found);else if(found.status==='SUCCEEDED'&&el('view-auto')?.classList.contains('active'))void window.SFMonthOptimizer?.restoreBackground?.(found);}}
+  try{const found=await rpc('get_background_auto_plan',{p_company_id:B.companyId,p_job_id:null});if(who!==identity()||token!==sequence)return;job=found;render();if(found&&found.id!==seen){seen=found.id;const activeRun=window.SFAutonomousPlanning?.getState?.()?.runs?.find(r=>['QUEUED','PREPARING','CALCULATING','ASSESS_QUEUED','ASSESSING'].includes(r.status)&&String(r.first_month).slice(0,7)===String(found.first_month).slice(0,7));if(activeRun&&activeRun.background_job_id!==found.id)return;if(running(found))void window.SFMonthOptimizer?.resumeBackground?.(found);else if(found.status==='SUCCEEDED'&&selected(found)&&el('view-auto')?.classList.contains('active'))void window.SFMonthOptimizer?.restoreBackground?.(found);}}
   catch(e){if(who===identity())console.warn('Hintergrundauftrag konnte nicht angezeigt werden',e.message||String(e));}
   finally{if(token===sequence)loading=false;}
  }
  function accessChanged(){const next=identity();if(next===owner){render();return;}owner=next;sequence++;loading=false;seen='';job=null;if(watch){window.SFAutoPlanProgress?.finish('Die Anzeige wurde getrennt. Der Auftrag läuft weiter.');window.SFAutoPlanProgress?.reset?.();}stopWatch();render();if(next)setTimeout(discover,0);}
  function install(){for(const name of ['updateState','hydrate']){const old=B[name];if(typeof old!=='function'||old.__backgroundPlan)continue;const fn=name==='hydrate'?async function(){const r=await old.apply(this,arguments);accessChanged();return r}:function(){const r=old.apply(this,arguments);accessChanged();return r};fn.__backgroundPlan=true;B[name]=fn;}accessChanged();}
  document.addEventListener('visibilitychange',()=>{if(document.hidden){clearTimeout(timer);timer=null;}else if(watch)schedule(0);else void discover();});
- document.addEventListener('click',e=>{if(e.target.closest?.('[data-view="auto"]'))setTimeout(()=>{render();if(job?.status==='SUCCEEDED'&&!el('sfBackgroundPlanStatus')?.hidden&&!window.SFMonthOptimizer?.getResult?.())void window.SFMonthOptimizer?.restoreBackground?.(job);else void discover();},0);});
+ document.addEventListener('click',e=>{if(e.target.closest?.('[data-view="auto"]'))setTimeout(()=>{render();if(job?.status==='SUCCEEDED'&&selected(job)&&!el('sfBackgroundPlanStatus')?.hidden&&!window.SFMonthOptimizer?.getResult?.())void window.SFMonthOptimizer?.restoreBackground?.(job);else void discover();},0);});
  window.SFBackgroundPlanning={available,start,wait,cancel,applied,discard,render,discover,getJob:()=>job};
  install();setInterval(install,2000);
 })();

@@ -226,7 +226,7 @@ window.SFHelpContent = {
       ],
       [
         "Welche Kalenderansichten gibt es?",
-        "Nutzen Sie Wochen-, Monats- und Zeitachsenansicht für unterschiedliche Blickwinkel auf denselben Plan. Die Schichtzeiten bleiben bei einem Ansichtswechsel erhalten."
+        "Nutzen Sie Wochen-, Monats- und Zeitachsenansicht für unterschiedliche Blickwinkel auf denselben Plan. Die Schichtzeiten bleiben bei einem Ansichtswechsel erhalten. Der Zeitraum bleibt beim Wechsel zwischen Dienstplan, Auto-Planung und Wunschplanung erhalten. Schichttermine zählen unterschiedliche Kombinationen aus Datum und Schichtmodell; Personaleinsätze zählen die zugewiesenen Mitarbeiter."
       ],
       [
         "Wie importiere ich einen Monatsplan aus Excel?",
@@ -262,7 +262,7 @@ window.SFHelpContent = {
       ],
       [
         "Wie plane ich trotz eines freien Rhythmustags einen zusätzlichen Dienst?",
-        "Wähle den Mitarbeiter bei der manuellen Dienstzuweisung im Dienstplan aus. „Laut Rhythmus frei“ wird in allen Unternehmen bei der manuellen Planung als Hinweis angezeigt. Gib eine Begründung ein und bestätige „Trotzdem einplanen“. Die Ausnahme gilt nur für diesen Dienst; sein Rhythmus wird nicht geändert. Sie wird mit dem Dienst gespeichert und im Audit protokolliert. „Rhythmus bearbeiten“ öffnet die dauerhafte Mitarbeitervorgabe. Auch in der Vorplanung kannst du an einem laut Rhythmus freien Tag oder abweichend von der vorgesehenen Schicht einen Dienst setzen. „In Vorplanung übernehmen“ bestätigt die dokumentierte Ausnahme; bei der späteren Entwurfsübernahme bleibt sie gespeichert. Die Information findest du unter Einstellungen → Planung → Manuelle Rhythmusausnahmen. Bestätigte Ausnahmen bleiben beim Optimieren als bestehende Dienste geschützt. Die Auto-Planung darf selbst keine Rhythmusausnahmen erzeugen. Andere Prüfungen wie Schichtfreigaben, Abwesenheiten, Überschneidungen und Erholung bleiben wirksam. Für veröffentlichte Pläne gelten zusätzlich der bestehende Änderungsablauf und erforderliche Freigaben."
+        "Wähle den Mitarbeiter bei der manuellen Dienstzuweisung im Dienstplan aus. „Laut Rhythmus frei“ wird in allen Unternehmen bei der manuellen Planung als Hinweis angezeigt. Gib eine Begründung ein und bestätige „Trotzdem einplanen“. Die Ausnahme gilt nur für diesen Dienst; sein Rhythmus wird nicht geändert. Sie wird mit dem Dienst gespeichert und im Audit protokolliert. „Rhythmus bearbeiten“ öffnet die dauerhafte Mitarbeitervorgabe. Auch in der Vorplanung kannst du an einem laut Rhythmus freien Tag oder abweichend von der vorgesehenen Schicht einen Dienst setzen. „In Vorplanung übernehmen“ bestätigt die dokumentierte Ausnahme; bei der späteren Entwurfsübernahme bleibt sie gespeichert. Die Information findest du unter Einstellungen → Planung → Manuelle Rhythmusausnahmen. Bestätigte Ausnahmen bleiben beim Optimieren als bestehende Dienste geschützt. Die Auto-Planung darf selbst keine Rhythmusausnahmen erzeugen. Andere Prüfungen wie Schichtfreigaben, Abwesenheiten, Überschneidungen und Erholung bleiben wirksam. Für veröffentlichte Pläne gelten zusätzlich der bestehende Änderungsablauf und erforderliche Freigaben. Bestätigte Rhythmusausnahmen werden zusätzlich für den sichtbaren Planungszeitraum zusammengefasst. Sie sind separat von offenen Regelkonflikten ausgewiesen."
       ]
     ],
     "employees": [
@@ -570,7 +570,7 @@ window.SFHelpContent = {
       ],
       [
         "Warum muss ich Vorschläge nach Änderungen neu erstellen?",
-        "Änderungen an Teamregeln oder Teamzuordnungen verwerfen alte Auto-Planungsvorschauen. Erstelle die Vorschläge unter den neuen Regeln erneut. Vor der Übernahme werden Unternehmen, Datenstand und Verfügbarkeit nochmals geprüft."
+        "Änderungen an Teamregeln oder Teamzuordnungen verwerfen alte Auto-Planungsvorschauen. Erstelle die Vorschläge unter den neuen Regeln erneut. Vor der Übernahme werden Unternehmen, Datenstand und Verfügbarkeit nochmals geprüft. Der gespeicherte Prüfstand eines Automatiklaufs ist eine historische Momentaufnahme mit Zeitangabe. Daneben zeigt die aktuelle Kalenderprüfung die heute offenen Pflichtpositionen. Abweichungen werden ausdrücklich benannt; ein veralteter Vorschlag kann erst nach neuer Berechnung übernommen werden."
       ],
       [
         "Warum bleiben trotz verfügbarer Mitarbeiter Dienste offen?",
@@ -610,7 +610,7 @@ window.SFHelpContent = {
       ],
       [
         "Was bedeutet der Fortschrittsbalken der Auto-Planung?",
-        "Arbeitsschritt und vergangene Zeit zeigen, dass die Planung läuft. Beim Datenladen und Vorbereiten steht „In Arbeit“, weil noch kein messbarer Prozentwert vorliegt. Die Monatsplanung zählt tatsächlich geprüfte Verteilungen über den gesamten ausgewählten Zeitraum. Bei „Arbeitsblöcke gemeinsam optimieren“ folgt eine zusätzliche Suche nach passenden Tauschvarianten; der angezeigte Variantenstand wird zwischengespeichert und läuft auch bei geschlossenem Browser weiter. Der beste geprüfte Vorschlag bleibt erhalten. 100 % erscheint erst nach erfolgreicher Abschlussprüfung und bedeutet eine fertige Vorschau. Sie müssen diese noch prüfen, als Entwurf übernehmen und gesondert veröffentlichen."
+        "Arbeitsschritt und vergangene Zeit zeigen, dass die Planung läuft. Beim Datenladen und Vorbereiten steht „In Arbeit“, weil noch kein messbarer Prozentwert vorliegt. Die Monatsplanung zählt tatsächlich geprüfte Verteilungen über den gesamten ausgewählten Zeitraum. Bei „Arbeitsblöcke gemeinsam optimieren“ folgt eine zusätzliche Suche nach passenden Tauschvarianten; der angezeigte Variantenstand wird zwischengespeichert und läuft auch bei geschlossenem Browser weiter. Der beste geprüfte Vorschlag bleibt erhalten. 100 % erscheint erst nach erfolgreicher Abschlussprüfung und bedeutet eine fertige Vorschau. Sie müssen diese noch prüfen, als Entwurf übernehmen und gesondert veröffentlichen. Auch beim Öffnen gespeicherter Ergebnisse werden die Zeitraumfelder während der Prüfung gesperrt. Eine nicht antwortende Vorschauprüfung endet mit einem Hinweis und lässt sich erneut starten."
       ],
       [
         "Was tue ich, wenn eine Auto-Planung fehlschlägt?",
