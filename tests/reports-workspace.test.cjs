@@ -28,3 +28,15 @@ test('plan status separates draft and published coverage without filtering real 
  assert.equal(C.analyze(d,{employee:'b',planStatus:'PUBLISHED'}).summary.coverage,.5,'coverage remains company-wide under employee selection');
 });
 test('unpublished drafts do not request actual time entries',()=>{const d=fixture();d.assignments=[{...assignment('draft','a'),status:'DRAFT'}];assert.equal(C.analyze(d).alerts.some(a=>a.kind==='missingTime'),false);d.assignments[0].status='PUBLISHED';assert.equal(C.analyze(d).alerts.some(a=>a.kind==='missingTime'),true)});
+
+test('browser analysis resolves planning dependencies that finish loading after the report module',()=>{
+ const vm=require('node:vm'),window={};
+ vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../assets/reports-workspace-core-v1.js'),'utf8'),{window});
+ assert.throws(()=>window.SFReportsCore.analyze(fixture()),/Zeitberechnung wird noch geladen/);
+ window.SFSolidPlanningCore=require('../assets/solid-planning-core-v1.js');
+ window.SFOtPolicy=require('../assets/ot-weekend-holiday-policy.js');
+ const d=fixture();d.assignments=[assignment('published','a'),{...assignment('draft','b'),status:'DRAFT'}];
+ for(const planStatus of ['', 'PUBLISHED', 'DRAFT']){
+  assert.equal(JSON.stringify(window.SFReportsCore.analyze(d,{planStatus}).summary),JSON.stringify(C.analyze(d,{planStatus}).summary));
+ }
+});

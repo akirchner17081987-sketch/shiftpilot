@@ -1,8 +1,8 @@
 // Pure analytics. Identical calculations power the dashboard and both exports.
 (function(root,factory){
- const api=factory(typeof module==='object'&&module.exports?require('./solid-planning-core-v1.js'):root.SFSolidPlanningCore,typeof module==='object'&&module.exports?require('./ot-weekend-holiday-policy.js'):root.SFOtPolicy);
+ const api=factory(typeof module==='object'&&module.exports?()=>require('./solid-planning-core-v1.js'):()=>root.SFSolidPlanningCore,typeof module==='object'&&module.exports?()=>require('./ot-weekend-holiday-policy.js'):()=>root.SFOtPolicy);
  if(typeof module==='object'&&module.exports)module.exports=api;else root.SFReportsCore=api;
-})(typeof window==='undefined'?globalThis:window,function(S,OT){
+})(typeof window==='undefined'?globalThis:window,function(planningCore,holidayPolicy){
  'use strict';
  const D=86400000,M=60000,collator=new Intl.Collator('de',{numeric:true,sensitivity:'base'});
  const plus=(d,n)=>new Date(Date.parse(d+'T12:00:00Z')+n*D).toISOString().slice(0,10);
@@ -33,6 +33,10 @@
  }
  const approved=a=>['Genehmigt','Erfasst','APPROVED'].includes(a.status);
  function analyze(data,filters={}){
+  // Browser integrations can arrive before the deferred planning module.
+  // Resolve dependencies for each analysis rather than capturing an empty startup value.
+  const S=planningCore(),OT=holidayPolicy();
+  if(!S?.instant||!S?.required||!OT?.applies)throw Error('Die Zeitberechnung wird noch geladen. Bitte erneut laden.');
   const allDays=days(data.from,data.to),tz=data.timezone||'Europe/Berlin',now=Date.parse(data.as_of),begin=S.instant(data.from,'00:00',tz),finish=S.instant(plus(data.to,1),'00:00',tz),today=data.today;
   const types=data.models,active=types.filter(t=>t.active!==false),model=new Map(types.map(t=>[t.code,t])),overrides=new Map(data.daily.map(x=>[x.date+'|'+x.shift,Number(x.required)]));
   const siteMatch=r=>!filters.site||(filters.site==='unassigned'?!r.site_id:r.site_id===filters.site),shiftMatch=r=>!filters.shift||(filters.shift==='QR'?!r.shift:r.shift===filters.shift);
