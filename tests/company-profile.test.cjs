@@ -13,3 +13,10 @@ test('renamed display code is used in exports while coverage still resolves inte
  const core=require('../assets/schedule-export-core-v1.js');const plan=core.buildPlan({month:'2026-10',company:'QA',employees:[{id:'1',first:'Test',last:'Person',status:'active'}],types:[{id:'O3',displayCode:'NACHT',start:'22:00',end:'06:00'}],assignments:[{employeeId:'1',date:'2026-10-01',type:'O3'}],getSoll:()=>1});
  assert.equal(plan.details[0].type,'O3');assert.equal(plan.details[0].displayCode,'NACHT');assert.match(plan.rows[0].cells[0].excel,/NACHT/);assert.equal(plan.rows[0].cells[0].pdf,'NACHT');assert.equal(plan.coverage[0].type,'O3');assert.equal(plan.coverage[0].displayCode,'NACHT');
 });
+
+// The catalogue is a separate, company-scoped read; a read failure must not discard the profile.
+test('model catalogue reads stay in the current company and may fail independently',async()=>{
+ const {B,P}=environment();const filters=[];
+ B.client.from=table=>{assert.equal(table,'shift_templates');const q={select(columns){assert.equal(columns,'id,code,display_code,name,active,site_id');return q},eq(key,value){filters.push([key,value]);return q},then(resolve){resolve({error:{message:'Offline'}})}};return q};
+ const profile=await P.load();assert.equal(profile.company_id,'company-a');assert.deepEqual(filters,[['company_id','company-a']]);
+});

@@ -60,7 +60,7 @@ html[data-sf-theme="light"] .sf-display-live[data-contrast="true"]{--live-bg:#ff
 
 /* Saved detail switches do not hide coverage counts, open positions or warnings. */
 body.sf-display-hide-names #appShell #view-schedule :is(.employee-pool-info>b,.sf-week-employee-info>b,.sf-display-person-name){display:none!important}
-body.sf-display-hide-times #appShell #view-schedule :is(.sf-week-shift-main>small,.sf-week-employee-info>small,.assignment>span){display:none!important}
+body.sf-display-hide-times #appShell #view-schedule :is(.sf-week-shift-main>small,.sf-week-row-label>small,.sf-week-employee-info>small,.assignment>span){display:none!important}
 body.sf-display-hide-hours #appShell #view-schedule :is(.sf-display-hours,.sp-pool-hours){display:none!important}
 #appShell #view-schedule .sf-display-hours{display:block;white-space:normal;overflow-wrap:anywhere;line-height:1.5;font-size:var(--sf-text-secondary,.8125rem);color:var(--muted);margin-top:5px}
 #appShell #view-schedule .sf-display-hours small{display:block;font-size:inherit}
