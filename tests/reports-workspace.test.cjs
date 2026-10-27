@@ -17,3 +17,14 @@ test('employees without time rights receive no actuals or time alerts',()=>{cons
 test('monthly merging preserves complete targets and deduplicates boundary assignments',()=>{const a=fixture(),b=fixture();a.from='2026-10-30';a.to='2026-10-31';b.from='2026-11-01';b.to='2026-11-02';a.assignments=[assignment('same','a','2026-10-31')];b.assignments=[...a.assignments];const m=C.merge([a,b]);assert.equal(m.employees[0].target_minutes,21600);assert.equal(m.assignments.length,1);assert.equal(m.from,a.from);assert.equal(m.to,b.to);assert.throws(()=>C.merge([a,{...b,company_id:'other'}]))});
 test('backend API guards tenant, membership, duration, and time permissions before data access',()=>{const sql=fs.readFileSync(path.join(__dirname,'../supabase/migrations/20261010154921_reports_workspace.sql'),'utf8');assert.match(sql,/auth\.uid\(\) is null or not private\.sf_is_manager/);assert.match(sql,/can_time:=private\.sf_can_manage_time/);assert.match(sql,/if can_time then/);assert.match(sql,/security invoker set search_path=''/);assert.match(sql,/from public,anon/);assert.match(sql,/p_end_date-p_start_date>30/);assert.match(sql,/sf_confirmed_work_minutes/)});
 module.exports={fixture,assignment};
+
+test('plan status separates draft and published coverage without filtering real time or contract targets',()=>{
+ const d=fixture();d.to='2026-10-02';d.assignments=[assignment('published','a'),{...assignment('draft','a','2026-10-02'),status:'DRAFT'}];
+ d.qr=[{id:'q',employee_id:'a',start:'2026-10-01T04:00Z',end:'2026-10-01T12:00Z',status:'qr_booked',shift:null}];d.employees[0].confirmed_minutes=480;
+ const all=C.analyze(d),published=C.analyze(d,{planStatus:'PUBLISHED'}),draft=C.analyze(d,{planStatus:'DRAFT'});
+ assert.equal(all.summary.plan,960);assert.equal(published.summary.plan,480);assert.equal(draft.summary.plan,480);
+ assert.equal(all.summary.missing,0);assert.equal(published.calendar[1].missing,1);assert.equal(draft.calendar[0].missing,1);
+ for(const r of [published,draft]){assert.equal(r.summary.captured,480);assert.equal(r.summary.confirmed,480);assert.equal(r.summary.target,all.summary.target);assert.equal(r.employeeRows.length,all.employeeRows.length)}
+ assert.equal(C.analyze(d,{employee:'b',planStatus:'PUBLISHED'}).summary.coverage,.5,'coverage remains company-wide under employee selection');
+});
+test('unpublished drafts do not request actual time entries',()=>{const d=fixture();d.assignments=[{...assignment('draft','a'),status:'DRAFT'}];assert.equal(C.analyze(d).alerts.some(a=>a.kind==='missingTime'),false);d.assignments[0].status='PUBLISHED';assert.equal(C.analyze(d).alerts.some(a=>a.kind==='missingTime'),true)});

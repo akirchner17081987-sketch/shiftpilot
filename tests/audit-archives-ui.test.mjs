@@ -14,3 +14,15 @@ test('conflicts disable restore; interrupted imports expose partial progress and
 test('complete snapshot download waits for every package and preserves opaque raw JSON',async()=>{const f=fixture();try{f.w.document.getElementById('sfArchiveCreate').click();await pause();assert.equal(f.downloads.length,1);const body=JSON.parse(await f.downloads[0].text());assert.deepEqual(body.parts,info.parts);assert.equal(body.signature,'signed');}finally{await f.close()}});
 
 test('stored archive packages use the authenticated Edge download without creating another archive',async()=>{const f=fixture();try{const rpc=f.w.SFBackend.client.rpc;let invokes=0;f.w.SFBackend.client.rpc=async(name,args)=>args.p_action==='part'?{data:{storage:true,part:args.p_args.part}}:rpc(name,args);f.w.SFBackend.client.functions={async invoke(name,{body}){assert.equal(name,'audit-archive-storage');assert.equal(body.company_id,C);invokes++;return{data:info.parts[body.part]}}};f.w.document.getElementById('sfArchiveCreate').click();await pause();assert.equal(invokes,2);assert.equal(f.downloads.length,1);assert.equal(f.calls.filter(c=>c.p_action==='create').length,1)}finally{await f.close()}});
+
+test('privacy-blocked archives stay disabled and only a current verified archive satisfies backup health',async()=>{
+ const f=fixture();try{
+  let rows=[{id:C,kind:'WEEKLY',created_at:'2026-10-26T02:00Z',row_count:4,restorable:false,storage_status:'READY'},{id:D,kind:'MANUAL',created_at:'2026-10-27T12:00Z',row_count:364,restorable:true,storage_status:'READY',verified_at:'2026-10-27T12:01Z'}];
+  const rpc=f.w.SFBackend.client.rpc;f.w.SFBackend.client.rpc=async(n,a)=>a.p_action==='list'?{data:{archives:rows}}:rpc(n,a);
+  f.w.document.getElementById('sfArchiveRefresh').click();await pause();
+  assert.equal(f.w.document.querySelector('.sf-archive-list button').disabled,true);assert.equal(f.w.document.querySelectorAll('[data-audit-archive]').length,1);
+  const health=f.w.document.getElementById('sfArchiveHealth');assert.equal(health.getAttribute('role'),'status');assert.match(health.textContent,/364 Ereignisse/);
+  f.w.document.querySelector('.sf-archive-list button').click();await pause();assert.equal(f.calls.filter(a=>a.p_action==='open').length,0);
+  rows=rows.slice(0,1);f.w.document.getElementById('sfArchiveRefresh').click();await pause();assert.equal(health.getAttribute('role'),'alert');assert.match(health.textContent,/Keine nutzbare Sicherung/);assert.equal(f.w.document.querySelector('.sf-archive-list button').disabled,true);
+ }finally{await f.close()}
+});

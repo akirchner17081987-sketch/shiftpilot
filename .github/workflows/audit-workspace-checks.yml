@@ -24,6 +24,8 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run test:audit
+      - run: node --test tests/audit-archives-ui.test.mjs tests/reports-workspace.test.cjs
+      - run: node tests/browser/reports-workspace-qa.cjs
       - name: Save browser evidence
         if: always()
         uses: actions/upload-artifact@v4
