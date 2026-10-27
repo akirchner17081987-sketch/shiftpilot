@@ -1,5 +1,5 @@
 {
-  "reviewedAt": "2026-10-24",
+  "reviewedAt": "2026-10-27",
   "sourceCommit": "80485ff3eb6e003ab4cd1f329f118118d0d103bc",
   "addedArticles": [
     {
@@ -2724,6 +2724,12 @@
       "area": "Ausgewogene Verteilung der Teamleiterdienste",
       "category": "auto",
       "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/planning-context-v1.js",
+      "area": "Planungszeitraum, aktueller Bedarfsvergleich und bestätigte Rhythmusausnahmen",
+      "category": "schedule",
+      "kind": "feature-or-support"
     }
   ],
   "categoryCoverage": [
@@ -3303,7 +3309,37 @@
         "assets/block-exchange-core-v1.js",
         "assets/autonomous-planning-v1.js",
         "supabase/functions/background-auto-plan/index.ts",
-        "tests/automatic-block-exchange.test.cjs"
+        "tests/automatic-block-exchange.test.cjs",
+        "assets/planning-context-v1.js",
+        "assets/schedule-final-v1.js",
+        "assets/month-optimizer-v1.js"
+      ]
+    },
+    {
+      "category": "schedule",
+      "question": "Welche Kalenderansichten gibt es?",
+      "sources": [
+        "assets/planning-context-v1.js",
+        "assets/schedule-final-v1.js",
+        "assets/month-optimizer-v1.js"
+      ]
+    },
+    {
+      "category": "schedule",
+      "question": "Wie plane ich trotz eines freien Rhythmustags einen zusätzlichen Dienst?",
+      "sources": [
+        "assets/planning-context-v1.js",
+        "assets/schedule-final-v1.js",
+        "assets/month-optimizer-v1.js"
+      ]
+    },
+    {
+      "category": "auto",
+      "question": "Warum muss ich Vorschläge nach Änderungen neu erstellen?",
+      "sources": [
+        "assets/planning-context-v1.js",
+        "assets/schedule-final-v1.js",
+        "assets/month-optimizer-v1.js"
       ]
     }
   ],
@@ -3314,13 +3350,13 @@
     "entry": "index.html"
   },
   "currentAudit": {
-    "date": "2026-10-24",
+    "date": "2026-10-27",
     "baselineArticleCount": 211,
     "addedArticleCount": 43,
-    "correctedArticleCount": 20,
+    "correctedArticleCount": 23,
     "articleCount": 254,
     "categoryCount": 22,
-    "assetJavaScriptCount": 231
+    "assetJavaScriptCount": 232
   },
   "incrementalUpdate": {
     "date": "2026-10-24",

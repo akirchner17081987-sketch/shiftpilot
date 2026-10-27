@@ -312,7 +312,7 @@
       const candidates=document.createElement('div');candidates.id='sfManualCandidates';candidates.className='sf-manual-candidates';options.after(candidates);
       document.getElementById('planEmployeeSearch').addEventListener('input',renderCandidates);
       const basePool=window.renderPlanEmployeePool;if(typeof basePool==='function')window.renderPlanEmployeePool=function(){const result=basePool.apply(this,arguments);renderCandidates();return result};
-      const manualButton=document.getElementById('sfManualPlanBtn');if(manualButton)manualButton.onclick=()=>{window.SchichtFunkCalendarView?.setMode?.('week');revealSidebar();document.getElementById('sfManualDay').focus()};
+      const manualButton=document.getElementById('sfManualPlanBtn');if(manualButton)manualButton.onclick=()=>{const period=window.SchichtFunkCalendarView?.getPeriod?.();window.SchichtFunkCalendarView?.setMode?.('week');const day=document.getElementById('sfManualDay');if(period?.mode==='month'){day.value=period.start;day.onchange?.();}revealSidebar();day.focus()};
     }
     const ds=currentWeekDates().map(iso),key=(window.SFBackend?.companyId||'local')+'|'+ds[0];
     if(contextKey!==key){contextKey=key;target=null;showBlocked=false;shiftFilter='';document.getElementById('sfManualTeam').value='';document.getElementById('planEmployeeSearch').value='';}

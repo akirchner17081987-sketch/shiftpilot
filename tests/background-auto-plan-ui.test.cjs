@@ -38,3 +38,16 @@ test('new login resumes an active job and restores planning controls when the jo
  for(let n=0;n<100&&!h.c.SFMonthOptimizer.getResult();n++)await delay(5);
  assert.equal(h.c.SFMonthOptimizer.getResult().backgroundJobId,current.id);assert.equal(h.c.SFMonthOptimizer.isBusy(),false);assert.equal(h.el('autoPlanMonth').disabled,false);
 });
+test('opening a saved result deduplicates review, locks controls and releases them after a company switch',async()=>{
+ const h=harness();h.c.document.hidden=true;const planning=h.c.SFMonthOptimizer.optimize();for(let n=0;n<50&&!h.payload();n++)await delay(3);h.finishServer();h.c.document.hidden=false;h.events.get('visibilitychange')();await planning;
+ const job=h.job();h.c.changeAutoPlanPeriod();let complete,reads=0;h.c.SFBackend.hydrate=()=>{reads++;return new Promise(resolve=>complete=resolve)};
+ const review=h.c.SFMonthOptimizer.restoreBackground(job);await delay(1);assert.equal(h.c.SFMonthOptimizer.isBusy(),true);assert.ok(h.controls.every(n=>n.disabled));
+ await h.c.SFMonthOptimizer.restoreBackground(job);assert.equal(reads,1);h.c.SFBackend.companyId='other-company';complete();await review;
+ assert.equal(h.c.SFMonthOptimizer.getResult(),null);assert.equal(h.c.SFMonthOptimizer.isBusy(),false);assert.ok(h.controls.slice(0,3).every(n=>!n.disabled),'period controls are enabled again');assert.equal(h.c.SFAutoPlanProgress.isBusy(),false);
+});
+test('an unresponsive saved-result review terminates and allows a fresh attempt',async()=>{
+ const h=harness();h.c.setTimeout=(fn,ms)=>setTimeout(fn,ms===30000?1:ms);h.c.SFBackend.hydrate=()=>new Promise(()=>{});
+ const job={id:'saved',company_id:h.c.SFBackend.companyId,first_month:'2027-01-01',month_count:1,result:{metadata:{fingerprint:'snapshot'}}};
+ await h.c.SFMonthOptimizer.restoreBackground(job);assert.equal(h.c.SFMonthOptimizer.isBusy(),false);assert.equal(h.c.SFAutoPlanProgress.isBusy(),false);assert.ok(h.controls.slice(0,3).every(n=>!n.disabled),'period controls are enabled again');assert.match(h.c.toast.copy,/dauert zu lange/);
+ await h.c.SFMonthOptimizer.restoreBackground(job);assert.equal(h.c.SFMonthOptimizer.isBusy(),false);
+});

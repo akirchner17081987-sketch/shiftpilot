@@ -2,7 +2,9 @@
 (function(){
   if(window.SFAutoPlanProgress)return;
   const el=id=>document.getElementById(id);
-  let active=false,timer=null,started=0,percent=null;
+  let active=false,timer=null,started=0,percent=null,periodControls=[];
+  function lockPeriod(){periodControls=['autoPlanPeriod','autoPlanMonth','autoPlanMonthCount','autoPlanWeekDate','autoPlanDate'].map(el).filter(Boolean).map(node=>({node,disabled:node.disabled}));periodControls.forEach(x=>x.node.disabled=true);}
+  function unlockPeriod(){periodControls.forEach(x=>x.node.disabled=x.disabled);periodControls=[];}
   function host(){
     let node=el('sfAutoProgress');if(node)return node;
     const anchor=document.querySelector('#view-auto .sf-auto-start');if(!anchor)return null;
@@ -22,11 +24,11 @@
     if(percent===null)bar.removeAttribute('aria-valuenow');else bar.setAttribute('aria-valuenow',String(percent));
     bar.setAttribute('aria-valuetext',failed?'Planung abgebrochen':percent===null?'Fortschritt noch nicht messbar':percent+' Prozent');bar.firstElementChild.style.width=percent===null?'35%':percent+'%';elapsed();
   }
-  function start(){if(active)return false;active=true;started=Date.now();percent=null;clearInterval(timer);host()?.classList.remove('is-error','is-done');el('view-auto')?.setAttribute('aria-busy','true');draw('Auto-Planung wird vorbereitet','Daten, Wünsche und geschützte Dienste werden geprüft.',null);timer=setInterval(elapsed,1000);return true;}
+  function start(){if(active)return false;active=true;lockPeriod();started=Date.now();percent=null;clearInterval(timer);host()?.classList.remove('is-error','is-done');el('view-auto')?.setAttribute('aria-busy','true');draw('Auto-Planung wird vorbereitet','Daten, Wünsche und geschützte Dienste werden geprüft.',null);timer=setInterval(elapsed,1000);return true;}
   function phase(label,detail=''){if(!active)start();draw(label,detail,null);}
   function update({completed,total,label,detail}){const valid=Number.isFinite(completed)&&Number.isFinite(total)&&total>0;draw(label,detail,valid?Math.min(99,Math.max(percent||0,Math.floor(completed/total*100))):null);}
   function message(label,detail=''){draw(label,detail);}
-  function finish(error){active=false;clearInterval(timer);timer=null;el('view-auto')?.removeAttribute('aria-busy');host()?.classList.toggle('is-error',!!error);host()?.classList.toggle('is-done',!error);draw(error?'Planung konnte nicht abgeschlossen werden':'Planung abgeschlossen',error||'Die Vorschläge sind bereit zur Prüfung. Eine Übernahme erfolgt erst nach deiner Bestätigung.',error?null:100);}
+  function finish(error){active=false;unlockPeriod();clearInterval(timer);timer=null;el('view-auto')?.removeAttribute('aria-busy');host()?.classList.toggle('is-error',!!error);host()?.classList.toggle('is-done',!error);draw(error?'Planung konnte nicht abgeschlossen werden':'Planung abgeschlossen',error||'Die Vorschläge sind bereit zur Prüfung. Eine Übernahme erfolgt erst nach deiner Bestätigung.',error?null:100);}
   function reset(){if(active)return;const node=el('sfAutoProgress');if(node)node.hidden=true;}
   // Let the browser show feedback before the synchronous day/week planner starts.
   const paint=()=>new Promise(resolve=>setTimeout(resolve,0));

@@ -35,7 +35,7 @@
     let box=document.getElementById('sfDraftPublishNotice');
     if(!summary.draftCount){box?.remove();return}
     if(!box){box=document.createElement('div');box.id='sfDraftPublishNotice';box.className='sf-draft-notice';tb.insertAdjacentElement('afterend',box)}
-    const shiftWord=summary.draftCount===1?'Schicht':'Schichten',employeeWord=summary.draftEmployeeCount===1?'Mitarbeiter':'Mitarbeiter';
+    const shiftWord=summary.draftCount===1?'Personaleinsatz':'Personaleinsätze',employeeWord=summary.draftEmployeeCount===1?'Mitarbeiter':'Mitarbeiter';
     box.innerHTML=`<div class="sf-draft-notice-copy"><div class="sf-draft-notice-title">Entwurf – Mitarbeiter noch nicht informiert</div><div class="sf-draft-notice-text">${summary.draftCount} ${shiftWord} ${selected.mode==='month'?'dieses Monats':'dieser Woche'} ${summary.draftCount===1?'ist':'sind'} noch nicht veröffentlicht${summary.draftEmployeeCount?` · ${summary.draftEmployeeCount} ${employeeWord} ${summary.draftEmployeeCount===1?'wird':'werden'} erst nach der Freigabe informiert`:''}.</div></div><button type="button" class="sf-draft-publish">Veröffentlichen &amp; Mitarbeiter informieren</button>`;
     const button=box.querySelector('.sf-draft-publish');
     button.onclick=async()=>{button.disabled=true;try{await (window.spPublishCurrentWeek||C.publishCurrentWeek)?.()}finally{button.disabled=false;setTimeout(renderDraftNotice,100)}};
