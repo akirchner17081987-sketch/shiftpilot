@@ -55,7 +55,7 @@ Deno.serve(async req => {
     const prepared = core.withShiftDurationLimit(core.withServerWishes(job.payload, job.server_wishes), Number(policy.data.standard_max_shift_hours));
     const repairLevel=checkpoint?.repairLevel||0;
     const scoped=prepared.metadata.continuity?.repairSeed?prepared:A.repairPayload(prepared,repairLevel);
-    const input = { ...scoped, boundedSearch, adaptiveSearch:true, enhancedBlockSearch:true, minimumInput: { ...scoped.minimumInput, scopedBlockRecovery, boundedSearch, criticalBeamWidth:boundedSearch?16:undefined }, monthInputs: scoped.monthInputs.map((month: any) => ({ ...month, scopedBlockRecovery, boundedSearch, criticalBeamWidth:boundedSearch?16:undefined })) };
+    const input = { ...scoped, metadata:{...scoped.metadata,searchRunId:id}, boundedSearch, adaptiveSearch:true, enhancedBlockSearch:true, minimumInput: { ...scoped.minimumInput, scopedBlockRecovery, boundedSearch, criticalBeamWidth:boundedSearch?16:undefined }, monthInputs: scoped.monthInputs.map((month: any) => ({ ...month, scopedBlockRecovery, boundedSearch, criticalBeamWidth:boundedSearch?16:undefined })) };
     const seed=prepared.metadata.continuity?.repairSeed,starting=!checkpoint;
     checkpoint = checkpoint || core.start(input);
     let seedStarted=false;

@@ -37,7 +37,7 @@
   for(const input of [payload.minimumInput,...payload.monthInputs]){if(!Array.isArray(input.employees)||input.employees.length>300||!Array.isArray(input.groups)||input.groups.length>12000||!Array.isArray(input.candidates)||input.candidates.length>40000||!Array.isArray(input.capacities)||input.capacities.length>12000)throw Error('Der Planungsauftrag ist zu groß. Bitte einen kürzeren Zeitraum wählen.');const ids=new Set(input.employees.map(e=>String(e.id)));if(input.groups.some(g=>!ids.has(String(g.employeeId))||!Array.isArray(g.options)||g.options.length>128||g.options.some(o=>!Array.isArray(o)||o.length>6||o.some(i=>!Number.isInteger(i)||i<0||i>=input.candidates.length))))throw Error('Ungültige Mitarbeiter oder Schichtoptionen.');}
   return true;
  }
- function start(payload){check(payload);return {version,stage:payload.adaptiveSearch||payload.months.length===1?'month':'minimum',monthIndex:0,solver:null,minimum:[],proposed:[],quality:[],steps:0};}
+ function start(payload){check(payload);const adaptiveSeed=payload.adaptiveSearch&&(payload.metadata?.autonomousRunId||payload.metadata?.searchRunId)?[...String(payload.metadata.autonomousRunId||payload.metadata.searchRunId)].reduce((n,c)=>(Math.imul(n,33)+c.charCodeAt(0))>>>0,71):0;return {version,adaptiveSeed,stage:payload.adaptiveSearch||payload.months.length===1?'month':'minimum',monthIndex:0,solver:null,minimum:[],proposed:[],quality:[],steps:0};}
  function materialize(payload,cp){
   if(cp.stage==='minimum'){
    const input=unpack(payload.minimumInput),critical=new Set(input.criticalCapacities.map(([key])=>key));
@@ -54,7 +54,7 @@
  }
  function seedRepair(payload,cp,preview){
   if(!payload.adaptiveSearch||payload.months.length!==1||!E||cp.stage!=='month'||cp.solver)return false;
-  const input={...materialize(payload,cp),adaptiveSearch:true},exchange=E.start(input,preview);
+  const input={...materialize(payload,cp),adaptiveSearch:true,adaptiveSeed:cp.adaptiveSeed||0},exchange=E.start(input,preview);
   if(exchange.status!=='searching')return false;
   cp.stage='exchange';cp.exchange=exchange;cp.seededRepair=true;cp.pendingQuality={open:exchange.initialOpen};return true;
  }
@@ -79,21 +79,21 @@
  function context(payload,cp){
   if(cp.version!==version)throw Error('Der gespeicherte Auftrag verwendet eine andere Version. Bitte neu starten.');
   if(cp.stage==='done')return {step:()=>false,progress:()=>progress(payload,cp),result:()=>result(payload,cp)};
-  const input={...materialize(payload,cp),adaptiveSearch:!!payload.adaptiveSearch};
+  const input={...materialize(payload,cp),adaptiveSearch:!!payload.adaptiveSearch,adaptiveSeed:cp.adaptiveSeed||0};
   if(payload.adaptiveSearch&&cp.fallbackMonth===cp.monthIndex)input.scopedBlockRecovery=true;
   function acceptMonth(found){const month=payload.months[cp.monthIndex];cp.proposed=unique([...cp.proposed,...(payload.monthInputs[cp.monthIndex].solidRules.teamLeaderMinimumMonthlyHours!=null?[]:cp.minimum.filter(a=>a.date.startsWith(month))),...(payload.monthInputs[cp.monthIndex].reserved||[]),...found.preview]);cp.quality.push(found.quality);cp.exchange=null;cp.exchangeRounds=0;cp.exchangeHistory=null;cp.pendingQuality=null;cp.solver=null;if(++cp.monthIndex===payload.months.length){cp.stage='done';return true;}cp.stage='month';return false;}
   if(cp.stage==='exchange'){
    if(!E)throw Error('Die erweiterte Blocksuche ist nicht geladen.');const exchange=E.context(input,cp.exchange);
-   const finish=()=>{
+   const finish=(stop=false)=>{
     const found=exchange.result(),stats=found.quality?.blockExchange,history=cp.exchangeHistory||{passes:0,improvements:0,globalPasses:0,initialOpen:cp.exchange.initialOpen};
-    if(payload.adaptiveSearch&&found.quality?.open>0&&['limited','complete'].includes(cp.exchange.status)&&(cp.exchangeRounds||0)<2&&found.quality.open<cp.exchange.initialOpen&&!searchBudget(payload,cp).expired){
+    if(!stop&&payload.adaptiveSearch&&found.quality?.open>0&&['limited','complete'].includes(cp.exchange.status)&&(cp.exchangeRounds||0)<2&&!searchBudget(payload,cp).expired){
      cp.exchangeHistory={...history,passes:history.passes+cp.exchange.pass,improvements:history.improvements+cp.exchange.improvements,globalPasses:history.globalPasses+(cp.exchange.globalPasses||0)};
-     cp.exchangeRounds=(cp.exchangeRounds||0)+1;cp.exchange=E.start(input,found.preview);cp.pendingQuality=found.quality;return false;
+     cp.exchangeRounds=(cp.exchangeRounds||0)+1;cp.exchange=E.start({...input,adaptiveSeed:(input.adaptiveSeed||0)+104729*cp.exchangeRounds},found.preview);cp.pendingQuality=found.quality;return false;
     }
     if(stats&&cp.exchangeHistory)found.quality={...found.quality,blockExchange:{...stats,passes:history.passes+stats.passes,improvements:history.improvements+stats.improvements,globalPasses:history.globalPasses+(stats.globalPasses||0),closed:Math.max(0,history.initialOpen-found.quality.open),rounds:(cp.exchangeRounds||0)+1}};
     return acceptMonth({...found,quality:found.quality||{...cp.pendingQuality,blockExchange:{status:cp.exchange.status,passes:cp.exchange.pass,reason:cp.exchange.reason||null}}});
    };
-   return{step:()=>false,exchangeStep:(highs,seconds=(payload.adaptiveSearch ? .4 : payload.boundedSearch ? .18 : .5))=>{if(cp.exchange.status==='searching')exchange.step(highs,seconds);if(cp.exchange.status!=='searching')return finish();return false;},limitExchange:()=>{cp.exchange.status='limited';cp.exchange.reason='Zeitbudget der automatischen Blockreparatur erreicht.';return finish();},stopExchange:reason=>{cp.exchange.status='unavailable';cp.exchange.reason=String(reason).slice(0,160);return finish();},progress:()=>progress(payload,cp),result:()=>result(payload,cp)};
+   return{step:()=>false,exchangeStep:(highs,seconds=(payload.adaptiveSearch ? .4 : payload.boundedSearch ? .18 : .5))=>{if(cp.exchange.status==='searching')exchange.step(highs,seconds);if(cp.exchange.status!=='searching')return finish();return false;},limitExchange:()=>{cp.exchange.status='limited';cp.exchange.reason='Zeitbudget der automatischen Blockreparatur erreicht.';return finish(true);},stopExchange:reason=>{cp.exchange.status='unavailable';cp.exchange.reason=String(reason).slice(0,160);return finish(true);},progress:()=>progress(payload,cp),result:()=>result(payload,cp)};
   }
   const jointNightSearch=payload.enhancedBlockSearch&&payload.months.length===1&&!input.criticalOnly&&input.solidRules.teamLeaderMinimumMonthlyHours==null&&input.criticalCapacities?.some(([key,n])=>n>0&&key.endsWith('|TL'));
   if(!cp.solver){

@@ -46,7 +46,7 @@ function blockPenalty(rows,group,p){
  return first.endsWith('-01')||!next.startsWith(p.month)?0:Math.max(0,(preferred||0)-rows.length);
 }
 function start(input,preview){
- const cp={version:1,pass:0,best:[],working:[],fixed:[],original:copyRows(preview),lastImprovement:0,initialOpen:0,improvements:0,maxPasses:input.adaptiveSearch?96:128,adaptive:!!input.adaptiveSearch,globalPasses:0,status:'searching'};
+ const cp={version:1,pass:0,best:[],working:[],fixed:[],original:copyRows(preview),lastImprovement:0,initialOpen:0,improvements:0,maxPasses:input.adaptiveSearch?96:128,adaptive:!!input.adaptiveSearch,seedOffset:input.adaptiveSeed||0,globalPasses:0,status:'searching'};
  if(!S.confirmed(input.solidRules)||(input.solidRules.conditionalStaffing||[]).length||input.capacities.some(([k])=>k.endsWith('|OT-DAY'))||input.groups.reduce((n,g)=>n+g.options.length,0)>12000||input.capacities.length>200){cp.status='unsupported';return cp;}
  const p=prepared(input,[],preview),excluded=excludedPeople(p);
  let cols=columns(p,excluded),by=new Map(cols.map((c,i)=>[c.sig,i]));
@@ -130,7 +130,7 @@ function context(input,cp){
  }
  function step(highs,seconds=.5){
   if(cp.status!=='searching')return false;
-  let seed=7919*cp.pass+71;const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;},pool=crew.slice();for(let i=pool.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+  let seed=7919*cp.pass+71+(cp.seedOffset||0);const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;},pool=crew.slice();for(let i=pool.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
   const workingState=state(cp.working),workingQuality=C.solidQuality(p,workingState);
   // Once coverage is complete, reserve a place in the neighbourhood for an
   // under-target leader and a qualified replacement instead of relying on luck.
@@ -154,7 +154,7 @@ function context(input,cp){
     for(const e of preferred.slice().reverse()){const at=pool.indexOf(e);pool.unshift(...pool.splice(at,1));}
    }
    let linked=[];
-   if(cp.pass%4===3){
+   if(cp.pass%4===1){
     const roots=cols.filter(c=>c.rows.some(a=>a.resource===root));
     const candidate=roots[Math.floor(cp.pass/4)%Math.max(1,roots.length)];
     if(candidate){
@@ -173,7 +173,7 @@ function context(input,cp){
   const target=slacks.find(a=>a.resource===repairRoot),forced=!!target;
   if(forced){lower[target.index]=upper[target.index]=0;if(target.criticalIndex!==null)lower[target.criticalIndex]=upper[target.criticalIndex]=0;}
   const reduced=cp.adaptive?compactModel(model,lower,upper,x):{model:{...model,colLower:lower,colUpper:upper},warm:x,expand:y=>y};
-  let solver;try{solver=highs.createModel(reduced.model);solver.options.set({output_flag:false,presolve:'on',time_limit:Math.max(.05,Math.min(global ? .8 : .5,seconds)),mip_rel_gap:0,random_seed:cp.pass});solver.setSolution({colValue:reduced.warm});solver.run();
+  let solver;try{solver=highs.createModel(reduced.model);solver.options.set({output_flag:false,presolve:'on',time_limit:Math.max(.05,Math.min(global ? .8 : .5,seconds)),mip_rel_gap:0,random_seed:(cp.pass+(cp.seedOffset||0))%2147483647});solver.setSolution({colValue:reduced.warm});solver.run();
    if(solver.info.get('primal_solution_status')===2){const y=reduced.expand(Array.from(solver.getSolution().colValue)),selected=y.slice(0,N).flatMap((v,i)=>v>.5?[i]:[]),obj=v=>v.reduce((n,x,i)=>n+x*cost[i],0);
     const integral=y.length===cost.length&&y.every((v,i)=>Number.isFinite(v)&&(!integer[i]||Math.abs(v-Math.round(v))<1e-5)),checked=integral&&valid(selected);
     cp.lastTrial={integral,checked,objectiveImproved:obj(y)<=obj(x)+1e-5};

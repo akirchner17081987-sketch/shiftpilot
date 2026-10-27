@@ -27,7 +27,7 @@ column if all its duties already appear among that employee's permitted options.
 Required indivisible work/rest options are excluded from this reconstruction.
 Missing or unauthorized candidates do not gain new permissions through repair.
 
-After an improving but incomplete round, the worker can rebuild the search from
+After a bounded incomplete round, the worker can rebuild the search from
 the best checked proposal twice. Rebuilding retains at least the same total coverage and the
 original fixed/base duties. Conditional staffing which cannot be represented by
 the interval model uses the existing scoped, checked replacement search.
@@ -41,7 +41,8 @@ or mathematical infeasibility. No plan is published by calculating a proposal.
 Valid incomplete proposals with the same company, period and fingerprint are also
 available as repair references. Every duty is rechecked against the new job,
 including server-confirmed wishes. A normal retry starts from that checked partial
-plan instead of discarding its completed coverage. Explicit full rebuilds retain
+plan instead of discarding its completed coverage. Different run and round seeds
+explore other neighbourhoods; each saved checkpoint retains its own seed. Explicit full rebuilds retain
 their existing meaning. A reference never authorizes saving or publication.
 
 During an incomplete repair a vacancy may move along an augmenting chain. The

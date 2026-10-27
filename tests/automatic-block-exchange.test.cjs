@@ -90,6 +90,14 @@ test('an improved incomplete round rebuilds the checked incumbent and an expired
  B.context(payload,saved).limitExchange();assert.equal(saved.stage,'done');assert.equal(B.result(payload,saved).quality[0].open,1);
  assert.equal(B.result(payload,saved).quality[0].blockExchange.closed,1);
 });
+test('an incomplete plateau retries a different stable search seed and an explicit time limit still stops it',()=>{
+ const f=small(),wire=B.pack(f.input),p={version:1,months:['2027-01'],minimumInput:wire,monthInputs:[wire],metadata:{autonomousRunId:'run-a'},adaptiveSearch:true,enhancedBlockSearch:true},cp=B.start(p);
+ assert.equal(cp.adaptiveSeed,B.start(JSON.parse(JSON.stringify(p))).adaptiveSeed);
+ assert.notEqual(cp.adaptiveSeed,B.start({...p,metadata:{autonomousRunId:'run-b'}}).adaptiveSeed);
+ B.searchBudget(p,cp);cp.stage='exchange';cp.exchange=E.start({...f.input,adaptiveSearch:true,adaptiveSeed:cp.adaptiveSeed},f.preview);cp.exchange.status='limited';
+ B.context(p,cp).exchangeStep(null);assert.equal(cp.stage,'exchange');assert.equal(cp.exchangeRounds,1);assert.equal(cp.exchange.seedOffset,cp.adaptiveSeed+104729);
+ B.context(p,JSON.parse(JSON.stringify(cp))).limitExchange();
+});
 test('the worker can request a shorter bonus solver pass without changing planning rules',()=>{
  const f=small(),wire=B.pack(f.input),payload={version:1,months:['2027-01'],minimumInput:wire,monthInputs:[wire],metadata:{},adaptiveSearch:true,enhancedBlockSearch:true},cp=B.start(payload);
  cp.stage='exchange';cp.exchange=E.start({...f.input,adaptiveSearch:true},f.preview);let options;
