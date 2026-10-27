@@ -39,7 +39,7 @@ async function main(){
    const callsBefore=await page.evaluate(()=>qa.authCalls);await page.locator('#sfEmail').fill('');await page.locator('#sfPassword').fill('');await page.locator('#sfAuthSubmit').click();
    check(await page.locator('#sfEmail').getAttribute('aria-invalid'),'true','empty email is marked');check(await page.locator('#sfEmail').evaluate(n=>n===document.activeElement),true,'first invalid field receives focus');
    await page.locator('#sfEmail').fill('invalid');await page.locator('#sfPassword').fill('synthetic-password');await page.locator('#sfAuthSubmit').click();check(await page.evaluate(()=>qa.authCalls),callsBefore,'invalid email never reaches auth');
-   await page.locator('#sfEmail').fill('synthetic@example.invalid');await page.locator('#sfPasswordVisibility').click();check(await page.locator('#sfPassword').getAttribute('type'),'text','explicit visibility control');await page.locator('#sfPasswordVisibility').click();check(await page.locator('#sfPassword').getAttribute('type'),'password','password is masked again');
+   await page.locator('#sfEmail').fill('synthetic@example.invalid');await page.locator('#sfPasswordVisibility').click();check(await page.locator('#sfPassword').getAttribute('type'),'text','explicit visibility control');await page.locator('#sfPasswordVisibility').click();check(await page.locator('#sfPassword').getAttribute('type'),'password','password is masked again');check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'no login overflow '+width);
    await page.locator('#sfAuthSubmit').click();
    await page.waitForFunction(()=>document.getElementById('sfAuthMsg').textContent.length>0);
    await page.locator('#sfEntryBack').click();check(await page.locator('#sfPassword').inputValue(),'','password cleared on return');
@@ -50,7 +50,7 @@ async function main(){
   await page.getByRole('button',{name:'Passwort vergessen?',exact:true}).click();await page.getByRole('dialog',{name:'Passwort vergessen?',exact:true}).waitFor({state:'visible'});
   check(await page.getByLabel('E-Mail',{exact:true}).evaluate(n=>n===document.activeElement),true,'recovery email is labelled and focused');
   await page.keyboard.press('Shift+Tab');check(await page.locator('#sfResetSend').evaluate(n=>n===document.activeElement),true,'recovery focus wraps backwards');await page.keyboard.press('Tab');check(await page.locator('#sfResetEmail').evaluate(n=>n===document.activeElement),true,'recovery focus wraps forwards');
-  await page.locator('#sfResetSend').click();check(await page.evaluate(()=>qa.resetCalls),0,'empty recovery never sends a request');
+  await page.locator('#sfResetEmail').fill('');await page.locator('#sfResetSend').click();check(await page.evaluate(()=>qa.resetCalls),0,'empty recovery never sends a request');
   await page.keyboard.press('Escape');await page.waitForFunction(()=>document.activeElement.matches('.sf-forgot-link'));check(await page.locator('#sfPasswordResetBackdrop').count(),0,'Escape returns to login');
   const legal=page.locator('#sfEntryOverlay .sf-entry-legal a').filter({hasText:'Impressum'});check(await legal.getAttribute('href'),'/impressum.html?bereich=verwaltung','legal link carries only the selected area');await legal.click();
   await page.locator('[data-sf-entry-return].back').click();await page.locator('#sfEmail').waitFor({state:'visible'});check(await page.locator('#sfAuthTitle').innerText(),'Verwaltung','legal return restores the selected login');
