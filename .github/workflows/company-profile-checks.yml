@@ -37,6 +37,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: node --test tests/company-profile.test.cjs tests/schedule-export.test.mjs tests/shift-models.test.mjs tests/qr-terminal-admin.test.mjs
       - run: node tests/browser/company-profile-qa.cjs
+      - run: node tests/browser/display-preferences-qa.cjs
       - run: node tests/browser/qr-terminal-layout-qa.cjs
       - uses: actions/upload-artifact@v4
         if: always()
