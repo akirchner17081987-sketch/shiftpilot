@@ -17,7 +17,6 @@
     'assets/view-state-v1.js',
     'assets/supabase-auth-redirect-v1.js',
     'assets/supabase-data-v1.js',
-    'assets/supabase-mfa-v1.js',
     'assets/privacy-retention-ui-v1.js',
     'assets/supabase-delta-sync-v1.js',
     'assets/supabase-employee-sync-reconcile-v1.js',
@@ -27,6 +26,8 @@
     'assets/supabase-auto-plan-guard-v1.js',
     'assets/supabase-delete-bridge-v1.js',
     'assets/supabase-employee-access-v1.js',
+    // Wrap the employee boot too: enrolled factors must be checked before any portal data loads.
+    'assets/supabase-mfa-v1.js',
     'assets/supabase-employee-access-guard-v1.js',
     'assets/supabase-employee-access-fix-v1.js',
     'assets/supabase-employee-invite-fix-v1.js',
