@@ -74,6 +74,7 @@
  async function openNotification(row){
   const metadata=row?.metadata||{},company=metadata.company_id;if(!company||!row.entity_id)return false;
   const user=B().user?.id;if(!user)return false;
+  if(B().role==='EMPLOYEE'){const target=new URL(location.href);target.searchParams.set('bereich','verwaltung');target.searchParams.set('sf_push_view','auto');target.searchParams.set('sf_push_notification',row.id);target.hash='app';location.assign(target.href);return false;}
   if(company!==B().companyId){sessionStorage.setItem('sf_pending_push_notification',row.id);sessionStorage.setItem('sf_pending_push_view','auto');try{if(await B().switchCompany?.(company))return false;}catch(e){window.showSaveToast?.('Planung öffnen',e.message||String(e));}sessionStorage.removeItem('sf_pending_push_notification');sessionStorage.removeItem('sf_pending_push_view');return true;}
   if(!identity())return false;
   if(window.switchView)window.switchView('auto');else window.showView?.('auto');

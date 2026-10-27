@@ -20,3 +20,8 @@ test('completion links select the exact month/proposal and an aborted company sw
  await w.SFAutonomousPlanning.openNotification({id:'other-note',entity_id:'foreign-run',metadata:{company_id:'two',first_month:'2027-04-01',status:'READY'}});
  assert.equal(w.sessionStorage.getItem('sf_pending_push_notification'),null);assert.equal(w.sessionStorage.getItem('sf_pending_push_view'),null);assert.equal(opened.length,1);
  }finally{await w.happyDOM.abort();w.close();}});
+test('a dual-role employee session follows a management URL and never elevates its own client role',async()=>{const {Window}=await import('happy-dom'),w=new Window({url:'https://example.test/?bereich=mitarbeiter'});try{
+ const navigations=[];w.location.assign=url=>navigations.push(url);w.SFBackend={ready:true,user:{id:'lead'},companyId:'one',role:'EMPLOYEE',client:{rpc:async()=>{throw Error('must reauthenticate workspace first')}}};w.setInterval=()=>0;w.eval(fs.readFileSync('assets/autonomous-planning-v1.js','utf8'));
+ assert.equal(await w.SFAutonomousPlanning.openNotification({id:'note',entity_id:'run',metadata:{company_id:'one',status:'READY'}}),false);
+ const url=new URL(navigations[0]);assert.equal(url.origin,'https://example.test');assert.equal(url.searchParams.get('bereich'),'verwaltung');assert.equal(url.searchParams.get('sf_push_notification'),'note');assert.equal(w.SFBackend.role,'EMPLOYEE');
+ }finally{await w.happyDOM.abort();w.close();}});
