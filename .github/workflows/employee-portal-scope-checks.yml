@@ -1,0 +1,36 @@
+name: Employee portal scope and late cards
+on:
+  pull_request:
+    paths:
+      - assets/employee-portal-workspace-v2.js
+      - assets/wish-planning-v1.js
+      - assets/shift-handover-v1.js
+      - database/employee-portal-scoped-bundles.sql
+      - supabase/migrations/*employee_portal_scoped_bundles.sql
+      - tests/employee-portal-scoped-bundles.test.mjs
+      - tests/browser/wish-planning-qa.cjs
+      - tests/browser/shift-handover-qa.cjs
+      - tests/browser/employee-qr-bookings-qa.cjs
+      - .github/workflows/employee-portal-scope-checks.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  employee-portal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: node --test tests/employee-portal-scoped-bundles.test.mjs tests/wish-planning.test.cjs tests/shift-handover.test.cjs
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/browser/wish-planning-qa.cjs
+      - run: node tests/browser/shift-handover-qa.cjs
+      - run: node tests/browser/employee-qr-bookings-qa.cjs

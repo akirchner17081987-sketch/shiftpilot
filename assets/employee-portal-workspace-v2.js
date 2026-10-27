@@ -15,6 +15,7 @@
   };
   const MOBILE_MAIN=new Set(['dashboard','shifts','time']);
   let active='dashboard',queued=false,arranging=false,modalFocusSequence=0;
+  const pendingCards=new Set();
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const setHtmlIfChanged=(node,html)=>{if(node&&node.innerHTML!==html)node.innerHTML=html};
   B.bindAccessibleModal=function(backdrop,{dialogSelector='[role="dialog"],[role="alertdialog"]',initialFocus,returnFocus,returnFocusSelector}={}){
@@ -231,7 +232,7 @@
   B.employeePortalNavigate=navigate;
   try{const saved=sessionStorage.getItem('sfEmployeePortalView');if(flatNav().some(x=>x[0]===saved))active=saved}catch{}
   const old=B.openEmployeePortal;if(typeof old==='function')B.openEmployeePortal=function(){const r=old.apply(this,arguments);requestAnimationFrame(arrange);setTimeout(arrange,180);setTimeout(arrange,700);return r};
-  const observer=new MutationObserver(records=>{if(arranging||!document.getElementById('sfEmployeePortal'))return;const cards=[];records.forEach(record=>record.addedNodes.forEach(node=>{if(node.nodeType!==1)return;if(node.matches?.('.sf-portal-card'))cards.push(node);node.querySelectorAll?.('.sf-portal-card').forEach(card=>cards.push(card))}));if(!cards.length||queued)return;queued=true;requestAnimationFrame(()=>{queued=false;integrateAddedCards([...new Set(cards)])})});observer.observe(document.documentElement,{childList:true,subtree:true});
+  const observer=new MutationObserver(records=>{if(arranging||!document.getElementById('sfEmployeePortal'))return;const cards=[];records.forEach(record=>record.addedNodes.forEach(node=>{if(node.nodeType!==1)return;if(node.matches?.('.sf-portal-card'))cards.push(node);node.querySelectorAll?.('.sf-portal-card').forEach(card=>cards.push(card))}));if(!cards.length)return;cards.forEach(card=>pendingCards.add(card));if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;const batch=[...pendingCards];pendingCards.clear();integrateAddedCards(batch)})});observer.observe(document.documentElement,{childList:true,subtree:true});
   window.addEventListener('offline',updateConnectionState);window.addEventListener('online',()=>{updateConnectionState();setTimeout(updateConnectionState,1000)});
   setTimeout(arrange,0);setTimeout(arrange,700)
 })();
