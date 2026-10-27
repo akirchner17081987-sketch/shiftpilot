@@ -50,3 +50,44 @@ test('shared coverage is labelled company-wide while unassigned bookings remain 
  d.qr=[{...booking('unassigned'),site_id:null,start:'2026-10-08T04:00Z'}];
  const r=C.analyze(d,{site:'unassigned'}),warning=r.alerts.find(a=>a.kind==='stale');assert.ok(warning);assert.equal(warning.scope,'site');assert.equal(warning.site_id,null);assert.equal(r.summary.companyActions,0);
 });
+
+
+test('coverage hints distinguish the running previous night, upcoming night and singular vacancies',()=>{
+ const d=fixture();d.as_of='2026-10-27T04:00:00Z';d.models=[{code:'ND',name:'Nacht',active:true,default_start:'20:00',default_end:'06:00',optional_weekdays:[1,2,3,4,5,6,7],site_id:null}];d.global={ND:1};
+ const r=C.analyze(d),hints=r.alerts.filter(a=>a.kind==='coverage');assert.equal(hints.length,2);
+ assert.equal(hints.find(a=>a.date==='2026-10-26').running,true);assert.equal(hints.find(a=>a.date==='2026-10-27').running,false);
+ assert.ok(hints.every(a=>a.title==='ND · 1 Position offen'&&Number.isFinite(a.start)&&a.end>a.start));
+ assert.equal(C.coverageContext(d,{site:'east'}).unassigned,2);assert.equal(C.analyze(d,{site:'east'}).summary.open,0);
+ assert.equal(C.coverageContext(d,{site:'east',shift:'QR'}).unassigned,0);
+});
+
+test('publication context separates drafts and free QR attendance from published duties',()=>{
+ const d=fixture();d.qr=[booking('free')];d.assignments=[{...assignment('draft'),status:'DRAFT'}];
+ let r=C.analyze(d);assert.equal(r.publication.published,0);assert.equal(r.publication.drafts,1);assert.equal(r.summary.present,1);
+ d.assignments.push(assignment('published','b'));r=C.analyze(d);assert.equal(r.publication.published,1);assert.equal(r.publication.drafts,1);
+ const shared=fixture();shared.models=['TLE','TLW'].map((code,i)=>({code,active:true,default_start:'06:00',default_end:'14:00',coverage_group:'TL',coverage_required:1,optional_weekdays:[1,2,3,4,5,6,7],site_id:i?'west':'east'}));shared.global={};
+ assert.equal(C.coverageContext(shared,{site:'east'}).shared,1);assert.equal(C.coverageContext(shared).unassigned,0);
+});
+
+test('dashboard keeps unassigned demand visible under site filters and routes to the exact rebuilt duty',async()=>{
+ const {Window}=await import('happy-dom'),w=new Window({url:'https://example.test'});
+ try{
+  w.document.body.innerHTML='<section id="view-overview" class="active"></section><section id="view-schedule"><select id="sfManualFilterShift"><option value="">Alle</option><option value="SD" selected>SD</option></select><input id="sfManualOnlyOpen" type="checkbox" checked><div id="sfWeekBoardV2"></div></section>';
+  const d=fixture();d.as_of='2026-10-27T04:00:00Z';d.models=[{code:'ND',name:'Nacht',active:true,default_start:'20:00',default_end:'06:00',optional_weekdays:[1,2,3,4,5,6,7],site_id:null}];d.global={ND:1};
+  w.SFTodayCore=C;w.SFReportsCore=require('../assets/reports-workspace-core-v1.js');w.SFBackend={ready:true,companyId:d.company_id,user:{id:'owner'},role:'OWNER',client:{rpc:async()=>({data:d})}};
+  w.setInterval=()=>0;const later=w.setTimeout.bind(w);w.setTimeout=(fn,ms)=>ms>=1000?0:later(fn,ms);
+  w.HTMLElement.prototype.getClientRects=function(){return this.closest('#view-schedule')&&!w.document.getElementById('view-schedule').classList.contains('active')?[]:[{}]};
+  w.HTMLElement.prototype.scrollIntoView=function(){this.dataset.scrolled='true'};
+  w.weekStart=new w.Date();w.SchichtFunkCalendarView={setMode(){}};w.switchView=view=>w.document.querySelectorAll('section[id^="view-"]').forEach(e=>e.classList.toggle('active',e.id==='view-'+view));
+  const board=w.document.getElementById('sfWeekBoardV2');const rebuild=()=>{board.innerHTML='<section class="sf-week-shift" data-date="2026-10-26" data-type="ND">Nachtdienst</section>'};w.renderCalendar=rebuild;
+  w.eval(fs.readFileSync(path.join(__dirname,'../assets/today-workspace-v3.js'),'utf8'));await w.happyDOM.whenAsyncComplete();
+  assert.match(w.document.querySelector('.sf-td-notices').textContent,/Keine veröffentlichten Dienste/);
+  assert.match(w.document.querySelector('.sf-td-alert-when').textContent,/26.10.2026.*20:00.*06:00.*27.10.2026.*läuft bereits.*Vortag/);
+  assert.equal(w.SFToday.selectSite('east'),true);assert.equal(w.SFToday.getResult().summary.open,0);assert.match(w.document.querySelector('.sf-td-notices').textContent,/2 Positionen offen/);
+  w.document.querySelector('[data-td-action="unassigned"]').click();assert.equal(w.document.getElementById('sfTodaySite').value,'unassigned');assert.equal(w.SFToday.getResult().summary.open,2);
+  const index=w.SFToday.getResult().alerts.findIndex(a=>a.date==='2026-10-26');w.document.querySelector('[data-td-alert="'+index+'"]').click();
+  assert.equal(w.document.getElementById('sfManualFilterShift').value,'');assert.equal(w.document.getElementById('sfManualOnlyOpen').checked,false);
+  assert.equal(board.querySelector('.sf-today-focus').dataset.date,'2026-10-26');assert.equal(w.document.activeElement.dataset.type,'ND');
+  rebuild();await w.happyDOM.whenAsyncComplete();assert.equal(board.querySelector('.sf-today-focus').dataset.type,'ND');
+ }finally{await w.happyDOM.abort();w.close();}
+});

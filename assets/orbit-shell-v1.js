@@ -306,7 +306,12 @@
     }
     const handover = view.querySelector('#sfHandoverToday');
     const handoverDetail = overviewDetail(handover, 'handover', 'Schichtübergabe');
-    if (handoverDetail && Number(handover?.querySelector('p')?.textContent.match(/(\d+) kritisch/)?.[1]) > 0) handoverDetail.open = true;
+    if (handoverDetail) {
+      const count = handover.dataset.openPoints;
+      const text = 'Schichtübergabe · ' + (count ? count + ' offen' : 'Status prüfen');
+      if (handoverDetail.firstElementChild.textContent !== text) handoverDetail.firstElementChild.textContent = text;
+      if (Number(handover.dataset.criticalPoints) > 0) handoverDetail.open = true;
+    }
     const filters = overviewDetail(root.querySelector('.sf-td-filters'), 'filters', 'Standort & Schicht');
     if (filters) {
       const site = root.querySelector('#sfTodaySite'), shift = root.querySelector('#sfTodayShift');

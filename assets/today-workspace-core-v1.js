@@ -3,6 +3,7 @@
  'use strict';
  const MIN=60000,HOUR=60*MIN,collator=new Intl.Collator('de',{numeric:true,sensitivity:'base'});
  const ms=v=>v?Date.parse(v):NaN,unique=a=>[...new Set(a)],published=a=>a.status==='PUBLISHED';
+ const positions=n=>n+' '+(n===1?'Position':'Positionen')+' offen';
  const localDate=(value,tz)=>new Intl.DateTimeFormat('sv-SE',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(value));
  const overlaps=(a,b,c,d)=>a<d&&b>c;
  const union=(ranges)=>{let total=0,last;for(const [s,e]of ranges.filter(([s,e])=>Number.isFinite(s)&&Number.isFinite(e)&&e>s).sort((a,b)=>a[0]-b[0])){if(last&&s<=last[1])last[1]=Math.max(last[1],e);else{if(last)total+=last[1]-last[0];last=[s,e]}}return(total+(last?last[1]-last[0]:0))/MIN};
@@ -77,7 +78,7 @@
    if(r.status==='draft')add('draft',3,r.name+' · Dienst noch im Entwurf',r.shift,{...ref,action:'schedule'});
    if(r.assignment?.duplicates.length)add('duplicate',1,r.name+' · Doppelte Zuweisung',r.shift+' wird nur einmal als besetzt gezählt.',{...ref,action:'schedule'});
   }
-  for(const c of todayCells.filter(c=>c.missing))add('coverage',1,c.label+' · '+c.missing+' Positionen offen','Veröffentlicht '+c.filled+' / Bedarf '+c.required+(c.drafts?' · '+c.drafts+' Entwürfe':''),{date:c.date,shift:c.code,site_id:c.site_id,scope:c.shared?'company':'site',action:'schedule'});
+  for(const c of todayCells.filter(c=>c.missing))add('coverage',1,c.label+' · '+positions(c.missing),'Veröffentlicht '+c.filled+' / Bedarf '+c.required+(c.drafts?' · '+c.drafts+' Entwürfe':''),{date:c.date,shift:c.code,start:c.start,end:c.end,running:c.running,site_id:c.site_id,scope:c.shared?'company':'site',action:'schedule'});
   for(const id of unique(rows.map(r=>r.employee_id))){const own=rows.filter(r=>r.employee_id===id),duties=own.filter(r=>r.planned);let conflict=false;
    for(let i=0;i<duties.length;i++)for(let j=i+1;j<duties.length;j++){const a=duties[i],b=duties[j],ga=models.get(a.shift)?.coverage_group,gb=models.get(b.shift)?.coverage_group;if(overlaps(ms(a.start),ms(a.end),ms(b.start),ms(b.end))&&!(ga&&ga===gb))conflict=true;}
    if(conflict)add('overlap',0,name(people.get(id))+' · Dienste überschneiden sich','Zeitliche Doppelbelegung prüfen.',{rowId:own[0].id,date,action:'schedule',employee_id:id,site_id:own[0].site_id});
@@ -94,7 +95,12 @@
   const summary={planned:unique(rows.filter(r=>r.planned).map(r=>r.employee_id)).length,present:reliable?unique(rows.filter(r=>r.present).map(r=>r.employee_id)).length:null,
    paused:reliable?unique(rows.filter(r=>r.onBreak).map(r=>r.employee_id)).length:null,finished:reliable?unique(rows.filter(r=>r.status==='finished'&&!rows.some(x=>x.employee_id===r.employee_id&&x.present)).map(r=>r.employee_id)).length:null,
    missing:reliable?unique(rows.filter(r=>r.status==='missing').map(r=>r.employee_id)).length:null,open:todayCells.reduce((n,c)=>n+c.missing,0),actions:alerts.length,companyActions:alerts.filter(a=>a.scope==='company').length,drafts:rows.filter(r=>r.status==='draft').length};
-  return{date,now,tz,rows,allRows,coverage:todayCells,alerts,transitions,summary,reliable};
+  const publication={published:rows.filter(r=>r.planned).length,drafts:rows.filter(r=>r.status==='draft').length,required:todayCells.reduce((n,c)=>n+c.required,0)};
+  return{date,now,tz,rows,allRows,coverage:todayCells,alerts,transitions,summary,publication,reliable};
+ }
+ function coverageContext(data,filters={},options={}){
+  const all=analyze(data,{shift:filters.shift||''},options);
+  return{unassigned:all.coverage.filter(c=>!c.site_id&&!c.shared).reduce((n,c)=>n+c.missing,0),shared:all.coverage.filter(c=>c.shared).reduce((n,c)=>n+c.missing,0)};
  }
  function siteOverview(data,filters={},options={}){
   const fresh=options.reliable!==false,sites=(data.sites||[]).map(site=>{
@@ -107,5 +113,5 @@
   });
   return{asOf:data.as_of,timezone:data.timezone||'Europe/Berlin',fresh,selected:filters.site||'',shift:filters.shift||'',sites};
  }
- return{analyze,siteOverview,absenceOverlap,localDate,union,name,labels};
+ return{analyze,siteOverview,coverageContext,positions,absenceOverlap,localDate,union,name,labels};
 });
