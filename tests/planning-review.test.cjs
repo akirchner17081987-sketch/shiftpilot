@@ -64,3 +64,10 @@ test('comparison clears correctly between applied, old background and repeated p
  api.render({base:[]});assert.match(el('autoPlanComparison').innerHTML,/Ausgangsstand/);api.render(result);assert.equal(el('autoPlanComparison').innerHTML,html);
  c.autoPlanApplied=1;api.render(result);assert.equal(el('autoPlanComparison').hidden,true);
 });
+
+test('rhythm summary refreshes when an exception changes without changing the assignment',()=>{
+ const{c,api,el}=harness();vm.runInContext(read('assets/planning-context-v1.js'),c);const original=duty(),result={base:[original],reviewBefore:api.snapshot([original],c.autoPlanningDates(),1)};
+ api.render(result);assert.doesNotMatch(el('autoPlanComparison').innerHTML,/bestätigte Rhythmusausnahmen/);
+ original.rhythmOverride={reason:'Confirmed extra duty'};api.render(result);assert.match(el('autoPlanComparison').innerHTML,/1 bestätigte Rhythmusausnahmen/);assert.match(el('autoPlanComparison').innerHTML,/Confirmed extra duty/);
+ original.rhythmOverride.reason='Updated reason';api.render(result);assert.match(el('autoPlanComparison').innerHTML,/Updated reason/);assert.doesNotMatch(el('autoPlanComparison').innerHTML,/Confirmed extra duty/);
+});
