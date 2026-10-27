@@ -27,3 +27,6 @@
 .sf-td-alert-meta{display:flex;flex-wrap:wrap;gap:3px 10px;margin-top:4px}
 .sf-td-alert-rows .sf-td-alert-meta small{margin-top:0}
 .sf-td-alert-meta small+small:before{content:"·";margin-right:10px}
+
+/* Operational context belongs below the map; the map composition stays unchanged. */
+.sf-td-notices{display:grid;gap:12px;margin:0 0 20px}.sf-td-notice{padding:16px 18px;border:1px solid var(--td-line);border-left:3px solid var(--amber,#efb95d);border-radius:10px;background:var(--td-panel)}.sf-td-notice p{margin:6px 0 12px}.sf-td-alert-when{font-weight:600;color:var(--text,#edf6ff)!important}#view-schedule .sf-today-focus{outline:3px solid var(--teal,#32d2b5)!important;outline-offset:-3px;box-shadow:inset 0 0 0 2px var(--bg,#091624);scroll-margin-block:90px 110px}
