@@ -255,3 +255,16 @@ html[data-sf-theme="light"] #sfAutonomousPlanning input,html[data-sf-theme="ligh
 @media(max-width:560px){#sfAutonomousPlanning .sf-auto-period-grid{grid-template-columns:1fr}#sfAutonomousPlanning>.sf-auto-rule-card-body{padding:4px 14px 14px}#sfAutonomousPlanning>summary>span{float:none;display:block;margin-top:5px}#sfAutonomousPlanning .sf-auto-actions{display:grid}#sfAutonomousPlanning .sf-auto-actions button{width:100%}}
 
 #sfAutonomousPlanning .sf-auto-table-wrap{max-width:100%;overflow-x:auto;margin:12px 0}#sfAutonomousPlanning .sf-auto-table-wrap table{width:100%;border-collapse:collapse;font-size:.88rem}#sfAutonomousPlanning .sf-auto-table-wrap th,#sfAutonomousPlanning .sf-auto-table-wrap td{padding:9px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line,#344555)}#sfAutonomousPlanning .sf-auto-table-wrap td:last-child{min-width:230px}#sfAutonomousPlanning article{margin:14px 0}
+
+/* Named completion recipients use the same compact cards in both themes. */
+#sfAutoPlanNotifications h3{margin:0 0 8px;font-size:15px;line-height:1.4}
+#sfAutoPlanNotifications p{font-size:12px;line-height:1.55;margin:8px 0}
+#sfAutoPlanNotifications fieldset{border:0;padding:0;margin:14px 0}
+#sfAutoPlanNotifications legend{font-size:12px;font-weight:700;margin-bottom:8px;padding:0}
+#sfAutoPlanNotifications .sf-auto-notify-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));gap:8px;margin-bottom:12px}
+#sfAutoPlanNotifications label{display:flex;align-items:flex-start;gap:9px;padding:10px;border:1px solid var(--border,#294158);border-radius:9px;cursor:pointer;min-width:0}
+#sfAutoPlanNotifications input[type=checkbox]{flex:0 0 16px;width:16px;height:16px;margin:2px 0 0}
+#sfAutoPlanNotifications label span{min-width:0;overflow-wrap:anywhere}
+#sfAutoPlanNotifications label b{display:block;font-size:12px;font-weight:700;line-height:1.5}
+#sfAutoPlanNotifications label small{display:block;font-size:11px;line-height:1.5;opacity:.75;margin-top:3px}
+#sfAutoPlanNotifications button{white-space:normal;max-width:100%}
