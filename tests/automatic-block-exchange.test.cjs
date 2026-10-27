@@ -8,6 +8,18 @@ test('fixed-variable elimination preserves constraint bounds, warm starts and fu
  const model={numCols:3,numRows:2,sense:1,colCost:[2,3,4],colLower:[0,0,0],colUpper:[1,1,1],integrality:[1,1,1],rowLower:[1,0],rowUpper:[1,2],matrix:{format:'csc',numCols:3,numRows:2,starts:[0,1,3,4],indices:[0,0,1,1],values:[1,1,2,1]}},before=JSON.stringify(model),r=E.compactModel(model,[1,0,0],[1,1,0],[1,0,0]);
  assert.equal(r.model.numCols,1);assert.deepEqual(r.model.rowLower,[0,0]);assert.deepEqual(r.model.rowUpper,[0,2]);assert.deepEqual(r.warm,[0]);
  assert.deepEqual(r.expand([1]),[1,1,0]);assert.deepEqual(r.expand([]),[]);assert.equal(JSON.stringify(model),before);
+ const clamped=E.compactModel(model,[0,0,0],[0,1,0],[1,0,0]);assert.deepEqual(clamped.expand([1]),[0,1,0]);
+});
+test('a checked intermediate replacement may explore worse preferences without replacing the best proposal',()=>{
+ const f=small({cap:18});f.input.adaptiveSearch=true;f.input.employees[0].target=9;
+ f.input.groups[0].options=[f.input.groups[0].options[0].slice(0,2)];f.input.criticalCapacities=f.input.capacities;
+ const cp=E.start(f.input,f.preview),before=JSON.stringify(cp.best);cp.pass=1;
+ const full=Array(16).fill(0);for(const i of [0,7,8,9,10])full[i]=1;full[13]=full[14]=9;
+ const fake={createModel(model){assert.equal(model.numCols,14);return{options:{set(){}},setSolution(){},run(){},info:{get:()=>2},getSolution:()=>({colValue:full.filter((_,i)=>i!==5&&i!==6)}),dispose(){}};}};
+ E.context(f.input,cp).step(fake);
+ assert.equal(cp.lastTrial.checked,true);assert.equal(cp.lastTrial.objectiveImproved,false);
+ assert.deepEqual(cp.working,[0]);assert.equal(JSON.stringify(cp.best),before);
+ assert.deepEqual(E.context(f.input,JSON.parse(JSON.stringify(cp))).result().preview.map(B.rowKey).sort(),f.preview.map(B.rowKey).sort());
 });
 test('adaptive repair can move one gap along a replacement chain while the total shortage stays bounded',()=>{
  const f=small();f.input.adaptiveSearch=true;f.input.groups[0].options.push(f.input.groups[0].options[0].slice(0,2));

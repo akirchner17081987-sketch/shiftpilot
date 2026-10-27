@@ -74,7 +74,7 @@ function compactModel(model,lower,upper,incumbent){
  }
  const starts=[0],indices=[],values=[];
  for(const i of free){for(let k=m.starts[i];k<m.starts[i+1];k++){indices.push(m.indices[k]);values.push(m.values[k]);}starts.push(indices.length);}
- return{model:{...model,numCols:free.length,colCost:free.map(i=>model.colCost[i]),colLower:free.map(i=>lower[i]),colUpper:free.map(i=>upper[i]),integrality:free.map(i=>model.integrality[i]),rowLower,rowUpper,matrix:{...m,numCols:free.length,starts,indices,values}},warm:free.map(i=>incumbent[i]),expand:solution=>{if(solution.length!==free.length)return[];const all=incumbent.slice();free.forEach((i,n)=>all[i]=solution[n]);return all;}};
+ return{model:{...model,numCols:free.length,colCost:free.map(i=>model.colCost[i]),colLower:free.map(i=>lower[i]),colUpper:free.map(i=>upper[i]),integrality:free.map(i=>model.integrality[i]),rowLower,rowUpper,matrix:{...m,numCols:free.length,starts,indices,values}},warm:free.map(i=>incumbent[i]),expand:solution=>{if(solution.length!==free.length)return[];const all=incumbent.map((v,i)=>lower[i]===upper[i]?lower[i]:v);free.forEach((i,n)=>all[i]=solution[n]);return all;}};
 }
 function context(input,cp){
  if(cp.version!==1)throw Error('Unbekannter Blocktausch-Zwischenstand.');
@@ -142,10 +142,11 @@ function context(input,cp){
   // Follow a gap through its eligible people and their incumbent resources.
   // Periodically release the entire crew so local neighbourhoods cannot trap
   // a chain which needs more employees than the current neighbourhood.
-  let width=Math.min(pool.length,4+cp.pass%5),global=false;
+  let width=Math.min(pool.length,4+cp.pass%5),global=false,repairRoot=null;
   if(cp.adaptive&&workingQuality.open>0){
    const missing=[...workingState.remaining].filter(([,n])=>n>0).sort((a,b)=>(p.potential.get(a[0])?.size||0)-(p.potential.get(b[0])?.size||0)||a[0].localeCompare(b[0]));
    const root=missing[cp.pass%Math.max(1,missing.length)]?.[0],eligible=new Set(cols.filter(c=>c.rows.some(a=>a.resource===root)).map(c=>String(c.group.employee.id)));
+   if(cp.pass%4===1)repairRoot=root;
    const affected=new Set(cp.working.filter(i=>eligible.has(String(cols[i].group.employee.id))).flatMap(i=>cols[i].rows.map(a=>a.resource)));
    const ranks=new Map(pool.map(e=>{const id=String(e.id);return[id,(eligible.has(id)?1000:0)+cols.filter(c=>String(c.group.employee.id)===id&&c.rows.some(a=>affected.has(a.resource))).length];}));
    if(cp.pass%2){
@@ -169,12 +170,15 @@ function context(input,cp){
   }
   const chosen=new Set(pool.slice(0,width).map(e=>String(e.id))),x=vector(cp.working),lower=lo.slice(),upper=hi.slice();
   for(let i=0;i<N;i++)if(!chosen.has(String(cols[i].group.employee.id)))lower[i]=upper[i]=x[i];for(const a of levels)if(!chosen.has(a.id))for(const i of a.indices)lower[i]=upper[i]=x[i];
+  const target=slacks.find(a=>a.resource===repairRoot),forced=!!target;
+  if(forced){lower[target.index]=upper[target.index]=0;if(target.criticalIndex!==null)lower[target.criticalIndex]=upper[target.criticalIndex]=0;}
   const reduced=cp.adaptive?compactModel(model,lower,upper,x):{model:{...model,colLower:lower,colUpper:upper},warm:x,expand:y=>y};
   let solver;try{solver=highs.createModel(reduced.model);solver.options.set({output_flag:false,presolve:'on',time_limit:Math.max(.05,Math.min(global ? .8 : .5,seconds)),mip_rel_gap:0,random_seed:cp.pass});solver.setSolution({colValue:reduced.warm});solver.run();
    if(solver.info.get('primal_solution_status')===2){const y=reduced.expand(Array.from(solver.getSolution().colValue)),selected=y.slice(0,N).flatMap((v,i)=>v>.5?[i]:[]),obj=v=>v.reduce((n,x,i)=>n+x*cost[i],0);
     const integral=y.length===cost.length&&y.every((v,i)=>Number.isFinite(v)&&(!integer[i]||Math.abs(v-Math.round(v))<1e-5)),checked=integral&&valid(selected);
     cp.lastTrial={integral,checked,objectiveImproved:obj(y)<=obj(x)+1e-5};
-    if(checked&&cp.lastTrial.objectiveImproved){cp.working=selected;const q=score(selected),before=score(cp.best);if(better(q,before,cp.adaptive)){cp.best=selected.slice();cp.lastImprovement=cp.pass;cp.improvements++;}}
+    const q=checked?score(selected):null,exploration=forced&&q&&q.open<=workingQuality.open&&q.critical<=workingQuality.critical&&q.leaderOpen<=workingQuality.leaderOpen;
+    if(checked&&(cp.lastTrial.objectiveImproved||exploration)){cp.working=selected;const before=score(cp.best);if(better(q,before,cp.adaptive)){cp.best=selected.slice();cp.lastImprovement=cp.pass;cp.improvements++;}}
    }
   }finally{solver?.dispose();}
   cp.pass++;const best=score(cp.best);cp.coverageComplete=best.open===0;cp.bestOpen=best.open;const allTargets=best.priorityDeficit===0&&best.teamLeaderDeficit<1e-6&&best.peerExcess<1e-6;if(cp.pass>=cp.maxPasses||best.open===0&&best.critical===0&&cp.pass-cp.lastImprovement>=(allTargets?12:48))cp.status=cp.pass>=cp.maxPasses?'limited':'complete';return true;
