@@ -231,8 +231,8 @@ test('wordmark stays above the login card after the animation', () => {
 
 test('entry preserves the production page-ready and role-gated loader', () => {
   const loader = read('assets/conflict-plausibility-v1.js');
-  assert.match(loader, /s\.async=false/);
-  assert.match(loader, /window\.SFPageReady\.then\(init\)/);
+  assert.match(loader, /node\.async=false/);
+  assert.match(loader, /Promise\.resolve\(window\.SFPageReady\)\.then\(init\)\.catch\(failLoad\)/);
   assert.match(loader, /if\(B\.role!=='EMPLOYEE'\)\{/);
   assert.match(loader, /await B\.prepareManagerModules\(\)/);
   assert.match(loader, /const result=await baseBoot\.apply\(this,arguments\)/);
