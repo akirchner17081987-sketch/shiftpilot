@@ -47,7 +47,9 @@ function prepare(payload,snapshot,assess){
  if(evaluated?.audit.errors){for(const wire of payload.monthInputs){const input=B.unpack(wire),all=B.unique([...input.base,...preview]),people=new Map(input.employees.map(e=>[String(e.id),e]));for(const e of people.values()){const own=all.filter(a=>String(a.employeeId)===String(e.id)&&a.date.startsWith(wire.month));if(S.errors(e,all,input.solidRules,own.map(a=>a.date)).length||sum(own,a=>S.duty(a,{...input.solidRules,timezone:input.timezone}).hours)>e.monthLimit+.001||own.length>e.maxMonthlyShifts)for(const a of own)affected.add(a.date);}}if(!affected.size)for(const a of preview)affected.add(a.date);}
  const preserve=!!evaluated?.audit.canPreserve&&totals(evaluated.result).teamLeaderDeficit<.001;
  const reusable=!snapshot.forceFullRebuild&&!snapshot.improveExisting&&preserve?evaluated.result:null;
- return{...next,metadata:{...next.metadata,continuity:{referenceRunId:reference.runId,fullRebuild:snapshot.forceFullRebuild===true,improve:snapshot.improveExisting===true,affectedDates:[...affected].sort(),incumbent:preserve?{preview:evaluated.result.preview,quality:evaluated.result.quality}:null,reusable:reusable?{preview:reusable.preview,quality:reusable.quality}:null}}};
+ const targetErrors=(evaluated?.audit.hours?.rows||[]).filter(r=>r.missing>(r.tolerance??Infinity)+.001&&!r.approvedDeviation).length;
+ const repairSeed=!snapshot.forceFullRebuild&&evaluated&&(snapshot.improveExisting||evaluated.audit.open>0)&&evaluated.audit.errors===targetErrors?{preview:evaluated.result.preview,quality:evaluated.result.quality}:null;
+ return{...next,metadata:{...next.metadata,continuity:{referenceRunId:reference.runId,fullRebuild:snapshot.forceFullRebuild===true,improve:snapshot.improveExisting===true,repairSeed,affectedDates:[...affected].sort(),incumbent:preserve?{preview:evaluated.result.preview,quality:evaluated.result.quality}:null,reusable:reusable?{preview:reusable.preview,quality:reusable.quality}:null}}};
 }
 function repairPayload(payload,level=0){
  const c=payload.metadata.continuity;if(!c||c.fullRebuild||!c.affectedDates.length||level>=2)return payload;

@@ -54,9 +54,18 @@ Deno.serve(async req => {
     const scopedBlockRecovery = !boundedSearch;
     const prepared = core.withShiftDurationLimit(core.withServerWishes(job.payload, job.server_wishes), Number(policy.data.standard_max_shift_hours));
     const repairLevel=checkpoint?.repairLevel||0;
-    const scoped=A.repairPayload(prepared,repairLevel);
+    const scoped=prepared.metadata.continuity?.repairSeed?prepared:A.repairPayload(prepared,repairLevel);
     const input = { ...scoped, boundedSearch, adaptiveSearch:true, enhancedBlockSearch:true, minimumInput: { ...scoped.minimumInput, scopedBlockRecovery, boundedSearch, criticalBeamWidth:boundedSearch?16:undefined }, monthInputs: scoped.monthInputs.map((month: any) => ({ ...month, scopedBlockRecovery, boundedSearch, criticalBeamWidth:boundedSearch?16:undefined })) };
+    const seed=prepared.metadata.continuity?.repairSeed,starting=!checkpoint;
     checkpoint = checkpoint || core.start(input);
+    let seedStarted=false;
+    if(starting&&seed&&input.months.length===1){
+      // Stored/client metadata is not authority: recheck every duty, wish,
+      // candidate, cap and rest rule against this job's current server input.
+      const audit=A.assess(prepared,{...seed,months:prepared.months,metadata:prepared.metadata});
+      const targetErrors=(audit.hours?.rows||[]).filter((r:any)=>r.missing>(r.tolerance??Infinity)+.001&&!r.approvedDeviation).length;
+      if(audit.errors===targetErrors)seedStarted=core.seedRepair(input,checkpoint,seed.preview);
+    }
     if(boundedSearch)checkpoint.boundedSearch=true;
     const budget=core.searchBudget(input,checkpoint);
     const reuse=prepared.metadata.continuity?.reusable&&!checkpoint.repairBest&&!checkpoint.skipReuse;
@@ -72,6 +81,8 @@ Deno.serve(async req => {
       audited=A.assess(prepared,output);
       if(audited.canPreserve){checkpoint.stage='done';checkpoint.proposed=output.preview;checkpoint.quality=output.quality;checkpoint.monthIndex=prepared.months.length;}
       else{output=null;checkpoint.skipReuse=true;}
+    }else if(seedStarted){
+      steps++; // Save the checked starting point before solving another slice.
     }else if(checkpoint.stage==='exchange'){
       // One solver slice per durable invocation. Its bounded synchronous CPU
       // time leaves headroom for cold starts, model checks and serialization.

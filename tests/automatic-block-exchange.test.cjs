@@ -66,6 +66,13 @@ test('the worker can request a shorter bonus solver pass without changing planni
  B.context(payload,cp).exchangeStep(fake,.15);assert.equal(options.time_limit,.15);
  assert.equal(cp.exchange.bestOpen,1);assert.equal(cp.exchange.pass,1);
 });
+test('a rechecked partial plan starts directly with repair and survives a durable checkpoint',async()=>{
+ const f=small(),wire=B.pack(f.input),p={version:1,months:['2027-01'],minimumInput:wire,monthInputs:[wire],metadata:{},adaptiveSearch:true,enhancedBlockSearch:true};let cp=B.start(p);
+ assert.equal(B.seedRepair(p,cp,f.preview),true);assert.equal(cp.stage,'exchange');assert.equal(cp.seededRepair,true);
+ cp=JSON.parse(JSON.stringify(cp));B.context(p,cp).exchangeStep(await runtime);
+ while(cp.stage==='exchange'){cp.exchange.maxPasses=1;B.context(p,cp).exchangeStep(await runtime);}
+ assert.equal(B.result(p,cp).quality[0].open,0);assert.equal(B.result(p,cp).preview.length,3);
+});
 test('normal bounded planning automatically starts and time-limits rule-checked block repairs',async()=>{
  const f=small(),input={...f.input,solidRules:{...f.input.solidRules,exactStaffing:{TL:1}}},wire={...B.pack(input),boundedSearch:true},payload={version:1,months:['2027-01'],minimumInput:wire,monthInputs:[wire],metadata:{},boundedSearch:true,enhancedBlockSearch:true};
  const cp=B.start(payload);cp.solver=R.start({...B.unpack(wire),_checkpointKey:'month:2027-01'},1);cp.solver.phase='done';cp.solver.best=[[1,0],[2,0]];

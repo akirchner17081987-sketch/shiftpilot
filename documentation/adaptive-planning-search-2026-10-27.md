@@ -37,3 +37,9 @@ visible in result metadata. Complete coverage does not waive personal SOLL
 shortfall review, approved wishes, permissions, rest or company constraints.
 Unfilled positions after a bounded search are not a proof of personnel shortage
 or mathematical infeasibility. No plan is published by calculating a proposal.
+
+Valid incomplete proposals with the same company, period and fingerprint are also
+available as repair references. Every duty is rechecked against the new job,
+including server-confirmed wishes. A normal retry starts from that checked partial
+plan instead of discarding its completed coverage. Explicit full rebuilds retain
+their existing meaning. A reference never authorizes saving or publication.

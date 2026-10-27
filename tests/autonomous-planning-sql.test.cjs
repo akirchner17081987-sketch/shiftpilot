@@ -1,5 +1,33 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),{PGlite}=require('@electric-sql/pglite');
 const {cid,other,uid,eid,bootstrap,files}=require('./fixtures/autonomous-db.cjs');
+test('partial repair references remain company/fingerprint scoped and never gain direct API privileges',async()=>{
+ const db=new PGlite(),company='11111111-1111-4111-8111-111111111111',foreign='22222222-2222-4222-8222-222222222222',id=n=>'00000000-0000-4000-8000-'+String(n).padStart(12,'0');
+ try{
+  await db.exec(`create role anon;create role authenticated;create role service_role;create schema private;
+   create table private.autonomous_planning_runs(id uuid primary key,company_id uuid,background_job_id uuid,first_month date,month_count int,status text,summary jsonb,created_at timestamptz default now());
+   create table private.background_auto_plan_jobs(id uuid primary key,company_id uuid,status text,fingerprint text,result jsonb);
+   create function private.sf_autonomy_snapshot_before_continuity(company_ uuid,first_ date,count_ int,run_ uuid,history_ int) returns jsonb language plpgsql as $$begin
+    if current_setting('test.company',true) is distinct from company_::text then raise exception 'Planungsrechte fehlen' using errcode='42501';end if;
+    return jsonb_build_object('company',company_,'fingerprint','current');end$$;
+   create function private.sf_autonomy_best(company_ uuid,first_ date,count_ int,fp_ text) returns uuid language sql as $$
+    select r.id from private.autonomous_planning_runs r join private.background_auto_plan_jobs j on j.id=r.background_job_id and j.company_id=r.company_id
+    where r.company_id=company_ and r.first_month=first_ and r.month_count=count_ and r.status='READY' and j.status='SUCCEEDED' and (fp_ is null or j.fingerprint=fp_) order by r.created_at desc limit 1$$;`);
+  const migration=fs.readdirSync('supabase/migrations').find(f=>f.endsWith('_reuse_checked_partial_planning_proposals.sql'));
+  await db.exec(fs.readFileSync('supabase/migrations/'+migration,'utf8'));
+  await db.query("select set_config('test.company',$1,false)",[company]);
+  const add=async(n,{owner=company,fp='current',open=5,errors=0,status='REVIEW',rows=[]}={})=>{
+   await db.query("insert into private.background_auto_plan_jobs values($1,$2,'SUCCEEDED',$3,$4)",[id(n),owner,fp,{preview:[{employeeId:'candidate',date:'2027-01-01'}]}]);
+   await db.query("insert into private.autonomous_planning_runs(id,company_id,background_job_id,first_month,month_count,status,summary) values($1,$2,$1,'2027-01-01',1,$3,$4)",[id(n),owner,status,{open,errors,hours:{rows}}]);
+  };
+  await add(1,{fp:'stale',open:0,status:'READY'});await add(2,{open:35});await add(3,{open:5});await add(4,{owner:foreign,open:1});await add(5,{open:1,errors:1});
+  const snapshot=async(owner=company)=>(await db.query("select private.sf_autonomy_snapshot($1,'2027-01-01',1,$2,3) v",[owner,id(99)])).rows[0].v;
+  assert.equal((await snapshot()).reference.runId,id(3));
+  await assert.rejects(()=>snapshot(foreign),/Planungsrechte/);
+  await add(7,{open:2,errors:1,rows:[{missing:9,tolerance:8,approvedDeviation:false}]});assert.equal((await snapshot()).reference.runId,id(7));
+  await add(6,{open:0,status:'READY'});assert.equal((await snapshot()).reference.runId,id(6));
+  for(const role of ['anon','authenticated','service_role'])assert.equal((await db.query("select has_function_privilege($1,'private.sf_autonomy_snapshot(uuid,date,integer,uuid,integer)','EXECUTE') allowed",[role])).rows[0].allowed,false);
+ }finally{await db.close();}
+});
 test('autonomous controls, authoritative snapshot, worker leases and atomic DRAFT application stay company scoped',async()=>{const db=new PGlite();try{await db.exec(bootstrap);for(const file of files)await db.exec(fs.readFileSync('supabase/migrations/'+file,'utf8'));
  const rpc=async(action,config=null,run=null,company=cid)=> (await db.query("select public.autonomous_planning_control($1,$2,$3::jsonb,$4,'2027-01-01') v",[company,action,JSON.stringify(config),run])).rows[0].v;
  let state=await rpc('GET');assert.equal(state.config.enabled,false);assert.equal(state.can_edit,true);await assert.rejects(()=>rpc('GET',null,null,other),/Planungsrechte/);

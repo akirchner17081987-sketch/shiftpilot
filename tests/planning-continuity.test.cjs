@@ -2,6 +2,15 @@ const test=require('node:test'),assert=require('node:assert/strict'),A=require('
 const runtime=require('highs')({print(){},printErr(){}});
 async function solve(payload){const H=await runtime;let best;for(let level=0;level<3;level++){const input={...A.repairPayload(payload,level),enhancedBlockSearch:true};let cp=B.start(input),calls=0;while(cp.stage!=='done'){const c=B.context(input,cp);if(cp.stage==='exchange')c.exchangeStep(H);else for(let n=0;n<250&&cp.stage!=='done';n++)if(!c.step())break;cp=JSON.parse(JSON.stringify(cp));assert.ok(++calls<2000);}const out=B.result(input,cp);out.repairScope=input.metadata.repairScope||null;const audit=A.assess(payload,out);if(!best||A.compare(audit,best.audit)<0)best={out,audit};if(audit.canApply||!payload.metadata.continuity?.affectedDates.length)break;}return best;}
 function build(s){return A.combine(s.months.map(month=>A.build({...s,months:[month],demand:s.demand.filter(d=>d.date.startsWith(month)),candidates:s.candidates.filter(d=>d.date.startsWith(month))})),s);}
+test('an incomplete but hard-rule-valid proposal becomes an improvement seed; changed permissions reject it',async()=>{
+ const s=snapshot(),first=await solve(build(s)),partial=first.out.preview.filter(a=>a.date<'2027-01-25'),next={...s,improveExisting:true,reference:{runId:'partial',preview:partial}},p=A.withContinuity(build(next),next);
+ assert.ok(p.metadata.continuity.repairSeed);assert.equal(p.metadata.continuity.reusable,null);
+ assert.ok(A.withContinuity(build(next),{...next,improveExisting:false}).metadata.continuity.repairSeed);
+ assert.ok(A.assess(p,p.metadata.continuity.repairSeed).open>0);
+ assert.equal(A.withContinuity(build(next),{...next,forceFullRebuild:true}).metadata.continuity.repairSeed,null);
+ const row=partial[0],invalid={...next,candidates:next.candidates.filter(a=>!(a.employeeId===row.employeeId&&a.date===row.date))};
+ assert.equal(A.withContinuity(build(invalid),invalid).metadata.continuity.repairSeed,null);
+});
 test('a still-valid best proposal is independently rechecked and reused without assignment changes',async()=>{const s=snapshot(),first=await solve(build(s));assert.equal(first.audit.canApply,true);const next={...s,reference:{runId:'best',preview:first.out.preview}},p=A.withContinuity(build(next),next);assert.ok(p.metadata.continuity.reusable);assert.equal(A.withContinuity(build(next),{...next,forceFullRebuild:true}).metadata.continuity.reusable,null);assert.deepEqual(p.metadata.continuity.reusable.preview.map(B.rowKey).sort(),first.out.preview.map(B.rowKey).sort());const audit=A.assess(p,p.metadata.continuity.reusable);assert.equal(audit.canApply,true);assert.equal(audit.continuity.total,0);assert.equal(audit.hours.targetAboveDemand,540-31*8);});
 test('fully staffed REVIEW proposal with only SOLL deviations is preserved but cannot be applied',async()=>{
  const s=snapshot(),first=await solve(build(s));s.policy.solid_planning_rules.monthlyShortfallTolerance=8;

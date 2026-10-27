@@ -52,6 +52,12 @@
   for(const list of peers.values()){const ratio=list.reduce((n,x)=>n+x.delta,0)/Math.max(1,list.reduce((n,x)=>n+x.e.target,0));for(const {e,delta} of list)e.balanceCarry=Math.max(-cap,Math.min(cap,(Number(e.balanceCarry)||0)+delta-e.target*ratio));}
   return {...source,base,capacities:[...capacities],criticalCapacities,_checkpointKey:'month:'+month};
  }
+ function seedRepair(payload,cp,preview){
+  if(!payload.adaptiveSearch||payload.months.length!==1||!E||cp.stage!=='month'||cp.solver)return false;
+  const input={...materialize(payload,cp),adaptiveSearch:true},exchange=E.start(input,preview);
+  if(exchange.status!=='searching')return false;
+  cp.stage='exchange';cp.exchange=exchange;cp.seededRepair=true;cp.pendingQuality={open:exchange.initialOpen};return true;
+ }
  function searchBudget(payload,cp,now=Date.now()){
   if(!payload.adaptiveSearch)return {deadlineAt:cp.deadlineAt||Infinity,allocationExpired:now>=(cp.deadlineAt||Infinity)};
   const months=payload.months.length;
@@ -152,5 +158,5 @@
   return {percent:position(.25+fraction*.7),label:'Monat '+(cp.monthIndex+1)+' von '+payload.months.length+' planen',detail:payload.months[cp.monthIndex]+' · '+(cp.solver?.iteration||0)+'/'+iterations+' Verteilungen geprüft'+(cp.solver?.phase==='fill'?' · '+cp.solver.cursor+'/'+cp.solver.order.length+' Schichtpositionen':'' )};
  }
  function result(payload,cp){if(cp.stage!=='done')throw Error('Der Auftrag ist noch nicht abgeschlossen.');return {version,preview:cp.proposed,quality:cp.quality,months:payload.months,metadata:payload.metadata};}
- return {version,pack,unpack,withServerWishes,withShiftDurationLimit,compactPayload,check,start,searchBudget,context,progress,result,unique,rowKey};
+ return {version,pack,unpack,withServerWishes,withShiftDurationLimit,compactPayload,check,start,seedRepair,searchBudget,context,progress,result,unique,rowKey};
 });
