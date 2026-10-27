@@ -4,6 +4,11 @@ const R=require('../assets/solid-planning-resume-v1.js');
 const loadHighs=require('highs'),runtime=loadHighs({print(){},printErr(){}});
 const policy={enabled:true,confirmedRulesVersion:2,timezone:'Europe/Berlin',monthlyHoursOnly:true,monthlyMaxHours:200,maxConsecutiveShifts:4,maxConsecutiveNightShifts:4,minFreeCalendarDays:2,minNightRecoveryCalendarDays:2,minBlockRestHours:48,maxCalendarWeekHours:55,threeNightBlockRecoveryFullCalendarDays:1};
 const times={O1:['16:00','01:00'],O3:['22:00','07:00'],OT:['07:00','16:00'],TL:['21:00','06:00']};
+test('fixed-variable elimination preserves constraint bounds, warm starts and full checkpoint indices',()=>{
+ const model={numCols:3,numRows:2,sense:1,colCost:[2,3,4],colLower:[0,0,0],colUpper:[1,1,1],integrality:[1,1,1],rowLower:[1,0],rowUpper:[1,2],matrix:{format:'csc',numCols:3,numRows:2,starts:[0,1,3,4],indices:[0,0,1,1],values:[1,1,2,1]}},before=JSON.stringify(model),r=E.compactModel(model,[1,0,0],[1,1,0],[1,0,0]);
+ assert.equal(r.model.numCols,1);assert.deepEqual(r.model.rowLower,[0,0]);assert.deepEqual(r.model.rowUpper,[0,2]);assert.deepEqual(r.warm,[0]);
+ assert.deepEqual(r.expand([1]),[1,1,0]);assert.deepEqual(r.expand([]),[]);assert.equal(JSON.stringify(model),before);
+});
 function small({cap=27,wish=false,protectedDuty=false}={}){
  const employees=['a','b','c'].map((id,i)=>({id,target:i?9:27,monthLimit:i?9:cap,calendarLimit:i?9:cap,maxMonthlyShifts:100,weeklyLimit:55,maxWeeklyHours:55,weeklyHours:40,maxConsecutive:4,employment:'Vollzeit',shifts:['TL'],role:'Sicherheitsmitarbeiter'}));
  if(protectedDuty)employees.push({...employees[0],id:'protected',target:9});

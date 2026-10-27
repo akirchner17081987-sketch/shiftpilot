@@ -63,6 +63,19 @@ function start(input,preview){
  if(!cols.length||cols.length>10000||new Set(cols.map(c=>String(c.group.employee.id))).size>24)cp.status='unsupported';
  return cp;
 }
+// Eliminate fixed columns exactly before entering the solver. The immutable
+// full model and its checkpoint indices stay unchanged; only this solve is
+// smaller. This leaves more of each CPU slice for actual replacement choices.
+function compactModel(model,lower,upper,incumbent){
+ const free=[],rowLower=model.rowLower.slice(),rowUpper=model.rowUpper.slice(),m=model.matrix;
+ for(let i=0;i<model.numCols;i++){
+  if(lower[i]!==upper[i]){free.push(i);continue;}
+  for(let k=m.starts[i];k<m.starts[i+1];k++){const r=m.indices[k],v=m.values[k]*lower[i];rowLower[r]-=v;rowUpper[r]-=v;}
+ }
+ const starts=[0],indices=[],values=[];
+ for(const i of free){for(let k=m.starts[i];k<m.starts[i+1];k++){indices.push(m.indices[k]);values.push(m.values[k]);}starts.push(indices.length);}
+ return{model:{...model,numCols:free.length,colCost:free.map(i=>model.colCost[i]),colLower:free.map(i=>lower[i]),colUpper:free.map(i=>upper[i]),integrality:free.map(i=>model.integrality[i]),rowLower,rowUpper,matrix:{...m,numCols:free.length,starts,indices,values}},warm:free.map(i=>incumbent[i]),expand:solution=>{if(solution.length!==free.length)return[];const all=incumbent.slice();free.forEach((i,n)=>all[i]=solution[n]);return all;}};
+}
 function context(input,cp){
  if(cp.version!==1)throw Error('Unbekannter Blocktausch-Zwischenstand.');
  if(cp.status==='unsupported')return{step:()=>false,result:()=>({preview:cp.original,quality:null})};
@@ -148,8 +161,9 @@ function context(input,cp){
   }
   const chosen=new Set(pool.slice(0,width).map(e=>String(e.id))),x=vector(cp.working),lower=lo.slice(),upper=hi.slice();
   for(let i=0;i<N;i++)if(!chosen.has(String(cols[i].group.employee.id)))lower[i]=upper[i]=x[i];for(const a of levels)if(!chosen.has(a.id))for(const i of a.indices)lower[i]=upper[i]=x[i];
-  let solver;try{solver=highs.createModel({...model,colLower:lower,colUpper:upper});solver.options.set({output_flag:false,presolve:'on',time_limit:Math.max(.05,Math.min(global ? .8 : .5,seconds)),mip_rel_gap:0,random_seed:cp.pass});solver.setSolution({colValue:x});solver.run();
-   if(solver.info.get('primal_solution_status')===2){const y=Array.from(solver.getSolution().colValue),selected=y.slice(0,N).flatMap((v,i)=>v>.5?[i]:[]),obj=v=>v.reduce((n,x,i)=>n+x*cost[i],0);
+  const reduced=cp.adaptive?compactModel(model,lower,upper,x):{model:{...model,colLower:lower,colUpper:upper},warm:x,expand:y=>y};
+  let solver;try{solver=highs.createModel(reduced.model);solver.options.set({output_flag:false,presolve:'on',time_limit:Math.max(.05,Math.min(global ? .8 : .5,seconds)),mip_rel_gap:0,random_seed:cp.pass});solver.setSolution({colValue:reduced.warm});solver.run();
+   if(solver.info.get('primal_solution_status')===2){const y=reduced.expand(Array.from(solver.getSolution().colValue)),selected=y.slice(0,N).flatMap((v,i)=>v>.5?[i]:[]),obj=v=>v.reduce((n,x,i)=>n+x*cost[i],0);
     const integral=y.length===cost.length&&y.every((v,i)=>Number.isFinite(v)&&(!integer[i]||Math.abs(v-Math.round(v))<1e-5)),checked=integral&&valid(selected);
     cp.lastTrial={integral,checked,objectiveImproved:obj(y)<=obj(x)+1e-5};
     if(checked&&cp.lastTrial.objectiveImproved){cp.working=selected;const q=score(selected),before=score(cp.best);if(better(q,before,cp.adaptive)){cp.best=selected.slice();cp.lastImprovement=cp.pass;cp.improvements++;}}
@@ -159,5 +173,5 @@ function context(input,cp){
  }
  return{step,result:initial,model,columns:cols.length};
 }
-return{start,context};
+return{start,context,compactModel};
 });
