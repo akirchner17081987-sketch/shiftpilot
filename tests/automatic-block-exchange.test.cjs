@@ -59,6 +59,13 @@ test('an improved incomplete round rebuilds the checked incumbent and an expired
  B.context(payload,saved).limitExchange();assert.equal(saved.stage,'done');assert.equal(B.result(payload,saved).quality[0].open,1);
  assert.equal(B.result(payload,saved).quality[0].blockExchange.closed,1);
 });
+test('the worker can request a shorter bonus solver pass without changing planning rules',()=>{
+ const f=small(),wire=B.pack(f.input),payload={version:1,months:['2027-01'],minimumInput:wire,monthInputs:[wire],metadata:{},adaptiveSearch:true,enhancedBlockSearch:true},cp=B.start(payload);
+ cp.stage='exchange';cp.exchange=E.start({...f.input,adaptiveSearch:true},f.preview);let options;
+ const fake={createModel(){return{options:{set(value){options=value;}},setSolution(){},run(){},info:{get:()=>0},dispose(){}};}};
+ B.context(payload,cp).exchangeStep(fake,.15);assert.equal(options.time_limit,.15);
+ assert.equal(cp.exchange.bestOpen,1);assert.equal(cp.exchange.pass,1);
+});
 test('normal bounded planning automatically starts and time-limits rule-checked block repairs',async()=>{
  const f=small(),input={...f.input,solidRules:{...f.input.solidRules,exactStaffing:{TL:1}}},wire={...B.pack(input),boundedSearch:true},payload={version:1,months:['2027-01'],minimumInput:wire,monthInputs:[wire],metadata:{},boundedSearch:true,enhancedBlockSearch:true};
  const cp=B.start(payload);cp.solver=R.start({...B.unpack(wire),_checkpointKey:'month:2027-01'},1);cp.solver.phase='done';cp.solver.best=[[1,0],[2,0]];

@@ -81,11 +81,10 @@ Deno.serve(async req => {
           const highs=await loadBlockSolver();
           if(boundedSearch&&Date.now()>=budget.deadlineAt-2000)run!.limitExchange();
           else {
-            const exchangeSlice=performance.now();
             run!.exchangeStep(highs);
             // Reuse the compiled neighbourhood for a second bounded pass when
             // there is CPU headroom; save both improvements in this invocation.
-            if(checkpoint.stage==='exchange'&&checkpoint.exchange.status==='searching'&&performance.now()-exchangeSlice<850){run!.exchangeStep(highs);steps++;}
+            if(checkpoint.stage==='exchange'&&checkpoint.exchange.status==='searching'&&performance.now()-preparationStarted<1000){run!.exchangeStep(highs,.15);steps++;}
           }
         }
         else run!.exchangeStep(null);
