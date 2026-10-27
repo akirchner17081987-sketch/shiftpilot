@@ -29,11 +29,20 @@ Am selben Tag wurde bereits unabhängig vom physischen Restore nachgewiesen:
 
 Diese Ergebnisse ersetzen keinen vollständigen Restore. Frühere logische Wiederherstellungs- und Datei-Hash-Tests sind in `backup-storage-restore-pruefung-2026-09-13.md` dokumentiert. Die Anforderungen an ein unabhängiges Storage-Backup bleiben in `storage-backup-target-architecture-2026-09-16.md` bestehen.
 
-### Vorbereiteter Abnahmelauf nach Kostenfreigabe
+### Warum der Direktklon noch nicht freigegeben ist
 
-1. Heutiges physisches Backup ausschließlich in ein neues, separat benanntes Testprojekt zurückspielen; produktive URLs, Auth-Konfiguration und aktive Dienste unverändert lassen.
-2. Fertigstellung und Herkunft des Restore im Dashboard protokollieren. Im Testprojekt ausschließlich lesend Migrationen, erwartete Tabellen, Datenmengen, referenzielle Konsistenz und RLS-Status prüfen; keine echten Benachrichtigungen oder produktiven Logins auslösen.
-3. Storage separat aus dem vorgesehenen unabhängigen Dateibackup wiederherstellen und mit `scripts/storage-restore-manifest.mjs` Anzahl, Pfad, Größe und SHA-256 vergleichen. Bei weiterhin leerem Personal-Bucket diesen Sachverhalt gesondert festhalten; ein leerer Bucket belegt keine Wiederherstellung realer Personaldateien.
-4. Ergebnis und verbleibende Konfigurationslücken dokumentieren. Testressource erst nach Prüfung der normalen Löschbestätigung entfernen. Kostenpflichtige Ressourcen nicht unbeaufsichtigt weiterbetreiben.
+Die aktuelle [Supabase-Dokumentation](https://supabase.com/docs/guides/platform/clone-project) erklärt, dass ein binärer Restore auch externe Erweiterungen und Cron-Jobs übernimmt. Diese starten unmittelbar nach Abschluss; ein Ausschließen oder vorab Pausieren ist im Restore-Dialog nicht möglich. Die reine Auswahl eines neuen Projekts stellt daher noch keine Isolation sicher.
+
+Die lesende Live-Abfrage am 27.10.2026 bestätigt zehn aktive SchichtFunk-Cron-Jobs, darunter Dispatches alle zehn Sekunden. Die versionierten Definitionen von `private.sf_dispatch_background_plans` und `private.sf_autonomy_tick` beziehungsweise ihren Helfern rufen die produktiven Edge Functions auf. Ein ungeprüfter physischer Klon könnte damit produktive Dienste auslösen.
+
+### Sicherer nächster Abnahmelauf
+
+1. Einen logischen Datenbankexport nach dem [offiziellen Backup-/Restore-Verfahren](https://supabase.com/docs/guides/platform/migrating-within-supabase/backup-restore) über einen berechtigten Datenbankzugang erstellen. Der bestehende Connector und die Dashboard-Anmeldung liefern hier weder eine herunterladbare physische Sicherung noch die für diesen CLI-Export nötige Datenbankverbindung. Keine Zugangsdaten oder Exporte im öffentlichen Repository speichern.
+2. Vor dem Einspielen externe Cron-Jobs, Webhooks und Wrapper im Export prüfen und deaktivieren beziehungsweise ausschließen. Die Zielumgebung muss vor dem ersten Ausführen produktive Aufrufe verhindern. Dafür keine produktiven Jobs pausieren oder produktive Tokens ändern.
+3. Schema, Rollen und Daten in die geprüfte isolierte Zielumgebung zurückspielen. Vollständigkeit des Exports, Datenmengen, referenzielle Konsistenz, Migrationen und RLS prüfen. Fehler dürfen nicht als erfolgreiche Teilwiederherstellung übergangen werden. Unterschiede des logischen Verfahrens, etwa bei Vault-Schlüsseln, gesondert dokumentieren.
+4. Storage separat aus dem vorgesehenen unabhängigen Dateibackup wiederherstellen und mit `scripts/storage-restore-manifest.mjs` Anzahl, Pfad, Größe und SHA-256 vergleichen. Ein weiterhin leerer Personal-Bucket belegt keine Wiederherstellung realer Personaldateien.
+5. Ergebnis und verbleibende Konfigurationslücken dokumentieren. Kostenpflichtige Zielressourcen nur nach konkreter Kostenfreigabe anlegen und ihre spätere Stilllegung vereinbaren.
+
+Ein erfolgreicher logischer Test wäre als solcher zu kennzeichnen. Der physische Tagesbackup-Restore darf erst als nachgewiesen gelten, wenn auch dafür eine geprüfte Isolation vorhanden ist.
 
 **Checklistenstatus:** Hilfe und Startkorrektur sind technisch umgesetzt. Der Punkt Datensicherung bleibt bis zum tatsächlichen Restore und separaten Storage-Nachweis offen. Die Veröffentlichung und abschließende Liveprüfung sind zusätzlich erforderlich, bevor die beiden Codepunkte als live erledigt gelten.
