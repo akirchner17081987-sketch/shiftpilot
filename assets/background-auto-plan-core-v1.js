@@ -37,7 +37,7 @@
   for(const input of [payload.minimumInput,...payload.monthInputs]){if(!Array.isArray(input.employees)||input.employees.length>300||!Array.isArray(input.groups)||input.groups.length>12000||!Array.isArray(input.candidates)||input.candidates.length>40000||!Array.isArray(input.capacities)||input.capacities.length>12000)throw Error('Der Planungsauftrag ist zu groß. Bitte einen kürzeren Zeitraum wählen.');const ids=new Set(input.employees.map(e=>String(e.id)));if(input.groups.some(g=>!ids.has(String(g.employeeId))||!Array.isArray(g.options)||g.options.length>128||g.options.some(o=>!Array.isArray(o)||o.length>6||o.some(i=>!Number.isInteger(i)||i<0||i>=input.candidates.length))))throw Error('Ungültige Mitarbeiter oder Schichtoptionen.');}
   return true;
  }
- function start(payload){check(payload);return {version,stage:payload.months.length===1?'month':'minimum',monthIndex:0,solver:null,minimum:[],proposed:[],quality:[],steps:0};}
+ function start(payload){check(payload);return {version,stage:payload.adaptiveSearch||payload.months.length===1?'month':'minimum',monthIndex:0,solver:null,minimum:[],proposed:[],quality:[],steps:0};}
  function materialize(payload,cp){
   if(cp.stage==='minimum'){
    const input=unpack(payload.minimumInput),critical=new Set(input.criticalCapacities.map(([key])=>key));
@@ -52,28 +52,75 @@
   for(const list of peers.values()){const ratio=list.reduce((n,x)=>n+x.delta,0)/Math.max(1,list.reduce((n,x)=>n+x.e.target,0));for(const {e,delta} of list)e.balanceCarry=Math.max(-cap,Math.min(cap,(Number(e.balanceCarry)||0)+delta-e.target*ratio));}
   return {...source,base,capacities:[...capacities],criticalCapacities,_checkpointKey:'month:'+month};
  }
+ function searchBudget(payload,cp,now=Date.now()){
+  if(!payload.adaptiveSearch)return {deadlineAt:cp.deadlineAt||Infinity,allocationExpired:now>=(cp.deadlineAt||Infinity)};
+  const months=payload.months.length;
+  cp.searchStartedAt ||= now;
+  // Durable, per-month allocation and repair budgets. A slow first month must
+  // not consume the later months' opportunity to be planned and repaired.
+  cp.deadlineAt ||= cp.searchStartedAt+Math.min(3000000,Math.max(1,months)*480000);
+  if(cp.budgetMonth!==cp.monthIndex){cp.budgetMonth=cp.monthIndex;cp.monthStartedAt=now;cp.monthDeadlineAt=Math.min(cp.deadlineAt,now+Math.min(480000,(cp.deadlineAt-now)/Math.max(1,months-cp.monthIndex)));}
+  const deadlineAt=cp.monthDeadlineAt;
+  return {deadlineAt,allocationExpired:now>=Math.min(cp.monthStartedAt+90000,cp.monthStartedAt+(deadlineAt-cp.monthStartedAt)*.3),expired:now>=deadlineAt};
+ }
  function context(payload,cp){
   if(cp.version!==version)throw Error('Der gespeicherte Auftrag verwendet eine andere Version. Bitte neu starten.');
   if(cp.stage==='done')return {step:()=>false,progress:()=>progress(payload,cp),result:()=>result(payload,cp)};
-  const input=materialize(payload,cp);
-  function acceptMonth(found){const month=payload.months[cp.monthIndex];cp.proposed=unique([...cp.proposed,...(payload.monthInputs[cp.monthIndex].solidRules.teamLeaderMinimumMonthlyHours!=null?[]:cp.minimum.filter(a=>a.date.startsWith(month))),...(payload.monthInputs[cp.monthIndex].reserved||[]),...found.preview]);cp.quality.push(found.quality);cp.exchange=null;cp.pendingQuality=null;cp.solver=null;if(++cp.monthIndex===payload.months.length){cp.stage='done';return true;}cp.stage='month';return false;}
+  const input={...materialize(payload,cp),adaptiveSearch:!!payload.adaptiveSearch};
+  if(payload.adaptiveSearch&&cp.fallbackMonth===cp.monthIndex)input.scopedBlockRecovery=true;
+  function acceptMonth(found){const month=payload.months[cp.monthIndex];cp.proposed=unique([...cp.proposed,...(payload.monthInputs[cp.monthIndex].solidRules.teamLeaderMinimumMonthlyHours!=null?[]:cp.minimum.filter(a=>a.date.startsWith(month))),...(payload.monthInputs[cp.monthIndex].reserved||[]),...found.preview]);cp.quality.push(found.quality);cp.exchange=null;cp.exchangeRounds=0;cp.exchangeHistory=null;cp.pendingQuality=null;cp.solver=null;if(++cp.monthIndex===payload.months.length){cp.stage='done';return true;}cp.stage='month';return false;}
   if(cp.stage==='exchange'){
    if(!E)throw Error('Die erweiterte Blocksuche ist nicht geladen.');const exchange=E.context(input,cp.exchange);
-   const finish=()=>{const found=exchange.result();return acceptMonth({...found,quality:found.quality||{...cp.pendingQuality,blockExchange:{status:cp.exchange.status,passes:cp.exchange.pass,reason:cp.exchange.reason||null}}});};
-   return{step:()=>false,exchangeStep:highs=>{if(cp.exchange.status==='searching')exchange.step(highs,payload.boundedSearch?.18:.5);if(cp.exchange.status!=='searching')return finish();return false;},limitExchange:()=>{cp.exchange.status='limited';cp.exchange.reason='Zeitbudget der automatischen Blockreparatur erreicht.';return finish();},stopExchange:reason=>{cp.exchange.status='unavailable';cp.exchange.reason=String(reason).slice(0,160);return finish();},progress:()=>progress(payload,cp),result:()=>result(payload,cp)};
+   const finish=()=>{
+    const found=exchange.result(),stats=found.quality?.blockExchange,history=cp.exchangeHistory||{passes:0,improvements:0,globalPasses:0,initialOpen:cp.exchange.initialOpen};
+    if(payload.adaptiveSearch&&found.quality?.open>0&&['limited','complete'].includes(cp.exchange.status)&&(cp.exchangeRounds||0)<2&&found.quality.open<cp.exchange.initialOpen&&!searchBudget(payload,cp).expired){
+     cp.exchangeHistory={...history,passes:history.passes+cp.exchange.pass,improvements:history.improvements+cp.exchange.improvements,globalPasses:history.globalPasses+(cp.exchange.globalPasses||0)};
+     cp.exchangeRounds=(cp.exchangeRounds||0)+1;cp.exchange=E.start(input,found.preview);cp.pendingQuality=found.quality;return false;
+    }
+    if(stats&&cp.exchangeHistory)found.quality={...found.quality,blockExchange:{...stats,passes:history.passes+stats.passes,improvements:history.improvements+stats.improvements,globalPasses:history.globalPasses+(stats.globalPasses||0),closed:Math.max(0,history.initialOpen-found.quality.open),rounds:(cp.exchangeRounds||0)+1}};
+    return acceptMonth({...found,quality:found.quality||{...cp.pendingQuality,blockExchange:{status:cp.exchange.status,passes:cp.exchange.pass,reason:cp.exchange.reason||null}}});
+   };
+   return{step:()=>false,exchangeStep:highs=>{if(cp.exchange.status==='searching')exchange.step(highs,payload.adaptiveSearch ? .5 : payload.boundedSearch ? .18 : .5);if(cp.exchange.status!=='searching')return finish();return false;},limitExchange:()=>{cp.exchange.status='limited';cp.exchange.reason='Zeitbudget der automatischen Blockreparatur erreicht.';return finish();},stopExchange:reason=>{cp.exchange.status='unavailable';cp.exchange.reason=String(reason).slice(0,160);return finish();},progress:()=>progress(payload,cp),result:()=>result(payload,cp)};
   }
   const jointNightSearch=payload.enhancedBlockSearch&&payload.months.length===1&&!input.criticalOnly&&input.solidRules.teamLeaderMinimumMonthlyHours==null&&input.criticalCapacities?.some(([key,n])=>n>0&&key.endsWith('|TL'));
-  cp.solver=cp.solver||R.start(input,payload.boundedSearch?1:jointNightSearch?4:Math.max(input.solidRules.teamLeaderMinimumMonthlyHours!=null&&!input.criticalOnly?24:12,Math.min(48,Number(input.searchIterations)||12)));let runner=R.context(input,cp.solver);
+  if(!cp.solver){
+   cp.solver=R.start(input,payload.boundedSearch?1:jointNightSearch?4:Math.max(input.solidRules.teamLeaderMinimumMonthlyHours!=null&&!input.criticalOnly?24:12,Math.min(48,Number(input.searchIterations)||12)));
+   // The constructive pass already ranks scarce mandatory resources first.
+   // Reserve the expensive joint search for complete blocks instead of spending
+   // its entire budget enumerating daily critical-beam prefixes.
+   if(payload.adaptiveSearch&&cp.stage==='month'&&S.confirmed(input.solidRules))cp.solver.phase='iteration-start';
+  }
+  let runner=R.context(input,cp.solver);
+  function beginExchange(found){
+   const exchange=E.start(input,found.preview);
+   if(exchange.status==='unsupported'){exchange.initialOpen=found.quality?.open||0;exchange.bestOpen=exchange.initialOpen;}
+   // Conditional staffing uses the existing checked block-replacement search
+   // when the interval model cannot represent this company's constraints.
+   if(payload.adaptiveSearch&&exchange.status==='unsupported'&&cp.fallbackMonth!==cp.monthIndex&&found.remaining){
+    cp.fallbackMonth=cp.monthIndex;cp.solver.refined=cp.solver.best||[];
+    cp.solver.refineRoots=found.remaining.filter(([,n])=>n>0).map(([key])=>key);
+    cp.solver.refineCursor=0;cp.solver.refinePass=0;cp.solver.refineImproved=false;cp.solver.phase='block-recovery';
+    return false;
+   }
+   cp.exchange=exchange;if(payload.boundedSearch&&!payload.adaptiveSearch)cp.exchange.maxPasses=Math.min(cp.exchange.maxPasses,40);
+   cp.pendingQuality=found.quality;cp.stage='exchange';cp.solver=null;return false;
+  }
   function step(){
    if(cp.stage==='done')return false;
    runner.step();cp.steps++;
    if(cp.solver.phase==='done'){
     const found=runner.result();
     if(cp.stage==='minimum'){cp.minimum=unique([...(payload.minimumInput.reserved||[]),...found.preview]);cp.stage='month';}
-    else if(payload.enhancedBlockSearch&&E&&(!payload.boundedSearch||found.quality?.open>0)&&(!payload.boundedSearch||!cp.deadlineAt||Date.now()<cp.deadlineAt-3000)){cp.exchange=E.start(input,found.preview);if(payload.boundedSearch)cp.exchange.maxPasses=Math.min(cp.exchange.maxPasses,40);cp.pendingQuality=found.quality;cp.stage='exchange';cp.solver=null;return false;}
+    else if(payload.enhancedBlockSearch&&E&&(!payload.boundedSearch||found.quality?.open>0)&&(!payload.boundedSearch||!cp.deadlineAt||Date.now()<cp.deadlineAt-3000)){return beginExchange(found);}
     else if(acceptMonth(found))return true;
     cp.solver=null;return false; // Rebuild only at the next invocation, with the new immutable stage input.
    }return true;
+  }
+  function improvePartial(){
+   if(cp.stage!=='month'||!payload.adaptiveSearch||!E)return false;
+   const found=runner.finishEarly();
+   if(!(found.quality?.open>0))return acceptMonth(found);
+   return beginExchange(found);
   }
   function finishEarly(){
    if(cp.stage==='minimum'){
@@ -85,18 +132,18 @@
    const found=runner.finishEarly();
    return acceptMonth(found);
   }
-  return {step,finishEarly,progress:()=>progress(payload,cp),result:()=>result(payload,cp)};
+  return {step,improvePartial,finishEarly,progress:()=>progress(payload,cp),result:()=>result(payload,cp)};
  }
  function progress(payload,cp){
   if(cp.stage==='done'){const missing=(cp.quality||[]).reduce((n,q)=>n+(q?.critical||0),0);return missing?{percent:100,label:'Entwurf mit offenen Pflichtdiensten',detail:missing+' Pflichtpositionen sind noch unbesetzt. Der Entwurf muss geprüft werden.'}:{percent:100,label:'Planung abgeschlossen',detail:'Die Vorschläge sind zur Prüfung bereit.'};}
   if(cp.stage==='minimum'){const total=cp.solver?.components?.reduce((n,c)=>n+c.keys.length,0)||1,done=cp.solver?.components?.slice(0,cp.solver.component).reduce((n,c)=>n+c.keys.length,0)+(cp.solver?.key||0);return {percent:Math.min(15,Math.floor((done||0)/total*15)),label:'Pflichtbesetzung verteilen',detail:'Pflichtschichten · '+(done||0)+'/'+total+' Pflichtpositionen geprüft'+(cp.solver?.criticalWork?' · Varianten '+cp.solver.criticalWork.index+'/'+cp.solver.beam.length:'' )};}
   const position=fraction=>Math.min(99,15+Math.floor((cp.monthIndex+fraction)/payload.months.length*84));
-  if(cp.stage==='exchange')return{percent:position(.99),label:'Arbeitsblöcke gemeinsam optimieren',detail:payload.months[cp.monthIndex]+' · '+cp.exchange.pass+'/'+cp.exchange.maxPasses+' Tauschvarianten geprüft · bester geprüfter Vorschlag bleibt erhalten'};
+  if(cp.stage==='exchange')return{percent:position(.99),label:'Arbeitsblöcke gemeinsam optimieren',detail:payload.months[cp.monthIndex]+' · '+cp.exchange.pass+'/'+cp.exchange.maxPasses+' Tauschvarianten geprüft'+(cp.exchange.adaptive?' · '+(cp.exchange.bestOpen??cp.exchange.initialOpen)+' Pflichtpositionen offen · '+Math.max(0,(cp.exchange.initialOpen||0)-(cp.exchange.bestOpen??cp.exchange.initialOpen))+' geschlossen':'')+' · bester geprüfter Vorschlag bleibt erhalten'};
   if(cp.solver?.phase==='refine'||cp.solver?.phase==='block-recovery')return {percent:position(.95),label:'Arbeitsblöcke nachbessern',detail:payload.months[cp.monthIndex]+' · '+(cp.solver.refineCursor||0)+'/'+(cp.solver.refineRoots?.length||0)+' offene Positionen geprüft'};
   if(cp.solver?.phase==='critical'){const solver=cp.solver,total=solver.components?.reduce((n,c)=>n+c.keys.length,0)||1,done=(solver.components?.slice(0,solver.component).reduce((n,c)=>n+c.keys.length,0)||0)+(solver.key||0),work=solver.criticalWork,partial=work?work.index/Math.max(1,solver.beam?.length||1):0;return{percent:position(.25*(done+partial)/total),label:'Pflichtbesetzung im Monat prüfen',detail:payload.months[cp.monthIndex]+' · '+done+'/'+total+' Pflichtpositionen geprüft'+(work?' · Varianten '+work.index+'/'+solver.beam.length:'')};}
   const iterations=cp.solver?.iterations||12,fraction=(cp.solver?.iteration||0)/iterations;
   return {percent:position(.25+fraction*.7),label:'Monat '+(cp.monthIndex+1)+' von '+payload.months.length+' planen',detail:payload.months[cp.monthIndex]+' · '+(cp.solver?.iteration||0)+'/'+iterations+' Verteilungen geprüft'+(cp.solver?.phase==='fill'?' · '+cp.solver.cursor+'/'+cp.solver.order.length+' Schichtpositionen':'' )};
  }
  function result(payload,cp){if(cp.stage!=='done')throw Error('Der Auftrag ist noch nicht abgeschlossen.');return {version,preview:cp.proposed,quality:cp.quality,months:payload.months,metadata:payload.metadata};}
- return {version,pack,unpack,withServerWishes,withShiftDurationLimit,compactPayload,check,start,context,progress,result,unique,rowKey};
+ return {version,pack,unpack,withServerWishes,withShiftDurationLimit,compactPayload,check,start,searchBudget,context,progress,result,unique,rowKey};
 });

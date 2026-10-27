@@ -123,3 +123,21 @@ test('a multi-month deadline returns a clearly limited result for every requeste
  assert.equal(cp.stage,'done');assert.deepEqual(C.result(p,cp).months,p.months);
  assert.equal(cp.quality.length,2);assert.ok(cp.quality.every(q=>q.searchLimited));
 });
+test('adaptive jobs reserve repair time and restart the allocation budget for every month after JSON recovery',()=>{
+ const p={...payload(),adaptiveSearch:true,months:['2027-01','2027-02']};p.monthInputs.push(C.pack(input('2027-02')));const cp=C.start(p),begin=100000;
+ let budget=C.searchBudget(p,cp,begin);assert.equal(budget.expired,false);assert.equal(budget.allocationExpired,false);
+ const resumed=JSON.parse(JSON.stringify(cp));budget=C.searchBudget(p,resumed,begin+90001);
+ assert.equal(budget.allocationExpired,true);assert.equal(budget.expired,false);assert.ok(budget.deadlineAt>begin+300000);
+ resumed.monthIndex=1;budget=C.searchBudget(p,resumed,begin+350000);
+ assert.equal(budget.allocationExpired,false);assert.equal(budget.expired,false);
+ assert.ok(budget.deadlineAt>=begin+700000);
+});
+test('a partial allocation enters joint block repair instead of being returned as the final month',()=>{
+ const p={...payload(),adaptiveSearch:true,boundedSearch:true,enhancedBlockSearch:true},cp=C.start(p);
+ for(const wire of [p.minimumInput,...p.monthInputs])wire.solidRules={...wire.solidRules,confirmedRulesVersion:2,minFreeCalendarDays:2,minNightRecoveryCalendarDays:2,maxConsecutiveNightShifts:4,maxCalendarWeekHours:55};
+ C.searchBudget(p,cp);const runner=C.context(p,cp);runner.step();runner.improvePartial();
+ assert.equal(cp.stage,'exchange');assert.equal(cp.monthIndex,0);assert.equal(cp.quality.length,0);
+ assert.equal(cp.exchange.adaptive,true);assert.equal(cp.exchange.maxPasses,96);
+ const saved=JSON.parse(JSON.stringify(cp));C.context(p,saved).limitExchange();
+ assert.equal(saved.stage,'done');assert.ok(C.result(p,saved).quality[0].open>0);
+});

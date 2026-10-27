@@ -47,17 +47,18 @@ Deno.serve(async req => {
     const policy = await admin.from("company_compliance_policy").select("standard_max_shift_hours").eq("company_id", job.payload.metadata.company).single();
     if (policy.error || !policy.data) throw new Error("Die Schichtdauer des Unternehmens konnte nicht geladen werden.");
     // Shared search capability; eligibility and hard rules come from this job's company.
-    // New jobs use one broad, rule-checked allocation. A legacy run which has
-    // already exceeded the budget returns its best saved draft on the next claim.
+    // New jobs reserve a separate durable repair budget after initial allocation.
+    // Every accepted repair still passes the same company-specific hard rules.
     const startedAt=Date.parse(job.started_at||"");
     const boundedSearch = checkpoint ? checkpoint.boundedSearch === true || Number.isFinite(startedAt)&&Date.now()-startedAt>120000 : true;
     const scopedBlockRecovery = !boundedSearch;
     const prepared = core.withShiftDurationLimit(core.withServerWishes(job.payload, job.server_wishes), Number(policy.data.standard_max_shift_hours));
     const repairLevel=checkpoint?.repairLevel||0;
     const scoped=A.repairPayload(prepared,repairLevel);
-    const input = { ...scoped, boundedSearch, enhancedBlockSearch:true, minimumInput: { ...scoped.minimumInput, scopedBlockRecovery, boundedSearch, criticalBeamWidth:boundedSearch?16:undefined }, monthInputs: scoped.monthInputs.map((month: any) => ({ ...month, scopedBlockRecovery, boundedSearch, criticalBeamWidth:boundedSearch?16:undefined })) };
+    const input = { ...scoped, boundedSearch, adaptiveSearch:true, enhancedBlockSearch:true, minimumInput: { ...scoped.minimumInput, scopedBlockRecovery, boundedSearch, criticalBeamWidth:boundedSearch?16:undefined }, monthInputs: scoped.monthInputs.map((month: any) => ({ ...month, scopedBlockRecovery, boundedSearch, criticalBeamWidth:boundedSearch?16:undefined })) };
     checkpoint = checkpoint || core.start(input);
-    if(boundedSearch){checkpoint.boundedSearch=true;checkpoint.deadlineAt ||= (Number.isFinite(startedAt)?startedAt:Date.now())+105000;}
+    if(boundedSearch)checkpoint.boundedSearch=true;
+    const budget=core.searchBudget(input,checkpoint);
     const reuse=prepared.metadata.continuity?.reusable&&!checkpoint.repairBest&&!checkpoint.skipReuse;
     const run = reuse?null:core.context(input, checkpoint), slice = performance.now();
     preparationMs=Math.round(slice-preparationStarted);computeStarted=slice;
@@ -75,20 +76,27 @@ Deno.serve(async req => {
       // One solver slice per durable invocation. Its bounded synchronous CPU
       // time leaves headroom for cold starts, model checks and serialization.
       try{
-        if(boundedSearch&&Date.now()>=checkpoint.deadlineAt-2000)run!.limitExchange();
+        if(boundedSearch&&Date.now()>=budget.deadlineAt-2000)run!.limitExchange();
         else if(checkpoint.exchange.status==='searching'){
           const highs=await loadBlockSolver();
-          if(boundedSearch&&Date.now()>=checkpoint.deadlineAt-2000)run!.limitExchange();
-          else run!.exchangeStep(highs);
+          if(boundedSearch&&Date.now()>=budget.deadlineAt-2000)run!.limitExchange();
+          else {
+            const exchangeSlice=performance.now();
+            run!.exchangeStep(highs);
+            // Reuse the compiled neighbourhood for a second bounded pass when
+            // there is CPU headroom; save both improvements in this invocation.
+            if(checkpoint.stage==='exchange'&&checkpoint.exchange.status==='searching'&&performance.now()-exchangeSlice<850){run!.exchangeStep(highs);steps++;}
+          }
         }
         else run!.exchangeStep(null);
       }catch(error){run!.stopExchange((error as Error)?.message||'Zusätzliche Suche nicht verfügbar; bester Vorschlag bleibt erhalten.');}
       steps++;
-    }else if(boundedSearch&&(checkpoint.stage==='month'||checkpoint.stage==='minimum')&&Date.now()>=checkpoint.deadlineAt){
+    }else if(boundedSearch&&(checkpoint.stage==='month'||checkpoint.stage==='minimum')&&budget.expired){
       checkpoint.timeLimited=true;
-      for(let n=0;n<=input.months.length&&checkpoint.stage!=='done';n++){
-        const partial=core.context(input,checkpoint);partial.finishEarly();steps++;
-      }
+      run!.finishEarly();steps++;
+    }else if(boundedSearch&&(checkpoint.stage==='month'||checkpoint.stage==='minimum')&&budget.allocationExpired&&!['refine','block-recovery'].includes(checkpoint.solver?.phase)){
+      if(checkpoint.stage==='month')run!.improvePartial();else run!.finishEarly();
+      steps++;
     }else {
       if(checkpoint.solver?.phase==='fill')console.info(JSON.stringify({event:'auto_plan_fill_enter',job_id:id,revision:job.revision,cursor:checkpoint.solver.cursor,records:checkpoint.solver.records?.length||0}));
       do {
@@ -96,7 +104,7 @@ Deno.serve(async req => {
       steps++; if (!run!.step()) break;
       // One bounded exchange per invocation keeps CPU use below the Edge limit.
       if (recovering || checkpoint.solver?.phase === "block-recovery" || checkpoint.stage==='exchange') break;
-      } while (checkpoint.stage !== "done" && performance.now() - slice < (checkpoint.solver?.phase==='fill'?300:700) && steps < (checkpoint.solver?.phase==='fill'?64:1000));
+      } while (checkpoint.stage !== "done" && performance.now() - slice < (checkpoint.solver?.phase==='fill'?600:700) && steps < (checkpoint.solver?.phase==='fill'?512:1000));
     }
     progress = core.progress(input,checkpoint);
     if (checkpoint.stage === "done") {
@@ -112,7 +120,7 @@ Deno.serve(async req => {
       }else output=best.result;
       }
     }
-    if(output&&!output.repairScope?.reused&&input.monthInputs.some((month:any)=>month.solidRules?.teamLeaderShiftBalance?.enabled)&&(!boundedSearch||Date.now()<(checkpoint.deadlineAt||0)+3000)){
+    if(output&&!output.repairScope?.reused&&input.monthInputs.some((month:any)=>month.solidRules?.teamLeaderShiftBalance?.enabled)&&(!boundedSearch||Date.now()<budget.deadlineAt+3000)){
       try{
         const highs=await loadBlockSolver();
         const candidate={...output,preview:output.preview.slice(),quality:output.quality.map((q:any)=>({...q}))};

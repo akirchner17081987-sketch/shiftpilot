@@ -22,11 +22,42 @@ test('reserved duty repeated in the preview is counted once while repairing othe
 test('personal hour ceilings, confirmed wishes and indivisible required blocks remain binding',async()=>{for(const options of [{cap:18},{wish:true}]){const f=small(options),{result}=await optimize(f.input,f.preview);assert.equal(result.quality.open,1);assert.equal(result.preview.filter(a=>a.employeeId==='a').length,0);assert.equal(result.preview.length,2);}});
 test('published previous-month nights remain immutable and their January hours count toward the calendar cap',async()=>{const f=small();f.input.base=[29,30,31].map(n=>({employeeId:'a',date:'2026-12-'+n,type:'TL',start:'21:00',end:'06:00',resource:'2026-12-'+n+'|TL',status:'PUBLISHED',_dbStatus:'PUBLISHED'}));const saved=JSON.stringify(f.input.base),blocked=await optimize(f.input,f.preview);assert.equal(blocked.result.quality.open,1);f.input.employees[0].calendarLimit=36;const {result}=await optimize(f.input,f.preview);assert.equal(result.quality.open,0);assert.equal(JSON.stringify(f.input.base),saved);assert.deepEqual(S.errors(f.input.employees[0],[...f.input.base,...result.preview],policy),[]);});
 test('non-integral or invalid solver output never replaces the checked incumbent',()=>{const f=small(),cp=E.start(f.input,f.preview),before=JSON.stringify(cp.best),c=E.context(f.input,cp),fake={createModel(model){return{options:{set(){}},setSolution(){},run(){},info:{get:()=>2},getSolution:()=>({colValue:model.colCost.map(()=>.75)}),dispose(){}};}};c.step(fake);assert.equal(JSON.stringify(cp.best),before);assert.equal(c.result().quality.open,1);});
+test('adaptive repair reassigns a complete blocked chain and keeps published duties fixed',async()=>{
+ const f=small({protectedDuty:true});f.input.adaptiveSearch=true;
+ const {result,cp}=await optimize(f.input,f.preview);
+ assert.equal(result.quality.open,0);assert.equal(result.quality.blockExchange.adaptive,true);
+ assert.ok(cp.improvements>0);assert.equal(f.input.base[0]._dbStatus,'PUBLISHED');
+ assert.ok(result.preview.every(a=>a.employeeId==='a'));
+});
+test('approved fragments joined by the allocator remain movable even when the capped options omit their combined block',()=>{
+ const f=small();f.input.adaptiveSearch=true;const a=f.input.groups[0];a.fullWorkRest=false;
+ a.options.push([a.options[0][0]],[a.options[0][1]]);
+ const preview=[...a.options[0].slice(0,2),f.preview[1]],before=JSON.stringify(f.input),cp=E.start(f.input,preview);
+ assert.equal(cp.status,'searching');assert.ok(!cp.excluded.includes('a'));
+ assert.equal(JSON.stringify(f.input),before);
+ assert.deepEqual(E.context(f.input,JSON.parse(JSON.stringify(cp))).result().preview.map(B.rowKey).sort(),preview.map(B.rowKey).sort());
+});
+test('adaptive stagnation releases the whole crew and malformed numeric solver results cannot replace the incumbent',()=>{
+ const f=small();f.input.adaptiveSearch=true;const cp=E.start(f.input,f.preview);cp.pass=31;cp.lastImprovement=0;
+ const before=JSON.stringify(cp.best);let unlocked=false;
+ const fake={createModel(model){unlocked=model.colLower.slice(0,3).every(v=>v===0)&&model.colUpper.slice(0,3).every(v=>v===1);return{options:{set(){}},setSolution(){},run(){},info:{get:()=>2},getSolution:()=>({colValue:model.colCost.map(()=>NaN)}),dispose(){}};}};
+ E.context(f.input,cp).step(fake);assert.equal(unlocked,true);assert.equal(cp.globalPasses,1);
+ assert.equal(JSON.stringify(cp.best),before);assert.equal(cp.lastTrial.integral,false);
+});
 test('unsupported dynamic coverage keeps the original proposal and does not silently relax rules',()=>{const f=small();f.input.solidRules={...policy,conditionalStaffing:[{shift:'OT',sourceShift:'O3'}]};const cp=E.start(f.input,f.preview),r=E.context(f.input,cp).result();assert.equal(cp.status,'unsupported');assert.deepEqual(r.preview.map(B.rowKey),f.preview.map(B.rowKey));});
 test('conservatively fixed employees stay excluded after checkpoint reconstruction',async()=>{const f=small();f.preview.push({...f.preview[0],employeeId:'a',date:'2027-01-10',resource:'2027-01-10|TL'});f.input.capacities.push(['2027-01-10|TL',1]);const cp=JSON.parse(JSON.stringify(E.start(f.input,f.preview)));assert.ok(cp.excluded.includes('a'));const c=E.context(f.input,cp);c.step(await runtime);const r=c.result();assert.deepEqual(r.preview.filter(a=>a.employeeId==='a').map(B.rowKey),f.preview.filter(a=>a.employeeId==='a').map(B.rowKey));assert.equal(r.quality.open,1);});
 test('whole-block search explicitly balances staff with identical targets and shift permissions',async()=>{const f=small(),employees=f.input.employees.slice(0,2).map(e=>({...e,target:36,monthLimit:36,calendarLimit:36})),row=(id,n)=>({employeeId:id,date:'2027-01-0'+n,type:'TL',start:'21:00',end:'06:00',resource:'2027-01-0'+n+'|TL'});f.input.employees=employees;f.input.groups=[{id:'a',employee:employees[0],options:[[4,5,6].map(n=>row('a',n)),[4,5].map(n=>row('a',n))]},{id:'b',employee:employees[1],options:[[row('b',7)],[6,7].map(n=>row('b',n))]}];f.input.capacities=[4,5,6,7].map(n=>['2027-01-0'+n+'|TL',1]);const {result}=await optimize(f.input,[...[4,5,6].map(n=>row('a',n)),row('b',7)]);assert.equal(result.quality.open,0);assert.equal(result.quality.peerSpread,0);assert.equal(result.quality.peerExcess,0);assert.equal(result.preview.filter(a=>a.employeeId==='a').length,2);});
 test('durable background jobs expose and checkpoint the additional search; runtime failure retains the proposal',async()=>{const f=small(),wire=B.pack(f.input),payload={version:1,months:['2027-01'],minimumInput:wire,monthInputs:[wire],metadata:{},enhancedBlockSearch:true};const cp=B.start(payload);cp.stage='exchange';cp.exchange=E.start(f.input,f.preview);cp.pendingQuality={open:1,critical:0};assert.match(B.progress(payload,cp).label,/gemeinsam/);const run=B.context(payload,cp);run.exchangeStep(await runtime);while(cp.stage==='exchange'){cp.exchange.maxPasses=1;B.context(payload,cp).exchangeStep(await runtime);}assert.equal(cp.stage,'done');assert.equal(B.result(payload,cp).quality[0].open,0);
  const failed=B.start(payload);failed.stage='exchange';failed.exchange=E.start(f.input,f.preview);failed.pendingQuality={open:1,critical:0};B.context(payload,failed).stopExchange('unavailable');assert.equal(failed.stage,'done');assert.equal(B.result(payload,failed).quality[0].open,1);assert.equal(B.result(payload,failed).quality[0].blockExchange.status,'unavailable');
+});
+test('an improved incomplete round rebuilds the checked incumbent and an expired budget stops further rounds',()=>{
+ const f=small(),wire=B.pack(f.input),payload={version:1,months:['2027-01'],minimumInput:wire,monthInputs:[wire],metadata:{},adaptiveSearch:true,enhancedBlockSearch:true};
+ const cp=B.start(payload);B.searchBudget(payload,cp);cp.stage='exchange';
+ cp.exchange=E.start({...f.input,adaptiveSearch:true},f.preview);cp.exchange.status='limited';cp.exchange.initialOpen=2;cp.pendingQuality={open:1};
+ B.context(payload,cp).exchangeStep(null);assert.equal(cp.stage,'exchange');assert.equal(cp.exchangeRounds,1);assert.equal(cp.pendingQuality.open,1);
+ const saved=JSON.parse(JSON.stringify(cp));saved.monthDeadlineAt=Date.now()-1;
+ B.context(payload,saved).limitExchange();assert.equal(saved.stage,'done');assert.equal(B.result(payload,saved).quality[0].open,1);
+ assert.equal(B.result(payload,saved).quality[0].blockExchange.closed,1);
 });
 test('normal bounded planning automatically starts and time-limits rule-checked block repairs',async()=>{
  const f=small(),input={...f.input,solidRules:{...f.input.solidRules,exactStaffing:{TL:1}}},wire={...B.pack(input),boundedSearch:true},payload={version:1,months:['2027-01'],minimumInput:wire,monthInputs:[wire],metadata:{},boundedSearch:true,enhancedBlockSearch:true};
