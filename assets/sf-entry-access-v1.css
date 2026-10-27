@@ -37,7 +37,7 @@
 #sfEntryOverlay.sf-entry-access-enabled #sfAuthBackdrop .sf-auth-card::after{animation:none;display:none}
 #sfEntryOverlay.sf-entry-access-enabled #sfAuthBackdrop .sf-auth-head h2{font-size:25px;font-weight:500}
 #sfEntryOverlay.sf-entry-access-enabled #sfAuthBackdrop .sf-auth-legal{display:none}
-#sfEntryOverlay .sf-entry-legal{position:absolute;right:36px;bottom:24px;display:flex;gap:18px;font-size:11px}
+#sfEntryOverlay .sf-entry-legal{position:absolute;z-index:2;right:36px;bottom:24px;display:flex;gap:18px;font-size:11px}
 #sfEntryOverlay .sf-entry-legal a{color:#91a7b1;text-decoration:none}
 #sfEntryOverlay .sf-entry-legal a:hover{color:#62dbcb}
 #sfEntryOverlay.sf-entry-access-enabled .sf-entry-brand-note{left:36px;right:auto;text-align:left}

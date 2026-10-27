@@ -4,6 +4,7 @@ on:
     branches: [main, codex/ionos-migration]
     paths:
       - assets/sf-entry-access-v1.js
+      - assets/sf-entry-access-v1.css
       - assets/supabase-auth-v1.js
       - assets/supabase-password-reset-v1.js
       - impressum.html
@@ -14,6 +15,7 @@ on:
   pull_request:
     paths:
       - assets/sf-entry-access-v1.js
+      - assets/sf-entry-access-v1.css
       - assets/supabase-auth-v1.js
       - assets/supabase-password-reset-v1.js
       - impressum.html
