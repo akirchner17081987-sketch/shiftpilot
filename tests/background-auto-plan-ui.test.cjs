@@ -51,3 +51,12 @@ test('an unresponsive saved-result review terminates and allows a fresh attempt'
  await h.c.SFMonthOptimizer.restoreBackground(job);assert.equal(h.c.SFMonthOptimizer.isBusy(),false);assert.equal(h.c.SFAutoPlanProgress.isBusy(),false);assert.ok(h.controls.slice(0,3).every(n=>!n.disabled),'period controls are enabled again');assert.match(h.c.toast.copy,/dauert zu lange/);
  await h.c.SFMonthOptimizer.restoreBackground(job);assert.equal(h.c.SFMonthOptimizer.isBusy(),false);
 });
+
+test('late fingerprint responses cannot import a saved result after company or account changes',async()=>{
+ for(const accountChange of [false,true]){
+  const h=harness();h.c.document.hidden=true;const planning=h.c.SFMonthOptimizer.optimize();for(let n=0;n<50&&!h.payload();n++)await delay(3);h.finishServer();h.c.document.hidden=false;h.events.get('visibilitychange')();await planning;const job=h.job();h.c.changeAutoPlanPeriod();
+  let complete;const old=h.c.SFBackend.client.rpc;h.c.SFBackend.client.rpc=(name,args)=>name==='preview_planning_period'?new Promise(resolve=>complete=resolve):old(name,args);
+  const review=h.c.SFMonthOptimizer.restoreBackground(job);for(let n=0;n<20&&!complete;n++)await delay(1);assert.ok(complete);if(accountChange)h.c.SFBackend.user={id:'new-account'};else h.c.SFBackend.companyId='new-company';complete({data:{fingerprint:job.result.metadata.fingerprint}});await review;
+  assert.equal(h.c.SFMonthOptimizer.getResult(),null);assert.equal(h.c.SFMonthOptimizer.isBusy(),false);assert.equal(h.run('autoPlanPreview.length'),0);assert.ok(h.controls.slice(0,3).every(n=>!n.disabled));
+ }
+});
