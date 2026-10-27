@@ -376,7 +376,7 @@
       v.id = "view-marketplace";
       v.className = "view sf-market-view";
       v.innerHTML =
-        '<div class="page-head"><div><div class="eyebrow">ZUSAMMENARBEIT</div><h1>Schicht-Marktplatz</h1><p>Angebote, Übernahmewünsche und Planerfreigaben zentral verwalten.</p></div><button class="ghost" id="sfMarketRefresh">↻ Aktualisieren</button></div><div class="stats sf-market-kpis" id="sfMarketKpis"></div><div class="sf-market-tabs" id="sfMarketTabs"><button data-filter="active">Aktuell</button><button data-filter="available">Verfügbar</button><button data-filter="review">Zu prüfen</button><button data-filter="history">Verlauf</button></div><section class="sf-market"><div class="sf-market-toolbar"><input id="sfMarketSearch" type="search" placeholder="Mitarbeiter, Schicht oder Status suchen …"><span class="sf-market-count" id="sfMarketResultCount">0 Einträge</span></div><div class="sf-market-list" id="sfMarketDashboardList" style="margin-top:11px"></div></section>';
+        '<div class="page-head"><div><div class="eyebrow">ZUSAMMENARBEIT</div><h1>Schicht-Marktplatz</h1><p>Angebote, Übernahmewünsche und Planerfreigaben zentral verwalten.</p></div><button class="ghost" id="sfMarketRefresh">↻ Aktualisieren</button></div><div class="stats sf-market-kpis" id="sfMarketKpis"></div><div class="sf-market-tabs" id="sfMarketTabs"><button data-filter="active">Aktuell</button><button data-filter="available">Verfügbar</button><button data-filter="review">Zu prüfen</button><button data-filter="history">Verlauf</button></div><section class="sf-market"><div class="sf-market-toolbar"><input id="sfMarketSearch" type="search" aria-label="Marktplatz nach Mitarbeiter, Schicht oder Status durchsuchen" placeholder="Mitarbeiter, Schicht oder Status suchen …"><span class="sf-market-count" id="sfMarketResultCount">0 Einträge</span></div><div class="sf-market-list" id="sfMarketDashboardList" style="margin-top:11px"></div></section>';
       content.appendChild(v);
       const footer=document.createElement('footer');footer.className='sf-market-footer';footer.innerHTML='<button type="button" class="sf-market-withdraw-all" id="sfMarketWithdrawAll">Alle Angebote zurückziehen</button>';v.querySelector('section.sf-market').appendChild(footer);
       footer.querySelector('button').onclick=withdrawAll;
@@ -440,7 +440,7 @@
                 `<article class="sf-market-row" data-id="${x.id}"><div><b>${esc(x.shift_label || x.shift_code)} · ${esc(dt(x.starts_at))}${x.ends_at ? '–' + esc(dt(x.ends_at)) : ''}</b><small>${esc(x.offered_by)}${x.claimed_by ? " → " + esc(x.claimed_by) : x.kind === 'OPEN_POSITION' ? ` · ${x.remaining_count} Plätze offen` : " · noch nicht übernommen"}${x.reason ? " · " + esc(x.reason) : ""}</small>${extraWarning(x) ? `<small class="sf-market-block">${esc(extraWarning(x))}</small>` : ''}</div><div><span class="sf-market-state">${esc(status(x.status))}</span>${x.colleague_comment ? `<small>${esc(x.colleague_comment)}</small>` : ""}</div><div class="sf-market-actions">${reviewButton(x)}</div></article>`,
             )
             .join("")
-        : '<div class="sf-market-empty">Für diesen Filter sind keine Einträge vorhanden.</div>';
+        : '<div class="sf-market-empty">Für diesen Filter sind keine Einträge vorhanden. Offene Dienste kannst du im Dienstplan für den Marktplatz anbieten. Mitarbeiterangebote und Übernahmewünsche erscheinen hier zur Prüfung.</div>';
     bindReviews(view);
   }
   function renderManager() {

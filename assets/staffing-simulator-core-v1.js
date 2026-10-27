@@ -6,15 +6,16 @@
  const valid=d=>/^\d{4}-\d{2}-\d{2}$/.test(d||'')&&Number.isFinite(Date.parse(d+'T12:00Z'))&&plus(d,0)===d;
  const days=(from,to)=>{const a=[];for(let d=from;d<=to;d=plus(d,1))a.push(d);return a};
  function number(v,min,max,label){const n=Number(v);if(!Number.isFinite(n)||n<min||n>max)throw Error(label+' liegt außerhalb des erlaubten Bereichs.');return n}
+ function weeklyMaximum(data,id){const e=data.employees.find(e=>e.id===id)||{};return Number(S.employeeRules(e,data.rules).maxCalendarWeekHours)||40}
  function validate(data,config){
   if(!S.confirmed(data.rules))throw Error('Der Simulator benötigt die bestätigten Erholungsregeln (Version 2).');
   if(!valid(data.from)||!valid(data.to)||data.to<data.from||Date.parse(data.to)-Date.parse(data.from)>366*86400000)throw Error('Ungültiger Simulationszeitraum.');
   const c=clone(config),ids=new Set(data.employees.map(e=>e.id));c.name=String(c.name||'Variante').trim().slice(0,80);
   c.hires=number(c.hires||0,0,20,'Neue Mitarbeiter');if(!Number.isInteger(c.hires))throw Error('Mitarbeiterzahl muss ganzzahlig sein.');
   if(c.hires&&!ids.has(c.templateId))throw Error('Bitte ein verfügbares Referenzprofil für die Einstellungen wählen.');
-  c.hireHours=number(c.hireHours??180,1,190,'Vertragsstunden neuer Mitarbeiter');c.hireWeekly=number(c.hireWeekly??40,1,40,'Wochenmaximum neuer Mitarbeiter');
+  c.hireHours=number(c.hireHours??180,1,400,'Vertragsstunden neuer Mitarbeiter');c.hireWeekly=number(c.hireWeekly??40,1,c.hires?weeklyMaximum(data,c.templateId):80,'Wochenmaximum neuer Mitarbeiter');
   for(const k of ['hourCost','hireHourCost'])c[k]=c[k]===''||c[k]==null?null:number(c[k],0,500,'Arbeitgeberkosten pro Stunde');
-  if(c.changeId){if(!ids.has(c.changeId))throw Error('Das gewählte Vertragsprofil ist nicht mehr verfügbar.');c.changeHours=number(c.changeHours,1,190,'Geänderte Vertragsstunden');c.changeWeekly=number(c.changeWeekly??40,1,40,'Geändertes Wochenmaximum');}
+  if(c.changeId){if(!ids.has(c.changeId))throw Error('Das gewählte Vertragsprofil ist nicht mehr verfügbar.');c.changeHours=number(c.changeHours,1,400,'Geänderte Vertragsstunden');c.changeWeekly=number(c.changeWeekly??40,1,weeklyMaximum(data,c.changeId),'Geändertes Wochenmaximum');}
   c.extraCount=number(c.extraCount||0,0,20,'Zusätzlicher Bedarf');if(!Number.isInteger(c.extraCount))throw Error('Zusätzlicher Bedarf muss ganzzahlig sein.');
   if(c.extraCount&&!data.models.some(t=>t.code===c.extraShift&&t.active!==false))throw Error('Bitte ein aktives Schichtmodell für den Mehrbedarf wählen.');
   if(c.outageId){if(!ids.has(c.outageId))throw Error('Das gewählte Ausfallprofil ist nicht mehr verfügbar.');if(!valid(c.outageFrom)||!valid(c.outageTo)||c.outageFrom>c.outageTo||c.outageFrom<data.from||c.outageTo>data.to)throw Error('Der angenommene Ausfall muss innerhalb des Simulationszeitraums liegen.');}
@@ -88,5 +89,5 @@
   const required=coverage.reduce((n,r)=>n+r.required,0),open=coverage.reduce((n,r)=>n+r.missing,0),costKnown=people.every(e=>(e.hypothetical?c.hireHourCost:c.hourCost)!==null),cost=costKnown?round(rows.reduce((n,r)=>n+r.target*(r.hypothetical?c.hireHourCost:c.hourCost),0)):null;
   return {name:c.name,config:c,people:people.length,hires:c.hires,required,open,coverage:required?(required-open)/required:null,openHours:round(coverage.reduce((n,r)=>n+r.missing*r.hours,0)),target:round(rows.reduce((n,r)=>n+r.target,0)),planned:round(rows.reduce((n,r)=>n+r.planned,0)),missing:round(rows.reduce((n,r)=>n+r.missing,0)),cost,rows,byMonth,preview,diagnoses,asOf:data.as_of,fingerprint:data.fingerprint,version:1};
  }
- return {validate,staff,eligibility,cells,contractTarget,absenceInterval,run,days,monthNext};
+ return {validate,weeklyMaximum,staff,eligibility,cells,contractTarget,absenceInterval,run,days,monthNext};
 });

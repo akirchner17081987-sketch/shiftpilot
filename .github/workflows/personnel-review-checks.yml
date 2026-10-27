@@ -1,0 +1,42 @@
+name: Personal hours and usability
+on:
+  pull_request:
+    paths:
+      - 'assets/staffing-simulator-*.js'
+      - assets/employee-management-v2.js
+      - assets/absence-management-v3.js
+      - assets/qr-independent-report-v1.js
+      - assets/shift-handover-v1.js
+      - assets/datev-lodas-export-v1.js
+      - assets/supabase-time-tracking-v1.js
+      - tests/personnel-review.test.cjs
+      - .github/workflows/personnel-review-checks.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: personnel-review-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  personal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: node --test tests/personnel-review.test.cjs tests/staffing-simulator.test.cjs tests/time-period-presets.test.mjs tests/datev-lodas-format.test.mjs tests/shift-handover.test.cjs
+      - run: npx playwright install --with-deps chromium
+      - run: |
+          node tests/browser/employee-profile-qa.cjs
+          node tests/browser/staffing-simulator-qa.cjs
+          node tests/browser/qr-period-views-qa.cjs
+          node tests/browser/shift-handover-qa.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: personnel-review-results
+          path: test-results/

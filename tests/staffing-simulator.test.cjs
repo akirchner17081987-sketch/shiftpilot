@@ -1,5 +1,18 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),C=require('../assets/staffing-simulator-core-v1.js'),S=require('../assets/solid-planning-core-v1.js'),{fixture,variant}=require('./fixtures/staffing-simulator-data.cjs');
 const fast={iterations:1};
+test('scenario weekly limits follow company and OT policy rather than a fixed 40-hour cap',()=>{
+ const d=fixture();d.rules.maxCalendarWeekHours=55;
+ const config={...variant(),hires:1,templateId:'e0',hireWeekly:55};
+ assert.equal(C.validate(d,config).hireWeekly,55);
+ assert.equal(C.validate(d,{...variant(),changeId:'e0',changeHours:180,changeWeekly:55}).changeWeekly,55);
+ assert.throws(()=>C.validate(d,{...config,hireWeekly:56}),/Wochenmaximum/);
+ d.employees[0].shifts=['OT1','OT2'];d.rules.otOnlyMaxCalendarWeekHours=50;
+ assert.equal(C.weeklyMaximum(d,'e0'),50);
+ assert.throws(()=>C.validate(d,config),/Wochenmaximum/);
+ d.rules.maxCalendarWeekHours=32;
+ assert.doesNotThrow(()=>C.validate(d,variant()),'Unused baseline hiring fields cannot block a low-hour company');
+ assert.throws(()=>C.validate(d,{...config,templateId:'e1',hireWeekly:40}),/Wochenmaximum/);
+});
 test('isolated scenario preserves source and enforces recovery/month/week boundaries',async()=>{const data=fixture(),original=JSON.stringify(data),r=await C.run(data,variant(),fast);assert.equal(JSON.stringify(data),original);assert.ok(r.open>0);assert.ok(r.preview.length>0);for(const e of data.employees){assert.deepEqual(S.errors(e,r.preview,data.rules),[]);for(const month of ['2027-01','2027-02','2027-03'])assert.ok(r.preview.filter(a=>a.employeeId===e.id&&a.date.startsWith(month)).length<=23)}assert.equal(r.cost,54000);assert.equal(r.byMonth.length,3)});
 test('additional staff have unique hypothetical IDs, no personal authorizations, and separate cost',async()=>{const d=fixture(),r=await C.run(d,{...variant(),hires:2,templateId:'e0',hireHours:144,hireWeekly:32},fast);assert.equal(r.people,6);assert.equal(r.cost,54000+2*144*3*26);assert.equal(r.rows.filter(x=>x.hypothetical).length,2);assert.ok(r.preview.some(a=>a.employeeId.startsWith('simulation-hire-')));assert.ok(C.staff(d,{...variant(),hires:1,templateId:'e0',hireHours:180,hireWeekly:40}).at(-1).personnelNo==='')});
 test('missing costs remain unknown instead of zero',async()=>{const d=fixture();d.to='2027-01-31';const r=await C.run(d,{...variant(),hourCost:''},fast);assert.equal(r.cost,null);const z=await C.run(d,{...variant(),hourCost:0},fast);assert.equal(z.cost,0)});
