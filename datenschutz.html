@@ -18,7 +18,7 @@
   <article class="card">
     <div class="eyebrow">Datenschutz</div>
     <h1>Datenschutzerklärung</h1>
-    <p class="muted">Stand: 21. Oktober 2026</p>
+    <p class="muted">Stand: 28. Oktober 2026</p>
     <div class="notice">Diese Datenschutzerklärung beschreibt den derzeitigen technischen und funktionalen Stand von SchichtFunk. Bei kundenspezifischen Verarbeitungen von Beschäftigtendaten ist grundsätzlich das jeweilige Unternehmen bzw. der jeweilige Arbeitgeber datenschutzrechtlich verantwortlich; SchichtFunk verarbeitet diese Daten im Rahmen der bereitgestellten SaaS-Funktionen als Auftragsverarbeiter, soweit dies vertraglich so vereinbart ist.</div>
 
     <nav class="toc" aria-label="Inhaltsübersicht">
@@ -49,8 +49,8 @@
 
     <section id="hosting">
       <h2>3. Hosting, Backend und technische Infrastruktur</h2>
-      <h3>IONOS Deploy Now und vorübergehende Rückfallumgebung</h3>
-      <p>Die Weboberfläche und PWA von SchichtFunk werden nach Abschluss der kontrollierten Umstellung über IONOS Deploy Now bereitgestellt. Während der technischen Migration kann Vercel vorübergehend parallel als bestehende Bereitstellungs- und Rückfallumgebung erreichbar bleiben. Der Anbieter, über den eine Seite tatsächlich abgerufen wird, kann technisch notwendige Verbindungs- und Protokolldaten verarbeiten, insbesondere IP-Adresse, Datum und Uhrzeit, aufgerufene Ressource, Browser-/Geräteinformationen sowie technische Fehler- und Sicherheitsdaten. Zweck ist die zuverlässige und sichere Bereitstellung des Dienstes.</p>
+      <h3>IONOS Deploy Now und weitere Bereitstellungsumgebung</h3>
+      <p>Die Weboberfläche und PWA von SchichtFunk werden über IONOS Deploy Now bereitgestellt. Eine bestehende Vercel-Bereitstellung kann als technische Rückfallumgebung erreichbar sein. Der Anbieter, über den eine Seite tatsächlich abgerufen wird, kann technisch notwendige Verbindungs- und Protokolldaten verarbeiten, insbesondere IP-Adresse, Datum und Uhrzeit, aufgerufene Ressource, Browser-/Geräteinformationen sowie technische Fehler- und Sicherheitsdaten. Zweck ist die zuverlässige und sichere Bereitstellung des Dienstes.</p>
       <h3>Supabase</h3>
       <p>Das SchichtFunk-Backend nutzt Supabase für Datenbank- und Authentifizierungsfunktionen sowie – soweit eingesetzt – serverseitige Funktionen und Echtzeitfunktionen. Das produktive Supabase-Projekt ist in der Region <strong>eu-central-1</strong> eingerichtet. Verarbeitet werden dort insbesondere Benutzer-, Mandanten-, Personal-, Dienstplan-, Arbeitszeit-, Abwesenheits-, Benachrichtigungs- und Auditdaten.</p>
       <h3>Verortung von Unternehmensstandorten</h3>
@@ -96,11 +96,14 @@
       <p>Für die Zeiterfassung verarbeitet SchichtFunk insbesondere geplante und tatsächliche Beginn-/Endzeiten, Pausen, bestätigte Arbeitszeit, Status, Korrekturen, Prüfschritte und Stundenkontowerte.</p>
       <p>Bei der QR-Zeiterfassung werden je nach Vorgang insbesondere Benutzer-/Mitarbeiterzuordnung, Terminalbezug, Aktion (z. B. Ein-/Auschecken), Zeitpunkt und technische Prüfmerkmale verarbeitet. Die QR-Funktion dient der eindeutigen Zuordnung von Zeiterfassungsereignissen zum berechtigten Konto und zum jeweiligen Terminal. Nach aktuellem Produktstand ist für die Zeiterfassung keine GPS-Ortung erforderlich.</p>
       <p>Die Verarbeitung dient der Arbeitszeitdokumentation, Lohnvorbereitung, internen Kontrolle und der Erfüllung der vom jeweiligen Kunden festgelegten arbeits- und vergütungsbezogenen Prozesse.</p>
+      <p>Bei der QR-Zeiterfassung kann die Summe der erfassten Pausen einer Schicht automatisiert geprüft werden. Überschreitet sie 60 Minuten, wird eine Benachrichtigung im Portal für aktive Administratoren und Teamleitungen des betreffenden Unternehmens erstellt. Sie enthält die Zuordnung zur betroffenen Person und Schicht sowie den Hinweis auf die Überschreitung. Diese Meldung wird nicht als Push-Nachricht oder E-Mail versendet. Die Prüfung unterstützt die betriebliche Klärung durch berechtigte Personen; der jeweilige Arbeitgeber bestimmt die Verwendung und die hierfür geltenden Regeln.</p>
     </section>
 
     <section id="funktionen">
       <h2>9. Schichtänderungen, Tausch, Marktplatz, Auto-Planung und Störfall-Autopilot</h2>
       <p>SchichtFunk verarbeitet im Rahmen dieser Funktionen Anfragen, Entscheidungen, Kommentare, betroffene Schichten, beteiligte Mitarbeiter, Statusinformationen und Zeitpunkte. Die Daten dienen der Koordination von Schichtänderungen, Tauschvorgängen, offenen Schichten und betrieblichen Störungen.</p>
+      <h3>Interne Direktnachrichten</h3>
+      <p>SchichtFunk bietet persönliche Textnachrichten zwischen berechtigten Nutzern desselben Unternehmens zur betrieblichen Kommunikation an. Dabei werden insbesondere Absender, Empfänger, Nachrichteninhalt, Versandzeit und gegebenenfalls Lesestatus verarbeitet. Die Inhalte sind für die jeweiligen Gesprächspartner zugänglich; es besteht kein allgemeiner Verwaltungszugriff auf fremde Gespräche. Die Verarbeitung erfolgt für den jeweiligen Arbeitgeber nach dessen Vorgaben. Vertrauliche oder besonders sensible Angaben sollten nur übermittelt werden, soweit dies für den jeweiligen Zweck erforderlich und zulässig ist.</p>
       <p>Auto-Planung und Störfall-Autopilot verwenden regelbasierte Kriterien wie Verfügbarkeit, Schichtfreigaben, Abwesenheiten, Soll-/Ist-Besetzung und Arbeitszeitvorgaben, um Vorschläge zu erzeugen. Nach aktuellem Produktstand werden dadurch keine ausschließlich automatisierten Entscheidungen getroffen, die gegenüber einer Person ohne menschliche Entscheidung rechtliche Wirkung im Sinne des Art. 22 DSGVO entfalten.</p>
       <p>Für gesetzliche Feiertage und Stundenkonto-Berechnungen kann die im Mandanten konfigurierte Region bzw. das Bundesland verarbeitet werden. Im aktuellen SchichtFunk-Produktivmandanten ist Sachsen (<code>DE-SN</code>) als Feiertagsregion hinterlegt.</p>
     </section>
@@ -134,7 +137,7 @@
       <ul>
         <li>berechtigte Nutzer des jeweiligen Kundenmandanten entsprechend ihrer Rolle,</li>
         <li>IONOS für das primäre statische Webhosting und die Auslieferung der PWA,</li>
-        <li>Vercel vorübergehend als bestehende Bereitstellungs- und technische Rückfallumgebung,</li>
+        <li>Vercel als bestehende Bereitstellungs- und technische Rückfallumgebung,</li>
         <li>Supabase für Backend-, Datenbank-, Authentifizierungs- und Serverfunktionen,</li>
         <li>Push-Infrastrukturanbieter des jeweiligen Browsers bzw. Betriebssystems bei aktivierten Push-Mitteilungen,</li>
         <li>rechtlich oder technisch erforderliche Dienstleister, Berater oder Behörden, soweit eine entsprechende Verpflichtung oder Berechtigung besteht.</li>
@@ -148,6 +151,7 @@
       <ul>
         <li><strong>Kundendaten und Beschäftigtendaten:</strong> nach Weisung und Löschkonzept des jeweiligen verantwortlichen Kunden sowie nach den für ihn geltenden Aufbewahrungs- und Nachweispflichten.</li>
         <li><strong>Konten und Berechtigungen:</strong> solange das Konto bzw. Vertragsverhältnis aktiv ist und anschließend nur soweit noch für Abwicklung, Sicherheit oder gesetzliche Nachweise erforderlich.</li>
+        <li><strong>Direktnachrichten und portalinterne Meldungen:</strong> nach Zweck, Vorgaben und Löschkonzept des verantwortlichen Kunden sowie gegebenenfalls geltenden Aufbewahrungs- und Nachweispflichten.</li>
         <li><strong>Push-Abonnements:</strong> bis zur Deaktivierung bzw. solange der technische Endpunkt gültig ist; dauerhaft ungültige Endpunkte können automatisiert entfernt werden.</li>
         <li><strong>Support- und E-Mail-Daten:</strong> bis die Anfrage abschließend bearbeitet ist und keine gesetzlichen oder berechtigten Aufbewahrungsgründe mehr bestehen.</li>
         <li><strong>Audit- und Sicherheitsdaten:</strong> nach den im Sicherheits- und Löschkonzept definierten Erforderlichkeits- und Nachweisfristen.</li>
