@@ -51,7 +51,18 @@ begin
  perform private.sf_notify_long_qr_breaks();
  select count(*) into count_ from public.notifications where kind='QR_BREAK_OVER_LIMIT' and entity_id=assign_;
  if count_<>2 then raise exception 'assigned QR flow failed, got %',count_; end if;
+ perform set_config('role','authenticated',true);
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',admin_,'role','authenticated','aal','aal2')::text,true);
+ select count(*) into count_ from public.notifications where kind='QR_BREAK_OVER_LIMIT' and entity_id=assign_;
+ if count_<>1 then raise exception 'administrator notification not visible through RLS'; end if;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',lead_,'role','authenticated','aal','aal2')::text,true);
+ select count(*) into count_ from public.notifications where kind='QR_BREAK_OVER_LIMIT' and entity_id=assign_;
+ if count_<>1 then raise exception 'team lead notification not visible through RLS'; end if;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',outsider_,'role','authenticated','aal','aal2')::text,true);
+ select count(*) into count_ from public.notifications where kind='QR_BREAK_OVER_LIMIT' and entity_id=assign_;
+ if count_<>0 then raise exception 'other company can see notification through RLS'; end if;
+ perform set_config('role','postgres',true);
 end
 $test$;
 rollback;
-select 'boundary, recipients, company isolation, no push, duplicates, split/ongoing and assigned QR passed' as result;
+select 'boundary, recipients, RLS isolation, no push, duplicates, split/ongoing and assigned QR passed' as result;
