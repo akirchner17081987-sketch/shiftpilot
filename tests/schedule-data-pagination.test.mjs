@@ -3,8 +3,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 
-const source=fs.readFileSync(new URL('../assets/supabase-data-v1.js',import.meta.url),'utf8');
-function harness({failPage=false,failPrivate=false,logoutDuringPrivate=false,role='OWNER',accessRole,permissions=[],failAudit=false}={}){
+const read=name=>fs.readFileSync(new URL('../'+name,import.meta.url),'utf8');
+const source=read('assets/supabase-data-v1.js');
+function harness({failPage=false,failPrivate=false,logoutDuringPrivate=false,role='OWNER',accessRole,permissions=[],failAudit=false,shortDelete=false}={}){
   const rows=Array.from({length:1562},(_,i)=>({id:String(i).padStart(6,'0'),company_id:'target',employee_id:'person',legacy_id:'shift-'+i,status:'DRAFT',shift_code:'FD',starts_at:i<1251?'2026-12-01T05:00:00Z':'2027-01-01T05:00:00Z',ends_at:i<1251?'2026-12-01T13:00:00Z':'2027-01-01T13:00:00Z',version:1}));
   rows.push({...rows[0],id:'999998',company_id:'other'}, {...rows[0],id:'999999',status:'CANCELLED'});
   const calls=[],deletes=[];
@@ -12,9 +13,9 @@ function harness({failPage=false,failPrivate=false,logoutDuringPrivate=false,rol
   c.window=c;c.SFBackend={companyId:'target',user:{id:'manager'},ready:true,role,accessRole,accessPermissions:permissions};
   c.SFBackend.client={rpc:async(name,args)=>{if(name==='company_private_client_configuration'){if(logoutDuringPrivate){c.SFBackend.clearCompanyPrivateConfiguration();c.SFBackend.companyId=null;}return {data:{helpArticles:{auto:{internal:'private-test'}}},error:failPrivate?{message:'Private configuration unavailable'}:null};}return {data:name==='employee_roster_generation'?0:[],error:null};},from(table){
     const filters=[],orders=[];let count=null,mode='read',payload;
-    const q={select(){return q},eq(k,v){filters.push([k,'eq',v]);return q},neq(k,v){filters.push([k,'neq',v]);return q},gt(k,v){filters.push([k,'gt',v]);return q},order(k){orders.push(k);return q},limit(n){count=n;return q},range(first,last){count=last-first+1;filters.push(['range','slice',first]);return q},upsert(p){mode='upsert';payload=p;return q},update(){mode='update';return q},delete(){mode='delete';return q},single(){return q},then(resolve,reject){return Promise.resolve().then(()=>{
+    const q={select(){return q},eq(k,v){filters.push([k,'eq',v]);return q},in(k,v){filters.push([k,'in',v]);return q},neq(k,v){filters.push([k,'neq',v]);return q},gt(k,v){filters.push([k,'gt',v]);return q},order(k){orders.push(k);return q},limit(n){count=n;return q},range(first,last){count=last-first+1;filters.push(['range','slice',first]);return q},upsert(p){mode='upsert';payload=p;return q},update(){mode='update';return q},delete(){mode='delete';return q},single(){return q},then(resolve,reject){return Promise.resolve().then(()=>{
       calls.push({table,filters:[...filters],orders:[...orders],count,mode});
-      if(mode==='delete'){deletes.push(filters.find(f=>f[0]==='id')[2]);return {data:[],error:null}}
+      if(mode==='delete'){const ids=filters.find(f=>f[0]==='id')[2];deletes.push(...ids);return {data:(shortDelete?ids.slice(0,-1):ids).map(id=>({id})),error:null}}
       if(mode==='upsert')return {data:Array.isArray(payload)?payload.map(p=>({...p,id:rows.find(r=>r.legacy_id===p.legacy_id)?.id})):[],error:null};
       if(mode==='update')return {data:[],error:null};
       if(table==='audit_events'&&failAudit)return {data:null,error:{code:'57014',message:'canceling statement due to statement timeout'}};
@@ -76,4 +77,53 @@ test('owner and administrator startup retain their authorized audit query and it
   const failed=harness({role,accessRole:role,failAudit:true});
   await assert.rejects(failed.c.SFBackend.hydrate(),{code:'57014',message:'canceling statement due to statement timeout'});
  }
+});
+
+test('large draft deletion is tenant-scoped, batched and leaves retained duties untouched',async()=>{
+  const {c,calls,deletes}=harness();await c.SFBackend.hydrate();
+  c.assignments=c.assignments.filter((_,i)=>i>=1251);await c.SFBackend.sync();
+  assert.equal(c.SFBackend.lastSyncError,null);assert.equal(deletes.length,1251);
+  assert.equal(new Set(deletes).size,1251);
+  const batches=calls.filter(q=>q.table==='shift_assignments'&&q.mode==='delete');
+  assert.equal(batches.length,13);
+  for(const q of batches){assert.ok(q.filters.some(f=>f[0]==='company_id'&&f[2]==='target'));assert.ok(q.filters.some(f=>f[0]==='status'&&f[2]==='DRAFT'));assert.ok(q.filters.find(f=>f[0]==='id')[2].length<=100);}
+});
+
+
+test('cloud deletion reports success after the database confirms every requested row',async()=>{
+  const {c}=harness(),toasts=[];c.showSaveToast=(...args)=>toasts.push(args);await c.SFBackend.hydrate();
+  c.assignments=c.assignments.filter(a=>a._dbId!=='001561');await c.SFBackend.sync();
+  assert.equal(c.SFBackend.lastSyncError,null);assert.ok(toasts.some(t=>t[0]==='Löschung gespeichert'));
+});
+
+test('incomplete database deletion reports an error rather than a success',async()=>{
+  const {c}=harness({shortDelete:true}),toasts=[];c.showSaveToast=(...args)=>toasts.push(args);await c.SFBackend.hydrate();
+  c.assignments=c.assignments.filter(a=>a._dbId!=='001561');await c.SFBackend.sync();
+  assert.match(c.SFBackend.lastSyncError.message,/Nicht alle Schichtentwürfe/);
+  assert.ok(toasts.some(t=>t[0]==='Cloud-Synchronisierung fehlgeschlagen'));
+  assert.ok(!toasts.some(t=>t[0]==='Löschung gespeichert'));
+});
+
+test('quick deletion does not claim cloud success before synchronization',()=>{
+  const messages=[],c={window:{SFBackend:{ready:true}},assignments:[{id:'a',_dbId:'db-a',date:'2026-12-01',type:'TEST',employeeId:'e'}],employees:[{id:'e',first:'Test',last:'Person'}],confirm:()=>true,showSaveToast:(...args)=>messages.push(args),saveAll(){},Date};
+  vm.runInNewContext(read('assets/assignment-quick-delete-v1.js'),c);c.window.spQuickDeleteAssignment('a');
+  assert.equal(messages[0][0],'Löschung wird gespeichert');assert.equal(c.assignments.length,0);
+});
+
+test('a second synchronization is queued while another save or month reset is in progress',async()=>{
+  const {c,calls}=harness();let queued=0;c.SFBackend.scheduleSync=()=>queued++;
+  c.SFBackend.syncing=true;await c.SFBackend.sync();assert.equal(queued,1);assert.equal(calls.length,0);
+  c.SFBackend.syncing=false;c.SFBackend.scheduleResetting=true;await c.SFBackend.sync();assert.equal(queued,2);assert.equal(calls.length,0);
+});
+
+test('quick delete routes published shifts to the protected change workflow without removing them',()=>{
+  const messages=[],opened=[],c={window:{SFBackend:{ready:true},editAssignment:id=>opened.push(id)},assignments:[{id:'a',date:'2026-12-01',type:'TEST',employeeId:'e',_dbStatus:'PUBLISHED'}],employees:[],confirm:()=>{throw Error('Must not confirm direct deletion')},showSaveToast:(...args)=>messages.push(args),Date};
+  vm.runInNewContext(read('assets/assignment-quick-delete-v1.js'),c);c.window.spQuickDeleteAssignment('a');
+  assert.equal(c.assignments.length,1);assert.deepEqual(opened,['a']);assert.equal(messages[0][0],'Veröffentlichte Schicht');
+});
+
+test('repeated quick-delete clicks cannot start a second deletion for the same draft',()=>{
+  let saves=0,confirms=0;const c={window:{SFBackend:{ready:true}},assignments:[{id:'a',date:'2026-12-01',type:'TEST',employeeId:'e'}],employees:[{id:'e',first:'Test',last:'Person'}],confirm:()=>{confirms++;return true},showSaveToast(){},saveAll(){saves++},Date};
+  vm.runInNewContext(read('assets/assignment-quick-delete-v1.js'),c);c.window.spQuickDeleteAssignment('a');c.window.spQuickDeleteAssignment('a');
+  assert.equal(confirms,1);assert.equal(saves,1);assert.equal(c.assignments.length,0);
 });
