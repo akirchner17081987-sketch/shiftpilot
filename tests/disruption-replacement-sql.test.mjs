@@ -85,12 +85,31 @@ test('LIST resolves the employee join without a record collision and still enfor
 }finally{await db.close();}});
 
 
-test('replacement offer never discloses another employee’s absence reason or private notes',async()=>{const db=await setup();try{
- const a=await source(db),i=await one(db,`select manager_create_disruption($1,$2,'SICKNESS','Confidential health information') id`,[company,a.id]);
+test('simulated sickness: before/after privacy, unchanged offer, isolated access and successful acceptance',async(t)=>{const db=await setup();try{
+ const secret='SIMULATION: Vertrauliche Krankheitsnotiz',a=await source(db);
+ const i=await one(db,`select manager_create_disruption($1,$2,'SICKNESS',$3) id`,[company,a.id,secret]);
  await db.query('select manager_send_disruption_offers($1,$2)',[i.id,[portal]]);
+ // Reproduce the production implementation before the correction on this isolated database.
+ await db.exec(fn(read('supabase/migrations/20260929214843_time_role_employee_boundaries.sql'),'private.employee_list_disruption_offers_impl'));
+ await db.query(`select set_config('request.jwt.claim.sub',$1,false)`,[portalUser]);await db.exec('set role authenticated');
+ const before=(await db.query('select * from employee_list_disruption_offers()')).rows;
+ assert.equal(before.length,1);assert.equal(before[0].incident_type,'SICKNESS');assert.equal(before[0].note,secret);
+ await db.exec('reset role');await db.exec(read('supabase/migrations/20261028184359_disruption_offer_privacy.sql'));await db.exec('set role authenticated');
+ const after=(await db.query('select * from employee_list_disruption_offers()')).rows;
+ assert.equal(after.length,1);assert.equal(after[0].incident_type,'OTHER');assert.equal(after[0].note,'');
+ for(const key of ['offer_id','offer_status','incident_id','shift_code','starts_at','ends_at','expires_at','employee_comment'])assert.deepEqual(after[0][key],before[0][key],key);
+ assert.ok(!JSON.stringify(after).includes(secret));
+ // Unrelated active employee has no offer and cannot answer this one.
+ await db.exec('reset role');await db.query('update employees set auth_user_id=$1 where id=$2',[actor,target]);
+ await db.query(`select set_config('request.jwt.claim.sub',$1,false)`,[actor]);await db.exec('set role authenticated');
+ assert.deepEqual((await db.query('select * from employee_list_disruption_offers()')).rows,[]);
+ await assert.rejects(db.query(`select * from employee_respond_disruption_offer($1,'ACCEPT','Simulation')`,[after[0].offer_id]),/gehört nicht/);
  await db.query(`select set_config('request.jwt.claim.sub',$1,false)`,[portalUser]);
- await db.exec('set role authenticated');
- const rows=(await db.query('select * from employee_list_disruption_offers()')).rows;
- assert.equal(rows.length,1);assert.equal(rows[0].incident_type,'OTHER');assert.equal(rows[0].note,'');assert.equal(rows[0].shift_code,'T');
- assert.ok(!JSON.stringify(rows).includes('Confidential health information'));
+ const accepted=await one(db,`select * from employee_respond_disruption_offer($1,'ACCEPT','Simulation zugesagt')`,[after[0].offer_id]);assert.equal(accepted.status,'ACCEPTED');
+ await db.exec('reset role');
+ assert.equal((await one(db,'select employee_id from shift_assignments where id=$1',[a.id])).employee_id,portal);
+ assert.equal((await one(db,'select status from disruption_incidents where id=$1',[i.id])).status,'RESOLVED');
+ assert.equal((await one(db,'select incident_type,note from disruption_incidents where id=$1',[i.id])).note,secret,'manager documentation remains intact');
+ const notices=(await db.query('select title,message from notifications')).rows;assert.ok(notices.length>0);assert.ok(!JSON.stringify(notices).includes(secret));
+ t.diagnostic('Simulation: vorher SICKNESS + vertrauliche Notiz; nachher OTHER + leere Notiz; Angebot unverändert; fremde Person gesperrt; Zusage übernimmt Dienst und löst Störfall.');
  }finally{await db.close();}});
