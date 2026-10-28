@@ -1,4 +1,6 @@
 -- Synthetic accounts and companies only. No test data is committed.
+-- Health-category decisions require the current owner/MFA authorization.
+-- A time-only identity may be rejected by the active employee guard first.
 BEGIN;
 DO $test$
 DECLARE
@@ -11,11 +13,11 @@ BEGIN
     INSERT INTO auth.users(id,aud,role,email,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)
     VALUES(uid,'authenticated','authenticated','sf-absence-rollback-'||uid::text||'@example.invalid','{}','{}',now(),now());
   END LOOP;
-  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',planner_user,'role','authenticated')::text,true);
+  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',planner_user,'role','authenticated','aal','aal2')::text,true);
   PERFORM set_config('request.jwt.claim.sub',planner_user::text,true);
   INSERT INTO public.companies(name,created_by) VALUES('SF Absence Rollback QA',planner_user) RETURNING id INTO company;
   INSERT INTO public.companies(name,created_by) VALUES('SF Absence Foreign Rollback QA',foreign_user) RETURNING id INTO other_company;
-  INSERT INTO public.company_members(company_id,user_id,role,status) VALUES(company,planner_user,'PLANNER','ACTIVE'),(other_company,foreign_user,'PLANNER','ACTIVE'),(company,time_user,'TIME_TRACKING','ACTIVE');
+  INSERT INTO public.company_members(company_id,user_id,role,status) VALUES(company,planner_user,'OWNER','ACTIVE'),(other_company,foreign_user,'PLANNER','ACTIVE'),(company,time_user,'TIME_TRACKING','ACTIVE');
   INSERT INTO public.employees(company_id,auth_user_id,first_name,last_name,personnel_no,email,access_status,shift_permissions)
   VALUES(company,employee_user,'Synthetic','Absence Check','SF-ABSENCE-ROLLBACK','sf-absence-employee@example.invalid','ACTIVE',ARRAY['FD']) RETURNING id INTO employee;
   PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',employee_user,'role','authenticated')::text,true);
@@ -33,8 +35,8 @@ BEGIN
   PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',foreign_user,'role','authenticated')::text,true);PERFORM set_config('request.jwt.claim.sub',foreign_user::text,true);
   BEGIN PERFORM public.manager_review_absence_request(ids[1],'APPROVE','');RAISE EXCEPTION 'Foreign planner could approve';EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE 'Keine Berechtigung%' THEN RAISE;END IF;negative_checks:=negative_checks+1;END;
   PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',time_user,'role','authenticated')::text,true);PERFORM set_config('request.jwt.claim.sub',time_user::text,true);
-  BEGIN PERFORM public.employee_submit_absence_request('Home-Office','2050-06-01','2050-06-02');RAISE EXCEPTION 'Time-only login could submit';EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE 'Dieser Zugang ist nur fuer die Zeiterfassung%' THEN RAISE;END IF;negative_checks:=negative_checks+1;END;
-  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',planner_user,'role','authenticated')::text,true);PERFORM set_config('request.jwt.claim.sub',planner_user::text,true);
+  BEGIN PERFORM public.employee_submit_absence_request('Home-Office','2050-06-01','2050-06-02');RAISE EXCEPTION 'Time-only login could submit';EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE 'Dieser Zugang ist nur fuer die Zeiterfassung%' AND SQLERRM NOT LIKE 'Kein Mitarbeiterzugang%' THEN RAISE;END IF;negative_checks:=negative_checks+1;END;
+  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',planner_user,'role','authenticated','aal','aal2')::text,true);PERFORM set_config('request.jwt.claim.sub',planner_user::text,true);
   i:=0;
   FOREACH absence IN ARRAY ids LOOP
     i:=i+1;result:=public.manager_review_absence_request(absence,'APPROVE','Synthetic planner feedback');
@@ -43,7 +45,7 @@ BEGIN
   END LOOP;
   PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',employee_user,'role','authenticated')::text,true);PERFORM set_config('request.jwt.claim.sub',employee_user::text,true);
   rejected:=public.employee_submit_absence_request('Home-Office','2050-07-01','2050-07-01','',true,null,null,'');
-  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',planner_user,'role','authenticated')::text,true);PERFORM set_config('request.jwt.claim.sub',planner_user::text,true);
+  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',planner_user,'role','authenticated','aal','aal2')::text,true);PERFORM set_config('request.jwt.claim.sub',planner_user::text,true);
   result:=public.manager_review_absence_request(rejected,'REJECT','Synthetic rejection feedback');IF result<>'Abgelehnt' THEN RAISE EXCEPTION 'Rejection failed';END IF;
   IF negative_checks<>6 THEN RAISE EXCEPTION 'Incomplete negative checks: %',negative_checks;END IF;
   RESET ROLE;
