@@ -46,6 +46,17 @@ test('background planning persists and restores the comparison baseline with the
  delete job.result.metadata.reviewBefore;await c.SFMonthOptimizer.restoreBackground(job);assert.match(el('autoPlanComparison').innerHTML,/Was verändert/);assert.equal(c.SFMonthOptimizer.getResult().reviewBefore.openCount,2);
  await c.SFMonthOptimizer.restoreBackground(job,false,{canApply:false,open:2,errors:1,spread:10});assert.match(el('autoMonthHours').innerHTML,/Manuelle Entscheidung erforderlich/);assert.match(el('autoMonthHours').innerHTML,/2 Pflichtpositionen offen · 1 Regelkonflikte/);assert.equal(el('applyAutoPlanBtn').disabled,true);
 });
+test('directly opened autonomous jobs always use the server review status and fail closed',async()=>{
+ const {c,el,run,calls}=harness();el('autoPlanMonthCount').value='1';await c.SFMonthOptimizer.optimize();const preview=JSON.parse(JSON.stringify(run('autoPlanPreview')));let payload;
+ c.SFBackgroundAutoPlanCore=require('../assets/background-auto-plan-core-v1.js');c.SFBackgroundPlanning={available:()=>true,render(){},start:async value=>{payload=JSON.parse(JSON.stringify(value));throw Error('capture fixture')}};
+ await c.SFMonthOptimizer.optimize();payload.metadata.autonomousRunId='autonomous-run';const job={id:'autonomous-job',company_id:'co',first_month:'2027-01-01',month_count:1,result:{preview,metadata:payload.metadata}};
+ const original=c.SFBackend.client.rpc;let serverRun={id:'autonomous-run',background_job_id:'autonomous-job',status:'REVIEW',current_data:true,summary:{canApply:false,open:2,errors:0,spread:10}};
+ c.SFBackend.client.rpc=async(name,args)=>name==='autonomous_planning_control'?{data:{runs:serverRun?[serverRun]:[]}}:original(name,args);
+ await c.SFMonthOptimizer.restoreBackground(job);assert.equal(el('applyAutoPlanBtn').disabled,true);assert.match(el('autoMonthHours').innerHTML,/2 Pflichtpositionen offen/);const count=calls.filter(x=>x.name==='apply_planning_period').length;await c.SFMonthOptimizer.apply();assert.equal(calls.filter(x=>x.name==='apply_planning_period').length,count);
+ serverRun=null;await c.SFMonthOptimizer.restoreBackground(job);assert.equal(el('applyAutoPlanBtn').disabled,true);assert.match(el('autoMonthHours').innerHTML,/Prüfstand ist nicht verfügbar/);
+ serverRun={id:'autonomous-run',background_job_id:'autonomous-job',status:'READY',current_data:true,summary:{canApply:true,open:0,errors:0,spread:0}};await c.SFMonthOptimizer.restoreBackground(job);assert.equal(c.SFMonthOptimizer.getResult().autonomousAssurance.canApply,true);
+ serverRun.current_data=false;await c.SFMonthOptimizer.restoreBackground(job);assert.equal(el('applyAutoPlanBtn').disabled,true);
+});
 test('other-company policy disables month-count expansion',()=>{const{c}=harness();c.SFCompliance.policy.solidPlanningRules={};assert.equal(c.autoPlanningDates().length,31)});
 
 test('continuous horizon includes seven months and is capped at twelve',()=>{
