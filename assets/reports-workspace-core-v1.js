@@ -26,12 +26,32 @@
     for(const k of ['target_minutes','elapsed_target_minutes','credit_minutes','elapsed_credit_minutes','confirmed_minutes'])row[k]+=Number(e[k]||0);
    }
   }
-  return {...first,from:parts[0].from,to:parts.at(-1).to,as_of:parts.map(p=>p.as_of).sort()[0],closed_month:parts.some(p=>p.closed_month),employees:[...people.values()],assignments:unique(parts.flatMap(p=>p.assignments)),times:unique(parts.flatMap(p=>p.times)),qr:unique(parts.flatMap(p=>p.qr)),absences:unique(parts.flatMap(p=>p.absences)),daily:unique(parts.flatMap(p=>p.daily).map(x=>({...x,id:x.date+'|'+x.shift})))};
+  return {...first,from:parts[0].from,to:parts.at(-1).to,as_of:parts.map(p=>p.as_of).sort()[0],closed_month:parts.some(p=>p.closed_month),employees:[...people.values()],fairness:parts.every(p=>p.fairness)?{published_dates:[...new Set(parts.flatMap(p=>p.fairness.published_dates||[]))],profiles:[...new Map(parts.flatMap(p=>p.fairness.profiles).map(p=>[p.id,{...p,eligible_dates:[...new Set(parts.flatMap(x=>x.fairness.profiles.filter(e=>e.id===p.id).flatMap(e=>e.eligible_dates)))]}])).values()],wishes:unique(parts.flatMap(p=>p.fairness.wishes)),takeovers:unique(parts.flatMap(p=>p.fairness.takeovers).map(t=>({...t,id:t.assignment_id+'|'+t.employee_id+'|'+t.confirmed_at})))}:null,assignments:unique(parts.flatMap(p=>p.assignments)),times:unique(parts.flatMap(p=>p.times)),qr:unique(parts.flatMap(p=>p.qr)),absences:unique(parts.flatMap(p=>p.absences)),daily:unique(parts.flatMap(p=>p.daily).map(x=>({...x,id:x.date+'|'+x.shift})))};
  }
  function unionMinutes(rows,from,to){const intervals=rows.map(r=>[Math.max(Date.parse(r.start),from),Math.min(Date.parse(r.end)-Math.max(0,Number(r.break_minutes||0))*M,to)]).filter(([s,e])=>Number.isFinite(s)&&Number.isFinite(e)&&e>s).sort((a,b)=>a[0]-b[0]);let total=0,last=null;
   for(const [s,e] of intervals){if(last&&s<=last[1])last[1]=Math.max(last[1],e);else{if(last)total+=last[1]-last[0];last=[s,e]}}if(last)total+=last[1]-last[0];return total/M;
  }
  const approved=a=>['Genehmigt','Erfasst','APPROVED'].includes(a.status);
+ function fairness(data,e,own,available,scope,S,OT){
+  const evidence=data.fairness,profile=evidence?.profiles?.find(p=>p.id===e.id),tz=data.timezone||'Europe/Berlin';
+  const dates=profile?available.filter(d=>profile.eligible_dates.includes(d)):available;
+  const counts={holidayDuties:0,holidayMinutes:0,nightMinutes:0,weekendMinutes:0},mapping=data.rules.fairnessHolidayStatesBySite||data.rules.otHolidayStatesBySite||{};
+  let regionalUnknown=false;
+  for(const a of own){const start=Date.parse(a.start),end=Date.parse(a.end),factor=Math.max(0,(end-start)/M-Math.max(0,Number(a.break_minutes||0)))/((end-start)/M),site=data.sites.find(s=>s.id===a.site_id),state=mapping[site?.name];if(!state)regionalUnknown=true;let holiday=0;
+   for(let d=S.localDate(start,{timezone:tz});S.instant(d,'00:00',tz)<end;d=plus(d,1)){const ds=S.instant(d,'00:00',tz),de=S.instant(plus(d,1),'00:00',tz),clip=(x,y)=>Math.max(0,Math.min(end,y)-Math.max(start,x))/M*factor;
+    counts.nightMinutes+=clip(ds,S.instant(d,'06:00',tz))+clip(S.instant(d,'22:00',tz),de);
+    if(weekday(d)>5)counts.weekendMinutes+=clip(ds,de);if(OT.isHoliday(d,[state||'DE']))holiday+=clip(ds,de);
+   }if(holiday>0){counts.holidayDuties++;counts.holidayMinutes+=holiday;}
+  }
+  const takeovers=new Set((evidence?.takeovers||[]).filter(t=>t.employee_id===e.id&&own.some(a=>a.id===t.assignment_id&&a.status==='PUBLISHED'&&Date.parse(a.start)-Date.parse(t.confirmed_at)>=0&&Date.parse(a.start)-Date.parse(t.confirmed_at)<=48*3600000)).map(t=>t.assignment_id));
+  const wishes={fit:0,missed:0,open:0,withdrawn:0,approved:0,rejected:0,unknown:0},latest=new Map();
+  for(const w of evidence?.wishes||[]){if(w.employee_id!==e.id)continue;for(let d=w.start_date<data.from?data.from:w.start_date;d<=w.end_date&&d<=data.to;d=plus(d,1)){const key=w.kind+'|'+d,old=latest.get(key);if(!old||String(w.updated_at||'')>String(old.w.updated_at||'')||w.updated_at===old.w.updated_at&&String(w.id)>String(old.w.id))latest.set(key,{w,d});}}
+  for(const {w,d} of latest.values()){if(['WITHDRAWN','CANCELLED'].includes(w.status)){wishes.withdrawn++;continue;}if(w.status==='PENDING')wishes.open++;else if(w.status==='REJECTED')wishes.rejected++;else if(['PROMISED','ACCEPTED','RELEASE_REQUESTED','RELEASED'].includes(w.status))wishes.approved++;
+   if(w.status==='RELEASED')continue;if(!(evidence?.published_dates||[]).includes(d)){wishes.unknown++;continue;}const duties=data.assignments.filter(a=>a.employee_id===e.id&&a.status==='PUBLISHED');const ds=S.instant(d,'00:00',tz),de=S.instant(plus(d,1),'00:00',tz);
+   const fit=w.kind==='OFF'?!duties.some(a=>Date.parse(a.start)<de&&Date.parse(a.end)>ds):duties.some(a=>a.date===d&&a.shift===w.shift_code);wishes[fit?'fit':'missed']++;
+  }
+  return {...counts,eligibleDays:dates.length,shortNotice:evidence?takeovers.size:null,wishes:evidence&&!scope?wishes:null,regionalUnknown,profile:profile||null,comparisonGroup:[profile?.role||'',...(e.shifts||[]).slice().sort()].join(' · ')};
+ }
  function analyze(data,filters={}){
   // Browser integrations can arrive before the deferred planning module.
   // Resolve dependencies for each analysis rather than capturing an empty startup value.
@@ -58,8 +78,9 @@
    const available=allDays.filter(d=>(!e.start_date||d>=e.start_date)&&(!e.contract_end||d<=e.contract_end)&&!off.some(a=>a.full_day!==false&&a.from<=d&&a.to>=d));
    const plan=own.reduce((n,a)=>n+plannedMinutes(a),0),captured=unionMinutes(completed.filter(r=>r.employee_id===e.id),begin,finish),confirmed=scope?unionMinutes(accepted.filter(r=>r.employee_id===e.id),begin,finish):Number(e.confirmed_minutes||0);
    const nights=own.filter(night).length,weekends=own.filter(a=>weekday(a.date)>5).length,extra=own.filter(a=>a.extra||model.get(a.shift)?.planning_mode==='optional').length;
+   const burden=fairness(data,e,own,available,scope,S,OT);
    const target=Number(e.target_minutes||0),credit=Number(e.credit_minutes||0),elapsedTarget=Number(e.elapsed_target_minutes||0),elapsedCredit=Number(e.elapsed_credit_minutes||0);
-   return {...e,name:[e.last,e.first].filter(Boolean).join(', '),plan,captured:data.can_time?captured:null,confirmed:data.can_time?confirmed:null,target,credit,elapsedTarget,elapsedCredit,
+   return {...e,...burden,planDeviation:scope?null:plan+credit-target,name:[e.last,e.first].filter(Boolean).join(', '),plan,captured:data.can_time?captured:null,confirmed:data.can_time?confirmed:null,target,credit,elapsedTarget,elapsedCredit,
     remaining:scope?null:Math.max(0,target-credit-plan),planRatio:!scope&&target>credit?plan/(target-credit):null,
     elapsedBalance:!scope&&data.can_time&&today>=data.from?confirmed+elapsedCredit-elapsedTarget:null,
     duties:own.length,nights,weekends,extra,availableDays:available.length,nightRate:available.length?nights/available.length*30:null,weekendRate:target>0?weekends/(target/60)*100:null,
