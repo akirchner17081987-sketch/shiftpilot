@@ -1,7 +1,11 @@
 # SchichtFunk – IONOS Deploy Now Anfrage zu Logs und Aufbewahrung
 
 Stand: 16.09.2026
-Status: Versandfertige Betreiberanfrage; noch nicht an IONOS gesendet
+Status: Historischer Anfrageentwurf; nicht versendet. Kernfragen seit 28.10.2026 durch produktspezifische Dokumentation geklärt.
+
+## Nachtrag 28.10.2026
+
+https://docs.ionos.space/docs/deployment-viewer/ bestätigt den lesenden Deployment Viewer, Rohlogs im Verzeichnis `logs` und höchstens 30 Tage Aufbewahrung. Die historische Aussage unten, es gebe keine produktspezifische Quelle, ist damit überholt. Ungeklärt bleiben eine produktspezifische IP-Kürzung und ein automatischer Logexport. Dafür wird keine Anbieterantwort oder abgeschlossene Supportanfrage behauptet.
 
 ## Anlass
 

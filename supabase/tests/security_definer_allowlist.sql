@@ -7,6 +7,7 @@ with allowlist(name, arguments) as (values
   ('employee_respond_to_shift_change','p_change_id uuid, p_decision text, p_comment text'),
   ('employee_submit_time_entry','p_assignment_id uuid, p_actual_start timestamp with time zone, p_actual_end timestamp with time zone, p_break_minutes integer, p_note text'),
   ('get_push_public_key',''),
+  ('manager_central_time_entries','p_company_id uuid, p_start_date date, p_end_date date'),
   ('manager_close_time_month','p_company_id uuid, p_month date, p_note text'),
   ('manager_create_company_invite','p_company_id uuid, p_email text, p_role text, p_token_hash text'),
   ('manager_create_time_qr_terminal','p_company_id uuid, p_name text, p_location_note text'),

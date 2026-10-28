@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  SCHICHTFUNK_SITE_URL: https://home-5021411544.app-ionos.space
+  SCHICHTFUNK_SITE_URL: https://schichtfunk.de
   SUPABASE_URL: https://zbvloohfjleadjnqhbbh.supabase.co
   SUPABASE_PUBLISHABLE_KEY: sb_publishable_Y78saCIbksWRAkP2yQYofw_4Er0WZU7
   HEALTHCHECK_TIMEOUT_MS: '10000'

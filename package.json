@@ -44,7 +44,8 @@
     "test:portal-entry": "node --test tests/portal-entry-routing.test.mjs && node tests/browser/portal-entry-routing-qa.cjs",
     "test:entry-location": "node --test tests/entry-loading-v2.test.mjs tests/entry-location.test.cjs && node tests/browser/entry-location-qa.cjs",
     "test:globe": "node tests/browser/globe-surface-qa.cjs",
-    "test:evidence": "node --test tests/personnel-evidence.test.cjs && node tests/browser/personnel-evidence-qa.cjs"
+    "test:evidence": "node --test tests/personnel-evidence.test.cjs && node tests/browser/personnel-evidence-qa.cjs",
+    "test:security": "node --test tests/security-definer-cross-tenant.test.mjs tests/mfa-session-security.test.mjs tests/access-mfa-action-matrix.test.mjs tests/roles-permission-boundaries.test.mjs tests/audit-workspace-sql.test.mjs tests/audit-permission-scan.test.mjs tests/privacy-security-governance.test.mjs tests/privacy-retention-longterm.test.mjs tests/privacy-worker-token-rotation.test.mjs tests/security-operations-evidence.test.mjs tests/audit-archives-sql.test.mjs tests/audit-archive-storage.test.mjs tests/personnel-health-privacy.test.mjs tests/help-center-coverage.test.mjs"
   },
   "engines": {
     "node": ">=18"
