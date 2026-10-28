@@ -22,7 +22,10 @@
     if(!ok)return false;
     assignments=assignments.filter(x=>x.id!==id);
     refresh();
-    if(typeof showSaveToast==='function')showSaveToast('Schicht gelöscht',`${a.type} · ${name} wurde aus dem Dienstplan entfernt.`);
+    if(typeof showSaveToast==='function'){
+      if(window.SFBackend?.ready)showSaveToast('Löschung wird gespeichert',`${a.type} · ${name} wird mit der Cloud abgeglichen.`);
+      else showSaveToast('Schicht gelöscht',`${a.type} · ${name} wurde aus dem Dienstplan entfernt.`);
+    }
     return false;
   };
 
