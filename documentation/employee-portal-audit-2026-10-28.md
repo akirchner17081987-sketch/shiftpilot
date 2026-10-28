@@ -20,7 +20,7 @@ Prüfdatum: 28.10.2026. Produktiver Ausgangsstand: PR #203, Commit dcc9cf77a5e50
 | Kommende Dienste | Monatskalender und Liste, Monatswechsel, veröffentlichte eigene Dienste, keine Entwürfe. |
 | Änderungen | Alte und vorgeschlagene Variante, tatsächlich geänderte Felder gekennzeichnet, Antworten und Verlauf. |
 | Arbeitszeit und Zeitkonto | Buchungen, Monats-SOLL, bestätigte Zeiten und Saldo; Monatsverknüpfung bleibt erhalten. Offline-/Fehlerstatus zeigt den letzten bestätigten Stand. |
-| Abwesenheiten | Antrag, Status, Freigabe/Ablehnung und Rückmeldung. Ein verbindlicher Resturlaubsanspruch wird nicht aus Kalendertagen erfunden. |
+| Abwesenheiten | Antrag, Status, Freigabe/Ablehnung und Rückmeldung. Urlaubskonto mit Jahresanspruch, Übertrag, bestätigten Tagen und Resturlaub ist vorhanden. Ohne vollständige Stammdaten und geprüfte Anrechnungstage wird der Resturlaub als offen ausgewiesen. |
 | Wünsche und Anfragen | Wunschformular, geschützte Freizeitzusagen, Rückfragen, Profilkorrektur und sichtbare offene Aufgaben. |
 | Schichttausch und offene Dienste | Vorhanden; Filter nach Datum, tatsächlichem Standort und Eignung, klare nächste Bearbeitungsschritte, Freigabe vor verbindlicher Übernahme. |
 | Kalender | ICS-Export des gewählten Monats vorhanden, inklusive Standort, stabiler Kennung und Zeitumstellung. Kein automatisch aktualisiertes Kalenderabo. Ein Abo ist eine zusätzliche Produktentscheidung; der Export aktualisiert sich nicht nachträglich. |
@@ -30,7 +30,7 @@ Die technische Bestandsprüfung ersetzt keine kundenspezifische Bedarfserhebung 
 
 ## Durchgeführte Prüfungen
 
-- 60 automatisierte Funktions-/Datenbank-/Push-Laufzeittests bestanden: persönliche Übersicht, Monatsdienste/ICS mit Zeitumstellung, getrennte Mitarbeiterdaten, Abwesenheitsanzeige, Wunschplanung, offene Dienste sowie Dispatcher und aktive Empfänger.
+- 70 automatisierte Funktions-/Datenbank-/Push-Laufzeittests bestanden (einschließlich zehn Urlaubskonto-Prüfungen): persönliche Übersicht, Monatsdienste/ICS mit Zeitumstellung, getrennte Mitarbeiterdaten, Abwesenheitsanzeige, Wunschplanung, offene Dienste sowie Dispatcher und aktive Empfänger.
 - Portal-Browserprüfung bestanden: 13 Bereiche bei vier Ansichten (1440 px dunkel/hell, 390 px dunkel, 360 px hell); Navigation, Filter, Kalenderdownload, Änderungsmarkierungen, Wünsche, Zeitkonto, Abwesenheiten und Kontraste.
 - Persönliche Startseite zusätzlich bei vier Ansichten geprüft: nächster Dienst, QR-Anwesenheit und Pause, Aufgaben, Fehlerzustand, Scanner-Einstieg und verspätete Antwort nach Unternehmenswechsel.
 - 22 Push-Oberflächenprüfungen bestanden: Aktivierung, verweigerte Erlaubnis, Testaktion, Abmelden, Serverfehler, iOS-Hinweis und Breiten 360/768/1440 px. Geräte-/Provider-APIs simuliert.
