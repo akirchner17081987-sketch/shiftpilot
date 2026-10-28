@@ -20,6 +20,12 @@ async function setup(){const db=new PGlite();try{await db.exec(read('tests/sql/a
  create trigger scope_guard before insert or update on shift_assignments for each row execute function enforce_shift_employee_scope();`);
  await db.exec(migration());
  await db.exec(read('supabase/migrations/20261027051422_fix_disruption_list_employee_alias.sql'));
+ await db.exec(read('supabase/migrations/20261028184359_disruption_offer_privacy.sql'));
+ await db.exec(`alter table shift_templates add site_id uuid;create table company_locations(id uuid primary key,company_id uuid,name text);create unique index notifications_dedupe on notifications(user_id,kind,entity_id);`);
+ for(const name of ['private.sf_put_notification','private.sf_notify_managers'])await db.exec(fn(read('supabase/migrations/20260829221839_schichtfunk_notifications_v1.sql'),name));
+ await db.exec('alter table company_compliance_policy add monthly_planning_max_hours numeric,add monthly_planning_max_shifts integer');
+ await db.exec(fn(read('supabase/migrations/20261014071747_employee_fixed_monday_thursday_o3.sql'),'private.sf_assert_month_planning_limits'));
+ await db.exec(read('supabase/migrations/20261028190138_disruption_completion_checks.sql'));
  await db.query('insert into auth.users(id) values($1),($2)',[actor,portalUser]);await db.query("insert into companies(id,name,timezone) values($1,'Own','Europe/Berlin'),($2,'Other','Europe/Berlin')",[company,foreign]);
  await db.query(`insert into company_members(company_id,user_id,role,status) values($1,$2,'OWNER','ACTIVE')`,[company,actor]);await db.query(`insert into company_compliance_policy(company_id,solid_planning_rules,standard_min_rest_hours,standard_max_shift_hours) values($1,'{}',11,10)`,[company]);
  for(const [id,name,user] of [[original,'Original',null],[target,'Offline',null],[portal,'Portal',portalUser]])await db.query(`insert into employees(id,company_id,first_name,last_name,status,role,shift_permissions,auth_user_id,access_status,qualifications) values($1,$2,$3,'Test','active','Mitarbeiter',array['T'],$4,'ACTIVE','{}')`,[id,company,name,user]);
@@ -60,7 +66,7 @@ test('council approval freezes compound spec, rejects unilateral status writes a
 test('automatic offers never retry answered candidates; only explicit retry can reopen one and notification is refreshed',async()=>{const db=await setup();try{
  const a=await source(db),i=await one(db,`select manager_create_disruption($1,$2,'OTHER','') id`,[company,a.id]);assert.equal((await one(db,'select manager_send_disruption_offers($1,$2) n',[i.id,[portal]])).n,1);
  await db.query(`update disruption_offers set status='DECLINED' where incident_id=$1`,[i.id]);assert.equal((await one(db,'select manager_send_disruption_offers($1,$2) n',[i.id,[portal]])).n,0);assert.equal((await one(db,'select status from disruption_offers where incident_id=$1',[i.id])).status,'DECLINED');
- await assert.rejects(db.query('select manager_retry_disruption_offer($1,$2,false)',[i.id,portal]),/ausdrücklich/);assert.equal((await one(db,'select manager_retry_disruption_offer($1,$2,true) n',[i.id,portal])).n,1);assert.equal((await one(db,'select status from disruption_offers where incident_id=$1',[i.id])).status,'OFFERED');assert.equal((await one(db,"select count(*)::int n from notifications where title='Erneute Ersatzanfrage'")).n,2,'existing notification is refreshed, not left read');
+ await assert.rejects(db.query('select manager_retry_disruption_offer($1,$2,false)',[i.id,portal]),/ausdrücklich/);assert.equal((await one(db,'select manager_retry_disruption_offer($1,$2,true) n',[i.id,portal])).n,1);assert.equal((await one(db,'select status from disruption_offers where incident_id=$1',[i.id])).status,'OFFERED');assert.equal((await one(db,"select count(*)::int n from notifications where title='Erneute Ersatzanfrage'")).n,1,'existing notification is refreshed, not duplicated');
  }finally{await db.close();}});
 test('pending handover cannot shorten its source in a standalone write; cancellation invalidates its approval request',async()=>{const db=await setup();try{
  await db.exec('update company_compliance_policy set works_council_enabled=true');const a=await source(db),r=await commit(db,a.id,{mode:'PARTIAL',from_local:'2027-02-01T09:00'});await db.query(`update shift_change_requests set status='READY_TO_APPLY' where id=$1`,[r.change_id]);
@@ -82,3 +88,63 @@ test('LIST resolves the employee join without a record collision and still enfor
  await db.exec('reset role');const a=await source(db);await commit(db,a.id);await db.exec('set role authenticated');
  const list=await one(db,`select manager_disruption_replacement($1,null,'{"action":"LIST"}') result`,[company]);assert.equal(list.result.length,1);assert.equal(list.result[0].replacement_employee,'Offline Test');
 }finally{await db.close();}});
+
+
+test('simulated sickness: before/after privacy, unchanged offer, isolated access and successful acceptance',async(t)=>{const db=await setup();try{
+ const secret='SIMULATION: Vertrauliche Krankheitsnotiz',a=await source(db);
+ const i=await one(db,`select manager_create_disruption($1,$2,'SICKNESS',$3) id`,[company,a.id,secret]);
+ await db.query('select manager_send_disruption_offers($1,$2)',[i.id,[portal]]);
+ // Reproduce the production implementation before the correction on this isolated database.
+ await db.exec(fn(read('supabase/migrations/20260929214843_time_role_employee_boundaries.sql'),'private.employee_list_disruption_offers_impl'));
+ await db.query(`select set_config('request.jwt.claim.sub',$1,false)`,[portalUser]);await db.exec('set role authenticated');
+ const before=(await db.query('select * from employee_list_disruption_offers()')).rows;
+ assert.equal(before.length,1);assert.equal(before[0].incident_type,'SICKNESS');assert.equal(before[0].note,secret);
+ await db.exec('reset role');await db.exec(read('supabase/migrations/20261028184359_disruption_offer_privacy.sql'));await db.exec('set role authenticated');
+ const after=(await db.query('select * from employee_list_disruption_offers()')).rows;
+ assert.equal(after.length,1);assert.equal(after[0].incident_type,'OTHER');assert.equal(after[0].note,'');
+ for(const key of ['offer_id','offer_status','incident_id','shift_code','starts_at','ends_at','expires_at','employee_comment'])assert.deepEqual(after[0][key],before[0][key],key);
+ assert.ok(!JSON.stringify(after).includes(secret));
+ // Unrelated active employee has no offer and cannot answer this one.
+ await db.exec('reset role');await db.query('update employees set auth_user_id=$1 where id=$2',[actor,target]);
+ await db.query(`select set_config('request.jwt.claim.sub',$1,false)`,[actor]);await db.exec('set role authenticated');
+ assert.deepEqual((await db.query('select * from employee_list_disruption_offers()')).rows,[]);
+ await assert.rejects(db.query(`select * from employee_respond_disruption_offer($1,'ACCEPT','Simulation')`,[after[0].offer_id]),/gehört nicht/);
+ await db.query(`select set_config('request.jwt.claim.sub',$1,false)`,[portalUser]);
+ const accepted=await one(db,`select * from employee_respond_disruption_offer($1,'ACCEPT','Simulation zugesagt')`,[after[0].offer_id]);assert.equal(accepted.status,'ACCEPTED');
+ await db.exec('reset role');
+ assert.equal((await one(db,'select employee_id from shift_assignments where id=$1',[a.id])).employee_id,portal);
+ assert.equal((await one(db,'select status from disruption_incidents where id=$1',[i.id])).status,'RESOLVED');
+ assert.equal((await one(db,'select incident_type,note from disruption_incidents where id=$1',[i.id])).note,secret,'manager documentation remains intact');
+ const notices=(await db.query('select title,message from notifications')).rows;assert.ok(notices.length>0);assert.ok(!JSON.stringify(notices).includes(secret));
+ t.diagnostic('Simulation: vorher SICKNESS + vertrauliche Notiz; nachher OTHER + leere Notiz; Angebot unverändert; fremde Person gesperrt; Zusage übernimmt Dienst und löst Störfall.');
+ }finally{await db.close();}});
+
+test('candidate diagnostics cover shift authorization, contract, site-specific staff restriction, absence, overlap and rest',async()=>{const db=await setup();try{
+ const a=await source(db);const preview=()=>one(db,`select manager_disruption_replacement($1,$2,'{"action":"PREVIEW"}') p`,[company,a.id]);const candidate=async()=> (await preview()).p.candidates.find(c=>c.employee_id===target);
+ assert.equal((await candidate()).block,null);
+ await db.query('update employees set shift_permissions=\'{}\' where id=$1',[target]);assert.match((await candidate()).block,/Schichtfreigabe/);await db.query("update employees set shift_permissions=array['T'],contract_end='2027-01-31' where id=$1",[target]);assert.match((await candidate()).block,/Vertragslaufzeit/);
+ await db.query('update employees set contract_end=null,personnel_no=\'QA-2\' where id=$1',[target]);const site=crypto.randomUUID();await db.query("insert into company_locations values($1,$2,'Teststandort Leipzig')",[site,company]);await db.query("update shift_templates set site_id=$1,allowed_personnel_nos=array['QA-1']",[site]);assert.equal((await preview()).p.assignment.site,'Teststandort Leipzig');assert.match((await candidate()).block,/Personalnummer.*freigegeben/);await db.exec('update shift_templates set allowed_personnel_nos=null');
+ await db.query("insert into absences(company_id,employee_id,start_date,end_date,status,full_day) values($1,$2,'2027-02-01','2027-02-01','Genehmigt',true)",[company,target]);assert.match((await candidate()).block,/Abwesenheit|verfügbar/i);await db.exec('delete from absences');
+ await db.query("insert into shift_assignments(company_id,employee_id,shift_code,starts_at,ends_at,status) values($1,$2,'T','2027-02-01T06:00Z','2027-02-01T12:00Z','DRAFT')",[company,target]);assert.match((await candidate()).block,/anderer Dienst/i);await db.query('delete from shift_assignments where employee_id=$1',[target]);
+ await db.query("insert into shift_assignments(company_id,employee_id,shift_code,starts_at,ends_at,status) values($1,$2,'T','2027-01-31T18:00Z','2027-02-01T02:00Z','DRAFT')",[company,target]);assert.match((await candidate()).block,/Ruhezeit/i);
+ }finally{await db.close();}});
+
+test('disabled digital access cannot be proposed or offered and changed scope is rechecked at acceptance',async()=>{const db=await setup();try{
+ const a=await source(db),i=await one(db,`select manager_create_disruption($1,$2,'OTHER','Synthetic') id`,[company,a.id]);
+ await db.query("update employees set access_status='DISABLED' where id=$1",[portal]);assert.deepEqual((await db.query('select * from manager_list_disruption_candidates($1)',[i.id])).rows,[]);await assert.rejects(db.query('select manager_send_disruption_offers($1,$2)',[i.id,[portal]]),/erreichbar/);
+ await db.query("update employees set access_status='ACTIVE' where id=$1",[portal]);await db.query('select manager_send_disruption_offers($1,$2)',[i.id,[portal]]);const offer=await one(db,'select id from disruption_offers where incident_id=$1',[i.id]);
+ await db.query("update employees set contract_end='2027-01-31' where id=$1",[portal]);await db.query(`select set_config('request.jwt.claim.sub',$1,false)`,[portalUser]);await assert.rejects(db.query(`select * from employee_respond_disruption_offer($1,'ACCEPT','')`,[offer.id]),/Vertragslaufzeit/);assert.equal((await one(db,'select employee_id from shift_assignments where id=$1',[a.id])).employee_id,original);
+ }finally{await db.close();}});
+
+test('decline notifies only this company managers, resolution notifies the original employee, without private notes',async()=>{const db=await setup();try{
+ const originalUser=crypto.randomUUID();await db.query('insert into auth.users(id) values($1)',[originalUser]);await db.query('update employees set auth_user_id=$1 where id=$2',[originalUser,original]);
+ const a=await source(db),i=await one(db,`select manager_create_disruption($1,$2,'SICKNESS','INTERNAL PRIVATE NOTE') id`,[company,a.id]);await db.query('select manager_send_disruption_offers($1,$2)',[i.id,[portal]]);const offer=await one(db,'select id from disruption_offers where incident_id=$1',[i.id]);await db.query(`select set_config('request.jwt.claim.sub',$1,false)`,[portalUser]);await one(db,`select * from employee_respond_disruption_offer($1,'DECLINE','Unavailable')`,[offer.id]);
+ const notices=(await db.query("select * from notifications where kind='DISRUPTION_RESPONSE'")).rows;assert.equal(notices.length,1);assert.equal(notices[0].user_id,actor);assert.equal(notices[0].company_id,company);
+ await db.query(`select set_config('request.jwt.claim.sub',$1,false)`,[actor]);await commit(db,a.id);const resolved=(await db.query("select * from notifications where kind='DISRUPTION_REPLACED' and employee_id=$1",[original])).rows;assert.equal(resolved.length,1);assert.equal(resolved[0].user_id,originalUser);assert.ok(!JSON.stringify(resolved).includes('INTERNAL PRIVATE NOTE'));
+ }finally{await db.close();}});
+
+test('monthly cap and responsible-person qualification block a candidate before any replacement is saved',async()=>{const db=await setup();try{
+ const a=await source(db);const candidate=async()=> (await one(db,`select manager_disruption_replacement($1,$2,'{"action":"PREVIEW"}') p`,[company,a.id])).p.candidates.find(c=>c.employee_id===target);
+ await db.query("update shift_templates set responsible_only=true,responsible_employee_id=$1",[portal]);assert.match((await candidate()).block,/verantwortliche Person/);await db.exec('update shift_templates set responsible_only=false');
+ await db.query("update employees set employment='Vollzeit',weekly_hours=40,qualifications=array['__sp:monthlyHours=180'] where id=$1",[target]);await db.exec('update company_compliance_policy set monthly_planning_max_hours=4');assert.match((await candidate()).block,/Monatsgrenze/);await assert.rejects(commit(db,a.id),/Monatsgrenze/);assert.equal((await one(db,'select employee_id from shift_assignments where id=$1',[a.id])).employee_id,original);
+ }finally{await db.close();}});
