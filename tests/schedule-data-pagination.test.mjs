@@ -83,3 +83,21 @@ test('quick deletion does not claim cloud success before synchronization',()=>{
   vm.runInNewContext(read('assets/assignment-quick-delete-v1.js'),c);c.window.spQuickDeleteAssignment('a');
   assert.equal(messages[0][0],'Löschung wird gespeichert');assert.equal(c.assignments.length,0);
 });
+
+test('a second synchronization is queued while another save or month reset is in progress',async()=>{
+  const {c,calls}=harness();let queued=0;c.SFBackend.scheduleSync=()=>queued++;
+  c.SFBackend.syncing=true;await c.SFBackend.sync();assert.equal(queued,1);assert.equal(calls.length,0);
+  c.SFBackend.syncing=false;c.SFBackend.scheduleResetting=true;await c.SFBackend.sync();assert.equal(queued,2);assert.equal(calls.length,0);
+});
+
+test('quick delete routes published shifts to the protected change workflow without removing them',()=>{
+  const messages=[],opened=[],c={window:{SFBackend:{ready:true},editAssignment:id=>opened.push(id)},assignments:[{id:'a',date:'2026-12-01',type:'TEST',employeeId:'e',_dbStatus:'PUBLISHED'}],employees:[],confirm:()=>{throw Error('Must not confirm direct deletion')},showSaveToast:(...args)=>messages.push(args),Date};
+  vm.runInNewContext(read('assets/assignment-quick-delete-v1.js'),c);c.window.spQuickDeleteAssignment('a');
+  assert.equal(c.assignments.length,1);assert.deepEqual(opened,['a']);assert.equal(messages[0][0],'Veröffentlichte Schicht');
+});
+
+test('repeated quick-delete clicks cannot start a second deletion for the same draft',()=>{
+  let saves=0,confirms=0;const c={window:{SFBackend:{ready:true}},assignments:[{id:'a',date:'2026-12-01',type:'TEST',employeeId:'e'}],employees:[{id:'e',first:'Test',last:'Person'}],confirm:()=>{confirms++;return true},showSaveToast(){},saveAll(){saves++},Date};
+  vm.runInNewContext(read('assets/assignment-quick-delete-v1.js'),c);c.window.spQuickDeleteAssignment('a');c.window.spQuickDeleteAssignment('a');
+  assert.equal(confirms,1);assert.equal(saves,1);assert.equal(c.assignments.length,0);
+});
