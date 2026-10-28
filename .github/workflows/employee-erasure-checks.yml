@@ -44,6 +44,7 @@ jobs:
       psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261014031758_employee_erasure_large_planning_payloads.sql
       psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261014032905_employee_erasure_reuse_guard_tokens.sql
       psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261014034730_employee_erasure_resumable_database_batches.sql
+      psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261026002347_employee_erasure_indexed_batches_progress.sql
       psql -v ON_ERROR_STOP=1 -f tests/sql/employee-erasure-integration.sql
      env:
       PGHOST: localhost
