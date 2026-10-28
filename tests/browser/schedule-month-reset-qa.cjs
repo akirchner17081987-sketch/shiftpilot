@@ -33,7 +33,8 @@ async function run(){
   fs.mkdirSync(path.join(root,'test-results'),{recursive:true});await page.screenshot({path:path.join(root,'test-results','month-reset-'+name+'.png'),fullPage:true});
   await page.keyboard.press('Escape');await dialog.waitFor({state:'detached'});assert.equal(await page.evaluate(()=>__deleted.length),0,'Escape does not delete');
   await button.click();await page.locator('#sfResetConfirm').fill('LÖSCHEN 2026-12');await page.evaluate(()=>__fail=true);await page.locator('#sfResetSubmit').click();await page.locator('#sfResetMsg.show').waitFor();assert.match(await page.locator('#sfResetMsg').textContent(),/inzwischen abgeschlossen/);assert.equal(await page.evaluate(()=>__deleted.length),0);
-  await page.evaluate(()=>{__fail=false;__hold=true});await page.locator('#sfResetSubmit').click();await page.waitForFunction(()=>!!window.__release);
+  assert.equal(await page.locator('#sfResetSubmit').isDisabled(),true,'Ambiguous outcome cannot be immediately repeated');
+  await page.locator('#sfResetCancel').click();await page.evaluate(()=>{__fail=false;__hold=true});await button.click();await page.locator('#sfResetConfirm').fill('LÖSCHEN 2026-12');await page.locator('#sfResetSubmit').click();await page.waitForFunction(()=>!!window.__release);
   await page.keyboard.press('Escape');assert.equal(await dialog.count(),1,'Saving dialog cannot be escaped');assert.equal(await page.locator('#sfResetCancel').isDisabled(),true);assert.equal(await page.evaluate(()=>SFBackend.scheduleResetting),true);
   await page.evaluate(()=>__release());await dialog.waitFor({state:'detached'});const deleted=await page.evaluate(()=>__deleted);assert.deepEqual(deleted,[{p_company_id:'company-a',p_month:'2026-12-01',p_confirmation:'LÖSCHEN 2026-12'}]);
   assert.deepEqual(await page.evaluate(()=>assignments.map(a=>a.id)),['nov','jan'],'Other months stay locally intact');assert.equal(await page.evaluate(()=>autoPlanPreview.length),0,'Invalid preview removed');
