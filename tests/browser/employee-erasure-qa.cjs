@@ -1,6 +1,9 @@
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
 const path = require('node:path');
+const fs = require('node:fs');
+const output = path.resolve('test-results/employee-erasure');
+fs.mkdirSync(output,{recursive:true});
 (async () => {
  const browser=await chromium.launch({headless:true});
  try {
@@ -46,7 +49,7 @@ const path = require('node:path');
    await page.waitForFunction(()=>document.querySelector('#sfErasureConfirm').textContent.includes('99 %'));
    assert(!(await progressButton.textContent()).includes('100 %'),'100% is reserved for verified completion');
    await progressButton.scrollIntoViewIfNeeded();
-   await page.screenshot({path:`/workspace/scratch/70320f0cafb6/erasure-progress-${width}.png`});
+   await page.screenshot({path:path.join(output,`erasure-progress-${width}.png`)});
    await page.evaluate(()=>resolveDeletion());
    await page.getByRole('button',{name:'Vollständig gelöscht · 100 %'}).waitFor();
    await page.waitForFunction(()=>!document.querySelector('#sfEmployeeErasureDialog'));
