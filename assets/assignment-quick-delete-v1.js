@@ -13,6 +13,12 @@
   window.spQuickDeleteAssignment=function(id,ev){
     if(ev){ev.preventDefault();ev.stopPropagation();}
     const a=(assignments||[]).find(x=>x.id===id);if(!a)return false;
+    const published=a._dbStatus==='PUBLISHED'||!!a.publishedAt||!!window.SFCompliance?.isPublished?.(a);
+    if(published){
+      if(typeof showSaveToast==='function')showSaveToast('Veröffentlichte Schicht', 'Bitte die Löschung über die Änderungsprüfung durchführen.');
+      if(typeof window.editAssignment==='function')window.editAssignment(id);
+      return false;
+    }
     const emp=(employees||[]).find(e=>e.id===a.employeeId);
     const t=typeof typeById==='function'?typeById(a.type):null;
     const start=a.start||t?.start||'',end=a.end||t?.end||'';
@@ -23,7 +29,7 @@
     assignments=assignments.filter(x=>x.id!==id);
     refresh();
     if(typeof showSaveToast==='function'){
-      if(window.SFBackend?.ready)showSaveToast('Löschung wird gespeichert',`${a.type} · ${name} wird mit der Cloud abgeglichen.`);
+      if(window.SFBackend?.ready)showSaveToast('Löschung wird gespeichert',`${a.type} · ${name} wird mit der Cloud abgeglichen.`,'warning');
       else showSaveToast('Schicht gelöscht',`${a.type} · ${name} wurde aus dem Dienstplan entfernt.`);
     }
     return false;
