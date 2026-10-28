@@ -1,5 +1,7 @@
 -- Synthetic records only; every write, deletion and audit event is rolled back.
 BEGIN;
+-- Simulated authenticated AAL2 context for synthetic fixtures only.
+SELECT set_config('request.jwt.claims','{"aal":"aal2","role":"authenticated"}',true);
 DO $$
 DECLARE owner_user uuid; planner_user uuid:=gen_random_uuid(); co uuid:=gen_random_uuid(); other_co uuid:=gen_random_uuid();
  emp uuid:=gen_random_uuid(); emp_alt uuid:=gen_random_uuid(); ids uuid[]; foreign_shift uuid; offer uuid; claim uuid; legacy_offer uuid; summary jsonb; result jsonb; blocked boolean;

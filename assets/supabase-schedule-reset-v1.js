@@ -80,6 +80,7 @@
     submit.onclick=async()=>{
       if(blocked||input?.value.trim()!==word||busy)return;
       busy=true;B.scheduleResetting=true;syncButton();m.querySelectorAll('button,input').forEach(el=>el.disabled=true);submit.textContent='Wird gelöscht …';
+      let sent=false,deleted=false;
       try{
         if(B.companyId!==company||selectedMonth()!==month)throw Error('Die Auswahl wurde geändert. Bitte den Monat erneut prüfen.');
         if(saving())throw Error('Planungsdaten werden gerade gespeichert. Bitte versuche es gleich erneut.');
@@ -87,12 +88,15 @@
         // Deleting a month must never save unrelated duties, absences or time entries.
         clearTimeout(B.syncTimer);B.syncTimer=null;
         const pendingOutside=typeof assignments==='undefined'?[]:assignments.filter(a=>!String(a.date||'').startsWith(month+'-')&&(B.assignmentIsDirty?B.assignmentIsDirty(a):!a._dbId)).map(a=>({...a}));
+        sent=true;
         const data=await rpc('reset_company_schedule_month',{p_company_id:company,p_month:month+'-01',p_confirmation:word});
+        deleted=true;
         // Do not allow an unsuccessful refresh to sync deleted drafts back into the cloud.
         if(typeof assignments!=='undefined')assignments=assignments.filter(a=>!String(a.date||'').startsWith(month+'-'));
         if(typeof autoPlanPreview!=='undefined')autoPlanPreview=[];
         if(typeof autoPlanAnalyzed!=='undefined')autoPlanAnalyzed=false;
         if(typeof autoPlanApplied!=='undefined')autoPlanApplied=0;
+        B.showLoading?.('Löschung bestätigt – Daten werden aktualisiert …');
         await B.hydrate();
         if(typeof assignments!=='undefined')for(const a of pendingOutside){const i=assignments.findIndex(x=>String(x.id)===String(a.id));if(i<0)assignments.push(a);else assignments[i]=a;}
         closeAccessible();
@@ -107,7 +111,7 @@
         const message=`${n} Schichten aus ${label} wurden entfernt.`;
         if(typeof showSaveToast==='function')showSaveToast('Monat gelöscht',message);
         else C.toast?.('Monat gelöscht',message);
-      }catch(e){console.error('Monatslöschung fehlgeschlagen',e);msg.textContent=e?.message||String(e);msg.classList.add('show');m.querySelectorAll('button,input').forEach(el=>el.disabled=false);submit.disabled=input?.value.trim()!==word;submit.textContent=label+' löschen'}finally{B.hideLoading?.();busy=false;B.scheduleResetting=false;syncButton()}
+      }catch(e){console.error('Monatslöschung oder Neuladen fehlgeschlagen',e);msg.textContent=deleted?'Die Löschung wurde bestätigt, aber der aktuelle Datenstand konnte nicht geladen werden. Bitte die Seite neu laden und den Monat prüfen. Noch nicht gespeicherte Änderungen sollten zuvor gesichert werden.':sent?'Der Ausgang der Löschung ist unklar. Bitte den Dialog schließen und den Monat erneut prüfen, bevor du weitere Schritte unternimmst. Details: '+(e?.message||String(e)):(e?.message||String(e));msg.classList.add('show');m.querySelector('#sfResetCancel').disabled=false;if(!sent){if(input)input.disabled=false;submit.disabled=input?.value.trim()!==word;submit.textContent=label+' löschen'}else{submit.disabled=true;submit.textContent=deleted?'Gelöscht – Neuladen fehlgeschlagen':'Status erneut prüfen'}}finally{B.hideLoading?.();busy=false;B.scheduleResetting=false;syncButton()}
     };
     m.querySelector('#sfResetCancel').focus();
   }
