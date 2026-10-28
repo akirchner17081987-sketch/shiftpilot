@@ -1,0 +1,30 @@
+name: Cloud-Synchronisierung und Löschung
+on:
+  pull_request:
+    paths:
+      - 'assets/supabase-data-v1.js'
+      - 'assets/assignment-quick-delete-v1.js'
+      - 'tests/browser/cloud-sync-performance-qa.cjs'
+      - '.github/workflows/cloud-sync-performance-checks.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/supabase-data-v1.js'
+      - 'assets/assignment-quick-delete-v1.js'
+      - 'tests/browser/cloud-sync-performance-qa.cjs'
+      - '.github/workflows/cloud-sync-performance-checks.yml'
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/browser/cloud-sync-performance-qa.cjs
