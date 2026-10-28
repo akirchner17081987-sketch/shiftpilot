@@ -43,7 +43,7 @@
   finally{if(token===sequence)loading=false;}
  }
  function accessChanged(){const next=identity();if(next===owner){render();return;}owner=next;sequence++;loading=false;seen='';job=null;if(watch){window.SFAutoPlanProgress?.finish('Die Anzeige wurde getrennt. Der Auftrag läuft weiter.');window.SFAutoPlanProgress?.reset?.();}stopWatch();render();if(next)setTimeout(discover,0);}
- function install(){for(const name of ['updateState','hydrate']){const old=B[name];if(typeof old!=='function'||old.__backgroundPlan)continue;const fn=name==='hydrate'?async function(){const r=await old.apply(this,arguments);accessChanged();return r}:function(){const r=old.apply(this,arguments);accessChanged();return r};fn.__backgroundPlan=true;B[name]=fn;}accessChanged();}
+ function install(){for(const name of ['updateState','hydrate']){const old=B[name];if(typeof old!=='function'||old.__backgroundPlan)continue;const fn=name==='hydrate'?async function(){const r=await old.apply(this,arguments);accessChanged();return r}:function(){const r=old.apply(this,arguments);accessChanged();return r};Object.assign(fn,old);fn.__backgroundPlan=true;B[name]=fn;}accessChanged();}
  document.addEventListener('visibilitychange',()=>{if(document.hidden){clearTimeout(timer);timer=null;}else if(watch)schedule(0);else void discover();});
  document.addEventListener('click',e=>{if(e.target.closest?.('[data-view="auto"]'))setTimeout(()=>{render();if(job?.status==='SUCCEEDED'&&selected(job)&&!el('sfBackgroundPlanStatus')?.hidden&&!window.SFMonthOptimizer?.getResult?.())void window.SFMonthOptimizer?.restoreBackground?.(job);else void discover();},0);});
  window.SFBackgroundPlanning={available,start,wait,cancel,applied,discard,render,discover,getJob:()=>job};
