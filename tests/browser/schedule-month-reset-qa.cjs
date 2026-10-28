@@ -5,10 +5,10 @@ const fixture=`
 window.__errors=[];addEventListener('error',e=>__errors.push(e.message));addEventListener('unhandledrejection',e=>__errors.push(String(e.reason)));
 let assignments=[{id:'nov',_dbId:'nov-db',date:'2026-11-30'},{id:'dec',_dbId:'dec-db',date:'2026-12-01'},{id:'jan',_dbId:'jan-db',date:'2027-01-01',note:'Ungespeicherte Anpassung'}];let autoPlanPreview=[{date:'2026-12-15'}],autoPlanAnalyzed=true,autoPlanApplied=4;
 window.__period={mode:'week',start:'2026-11-30',end:'2026-12-06'};window.SchichtFunkCalendarView={getPeriod:()=>__period};
-window.__calls=[];window.__deleted=[];window.__preview={monthStart:'2026-12-01',monthEnd:'2026-12-31',total:3,draft:1,published:2,canDelete:true};window.__fail=false;window.__hold=false;
+window.__calls=[];window.__deleted=[];window.__preview={monthStart:'2026-12-01',monthEnd:'2026-12-31',total:3,draft:1,published:2,canDelete:true};window.__fail=false;window.__hold=false;window.__hydrateFail=false;
 window.showSaveToast=(...args)=>window.__toast=args;window.renderCalendar=window.renderPlanEmployeePool=window.renderOverview=window.updateStats=()=>{};
 window.__syncCalls=0;
-window.SFBackend={ready:true,role:'OWNER',companyId:'company-a',companyName:'Fiktives Testunternehmen',lastSyncError:{message:'Der Monat ist abgeschlossen (August)'},assignmentIsDirty:a=>a.note==='Ungespeicherte Anpassung',sync:async()=>{__syncCalls++;throw Error('Der Monat ist abgeschlossen (August)')},hydrate:async()=>{assignments=[{id:'nov',_dbId:'nov-db',date:'2026-11-30'},{id:'jan',_dbId:'jan-db',date:'2027-01-01',note:''}]},client:{rpc:async(name,args)=>{
+window.SFBackend={ready:true,role:'OWNER',companyId:'company-a',companyName:'Fiktives Testunternehmen',lastSyncError:{message:'Der Monat ist abgeschlossen (August)'},assignmentIsDirty:a=>a.note==='Ungespeicherte Anpassung',sync:async()=>{__syncCalls++;throw Error('Der Monat ist abgeschlossen (August)')},hydrate:async()=>{if(__hydrateFail)throw Error('Test reload failure');assignments=[{id:'nov',_dbId:'nov-db',date:'2026-11-30'},{id:'jan',_dbId:'jan-db',date:'2027-01-01',note:''}]},client:{rpc:async(name,args)=>{
  __calls.push({name,args});if(name==='preview_schedule_month_reset')return {data:{...__preview}};
  if(name==='reset_company_schedule_month'){if(__fail)return {error:{message:'Monat wurde inzwischen abgeschlossen'}};if(__hold)await new Promise(r=>window.__release=r);__deleted.push(args);return {data:{deletedAssignments:3}};}
  throw Error('Unexpected RPC: '+name);
@@ -40,12 +40,17 @@ async function run(){
   assert.deepEqual(await page.evaluate(()=>assignments.map(a=>a.id)),['nov','jan'],'Other months stay locally intact');assert.equal(await page.evaluate(()=>autoPlanPreview.length),0,'Invalid preview removed');
   assert.equal(await page.evaluate(()=>assignments.find(a=>a.id==='jan').note),'Ungespeicherte Anpassung','Pending changes outside December survive the cloud refresh');
   assert.equal(await page.evaluate(()=>__syncCalls),0,'Confirmed month deletion never synchronizes a closed unrelated month');
+  await page.evaluate(()=>{__hold=false;__hydrateFail=true});await button.click();await page.locator('#sfResetConfirm').fill('LÖSCHEN 2026-12');await page.locator('#sfResetSubmit').click();await page.locator('#sfResetMsg.show').waitFor();
+  assert.match(await page.locator('#sfResetMsg').textContent(),/Löschung wurde bestätigt/,'A failed reload does not falsely report a failed deletion');
+  assert.equal(await page.locator('#sfResetSubmit').isDisabled(),true,'Confirmed deletion cannot be repeated after reload failure');
+  await page.locator('#sfResetCancel').click();await page.evaluate(()=>__hydrateFail=false);
+
   await page.evaluate(()=>{assignments.push({id:'unsaved-dec',date:'2026-12-15'});__preview.total=0;__preview.canDelete=false});await button.click();await dialog.waitFor();assert.match(await dialog.textContent(),/1 ungespeicherte Schichten werden verworfen/);assert.equal(await page.locator('#sfResetConfirm').count(),1,'Local unsaved month can still be cleared after explicit confirmation');await page.locator('#sfResetCancel').click();
   assert.equal(await page.evaluate(()=>assignments.some(a=>a.id==='unsaved-dec')),true,'Cancelling keeps unsaved month duties');
   await page.evaluate(()=>{__preview.total=3;__preview.canDelete=true});
   await page.evaluate(()=>{__preview.closed=true;__preview.canDelete=false});await button.click();await dialog.waitFor();assert.match(await dialog.textContent(),/abgeschlossen/);assert.equal(await page.locator('#sfResetConfirm').count(),0);assert.equal(await page.locator('#sfResetSubmit').isDisabled(),true);await page.locator('#sfResetCancel').click();
   await page.evaluate(()=>{__preview.closed=false;__preview.recordedTimeEntries=1});await button.click();await dialog.waitFor();assert.match(await dialog.textContent(),/erfasste Arbeitszeiten/);await page.locator('#sfResetCancel').click();
-  await page.evaluate(()=>{__preview.recordedTimeEntries=0;__preview.canDelete=true;__hold=false});await button.click();await page.locator('#sfResetConfirm').fill('LÖSCHEN 2026-12');await page.evaluate(()=>SFBackend.companyId='company-b');await page.locator('#sfResetSubmit').click();await page.locator('#sfResetMsg.show').waitFor();assert.equal(await page.evaluate(()=>__deleted.length),1,'Changed company cannot delete stale selection');
+  await page.evaluate(()=>{__preview.recordedTimeEntries=0;__preview.canDelete=true;__hold=false});await button.click();await page.locator('#sfResetConfirm').fill('LÖSCHEN 2026-12');await page.evaluate(()=>SFBackend.companyId='company-b');await page.locator('#sfResetSubmit').click();await page.locator('#sfResetMsg.show').waitFor();assert.equal(await page.evaluate(()=>__deleted.length),2,'Changed company cannot delete stale selection');
   assert.deepEqual(await page.evaluate(()=>__errors),[]);results.push({name,passed:true});await context.close();
  }}finally{await browser.close()}
  console.log(JSON.stringify({browser_checks:results}));
