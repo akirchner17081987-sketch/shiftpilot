@@ -1,6 +1,8 @@
 # SchichtFunk – Backup- und Storage-Restore-Prüfung
 
-Stand: 16.09.2026
+Stand: 28.10.2026
+
+**Aktueller Nachtrag:** Siehe `security-operations-point6-2026-10-28.md`. Die historische Backup-Liste unten ist kein heutiger Aktualitätsnachweis. Achtung: Ein physischer Restore in ein neues Projekt ist ohne zusätzliche Maßnahmen nicht von externen Diensten isoliert; kopierte Cron-/Netzwerkjobs können sofort anlaufen. Der frühere Methodenentscheid ist daher nur unter den unten ergänzten Sicherheitsbedingungen gültig.
 Produktivprojekt: `zbvloohfjleadjnqhbbh`, Frankfurt, PRODUCTION
 
 ## 1. Live-Nachweis der Sicherungen
@@ -45,6 +47,12 @@ Diese Entscheidung ist bewusst risikobasiert: Die tägliche Backup-Erzeugung, ei
 6. Hashvergleich des Storage-Manifests besteht ohne fehlende oder unerwartete Dateien;
 7. RPO und gemessene RTO werden dokumentiert;
 8. Restore-Projekt wird erst nach dokumentierter Abnahme und ausdrücklicher Freigabe wieder entfernt.
+
+### Sicherheitskorrektur vom 28.10.2026
+
+Die aktuelle Supabase-Dokumentation bestätigt, dass beim physischen Klonen auch die Vault-Verschlüsselungswurzel übernommen wird. Kopierte `pg_cron`-/`pg_net`-Jobs und andere externe Integrationen können unmittelbar starten; ein vorheriges Anhalten oder Ausschließen bietet der Klonprozess nicht an. Das spätere Abschalten im Ziel reicht deshalb nicht zur sicheren Isolation. **Kein physischer Klon der laufenden Produktion ohne vorher nachgewiesene, anbieterseitige Ausführungssperre oder kontrolliertes Wartungsfenster mit vor dem Snapshot stillgelegten Integrationen.** Eine reine logische Wiederherstellung in eine abgeschottete Umgebung kann zunächst ohne Secrets, Jobs und ausgehenden Netzverkehr geprüft werden; sie ersetzt den physischen Backupnachweis nicht. Quelle: https://supabase.com/docs/guides/platform/clone-project
+
+Der separate Storage-Backupweg muss inzwischen auch den privaten Bucket `audit-archives` einschließen. Am 28.10.2026 enthält er 31 Objekte mit 5.919.293 Bytes; `personnel-documents` und zugehörige Metadaten bleiben leer. Archive im selben Projekt sind keine unabhängige Dateisicherung.
 
 ## 4. Separater Storage-Backupweg
 

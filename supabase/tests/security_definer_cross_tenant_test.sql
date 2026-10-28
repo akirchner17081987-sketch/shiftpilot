@@ -3,7 +3,7 @@ create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
 -- Exactly one assertion per allowlisted authenticated SECURITY DEFINER RPC.
-select plan(39);
+select plan(40);
 
 -- The fixture is deliberately fictitious and the enclosing transaction always rolls back.
 insert into auth.users(
@@ -38,6 +38,11 @@ insert into public.employees(
 
 insert into public.shift_templates(company_id,code,name,default_start,default_end)
 values('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','RPCB','Fiktive B-Schicht','08:00','16:00');
+
+-- Current rule triggers validate the acting tenant even during fixture creation.
+select set_config('request.jwt.claim.sub','22222222-2222-4222-8222-222222222222',true);
+select set_config('request.jwt.claim.sub','22222222-2222-4222-8222-222222222222',true);
+select set_config('request.jwt.claims','{"role":"authenticated","aal":"aal2","sub":"22222222-2222-4222-8222-222222222222"}',true);
 
 insert into public.shift_assignments(
   id,company_id,employee_id,shift_code,starts_at,ends_at,status,published_at,created_by
@@ -118,6 +123,8 @@ $function$;
 
 set local role authenticated;
 select set_config('request.jwt.claim.role','authenticated',true);
+select set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',true);
+select set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',true);
 select set_config(
   'request.jwt.claims',
   '{"role":"authenticated","aal":"aal2","sub":"11111111-1111-4111-8111-111111111111"}',
@@ -125,6 +132,8 @@ select set_config(
 );
 
 -- Group A: company-scoped manager RPCs. Actor A must not access company B.
+-- rpc: manager_central_time_entries
+select ok(pg_temp.rpc_auth_rejected($call$select public.manager_central_time_entries('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',date '2026-09-01',date '2026-09-30')$call$),'manager_central_time_entries rejects company B');
 -- rpc: manager_close_time_month
 select ok(pg_temp.rpc_auth_rejected($call$select public.manager_close_time_month('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',date '2026-08-01','foreign')$call$),'manager_close_time_month rejects company B');
 -- rpc: manager_create_company_invite
@@ -200,6 +209,7 @@ select ok(pg_temp.rpc_auth_rejected($call$select public.employee_submit_time_ent
 
 -- employee_my_time_account_month has no tenant/entity argument. A user without an employee
 -- link must not inherit or discover the existing company-B employee context.
+select set_config('request.jwt.claim.sub','33333333-3333-4333-8333-333333333333',true);
 select set_config(
   'request.jwt.claims',
   '{"role":"authenticated","aal":"aal2","sub":"33333333-3333-4333-8333-333333333333"}',
@@ -209,6 +219,7 @@ select set_config(
 select ok(pg_temp.rpc_auth_rejected($call$select public.employee_my_time_account_month(date '2026-09-01')$call$),'employee_my_time_account_month rejects a user without own employee context');
 
 -- Group D: push/global RPCs. Restore actor A, then target company-B state.
+select set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',true);
 select set_config(
   'request.jwt.claims',
   '{"role":"authenticated","aal":"aal2","sub":"11111111-1111-4111-8111-111111111111"}',
@@ -229,19 +240,31 @@ select ok(
 
 -- get_push_public_key has no company argument. A user without any active membership or employee
 -- link must not receive the shared public key.
+select set_config('request.jwt.claim.sub','33333333-3333-4333-8333-333333333333',true);
 select set_config(
   'request.jwt.claims',
   '{"role":"authenticated","aal":"aal2","sub":"33333333-3333-4333-8333-333333333333"}',
   true
 );
+select set_config('request.jwt.claim.sub','33333333-3333-4333-8333-333333333333',true);
 -- rpc: get_push_public_key
 select ok(pg_temp.rpc_auth_rejected($call$select public.get_push_public_key()$call$),'get_push_public_key rejects a user without active tenant context');
 
+-- Verify foreign state with the fixture owner after leaving the caller's RLS scope.
+-- A caller-local count alone could remain zero even after an unauthorized deletion.
+reset role;
+do $$ begin
+ if (select count(*) from public.push_subscriptions where endpoint='https://push.example.invalid/rpc-tenant-b' and user_id='22222222-2222-4222-8222-222222222222')<>1 then
+  raise exception 'Foreign push subscription was removed';
+ end if;
+end $$;
+select * from finish();
+do $$ begin if num_failed()>0 then raise exception 'Cross-tenant test failed: % of 40',num_failed();end if;end $$;
 select jsonb_build_object(
-  'planned',39,
+  'planned',40,
   'executed',_currtest(),
   'failed',num_failed(),
   'groups',jsonb_build_array('manager-company','manager-entity','employee','push-global')
 ) as pgtap_summary;
-select * from finish();
+set constraints all immediate;
 rollback;

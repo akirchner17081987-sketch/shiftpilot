@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "verifiedAt": "2026-09-13T08:28:15Z",
+  "verifiedAt": "2026-10-28",
   "projectRef": "zbvloohfjleadjnqhbbh",
   "rules": {
     "schema": "public",
@@ -18,6 +18,7 @@
     {"name":"employee_respond_to_shift_change","arguments":"p_change_id uuid, p_decision text, p_comment text","boundary":"auth.uid + employee ownership"},
     {"name":"employee_submit_time_entry","arguments":"p_assignment_id uuid, p_actual_start timestamp with time zone, p_actual_end timestamp with time zone, p_break_minutes integer, p_note text","boundary":"auth.uid + employee ownership"},
     {"name":"get_push_public_key","arguments":"","boundary":"active membership or employee link"},
+    {"name":"manager_central_time_entries","arguments":"p_company_id uuid, p_start_date date, p_end_date date","boundary":"auth.uid + private.sf_can_manage_time; company-scoped time-entry delegates and joins"},
     {"name":"manager_close_time_month","arguments":"p_company_id uuid, p_month date, p_note text","boundary":"manager membership"},
     {"name":"manager_create_company_invite","arguments":"p_company_id uuid, p_email text, p_role text, p_token_hash text","boundary":"owner/admin membership"},
     {"name":"manager_create_time_qr_terminal","arguments":"p_company_id uuid, p_name text, p_location_note text","boundary":"manager membership"},

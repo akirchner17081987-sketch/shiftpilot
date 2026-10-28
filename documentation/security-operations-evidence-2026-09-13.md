@@ -1,5 +1,7 @@
 # SchichtFunk – Sicherheits- und Betriebsnachweisregister
 
+**Aktuelle Nachprüfung 28.10.2026:** `security-operations-point6-2026-10-28.md` und `customer-operations-pack-2026-10-28.md` sind für den heutigen Status maßgeblich. Frühere Prüfdaten und Hashes unten bleiben historische Belege. Supabase-Unterauftragsverarbeiter: inzwischen Stand 12.10.2026 statt Juni. IONOS-Deploy-Now-Rohlogs: produktspezifisch höchstens 30 Tage dokumentiert.
+
 Stand: 13.09.2026  
 Dokumentstatus: Betreiberunterlage, Version 1.0  
 Prüfumgebung: Zweig `codex/ionos-migration`; keine Änderung an Produktionsdaten oder produktiven Einstellungen

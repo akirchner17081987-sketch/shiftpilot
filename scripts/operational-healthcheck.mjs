@@ -1,4 +1,4 @@
-const siteUrl=(process.env.SCHICHTFUNK_SITE_URL||'https://home-5021411544.app-ionos.space').replace(/\/$/,'');
+const siteUrl=(process.env.SCHICHTFUNK_SITE_URL||'https://schichtfunk.de').replace(/\/$/,'');
 const supabaseUrl=(process.env.SUPABASE_URL||'https://zbvloohfjleadjnqhbbh.supabase.co').replace(/\/$/,'');
 const publishableKey=String(process.env.SUPABASE_PUBLISHABLE_KEY||'').trim();
 const timeoutMs=Number(process.env.HEALTHCHECK_TIMEOUT_MS||10000);
