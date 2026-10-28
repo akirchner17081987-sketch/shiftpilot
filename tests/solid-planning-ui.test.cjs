@@ -54,6 +54,7 @@ test('directly opened autonomous jobs always use the server review status and fa
  c.SFBackend.client.rpc=async(name,args)=>name==='autonomous_planning_control'?{data:{runs:serverRun?[serverRun]:[]}}:original(name,args);
  await c.SFMonthOptimizer.restoreBackground(job);assert.equal(el('applyAutoPlanBtn').disabled,true);assert.match(el('autoMonthHours').innerHTML,/2 Pflichtpositionen offen/);const count=calls.filter(x=>x.name==='apply_planning_period').length;await c.SFMonthOptimizer.apply();assert.equal(calls.filter(x=>x.name==='apply_planning_period').length,count);
  serverRun=null;await c.SFMonthOptimizer.restoreBackground(job);assert.equal(el('applyAutoPlanBtn').disabled,true);assert.match(el('autoMonthHours').innerHTML,/Prüfstand ist nicht verfügbar/);
+ serverRun={id:'autonomous-run',background_job_id:'autonomous-job',status:'ASSESSING',current_data:true,summary:null};await c.SFMonthOptimizer.restoreBackground(job);assert.equal(el('applyAutoPlanBtn').disabled,true);assert.match(el('autoMonthHours').innerHTML,/Prüfstand ist nicht verfügbar/);
  serverRun={id:'autonomous-run',background_job_id:'autonomous-job',status:'READY',current_data:true,summary:{canApply:true,open:0,errors:0,spread:0}};await c.SFMonthOptimizer.restoreBackground(job);assert.equal(c.SFMonthOptimizer.getResult().autonomousAssurance.canApply,true);
  serverRun.current_data=false;await c.SFMonthOptimizer.restoreBackground(job);assert.equal(el('applyAutoPlanBtn').disabled,true);
 });

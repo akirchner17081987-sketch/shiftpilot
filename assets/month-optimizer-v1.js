@@ -241,7 +241,7 @@
       // Always obtain the authoritative decision for autonomous jobs and fail closed.
       if(meta.autonomousRunId){
         let run=null;try{const q=await reviewRequest(()=>B.client.rpc('autonomous_planning_control',{p_company_id:company,p_action:'GET',p_month:job.first_month}));if(!validScope())throw Error('Der Planungszugang wurde gewechselt. Bitte den Vorschlag erneut öffnen.');if(q.error)throw q.error;run=[...(q.data?.runs||[]),q.data?.best_run].find(r=>r?.id===meta.autonomousRunId&&r.background_job_id===job.id);}catch(e){if(!validScope())throw e;}
-        autonomousAssurance={...(run?.summary||{}),reviewUnavailable:!run,canApply:!!run&&run.status==='READY'&&run.current_data!==false&&run.summary?.canApply===true};
+        autonomousAssurance={...(run?.summary||{}),reviewUnavailable:!run?.summary||!['READY','REVIEW'].includes(run.status),canApply:!!run&&run.status==='READY'&&run.current_data!==false&&run.summary?.canApply===true};
       }
       el('autoPlanPeriod').value='month';el('autoPlanMonth').value=meta.month;if(el('autoPlanMonthCount'))el('autoPlanMonthCount').value=String(meta.months.length);syncAutoPeriodControls();
       const proposed=stored.preview,base=meta.base,dates=meta.dates||autoPlanningDates();
