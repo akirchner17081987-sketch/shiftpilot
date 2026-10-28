@@ -8,7 +8,7 @@ Prüftag: 28.10.2026. Produktion: IONOS `https://schichtfunk.de`, Supabase-Proje
 |---|---|---|
 | Rollen und Mandantentrennung prüfen | Erledigt im beschriebenen Prüfumfang | 40/40 öffentliche SECURITY-DEFINER-RPCs gegen Fremdmandant; aktueller Rollen-/MFA-Test und direkte Tabellenpfade; zusätzlicher Live-Test mit 13 Audit-/Zugriffskontrollen |
 | Änderungen an Diensten, Arbeitszeiten und Regeln dokumentieren | Erledigt im beschriebenen Prüfumfang | Live: Dienständerung, Zeitkorrektur mit Grund und Regeländerung jeweils mit Bearbeiter und Vorher-/Nachher-Werten; Audit-Manipulation abgewehrt |
-| Datensicherung und Wiederherstellung testen | Teilweise, vollständige Abnahme offen | 4/4 synthetische logische Restore-Prüfungen heute bestanden; echter physischer Backup-Restore, heutige Backup-Liste und unabhängige Storage-Sicherung fehlen |
+| Datensicherung und Wiederherstellung testen | Teilweise, vollständige Abnahme offen | 4/4 synthetische logische Restore-Prüfungen heute bestanden; aktuelle Liste mit acht COMPLETED-Backups nach Anmeldung geprüft; echter physischer Backup-Restore und unabhängige Storage-Sicherung fehlen |
 | Datenschutzunterlagen, Hosting und AVV prüfen/dokumentieren | Technisch und dokumentarisch nachgeprüft | Primäranbieterquellen aktualisiert, neue Supabase-Unterauftragsverarbeiterliste berücksichtigt, IONOS-Rohlogfrist geklärt; keine neue vertragliche Zustimmung oder Kundenunterschrift behauptet |
 | Datenexport und Vertragsende festlegen | Ablauf vorbereitet | Kunden-Betriebspaket definiert Umfang, sichere Übergabe, Abruffrist, Weisung, Löschfreigaben und verbleibende Backupfristen; vollständiger Betreiberexport muss beim konkreten Vertragsende praktisch abgenommen werden |
 | Einführung, Hilfe und Support vorbereiten | Vorbereitet und Hilfe geprüft | Kundenblatt, Einführungsabnahme, Prioritäten und sichere Supportaufnahme; 258 Hilfeartikel/22 Kategorien auf vier Browseransichten geprüft; Vertretung/Servicezeiten noch zu benennen |
@@ -31,7 +31,20 @@ Prüftag: 28.10.2026. Produktion: IONOS `https://schichtfunk.de`, Supabase-Proje
 
 Der produktive Bucket `personnel-documents` und die zugehörigen Dokumentmetadaten sind leer. `audit-archives` enthält **31 Objekte / 5.919.293 Bytes**. Acht Archivübertragungen sind READY, vier historische Löschübertragungen DELETED. Die Storage-Ablage im Produktionsprojekt ist kein unabhängiges Vollbackup.
 
-Der letzte vorhandene historische Dashboard-Nachweis täglicher Backups stammt vom 13.09.2026. Die heutige Backup-Liste ist über den verbundenen SQL-Connector nicht abrufbar; das Dashboard verlangt eine separate Anmeldung. Die heutige Projektverfügbarkeit belegt nicht die heutige Backup-Erzeugung. Supabase dokumentiert für Pro sieben tägliche Backups; dies ist eine Anbieterangabe, kein aktueller kontobezogener Backupnachweis. Datenbankbackups enthalten keine Storage-Dateiinhalte.
+Nach der vom Betreiber durchgeführten Anmeldung wurde die aktuelle Backupverwaltung am 28.10.2026 lesend geprüft. Das Dashboard identifiziert `Security_Plattform PRO`, `SchichtFunk`, `main PRODUCTION`. Die Ansicht „Restore to new project“ zeigt alle folgenden acht physischen Sicherungen als **COMPLETED**. Das neueste Backup vom 28.10.2026 um 01:48:59 UTC entspricht **02:48:59 Uhr Europe/Berlin**. Damit ist der bisher fehlende aktuelle kontobezogene Backupnachweis erbracht; ein Restore wurde nicht gestartet.
+
+| Sicherungszeit UTC | Status |
+|---|---|
+| 28.10.2026 01:48:59 | COMPLETED |
+| 27.10.2026 01:49:05 | COMPLETED |
+| 26.10.2026 01:50:08 | COMPLETED |
+| 25.10.2026 01:50:01 | COMPLETED |
+| 24.10.2026 01:50:33 | COMPLETED |
+| 23.10.2026 01:48:24 | COMPLETED |
+| 22.10.2026 03:43:36 | COMPLETED |
+| 21.10.2026 01:59:20 | COMPLETED |
+
+Das ist eine Bestandsaufnahme, keine Garantie künftiger Sicherungen oder einer gemessenen Wiederherstellbarkeit. Datenbankbackups enthalten laut derselben Dashboardansicht keine Storage-Dateiinhalte. Physischer Restore und unabhängige Dateisicherung bleiben offen.
 
 Die frühere pauschale Einstufung von „Restore to a New Project“ als isoliert wurde korrigiert: Ein physischer Klon übernimmt auch die Vault-Verschlüsselungswurzel und kann kopierte Cron-/Netzwerkjobs sofort ausführen. Vorheriges Ausschließen/Anhalten im Klon bietet dieser Weg nicht. Ein Zielprojekt erst nach seiner Erstellung zu pausieren reicht daher nicht als Schutz vor Doppelversand oder Zugriffen auf Produktionsdienste.
 
@@ -57,7 +70,7 @@ Einführung/Support/Rückgabe: `customer-operations-pack-2026-10-28.md`. Die his
 
 ## Noch für die vollständige Abnahme erforderlich
 
-1. Heutige erfolgreiche Backup-Liste prüfen und den vollständigen isolierten Wiederherstellungsweg mit gemessenen Zeiten durchführen. Dafür fehlen Dashboard-Anmeldung bzw. freigegebener Managementzugang und ein vorab sicher isolierter Restoreweg; gegebenenfalls aktuelles Kostenangebot bestätigen.
+1. Den vollständigen isolierten Wiederherstellungsweg mit gemessenen Zeiten durchführen. Die Dashboard-Anmeldung und die aktuelle Backup-Liste sind inzwischen erfolgreich geprüft. Offen bleibt ein vorab sicher isolierter Restoreweg; gegebenenfalls ist ein aktuelles Kostenangebot zu bestätigen.
 2. Unabhängiges Backupziel für **alle** Storage-Dateien auswählen/freigeben, AVV/Region/Aufbewahrung/Zugang festhalten; täglichen Export, Fehleralarm und echte Rücksicherung einrichten/abnehmen. Kein vorhandenes Ziel oder Konto wurde erfunden; GitHub ist kein Personaldatei-Backupziel.
 3. Erreichbare Betriebs-/Datenschutzvertretung und tatsächlich betreute Supportzeiten festlegen. Vor externem Echtkundenstart zusätzlich das konkrete Kundenblatt und die Vereinbarungen ausfüllen.
 
@@ -72,3 +85,7 @@ Einführung/Support/Rückgabe: `customer-operations-pack-2026-10-28.md`. Die his
 - Physischer Klon und sofort startende Integrationen: https://supabase.com/docs/guides/platform/clone-project
 - Vercel DPA/Tarifgrenzen: https://vercel.com/legal/dpa und https://vercel.com/legal/terms
 - DSGVO Art. 28/32/33: https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX:32016R0679
+
+## Veröffentlichungsnachweis
+
+Die Implementierung wurde mit PR #207 in `codex/ionos-migration` zusammengeführt, Commit `3e4e2191e4c72e83ef2bec4939c906cf24eee359`. Der IONOS-Buildlauf `40770917745` einschließlich Browser-/Exportprüfung und Deployment-Auslösung ist erfolgreich abgeschlossen. Die Monitoring-Korrektur auf `main` ist über PR #206 integriert; der produktive Healthcheck-Lauf `40770917595` ist erfolgreich.
