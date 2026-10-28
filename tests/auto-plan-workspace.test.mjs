@@ -39,6 +39,12 @@ test('generated suggestions stay separate from assignments; removing a suggestio
 test('no matching shift permission gives an actionable reason and no misleading successful result',()=>{
  const {c,id}=harness();c.employees[0].shifts=[];c.generateAutoPlanPreview();assert.match(id('autoUnresolved').innerHTML,/Freigabe für FD/);assert.match(id('autoAnalysis').innerHTML,/is-warning/);assert.doesNotMatch(id('autoAnalysis').innerHTML,/is-good/);
 });
+test('coverage counts only required positions, excludes cancelled and excess duties, and names the shift location',()=>{
+ const {c,id,api}=harness();c.TYPES[0].siteId='site-a';c.window.SFCompanyProfile={siteLabel:id=>id==='site-a'?'Leipzig':''};
+ const rows=[{employeeId:'e',date:'2026-12-01',type:'FD'},{employeeId:'other',date:'2026-12-01',type:'FD'},{employeeId:'x',date:'2026-12-01',type:'FD',_dbStatus:'CANCELLED'}];
+ let result=api.coverageSummary(['2026-12-01'],rows);assert.deepEqual({...result},{required:1,covered:1,open:0});
+ c.employees[0].shifts=[];c.generateAutoPlanPreview();assert.match(id('autoUnresolved').innerHTML,/Standort: Leipzig/);assert.match(id('autoStats').innerHTML,/Pflichtpositionen besetzt/);
+});
 test('required rhythm and time rules are reported distinctly',()=>{
  const {api,c}=harness();c.window.sfRhythmCheck=()=>({mode:'required',allowed:false});assert.match(api.explain({type:'FD',date:'2026-12-01'}),/verbindliche Rhythmus/);c.window.sfRhythmCheck=()=>({mode:'required',allowed:true});c.window.SFAutoPlanGuard={passesTimeRules:()=>false};assert.match(api.explain({type:'FD',date:'2026-12-01'}),/Ruhezeit/);
 });
@@ -141,6 +147,12 @@ function sharedHarness(){
 }
 test('one shared TL deficit chooses either location and is counted once in the preview',async()=>{
  for(const available of ['le','re']){const {c,run,id}=sharedHarness();c.absent=e=>e!==available;assert.equal(c.autoOpenSlots().length,1);c.generateAutoPlanPreview();assert.equal(run('autoPlanPreview.length'),1);assert.equal(run('autoPlanPreview[0].type'),available==='le'?'TL-LE':'TL-RE');assert.equal(id('autoUnresolvedCount').textContent,0);assert.match(run('autoPlanPreview[0].reason'),/Deckt TL LE\/RE gemeinsam ab/);await c.applyAutoPlanPreview();assert.equal(c.assignments.length,1);assert.equal(c.autoOpenSlots().length,0);}
+});
+test('coverage report counts a shared leadership requirement once and rejects partial coverage',()=>{
+ const {c,api}=sharedHarness(),date='2026-12-01';
+ let result=api.coverageSummary([date],[]);assert.deepEqual({...result},{required:1,covered:0,open:1});
+ result=api.coverageSummary([date],[{employeeId:'le',date,type:'TL-LE',start:'20:00',end:'06:00'},{employeeId:'re',date,type:'TL-RE',start:'20:00',end:'06:00'}]);assert.deepEqual({...result},{required:1,covered:1,open:0});
+ result=api.coverageSummary([date],[{employeeId:'re',date,type:'TL-RE',start:'22:00',end:'06:00'}]);assert.deepEqual({...result},{required:1,covered:0,open:1});
 });
 test('LE, RE, two local TLs and legacy TL assignments all cover the shared night without a second mandatory slot',()=>{
  for(const types of [['TL-LE'],['TL-RE'],['TL-LE','TL-RE'],['Teamleiter']]){const {c,M}=sharedHarness();c.assignments=types.map((type,i)=>({date:'2026-12-01',type,employeeId:'tl'+i,start:'20:00',end:'06:00'}));assert.equal(c.autoOpenSlots().length,0);assert.equal(M.requiredSoll('2026-12-01','TL-LE',1)-c.assignmentsFor('2026-12-01','TL-LE').length,0);assert.equal(M.requiredSoll('2026-12-01','TL-RE',1)-c.assignmentsFor('2026-12-01','TL-RE').length,0);assert.equal(M.coverageInfo('2026-12-01','TL-LE').target,1);}

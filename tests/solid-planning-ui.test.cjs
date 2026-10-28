@@ -43,7 +43,8 @@ test('background planning persists and restores the comparison baseline with the
  await c.SFMonthOptimizer.optimize();assert.equal(payload.metadata.reviewBefore.version,1);assert.equal(payload.metadata.reviewBefore.dates.length,31);
  const job={id:'saved-job',company_id:'co',first_month:'2027-01-01',month_count:1,result:{preview,metadata:payload.metadata}};
  await c.SFMonthOptimizer.restoreBackground(job);assert.ok(c.SFMonthOptimizer.getResult(),c.toast?.copy);assert.deepEqual(c.SFMonthOptimizer.getResult().reviewBefore,payload.metadata.reviewBefore);assert.match(el('autoPlanComparison').innerHTML,/Was verändert/);
- delete job.result.metadata.reviewBefore;await c.SFMonthOptimizer.restoreBackground(job);assert.match(el('autoPlanComparison').innerHTML,/Ausgangsstand/);
+ delete job.result.metadata.reviewBefore;await c.SFMonthOptimizer.restoreBackground(job);assert.match(el('autoPlanComparison').innerHTML,/Was verändert/);assert.equal(c.SFMonthOptimizer.getResult().reviewBefore.openCount,2);
+ await c.SFMonthOptimizer.restoreBackground(job,false,{canApply:false,open:2,errors:1,spread:10});assert.match(el('autoMonthHours').innerHTML,/Manuelle Entscheidung erforderlich/);assert.match(el('autoMonthHours').innerHTML,/2 Pflichtpositionen offen · 1 Regelkonflikte/);assert.equal(el('applyAutoPlanBtn').disabled,true);
 });
 test('other-company policy disables month-count expansion',()=>{const{c}=harness();c.SFCompliance.policy.solidPlanningRules={};assert.equal(c.autoPlanningDates().length,31)});
 
@@ -112,6 +113,7 @@ test('200-hour OT preview staggers days off and allows confirming the two-person
  await c.SFMonthOptimizer.optimize();assert.ok(c.SFMonthOptimizer.getResult(),c.toast?.copy);const preview=run('autoPlanPreview');
  for(const e of c.employees)assert.equal(preview.filter(a=>a.employeeId===e.id).length,20);
  assert.equal(c.SFMonthOptimizer.getResult().criticalOpen,0);assert.equal(run('autoPlanUnresolved.length'),9);
+ assert.equal(el('autoUnresolvedCount').textContent,0,'allowed OT days off are not displayed as mandatory gaps');assert.match(el('autoStats').innerHTML,/Pflichtpositionen besetzt/);assert.match(el('autoMonthHours').innerHTML,/0 Pflichtpositionen offen/);
  await c.applyAutoPlanPreview();assert.equal(calls.at(-1).name,'apply_planning_period');assert.equal(calls.at(-1).args.p_assignments.length,60);
 });
 test('candidate collection retains the complete three-night block despite the last night failing alone',async()=>{

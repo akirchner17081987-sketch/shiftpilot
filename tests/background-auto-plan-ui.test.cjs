@@ -32,6 +32,16 @@ test('company switch disconnects display without cancelling the old company job 
  const h=harness();h.c.document.hidden=true;const planning=h.c.SFMonthOptimizer.optimize();for(let n=0;n<50&&!h.payload();n++)await delay(3);assert.ok(h.payload());h.c.SFBackend.companyId='other-company';h.c.SFBackend.updateState();await planning;
  assert.equal(h.calls.filter(x=>x.name==='cancel_background_auto_plan').length,0);assert.equal(h.c.SFMonthOptimizer.getResult(),null);assert.equal(h.c.SFMonthOptimizer.isBusy(),false);
 });
+test('saved server proposals without a comparison baseline reconstruct it only after fingerprint verification',async()=>{
+ const h=harness();h.c.document.hidden=true;const planning=h.c.SFMonthOptimizer.optimize();
+ for(let n=0;n<50&&!h.payload();n++)await delay(3);assert.ok(h.payload());h.finishServer();h.c.document.hidden=false;h.events.get('visibilitychange')();await planning;
+ const job=h.job();delete job.result.metadata.reviewBefore;h.c.changeAutoPlanPeriod();let calls=0;
+ h.c.SFPlanningReview={snapshot(rows,dates,open){calls++;return {version:1,company:h.c.SFBackend.companyId,rows:[...rows],dates:[...dates],openCount:open}},reset(){},render(){},refreshOpen(){},hoursMarkup(){return ''},slotMarkup(){return ''}};
+ const old=h.c.SFBackend.client.rpc;h.c.SFBackend.client.rpc=(name,args)=>name==='preview_planning_period'?Promise.resolve({data:{fingerprint:'changed'}}):old(name,args);
+ await h.c.SFMonthOptimizer.restoreBackground(job);assert.equal(calls,0);assert.equal(h.c.SFMonthOptimizer.getResult(),null);
+ h.c.SFBackend.client.rpc=old;await h.c.SFMonthOptimizer.restoreBackground(job);
+ assert.equal(calls,1);const baseline=h.c.SFMonthOptimizer.getResult().reviewBefore;assert.equal(baseline.company,h.c.SFBackend.companyId);assert.equal(baseline.dates.length,h.run('autoPlanningDates().length'));assert.equal(baseline.openCount,h.run('autoOpenSlots().length'));assert.equal(baseline.rows.length,h.c.assignments.length);
+});
 test('new login resumes an active job and restores planning controls when the job finishes',async()=>{
  const h=harness();h.c.document.hidden=true;const planning=h.c.SFMonthOptimizer.optimize();for(let n=0;n<50&&!h.payload();n++)await delay(3);const current=h.job();h.c.SFBackend.ready=false;h.c.SFBackend.updateState();await planning;
  h.c.SFBackend.ready=true;h.c.SFBackend.updateState();await delay(5);h.finishServer();h.c.document.hidden=false;h.events.get('visibilitychange')();
