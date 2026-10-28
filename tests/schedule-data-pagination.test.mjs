@@ -79,7 +79,7 @@ test('incomplete database deletion reports an error rather than a success',async
 });
 
 test('quick deletion does not claim cloud success before synchronization',()=>{
-  const messages=[],c={window:{SFBackend:{ready:true}},assignments:[{id:'a',date:'2026-12-01',type:'TEST',employeeId:'e'}],employees:[{id:'e',first:'Test',last:'Person'}],confirm:()=>true,showSaveToast:(...args)=>messages.push(args),saveAll(){},Date};
+  const messages=[],c={window:{SFBackend:{ready:true}},assignments:[{id:'a',_dbId:'db-a',date:'2026-12-01',type:'TEST',employeeId:'e'}],employees:[{id:'e',first:'Test',last:'Person'}],confirm:()=>true,showSaveToast:(...args)=>messages.push(args),saveAll(){},Date};
   vm.runInNewContext(read('assets/assignment-quick-delete-v1.js'),c);c.window.spQuickDeleteAssignment('a');
   assert.equal(messages[0][0],'Löschung wird gespeichert');assert.equal(c.assignments.length,0);
 });
