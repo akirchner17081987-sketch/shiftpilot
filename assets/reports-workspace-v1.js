@@ -132,7 +132,7 @@
  }
  R.reload=()=>reload(true);R.render=()=>reload(false);R.core=C;R.reportTables=reportTables;R.exportInfo=exportInfo;R.exportReport=exportReport;R.getResult=()=>same(context())&&contextKey===key(context())?result:null;
  window.renderReports=R.render;
- function installStateGuard(){if(typeof B.updateState==='function'&&!B.updateState.__reportsGuard){const base=B.updateState;const fn=function(){const out=base.apply(this,arguments),previous=contextKey;mount();guard();if(previous!==contextKey&&active()&&same(context()))reload(true);return out};fn.__reportsGuard=true;B.updateState=fn}}
+ function installStateGuard(){if(typeof B.updateState==='function'&&!B.updateState.__reportsGuard){const base=B.updateState;const fn=function(){const out=base.apply(this,arguments),previous=contextKey;mount();guard();if(previous!==contextKey&&active()&&same(context()))reload(true);return out};Object.assign(fn,base);fn.__reportsGuard=true;B.updateState=fn}}
  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&active())reload(true)});document.addEventListener('sf:company-profile-change',()=>{if(active())reload(true)});window.addEventListener('sf:company-timezone-change',()=>{invalidate();if(active())reload(true)});
  setInterval(()=>{installStateGuard();const c=context();if(key(c)!==contextKey||!same(c)){guard();if(active()&&same(c))reload(true)}if(!root())return;if(active()&&!document.hidden&&Date.now()-lastCheck>30000){lastCheck=Date.now();if(!pending&&!exporting&&!root()?.contains(document.activeElement))reload(true)}},500);
  mount();installStateGuard();if(active())reload();
