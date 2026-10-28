@@ -7,8 +7,9 @@
   const dateLabel=date=>{if(!dateLabels.has(date))dateLabels.set(date,dateFormatter.format(new Date(date+'T12:00:00')));return dateLabels.get(date)};
   const written=new WeakMap();
   const html=(node,value)=>{if(!node||written.get(node)===value)return;node.innerHTML=value;written.set(node,value)};
-  let suggestionKey='',suggestionHost=null,stairMonth='',unresolvedPage=0,unresolvedKey='';
+  let suggestionKey='',suggestionHost=null,stairMonth='',unresolvedPage=0,unresolvedKey='',siteLoadKey='';
   const shiftLabel=code=>{const t=typeById(code),label=window.SFShiftModels?.label?.(code)||code;return t?.name&&t.name!==label?`${label} · ${t.name}`:label};
+  const slotSite=slot=>{const codes=slot.alternatives?.length?slot.alternatives:[slot.type],labels=codes.map(code=>{const model=window.SFShiftModels?.find?.(code)||typeById(code),id=model?.siteId;if(!id)return 'Kein Standort zugeordnet';return window.SFCompanyProfile?.siteLabel?.(id)||'Zugeordneter Standort (Name nicht geladen)'});return [...new Set(labels)].join(' / ')};
   function renderRuleCards(rules,company,core,confirmed){
     const p=rules||{},cards=[],hasOT=TYPES.some(t=>['OT1','OT2','OT3'].includes(t.id));
     const card=(key,title,rows=[],notes=[])=>{
@@ -96,7 +97,29 @@
     const keyOf=x=>x.date+'|'+(x.coverageGroup||x.type);
     const counts=new Map();preview.forEach(x=>{const key=keyOf(x);counts.set(key,(counts.get(key)||0)+1)});
     const known=new Map();autoPlanUnresolved.forEach(x=>{const key=keyOf(x);if(!known.has(key))known.set(key,x.reason)});
-    return slots.filter(x=>{const key=keyOf(x),n=counts.get(key)||0;if(n){counts.set(key,n-1);return false}return true}).map(x=>({...x,reason:known.get(keyOf(x))||'Für diese Position liegt kein Vorschlag vor. Bitte prüfe die Besetzung im Dienstplan.'}));
+    const pending=slots.filter(x=>{const key=keyOf(x),n=counts.get(key)||0;if(n){counts.set(key,n-1);return false}return true});
+    const core=window.SFSolidPlanningCore,rules=window.SFCompliance?.policy?.solidPlanningRules,roster=core?.otRoster?.(rules),byDay=new Map();
+    return pending.filter(x=>{if(x.coverageGroup!=='OT-DAY'||!roster?.allowDaysOff)return true;if(!byDay.has(x.date))byDay.set(x.date,core.rosterMissing(x.date,[...assignments,...preview],rules));const n=byDay.get(x.date);if(n<=0)return false;byDay.set(x.date,n-1);return true;}).map(x=>({...x,reason:known.get(keyOf(x))||'Für diese Position liegt kein Vorschlag vor. Bitte prüfe die Besetzung im Dienstplan.'}));
+  }
+  function coverageSummary(dates,rows){
+    const before=assignments,all=rows.filter(a=>a.status!=='CANCELLED'&&a._dbStatus!=='CANCELLED'),models=window.SFShiftModels,core=window.SFSolidPlanningCore,rules=window.SFCompliance?.policy?.solidPlanningRules;
+    const bySlot=new Map();for(const a of all){const key=a.date+'|'+a.type;if(!bySlot.has(key))bySlot.set(key,new Set());bySlot.get(key).add(String(a.employeeId));}
+    let required=0,covered=0;
+    try{assignments=all;
+      for(const date of dates){
+        const roster=core?.otRoster?.(rules),otNeeds={};
+        if(roster)for(const code of core.otCodes)otNeeds[code]=Math.max(0,Number(core.required(date,code,all,rules))||0);
+        if(roster?.allowDaysOff&&!otNeeds.OT1&&!otNeeds.OT3)otNeeds.OT2=Math.min(otNeeds.OT2,core.rosterMinimum(rules));
+        for(const t of TYPES){
+          if(t.active===false)continue;
+          const group=models?.coverageInfo?.(date,t.id);if(group&&group.representative!==t.id)continue;
+          const need=group?Number(group.target)||0:roster&&core.otCodes.includes(t.id)?otNeeds[t.id]:Number(models?.requiredSoll?.(date,t.id,getSoll(date,t.id))??getSoll(date,t.id))||0;
+          const filled=group?group.filled:(bySlot.get(date+'|'+t.id)?.size||0);
+          required+=need;covered+=Math.min(need,filled);
+        }
+      }
+    }finally{assignments=before;}
+    return {required,covered,open:required-covered};
   }
   function explain(slot,simulated=[]){
     const {type,date}=slot;
@@ -118,7 +141,7 @@
     if(!pool.length)return'Der verbindliche Rhythmus der verfügbaren Mitarbeiter passt an diesem Tag nicht zu dieser Schicht.';
     const timePool=pool.filter(e=>!window.SFAutoPlanGuard||window.SFAutoPlanGuard.passesTimeRules(e.id,type,date,simulated));
     if(!timePool.length)return'Schichtwechsel, Schichtdauer, Ruhezeit, Überschneidung oder das Maximum an Diensten in Folge verhindern die Besetzung. Prüfe die Schichtzeiten und benachbarte Dienste.';
-    const cap=Number(window.SFCompliance?.policy?.monthlyPlanningMaxHours)||220,count=Number(window.SFCompliance?.policy?.monthlyPlanningMaxShifts);return `Für die übrigen passenden Mitarbeiter reichen die freien Wochen- oder Monatsstunden nicht aus. Vollzeit: maximal ${cap} Monatsstunden${count?`, höchstens ${count} Schichten pro Monat`:''}; Ziel bleiben die persönlichen Monatsstunden. Bei Teilzeit bleibt das individuelle Monats-SOLL die feste Obergrenze.`;
+    return 'Für die verbleibenden Mitarbeiter bitte Wochen- oder Monatsstunden, vollständige Arbeitsblöcke und die übrigen Regeln prüfen. Der Suchlauf hat keine passende Zuordnung gefunden; das allein belegt keinen Personalmangel.';
   }
   function renderSuggestions(){
     const host=el('autoSuggestions');if(!host)return;
@@ -160,11 +183,13 @@
     html(host,`<div class="sf-auto-draft-summary" aria-label="Entwurf zusammengefasst"><span><b>${staffed} / ${people.length}</b> Mitarbeiter eingeplant</span><span><b>${duties}</b> ${duties===1?'Dienst':'Dienste'}</span><span><b>${hoursLabel(planned)}</b> Plan-IST</span><span><b>${hoursLabel(target)}</b> ${scope}-SOLL</span></div><p class="sf-auto-draft-note">Plan-IST = geplante Stunden einschließlich dieses Vorschlags. Differenz = Plan-IST minus ${scope}-SOLL; keine erfassten Arbeitszeiten.</p>${months.length>1?`<div class="sf-auto-preview-nav"><label>Monat in der Planvorschau <select aria-label="Monat in der Planvorschau" data-sf-change="change-8b4a4168b2ab">${months.map(m=>`<option value="${esc(m)}" ${m===stairMonth?'selected':''}>${esc(monthFormatter.format(new Date(m+'-01T12:00:00')))}</option>`).join('')}</select></label><p>Die Gesamtwerte gelten für den vollständigen Planungszeitraum. Die Tabelle zeigt den ausgewählten Monat.</p></div>`:''}<div class="sf-auto-stair-scroll" tabindex="0" aria-label="Treppenmuster horizontal scrollen"><table class="sf-auto-stair-table"><caption>${esc(autoPeriodLabel(shown))} · Schichtcode: besetzt · –: Rhythmusfrei · ○: Arbeitstag ohne Dienst · Abw.: abwesend</caption><thead><tr><th scope="col">Mitarbeiter</th>${head}</tr></thead><tbody>${rows.map(({e,duties,planned,target,difference})=>`<tr data-auto-employee="${esc(e.id)}"><th scope="row" style="${window.SFScheduleEmployeeDisplay?.style(e)||''}"><span class="sf-auto-draft-person">${esc(e.personnelNo||'')} · ${esc(e.first+' '+e.last)}</span><span class="sf-auto-draft-metrics"><span>${duties} ${duties===1?'Dienst':'Dienste'}</span><span>Plan-IST <b>${hoursLabel(planned)}</b></span><span>SOLL <b>${hoursLabel(target)}</b></span><span class="sf-auto-draft-balance ${difference<-.005?'is-short':difference>.005?'is-extra':'is-balanced'}" title="Plan-IST minus SOLL">Differenz <b>${difference>.005?'+':''}${hoursLabel(difference)}</b></span></span></th>${shown.map(d=>{const a=days.get(String(e.id)+'|'+d),r=window.SFRhythm?.check(e,'O1',d),away=absent(e.id,d),free=r?.mode==='required'&&r.expected==='FREI',work=r?.mode==='required'&&r.expected==='ALLE',value=a?a.type:away?'Abw.':free?'–':work?'○':'·',state=a?'assigned':away?'absent':free?'free':work?'work':'empty',title=a?`${(window.SFShiftModels?.label?.(a.type)||a.type)} · ${a.start||typeById(a.type)?.start}–${a.end||typeById(a.type)?.end}`:away?'Abwesend':free?'Verbindlicher freier Tag':work?'Arbeitstag ohne Dienst: Besetzung nach Bedarf und Stundenlimits':'Kein Dienst vorgesehen';return`<td class="is-${state}" title="${esc(d+' · '+e.first+' '+e.last+' · '+title)}">${esc(value)}</td>`}).join('')}</tr>`).join('')}</tbody>${staffingRows(shown,all,head)}</table></div><p class="sf-auto-draft-note">Besetzungs-IST = eingeplante Mitarbeiter einschließlich Vorschlägen; SOLL = Pflichtbedarf. Optionale Schichten dürfen bei SOLL 0 frei bleiben. Gemeinsamer Bedarf wird in der Summenzeile der Schichtalternativen geprüft.</p>`);
   }
   function renderUnresolved(remaining){
+    const profile=window.SFCompanyProfile,scope=window.SFBackend?.companyId;
+    if(scope&&profile?.current&&profile?.load&&!profile.current()&&siteLoadKey!==scope&&remaining.some(s=>(s.alternatives||[s.type]).some(code=>(window.SFShiftModels?.find?.(code)||typeById(code))?.siteId))){siteLoadKey=scope;Promise.resolve(profile.load()).then(()=>{if(window.SFBackend?.companyId===scope)renderAutoPlanning();}).catch(()=>{});}
     const grouped=new Map();remaining.forEach(x=>{const key=x.date+'|'+x.type+'|'+x.reason;if(!grouped.has(key))grouped.set(key,{...x,count:0});grouped.get(key).count++});
     const list=[...grouped.values()].sort((a,b)=>a.date.localeCompare(b.date)||a.type.localeCompare(b.type)),key=JSON.stringify([window.SFBackend?.companyId,list]);
     if(key!==unresolvedKey){unresolvedKey=key;unresolvedPage=0}
     const size=60,pages=Math.ceil(list.length/size);unresolvedPage=Math.max(0,Math.min(unresolvedPage,pages-1));
-    html(el('autoUnresolved'),list.length?`${pages>1?`<div class="sf-auto-preview-nav" aria-label="Offene Positionen durchblättern"><span>Seite ${unresolvedPage+1} von ${pages} · ${list.length} Schichtgruppen</span><button type="button" class="ghost" data-sf-click="click-0268814d6fd6" ${unresolvedPage===0?'disabled':''}>Zurück</button><button type="button" class="ghost" data-sf-click="click-edb4d32093fc" ${unresolvedPage===pages-1?'disabled':''}>Weiter</button></div>`:''}${list.slice(unresolvedPage*size,(unresolvedPage+1)*size).map(x=>`<div class="sf-auto-unresolved-row"><div><b>${esc(dateLabel(x.date))} · ${esc(x.coverageLabel||shiftLabel(x.type))}</b><span class="sf-auto-needed">${x.count} Position${x.count===1?'':'en'} offen</span><p>${esc(x.reason)}</p>${window.SFPlanningReview?.slotMarkup(x)||''}</div><button type="button" class="ghost" data-auto-date="${esc(x.date)}" data-sf-click="click-1cb69e027894">Im Dienstplan prüfen</button></div>`).join('')}`:'<div class="sf-auto-empty is-good"><b>Alle offenen Positionen haben einen Vorschlag.</b><p>Prüfe die Besetzungen und übernimm sie anschließend als Entwurf.</p></div>');
+    html(el('autoUnresolved'),list.length?`${pages>1?`<div class="sf-auto-preview-nav" aria-label="Offene Positionen durchblättern"><span>Seite ${unresolvedPage+1} von ${pages} · ${list.length} Schichtgruppen</span><button type="button" class="ghost" data-sf-click="click-0268814d6fd6" ${unresolvedPage===0?'disabled':''}>Zurück</button><button type="button" class="ghost" data-sf-click="click-edb4d32093fc" ${unresolvedPage===pages-1?'disabled':''}>Weiter</button></div>`:''}${list.slice(unresolvedPage*size,(unresolvedPage+1)*size).map(x=>`<div class="sf-auto-unresolved-row"><div><b>${esc(dateLabel(x.date))} · ${esc(x.coverageLabel||shiftLabel(x.type))}</b><span class="sf-auto-needed">${x.count} Position${x.count===1?'':'en'} offen</span><p>Schicht: ${esc((x.alternatives?.length?x.alternatives:[x.type]).map(shiftLabel).join(" / "))} · Standort: ${esc(slotSite(x))}</p><p>${esc(x.reason)}</p>${window.SFPlanningReview?.slotMarkup(x)||''}</div><button type="button" class="ghost" data-auto-date="${esc(x.date)}" data-sf-click="click-1cb69e027894">Im Dienstplan prüfen</button></div>`).join('')}`:'<div class="sf-auto-empty is-good"><b>Alle offenen Positionen haben einen Vorschlag.</b><p>Prüfe die Besetzungen und übernimm sie anschließend als Entwurf.</p></div>');
   }
   function render(){
     if(!el('view-auto')||window.SFAutoPlanProgress?.isBusy())return;
@@ -177,14 +202,15 @@
     if(optionalSlots.length)text('autoStartHint',`${slots.length} offene Pflichtpositionen · ${optionalSlots.length} optionale Besetzungen. Pflichtdienste haben Vorrang.`);
     el('generateAutoPlanBtn').disabled=(!slots.length&&!optionalSlots.length)||autoPlanApplying;
     el('generateAutoPlanBtn').textContent=analyzed?'↻ Vorschläge neu erstellen':'✦ Vorschläge erstellen';
-    const stats=[['Offene Positionen',slots.length,'im gewählten Zeitraum'],['Vorschläge',analyzed?count:'–',analyzed?'zur Prüfung bereit':'Analyse noch nicht gestartet'],['Noch zu besetzen',analyzed?remaining.length:'–',analyzed?'nach diesen Vorschlägen':'wird bei der Analyse geprüft'],['Verfügbare Profile',available,'aktive Mitarbeiter ohne durchgehende Abwesenheit']];
+    const coverage=analyzed?coverageSummary(dates,[...assignments,...autoPlanPreview]):null;
+    const stats=[['Pflichtpositionen besetzt',coverage?coverage.covered+' / '+coverage.required:'–',coverage?'einschließlich Vorschlag':'nach der Analyse'],['Vorschläge',analyzed?count:'–',analyzed?'zur Prüfung bereit':'Analyse noch nicht gestartet'],['Noch zu besetzen',coverage?coverage.open:'–',analyzed?'nach diesen Vorschlägen':'wird bei der Analyse geprüft'],['Verfügbare Profile',available,'aktive Mitarbeiter ohne durchgehende Abwesenheit']];
     html(el('autoStats'),stats.map(([title,value,note])=>`<div class="stat"><small>${esc(title)}</small><strong>${esc(value)}</strong><em>${esc(note)}</em></div>`).join(''));
     let title,copy,tone='';
     if(applied){title=`${applied} Besetzung${applied===1?'':'en'} als Entwurf übernommen`;copy=remaining.length?`${remaining.length} Positionen sind noch offen. Prüfe sie im Dienstplan oder erstelle weitere Vorschläge.`:'Der Zeitraum ist vollständig besetzt. Prüfe den Dienstplan und veröffentliche ihn, wenn alles passt.';tone='is-good'}
     else if(!slots.length){title=analyzed&&count?`${count} optionale Besetzung${count===1?'':'en'} vorgeschlagen`:optionalSlots.length?'Optionale Besetzung möglich':'Keine offenen Positionen';copy=analyzed?'Alle Pflichtpositionen sind abgedeckt. Nicht vorgeschlagene optionale Schichten dürfen frei bleiben.':'Für diesen Zeitraum ist keine zusätzliche Pflichtbesetzung erforderlich. Optionale Schichten werden bei freien Kapazitäten vorgeschlagen.';tone='is-good'}
     else if(!analyzed){title='Bereit für deinen Planungsvorschlag';copy='Starte „Vorschläge erstellen“. Anschließend siehst du passende Besetzungen und die Gründe für offene Positionen.'}
     else if(count){title=`${count} Besetzung${count===1?'':'en'} vorgeschlagen`;copy=remaining.length?`${remaining.length} Positionen benötigen noch deine Prüfung. Die Vorschläge kannst du einzeln entfernen oder als Entwurf übernehmen.`:'Für alle offenen Positionen gibt es einen Vorschlag. Prüfe die Mitarbeiterzuordnung und übernimm die Besetzungen als Entwurf.';tone=remaining.length?'is-warning':'is-good'}
-    else{title='Für die offenen Positionen wurde kein passender Mitarbeiter gefunden';copy='Unter „Noch zu besetzen“ siehst du die Gründe. Prüfe dort die Profile, den Rhythmus oder bereits geplante Dienste.';tone='is-warning'}
+    else{title='Für die offenen Positionen wurde keine Besetzung vorgeschlagen';copy='Unter „Noch zu besetzen“ kannst du erkennbare Hindernisse prüfen. Ein begrenzter Suchlauf belegt keinen Personalmangel.';tone='is-warning'}
     html(el('autoAnalysis'),`<div class="sf-auto-status ${tone}"><b>${esc(title)}</b><p>${esc(copy)}</p></div>`);
     text('autoReviewHint',analyzed?`${label} · Ergebnis der aktuellen Planung`:'Die Zahlen für Vorschläge und verbleibende Positionen erscheinen nach der Analyse.');
     el('autoResults').hidden=!analyzed||!!applied;
@@ -230,7 +256,7 @@
       cancel.onclick=()=>done(false);accept.onclick=()=>done(true);back.onclick=e=>{if(e.target===back)done(false)};document.addEventListener('keydown',key);cancel.focus();
     });
   }
-  window.SFAutoPlanWorkspace={render,explain,remainingSlots,openSchedule,confirmApply,startApply,stairMonth:value=>{stairMonth=value;renderAutoPlanning()},unresolvedPage:delta=>{unresolvedPage+=delta;renderAutoPlanning()},expandDays:open=>document.querySelectorAll('#autoSuggestions details').forEach(x=>{if(open)x.sfAutoFill?.();x.open=open})};
+  window.SFAutoPlanWorkspace={render,explain,remainingSlots,coverageSummary,openSchedule,confirmApply,startApply,stairMonth:value=>{stairMonth=value;renderAutoPlanning()},unresolvedPage:delta=>{unresolvedPage+=delta;renderAutoPlanning()},expandDays:open=>document.querySelectorAll('#autoSuggestions details').forEach(x=>{if(open)x.sfAutoFill?.();x.open=open})};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',render,{once:true});else render();
 })();
 

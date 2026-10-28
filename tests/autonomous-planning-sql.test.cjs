@@ -1,5 +1,23 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),{PGlite}=require('@electric-sql/pglite');
 const {cid,other,uid,eid,bootstrap,files}=require('./fixtures/autonomous-db.cjs');
+test('manual approval migration converts existing automatic settings and blocks reenabling them',async()=>{
+ const db=new PGlite();try{await db.exec(bootstrap);for(const file of files)await db.exec(fs.readFileSync('supabase/migrations/'+file,'utf8'));
+ await db.query("insert into private.autonomous_planning_settings(company_id,enabled,mode,revision,actor_id) values($1,true,'DRAFT',7,$2)",[cid,uid]);
+ const migration=fs.readdirSync('supabase/migrations').find(f=>f.endsWith('_planning_manual_approval.sql'));await db.exec(fs.readFileSync('supabase/migrations/'+migration,'utf8'));
+ const setting=(await db.query('select mode,enabled,revision from private.autonomous_planning_settings where company_id=$1',[cid])).rows[0];assert.deepEqual(setting,{mode:'PREVIEW',enabled:true,revision:8});
+ await assert.rejects(()=>db.query("update private.autonomous_planning_settings set mode='DRAFT' where company_id=$1",[cid]),/autonomous_planning_requires_manual_approval/);
+ const cfg={enabled:true,mode:'DRAFT',run_day:20,run_time:'06:00',lead_months:1,month_count:1,on_changes:false,history_months:3,revision:8};
+ await assert.rejects(()=>db.query("select public.autonomous_planning_control($1,'SAVE',$2::jsonb)",[cid,JSON.stringify(cfg)]),/autonomous_planning_requires_manual_approval/);
+ const state=(await db.query("select public.autonomous_planning_control($1,'RUN',null,null,'2027-01-01') v",[cid])).rows[0].v,run=state.runs[0];
+ const stored=(await db.query('select * from private.autonomous_planning_runs where id=$1',[run.id])).rows[0],job='dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+ await db.query("insert into private.background_auto_plan_jobs(id,company_id,status,fingerprint,payload,result) values($1,$2,'SUCCEEDED','snapshot',$3,$4)",[job,cid,{metadata:{movable:[]}},{preview:[{employeeId:'local',date:'2027-01-04',type:'TAG',start:'08:00',end:'16:00'}]}]);
+ await db.query("update private.autonomous_planning_runs set source='MONTHLY',status='ASSESS_QUEUED',background_job_id=$2 where id=$1",[run.id,job]);
+ const lease=(await db.query('select private.sf_autonomy_claim($1,$2) v',[run.id,stored.token])).rows[0].v;
+ const summary={checked:1,canApply:true,open:0,critical:0,errors:0,spread:0};
+ await db.query('select private.sf_autonomy_finish($1,$2,$3,$4,null,null,$5,null)',[run.id,stored.token,lease.lease,lease.revision,summary]);
+ assert.equal((await db.query('select status from private.autonomous_planning_runs where id=$1',[run.id])).rows[0].status,'READY');assert.equal((await db.query('select count(*) n from private.saved_plans')).rows[0].n,0,'scheduled completion stays a proposal');
+ }finally{await db.close();}
+});
 test('partial repair references remain company/fingerprint scoped and never gain direct API privileges',async()=>{
  const db=new PGlite(),company='11111111-1111-4111-8111-111111111111',foreign='22222222-2222-4222-8222-222222222222',id=n=>'00000000-0000-4000-8000-'+String(n).padStart(12,'0');
  try{

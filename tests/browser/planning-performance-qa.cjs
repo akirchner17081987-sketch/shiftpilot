@@ -41,6 +41,8 @@ async function main(){
  async function render(variant){const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(origin+'/render?variant='+variant);const stats=await page.evaluate(()=>({openMs:qa.openMs,preview:autoPlanPreview.length,existing:assignments.length,cells:document.querySelectorAll('.sf-auto-stair-table > tbody:not(.sf-auto-staffing) td').length,details:document.querySelectorAll('#autoSuggestions .sf-auto-suggestion-row').length,total:document.querySelector('.sf-auto-draft-summary').textContent}));assert.equal(stats.preview,4320);assert.equal(stats.existing,4320);assert.match(stats.total,/69[.\s]?120 h/);assert.match(stats.total,/86[.\s]?400 h/);
   const samples=[];for(let n=0;n<3;n++)samples.push(await page.evaluate(()=>{const start=performance.now();renderAutoPlanning();return performance.now()-start}));stats.repeatMs=samples.sort((a,b)=>a-b)[1];
   if(variant==='current'){
+   assert.match(await page.locator('#autoStats').textContent(),/Pflichtpositionen besetzt/);
+   assert.match(await page.locator('#autoUnresolved').textContent(),/Standort:/);
    const ruleDetails=page.locator('#autoRuleDetails');
    assert.equal(await page.locator('#optimizeAutoMonthBtn').isVisible(),false);assert.equal(await page.locator('#generateAutoPlanBtn').isVisible(),true);
 
