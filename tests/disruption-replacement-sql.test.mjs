@@ -20,6 +20,7 @@ async function setup(){const db=new PGlite();try{await db.exec(read('tests/sql/a
  create trigger scope_guard before insert or update on shift_assignments for each row execute function enforce_shift_employee_scope();`);
  await db.exec(migration());
  await db.exec(read('supabase/migrations/20261027051422_fix_disruption_list_employee_alias.sql'));
+ await db.exec(read('supabase/migrations/20261028184359_disruption_offer_privacy.sql'));
  await db.query('insert into auth.users(id) values($1),($2)',[actor,portalUser]);await db.query("insert into companies(id,name,timezone) values($1,'Own','Europe/Berlin'),($2,'Other','Europe/Berlin')",[company,foreign]);
  await db.query(`insert into company_members(company_id,user_id,role,status) values($1,$2,'OWNER','ACTIVE')`,[company,actor]);await db.query(`insert into company_compliance_policy(company_id,solid_planning_rules,standard_min_rest_hours,standard_max_shift_hours) values($1,'{}',11,10)`,[company]);
  for(const [id,name,user] of [[original,'Original',null],[target,'Offline',null],[portal,'Portal',portalUser]])await db.query(`insert into employees(id,company_id,first_name,last_name,status,role,shift_permissions,auth_user_id,access_status,qualifications) values($1,$2,$3,'Test','active','Mitarbeiter',array['T'],$4,'ACTIVE','{}')`,[id,company,name,user]);
@@ -82,3 +83,14 @@ test('LIST resolves the employee join without a record collision and still enfor
  await db.exec('reset role');const a=await source(db);await commit(db,a.id);await db.exec('set role authenticated');
  const list=await one(db,`select manager_disruption_replacement($1,null,'{"action":"LIST"}') result`,[company]);assert.equal(list.result.length,1);assert.equal(list.result[0].replacement_employee,'Offline Test');
 }finally{await db.close();}});
+
+
+test('replacement offer never discloses another employee’s absence reason or private notes',async()=>{const db=await setup();try{
+ const a=await source(db),i=await one(db,`select manager_create_disruption($1,$2,'SICKNESS','Confidential health information') id`,[company,a.id]);
+ await db.query('select manager_send_disruption_offers($1,$2)',[i.id,[portal]]);
+ await db.query(`select set_config('request.jwt.claim.sub',$1,false)`,[portalUser]);
+ await db.exec('set role authenticated');
+ const rows=(await db.query('select * from employee_list_disruption_offers()')).rows;
+ assert.equal(rows.length,1);assert.equal(rows[0].incident_type,'OTHER');assert.equal(rows[0].note,'');assert.equal(rows[0].shift_code,'T');
+ assert.ok(!JSON.stringify(rows).includes('Confidential health information'));
+ }finally{await db.close();}});
