@@ -64,6 +64,12 @@ test('large draft deletion is tenant-scoped, batched and leaves retained duties 
 });
 
 
+test('cloud deletion reports success after the database confirms every requested row',async()=>{
+  const {c}=harness(),toasts=[];c.showSaveToast=(...args)=>toasts.push(args);await c.SFBackend.hydrate();
+  c.assignments=c.assignments.filter(a=>a._dbId!=='001561');await c.SFBackend.sync();
+  assert.equal(c.SFBackend.lastSyncError,null);assert.ok(toasts.some(t=>t[0]==='Löschung gespeichert'));
+});
+
 test('incomplete database deletion reports an error rather than a success',async()=>{
   const {c}=harness({shortDelete:true}),toasts=[];c.showSaveToast=(...args)=>toasts.push(args);await c.SFBackend.hydrate();
   c.assignments=c.assignments.filter(a=>a._dbId!=='001561');await c.SFBackend.sync();
