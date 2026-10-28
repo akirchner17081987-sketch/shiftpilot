@@ -29,7 +29,7 @@
     assignments=assignments.filter(x=>x.id!==id);
     refresh();
     if(typeof showSaveToast==='function'){
-      if(window.SFBackend?.ready)showSaveToast('Löschung wird gespeichert',`${a.type} · ${name} wird mit der Cloud abgeglichen.`,'warning');
+      if(window.SFBackend?.ready&&(a._dbId||window.SFBackend.asgDb?.has(String(a.id))||window.SFBackend.syncing))showSaveToast('Löschung wird gespeichert',`${a.type} · ${name} wird mit der Cloud abgeglichen.`,'warning');
       else showSaveToast('Schicht gelöscht',`${a.type} · ${name} wurde aus dem Dienstplan entfernt.`);
     }
     return false;
