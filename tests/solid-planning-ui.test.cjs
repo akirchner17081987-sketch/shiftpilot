@@ -44,6 +44,7 @@ test('background planning persists and restores the comparison baseline with the
  const job={id:'saved-job',company_id:'co',first_month:'2027-01-01',month_count:1,result:{preview,metadata:payload.metadata}};
  await c.SFMonthOptimizer.restoreBackground(job);assert.ok(c.SFMonthOptimizer.getResult(),c.toast?.copy);assert.deepEqual(c.SFMonthOptimizer.getResult().reviewBefore,payload.metadata.reviewBefore);assert.match(el('autoPlanComparison').innerHTML,/Was verändert/);
  delete job.result.metadata.reviewBefore;await c.SFMonthOptimizer.restoreBackground(job);assert.match(el('autoPlanComparison').innerHTML,/Was verändert/);assert.equal(c.SFMonthOptimizer.getResult().reviewBefore.openCount,2);
+ await c.SFMonthOptimizer.restoreBackground(job,false,{canApply:false,open:2,errors:1,spread:10});assert.match(el('autoMonthHours').innerHTML,/Manuelle Entscheidung erforderlich/);assert.match(el('autoMonthHours').innerHTML,/2 Pflichtpositionen offen · 1 Regelkonflikte/);assert.equal(el('applyAutoPlanBtn').disabled,true);
 });
 test('other-company policy disables month-count expansion',()=>{const{c}=harness();c.SFCompliance.policy.solidPlanningRules={};assert.equal(c.autoPlanningDates().length,31)});
 
