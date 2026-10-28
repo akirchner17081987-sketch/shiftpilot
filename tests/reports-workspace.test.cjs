@@ -40,3 +40,17 @@ test('browser analysis resolves planning dependencies that finish loading after 
   assert.equal(JSON.stringify(window.SFReportsCore.analyze(d,{planStatus}).summary),JSON.stringify(C.analyze(d,{planStatus}).summary));
  }
 });
+
+test('fairness counts holiday carry-over, DST nights and confirmed short-notice takeovers without duplicate evidence',()=>{
+ const d=fixture();d.from='2026-10-24';d.to='2026-10-31';d.rules={fairnessHolidayStatesBySite:{'QA East':'SN'}};
+ d.assignments=[assignment('dst','a','2026-10-24','ND','2026-10-24T20:00Z','2026-10-25T06:00Z'),assignment('holiday','a','2026-10-30','ND','2026-10-30T21:00Z','2026-10-31T07:00Z')];
+ d.fairness={profiles:[{id:'a',eligible_dates:['2026-10-24','2026-10-30'],role:'Mitarbeiter',employment:'Teilzeit'}],published_dates:[],wishes:[],takeovers:[{employee_id:'a',assignment_id:'dst',confirmed_at:'2026-10-24T12:00Z'},{employee_id:'a',assignment_id:'dst',confirmed_at:'2026-10-24T12:00Z'},{employee_id:'a',assignment_id:'holiday',confirmed_at:'2026-10-27T12:00Z'}]};
+ const a=C.analyze(d).employeeRows.find(e=>e.id==='a');assert.equal(a.shortNotice,1);assert.equal(a.eligibleDays,2);assert.equal(a.holidayDuties,1);assert.equal(a.holidayMinutes,8*60);assert.equal(a.nightMinutes,17*60);assert.equal(a.weekendMinutes,18*60);assert.equal(a.regionalUnknown,false);
+});
+test('wish outcomes use published plans, night carry-in and independent decisions; absent evidence is unknown',()=>{
+ const d=fixture();d.to='2026-10-03';d.assignments=[assignment('carry','a','2026-09-30','ND','2026-09-30T20:00Z','2026-10-01T06:00Z')];d.fairness={profiles:[],published_dates:['2026-10-01','2026-10-02'],takeovers:[],wishes:[{id:'w1',employee_id:'a',kind:'OFF',status:'PROMISED',start_date:'2026-10-01',end_date:'2026-10-03',updated_at:'2026-09-01'}]};
+ const a=C.analyze(d).employeeRows.find(e=>e.id==='a');assert.equal(a.wishes.missed,1);assert.equal(a.wishes.fit,1);assert.equal(a.wishes.unknown,1);assert.equal(a.wishes.approved,3);assert.equal(C.analyze(d,{shift:'ND'}).employeeRows.find(e=>e.id==='a').wishes,null);delete d.fairness;assert.equal(C.analyze(d).employeeRows.find(e=>e.id==='a').shortNotice,null);
+});
+test('multi-month fairness merging preserves all eligible dates and no duplicated wish or takeover',()=>{
+ const a=fixture(),b=fixture();a.fairness={profiles:[{id:'a',eligible_dates:['2026-10-01']}],published_dates:['2026-10-01'],wishes:[{id:'same'}],takeovers:[{employee_id:'a',assignment_id:'x',confirmed_at:'2026-10-01'}]};b.fairness={...a.fairness,profiles:[{id:'a',eligible_dates:['2026-11-01']}],published_dates:['2026-11-01']};b.from='2026-11-01';b.to='2026-11-30';const r=C.merge([a,b]);assert.deepEqual(r.fairness.profiles[0].eligible_dates,['2026-10-01','2026-11-01']);assert.equal(r.fairness.wishes.length,1);assert.equal(r.fairness.takeovers.length,1);
+});
