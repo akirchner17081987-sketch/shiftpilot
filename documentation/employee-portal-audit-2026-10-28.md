@@ -10,7 +10,7 @@ Prüfdatum: 28.10.2026. Produktiver Ausgangsstand: PR #203, Commit dcc9cf77a5e50
 - [x] Arbeitszeit, Zeitkonto und Abwesenheiten übersichtlich darstellen.
 - [x] Wünsche und Anfragen einfach erfassbar machen.
 - [x] Funktionsstand von Schichttausch, offenen Diensten und Kalenderintegration prüfen.
-- [ ] Tatsächliche Zustellung und Öffnen auf den genutzten Mobilgeräten bestätigen.
+- [x] Tatsächliche Zustellung und Öffnen auf Alexanders getestetem Handy bestätigen (Rückmeldung vom 28.10.2026).
 
 ## Vorhandene Funktionen und Ergebnis
 
@@ -43,10 +43,12 @@ Der vollständige Chromium-Prozess konnte in dieser Testumgebung keinen lokalen 
 
 Push aktiviert, acht aktive Geräteabos für drei Konten. Neun Versandvorgänge mit Status SENT, insgesamt 25 angenommene Zustellungen und keine protokollierten fehlgeschlagenen Zustellungen. Retry-Job aktiv. SENT bestätigt den Versandweg, nicht die Anzeige auf einem realen Handy.
 
-Nach den Rollback-Tests weiterhin acht aktive Abos und neun Versandvorgänge. Keine synthetischen Testkonten verblieben. Keine Nachrichten an echte Mitarbeitende versendet.
+Nach den Rollback-Tests weiterhin acht aktive Abos und neun Versandvorgänge. Keine synthetischen Testkonten verblieben. Während dieser synthetischen Prüfungen wurden keine Nachrichten an echte Mitarbeitende versendet.
 
-## Noch erforderlicher Gerätetest
+## Bestätigter praktischer Gerätetest
 
-Je tatsächlich eingesetztem Gerät/Browser: Push ausdrücklich aktivieren, Testnachricht aus dem eigenen Konto anfordern, Empfang bei App im Hintergrund und gesperrtem Bildschirm prüfen, Nachricht antippen und richtigen Portalbereich bestätigen. WLAN/Mobilfunkwechsel prüfen. Auf iPhone/iPad als installierte Home-Bildschirm-App testen. Gerät, Betriebssystem, Browser, Uhrzeit und Ergebnis dokumentieren, ohne private Geräteendpunkte oder Schlüssel offenzulegen.
+Auf ausdrücklichen Wunsch von Alexander Kirchner wurde am 28.10.2026 um 20:37 Uhr (Europe/Berlin) eine einzelne Nachricht „SchichtFunk Push-Test“ an sein verifiziertes Konto bei Secontec Services gesendet. Der Versandweg meldete SENT, vier angenommene Zustellungen und keine Fehler. Anschließend bestätigte Alexander auf die Frage nach Empfang auf dem Handy und Öffnen von SchichtFunk durch Antippen: „Ja das hat geklappt“.
 
-Diese physische Empfangsprüfung kann aus der isolierten Browserumgebung nicht bestätigt werden. Punkt 4 bleibt deshalb teilweise abgeschlossen.
+Damit sind tatsächlicher Empfang und Öffnen für dieses Handy bestätigt. Gerätemodell, Betriebssystem, Browser, Sperrbildschirmzustand und WLAN/Mobilfunkwechsel wurden nicht separat angegeben bzw. bestätigt. Die vier angenommenen Zustellungen beweisen keine Sichtprüfung aller vier Geräteabos.
+
+Punkt 4 ist für die geprüften Portalabläufe und die bestätigte Handykonfiguration abgeschlossen. Weitere Gerätekonfigurationen und ein eventuell künftig gewünschtes Kalenderabo sind dadurch nicht mitgeprüft bzw. implementiert.
