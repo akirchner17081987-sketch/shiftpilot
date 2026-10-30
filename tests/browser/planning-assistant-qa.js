@@ -27,7 +27,7 @@
  ask('Bei welchen Mitarbeitern fehlt eine Teamzuordnung?');check('Unassigned employee is identified',log.querySelector('.is-answer:last-child').textContent.includes('Ben Beispiel'));
  ask('Wie stelle ich den Rhythmus von Team E ein?');check('Central rhythm instructions',log.textContent.includes('Teamrhythmen A–E'));
  ask('Welche Dienste hat Anna Beispiel im Dezember?');check('Employee roster shows actual assignment',log.lastChild.textContent.includes('Anna Beispiel')&&log.lastChild.querySelectorAll('[data-sf-chat-result]').length===1);
- ask('Welche Mitarbeiter haben im Dezember zu viele Stunden?');check('Planned overtime comparison is explicit',log.lastChild.textContent.includes('kein bestätigtes Überstundenkonto'));
+ ask('Welche Mitarbeiter haben im Dezember zu viele geplante Stunden?');check('Planned overtime comparison is explicit',log.lastChild.textContent.includes('kein bestätigtes Überstundenkonto'));
  ask('Bei wem fehlt die Schichtfreigabe für FD?');check('Missing permissions use actual staff profiles',log.lastChild.textContent.includes('Clara Beispiel'));
  ask('Warum kann Ben Beispiel am 02.12.2026 den FD nicht übernehmen?');check('Named employee diagnosis uses candidate assessment',log.lastChild.textContent.includes('erfüllt aktuell die Auto-Planungsregeln'));
  ask('Wie exportiere ich DATEV?');check('Knowledge routes DATEV to payroll help',log.lastChild.textContent.includes('LODAS-Bewegungsdaten'));
@@ -42,8 +42,8 @@
  for(const [question,expected] of [
   ['Wie erhalte ich eine Benachrichtigung wenn die Planung fertig ist?','Bei fertiger Berechnung benachrichtigen'],
   ['Wie wähle ich Empfänger für die fertige Auto-Planung aus?','namentliche Mehrfachauswahl'],
-  ['Wo finde ich den Planungsbericht?','Ergebnisübersicht des Planungslaufs'],
-  ['Wie kann ich den Planungsbericht als PDF exportieren?','keinen eigenen PDF-Export'],
+  ['Wo finde ich den Planungsbericht?','PDF herunterladen'],
+  ['Wie kann ich den Planungsbericht als PDF exportieren?','PDF herunterladen'],
   ['Wie funktioniert die Pausenprüfung bei mehr als 60 Minuten?','Erst bei insgesamt mehr als 60 Minuten'],
   ['Wie prüfe ich die faire Verteilung von Nacht- und Feiertagsdiensten?','Belastung & Verteilung'],
   ['Wie nutze ich einen Administrator ohne Dienstplanung?','Nicht einplanbar']

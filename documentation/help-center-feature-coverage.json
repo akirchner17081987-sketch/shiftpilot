@@ -1,6 +1,6 @@
 {
   "reviewedAt": "2026-10-30",
-  "sourceCommit": "cd62f15d738084317fff5529d81ffbab8b51d88f",
+  "sourceCommit": "cc8f9f361c16b5117bb24321ad17a65e16fc4a79",
   "addedArticles": [
     {
       "category": "wishes",
@@ -1465,6 +1465,33 @@
         "assets/planning-assistant-core-v1.js",
         "assets/planning-assistant-v1.js"
       ]
+    },
+    {
+      "category": "assistant",
+      "question": "Warum fragt der Assistent nach geplanten oder erfassten Stunden?",
+      "sources": [
+        "assets/planning-assistant-core-v1.js",
+        "assets/planning-assistant-report-v1.js",
+        "assets/planning-assistant-v1.js"
+      ]
+    },
+    {
+      "category": "assistant",
+      "question": "Was zeigt die Prüfgrundlage unter einer Analyse?",
+      "sources": [
+        "assets/planning-assistant-core-v1.js",
+        "assets/planning-assistant-report-v1.js",
+        "assets/planning-assistant-v1.js"
+      ]
+    },
+    {
+      "category": "assistant",
+      "question": "Warum muss ich einen Planungsbericht vor dem Download erneut erstellen?",
+      "sources": [
+        "assets/planning-assistant-core-v1.js",
+        "assets/planning-assistant-report-v1.js",
+        "assets/planning-assistant-v1.js"
+      ]
     }
   ],
   "moduleInventory": [
@@ -2868,6 +2895,11 @@
       "category": "start",
       "area": "Sicherer Start und begrenzte Script-Wiederherstellung",
       "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/planning-assistant-report-v1.js",
+      "category": "assistant",
+      "area": "PDF-Planungsbericht mit Prüfgrundlage und begrenzter aktueller Diagnose"
     }
   ],
   "categoryCoverage": [
@@ -3061,7 +3093,10 @@
         "Wie lasse ich den Assistenten Belastung und Stundenversorgung prüfen?",
         "Speichert der Planungsassistent automatisch Änderungen?",
         "Wo finde ich gespeicherte Planungsgründe und wie lange bleiben sie erhalten?",
-        "Welche Unternehmensregeln verwendet der Planungsassistent?"
+        "Welche Unternehmensregeln verwendet der Planungsassistent?",
+        "Warum fragt der Assistent nach geplanten oder erfassten Stunden?",
+        "Was zeigt die Prüfgrundlage unter einer Analyse?",
+        "Warum muss ich einen Planungsbericht vor dem Download erneut erstellen?"
       ]
     },
     {
@@ -3495,6 +3530,22 @@
         "assets/schedule-final-v1.js",
         "assets/month-optimizer-v1.js"
       ]
+    },
+    {
+      "category": "auto",
+      "question": "Wie exportiere ich den Planungsbericht?",
+      "sources": [
+        "assets/planning-assistant-report-v1.js",
+        "assets/planning-assistant-v1.js"
+      ]
+    },
+    {
+      "category": "auto",
+      "question": "Wo finde ich den Planungsbericht und die Planungsgründe?",
+      "sources": [
+        "assets/planning-assistant-report-v1.js",
+        "assets/planning-assistant-v1.js"
+      ]
     }
   ],
   "runtimeEntry": {
@@ -3505,12 +3556,12 @@
   },
   "currentAudit": {
     "date": "2026-10-30",
-    "baselineArticleCount": 258,
-    "addedArticleCount": 12,
-    "correctedArticleCount": 0,
-    "articleCount": 270,
+    "baselineArticleCount": 270,
+    "addedArticleCount": 3,
+    "correctedArticleCount": 2,
+    "articleCount": 273,
     "categoryCount": 22,
-    "assetJavaScriptCount": 233
+    "assetJavaScriptCount": 234
   },
   "incrementalUpdate": {
     "date": "2026-10-27",

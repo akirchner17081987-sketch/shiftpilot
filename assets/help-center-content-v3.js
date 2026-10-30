@@ -1,4 +1,4 @@
-// Aktive SchichtFunk-Hilfe: Funktionsabgleich · 30.10.2026.
+// Aktive SchichtFunk-Hilfe: PDF, Rückfragen und Prüfgrundlage · 30.10.2026.
 window.SFHelpContent = {
   "categories": [
     [
@@ -682,11 +682,11 @@ window.SFHelpContent = {
       ],
       [
         "Wo finde ich den Planungsbericht und die Planungsgründe?",
-        "Der Planungsbericht ergibt sich aus der Ergebnisübersicht des Planungslaufs und der geöffneten Vorschau. Unter Auto-Planung zeigen die Laufkarten Status, offene Pflichtpositionen, Regelprüfung, Stundenziele und verfügbare Diagnosen. Vorschlag ansehen beziehungsweise Gespeichertes Ergebnis ansehen öffnet den konkreten Vorschlag. Prüfe offene Dienste nach Datum und Schicht sowie die angezeigten Ausschlussgründe, Stundenabweichungen und manuellen Entscheidungen. Im Planungsassistenten ergänzt Gespeicherte Planungsgründe die lokal vorhandenen Enddiagnosen neuer Läufe. Diese lokale Historie umfasst höchstens 20 Läufe der letzten 90 Tage und wird nicht zwischen Geräten synchronisiert. Eine fehlende Diagnose beweist keinen Personalmangel. Änderungen nach dem Lauf erfordern eine erneute Prüfung; die Übernahme als Entwurf und Veröffentlichung bleiben getrennte Schritte."
+        "Öffne im Planungsassistenten Planungsbericht oder frage Planungsbericht erstellen. Nach der Anzeige kannst du die PDF herunterladen. Die Ergebnisübersicht und die Vorschau des Auto-Planungslaufs bleiben zusätzlich unter Auto-Planung verfügbar. Der Bericht trennt aktuelle Prüfungen von gespeicherten historischen Enddiagnosen. Gespeicherte Planungsgründe umfassen die lokal vorhandenen neuen Läufe, höchstens 20 aus den letzten 90 Tagen; sie werden nicht zwischen Geräten synchronisiert. Fehlende Gründe beweisen keinen Personalmangel. Ein Bericht übernimmt oder veröffentlicht keinen Dienstplan."
       ],
       [
         "Wie exportiere ich den Planungsbericht?",
-        "Für die Ergebnisdiagnose der Auto-Planung gibt es derzeit keinen eigenen PDF-Export. Ein Dienstplan-PDF und ein Arbeitszeit-Monatsbericht enthalten andere Informationen und ersetzen diese Diagnose nicht. Den gespeicherten Planungsvorschlag öffnest du in der Auto-Planung; die verfügbaren Planungsgründe kannst du zusätzlich im Assistenten ansehen. Auswertungen bietet PDF und Excel für den dort gewählten Zeitraum, Planstatus und die Belastungskennzahlen. Prüfe vor einer Weitergabe, ob die benötigten Gründe und Einschränkungen tatsächlich enthalten sind."
+        "Öffne den Planungsassistenten, wähle den Zeitraum und klicke Planungsbericht oder schreibe Planungsbericht erstellen. Prüfe die angezeigte Grundlage und wähle Planungsbericht als PDF herunterladen. Die PDF enthält den geprüften Zeitraum, Unternehmen, Abruf- und Prüfzeit, Planstatus und Datenumfang, Besetzung, alle offenen Positionen, Stunden und Monatsabweichungen sowie Prüfpunkte und gekennzeichnete manuelle Einplanungen. Gespeicherte Planungsgründe stehen getrennt als historischer Stand. Die aktuelle Einzelprüfung wird auf höchstens 40 offene Schichten und ein Zeitbudget begrenzt; alle Positionen werden aufgeführt und ungeprüfte Ursachen gekennzeichnet. Monats-SOLL wird nur für einen vollständigen einzelnen Monat bewertet. Der Bericht umfasst höchstens 62 Kalendertage. Er wird auf diesem Gerät erstellt und nicht automatisch versendet oder hochgeladen. Ein Dienstplan- oder Arbeitszeitexport ist ein anderer Bericht."
       ]
     ],
     "reports": [
@@ -1235,6 +1235,18 @@ window.SFHelpContent = {
       [
         "Welche Unternehmensregeln verwendet der Planungsassistent?",
         "Der Assistent verwendet die aktuell geladenen Planungsregeln, Schichtmodelle, Mitarbeiterfreigaben und persönlichen Obergrenzen des ausgewählten Unternehmens. Welche Planungsregeln gelten? zeigt diese Werte, sobald die Regeln vollständig geladen sind. Betriebliche Ergänzungen zu vorhandenen Hilfeantworten werden nur aus der angemeldeten Konfiguration desselben Unternehmens übernommen; die Demo erhält keine produktiven Ergänzungen. Ein Unternehmenswechsel verwirft den bisherigen Gesprächskontext. Allgemeine Beispiele zu acht, neun oder zehn Stunden sind keine Vorgabe für alle Unternehmen. Prüfe Monats-SOLL, Obergrenzen, Schichtzeiten und Standortbindung anhand der tatsächlichen Einstellungen. Hilfeantworten ändern keine Regeln oder Dienstpläne."
+      ],
+      [
+        "Warum fragt der Assistent nach geplanten oder erfassten Stunden?",
+        "Eine allgemeine Stundenfrage kann Planstunden oder tatsächlich erfasste Arbeitszeit meinen. Der Assistent bietet dafür anklickbare Rückfragen. Geplante Stunden berechnet er aus den geladenen Diensten; Name und Zeitraum bleiben in der ausgewählten Frage erhalten. Für erfasste oder bestätigte Arbeitszeit führt die Antwort zu Auswertungen, wo Zeitraum und Mitarbeiter geprüft werden. Planstunden werden niemals als tatsächlich geleistete Arbeit ausgegeben. Bei einer allgemeinen Bitte um Planungshilfe kannst du zwischen Monatsprüfung, Bedienhilfe und PDF-Bericht wählen. Rückfragen speichern keine Dienste."
+      ],
+      [
+        "Was zeigt die Prüfgrundlage unter einer Analyse?",
+        "Die Prüfgrundlage zeigt Unternehmen, tatsächlich geprüften Zeitraum, Planstatus, Umfang des geladenen Bestands und den letzten bestätigten Unternehmensabruf. Prüfzeit und Abrufzeit sind getrennte Angaben. Ein Monatscheck kann den gesamten Monat prüfen, auch wenn vorher eine Woche angezeigt war; maßgeblich ist der ausgewiesene Zeitraum. Entwürfe, veröffentlichte Dienste und unbekannte Status werden getrennt gezählt. Bei fehlendem Abrufnachweis, einer möglichen Abrufgrenze, älteren Daten, unvollständigen Regeln, ausstehenden Speicherungen oder einer begrenzten Suche erscheinen Hinweise. Ein erfolgreicher Abruf ist keine pauschale Garantie für vollständige Randdaten. Verbesserungsvorschläge werden gesondert als noch nicht gespeichert gekennzeichnet."
+      ],
+      [
+        "Warum muss ich einen Planungsbericht vor dem Download erneut erstellen?",
+        "Der Bericht gehört zu dem Unternehmen, Zugang, Zeitraum und Planungsstand seiner Erstellung. Ändern sich während des Ladens der PDF-Bibliothek oder danach die Berechtigungen, das Unternehmen, die Zeitraumwahl oder Planungsdaten, wird der Download blockiert. Erstelle dann Planungsbericht erneut für den aktuellen Stand. Ein fehlgeschlagener Download verändert keine Dienste. Bereits heruntergeladene Berichte bleiben historische Dateien und aktualisieren sich nicht automatisch."
       ]
     ]
   },

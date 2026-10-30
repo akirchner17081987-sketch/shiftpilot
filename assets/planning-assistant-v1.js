@@ -5,7 +5,7 @@
   const Core=window.SFPlanningAssistantCore,roles=['OWNER','ADMIN','PLANNER','DISPATCHER'];
   if(!Core)return;
   let context={},messages=[],scope=null,previousFocus=null,selectedMonth='',hydrationFailed=false,selectedService=null,planningRuns=[],journalError='',requestId=0,applyingProposal=false,refreshingProposal=null;
-  const Insights=window.SFPlanningInsights,Workflows=window.SFPlanningWorkflows;
+  const Insights=window.SFPlanningInsights,Workflows=window.SFPlanningWorkflows,Report=window.SFPlanningReport;
   let protectedAssignmentIds=new Set(),profiles=[],profileError='',changeRequest=null,changeReport=null;
   let observedOwner=null,observedState=null,pendingChange=null,changeDue=0,changeRevision='',lastObserved=0,changeAcknowledged=false;
   let helpContext=null;
@@ -125,10 +125,11 @@
     const dates=contextDates();
     if(selectedService&&!dates.includes(selectedService.date))selectedService=null;
     return{authorized:true,...workSnapshot(),profiles,profileError,changeRequest,today:today(),defaultDates:dates,selectedService,selectedPeriodExplicit:!!selectedMonth,
+      companyId:B().companyId,userId:B().user?.id,companyName:B().planningDataRead?.companyId===B().companyId?B().planningDataRead.companyName:undefined,timezone:B().companyTimeZone||'Europe/Berlin',dataRead:B().planningDataRead,pendingChanges:!!(B().syncing||B().syncTimer||B().lastSyncError),
       employees:typeof employees==='undefined'?[]:employees.filter(belongs),
       assignments:typeof assignments==='undefined'?[]:assignments.filter(belongs).filter(a=>a.status!=='CANCELLED'&&a._dbStatus!=='CANCELLED'),
       absences:typeof absences==='undefined'?[]:absences.filter(belongs),
-      shifts:typeof TYPES==='undefined'?[]:TYPES.filter(t=>t.active!==false),
+      shifts:typeof TYPES==='undefined'?[]:TYPES.filter(t=>t.active!==false).map(t=>({...t,siteName:t.siteId?(window.SFCompanyProfile?.siteLabel?.(t.siteId)||'Standort hinterlegt; Name nicht geladen'):''})),
       getSoll:(date,type)=>getSoll(date,type),
       requiredSoll:(date,type,raw)=>window.SFShiftModels?.requiredSoll?.(date,type,raw)??raw,
       coverageInfo:(date,type)=>window.SFShiftModels?.coverageInfo?.(date,type),
@@ -184,7 +185,22 @@
     const delta=Workflows.changedDays(observedState,next);observedState=next;if(delta.dates.length)mergeChange(delta);
     if(pendingChange&&Date.now()>=changeDue){const request=pendingChange;pendingChange=null;try{const current=snapshot();if(current.loading||current.error)return;changeReport=Workflows.followup(current,request);changeRequest=request;changeRevision=signature();showChangeNotice();}catch{changeReport={title:'Änderungscheck noch offen',text:'Die automatische Folgeprüfung konnte nicht abgeschlossen werden. Bitte erneut prüfen.'};changeRequest=request;showChangeNotice();}}
   }
-  function ask(question,analysisRequest){syncScope();return Core.answer(question,{...snapshot(),analysisRequest},context);}
+  const reportAccess=()=>JSON.stringify([identity(),B().accessRole||'',B().accessPermissions||[]]);
+  function ask(question,analysisRequest){
+    syncScope();const state={...snapshot(),analysisRequest},answer=Core.answer(question,state,context);
+    if(answer.reportRequest){
+      try{if(!Report)throw Error('Der PDF-Bericht ist noch nicht vollständig geladen. Bitte Seite neu laden.');answer.report=Report.collect(Core,state,answer.context.dates);answer.basis=answer.report.basis;answer.columns=['Kennzahl','Positionen'];answer.rows=answer.report.summary;Object.assign(answer.report,{owner:reportAccess(),revision:signature(),selection:JSON.stringify(contextDates())});}
+      catch(error){return {title:'Planungsbericht derzeit nicht verfügbar',text:error.message,context:{}};}
+    }
+    return answer;
+  }
+  async function downloadReport(report,button){
+    const assertFresh=()=>{if(!authorized()||busy()||report.owner!==reportAccess()||report.revision!==signature()||report.selection!==JSON.stringify(contextDates()))throw Error('Unternehmen, Zeitraum oder Planungsdaten wurden geändert. Bitte einen neuen Planungsbericht erstellen.');};
+    button.disabled=true;button.textContent='PDF wird erstellt …';let status=button.parentElement.querySelector('.sf-chat-export-status');if(!status){status=node('p',undefined,'sf-chat-export-status');status.setAttribute('role','status');button.after(status);}status.textContent='PDF wird auf diesem Gerät erstellt.';
+    try{await Report.download(report,assertFresh);if(report.owner===reportAccess()){button.textContent='PDF erneut herunterladen';status.textContent='PDF wurde erstellt.';}}
+    catch(error){if(report.owner===reportAccess()){window.showSaveToast?.('PDF nicht erstellt',error.message);status.textContent=error.message;status.setAttribute('role','alert');}button.textContent='PDF erneut versuchen';}
+    finally{button.disabled=false;}
+  }
   async function loadRuns(){
     const owner=identity();if(!owner)return;
     if(demo())return;
@@ -424,6 +440,9 @@
     if(message.user)article.appendChild(node('p',message.text));
     else{
       const a=message.answer;article.appendChild(node('h3',a.title));article.appendChild(node('p',a.text));
+      if(a.clarification?.length){const choices=node('div',undefined,'sf-chat-clarification');choices.setAttribute('role','group');choices.setAttribute('aria-label','Rückfrage beantworten');for(const choice of a.clarification){const button=node('button',choice.label);button.type='button';button.onclick=()=>submit(choice.question);choices.appendChild(button);}article.appendChild(choices);}
+      if(a.basis){const b=a.basis,details=node('details',undefined,'sf-chat-basis');details.open=true;details.appendChild(node('summary','Prüfgrundlage · '+b.company+' · '+b.from+' bis '+b.to));const fields=node('dl');for(const [label,value] of [['Planstatus',b.planStatus],['Datenumfang',b.scope],['Letzter Abruf',Report?Report.dateTime(b.readAt,b.timezone):b.readAt||'Nicht bestätigt'],['Vollständigkeit',b.completeness]]){const row=node('div');row.append(node('dt',label),node('dd',value));fields.appendChild(row);}details.appendChild(fields);for(const warning of b.warnings||[])details.appendChild(node('p',warning,'sf-chat-basis-warning'));article.appendChild(details);}
+      if(a.report){const button=node('button','Planungsbericht als PDF herunterladen','sf-chat-report-button');button.type='button';button.onclick=()=>downloadReport(a.report,button);article.appendChild(button);}
       if(a.blockers?.length){const section=node('section',undefined,'sf-chat-blockers'),list=node('ul');section.appendChild(node('h4','Verbleibende Engpässe'));a.blockers.forEach(text=>list.appendChild(node('li',text)));section.appendChild(list);article.appendChild(section);}
       if(a.rows?.length){
         const results=node('div',undefined,'sf-chat-results');results.setAttribute('aria-label',a.title+' – Ergebnisse');
@@ -472,9 +491,9 @@
     toggleQuestionGuide(false);setProgress(true);
     el('sfPlanningChatStatus').textContent='Planungsdaten werden geprüft.';
     try{
-      if(['bottlenecks','forecast','leaveImpact','changeImpact','order','multiBalance','undo','wizard','variants','profiles','followup'].includes(Core.intentFor(Core.normalize(text))))await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+      if(['report','bottlenecks','forecast','leaveImpact','changeImpact','order','multiBalance','undo','wizard','variants','profiles','followup'].includes(Core.intentFor(Core.normalize(text))))await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       if(owner!==identity()||request!==requestId)return;
-      if(/protokoll|gespeicherte|planungsgruende|besetzung.*verhindert/.test(Core.normalize(text)))await loadRuns();
+      if(Core.intentFor(Core.normalize(text))==='report'||/protokoll|gespeicherte|planungsgruende|besetzung.*verhindert/.test(Core.normalize(text)))await loadRuns();
       if(Core.intentFor(Core.normalize(text))==='profiles')await loadProfiles();
       if(owner!==identity()||request!==requestId)return;
       answer=ask(text,analysisRequest);
@@ -518,6 +537,7 @@
     welcome.appendChild(node('p','Stelle deine Frage oder wähle einen Einstieg. Alle unterstützten Themen findest du jederzeit unter „Fragen & Beispiele“.'));
     const examples=node('div',undefined,'sf-chat-examples sf-chat-start');
     for(const [label,question] of [
+      ['Planungsbericht','Planungsbericht erstellen'],
       ['Lernpräferenzen','Lernpräferenzen verwalten'],
       ['Planungsprofile','Planungsprofile verwalten'],
       ['Änderungscheck','Änderungscheck anzeigen'],

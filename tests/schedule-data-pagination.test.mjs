@@ -34,6 +34,7 @@ function harness({failPage=false,failPrivate=false,logoutDuringPrivate=false,rol
 test('hydration loads January beyond 1000 duties and keeps tenant and status filters on every page',async()=>{
   const {c,calls}=harness();await c.SFBackend.hydrate();
   assert.equal(c.assignments.length,1562);
+  assert.equal(c.SFBackend.planningDataRead.companyId,'target');assert.equal(c.SFBackend.planningDataRead.userId,'manager');assert.ok(Number.isFinite(Date.parse(c.SFBackend.planningDataRead.readAt)));assert.equal(c.SFBackend.planningDataRead.possibleLimit,false);
   assert.equal(c.assignments.filter(a=>a.date.startsWith('2027-01')).length,311);
   assert.equal(new Set(c.assignments.map(a=>a._dbId)).size,1562);
   assert.equal(c.SFBackend.asgDb.size,1562);
@@ -44,7 +45,7 @@ test('hydration loads January beyond 1000 duties and keeps tenant and status fil
 test('a later-page error retains the complete previous local plan and restores synchronization state',async()=>{
   const {c}=harness({failPage:true}),previous=c.assignments;
   await assert.rejects(c.SFBackend.hydrate(),{message:'Second page unavailable'});
-  assert.equal(c.assignments,previous);assert.equal(c.SFBackend.asgDb.size,0);assert.equal(c.SFBackend.suppressSync,false);
+  assert.equal(c.assignments,previous);assert.equal(c.SFBackend.planningDataRead,null);assert.equal(c.SFBackend.asgDb.size,0);assert.equal(c.SFBackend.suppressSync,false);
 });
 
 test('synchronization finds a removed draft beyond the first 1000 without deleting retained duties',async()=>{
