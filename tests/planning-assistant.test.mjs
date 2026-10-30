@@ -233,3 +233,63 @@ test('assistant company help matches authenticated tenant context and never muta
  assert.equal(Core.companyHelpArticles(articles,backend,true).auto[0][1],'Öffentliche Erklärung');
  assert.equal(JSON.stringify(articles),before);
 });
+
+test('explicit German, ISO and abbreviated ranges include both endpoints',()=>{
+ const s=fixture();
+ for(const q of ['01.11.2026 bis 15.11.2026','2026-11-01 bis 2026-11-15','1. bis 15. November 2026','1.–15.11.2026','01.11.–15.11.2026','1. November bis 15. November 2026','01.11 bis 15.11','1.November bis 15.November 2026']){
+  const p=Core.parsePeriod(Core.normalize(q),s);assert.equal(p.dates.length,15,q);assert.equal(p.dates[0],'2026-11-01');assert.equal(p.dates.at(-1),'2026-11-15');assert.equal(p.explicit,true);
+ }
+});
+test('ranges handle leap days and infer omitted years across December and January',()=>{
+ const s=fixture();for(const [q,first,last,n] of [['28.02.2028 bis 01.03.2028','2028-02-28','2028-03-01',3],['30.12.2026–02.01.','2026-12-30','2027-01-02',4],['30.12. bis 02.01.2027','2026-12-30','2027-01-02',4],['28. Dezember 2026 bis 3. Januar 2027','2026-12-28','2027-01-03',7]]){const p=Core.parsePeriod(Core.normalize(q),s);assert.equal(p.dates[0],first,q);assert.equal(p.dates.at(-1),last);assert.equal(p.dates.length,n);}
+});
+test('invalid, incomplete, reversed and overlong ranges never become a one-day analysis',()=>{
+ const s=fixture();for(const q of ['31.02.2026 bis 03.03.2026','15.11.2026 bis 01.11.2026','01.11.2026 bis','2026-11-01 bis 2027-02-01','1. November bis','01.11.2026 bis 99.11.2026']){const p=Core.parsePeriod(Core.normalize(q),s);assert.ok(p.error,q);assert.equal(p.dates,undefined);assert.equal(Core.answer('Offene Dienste '+q,s).title,'Datum prüfen');}
+ assert.equal(Core.parsePeriod('Welche Monatsobergrenze gilt bis zu 200 Stunden?',s).explicit,false);
+});
+test('range analyses and scenario forms use the same complete calendar interval',()=>{
+ const s=fixture(),r=Core.answer('Zeige offene Dienste vom 01.12.2026 bis 15.12.2026',s);assert.equal(r.context.dates.length,15);assert.equal(r.rows.length,45);assert.equal(r.basis.to,'2026-12-15');assert.match(r.text,/89 offene Positionen/);
+ assert.deepEqual(Core.parseRange('vom 1. bis 15. Dezember 2026',s),{startDate:'2026-12-01',endDate:'2026-12-15'});
+ const h=Core.answer('Geplante Stunden für Anna Plan vom 01.12.2026 bis 15.12.2026',s);assert.equal(h.rows[0][2],'–');assert.equal(h.rows[0][3],'–');
+});
+test('courteous requests retain action intent instead of becoming employee questions',()=>{
+ const s=fixture();for(const q of ['Kannst du mir bitte die offenen Dienste im Dezember zeigen?','Hallo, könntest du bitte offene Dienste im Dezember prüfen?','Ich möchte offene Dienste im Dezember sehen'])assert.equal(Core.answer(q,s).context.intent,'open',q);
+ assert.equal(Core.answer('Kannst du mir bitte einen PDF-Bericht für Dezember erstellen?',s).reportRequest,true);
+ assert.equal(Core.answer('Kannst du bitte alle Dienste löschen?',s).context.intent,'write');
+});
+test('combined requests offer both tasks with frozen dates instead of losing one intent',()=>{
+ const s=fixture(),before=JSON.stringify(s),r=Core.answer('Zeige offene Dienste vom 01.12.2026 bis 15.12.2026 und erstelle einen PDF-Bericht',s);assert.equal(r.taskPlan.tasks.length,2);assert.deepEqual(r.taskPlan.tasks.map(t=>t.intent),['open','report']);
+ for(const task of r.taskPlan.tasks){const result=Core.answer(task.question,{...s,defaultDates:['2028-01-01']});assert.equal(result.context.dates[0],'2026-12-01');assert.equal(result.context.dates.at(-1),'2026-12-15');}
+ for(const question of ['Kannst du mir bitte Besetzung, Stunden und Belastung im Dezember prüfen?','Kannst du mir offene Dienste im Dezember zeigen und einen PDF-Bericht erstellen?'])assert.ok(Core.answer(question,s).taskPlan,question);
+ const combined=Core.answer('Prüfe Besetzung, geplante Stunden und Belastung vom 01.12.2026 bis 15.12.2026 und erstelle einen PDF-Bericht',s);assert.deepEqual(combined.taskPlan.tasks.map(t=>t.intent),['coverage','workload','loadCheck','report']);for(const task of combined.taskPlan.tasks)assert.equal(Core.answer(task.question,s).taskPlan,undefined);
+ assert.equal(JSON.stringify(s),before);
+});
+test('each task retains its own explicit month, year and person',()=>{
+ const s=fixture(),r=Core.answer('Zeige geplante Stunden für Anna Plan im November 2026 und erstelle einen PDF-Bericht für Dezember 2027',s);assert.equal(r.taskPlan.tasks.length,2);
+ const hours=Core.answer(r.taskPlan.tasks[0].question,s),pdf=Core.answer(r.taskPlan.tasks[1].question,s);assert.deepEqual(hours.context.employeeIds,['e1']);assert.equal(hours.basis.from,'2026-11-01');assert.equal(pdf.context.dates[0],'2027-12-01');assert.equal(pdf.context.dates.length,31);
+ const shared=Core.answer('Zeige geplante Stunden für Anna Plan und zeige ihre Dienste im Dezember 2026',s);assert.deepEqual(Core.answer(shared.taskPlan.tasks[1].question,s).context.employeeIds,['e1']);
+});
+test('topic lists keep hour ambiguity and accept a typed clarification within the original period',()=>{
+ const s=fixture(),plan=Core.answer('Prüfe Besetzung, Stunden und Belastung im Dezember 2026',s);assert.deepEqual(plan.taskPlan.tasks.map(t=>t.intent),['coverage','workload','loadCheck']);
+ const choice=Core.answer(plan.taskPlan.tasks[1].question,s);assert.equal(choice.clarification.length,2);const r=Core.answer('die geplanten',s,choice.context);assert.equal(r.context.intent,'workload');assert.equal(r.basis.from,'2026-12-01');assert.equal(r.basis.to,'2026-12-31');
+});
+test('short hour replies preserve person and month; yes does not choose a basis',()=>{
+ const s=fixture(),choice=Core.answer('Wie viele Stunden hat Anna Plan im Januar 2027?',s);assert.equal(Core.answer('ja',s,choice.context).clarification.length,2);
+ for(const reply of ['die geplanten','ich meine geplante Stunden','Planstunden bitte']){const r=Core.answer(reply,s,choice.context);assert.equal(r.context.intent,'workload',reply);assert.deepEqual(r.context.employeeIds,['e1']);assert.equal(r.context.dates[0],'2027-01-01');}
+ const actual=Core.answer('die erfassten',s,choice.context);assert.equal(actual.context.intent,'actualHours');assert.equal(actual.rows.length,0);assert.equal(actual.context.dates[0],'2027-01-01');
+});
+test('a short PDF follow-up and a referenced new topic keep the previous period and employee',()=>{
+ const s=fixture(),first=Core.answer('Welche Dienste hat Anna Plan im Januar 2027?',s),hours=Core.answer('Und ihre geplanten Stunden?',s,first.context),pdf=Core.answer('Und als PDF bitte',s,first.context);
+ assert.equal(hours.context.intent,'workload');assert.deepEqual(hours.context.employeeIds,['e1']);assert.equal(hours.context.dates[0],'2027-01-01');assert.equal(pdf.reportRequest,true);assert.equal(pdf.context.dates[0],'2027-01-01');
+});
+test('multiple people are not mistaken for a task separator and unknown tasks remain visible',()=>{
+ const s=fixture();assert.equal(Core.answer('Geplante Stunden für Anna und Ben im Dezember',s).taskPlan,undefined);
+ const r=Core.answer('Zeige offene Dienste im Dezember und prüfe den Wetterbericht',s);assert.equal(r.taskPlan.tasks.length,2);assert.equal(r.taskPlan.tasks[1].label,'Anliegen klären');
+});
+test('combined deletion or publication requests never bypass the explicit application controls',()=>{
+ const s=fixture(),before=JSON.stringify(s),r=Core.answer('Zeige offene Dienste und lösche alle Dienste im Dezember',s);assert.equal(r.taskPlan.tasks[1].intent,'write');assert.equal(Core.answer(r.taskPlan.tasks[1].question,s).context.intent,'write');assert.equal(JSON.stringify(s),before);
+});
+test('overlong task lists and invalid dates in later tasks require correction',()=>{
+ const s=fixture();assert.match(Core.answer('Zeige offene Dienste; prüfe Besetzung; zeige Stunden; prüfe Belastung; erstelle einen PDF-Bericht',s).title,/aufteilen/);
+ assert.equal(Core.answer('Zeige offene Dienste am 01.12.2026 und zeige geplante Stunden am 31.02.2027',s).title,'Datum prüfen');
+});

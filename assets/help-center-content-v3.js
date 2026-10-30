@@ -566,7 +566,7 @@ window.SFHelpContent = {
       ],
       [
         "Wo sehe ich mögliche Fragen an den Planungsassistenten?",
-        "Im geöffneten Planungsassistenten ist Fragen & Beispiele jederzeit erreichbar. Dort findest du anklickbare Beispiele zu Engpässen, Besetzung, Ersatz, Mitarbeitern, Teams und Bedienung. Der Gesprächsverlauf bleibt erhalten. Du kannst frei formulieren, die Erkennung ist auf unterstützte Themen begrenzt. Für einzelne Dienste Datum und Schicht nennen, für Personen Namen oder Personalnummer. Bei unbekannten Fragen helfen die angebotenen Themen oder eine genauere Formulierung."
+        "Im geöffneten Planungsassistenten ist Fragen & Beispiele jederzeit erreichbar. Dort findest du anklickbare Beispiele zu Engpässen, Besetzung, Ersatz, Mitarbeitern, Teams und Bedienung. Der Gesprächsverlauf bleibt erhalten. Du kannst frei formulieren, zum Beispiel „Kannst du mir offene Dienste vom 1. bis 15. November zeigen?“. Vollständige Datumsbereiche werden einschließlich Beginn und Ende geprüft. Bei mehreren Anliegen zeigt der Assistent bis zu vier Aufgaben als einzelne Schritte mit Fortsetzung an; Zeitraum und eindeutig erkannte Personen bleiben dabei erhalten. Unklare oder unbekannte Anliegen bleiben als Rückfrage sichtbar. Die Erkennung ist auf unterstützte Themen begrenzt. Für einzelne Dienste Datum und Schicht nennen, für Personen Namen oder Personalnummer. Bei unbekannten Fragen helfen die angebotenen Themen oder eine genauere Formulierung."
       ],
       [
         "Läuft die Auto-Planung weiter, wenn ich den Browser verlasse?",
@@ -1238,7 +1238,7 @@ window.SFHelpContent = {
       ],
       [
         "Warum fragt der Assistent nach geplanten oder erfassten Stunden?",
-        "Eine allgemeine Stundenfrage kann Planstunden oder tatsächlich erfasste Arbeitszeit meinen. Der Assistent bietet dafür anklickbare Rückfragen. Geplante Stunden berechnet er aus den geladenen Diensten; Name und Zeitraum bleiben in der ausgewählten Frage erhalten. Für erfasste oder bestätigte Arbeitszeit führt die Antwort zu Auswertungen, wo Zeitraum und Mitarbeiter geprüft werden. Planstunden werden niemals als tatsächlich geleistete Arbeit ausgegeben. Bei einer allgemeinen Bitte um Planungshilfe kannst du zwischen Monatsprüfung, Bedienhilfe und PDF-Bericht wählen. Rückfragen speichern keine Dienste."
+        "Eine allgemeine Stundenfrage kann Planstunden oder tatsächlich erfasste Arbeitszeit meinen. Der Assistent bietet dafür anklickbare Rückfragen. Geplante Stunden berechnet er aus den geladenen Diensten; Name und Zeitraum bleiben in der ausgewählten Frage erhalten. Du kannst auch kurz „die geplanten“ oder „die erfassten“ antworten. „Ja“ wählt keine Stundenart. Nach einer Analyse bedeutet „als PDF bitte“ einen Planungsbericht für den bisherigen Zeitraum. Für erfasste oder bestätigte Arbeitszeit führt die Antwort zu Auswertungen, wo Zeitraum und Mitarbeiter geprüft werden. Planstunden werden niemals als tatsächlich geleistete Arbeit ausgegeben. Bei einer allgemeinen Bitte um Planungshilfe kannst du zwischen Monatsprüfung, Bedienhilfe und PDF-Bericht wählen. Rückfragen speichern keine Dienste."
       ],
       [
         "Was zeigt die Prüfgrundlage unter einer Analyse?",
@@ -1246,7 +1246,7 @@ window.SFHelpContent = {
       ],
       [
         "Warum muss ich einen Planungsbericht vor dem Download erneut erstellen?",
-        "Der Bericht gehört zu dem Unternehmen, Zugang, Zeitraum und Planungsstand seiner Erstellung. Ändern sich während des Ladens der PDF-Bibliothek oder danach die Berechtigungen, das Unternehmen, die Zeitraumwahl oder Planungsdaten, wird der Download blockiert. Erstelle dann Planungsbericht erneut für den aktuellen Stand. Ein fehlgeschlagener Download verändert keine Dienste. Bereits heruntergeladene Berichte bleiben historische Dateien und aktualisieren sich nicht automatisch."
+        "Der Bericht gehört zu dem Unternehmen, Zugang, Zeitraum und Planungsstand seiner Erstellung. Ändern sich während des Ladens der PDF-Bibliothek oder danach die Berechtigungen, das Unternehmen, die Zeitraumwahl oder Planungsdaten, wird der Download blockiert. Ältere Analysen werden bei Änderungen der lokal geladenen Planungsdaten oder der Zeitraumwahl sichtbar als nicht mehr aktuell markiert. Über Erneut prüfen kannst du die ursprüngliche Frage mit ihrem Zeitraum erneut auswerten. Download und Übernahme einer markierten Vorschau sind gesperrt. Erstelle dann Planungsbericht erneut für den aktuellen Stand. Ein fehlgeschlagener Download verändert keine Dienste. Bereits heruntergeladene Berichte bleiben historische Dateien und aktualisieren sich nicht automatisch."
       ]
     ]
   },
