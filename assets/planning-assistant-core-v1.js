@@ -582,10 +582,10 @@
       const q=naturalQuestion(question);
       if(previous.clarify==='hours'&&/^(?:(?:die|nur|bitte|ich meine)\s+)*(?:geplant\w*|planstunden|erfasst\w*|tatsaechlich\w*|ist[- ]?stunden|geleistet\w*)(?:\s+(?:stunden|arbeitszeit|bitte|meine ich))*[.!?]*$/.test(q)){
         const actual=/erfasst|tatsaechlich|ist[- ]?stunden|geleistet/.test(q),revised=previous.originalQuestion.replace(/stunden/i,actual?'tatsächlich erfasste Stunden':'geplante Stunden');
-        return answer(revised,{...s,defaultDates:previous.dates||s.defaultDates},{...previous,clarify:null});
+        const result=answer(revised,{...s,defaultDates:previous.dates||s.defaultDates},{...previous,clarify:null});result.replayQuestion=revised;return result;
       }
       if(previous.clarify==='hours'&&/^(?:ja|nein|okay|ok|bitte)[.!?]*$/.test(q))return answer(previous.originalQuestion,{...s,defaultDates:previous.dates||s.defaultDates},{});
-      if(previous.dates&&/^(?:(?:und|auch|das|bitte|dann|dafuer)\s+)*(?:als\s+)?pdf(?:[- ]?bericht)?(?:\s+bitte)?[.!?]*$/.test(q))return answer('Planungsbericht erstellen',{...s,defaultDates:previous.dates},{});
+      if(isReportFollowup(question,previous)){const result=answer('Planungsbericht erstellen',{...s,defaultDates:previous.dates},{});result.replayQuestion='Planungsbericht erstellen';return result;}
       if(!s.analysisRequest){const plan=requestPlan(question,s,previous);if(plan)return plan;}
     }
     const result=answerRaw(question,s,previous);
@@ -597,7 +597,8 @@
     }
     return result;
   }
-  const api={answer,normalize,naturalQuestion,requestPlan,parsePeriod,parseRange,rangeDates,parseShift,coverage,periodLabel,validDate,team,findHelp,questionGroups,intentFor,companyHelpArticles,analysisBasis,paidHours,plannedHours,fullMonth};
+  function isReportFollowup(question,previous){return !!(previous?.dates&&/^(?:(?:und|auch|das|bitte|dann|dafuer)\s+)*(?:als\s+)?pdf(?:[- ]?bericht)?(?:\s+bitte)?[.!?]*$/.test(naturalQuestion(question)));}
+  const api={answer,normalize,naturalQuestion,isReportFollowup,requestPlan,parsePeriod,parseRange,rangeDates,parseShift,coverage,periodLabel,validDate,team,findHelp,questionGroups,intentFor,companyHelpArticles,analysisBasis,paidHours,plannedHours,fullMonth};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.SFPlanningAssistantCore=api;
 })(typeof window==='undefined'?globalThis:window);
 

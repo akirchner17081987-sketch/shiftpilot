@@ -209,7 +209,7 @@
   function showStaleAnswer(message,article){
     if(article.querySelector('.sf-chat-stale'))return;
     const notice=node('div',undefined,'sf-chat-stale');notice.setAttribute('role','status');notice.appendChild(node('p','Planungsdaten oder Zeitraum wurden geändert. Diese Antwort ist nicht mehr aktuell.'));
-    const refresh=node('button','Erneut prüfen','sf-chat-row-action');refresh.type='button';refresh.onclick=()=>{const dates=message.answer.context?.dates||[],period=Core.parsePeriod(Core.normalize(message.question),{today:today(),defaultDates:dates.length?dates:contextDates()}),range=dates.length&&!period.explicit?(dates.length===1?' am '+dates[0]:' vom '+dates[0]+' bis '+dates.at(-1)):'';submit(message.question+range+(message.answer.context?.type?' · '+message.answer.context.type:''),message.analysisRequest,{previous:message.previous});};notice.appendChild(refresh);article.querySelector('h3')?.after(notice);
+    const refresh=node('button','Erneut prüfen','sf-chat-row-action');refresh.type='button';refresh.onclick=()=>{const question=message.answer.report?'Planungsbericht erstellen':message.answer.replayQuestion||message.question,dates=message.answer.context?.dates||[],period=Core.parsePeriod(Core.normalize(question),{today:today(),defaultDates:dates.length?dates:contextDates()}),range=dates.length&&(!period.explicit||message.answer.report)?(dates.length===1?' am '+dates[0]:' vom '+dates[0]+' bis '+dates.at(-1)):'';submit(question+range+(message.answer.context?.type?' · '+message.answer.context.type:''),message.analysisRequest,{previous:message.previous});};notice.appendChild(refresh);article.querySelector('h3')?.after(notice);
     article.querySelectorAll('[data-sf-sensitive]').forEach(button=>button.disabled=true);
   }
   function renderTaskPlan(plan,host){
@@ -519,7 +519,7 @@
     try{
       if(['report','bottlenecks','forecast','leaveImpact','changeImpact','order','multiBalance','undo','wizard','variants','profiles','followup'].includes(Core.intentFor(Core.normalize(text))))await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       if(owner!==identity()||request!==requestId)return;
-      if(/pdf|planungsbericht|protokoll|gespeicherte|planungsgruende|besetzung.*verhindert/.test(Core.normalize(text)))await loadRuns();
+      if(Core.intentFor(Core.normalize(text))==='report'||Core.isReportFollowup(text,conversation)||/protokoll|gespeicherte|planungsgruende|besetzung.*verhindert/.test(Core.normalize(text)))await loadRuns();
       if(Core.intentFor(Core.normalize(text))==='profiles')await loadProfiles();
       if(owner!==identity()||request!==requestId)return;
       answer=ask(text,analysisRequest,conversation);
