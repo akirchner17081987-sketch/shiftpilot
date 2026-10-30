@@ -322,3 +322,5 @@ test('vocabulary handles typos, dictionary terms and read-only weekend and shift
 });
 
 test('ambiguous shift names require a choice while an explicit code remains authoritative',()=>{const s=fixture();s.shifts=[{id:'N1',name:'Nachtdienst Leipzig'},{id:'N2',name:'Nachtdienst West'}];assert.equal(Core.answer('Ersatz für Nachtdienst am 03.12.2026',s).clarification.length,2);assert.equal(Core.answer('Ersatz für N1 am 03.12.2026',s).context.type,'N1');});
+
+test('shared vocabulary retains known codes even when the selected company does not configure them',()=>{const s=fixture();s.dictionary=[{term:'nachtrunde',target:'O3'}];const r=Core.answer('Offene Dienste Nachtrunde im Dezember',s);assert.match(r.title,/Begriff bekannt/);assert.match(r.text,/nicht aktiv eingerichtet/);assert.equal(r.rows.length,0);const other={...s,shifts:[{id:'O3',name:'O3'}]};assert.equal(Core.answer('Offene Dienste Nachtrunde im Dezember',other).context.type,'O3');});
