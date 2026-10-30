@@ -320,3 +320,5 @@ test('vocabulary handles typos, dictionary terms and read-only weekend and shift
  assert.equal(Core.answer('Lösche alle Dienste',s).context.intent,'write');
  assert.equal(Core.answer('Nachtrunde', {...s,authorized:false}).title,'Anmeldung erforderlich');
 });
+
+test('ambiguous shift names require a choice while an explicit code remains authoritative',()=>{const s=fixture();s.shifts=[{id:'N1',name:'Nachtdienst Leipzig'},{id:'N2',name:'Nachtdienst West'}];assert.equal(Core.answer('Ersatz für Nachtdienst am 03.12.2026',s).clarification.length,2);assert.equal(Core.answer('Ersatz für N1 am 03.12.2026',s).context.type,'N1');});

@@ -599,6 +599,8 @@
         if(targets.length>1)return response('Welchen Begriff meinst du?','Mehrere Wörterbucheinträge passen. Bitte wähle die Bedeutung.',{clarification:targets.map(target=>({label:target.startsWith('topic:')?Vocabulary.topics[target.slice(6)]:target,question:hits.reduce((text,h)=>text.replace(h.term,''),q)+' '+(target.startsWith('topic:')?Vocabulary.topics[target.slice(6)]:target)})),context:previous});
         const target=targets[0],revised=q.replace(hits[0].term,target.startsWith('topic:')?Vocabulary.topics[target.slice(6)]:target);const r=answer(revised,{...s,_vocabularyResolved:true},previous);r.replayQuestion=revised;return r;
       }
+      const shiftWord=q.match(/\b(?:frueh|spaet|nacht)(?:schicht|dienst)?\b/);
+      if(shiftWord&&!hits.length){const stem=shiftWord[0].replace(/schicht|dienst/g,''),choices=(s.shifts||[]).filter(t=>normalize(t.name||'').includes(stem)),exact=(s.shifts||[]).some(t=>new RegExp('(?:^|[^a-z0-9])'+normalize(t.id).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(?:$|[^a-z0-9])').test(q));if(choices.length>1&&!exact)return response('Welche Schicht meinst du?','Mehrere aktive Schichten passen zu dieser Bezeichnung. Bitte wähle eine aus.',{clarification:choices.map(t=>({label:t.id+' · '+t.name,question:q.replace(shiftWord[0],t.id)})),context:previous});}
       const siteFollow=/^(?:und|auch)\s+(.+?)[?.!]*$/.exec(q);if(siteFollow&&previous.dates?.length&&(s.shifts||[]).some(t=>t.siteName&&normalize(t.siteName).includes(siteFollow[1])))q='nur '+siteFollow[1];
       const narrow=/^(?:(?:und|bitte|dann)\s+)*(?:nur|ausschliesslich)\s+(.+?)[?.!]*$/.exec(q);
       if(narrow&&previous.dates?.length){
