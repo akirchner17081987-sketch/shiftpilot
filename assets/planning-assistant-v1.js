@@ -173,7 +173,7 @@
     const cancel=node('button','Planungsauftrag abbrechen','sf-chat-row-action');cancel.type='button';cancel.id='sfGoalCancel';cancel.onclick=()=>{controller.abort();if(progress)progress.textContent='Auftrag wird abgebrochen …';};el('sfPlanningChatForm')?.before(cancel);
     const current=()=>owner===identity()&&request===requestId&&!controller.signal.aborted;
     try{
-      row=await store.update(row,{status:'running',run_token:crypto.randomUUID()});claimed=true;cacheGoal(row);
+      row=await store.update(row,{status:'running',run_token:Goals.uuid()});claimed=true;cacheGoal(row);
       if(!current())throw Error('Der Auftrag wurde unterbrochen.');
       if(!demo()){
         if(B().syncing||window.SFMonthOptimizer?.isBusy?.())throw Error('Eine andere Planung oder Speicherung läuft.');
