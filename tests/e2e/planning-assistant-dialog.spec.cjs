@@ -42,3 +42,8 @@ test('administrators manage scoped dictionary terms and narrowing never writes d
  await ask(page,'Personalbedarf im Dezember 2026');await expect(last(page)).toContainText('Offene Dienste');await ask(page,'Nur Wochenende');await expect(last(page).locator('.sf-chat-basis')).toContainText('2026-12-05 bis 2026-12-27');
  await page.evaluate(()=>SFBackend.companyId='other-company');await expect(page.locator('#sfPlanningChat')).toBeHidden();await clean(page,errors);
 });
+test('a shared term without a local shift explains the mismatch and the dictionary is read only without central rights',async({page})=>{
+ const errors=await setup(page);await page.evaluate(()=>{const config={planningDictionary:[{term:'nachtrunde',target:'O3'}],planningDictionaryEditable:false};SFBackend.companyPrivateConfiguration={companyId:SFBackend.companyId,data:config};SFBackend.client={rpc:async name=>name==='company_private_client_configuration'?{data:config}:{error:{message:'Unexpected write'}}};});
+ await ask(page,'Offene Dienste Nachtrunde im Dezember');await expect(last(page)).toContainText('Begriff bekannt');await expect(last(page)).toContainText('nicht aktiv eingerichtet');await expect(last(page).locator('[data-sf-chat-result]')).toHaveCount(0);
+ await page.locator('#sfPlanningChatReset').click();await page.getByText('Weitere Funktionen',{exact:true}).click();await page.getByRole('button',{name:'Gemeinsamer Wortschatz',exact:true}).click();await expect(page.locator('#sfDictionaryDialog')).toContainText('Lesemodus');await expect(page.locator('#sfDictionaryDialog').getByRole('button',{name:'Begriff speichern'})).toHaveCount(0);await page.locator('#sfDictionaryDialog').getByRole('button',{name:'Schließen'}).click();await clean(page,errors);
+});
