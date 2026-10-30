@@ -46,7 +46,7 @@
   }
   const questionGroups=[
     ['Planung erleichtern',['Lernpräferenzen verwalten','Planungsprofile verwalten','November mit unserem Standardprofil vorbereiten','Änderungscheck anzeigen','Planvarianten vergleichen']],
-    ['Planungsaufträge und Begleitung',['Planungsauftrag starten','Bringe die Teamleiter im November möglichst auf ihre Sollstunden. Bereits veröffentlichte Dienste bleiben bestehen.','Hilf mir, diesen Monat fertigzustellen','Mehrmonatsausgleich starten','Nimm die letzte Änderung des Assistenten zurück.']],
+    ['Planungsaufträge und Begleitung',['Zielauftrag starten','Meine Planungsaufträge','Setze meinen November-Auftrag fort','Planungsauftrag starten','Bringe die Teamleiter im November möglichst auf ihre Sollstunden. Bereits veröffentlichte Dienste bleiben bestehen.','Hilf mir, diesen Monat fertigzustellen','Mehrmonatsausgleich starten','Nimm die letzte Änderung des Assistenten zurück.']],
     ['Vorausschauen und Änderungen prüfen',['Frühwarnung starten','Welche Dienste sind in den nächsten 28 Tagen besonders anfällig?','Urlaubsfolgen prüfen','Dienstverschiebung prüfen']],
     ['Plan prüfen und Engpässe lösen',['Engpasslöser starten','Wie bekommen wir alle auf ihre Sollstunden und besetzen alle Pflichtdienste?','Wie bekommen wir die Teamleiter auf ihre Sollstunden?','Monatscheck starten','Belastungscheck starten','Verbesserungsvorschläge erstellen']],
     ['Besetzung und Ersatz',['Welche Dienste sind im gewählten Zeitraum noch offen?','Welche Dienste sind im gewählten Zeitraum überbesetzt?','Welche Mitarbeiter kommen als Ersatz infrage?','Warum konnte die Auto-Planung diesen Dienst nicht besetzen?','Ausfallsimulation starten','Gespeicherte Planungsgründe anzeigen']],
@@ -57,6 +57,9 @@
   function duration(a,shifts){const t=shifts.find(t=>t.id===a.type),start=a.start||t?.start,end=a.end||t?.end;const mins=v=>/^\d{2}:\d{2}$/.test(v||'')?Number(v.slice(0,2))*60+Number(v.slice(3)):NaN;let m=mins(end)-mins(start);if(m<0)m+=1440;return Number.isFinite(m)?m/60:0;}
   function intentFor(q){
     q=naturalQuestion(q);
+    if(/(?:auftrag|auftraege).*(?:fortsetzen|fortfuehren)|setze.*auftrag.*fort|(?:november|dezember|januar|februar|maerz|april|mai|juni|juli|august|september|oktober)[- ]auftrag.*(?:weiter|fort)/.test(q))return 'goalResume';
+    if(/meine (?:planungs)?auftraege|gespeicherte (?:planungs)?auftraege|auftragsuebersicht/.test(q))return 'goalOrders';
+    if(/zielauftrag|begleitete[rn]? (?:planungs)?auftrag|selbstaendig\w*.*auftrag|auftrag.*selbstaendig|^bereite\b.*\bvor\b/.test(q))return 'goalOrder';
     if(!/^(?:wie|wo|was|warum)\b/.test(q)&&/planungsbericht|pdf[- ]?bericht/.test(q)&&/erstell|erzeug|export|herunterlad|mach|bitte/.test(q))return 'report';
     if(/^(?:(?:bitte\s+)?(?:erstelle?|erzeuge?|exportiere?)\b.*planungsbericht|planungsbericht\s+(?:erstellen|exportieren|herunterladen|als pdf))/.test(q))return 'report';
     if(/lernpr(?:ae|e)ferenz|lernende planung|aus.*korrekturen.*lernen/.test(q))return 'learning';
@@ -382,6 +385,11 @@
     if(intent==='report')return response('Planungsbericht · '+label,'Der Bericht enthält die aktuelle Besetzung, offene Positionen mit geprüften Gründen, Stundenabweichungen, Regelhinweise und gekennzeichnete manuelle Einplanungen. Prüfe die Grundlage und lade anschließend die PDF herunter.',{reportRequest:true,context});
     const staff=s.employees.filter(e=>!e.deletedAt&&e.status==='active');
     const nav=(view,label)=>({view,label});
+    if(intent==='goalOrders'||intent==='goalResume')return response('Meine Planungsaufträge','Gespeicherte Ziele, Prüfschritte und Entscheidungen des aktuellen Benutzers und Unternehmens. Beim Fortsetzen wird der aktuelle Plan erneut geprüft.',{goalManager:{resume:intent==='goalResume',month:period.explicit?dates[Math.floor(dates.length/2)].slice(0,7):null},context});
+    if(intent==='goalOrder'){
+      const matches=employeeMatches(q,staff),focus=requestedTeam?'team:'+requestedTeam:/teamleiter/.test(q)?'leaders':matches.length===1?'person:'+matches[0].id:'all',goal=/pflicht|besetz/.test(q)&&!/stunden|soll|fair/.test(q)?'coverage':'both';
+      return response('Begleiteten Planungsauftrag starten','Wähle Monat, Ziel und Mitarbeiterkreis. Der Assistent prüft mehrere Strategien, behält regelkonforme Verbesserungen und speichert den Fortschritt. Vorschläge werden erst nach deiner Bestätigung als Entwurf übernommen.',{form:{kind:'goalOrder',month:dates[Math.floor(dates.length/2)].slice(0,7),focus,goal},context:{...context,pending:true}});
+    }
     if(Insights&&['forecast','leaveImpact','changeImpact'].includes(intent))return scenarioAnswer(q,s,previous,intent,period,staff);
     if(intent==='learning')return response('Lernende Planung','Bestätige Präferenzen aus manuellen Dienstkorrekturen. Sie unterstützen neue Vorschläge zusätzlich zu den verbindlichen Planungsregeln.',{actions:[{label:'Lernpräferenzen verwalten',learning:true}],context:{intent:'learning',dates}});
     if(Workflows&&['profiles','variants','followup'].includes(intent)){
@@ -589,7 +597,7 @@
       }
       if(previous.clarify==='hours'&&/^(?:ja|nein|okay|ok|bitte)[.!?]*$/.test(q))return answer(previous.originalQuestion,{...s,defaultDates:previous.dates||s.defaultDates},{});
       if(isReportFollowup(question,previous)){const result=answer('Planungsbericht erstellen',{...s,defaultDates:previous.dates},{});result.replayQuestion='Planungsbericht erstellen';return result;}
-      if(!s.analysisRequest){const plan=requestPlan(question,s,previous);if(plan)return plan;}
+      if(!s.analysisRequest&&!['goalOrder','goalOrders','goalResume'].includes(intentFor(q))){const plan=requestPlan(question,s,previous);if(plan)return plan;}
     }
     const result=answerRaw(question,s,previous);
     if(s.authorized&&!s.loading&&!s.error&&result.context?.pending&&result.context.intent==='workload'&&/stunden/.test(normalize(question))&&!/geplant|planstunden|planung|soll|vertrag/.test(normalize(question)))result.context={...result.context,hoursQuestion:question};

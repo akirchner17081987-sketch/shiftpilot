@@ -1,4 +1,4 @@
-// Aktive SchichtFunk-Hilfe: PDF, Rückfragen und Prüfgrundlage · 30.10.2026.
+// Aktive SchichtFunk-Hilfe: begleitete Aufträge und gespeicherte Entscheidungen · 30.10.2026.
 window.SFHelpContent = {
   "categories": [
     [
@@ -534,11 +534,11 @@ window.SFHelpContent = {
       ],
       [
         "Wie erteile ich einen Planungsauftrag in Alltagssprache?",
-        "Öffne den Planungsassistenten und wähle Planungsauftrag. Gib Ziel, Monat und Mitarbeiterkreis an oder schreibe beispielsweise: Bringe die Teamleiter im November möglichst auf ihre Sollstunden. Der Assistent kombiniert die vorhandenen Besetzungs- und Stundenprüfungen zu einem gemeinsam geprüften Entwurf. Unterstützt werden Pflichtbesetzung sowie Pflichtbesetzung mit Sollstundenverbesserung; als Fokus sind alle aktiven Mitarbeiter, Teamleiter, Team A bis E oder eine eindeutige Person möglich. Unklare Personen und nicht zuverlässig unterstützte Zusatzbedingungen führen zur Auswahl. Der angezeigte Auftrag ist vor der bestätigten Übernahme zu prüfen. Feste, veröffentlichte und geschützte Dienste bleiben erhalten; verbindliche Regeln werden nicht gelockert."
+        "Öffne den Planungsassistenten und wähle Planungsauftrag. Gib Ziel, Monat und Mitarbeiterkreis an oder schreibe beispielsweise: Bringe die Teamleiter im November möglichst auf ihre Sollstunden. Der Assistent kombiniert die vorhandenen Besetzungs- und Stundenprüfungen zu einem gemeinsam geprüften Entwurf. Unterstützt werden Pflichtbesetzung sowie Pflichtbesetzung mit Sollstundenverbesserung; als Fokus sind alle aktiven Mitarbeiter, Teamleiter, Team A bis E oder eine eindeutige Person möglich. Unklare Personen und nicht zuverlässig unterstützte Zusatzbedingungen führen zur Auswahl. Der angezeigte Auftrag ist vor der bestätigten Übernahme zu prüfen. Feste, veröffentlichte und geschützte Dienste bleiben erhalten; verbindliche Regeln werden nicht gelockert. Für eine selbstständige Folgeprüfung mehrerer Strategien mit gespeichertem Fortschritt wähle Begleiteter Auftrag. Meine Aufträge ermöglicht die Fortsetzung auf einem anderen Gerät."
       ],
       [
         "Wie führt mich der Assistent durch die Monatsplanung?",
-        "Wähle Geführte Planung oder frage: Hilf mir, diesen Monat fertigzustellen. Die fünf Schritte sind Pflichtbesetzung, verbindliche Regeln, Stundenverteilung, Vertretungsreserve und Vorbereitung der Veröffentlichung. Besetzung und Regeln werden immer neu geprüft. Stunden, Reserve und Abschlussprüfung kannst du als geprüft markieren und später wieder öffnen. Planung fortsetzen führt zum gespeicherten Monat zurück. Bei Planungs- oder Regeländerungen werden manuelle Bestätigungen zurückgesetzt. Der Fortschritt wird nur in diesem Browser, getrennt nach Benutzer und Unternehmen, gespeichert. Die Veröffentlichung bleibt eine gesonderte Entscheidung im Dienstplan."
+        "Wähle Geführte Planung oder frage: Hilf mir, diesen Monat fertigzustellen. Die fünf Schritte sind Pflichtbesetzung, verbindliche Regeln, Stundenverteilung, Vertretungsreserve und Vorbereitung der Veröffentlichung. Besetzung und Regeln werden immer neu geprüft. Stunden, Reserve und Abschlussprüfung kannst du als geprüft markieren und später wieder öffnen. Planung fortsetzen führt zum gespeicherten Monat zurück. Bei Planungs- oder Regeländerungen werden manuelle Bestätigungen zurückgesetzt. Der Fortschritt wird nur in diesem Browser, getrennt nach Benutzer und Unternehmen, gespeichert. Die Veröffentlichung bleibt eine gesonderte Entscheidung im Dienstplan. Für dauerhaft gespeicherte Ziele und Entscheidungen mit geräteübergreifender Fortsetzung verwende Begleiteter Auftrag und Meine Aufträge."
       ],
       [
         "Wie funktioniert der Mehrmonatsausgleich im Assistenten?",
@@ -1247,6 +1247,18 @@ window.SFHelpContent = {
       [
         "Warum muss ich einen Planungsbericht vor dem Download erneut erstellen?",
         "Der Bericht gehört zu dem Unternehmen, Zugang, Zeitraum und Planungsstand seiner Erstellung. Ändern sich während des Ladens der PDF-Bibliothek oder danach die Berechtigungen, das Unternehmen, die Zeitraumwahl oder Planungsdaten, wird der Download blockiert. Ältere Analysen werden bei Änderungen der lokal geladenen Planungsdaten oder der Zeitraumwahl sichtbar als nicht mehr aktuell markiert. Über Erneut prüfen kannst du die ursprüngliche Frage mit ihrem Zeitraum erneut auswerten. Download und Übernahme einer markierten Vorschau sind gesperrt. Erstelle dann Planungsbericht erneut für den aktuellen Stand. Ein fehlgeschlagener Download verändert keine Dienste. Bereits heruntergeladene Berichte bleiben historische Dateien und aktualisieren sich nicht automatisch."
+      ],
+      [
+        "Wie starte ich einen begleiteten Planungsauftrag?",
+        "Wähle Begleiteter Auftrag im Planungsassistenten oder schreibe beispielsweise Bereite November vor, schließe Lücken und verteile die Stunden fair. Bestätige Monat, Ziel und Mitarbeiterkreis im Formular. Der Assistent prüft direkte Besetzung, gemeinsame Engpasslösung, Stundenverteilung und Vertretungsreserve. Er behält nur gemeinsam geprüfte Verbesserungen unter den bestehenden Regeln und Vergabeprioritäten. Die Suche endet bei erreichtem Ziel, ausbleibender Verbesserung, Suchgrenze oder spätestens nach zwei Minuten. Suchschritte, verbleibende Lücken und Sollstundenabweichungen bleiben sichtbar. Prüfe die einzelnen vorgeschlagenen Dienständerungen und bestätige erst danach die Übernahme als Entwurf. Danach prüft der Auftrag den gespeicherten Plan erneut. Ein Auftrag veröffentlicht keinen Plan."
+      ],
+      [
+        "Wie setze ich einen Planungsauftrag auf einem anderen Gerät fort?",
+        "Öffne Meine Aufträge im Assistenten oder schreibe Setze meinen November-Auftrag fort. Ziele, Suchschritte, Ergebniskennzahlen und Prüfvermerke werden zentral für deinen Benutzer und das ausgewählte Unternehmen gespeichert. Andere Benutzer und Unternehmen haben keinen Zugriff. Bei mehreren passenden Aufträgen wählst du einen aus. Auf einem weiteren Gerät meldest du dich mit demselben Benutzer an und wählst dasselbe Unternehmen. Die Vorschau wird anhand der aktuellen Planung neu berechnet; vollständige Dienstpläne oder freie Personalnotizen werden nicht im Auftrag gespeichert. Ein aktiver Lauf ist vor versehentlichem parallelem Start geschützt. Nach einer Unterbrechung kann der Auftrag nach Ablauf der Laufzeit wieder aufgenommen werden. Der Rechenlauf benötigt den geöffneten Verwaltungsbereich; eine Überwachung bei geschlossenem Browser ist nicht Bestandteil dieser Funktion. Bis zu 100 Aufträge je Benutzer und Unternehmen können gespeichert werden; ältere Aufträge lassen sich archivieren oder entfernen. Die bisherige Geführte Planung behält ihren lokalen Browserfortschritt."
+      ],
+      [
+        "Was bedeutet ein gespeicherter Entscheidungsvermerk im Auftrag?",
+        "Als geprüft vermerken oder Später entscheiden speichert deine Entscheidung zu einem verbleibenden Prüfpunkt. Die Lücke oder Stundenabweichung bleibt trotzdem sichtbar und gilt nicht als behoben. Eine zurückgestellte Übernahme wird bei unverändertem Datenstand nicht erneut angeboten; du kannst sie wieder zur Prüfung öffnen. Entscheidungen gelten nur für den bestätigten Datenstand einschließlich Planungsregeln. Beim Fortsetzen mit geänderten Daten werden alte Vermerke nicht als aktuelle Bestätigung verwendet. Zwischenzeitlich geänderte Aufträge müssen neu geladen werden. Die Entscheidung ersetzt keine Dienstplanfreigabe."
       ]
     ]
   },
