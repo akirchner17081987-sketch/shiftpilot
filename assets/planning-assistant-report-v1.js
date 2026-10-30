@@ -7,12 +7,11 @@
   if(!dates?.length||dates.length>62||dates.some(d=>!Core.validDate(d)))throw Error('Bitte einen gültigen Zeitraum von höchstens 62 Tagen wählen.');
   const staff=s.employees.filter(e=>e.status==='active'&&!e.deletedAt),state={...s,assignments:s.assignments.filter(a=>a.status!=='CANCELLED'&&a._dbStatus!=='CANCELLED'),defaultDates:dates},coverage=Core.coverage(state,dates),missing=coverage.filter(x=>x.missing),started=Date.now();let examined=0,limited=false;
   const open=missing.map(x=>{
-   const model=s.shifts.find(t=>t.id===x.type),location=model?.siteName||model?.locationName||'Unternehmensweit';
+   const model=s.shifts.find(t=>t.id===x.type),shared=s.coverageInfo?.(x.date,x.type),location=shared?.members?.length>1?'Gemeinsamer Bedarf':model?.siteName||model?.locationName||'Unternehmensweit';
    let reason='Für diesen Datenstand nicht einzeln geprüft.';
    if(examined<40&&Date.now()-started<1200&&s.candidates){
     examined++;
     try{
-     const shared=s.coverageInfo?.(x.date,x.type);
      if(shared?.members?.length>1)reason='Gemeinsamer Schichtbedarf; die Alternativen im Assistenten einzeln prüfen.';
      else{const result=s.candidates(x.type,x.date),count=result.candidates?.length||0;reason=count?count+' Personen einzeln grundsätzlich geeignet; gemeinsame Verteilung nicht geprüft.':(result.reasons||[]).map(r=>r.count+' × '+r.label).join('; ')||'Kein zulässiger Kandidat gefunden; kein Nachweis, dass eine andere Gesamtverteilung unmöglich ist.';}
     }catch{reason='Eignungsprüfung nicht verfügbar; Ursache offen.';}
