@@ -8,6 +8,12 @@ async function setup(page){
 const last=p=>p.locator('#sfPlanningChatLog .is-answer').last();
 async function ask(page,q){await page.locator('#sfPlanningChatInput').fill(q);await page.getByRole('button',{name:'Frage senden'}).click();await expect(page.locator('#sfPlanningChatProgress')).toBeHidden();}
 async function clean(page,errors){expect(await page.evaluate(()=>__writes)).toBe(0);expect(errors).toEqual([]);expect(await page.evaluate(()=>__errors)).toEqual([]);}
+test('everyday language, clarification and why retain their planning period without writes',async({page})=>{
+ const errors=await setup(page);await ask(page,'Wer fehlt im Dezember 2026?');await expect(last(page)).toContainText('Meinst du offene Dienste oder abwesende Mitarbeiter?');
+ await last(page).getByRole('button',{name:'Offene Dienste',exact:true}).click();await expect(last(page).locator('.sf-chat-basis')).toContainText('2026-12-01 bis 2026-12-31');
+ await ask(page,'Und wie sieht es im Januar aus?');await expect(last(page).locator('.sf-chat-basis')).toContainText('2026-01-01 bis 2026-01-31');
+ await ask(page,'Warum?');await expect(last(page)).toContainText('Besetzung prüfen');await expect(last(page).locator('.sf-chat-basis')).toContainText('2026-01-01 bis 2026-01-31');await clean(page,errors);
+});
 test('natural range requests and typed hour answers retain the full period and person',async({page})=>{
  const errors=await setup(page);await ask(page,'Kannst du mir bitte die offenen Dienste vom 01.12.2026 bis 15.12.2026 zeigen?');await expect(last(page).locator('.sf-chat-basis')).toContainText('2026-12-01 bis 2026-12-15');
  await ask(page,'Wie viele Stunden hat Anna Beispiel im Januar 2027?');await expect(last(page)).toContainText('Welche Stunden meinst du?');await ask(page,'die geplanten');await expect(last(page)).toContainText('Anna Beispiel');await expect(last(page).locator('.sf-chat-basis')).toContainText('2027-01-01 bis 2027-01-31');
