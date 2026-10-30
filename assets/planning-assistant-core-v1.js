@@ -137,7 +137,7 @@
   function requestPlan(question,s,previous={}){
     const q=naturalQuestion(question),verbs='(?:zeige?\\w*|pruefe?\\w*|kontrolliere?\\w*|erstelle?\\w*|erzeuge?\\w*|exportiere?\\w*|suche?\\w*|finde?\\w*|loesche?\\w*|speichere?\\w*|uebernimm|veroeffentliche?\\w*|welche|wer|wie viele|mach\\w*|kannst du|koenntest du)';
     let parts=q.split(new RegExp('\\s*;\\s*|\\s+(?:und(?: dann| anschliessend)?|danach|anschliessend|ausserdem|sowie)\\s+(?='+verbs+'\\b)')).map(p=>p.trim()).filter(Boolean);
-    if(parts.length===1&&/^(?:pruef\w*|kontrollier\w*|zeig\w*)\b/.test(q)&&/\bund\b|,/.test(q)&&!intentFor(q)?.match(/write|publish|changeImpact|leaveImpact/)){
+    if(parts.length===1&&!/^(?:wie|wo|warum|was bedeutet)\b/.test(q)&&(/^(?:pruef\w*|kontrollier\w*|zeig\w*)\b/.test(q)||/\b(?:pruefen|kontrollieren|zeigen|anzeigen|erstellen)[.!?]*$/.test(q))&&/\bund\b|,/.test(q)&&!intentFor(q)?.match(/write|publish|changeImpact|leaveImpact/)){
       const topics=[[/\b(?:offene dienste|luecken)\b/,'Offene Dienste'],[/\bbesetzung\b/,'Besetzung prüfen'],[/\b(?:geplante stunden|planstunden|stunden)\b/,/geplante stunden|planstunden/.test(q)?'Geplante Stunden prüfen':/erfasst|tatsaechlich|geleistet/.test(q)?'Tatsächlich erfasste Stunden prüfen':'Stunden prüfen'],[/\bbelastung\b/,'Belastungscheck'],[/\b(?:planungsbericht|pdf[- ]?bericht)\b/,'Planungsbericht erstellen']].filter(([re])=>re.test(q));
       if(topics.length>1)parts=topics.map(([,text])=>text);
     }

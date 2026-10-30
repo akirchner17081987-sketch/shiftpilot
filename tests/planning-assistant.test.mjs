@@ -260,6 +260,7 @@ test('courteous requests retain action intent instead of becoming employee quest
 test('combined requests offer both tasks with frozen dates instead of losing one intent',()=>{
  const s=fixture(),before=JSON.stringify(s),r=Core.answer('Zeige offene Dienste vom 01.12.2026 bis 15.12.2026 und erstelle einen PDF-Bericht',s);assert.equal(r.taskPlan.tasks.length,2);assert.deepEqual(r.taskPlan.tasks.map(t=>t.intent),['open','report']);
  for(const task of r.taskPlan.tasks){const result=Core.answer(task.question,{...s,defaultDates:['2028-01-01']});assert.equal(result.context.dates[0],'2026-12-01');assert.equal(result.context.dates.at(-1),'2026-12-15');}
+ for(const question of ['Kannst du mir bitte Besetzung, Stunden und Belastung im Dezember prüfen?','Kannst du mir offene Dienste im Dezember zeigen und einen PDF-Bericht erstellen?'])assert.ok(Core.answer(question,s).taskPlan,question);
  assert.equal(JSON.stringify(s),before);
 });
 test('each task retains its own explicit month, year and person',()=>{
