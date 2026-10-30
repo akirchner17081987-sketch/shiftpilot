@@ -165,3 +165,6 @@
 .sf-chat-goal-card p,.sf-chat-goal-receipt p{font-size:12px;line-height:1.55}
 .sf-chat-goal-receipt ol{padding-left:20px;font-size:12px;line-height:1.6}
 #sfGoalCancel{margin:4px 18px 10px;min-height:44px}
+
+.sf-chat-start .sf-chat-primary{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:5px;min-height:86px;padding:14px}
+.sf-chat-primary strong{font-size:14px}.sf-chat-primary span{font-size:12px;line-height:1.4;font-weight:400;color:var(--muted)}
