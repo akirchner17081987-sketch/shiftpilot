@@ -57,7 +57,8 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
    assert.equal(await page.evaluate(()=>SFBackend.pendingView),'overview','a document reload starts on Today again');
    await page.waitForFunction(()=>window.SFLocationMapEngine&&document.querySelectorAll('[data-orbit-site]').length===2);
    await page.waitForFunction(()=>document.querySelector('.sf-location-map')?.dataset.surface==='atlas');
-   const overviewButton=page.locator('[data-orbit-category="overview"]'),assistant=page.locator('#appShell .top-actions #sfPlanningAssistantButton');
+   const overviewButton=page.locator('[data-orbit-category="overview"]'),assistant=page.locator('body > #sfPlanningAssistantButton');
+   await assistant.locator('strong').waitFor({state:'visible'});await assistant.locator('small').waitFor({state:'visible'});
    await assistant.waitFor({state:'visible'});await assistant.click();await page.locator('#sfPlanningChat').waitFor({state:'visible'});await assistant.click();await page.locator('#sfPlanningChat').waitFor({state:'hidden'});
    const sitePin=id=>page.locator('[data-orbit-site="'+id+'"]'),card=page.locator('#sfOrbitSiteInfo'),globe=page.locator('.sf-location-map canvas');
    assert.equal(await card.isVisible(),false,'categories appear only after location selection');

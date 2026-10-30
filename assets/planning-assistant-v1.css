@@ -168,3 +168,21 @@
 
 .sf-chat-start .sf-chat-primary{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:5px;min-height:86px;padding:14px}
 .sf-chat-primary strong{font-size:14px}.sf-chat-primary span{font-size:12px;line-height:1.4;font-weight:400;color:var(--muted)}
+
+/* Visible planning dock; kept outside the icon-only Orbit header. */
+.sf-chat-launcher{box-sizing:border-box;justify-content:flex-start;gap:12px;width:min(350px,calc(100vw - 24px));min-height:76px;padding:12px 16px!important;border-color:var(--teal,#36cbb7)!important;border-radius:18px!important;white-space:normal;text-align:left;line-height:1.4;box-shadow:0 8px 26px #0003}
+.sf-chat-launcher-mark{display:grid;place-items:center;flex:none;width:36px;height:36px;border-radius:11px;color:var(--teal,#36cbb7);background:#36cbb714}
+.sf-chat-launcher-mark svg{width:24px;height:24px}
+.sf-chat-launcher-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:3px}
+.sf-chat-launcher-copy strong{font-size:15px;font-weight:650;color:var(--text)}
+.sf-chat-launcher-copy small{font-size:12px;font-weight:400;color:var(--muted);line-height:1.4}
+.sf-chat-launcher-chevron{flex:none;color:var(--teal,#36cbb7);font-size:20px;line-height:1}
+.sf-chat-launcher[aria-expanded=true] .sf-chat-launcher-chevron{transform:rotate(180deg)}
+.sf-chat-launcher:disabled{opacity:.65;cursor:wait}
+body:has(#spAssignModal)>.sf-chat-launcher,body:has(dialog:modal)>.sf-chat-launcher{visibility:hidden;pointer-events:none}
+.sf-planning-chat:not(.sf-chat-docked){bottom:calc(max(20px,env(safe-area-inset-bottom)) + 88px);height:min(720px,calc(100dvh - 134px));max-height:calc(100dvh - 134px)}
+body.sf-orbit-manager .sf-planning-chat:not(.sf-chat-docked){bottom:calc(198px + env(safe-area-inset-bottom))!important;height:min(720px,calc(100dvh - 218px));max-height:calc(100dvh - 218px)!important}
+@media(max-width:650px){body.sf-orbit-manager .sf-planning-chat:not(.sf-chat-docked){bottom:calc(294px + env(safe-area-inset-bottom))!important;height:min(720px,calc(100dvh - 314px));max-height:calc(100dvh - 314px)!important}}
+@media(max-width:600px){.sf-planning-chat:not(.sf-chat-docked){bottom:calc(max(12px,env(safe-area-inset-bottom)) + 88px);height:min(720px,calc(100dvh - 112px));max-height:calc(100dvh - 112px)}}
+@media(max-width:380px){.sf-chat-launcher{gap:9px;padding:12px!important}.sf-chat-launcher-copy small{font-size:11px}}
+@media print{.sf-chat-launcher,.sf-planning-chat{display:none!important}}
