@@ -33,7 +33,7 @@ for(const theme of ['dark','light'])test('Labeled assistant dock remains visible
    await route.fulfill({contentType:file.endsWith('.css')?'text/css':'application/javascript',body:fs.readFileSync(file)});return;
   }
   if(url.pathname==='/qa-run.js'){await route.fulfill({contentType:'application/javascript',body:''});return;}
-  const body=html.replace('</head>','<link rel="stylesheet" href="/assets/orbit-shell-v1.css"></head>').replace('<body>','<body class="sf-orbit-manager"><div id="appShell" class="sf-orbit">').replace('</body>','</div></body>');
+  const body=html.replace('</head>','<link rel="stylesheet" href="/assets/mobile-responsive-v1.css"><link rel="stylesheet" href="/assets/orbit-shell-v1.css"></head>').replace('<body>','<body class="sf-orbit-manager"><div id="appShell" class="app sf-orbit">').replace('</body>','</div></body>');
   await route.fulfill({contentType:'text/html',body});
  });
  await page.goto('http://sf-assistant.test/?theme='+theme);
