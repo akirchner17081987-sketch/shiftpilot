@@ -338,3 +338,5 @@ test('context resolves free services, absences and spare plan hours while neutra
  const s=fixture(),a=Core.answer('Offene Dienste im Dezember',s);assert.equal(Core.answer('die freien',s,a.context).context.intent,'open');const h=Core.answer('Geplante Stunden im Dezember',s),b=Core.answer('Wer hat noch Luft?',s,h.context);assert.equal(b.context.intent,'workload');assert.match(b.interpretation,/keine Zusage/);assert.equal(Core.answer('Wer hat noch Luft?',s).clarification[0].learning.term,'wer hat noch luft');assert.equal(Core.answer('Wo fehlt uns jemand?',s).clarification[0].learning.term,'wo fehlt uns jemand');
  const v=require('../assets/planning-vocabulary-v1.js');assert.equal(v.learnable('Anna hat noch Luft',s),null);assert.equal(v.learnable('wer hat noch 115',s),null);
 });
+
+test('an hour clarification takes precedence over a short only filter',()=>{const s=fixture(),a=Core.answer('Wie viele Stunden hat Anna Plan im Dezember?',s),b=Core.answer('nur die geplanten',s,a.context);assert.equal(b.context.intent,'workload');assert.deepEqual(b.context.employeeIds,['e1']);});
