@@ -136,21 +136,24 @@
   const taskLabels={open:'Offene Dienste prüfen',coverage:'Besetzung prüfen',workload:'Stunden prüfen',loadCheck:'Belastung prüfen',report:'PDF-Planungsbericht erstellen',planningCheck:'Monatscheck durchführen',replacement:'Ersatz prüfen',forecast:'Vertretungsreserve prüfen',employeePlan:'Geplante Dienste anzeigen',overstaffed:'Überbesetzung prüfen',improvements:'Verbesserungen prüfen',bottlenecks:'Engpasslöser prüfen',write:'Gewünschte Änderung im passenden Bereich prüfen',export:'Dienstplanexport öffnen'};
   function requestPlan(question,s,previous={}){
     const q=naturalQuestion(question),verbs='(?:zeige?\\w*|pruefe?\\w*|kontrolliere?\\w*|erstelle?\\w*|erzeuge?\\w*|exportiere?\\w*|suche?\\w*|finde?\\w*|loesche?\\w*|speichere?\\w*|uebernimm|veroeffentliche?\\w*|welche|wer|wie viele|mach\\w*|kannst du|koenntest du)';
-    let parts=q.split(new RegExp('\\s*;\\s*|\\s+(?:und(?: dann| anschliessend)?|danach|anschliessend|ausserdem|sowie)\\s+(?='+verbs+'\\b)')).map(p=>p.trim()).filter(Boolean);
-    if(parts.length===1&&!/^(?:wie|wo|warum|was bedeutet)\b/.test(q)&&(/^(?:pruef\w*|kontrollier\w*|zeig\w*)\b/.test(q)||/\b(?:pruefen|kontrollieren|zeigen|anzeigen|erstellen)[.!?]*$/.test(q))&&/\bund\b|,/.test(q)&&!intentFor(q)?.match(/write|publish|changeImpact|leaveImpact/)){
-      const topics=[[/\b(?:offene dienste|luecken)\b/,'Offene Dienste'],[/\bbesetzung\b/,'Besetzung prüfen'],[/\b(?:geplante stunden|planstunden|stunden)\b/,/geplante stunden|planstunden/.test(q)?'Geplante Stunden prüfen':/erfasst|tatsaechlich|geleistet/.test(q)?'Tatsächlich erfasste Stunden prüfen':'Stunden prüfen'],[/\bbelastung\b/,'Belastungscheck'],[/\b(?:planungsbericht|pdf[- ]?bericht)\b/,'Planungsbericht erstellen']].filter(([re])=>re.test(q));
-      if(topics.length>1)parts=topics.map(([,text])=>text);
-    }
+    const chunks=q.split(new RegExp('\\s*;\\s*|\\s+(?:und(?: dann| anschliessend)?|danach|anschliessend|ausserdem|sowie)\\s+(?='+verbs+'\\b)')).map(p=>p.trim()).filter(Boolean);
+    const parts=chunks.flatMap(source=>{
+      if(!/^(?:wie|wo|warum|was bedeutet)\b/.test(source)&&(/^(?:pruef\w*|kontrollier\w*|zeig\w*)\b/.test(source)||/\b(?:pruefen|kontrollieren|zeigen|anzeigen|erstellen)[.!?]*$/.test(source))&&/\bund\b|,/.test(source)&&!intentFor(source)?.match(/write|publish|changeImpact|leaveImpact/)){
+        const topics=[[/\b(?:offene dienste|luecken)\b/,'Offene Dienste'],[/\bbesetzung\b/,'Besetzung prüfen'],[/\b(?:geplante stunden|planstunden|stunden)\b/,/geplante stunden|planstunden/.test(source)?'Geplante Stunden prüfen':/erfasst|tatsaechlich|geleistet/.test(source)?'Tatsächlich erfasste Stunden prüfen':'Stunden prüfen'],[/\bbelastung\b/,'Belastungscheck'],[/\b(?:planungsbericht|pdf[- ]?bericht)\b/,'Planungsbericht erstellen']].filter(([re])=>re.test(source));
+        if(topics.length>1)return topics.map(([,part])=>({part,source}));
+      }
+      return [{part:source,source}];
+    });
     if(parts.length<2)return null;
     const period=parsePeriod(q,s);if(period.error)return response('Datum prüfen',period.error,{context:{}});
     if(parts.length>4)return response('Auftrag bitte aufteilen','Ich habe mehr als vier Anliegen erkannt. Bitte stelle höchstens vier Aufgaben gemeinsam, damit jedes Anliegen vollständig geprüft werden kann.',{context:{}});
     const dates=period.explicit?period.dates:previous.dates||period.dates,staff=s.employees||[],explicitPeople=employeeMatches(q,staff),reference=/\b(?:ihre|seine|dafuer|dazu|auch)\b/.test(q),people=explicitPeople.length?explicitPeople:reference?staff.filter(e=>previous.employeeIds?.includes(String(e.id))):[],teamId=q.match(/\bteam\s+([a-e])\b/)?.[1]||(reference?previous.team:null),sharedType=parseShift(q,s);
-    for(const part of parts){const own=parsePeriod(part,{...s,defaultDates:dates});if(own.error)return response('Datum prüfen',own.error,{context:{}});}
-    const tasks=parts.map(part=>{
-      const own=parsePeriod(part,{...s,defaultDates:dates}),taskDates=own.explicit?own.dates:dates,scope=' vom '+taskDates[0]+' bis '+taskDates.at(-1);
+    for(const {source} of parts){const own=parsePeriod(source,{...s,defaultDates:dates});if(own.error)return response('Datum prüfen',own.error,{context:{}});}
+    const tasks=parts.map(({part,source})=>{
+      const own=parsePeriod(source,{...s,defaultDates:dates}),taskDates=own.explicit?own.dates:dates,scope=' vom '+taskDates[0]+' bis '+taskDates.at(-1),sourcePeople=employeeMatches(source,staff),taskPeople=sourcePeople.length?sourcePeople:people,taskTeam=source.match(/\bteam\s+([a-e])\b/)?.[1]||teamId,taskType=parseShift(source,s)||sharedType;
       let intent=intentFor(part);if(/pdf[- ]?bericht/.test(part)&&!/dienstplan/.test(part)&&!/^(?:wie|wo)\b/.test(part)){intent='report';part='Planungsbericht erstellen';}
-      const person=people.length===1&&['workload','employeePlan','employeeDiagnosis','outage'].includes(intent)&&!employeeMatches(part,staff).length?' für '+name(people[0]):teamId&&['workload','employeePlan'].includes(intent)&&!/team\s+[a-e]/.test(part)?' für Team '+teamId.toUpperCase():'';
-      const type=sharedType&&['replacement','diagnosis','open','coverage','overstaffed'].includes(intent)&&!parseShift(part,s)?' · '+sharedType:'';
+      const person=taskPeople.length===1&&['workload','employeePlan','employeeDiagnosis','outage'].includes(intent)&&!employeeMatches(part,staff).length?' für '+name(taskPeople[0]):taskTeam&&['workload','employeePlan'].includes(intent)&&!/team\s+[a-e]/.test(part)?' für Team '+taskTeam.toUpperCase():'';
+      const type=taskType&&['replacement','diagnosis','open','coverage','overstaffed'].includes(intent)&&!parseShift(part,s)?' · '+taskType:'';
       return {label:taskLabels[intent]||'Anliegen klären',question:part+person+scope+type,intent};
     });
     return response('Auftrag in '+tasks.length+' Schritten','Ich habe diese Anliegen erkannt. Starte mit einem Schritt; nach der Auswertung kannst du mit dem nächsten fortfahren. Änderungen werden einzeln als Vorschau geprüft und erst nach Bestätigung gespeichert.',{taskPlan:{tasks},context:{dates}});
