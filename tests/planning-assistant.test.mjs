@@ -71,14 +71,14 @@ test('employee services can be filtered by team and retain employee scope in fol
 });
 test('ambiguous employee names ask for clarification and accept the full name',()=>{
  const s=fixture();s.employees.push({id:'e5',first:'Anna',last:'Zwei',status:'active',shifts:['FD']});
- const a=Core.answer('Wie viele Stunden hat Anna im Dezember?',s);assert.equal(a.context.pending,true);assert.match(a.text,/Mehrere/);
+ const a=Core.answer('Wie viele geplante Stunden hat Anna im Dezember?',s);assert.equal(a.context.pending,true);assert.match(a.text,/Mehrere/);
  const b=Core.answer('Anna Zwei',s,a.context);assert.equal(b.rows.length,1);assert.equal(b.rows[0][0],'Anna Zwei');
- assert.match(Core.answer('Stunden für Niemand im Dezember',s).title,/nicht gefunden/);
+ assert.match(Core.answer('Geplante Stunden für Niemand im Dezember',s).title,/nicht gefunden/);
 });
 test('planned hour deviations compare only complete months and do not assert paid overtime',()=>{
  const s=fixture();s.monthTarget=e=>e.id==='e1'?4:20;
- const r=Core.answer('Welche Mitarbeiter haben im Dezember zu viele Stunden?',s);assert.equal(r.rows.length,1);assert.equal(r.rows[0][0],'Anna Plan');assert.equal(r.rows[0][3],'+4 Std.');assert.match(r.text,/kein bestätigtes/);
- assert.match(Core.answer('Welche Mitarbeiter haben heute zu viele Stunden?',s).text,/vollständigen Kalendermonat/);
+ const r=Core.answer('Welche Mitarbeiter haben im Dezember zu viele geplante Stunden?',s);assert.equal(r.rows.length,1);assert.equal(r.rows[0][0],'Anna Plan');assert.equal(r.rows[0][3],'+4 Std.');assert.match(r.text,/kein bestätigtes/);
+ assert.match(Core.answer('Welche Mitarbeiter haben heute zu viele geplante Stunden?',s).text,/vollständigen Kalendermonat/);
  const t=Core.answer('Wer liegt im Dezember unter dem Monats-SOLL?',s);assert.equal(t.rows.length,1);assert.equal(t.rows[0][0],'Ben Frei');
 });
 test('overstaffing lists only shifts above demand and never offsets shortages',()=>{
@@ -196,7 +196,7 @@ test('rule overview uses loaded company and personal limits and does not invent 
 });
 test('hour answers and replacement projections use the same date-aware calculation as the application',()=>{
  const s=fixture();s.assignmentHours=a=>a.type==='ND'&&a.date==='2027-03-27'?7:8;s.defaultDates=['2027-03-27'];s.assignments=[{date:'2027-03-27',type:'ND',employeeId:'e1'}];
- assert.equal(Core.answer('Wie viele Stunden hat Anna Plan im März 2027?',s).rows[0][1],'7 Std.');
+ assert.equal(Core.answer('Wie viele geplante Stunden hat Anna Plan im März 2027?',s).rows[0][1],'7 Std.');
  s.candidates=()=>({candidates:[{e:s.employees[1],h:0,monthHours:0}],reasons:[]});const r=Core.answer('Ersatz ND am 27.03.2027',s);assert.match(r.text,/7 Std/);assert.match(r.rows[0][2],/^7 \/ /);
 });
 
@@ -219,7 +219,7 @@ test('new product topics route to current instructions without triggering a plan
  ];
  for(const [question,title] of cases){const r=Core.answer(question,s);assert.equal(r.title,title,question);assert.equal(r.actions[0].query,title);assert.equal(r.actions[0].help,true);assert.equal(r.proposal,undefined);assert.equal(r.context.intent,undefined);}
  const switched=Core.answer(cases[0][0],s,{intent:'replacement',pending:true,dates:['2026-12-02']});assert.equal(switched.title,cases[0][1]);
- assert.match(Core.answer(cases[4][0],s).text,/keinen eigenen PDF-Export/);
+ assert.match(Core.answer(cases[4][0],s).text,/PDF herunterladen/);
  assert.equal(JSON.stringify(s),before);
  for(const question of cases.map(x=>x[0]))assert.match(Core.answer(question,{authorized:false}).title,/Anmeldung/);
 });

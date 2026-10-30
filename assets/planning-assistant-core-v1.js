@@ -56,6 +56,7 @@
   ];
   function duration(a,shifts){const t=shifts.find(t=>t.id===a.type),start=a.start||t?.start,end=a.end||t?.end;const mins=v=>/^\d{2}:\d{2}$/.test(v||'')?Number(v.slice(0,2))*60+Number(v.slice(3)):NaN;let m=mins(end)-mins(start);if(m<0)m+=1440;return Number.isFinite(m)?m/60:0;}
   function intentFor(q){
+    if(/^(?:(?:bitte\s+)?(?:erstelle?|erzeuge?|exportiere?)\b.*planungsbericht|planungsbericht\s+(?:erstellen|exportieren|herunterladen|als pdf))/.test(q))return 'report';
     if(/lernpr(?:ae|e)ferenz|lernende planung|aus.*korrekturen.*lernen/.test(q))return 'learning';
     if(/aenderungscheck|folgepruefung|automatische.*(?:aenderung|pruefung)/.test(q))return 'followup';
     if(/planvarianten|planvariante|varianten vergleichen/.test(q))return 'variants';
@@ -194,7 +195,7 @@
   }
   function paidHours(s,a){return s.assignmentHours?Number(s.assignmentHours(a))||0:duration(a,s.shifts);}
   function plannedHours(s,e,dates){return s.assignments.filter(a=>String(a.employeeId)===String(e.id)&&dates.includes(a.date)).reduce((sum,a)=>sum+paidHours(s,a),0);}
-  function fullMonth(dates){return dates.length>=28&&dates[0].endsWith('-01')&&dates[0].slice(0,7)===dates.at(-1).slice(0,7);}
+  function fullMonth(dates){if(!dates?.length||!validDate(dates[0])||!dates[0].endsWith('-01'))return false;const expected=monthDates(Number(dates[0].slice(0,4)),Number(dates[0].slice(5,7)));return dates.length===expected.length&&dates.every((d,i)=>d===expected[i]);}
   function response(title,text,more={}){return{title,text,rows:[],columns:[],actions:[],...more};}
   function planningCheck(s,dates,staff){
     const all=coverage(s,dates),open=all.reduce((n,x)=>n+x.missing,0),extra=all.reduce((n,x)=>n+x.extra,0),required=all.reduce((n,x)=>n+x.soll,0);
@@ -290,13 +291,23 @@
     }
     return best;
   }
-  function answer(question,s,previous={}){
+  function answerRaw(question,s,previous={}){
     if(!s.authorized)return response('Anmeldung erforderlich','Der Planungsassistent ist nur für angemeldete Benutzer mit Planungsrechten verfügbar.',{context:{}});
     if(s.loading)return response('Daten werden geladen','Bitte warte, bis das Unternehmen vollständig geladen ist, und stelle deine Frage erneut.',{context:{}});
     if(s.error)return response('Daten derzeit nicht bereit','Die Planungsdaten konnten nicht zuverlässig geladen werden. Bitte prüfe die Cloud-Verbindung und lade das Unternehmen erneut.',{context:{}});
+    if(previous.hoursQuestion){const matches=employeeMatches(normalize(question),s.employees||[]);if(matches.length===1)return answerRaw(previous.hoursQuestion+' · '+name(matches[0]),s,{});}
     const q=normalize(question).trim();if(!q)return response('Deine Frage','Schreibe eine Frage zur Planung oder wähle eines der Beispiele.',{context:previous});
-    const currentTopic=currentHelpTopic(q,s.helpArticles);
+    const detectedIntent=intentFor(q);
+    const currentTopic=detectedIntent==='report'?null:currentHelpTopic(q,s.helpArticles);
     if(currentTopic)return response(currentTopic.title,currentTopic.text,{notes:['Quelle: SchichtFunk Hilfe-Center. Maßgeblich sind die geladenen Regeln des ausgewählten Unternehmens.'],actions:[{help:true,query:currentTopic.title,label:'Anleitung im Hilfe-Center öffnen'}],context:{}});
+    if(!previous.pending&&detectedIntent==='workload'&&!/^(?:warum|weshalb|wieso)\b/.test(q)&&/stunden/.test(q)&&!/geplant|planstunden|planung|soll|vertrag|auslastung|ueberlast|unterlast/.test(q)&&employeeMatches(q,s.employees||[]).length<=1&&!(/\bfuer\s+[a-z]/.test(q)&&!employeeMatches(q,s.employees||[]).length)){
+      const requested=parsePeriod(q,s);if(requested.error)return response('Datum prüfen',requested.error,{context:{}});
+      const explicitActual=/tatsaechlich|erfasst|ist[- ]?stunden|geleistet|gearbeitet/.test(q);
+      if(explicitActual)return response('Tatsächlich erfasste Arbeitszeit','Für erfasste oder bestätigte Arbeitszeiten öffne Auswertungen und wähle dort den gewünschten Zeitraum. Der Planungsassistent berechnet Planstunden; diese werden nicht als tatsächlich geleistete Arbeit ausgegeben.',{actions:[{view:'reports',label:'Erfasste Arbeitszeit auswerten'}],context:{}});
+      const planned=String(question).replace(/stunden/i,'geplante Stunden'),actual=String(question).replace(/stunden/i,'tatsächlich erfasste Stunden');
+      return response('Welche Stunden meinst du?','Möchtest du geplante Dienste prüfen oder tatsächlich erfasste Arbeitszeit ansehen?',{clarification:[{label:'Geplante Stunden',question:planned},{label:'Erfasste Arbeitszeit',question:actual}],context:{}});
+    }
+    if(/^(?:(?:hilfe (?:bei|zur) )?(?:planung|dienstplan)|kannst du (?:mir )?(?:bei der |mit der )?planung helfen)[?.!]*$/.test(q))return response('Wobei soll ich dir helfen?','Wähle eine Prüfung der aktuellen Planung oder eine Erklärung zur Bedienung.',{clarification:[{label:'Planung prüfen',question:'Monatscheck starten'},{label:'Bedienung erklären',question:'Wie erstelle und übernehme ich Auto-Planungsvorschläge?'},{label:'PDF-Bericht erstellen',question:'Planungsbericht erstellen'}],context:{}});
     const period=parsePeriod(q,s);if(period.error)return response('Datum prüfen',period.error,{context:previous});
     const detected=/^(?:(?:und|auch|fuer)\s+)?team\s+[a-e][?.!]*$/.test(q)&&previous.intent?previous.intent:intentFor(q),followup=previous.pending||/^(und|auch|dafuer|dazu|diese|diesen|am|im|fuer|team|fd\b|sd\b|nd\b|\d)/.test(q)||(!detected&&(period.explicit||parseShift(q,s)));
     const intent=detected||(followup?previous.intent:null);
@@ -305,6 +316,7 @@
     const dates=period.explicit?period.dates:useService?[selected.date]:followup&&previous.dates?previous.dates:period.dates;
     const type=parseShift(q,s)||(useService?selected.type:followup?previous.type:null),requestedTeam=q.match(/\bteam\s+([a-e])\b/)?.[1]?.toUpperCase()||(followup?previous.team:null);
     const context={intent,dates,type,team:requestedTeam,pending:false},label=periodLabel(dates),shiftLabel=id=>{const t=s.shifts.find(t=>t.id===id);return t?.name&&t.name!==id?`${id} · ${t.name}`:id;};
+    if(intent==='report')return response('Planungsbericht · '+label,'Der Bericht enthält die aktuelle Besetzung, offene Positionen mit geprüften Gründen, Stundenabweichungen, Regelhinweise und gekennzeichnete manuelle Einplanungen. Prüfe die Grundlage und lade anschließend die PDF herunter.',{reportRequest:true,context});
     const staff=s.employees.filter(e=>!e.deletedAt&&e.status==='active');
     const nav=(view,label)=>({view,label});
     if(Insights&&['forecast','leaveImpact','changeImpact'].includes(intent))return scenarioAnswer(q,s,previous,intent,period,staff);
@@ -491,7 +503,31 @@
     const suggestions=[...(/personal|mitarbeiter|team/.test(q)?['Welche Mitarbeiter haben keine Schichtfreigabe?','Bei welchen Mitarbeitern fehlt eine Teamzuordnung?','Geplante Stunden prüfen']:/plan|dienst|besetz|ersatz/.test(q)?['Monatscheck starten','Engpasslöser starten','Offene Dienste prüfen','Ersatz für einen Dienst suchen']:['Monatscheck starten','Offene Dienste prüfen','Ersatz für einen Dienst suchen','Geplante Stunden prüfen','Welche Hilfethemen kennst du?']),'Welche Fragen kann ich stellen?'];
     return response('Welches Thema meinst du?','Für diese Frage habe ich noch keine zuverlässige Auswertung. Wähle ein passendes Thema oder formuliere die Frage genauer. Bei einzelnen Diensten helfen Datum und Schichtart.',{suggestions,context:{}});
   }
-  const api={answer,normalize,parsePeriod,parseRange,rangeDates,parseShift,coverage,periodLabel,validDate,team,findHelp,questionGroups,intentFor,companyHelpArticles};
+  function analysisBasis(s,dates,result={}){
+    const data=s.dataRead,matched=!!(data&&s.companyId&&s.userId&&data.companyId===s.companyId&&data.userId===s.userId&&Number.isFinite(Date.parse(data.readAt))),readAt=matched?data.readAt:null;
+    const rows=(s.assignments||[]).filter(a=>dates.includes(a.date)&&a.status!=='CANCELLED'&&a._dbStatus!=='CANCELLED');
+    const counts={draft:0,published:0,unknown:0};for(const a of rows){const status=a._dbStatus||a.status;if(status==='PUBLISHED'||a.publishedAt)counts.published++;else if(status==='DRAFT')counts.draft++;else counts.unknown++;}
+    const warnings=[];if(!matched)warnings.push('Zeitpunkt und Vollständigkeit des letzten Unternehmensabrufs sind nicht bestätigt.');
+    else if(data.possibleLimit)warnings.push('Eine Abrufgrenze kann erreicht sein; die Vollständigkeit ist offen.');
+    if(readAt&&Date.now()-Date.parse(readAt)>300000)warnings.push('Der letzte Unternehmensabruf liegt mehr als fünf Minuten zurück. Zwischenzeitliche Änderungen sind möglich.');
+    if(s.rulesReady!==true)warnings.push('Unternehmensregeln sind nicht vollständig bestätigt.');
+    if(s.teamRulesReady===false)warnings.push('Teamregeln sind noch nicht vollständig geladen.');
+    if(counts.unknown)warnings.push(counts.unknown+' Dienste haben keinen eindeutig geladenen Entwurfs- oder Veröffentlichungsstatus.');
+    if(s.pendingChanges)warnings.push('Speicherungen sind ausstehend oder fehlgeschlagen. Die Prüfung verwendet den lokalen Planungsstand.');
+    if(/Teilanalyse|unvollständig|Suchgrenze erreicht/i.test([result.text,...(result.blockers||[])].join(' ')))warnings.push('Die Analyse weist Einschränkungen auf; ungeprüfte Ergebnisse sind nicht als unauffällig bewertet.');
+    return {company:s.companyName||'Ausgewähltes Unternehmen',from:dates[0],to:dates.at(-1),days:dates.length,timezone:s.timezone||'Europe/Berlin',checkedAt:new Date().toISOString(),readAt:readAt||null,planStatus:`Entwürfe und veröffentlichte Dienste (${counts.draft} Entwürfe, ${counts.published} veröffentlicht, ${counts.unknown} ohne eindeutigen Status)`+(result.proposal?.proposed?.length?' · Verbesserungsvorschlag separat, noch nicht gespeichert':''),scope:`${(s.employees||[]).filter(e=>e.status==='active'&&!e.deletedAt).length} aktive Mitarbeiter · ${rows.length} Dienste im Zeitraum · ${(s.absences||[]).length} geladene Abwesenheiten`,completeness:matched&&!data.possibleLimit?'Unternehmensabruf erfolgreich; Prüfung des geladenen Bestands':'Vollständigkeit nicht bestätigt',warnings};
+  }
+  function answer(question,s,previous={}){
+    const result=answerRaw(question,s,previous);
+    if(s.authorized&&!s.loading&&!s.error&&result.context?.pending&&result.context.intent==='workload'&&/stunden/.test(normalize(question))&&!/geplant|planstunden|planung|soll|vertrag/.test(normalize(question)))result.context={...result.context,hoursQuestion:question};
+    if(!s.authorized||s.loading||s.error||result.title==='Datum prüfen'||result.clarification||result.context?.pending||result.notes?.some(n=>/^Quelle: SchichtFunk Hilfe-Center/.test(n))||result.profileManager||result.form)return result;
+    const intent=result.context?.intent||intentFor(normalize(question));
+    if(['report','planningCheck','loadCheck','workload','open','coverage','diagnosis','overstaffed','replacement','employeePlan','employeeDiagnosis','missingPermissions','unassigned','teamDay','outage','improvements','bottlenecks','forecast','leaveImpact','changeImpact','order','multiBalance','variants','followup','runReasons','rules','wizard'].includes(intent)){
+      const dates=result.context?.dates||parsePeriod(normalize(question),s).dates||s.defaultDates||[s.today];result.basis=analysisBasis(s,dates,result);
+    }
+    return result;
+  }
+  const api={answer,normalize,parsePeriod,parseRange,rangeDates,parseShift,coverage,periodLabel,validDate,team,findHelp,questionGroups,intentFor,companyHelpArticles,analysisBasis,paidHours,plannedHours,fullMonth};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.SFPlanningAssistantCore=api;
 })(typeof window==='undefined'?globalThis:window);
 
