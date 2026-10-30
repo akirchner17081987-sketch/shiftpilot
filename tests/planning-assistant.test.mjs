@@ -293,3 +293,17 @@ test('overlong task lists and invalid dates in later tasks require correction',(
  const s=fixture();assert.match(Core.answer('Zeige offene Dienste; prüfe Besetzung; zeige Stunden; prüfe Belastung; erstelle einen PDF-Bericht',s).title,/aufteilen/);
  assert.equal(Core.answer('Zeige offene Dienste am 01.12.2026 und zeige geplante Stunden am 31.02.2027',s).title,'Datum prüfen');
 });
+
+test('everyday planning language routes to supported actions and ambiguous absence asks first',()=>{
+ const s=fixture();
+ for(const q of ['Welche Dienstlücken gibt es im Dezember 2026?', 'Welche Schichten sind nicht belegt im Dezember 2026?'])assert.equal(Core.answer(q,s).context.intent,'open',q);
+ assert.equal(Core.answer('Wer kann am 03.12.2026 einspringen für FD?',s).context.intent,'replacement');
+ const goal=Core.answer('Mach Januar 2027 voll',s);assert.equal(goal.form.kind,'goalOrder');assert.equal(goal.form.month,'2027-01');
+ const ambiguous=Core.answer('Wer fehlt im Januar 2027?',s);assert.equal(ambiguous.clarification.length,2);assert.equal(Core.answer(ambiguous.clarification[0].question,s,ambiguous.context).context.intent,'open');assert.equal(Core.answer(ambiguous.clarification[1].question,s,ambiguous.context).context.intent,'absence');const typed=Core.answer('die Abwesenden',s,ambiguous.context);assert.equal(typed.context.intent,'absence');assert.equal(typed.context.dates[0],'2027-01-01');
+});
+test('follow-up month retains previous analysis and year; why checks current reasons and keeps the original scope',()=>{
+ const s=fixture(),before=JSON.stringify(s),a=Core.answer('Offene Dienste im November 2027',s),b=Core.answer('Und wie sieht es im Dezember aus?',s,a.context);
+ assert.equal(b.context.intent,'open');assert.equal(b.context.dates[0],'2027-12-01');assert.equal(b.context.dates.at(-1),'2027-12-31');
+ const c=Core.answer('Warum?',s,b.context);assert.equal(c.context.intent,'diagnosis');assert.equal(c.context.dates[0],'2027-12-01');assert.match(c.rows[0][3],/Verbindlicher Rhythmus passt nicht/);assert.match(c.rows[0][3],/keine früheren Planungsläufe/);assert.equal(JSON.stringify(s),before);
+ assert.ok(b.actions.some(x=>x.label==='Gründe für offene Dienste prüfen'));assert.ok(b.actions.some(x=>x.label==='Lösungen für den Monat prüfen'));
+});
