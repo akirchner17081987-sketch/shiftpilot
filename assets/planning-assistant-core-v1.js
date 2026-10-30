@@ -2,6 +2,7 @@
 (function(root){
   'use strict';
   const normalize=v=>String(v||'').toLocaleLowerCase('de-DE').replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/ß/g,'ss').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const Vocabulary=typeof module!=='undefined'&&module.exports?require('./planning-vocabulary-v1.js'):root.SFPlanningVocabulary;
   const months=['januar','februar','maerz','april','mai','juni','juli','august','september','oktober','november','dezember'];
   const pad=n=>String(n).padStart(2,'0');
   const day=(y,m,d)=>`${y}-${pad(m)}-${pad(d)}`;
@@ -92,7 +93,7 @@
     if(/veroeffentlich|freigeben|freigabe.*plan/.test(q))return 'publish';
     if(/\b(team|teams)\b/.test(q)&&/rhythm|rhytm|zyklus|tagesfolge|einstieg/.test(q)&&/\b(wie|wo|einstell|aender|einricht|hilfe)\w*/.test(q))return 'rhythmHelp';
     if(/(ohne|fehl\w*|kein\w*|nicht).*team|team.*(fehl\w*|ohne|nicht zugeordnet|keine zuordnung)/.test(q))return 'unassigned';
-    if(/ersatz|einspring|aushilf|uebernehmen|infrage|in frage|wer .*kann|passende.*mitarbeiter|verfuegbar.*mitarbeiter|mitarbeiter.*verfuegbar|wer.*verfuegbar|vertretung|besetz.*vorschlag/.test(q))return 'replacement';
+    if(/ersatz|einspring|aushilf|aushelfen|vertretung suchen|uebernehmen|infrage|in frage|wer .*kann|passende.*mitarbeiter|verfuegbar.*mitarbeiter|mitarbeiter.*verfuegbar|wer.*verfuegbar|vertretung|besetz.*vorschlag/.test(q))return 'replacement';
     if(/(?:warum|weshalb|wieso).*(?:plan|dienst|schicht|besetz)|nicht besetz|keine vorschlaege|kein vorschlag|autoplanung.*(fehler|problem)|auto.?planung.*(fehler|problem)/.test(q))return 'diagnosis';
     if(/stunden|auslastung|ueberlast|unterlast|ueber.*(?:vertrags|monats).?soll|unter.*(?:vertrags|monats).?soll/.test(q))return 'workload';
     if(/\b(team|teams)\b/.test(q))return 'teams';
@@ -106,7 +107,7 @@
     return null;
   }
   function naturalQuestion(value){
-    const original=normalize(value).trim().replace(/^(?:hallo|hey|guten morgen|guten tag)[!, .]+/,''),plain=original.replace(/^(?:(?:kannst|koenntest|wuerdest) du(?: mir)?|ich (?:moechte|haette gerne|wuerde gerne))\s+(?:bitte\s+)?/,'').replace(/^bitte\s+/,'');
+    const original=(Vocabulary?Vocabulary.clean(value):normalize(value)).trim().replace(/^(?:hallo|hey|guten morgen|guten tag)[!, .]+/,''),plain=original.replace(/^(?:(?:kannst|koenntest|wuerdest) du(?: mir)?|ich (?:moechte|haette gerne|wuerde gerne))\s+(?:bitte\s+)?/,'').replace(/^bitte\s+/,'');
     const action=plain.match(/\b(loeschen|speichern|uebernehmen|veroeffentlichen)[?.!]*$/);
     if(plain!==original&&action)return ({loeschen:'loesche',speichern:'speichere',uebernehmen:'uebernimm',veroeffentlichen:'veroeffentliche'})[action[1]]+' '+plain.slice(0,action.index).trim();
     return plain;
@@ -380,7 +381,7 @@
     const intent=detected||(followup?previous.intent:null);
     const selected=s.selectedService&&validDate(s.selectedService.date)&&s.shifts.some(t=>t.id===s.selectedService.type)?s.selectedService:null;
     const useService=selected&&['replacement','diagnosis','employeeDiagnosis'].includes(intent)&&(/\b(dieser|diesen|diesem|diese|hier|dafuer)\b/.test(q)||!period.explicit&&!previous.pending);
-    const dates=period.explicit?period.dates:useService?[selected.date]:followup&&previous.dates?previous.dates:period.dates;
+    const dates=s._filterDates|| (period.explicit?period.dates:useService?[selected.date]:followup&&previous.dates?previous.dates:period.dates);
     const type=parseShift(q,s)||(useService?selected.type:followup?previous.type:null),requestedTeam=q.match(/\bteam\s+([a-e])\b/)?.[1]?.toUpperCase()||(followup?previous.team:null);
     const context={intent,dates,type,team:requestedTeam,pending:false},label=periodLabel(dates),shiftLabel=id=>{const t=s.shifts.find(t=>t.id===id);return t?.name&&t.name!==id?`${id} · ${t.name}`:id;};
     if(intent==='report')return response('Planungsbericht · '+label,'Der Bericht enthält die aktuelle Besetzung, offene Positionen mit geprüften Gründen, Stundenabweichungen, Regelhinweise und gekennzeichnete manuelle Einplanungen. Prüfe die Grundlage und lade anschließend die PDF herunter.',{reportRequest:true,context});
@@ -591,7 +592,23 @@
   }
   function answer(question,s,previous={}){
     if(s.authorized&&!s.loading&&!s.error){
-      const q=naturalQuestion(question);
+      let q=naturalQuestion(question);
+      const alias=Vocabulary?.expand(q,s.dictionary,s.shifts||[]),hits=alias?.hits||[];
+      if(!s._vocabularyResolved&&hits.length){
+        const targets=[...new Set(hits.map(x=>x.target))];
+        if(targets.length>1)return response('Welchen Begriff meinst du?','Mehrere Wörterbucheinträge passen. Bitte wähle die Bedeutung.',{clarification:targets.map(target=>({label:target.startsWith('topic:')?Vocabulary.topics[target.slice(6)]:target,question:hits.reduce((text,h)=>text.replace(h.term,''),q)+' '+(target.startsWith('topic:')?Vocabulary.topics[target.slice(6)]:target)})),context:previous});
+        const target=targets[0],revised=q.replace(hits[0].term,target.startsWith('topic:')?Vocabulary.topics[target.slice(6)]:target);const r=answer(revised,{...s,_vocabularyResolved:true},previous);r.replayQuestion=revised;return r;
+      }
+      const siteFollow=/^(?:und|auch)\s+(.+?)[?.!]*$/.exec(q);if(siteFollow&&previous.dates?.length&&(s.shifts||[]).some(t=>t.siteName&&normalize(t.siteName).includes(siteFollow[1])))q='nur '+siteFollow[1];
+      const narrow=/^(?:(?:und|bitte|dann)\s+)*(?:nur|ausschliesslich)\s+(.+?)[?.!]*$/.exec(q);
+      if(narrow&&previous.dates?.length){
+        const filter=narrow[1],type=parseShift(filter,s),weekend=/^(?:am |an den |die )?(?:wochenende|wochenenden)$/.test(filter),site=(s.shifts||[]).filter(t=>t.siteName&&normalize(t.siteName).includes(filter));
+        if(!['open','coverage','overstaffed','diagnosis','employeePlan','workload'].includes(previous.intent))return response('Filter genauer angeben','Bitte starte eine Besetzungs-, Dienst- oder Stundenprüfung und grenze anschließend das Ergebnis ein.',{context:previous});
+        if(site.length&&!type)return response('Standort genauer auswählen','Die Besetzung kann standortübergreifend gelten. Wähle die konkrete Schicht am Standort; die Unternehmensvorgaben bleiben maßgeblich.',{clarification:site.map(t=>({label:t.id+' · '+t.siteName,question:'Nur '+t.id})),context:previous});
+        if(weekend||type){const dates=weekend?previous.dates.filter(d=>[0,6].includes(new Date(d+'T12:00:00Z').getUTCDay())):previous.dates;if(!dates.length)return response('Keine Wochenendtage','Der vorherige Zeitraum enthält keine Wochenendtage.',{context:previous});const prompts={open:'Offene Dienste',coverage:'Besetzung prüfen',overstaffed:'Überbesetzte Dienste',diagnosis:'Warum sind Dienste nicht besetzt?',employeePlan:'Zeige ihre Dienste',workload:'Geplante Stunden prüfen'},revised=prompts[previous.intent]+(type?' '+type:previous.type?' '+previous.type:'')+' vom '+dates[0]+' bis '+dates.at(-1),r=answer(revised,{...s,_filterDates:dates,_filterWeekend:weekend},previous);r.replayQuestion=(weekend?'Nur Wochenende':revised);return r;}
+        return response('Welchen Filter meinst du?','Nenne eine vorhandene Schicht oder „nur Wochenende“. Standorte benötigen eine eindeutige Schichtzuordnung.',{context:previous});
+      }
+      if(/^wer (?:ist frei|hat frei|ist verfuegbar)\b/.test(q)){const p=parsePeriod(q,s);if(p.error)return response('Datum prüfen',p.error,{context:previous});const dates=p.explicit?p.dates:previous.dates||p.dates,range=' vom '+dates[0]+' bis '+dates.at(-1);return response('Was bedeutet frei für dich?','Möchtest du Ersatz für einen Dienst suchen oder Abwesenheiten ansehen?',{clarification:[{label:'Ersatz suchen',question:'Ersatz suchen'+range},{label:'Abwesenheiten',question:'Abwesenheiten'+range}],context:{...previous,dates}});}
       if(previous.clarify==='missing'&&previous.dates?.length&&/^(?:(?:die|ich meine|bitte|nur)\s+)*(?:offen\w*|luecken|unbesetzt\w*|abwesend\w*|abwesenheiten|krank\w*)(?:\s+(?:dienste|schichten|mitarbeiter|personen|bitte))*[.!?]*$/.test(q)){
         const range=previous.dates.length===1?' am '+previous.dates[0]:' vom '+previous.dates[0]+' bis '+previous.dates.at(-1),revised=(/abwesen|abwesend|krank/.test(q)?'Abwesenheiten':'Offene Dienste')+range,result=answer(revised,{...s,defaultDates:previous.dates},{});result.replayQuestion=revised;return result;
       }

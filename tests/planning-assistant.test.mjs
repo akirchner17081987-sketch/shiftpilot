@@ -307,3 +307,15 @@ test('follow-up month retains previous analysis and year; why checks current rea
  const c=Core.answer('Warum?',s,b.context);assert.equal(c.context.intent,'diagnosis');assert.equal(c.context.dates[0],'2027-12-01');assert.match(c.rows[0][3],/Verbindlicher Rhythmus passt nicht/);assert.match(c.rows[0][3],/keine früheren Planungsläufe/);assert.equal(JSON.stringify(s),before);
  assert.ok(b.actions.some(x=>x.label==='Gründe für offene Dienste prüfen'));assert.ok(b.actions.some(x=>x.label==='Lösungen für den Monat prüfen'));
 });
+
+test('vocabulary handles typos, dictionary terms and read-only weekend and shift narrowing',()=>{
+ const s=fixture();s.dictionary=[{term:'nachtrunde',target:'ND'},{term:'personalbedarf',target:'topic:open'}];
+ assert.equal(Core.answer('Personalbedarf im Dezember',s).context.intent,'open');
+ assert.equal(Core.answer('Ersatzt für Nachtrunde am 03.12.2026',s).context.type,'ND');
+ const a=Core.answer('Offene Dienste im Dezember 2026',s),weekend=Core.answer('Nur Wochenende',s,a.context);
+ assert.ok(weekend.context.dates.length>0);assert.ok(weekend.context.dates.every(d=>[0,6].includes(new Date(d+'T12:00:00Z').getUTCDay())));
+ const shift=Core.answer('Nur ND',s,weekend.context);assert.equal(shift.context.type,'ND');assert.deepEqual(shift.context.dates,weekend.context.dates);
+ assert.equal(Core.answer('Wer ist frei?',s).clarification.length,2);
+ assert.equal(Core.answer('Lösche alle Dienste',s).context.intent,'write');
+ assert.equal(Core.answer('Nachtrunde', {...s,authorized:false}).title,'Anmeldung erforderlich');
+});
