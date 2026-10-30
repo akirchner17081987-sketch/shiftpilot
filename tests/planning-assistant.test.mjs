@@ -199,3 +199,37 @@ test('hour answers and replacement projections use the same date-aware calculati
  assert.equal(Core.answer('Wie viele Stunden hat Anna Plan im März 2027?',s).rows[0][1],'7 Std.');
  s.candidates=()=>({candidates:[{e:s.employees[1],h:0,monthHours:0}],reasons:[]});const r=Core.answer('Ersatz ND am 27.03.2027',s);assert.match(r.text,/7 Std/);assert.match(r.rows[0][2],/^7 \/ /);
 });
+
+test('new product topics route to current instructions without triggering a planning analysis',()=>{
+ const scope={window:{}};vm.runInNewContext(read('assets/help-center-content-v3.js'),scope);
+ const s={...fixture(),helpArticles:scope.window.SFHelpContent.articles};const before=JSON.stringify(s);
+ const cases=[
+  ['Wie erhalte ich eine Benachrichtigung wenn die Planung fertig ist?','Wie erhalte ich eine Benachrichtigung, wenn die Planung fertig ist?'],
+  ['Wie wähle ich Empfänger für die fertige Auto-Planung aus?','Wer kann die Fertigmeldung der Auto-Planung erhalten?'],
+  ['Wer kann die Fertigmeldung erhalten?','Wer kann die Fertigmeldung der Auto-Planung erhalten?'],
+  ['Wo finde ich den Planungsbericht?','Wo finde ich den Planungsbericht und die Planungsgründe?'],
+  ['Wie kann ich den Planungsbericht als PDF exportieren?','Wie exportiere ich den Planungsbericht?'],
+  ['Wie prüfe ich die faire Verteilung von Nacht- und Feiertagsdiensten?','Wie prüfe ich die faire Verteilung von Nacht-, Wochenend- und Feiertagsdiensten?'],
+  ['Wie vergleiche ich kurzfristige Übernahmen und Schichtwünsche?','Was zählt als kurzfristige Übernahme?'],
+  ['Wie funktioniert die Pausenprüfung bei mehr als 60 Minuten?','Wie funktioniert die Pausenprüfung bei mehr als 60 Minuten?'],
+  ['Wie nutze ich einen Administrator ohne Dienstplanung?','Wie nutze ich einen Administrator ohne Dienstplanung?'],
+  ['Was bedeutet der Planstatus?','Was bedeutet der Planstatus in der Auswertung?'],
+  ['Wie vergleiche ich Schichtwünsche mit dem veröffentlichten Plan?','Wie vergleiche ich Schichtwünsche mit dem veröffentlichten Plan?'],
+  ['Wie plane ich das 9h Modell?','Welche Unternehmensregeln verwendet der Planungsassistent?']
+ ];
+ for(const [question,title] of cases){const r=Core.answer(question,s);assert.equal(r.title,title,question);assert.equal(r.actions[0].query,title);assert.equal(r.actions[0].help,true);assert.equal(r.proposal,undefined);assert.equal(r.context.intent,undefined);}
+ const switched=Core.answer(cases[0][0],s,{intent:'replacement',pending:true,dates:['2026-12-02']});assert.equal(switched.title,cases[0][1]);
+ assert.match(Core.answer(cases[4][0],s).text,/keinen eigenen PDF-Export/);
+ assert.equal(JSON.stringify(s),before);
+ for(const question of cases.map(x=>x[0]))assert.match(Core.answer(question,{authorized:false}).title,/Anmeldung/);
+});
+
+test('assistant company help matches authenticated tenant context and never mutates public content',()=>{
+ const articles={auto:[['Betriebliche Regeln?','Öffentliche Erklärung']]},before=JSON.stringify(articles);
+ const privateAnswer='Neun Stunden <img src=x onerror=alert(1)>',backend={ready:true,user:{id:'user-a'},companyId:'company-a',companyPrivateConfiguration:{companyId:'company-a',data:{helpArticles:{auto:{'Betriebliche Regeln?':privateAnswer,'Unbekannt?':'Nicht einschleusen'}}}}};
+ assert.equal(Core.companyHelpArticles(articles,backend).auto[0][1],privateAnswer);
+ assert.equal(Core.companyHelpArticles(articles,backend).auto.length,1);
+ for(const b of [{...backend,ready:false},{...backend,user:null},{...backend,companyId:'company-b'},{...backend,companyPrivateConfiguration:null}])assert.equal(Core.companyHelpArticles(articles,b).auto[0][1],'Öffentliche Erklärung');
+ assert.equal(Core.companyHelpArticles(articles,backend,true).auto[0][1],'Öffentliche Erklärung');
+ assert.equal(JSON.stringify(articles),before);
+});

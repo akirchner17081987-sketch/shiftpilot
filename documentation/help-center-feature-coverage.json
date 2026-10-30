@@ -1,6 +1,6 @@
 {
-  "reviewedAt": "2026-10-27",
-  "sourceCommit": "80485ff3eb6e003ab4cd1f329f118118d0d103bc",
+  "reviewedAt": "2026-10-30",
+  "sourceCommit": "cd62f15d738084317fff5529d81ffbab8b51d88f",
   "addedArticles": [
     {
       "category": "wishes",
@@ -1368,6 +1368,102 @@
         "qr-time.html",
         "supabase/migrations/20261025010345_qr_break_timer_reminders.sql",
         "supabase/functions/push-dispatch/index.ts"
+      ]
+    },
+    {
+      "category": "auto",
+      "question": "Wie erhalte ich eine Benachrichtigung, wenn die Planung fertig ist?",
+      "sources": [
+        "assets/autonomous-planning-v1.js",
+        "assets/background-auto-plan-v1.js"
+      ]
+    },
+    {
+      "category": "auto",
+      "question": "Wer kann die Fertigmeldung der Auto-Planung erhalten?",
+      "sources": [
+        "assets/autonomous-planning-v1.js",
+        "assets/background-auto-plan-v1.js"
+      ]
+    },
+    {
+      "category": "auto",
+      "question": "Wo finde ich den Planungsbericht und die Planungsgründe?",
+      "sources": [
+        "assets/autonomous-planning-v1.js",
+        "assets/background-auto-plan-v1.js"
+      ]
+    },
+    {
+      "category": "auto",
+      "question": "Wie exportiere ich den Planungsbericht?",
+      "sources": [
+        "assets/autonomous-planning-v1.js",
+        "assets/background-auto-plan-v1.js"
+      ]
+    },
+    {
+      "category": "qr",
+      "question": "Wie funktioniert die Pausenprüfung bei mehr als 60 Minuten?",
+      "sources": [
+        "assets/qr-pause-total-v1.js",
+        "documentation/help-center-audit-2026-10-30.md"
+      ]
+    },
+    {
+      "category": "qr",
+      "question": "Wann findet die Pausenprüfung statt und was unterscheidet sie von der Vorwarnung?",
+      "sources": [
+        "assets/qr-pause-total-v1.js",
+        "documentation/help-center-audit-2026-10-30.md"
+      ]
+    },
+    {
+      "category": "reports",
+      "question": "Wie prüfe ich die faire Verteilung von Nacht-, Wochenend- und Feiertagsdiensten?",
+      "sources": [
+        "assets/reports-workspace-v1.js",
+        "documentation/fairness-overview-2026-10-28.md"
+      ]
+    },
+    {
+      "category": "reports",
+      "question": "Was zählt als kurzfristige Übernahme?",
+      "sources": [
+        "assets/reports-workspace-v1.js",
+        "documentation/fairness-overview-2026-10-28.md"
+      ]
+    },
+    {
+      "category": "reports",
+      "question": "Wie vergleiche ich Schichtwünsche mit dem veröffentlichten Plan?",
+      "sources": [
+        "assets/reports-workspace-v1.js",
+        "documentation/fairness-overview-2026-10-28.md"
+      ]
+    },
+    {
+      "category": "reports",
+      "question": "Was bedeutet der Planstatus in der Auswertung?",
+      "sources": [
+        "assets/reports-workspace-v1.js",
+        "documentation/fairness-overview-2026-10-28.md"
+      ]
+    },
+    {
+      "category": "access",
+      "question": "Wie nutze ich einen Administrator ohne Dienstplanung?",
+      "sources": [
+        "assets/employee-management-v2.js",
+        "assets/compliance-core-v2.js"
+      ]
+    },
+    {
+      "category": "assistant",
+      "question": "Welche Unternehmensregeln verwendet der Planungsassistent?",
+      "sources": [
+        "assets/planning-assistant-core-v1.js",
+        "assets/planning-assistant-v1.js"
       ]
     }
   ],
@@ -2889,7 +2985,9 @@
         "Wie wähle ich 10, 15 oder 20 Minuten Pause oder unbegrenzt?",
         "Wann erhalte ich die Erinnerung vor dem Pausenende?",
         "Warum kommt meine Pausen-Erinnerung nicht an?",
-        "Endet meine Pause automatisch nach der gewählten Dauer?"
+        "Endet meine Pause automatisch nach der gewählten Dauer?",
+        "Wie funktioniert die Pausenprüfung bei mehr als 60 Minuten?",
+        "Wann findet die Pausenprüfung statt und was unterscheidet sie von der Vorwarnung?"
       ]
     },
     {
@@ -2945,7 +3043,11 @@
         "Wie lernt die Planung aus meinen Dienstkorrekturen?",
         "Wie verteile ich Arbeitsblöcke als versetzte Treppe?",
         "Wie läuft die Auto-Planung selbständig bei geschlossenem Browser?",
-        "Wie funktionieren Vorprüfung, Planungsziele und Verbesserung?"
+        "Wie funktionieren Vorprüfung, Planungsziele und Verbesserung?",
+        "Wie erhalte ich eine Benachrichtigung, wenn die Planung fertig ist?",
+        "Wer kann die Fertigmeldung der Auto-Planung erhalten?",
+        "Wo finde ich den Planungsbericht und die Planungsgründe?",
+        "Wie exportiere ich den Planungsbericht?"
       ]
     },
     {
@@ -2958,7 +3060,8 @@
         "Welche Fragen versteht der Planungsassistent?",
         "Wie lasse ich den Assistenten Belastung und Stundenversorgung prüfen?",
         "Speichert der Planungsassistent automatisch Änderungen?",
-        "Wo finde ich gespeicherte Planungsgründe und wie lange bleiben sie erhalten?"
+        "Wo finde ich gespeicherte Planungsgründe und wie lange bleiben sie erhalten?",
+        "Welche Unternehmensregeln verwendet der Planungsassistent?"
       ]
     },
     {
@@ -3009,7 +3112,11 @@
         "Wie exportiere ich Monatsberichte?",
         "Wie funktioniert der DATEV-LODAS-Export?",
         "Warum weichen Zahlen voneinander ab?",
-        "Welche Voraussetzungen hat der DATEV-Export?"
+        "Welche Voraussetzungen hat der DATEV-Export?",
+        "Wie prüfe ich die faire Verteilung von Nacht-, Wochenend- und Feiertagsdiensten?",
+        "Was zählt als kurzfristige Übernahme?",
+        "Wie vergleiche ich Schichtwünsche mit dem veröffentlichten Plan?",
+        "Was bedeutet der Planstatus in der Auswertung?"
       ]
     },
     {
@@ -3143,7 +3250,8 @@
         "Was unterscheidet vollständige Datenlöschung vom normalen Entfernen?",
         "Was unterscheidet die Personalrolle „Teamleiter“ von der Zugangsrolle?",
         "Was unterscheidet „Zeiten verwalten“ von „Zeiten bestätigen“?",
-        "Wie sichere und importiere ich Audit-Logs?"
+        "Wie sichere und importiere ich Audit-Logs?",
+        "Wie nutze ich einen Administrator ohne Dienstplanung?"
       ]
     },
     {
@@ -3396,11 +3504,11 @@
     "entry": "index.html"
   },
   "currentAudit": {
-    "date": "2026-10-27",
-    "baselineArticleCount": 211,
-    "addedArticleCount": 47,
-    "correctedArticleCount": 23,
-    "articleCount": 258,
+    "date": "2026-10-30",
+    "baselineArticleCount": 258,
+    "addedArticleCount": 12,
+    "correctedArticleCount": 0,
+    "articleCount": 270,
     "categoryCount": 22,
     "assetJavaScriptCount": 233
   },

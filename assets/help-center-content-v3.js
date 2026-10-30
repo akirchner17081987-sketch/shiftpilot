@@ -1,4 +1,4 @@
-// Aktive SchichtFunk-Hilfe: Funktionsabgleich · 21.10.2026.
+// Aktive SchichtFunk-Hilfe: Funktionsabgleich · 30.10.2026.
 window.SFHelpContent = {
   "categories": [
     [
@@ -409,6 +409,30 @@ window.SFHelpContent = {
       [
         "Was tue ich bei einer vergessenen QR-Abmeldung?",
         "Melden Sie den tatsächlichen Beginn und das tatsächliche Ende der zuständigen Zeitverwaltung. Diese prüft die offene Buchung und schließt oder korrigiert sie mit Begründung in der QR-Detailansicht. Eine offene Pause endet spätestens mit dem eingetragenen Dienstende. Bei einer unklaren Fehlermeldung zuerst den aktuellen Buchungsstatus prüfen, bevor dieselbe Korrektur erneut ausgeführt wird."
+      ],
+      [
+        "Wie wähle ich 10, 15 oder 20 Minuten Pause oder unbegrenzt?",
+        "Während der Arbeitszeit können Sie vor „Pause beginnen“ freiwillig 10, 15 oder 20 Minuten wählen. Das Unendlichkeitszeichen ∞ ist die Voreinstellung ohne Zeitlimit und ohne Pausen-Erinnerung. Erst „Pause beginnen“ bucht den Pausenbeginn. Die gewählte Dauer beendet die Pause nicht automatisch."
+      ],
+      [
+        "Wann erhalte ich die Erinnerung vor dem Pausenende?",
+        "Bei 10, 15 oder 20 Minuten Pausendauer sendet SchichtFunk etwa 2 Minuten vor Ablauf eine Push-Erinnerung an Ihre Geräte mit aktiviertem SchichtFunk-Push. Der Erinnerungsdienst arbeitet auch bei geschlossenem Browser. Eine bereits beendete Pause oder eine abgelaufene Pausenzeit erzeugt keine verspätete Meldung. Bei ∞ ist keine Erinnerung vorgesehen."
+      ],
+      [
+        "Warum kommt meine Pausen-Erinnerung nicht an?",
+        "Aktivieren Sie Push-Mitteilungen im Mitarbeiterportal auf dem gewünschten Gerät und erlauben Sie Benachrichtigungen in den Website- oder App-Einstellungen. Auf dem iPhone oder iPad muss SchichtFunk als Web-App zum Home-Bildschirm hinzugefügt sein. Wählen Sie vor dem Pausenbeginn 10, 15 oder 20 Minuten. Bei unbegrenzter Pause ∞ erfolgt keine Erinnerung. Die Zustellung hängt auch von der Verbindung und den Geräte-Einstellungen ab."
+      ],
+      [
+        "Endet meine Pause automatisch nach der gewählten Dauer?",
+        "Nein. Der Countdown und die Erinnerung sind Hilfen. Beenden Sie die Pause ausdrücklich mit „Pause beenden“. Die Pause läuft auch nach Ablauf der gewählten Dauer weiter. „Arbeitszeit beenden“ schließt bei Dienstende eine noch laufende Pause zum selben Zeitpunkt. Pausen bleiben bezahlt und werden separat dokumentiert."
+      ],
+      [
+        "Wie funktioniert die Pausenprüfung bei mehr als 60 Minuten?",
+        "Die serverseitige Pausenprüfung summiert die erfassten Pausen je QR-Schicht, einschließlich einer noch laufenden Pause. Erst bei insgesamt mehr als 60 Minuten wird Pausenzeit überschritten an aktive Administratoren und Teamleiter des betroffenen Unternehmens gemeldet. Genau 60 Minuten lösen die Meldung nicht aus. Auch mehrere kurze Pausen werden gemeinsam betrachtet. Geprüft werden laufende Schichten und innerhalb der letzten 24 Stunden beendete Schichten. Ein Vorgang wird jedem Empfänger nur einmal gemeldet. Die Prüfung ändert weder Zeitbuchungen noch Abrechnung und bewertet nicht automatisch den Grund der Überschreitung."
+      ],
+      [
+        "Wann findet die Pausenprüfung statt und was unterscheidet sie von der Vorwarnung?",
+        "Die Pausenprüfung läuft serverseitig um 08:30 und 19:30 Uhr in Europe/Berlin, auch bei geschlossenem Browser. Sie meldet eine insgesamt überschrittene Pausenzeit an die berechtigte Verwaltung. Die persönliche Zwei-Minuten-Vorwarnung gehört dagegen zur freiwilligen Auswahl von 10, 15 oder 20 Minuten Pause. Bei ∞ entfällt nur diese persönliche Vorwarnung; die erfasste Pause zählt weiterhin für die Pausenprüfung. Die Meldegrenze ist keine erlaubte Pausendauer: Eine betriebliche Vorgabe von beispielsweise 45 Minuten bleibt davon getrennt und wird durch eine Meldeschwelle oder Kulanz nicht geändert."
       ]
     ],
     "absence": [
@@ -639,6 +663,30 @@ window.SFHelpContent = {
       [
         "Wie verteile ich Arbeitsblöcke als versetzte Treppe?",
         "Identische verbindliche Rhythmen mit demselben Startdatum führen zu gemeinsamen Arbeits- und Freitagen. Inhaber oder Administratoren aktivieren unter Einstellungen → Planung → Automatische Rhythmusstaffelung die Staffelungsvorschläge separat für das ausgewählte Unternehmen. Danach unter Auto-Planung einen einzelnen Monat wählen, Wochenstunden berücksichtigen und „Staffelung berechnen“ starten. Die Suche vergleicht vollständige Blöcke mit echten Besetzungsbedarfen, Freigaben, Abwesenheiten, Ruhezeiten und Stundenlimits. Prüfe die Vorher/Nachher-Lücken und die Rhythmustreppe. „Einstiege übernehmen“ speichert die vorgeschlagenen individuellen Einstiege gemeinsam; anschließend die Monatsplanung neu berechnen. Muster und persönliche Grenzen bleiben bestehen. Mitarbeiter mit gespeicherten Diensten werden nicht verschoben. Unterstützt werden bis zu 30 individuelle verbindliche ALLE/FREI-Tageszyklen; zentrale Team- oder Unternehmensrhythmen werden weiterhin in ihren eigenen Einstellungen gepflegt. Deaktivieren blendet die Vorschläge aus, setzt bereits übernommene Einstiege aber nicht zurück. Eine Staffelung kann fehlende Gesamtkapazität oder unpassende Blocklängen nicht ausgleichen und garantiert keine vollständige Besetzung."
+      ],
+      [
+        "Wie läuft die Auto-Planung selbständig bei geschlossenem Browser?",
+        "In der Auto-Planung öffnen Inhaber oder Administratoren den Bereich „Automatikmodus dieses Unternehmens“. Dort aktivieren sie einen monatlichen Termin, einen Zeitraum von bis zu drei Monaten und auf Wunsch die erneute Planung nach relevanten Änderungen. Alle Vorschläge bleiben zur Prüfung bereit. Ein Planer muss die Übernahme als Entwurf ausdrücklich bestätigen. Veröffentlichte und abgeschlossene Monate bleiben geschützt. Ein manueller Testlauf erstellt immer einen Vorschlag. Stundenunterschiede aus veröffentlichten Vormonaten und bereits berechneten Folgemonaten beeinflussen die faire Verteilung vorsichtig; SOLL und Zeitkonten bleiben unverändert. Offene Engpässe und Prüfprobleme sind im Laufstatus sichtbar. Die Veröffentlichung erfolgt separat."
+      ],
+      [
+        "Wie funktionieren Vorprüfung, Planungsziele und Verbesserung?",
+        "Beim Start eines Automatiklaufs berechnet die Vorprüfung Bedarf, SOLL und optimistisch verfügbare Stunden pro Monat. Mehr SOLL als angeforderte Dienste kann die Automatik allein nicht ausgleichen; verfügbare Kandidaten garantieren wegen Ruhezeiten und Blöcken noch keinen gültigen Plan. Unter Planungsziel wählen Sie Ausgewogen, Stundenausgleich oder Wünsche für die weichen Kriterien. Pflichtdienste, Zusagen und Grenzen bleiben bindend. „Bestehenden Vorschlag verbessern“ untersucht weitere Varianten und behält den bisher gültigen Vorschlag, solange keine bessere unabhängig geprüfte Verteilung gefunden wird. Gleich qualifizierte Kollegen werden über veröffentlichte Vormonate hinweg vorsichtig ausgeglichen. Der Lauf erzeugt nur einen Vorschlag und veröffentlicht keine Dienste."
+      ],
+      [
+        "Wie erhalte ich eine Benachrichtigung, wenn die Planung fertig ist?",
+        "Öffne Auto-Planung → Bei fertiger Berechnung benachrichtigen. Wähle die gewünschten Personen vor dem Start aus. Die Auswahl wird mit dem Planungsstart gespeichert. Nach erfolgreicher Abschlussprüfung erscheint die Fertigmeldung in der SchichtFunk-Meldungszentrale und bei aktiviertem Push zusätzlich auf den registrierten Geräten. Ohne Auswahl wird keine Fertigmeldung versendet. Die Meldung bedeutet, dass ein Vorschlag zur Prüfung bereitsteht; sie übernimmt oder veröffentlicht keinen Dienstplan."
+      ],
+      [
+        "Wer kann die Fertigmeldung der Auto-Planung erhalten?",
+        "Die namentliche Mehrfachauswahl zeigt berechtigte Inhaber, Administratoren, Planer und Teamleiter des ausgewählten Unternehmens. Bei jeder Person steht, ob Push auf einem Gerät aktiv ist oder nur die Meldungszentrale verwendet wird. Für eigene zeitgesteuerte Läufe kannst du Empfängerauswahl speichern verwenden. Die Auswahl gilt unternehmensbezogen. Änderungen nach dem Start ändern den bereits gestarteten Auftrag nicht."
+      ],
+      [
+        "Wo finde ich den Planungsbericht und die Planungsgründe?",
+        "Der Planungsbericht ergibt sich aus der Ergebnisübersicht des Planungslaufs und der geöffneten Vorschau. Unter Auto-Planung zeigen die Laufkarten Status, offene Pflichtpositionen, Regelprüfung, Stundenziele und verfügbare Diagnosen. Vorschlag ansehen beziehungsweise Gespeichertes Ergebnis ansehen öffnet den konkreten Vorschlag. Prüfe offene Dienste nach Datum und Schicht sowie die angezeigten Ausschlussgründe, Stundenabweichungen und manuellen Entscheidungen. Im Planungsassistenten ergänzt Gespeicherte Planungsgründe die lokal vorhandenen Enddiagnosen neuer Läufe. Diese lokale Historie umfasst höchstens 20 Läufe der letzten 90 Tage und wird nicht zwischen Geräten synchronisiert. Eine fehlende Diagnose beweist keinen Personalmangel. Änderungen nach dem Lauf erfordern eine erneute Prüfung; die Übernahme als Entwurf und Veröffentlichung bleiben getrennte Schritte."
+      ],
+      [
+        "Wie exportiere ich den Planungsbericht?",
+        "Für die Ergebnisdiagnose der Auto-Planung gibt es derzeit keinen eigenen PDF-Export. Ein Dienstplan-PDF und ein Arbeitszeit-Monatsbericht enthalten andere Informationen und ersetzen diese Diagnose nicht. Den gespeicherten Planungsvorschlag öffnest du in der Auto-Planung; die verfügbaren Planungsgründe kannst du zusätzlich im Assistenten ansehen. Auswertungen bietet PDF und Excel für den dort gewählten Zeitraum, Planstatus und die Belastungskennzahlen. Prüfe vor einer Weitergabe, ob die benötigten Gründe und Einschränkungen tatsächlich enthalten sind."
       ]
     ],
     "reports": [
@@ -673,6 +721,22 @@ window.SFHelpContent = {
       [
         "Welche Voraussetzungen hat der DATEV-Export?",
         "Inhaber und Administratoren konfigurieren Berater- und Mandantennummer, Personalnummern und Lohnarten-Zuordnungen. Grundlage ist der geprüfte, abgeschlossene Monat mit seiner Abschlussrevision. Die Vorprüfung meldet fehlende oder ungültige Angaben; ohne passende Daten wird keine leere Datei erzeugt. Der Download erstellt eine LODAS-Datei, überträgt sie aber nicht automatisch an DATEV. Nach Wiederöffnung und neuem Abschluss müssen Export und Revision erneut geprüft werden."
+      ],
+      [
+        "Wie prüfe ich die faire Verteilung von Nacht-, Wochenend- und Feiertagsdiensten?",
+        "Öffne Auswertungen → Belastung & Verteilung und wähle Zeitraum, Planstatus und Filter. Die Übersicht zeigt Nacht-, Wochenend- und Feiertagsdienste, entsprechende Stunden, nachgewiesene kurzfristige Übernahmen, Stundenabweichungen und Wünsche. Nachtstunden betreffen 22–06 Uhr; die Wochenendanzahl zählt Dienststarts am Samstag oder Sonntag, während Wochenendstunden nach Kalendertag aufgeteilt werden. Feiertagszeiten folgen dem hinterlegten Einsatzort. Bei fehlender regionaler Zuordnung werden nur bundesweite Feiertage erfasst und die Einschränkung angezeigt. Vertragsumfang, Schichtfreigaben, verbindliche freie Rhythmustage und genehmigte ganztägige Abwesenheiten gehören zur Vergleichsbasis. Pausen werden mangels genauer Pausenlage anteilig verteilt; eine Stunde kann zu mehreren Kategorien gehören. Unterschiede sind ein Prüfhinweis und keine automatische Leistungsbewertung oder Rangliste. PDF und Excel enthalten die gefilterten Ergebnisse."
+      ],
+      [
+        "Was zählt als kurzfristige Übernahme?",
+        "Als kurzfristig zählt eine nachgewiesene Ersatz- oder Marktplatzübernahme, die innerhalb von 0 bis 48 Stunden vor Dienstbeginn bestätigt oder durch die Disposition dokumentiert wurde. Die passende Zielperson und ein angewendeter Vorgang müssen vorliegen. Mehrere Nachweise desselben Dienstes zählen einmal. Eine gewöhnliche späte Planänderung oder eine Textnotiz wird nicht automatisch als freiwillige Übernahme gewertet. Fehlende Nachweise werden nicht geschätzt."
+      ],
+      [
+        "Wie vergleiche ich Schichtwünsche mit dem veröffentlichten Plan?",
+        "Die Wunschbilanz in Auswertungen → Belastung & Verteilung trennt zugesagte beziehungsweise vorgemerkte, abgelehnte, offene und zurückgezogene Wünsche. Passt oder abweichend vergleicht den Wunsch mit veröffentlichten Diensten und ist kein Genehmigungsstatus. Freizeitwünsche berücksichtigen Nachtüberträge; Schichtwünsche beziehen sich auf die gewünschte Schicht am Starttag. Pro Wunschtyp und Kalendertag gilt der neueste Eintrag. Ohne veröffentlichte Planungsbasis bleibt die Übereinstimmung unbekannt. Freiwillig freigegebene Freizeit zählt nicht als verfehlter Wunsch. Bei Standort- oder Schichtfiltern wird die Wunschbilanz ausgeblendet, weil sie die vollständige persönliche Planung benötigt."
+      ],
+      [
+        "Was bedeutet der Planstatus in der Auswertung?",
+        "Der gewählte Planstatus bestimmt, welche Entwürfe oder veröffentlichten Dienste in Planstunden, Restplanung, Verteilung und Bedarfsdeckung eingehen. Erfasste und bestätigte Arbeitszeiten bleiben davon unabhängig. Der Planstatus steht auch in PDF und Excel. Vergleiche Werte nur bei gleicher Auswahl. Die Bedarfsdeckung berücksichtigt das gesamte Personal im gewählten Standort- und Schichtbereich; ein Mitarbeiter- oder Teamfilter schränkt diese Besetzungswerte nicht ein. Bei Standort- oder Schichtanteilen wird kein anteiliger Vertragsfehlbetrag erfunden."
       ]
     ],
     "settings": [
@@ -910,11 +974,26 @@ window.SFHelpContent = {
       ]
     ],
     "disruptions": [
-      ["Wie melde ich einen akuten Ausfall?", "Öffne einen veröffentlichten Dienst und wähle Ausfall / Ersatz. Der Dienst und der betroffene Mitarbeiter sind vorausgewählt. Alternativ öffne Störfall-Autopilot und Störfall melden. Grund und Störfallart erfassen. Nur Störfall melden speichert den Ausfall ohne Ersatzbesetzung. Digitale Einzelanfragen und Top 3 anfragen stehen für zukünftige Dienste mit geeigneten Portalnutzern bereit."],
-      ["Wie ersetze ich einen laufenden Dienst?", "Unter Ausfall / Ersatz stehen Teilablösung und Restdienst nach vollständigem Ausfall zur Wahl. Zeitpunkt in der angezeigten Unternehmenszeitzone und Pause der Ersatzkraft festlegen. Bei Teilablösung bleibt der bisherige Abschnitt beim ursprünglichen Mitarbeiter. Zeitbuchungen werden nicht übertragen; offene Buchungen zuerst abschließen. Ein fehlender Abschnitt vor Beginn des Ersatzdienstes bleibt als Lücke bestehen. Verbindliche Schichtzeiten und weitere Regeln werden weiterhin geprüft."],
-      ["Kann ich eine bereits besprochene Vertretung direkt eintragen?", "Ersatzkraft wählen, Grund eingeben, die persönliche oder telefonische Zusage ausdrücklich bestätigen und dokumentieren. Auch aktive Mitarbeiter ohne Portalzugang sind auswählbar. Eine Abweichung vom Rhythmus muss gesondert bestätigt werden. Ersatz übernehmen speichert den gesamten Vorgang; falls weitere Freigaben oder Veröffentlichungsrechte fehlen, bleibt der Plan bis zur Freigabe unverändert. Freigaben öffnen führt zum Änderungsbereich."],
-      ["Wer wird mit Top 3 angefragt?", "Top 3 berücksichtigt ausschließlich bisher nicht angefragte geeignete Personen. Abgelehnte, abgelaufene und zurückgezogene Anfragen werden übersprungen. Erneut anfragen ist nur einzeln nach ausdrücklicher Bestätigung möglich. Bereits offene Anfragen warten auf Antwort. Nach einer gültigen Zusage werden weitere offene Anfragen geschlossen. Ist eine Betriebsratsfreigabe hinterlegt, muss die Disposition die Zusage über Ersatz übernehmen mit den erforderlichen Freigaben abschließen."],
-      ["Warum sehe ich keine Ersatzkräfte?", "Ein Ladefehler wird mit Erneut laden angezeigt und bedeutet nicht, dass niemand verfügbar ist. Die Anzeige unterscheidet ausstehende Antworten, fehlende digital erreichbare Ersatzkräfte und laufende Dienste. Über Ersatz übernehmen sind Mitarbeiter ohne Portalzugang erreichbar; gesperrte Personen zeigen ihren Prüfgrund. Beenden schließt den Störfall ohne Ersatz und verhindert die spätere Anwendung einer ausstehenden Ersatzübernahme."]
+      [
+        "Wie melde ich einen akuten Ausfall?",
+        "Öffne einen veröffentlichten Dienst und wähle Ausfall / Ersatz. Der Dienst und der betroffene Mitarbeiter sind vorausgewählt. Alternativ öffne Störfall-Autopilot und Störfall melden. Grund und Störfallart erfassen. Nur Störfall melden speichert den Ausfall ohne Ersatzbesetzung. Digitale Einzelanfragen und Top 3 anfragen stehen für zukünftige Dienste mit geeigneten Portalnutzern bereit."
+      ],
+      [
+        "Wie ersetze ich einen laufenden Dienst?",
+        "Unter Ausfall / Ersatz stehen Teilablösung und Restdienst nach vollständigem Ausfall zur Wahl. Zeitpunkt in der angezeigten Unternehmenszeitzone und Pause der Ersatzkraft festlegen. Bei Teilablösung bleibt der bisherige Abschnitt beim ursprünglichen Mitarbeiter. Zeitbuchungen werden nicht übertragen; offene Buchungen zuerst abschließen. Ein fehlender Abschnitt vor Beginn des Ersatzdienstes bleibt als Lücke bestehen. Verbindliche Schichtzeiten und weitere Regeln werden weiterhin geprüft."
+      ],
+      [
+        "Kann ich eine bereits besprochene Vertretung direkt eintragen?",
+        "Ersatzkraft wählen, Grund eingeben, die persönliche oder telefonische Zusage ausdrücklich bestätigen und dokumentieren. Auch aktive Mitarbeiter ohne Portalzugang sind auswählbar. Eine Abweichung vom Rhythmus muss gesondert bestätigt werden. Ersatz übernehmen speichert den gesamten Vorgang; falls weitere Freigaben oder Veröffentlichungsrechte fehlen, bleibt der Plan bis zur Freigabe unverändert. Freigaben öffnen führt zum Änderungsbereich."
+      ],
+      [
+        "Wer wird mit Top 3 angefragt?",
+        "Top 3 berücksichtigt ausschließlich bisher nicht angefragte geeignete Personen. Abgelehnte, abgelaufene und zurückgezogene Anfragen werden übersprungen. Erneut anfragen ist nur einzeln nach ausdrücklicher Bestätigung möglich. Bereits offene Anfragen warten auf Antwort. Nach einer gültigen Zusage werden weitere offene Anfragen geschlossen. Ist eine Betriebsratsfreigabe hinterlegt, muss die Disposition die Zusage über Ersatz übernehmen mit den erforderlichen Freigaben abschließen."
+      ],
+      [
+        "Warum sehe ich keine Ersatzkräfte?",
+        "Ein Ladefehler wird mit Erneut laden angezeigt und bedeutet nicht, dass niemand verfügbar ist. Die Anzeige unterscheidet ausstehende Antworten, fehlende digital erreichbare Ersatzkräfte und laufende Dienste. Über Ersatz übernehmen sind Mitarbeiter ohne Portalzugang erreichbar; gesperrte Personen zeigen ihren Prüfgrund. Beenden schließt den Störfall ohne Ersatz und verhindert die spätere Anwendung einer ausstehenden Ersatzübernahme."
+      ]
     ],
     "personnel": [
       [
@@ -1018,6 +1097,10 @@ window.SFHelpContent = {
       [
         "Wie sichere und importiere ich Audit-Logs?",
         "Öffnen Sie Audit-Logs → Wochenarchive & Wiederherstellung. Die abgeschlossene Vorwoche wird montags um 03:00 Uhr (Europe/Berlin) je Unternehmen gesichert. Herunterladen speichert ein vorhandenes Archiv als JSON auf Ihrem Gerät. Zeitraum als Sicherung exportieren erstellt eine vollständige Sicherung aller Aktionen im gewählten Zeitraum; Such- und Bereichsfilter gelten nur für die CSV/PDF-Prüfberichte. Sicherung importieren prüft zunächst Signatur, Unternehmen und Inhalte. Erst Neue Ereignisse wiederherstellen fügt fehlende Ereignisse hinzu. Identische Einträge werden übersprungen; widersprüchliche IDs und nicht mehr vorhandene Benutzer sperren den Import. Nach einem Abbruch können Sie dieselbe Datei erneut auswählen und fortsetzen. Personallöschungen oder Audit-Anonymisierungen sperren den Wiederimport älterer Sicherungen. Die Archive liegen nach bestätigter Rückleseprüfung im privaten Supabase-Dateispeicher. In der Datenbank bleibt nur das Archivverzeichnis; Live-Logs werden dadurch nicht gelöscht. Ein Download verwendet das vorhandene Archiv und erstellt keine weitere serverseitige Kopie. Laden Sie die Dateien bei Bedarf zusätzlich lokal herunter. Der Import unterstützt dieses JSON-Sicherungsformat aus demselben SchichtFunk-System, keine CSV/PDF-Dateien und keine vollständigen Datenbankbackups."
+      ],
+      [
+        "Wie nutze ich einen Administrator ohne Dienstplanung?",
+        "Vergib den Verwaltungszugang unter Einstellungen → Benutzer & Rechte als Administrator für die gewünschten Unternehmen. Eine Zugangsrolle macht die Person nicht automatisch zu einer planbaren Arbeitskraft. Falls ein verknüpftes Mitarbeiterprofil benötigt wird, kann es aktiv bleiben und unter Personal → Mitarbeiter → Einstellungen die Verfügbarkeit Nicht einplanbar erhalten. Speichere die Einstellung; damit wird die Person für neue Einplanungen gesperrt. Vorhandene Dienste müssen gesondert geprüft werden. Inaktiv ist ein eigener Mitarbeiterstatus und ersetzt nicht die Verwaltung der Benutzerrechte. Beim erneuten Aktivieren kann eine rote Verfügbarkeit zurück auf Verfügbar gesetzt werden; prüfe dann Nicht einplanbar erneut. Unternehmenszugehörigkeiten und Verwaltungsrechte werden getrennt je Unternehmen vergeben."
       ]
     ],
     "wishes": [
@@ -1148,31 +1231,12 @@ window.SFHelpContent = {
       [
         "Wo finde ich gespeicherte Planungsgründe und wie lange bleiben sie erhalten?",
         "Fragen Sie den Assistenten nach „Gespeicherte Planungsgründe“ für den gewünschten Zeitraum. Neue Auto-Planungsläufe speichern die Enddiagnose verbleibender Lücken im verwendeten Browser, getrennt nach Benutzer und Unternehmen. Bis zu 20 Läufe aus den letzten 90 Tagen bleiben verfügbar; höchstens 200 Schichten werden im Detail dargestellt. Es gibt keine Synchronisierung auf andere Geräte und keine nachträglich erfundenen Gründe für ältere Läufe. Spätere Planänderungen können vom damaligen Ergebnis abweichen."
+      ],
+      [
+        "Welche Unternehmensregeln verwendet der Planungsassistent?",
+        "Der Assistent verwendet die aktuell geladenen Planungsregeln, Schichtmodelle, Mitarbeiterfreigaben und persönlichen Obergrenzen des ausgewählten Unternehmens. Welche Planungsregeln gelten? zeigt diese Werte, sobald die Regeln vollständig geladen sind. Betriebliche Ergänzungen zu vorhandenen Hilfeantworten werden nur aus der angemeldeten Konfiguration desselben Unternehmens übernommen; die Demo erhält keine produktiven Ergänzungen. Ein Unternehmenswechsel verwirft den bisherigen Gesprächskontext. Allgemeine Beispiele zu acht, neun oder zehn Stunden sind keine Vorgabe für alle Unternehmen. Prüfe Monats-SOLL, Obergrenzen, Schichtzeiten und Standortbindung anhand der tatsächlichen Einstellungen. Hilfeantworten ändern keine Regeln oder Dienstpläne."
       ]
     ]
   },
-  "reviewedAt": "2026-10-13"
+  "reviewedAt": "2026-10-30"
 };
-
-window.SFHelpContent.articles.auto.push(["Wie läuft die Auto-Planung selbständig bei geschlossenem Browser?", "In der Auto-Planung öffnen Inhaber oder Administratoren den Bereich „Automatikmodus dieses Unternehmens“. Dort aktivieren sie einen monatlichen Termin, einen Zeitraum von bis zu drei Monaten und auf Wunsch die erneute Planung nach relevanten Änderungen. Alle Vorschläge bleiben zur Prüfung bereit. Ein Planer muss die Übernahme als Entwurf ausdrücklich bestätigen. Veröffentlichte und abgeschlossene Monate bleiben geschützt. Ein manueller Testlauf erstellt immer einen Vorschlag. Stundenunterschiede aus veröffentlichten Vormonaten und bereits berechneten Folgemonaten beeinflussen die faire Verteilung vorsichtig; SOLL und Zeitkonten bleiben unverändert. Offene Engpässe und Prüfprobleme sind im Laufstatus sichtbar. Die Veröffentlichung erfolgt separat."]);
-window.SFHelpContent.articles.auto.push(["Wie funktionieren Vorprüfung, Planungsziele und Verbesserung?", "Beim Start eines Automatiklaufs berechnet die Vorprüfung Bedarf, SOLL und optimistisch verfügbare Stunden pro Monat. Mehr SOLL als angeforderte Dienste kann die Automatik allein nicht ausgleichen; verfügbare Kandidaten garantieren wegen Ruhezeiten und Blöcken noch keinen gültigen Plan. Unter Planungsziel wählen Sie Ausgewogen, Stundenausgleich oder Wünsche für die weichen Kriterien. Pflichtdienste, Zusagen und Grenzen bleiben bindend. „Bestehenden Vorschlag verbessern“ untersucht weitere Varianten und behält den bisher gültigen Vorschlag, solange keine bessere unabhängig geprüfte Verteilung gefunden wird. Gleich qualifizierte Kollegen werden über veröffentlichte Vormonate hinweg vorsichtig ausgeglichen. Der Lauf erzeugt nur einen Vorschlag und veröffentlicht keine Dienste."]);
-
-// Pausenwahl und Erinnerungen · 27.10.2026.
-window.SFHelpContent.articles.qr.push(...[
-  [
-    "Wie wähle ich 10, 15 oder 20 Minuten Pause oder unbegrenzt?",
-    "Während der Arbeitszeit können Sie vor „Pause beginnen“ freiwillig 10, 15 oder 20 Minuten wählen. Das Unendlichkeitszeichen ∞ ist die Voreinstellung ohne Zeitlimit und ohne Pausen-Erinnerung. Erst „Pause beginnen“ bucht den Pausenbeginn. Die gewählte Dauer beendet die Pause nicht automatisch."
-  ],
-  [
-    "Wann erhalte ich die Erinnerung vor dem Pausenende?",
-    "Bei 10, 15 oder 20 Minuten Pausendauer sendet SchichtFunk etwa 2 Minuten vor Ablauf eine Push-Erinnerung an Ihre Geräte mit aktiviertem SchichtFunk-Push. Der Erinnerungsdienst arbeitet auch bei geschlossenem Browser. Eine bereits beendete Pause oder eine abgelaufene Pausenzeit erzeugt keine verspätete Meldung. Bei ∞ ist keine Erinnerung vorgesehen."
-  ],
-  [
-    "Warum kommt meine Pausen-Erinnerung nicht an?",
-    "Aktivieren Sie Push-Mitteilungen im Mitarbeiterportal auf dem gewünschten Gerät und erlauben Sie Benachrichtigungen in den Website- oder App-Einstellungen. Auf dem iPhone oder iPad muss SchichtFunk als Web-App zum Home-Bildschirm hinzugefügt sein. Wählen Sie vor dem Pausenbeginn 10, 15 oder 20 Minuten. Bei unbegrenzter Pause ∞ erfolgt keine Erinnerung. Die Zustellung hängt auch von der Verbindung und den Geräte-Einstellungen ab."
-  ],
-  [
-    "Endet meine Pause automatisch nach der gewählten Dauer?",
-    "Nein. Der Countdown und die Erinnerung sind Hilfen. Beenden Sie die Pause ausdrücklich mit „Pause beenden“. Die Pause läuft auch nach Ablauf der gewählten Dauer weiter. „Arbeitszeit beenden“ schließt bei Dienstende eine noch laufende Pause zum selben Zeitpunkt. Pausen bleiben bezahlt und werden separat dokumentiert."
-  ]
-]);

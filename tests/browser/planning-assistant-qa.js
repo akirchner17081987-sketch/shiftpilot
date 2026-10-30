@@ -39,6 +39,19 @@
   ['Was bedeutet 4/3/3/2?','Schlaftag'],
   ['Warum hängt die Übernahme als Entwurf?','Entwurf gespeichert – Ansicht prüfen']
  ]){ask(question);check('Current knowledge: '+question,log.lastChild.textContent.includes(expected)&&!!log.lastChild.querySelector('.sf-chat-actions button'));}
+ for(const [question,expected] of [
+  ['Wie erhalte ich eine Benachrichtigung wenn die Planung fertig ist?','Bei fertiger Berechnung benachrichtigen'],
+  ['Wie wähle ich Empfänger für die fertige Auto-Planung aus?','namentliche Mehrfachauswahl'],
+  ['Wo finde ich den Planungsbericht?','Ergebnisübersicht des Planungslaufs'],
+  ['Wie kann ich den Planungsbericht als PDF exportieren?','keinen eigenen PDF-Export'],
+  ['Wie funktioniert die Pausenprüfung bei mehr als 60 Minuten?','Erst bei insgesamt mehr als 60 Minuten'],
+  ['Wie prüfe ich die faire Verteilung von Nacht- und Feiertagsdiensten?','Belastung & Verteilung'],
+  ['Wie nutze ich einen Administrator ohne Dienstplanung?','Nicht einplanbar']
+ ]){ask(question);check('Updated help: '+question,log.lastChild.textContent.includes(expected)&&!!log.lastChild.querySelector('.sf-chat-actions button'));}
+ const privateQuestion='Welche Unternehmensregeln verwendet der Planungsassistent?',privateText='Betriebliche Antwort <img src=x onerror=alert(1)>';
+ window.SFBackend.companyPrivateConfiguration={companyId:window.SFBackend.companyId,data:{helpArticles:{assistant:{[privateQuestion]:privateText}}}};
+ ask(privateQuestion);button.click();check('Private help is current company text without HTML execution',log.lastChild.textContent.includes(privateText)&&!log.lastChild.querySelector('img'));
+ window.SFBackend.companyPrivateConfiguration=null;ask(privateQuestion);button.click();check('Removing private configuration clears the old conversation',!log.textContent.includes(privateText)&&log.lastChild.textContent.includes('aktuell geladenen Planungsregeln'));
  const previousRules=window.SFCompliance.policy.solidPlanningRules;
  window.SFCompliance.policy.solidPlanningRules={enabled:true,confirmedRulesVersion:2,timezone:'Europe/Berlin',maxCalendarWeekHours:55,monthlyMaxHours:180};
  ask('Welche Planungsregeln gelten?');check('Loaded rules show personal caps and contract targets',log.lastChild.textContent.includes('Aktuelle Planungsregeln')&&log.lastChild.textContent.includes('Wochenobergrenze')&&log.lastChild.textContent.includes('Monats-SOLL'));

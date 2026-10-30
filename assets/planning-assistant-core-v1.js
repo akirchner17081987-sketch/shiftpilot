@@ -15,6 +15,35 @@
   const Workflows=typeof module!=='undefined'&&module.exports?require('./planning-assistant-workflows-v1.js'):root.SFPlanningWorkflows;
   const meta=(e,k)=>String((e.qualifications||[]).find(q=>String(q).startsWith('__sp:'+k+'='))||'').split('=').slice(1).join('=');
   const team=e=>e.planningTeam??meta(e,'planningTeam');
+  // Use only authenticated configuration for the selected company; never mutate
+  // the public catalogue or retain private answers in shared browser storage.
+  function companyHelpArticles(articles,backend,demo=false){
+    const config=backend?.companyPrivateConfiguration;
+    const overrides=!demo&&backend?.ready&&backend?.user?.id&&config?.companyId===backend.companyId?config.data?.helpArticles:null;
+    return Object.fromEntries(Object.entries(articles).map(([category,items])=>[category,items.map(([question,answer])=>[question,typeof overrides?.[category]?.[question]==='string'?overrides[category][question]:answer])]));
+  }
+  const currentHelpTopics=[
+    [/planungsbericht.*(?:pdf|export)|(?:pdf|export).*planungsbericht/,'auto','Wie exportiere ich den Planungsbericht?'],
+    [/planungsbericht/,'auto','Wo finde ich den Planungsbericht und die Planungsgründe?'],
+    [/empfaenger.*(?:plan|berechnung)|\b(?:wer|wen)\b.*(?:fertigmeldung|abschlussmeldung|benachrichtig)|(?:fertigmeldung|abschlussmeldung).*empfaenger/,'auto','Wer kann die Fertigmeldung der Auto-Planung erhalten?'],
+    [/(?:benachrichtig|fertigmeldung|abschlussmeldung|empfaenger|push).*(?:plan|berechnung)|(?:plan|berechnung).*(?:benachrichtig|fertigmeldung|abschlussmeldung|empfaenger|push)/,'auto','Wie erhalte ich eine Benachrichtigung, wenn die Planung fertig ist?'],
+    [/pausenpruefung|pausenueberschreit|(?:pause|pausenzeit).*(?:60|kulanz|kontroll|ueberschreit)|(?:kontroll|ueberwach).*(?:pause|pausenzeit)/,'qr','Wie funktioniert die Pausenprüfung bei mehr als 60 Minuten?'],
+    [/(?:kurzfristige[nr]? uebernahm|48.?stunden.*uebernahm)/,'reports','Was zählt als kurzfristige Übernahme?'],
+    [/(?:fair\w*.*(?:verteil|nacht|feiertag|belast)|belastung.*verteilung|verteil\w*.*(?:nacht|feiertag)|feiertagsdienste)/,'reports','Wie prüfe ich die faire Verteilung von Nacht-, Wochenend- und Feiertagsdiensten?'],
+    [/(?:wunschbilanz|wuensche.*veroeffentlicht|schichtwuensche.*vergleich)/,'reports','Wie vergleiche ich Schichtwünsche mit dem veröffentlichten Plan?'],
+    [/planstatus|(?:entwurf|veroeffentlicht).*auswertung/,'reports','Was bedeutet der Planstatus in der Auswertung?'],
+    [/(?:admin|administrator|verwaltungszugang).*(?:ohne.*(?:plan|mitarbeiter)|nicht.*(?:einplan|dienstplan)|nur.*verwalt)/,'access','Wie nutze ich einen Administrator ohne Dienstplanung?'],
+    [/(?:unternehmensspezifisch|betrieblich).*(?:hilfe|antwort)|(?:hilfe|assistent).*(?:unternehmensregeln|9.?stunden|9h)|(?:plan|regel|modell).*\b9(?:h|.?stunden)/,'assistant','Welche Unternehmensregeln verwendet der Planungsassistent?']
+  ];
+  function currentHelpTopic(q,articles){
+    if(!/^(?:bitte\s+)?(?:wie\b|wo\b|was\b|wer\b|wen\b|warum\b|weshalb\b|wieso\b|wann\b|welche\b|kann ich\b|laeuft\b|planungsbericht\b|pausenpruefung\b)/.test(q))return null;
+    for(const [category,items] of Object.entries(articles||{}))for(const [title,text] of items)if(normalize(title).replace(/[?!.,]/g,'')===q.replace(/[?!.,]/g,''))return{title,text,category};
+    for(const [pattern,category,title] of currentHelpTopics)if(pattern.test(q)){
+      const article=articles?.[category]?.find(a=>a[0]===title);
+      if(article)return{title:article[0],text:article[1],category};
+    }
+    return null;
+  }
   const questionGroups=[
     ['Planung erleichtern',['Lernpräferenzen verwalten','Planungsprofile verwalten','November mit unserem Standardprofil vorbereiten','Änderungscheck anzeigen','Planvarianten vergleichen']],
     ['Planungsaufträge und Begleitung',['Planungsauftrag starten','Bringe die Teamleiter im November möglichst auf ihre Sollstunden. Bereits veröffentlichte Dienste bleiben bestehen.','Hilf mir, diesen Monat fertigzustellen','Mehrmonatsausgleich starten','Nimm die letzte Änderung des Assistenten zurück.']],
@@ -22,7 +51,8 @@
     ['Plan prüfen und Engpässe lösen',['Engpasslöser starten','Wie bekommen wir alle auf ihre Sollstunden und besetzen alle Pflichtdienste?','Wie bekommen wir die Teamleiter auf ihre Sollstunden?','Monatscheck starten','Belastungscheck starten','Verbesserungsvorschläge erstellen']],
     ['Besetzung und Ersatz',['Welche Dienste sind im gewählten Zeitraum noch offen?','Welche Dienste sind im gewählten Zeitraum überbesetzt?','Welche Mitarbeiter kommen als Ersatz infrage?','Warum konnte die Auto-Planung diesen Dienst nicht besetzen?','Ausfallsimulation starten','Gespeicherte Planungsgründe anzeigen']],
     ['Mitarbeiter und Teams',['Wie viele Stunden sind im gewählten Zeitraum geplant?','Welche Dienste hat Team E im gewählten Zeitraum?','Bei welchen Mitarbeitern fehlt eine Teamzuordnung?','Welche Mitarbeiter haben keine Schichtfreigabe?']],
-    ['Regeln und Bedienung',['Welche Planungsregeln gelten?','Welche Schichtwechsel sind erlaubt?','Wie stelle ich den Rhythmus von Team E ein?','Wie funktioniert der DATEV-LODAS-Export?','Wie veröffentliche ich den Dienstplan?']]
+    ['Regeln und Bedienung',['Welche Planungsregeln gelten?','Welche Schichtwechsel sind erlaubt?','Wie stelle ich den Rhythmus von Team E ein?','Wie funktioniert der DATEV-LODAS-Export?','Wie veröffentliche ich den Dienstplan?']],
+    ['Benachrichtigungen und aktuelle Auswertungen',['Wie erhalte ich eine Benachrichtigung, wenn die Planung fertig ist?','Wo finde ich den Planungsbericht und die Planungsgründe?','Wie funktioniert die Pausenprüfung bei mehr als 60 Minuten?','Wie prüfe ich die faire Verteilung von Nacht-, Wochenend- und Feiertagsdiensten?','Was zählt als kurzfristige Übernahme?','Wie nutze ich einen Administrator ohne Dienstplanung?']]
   ];
   function duration(a,shifts){const t=shifts.find(t=>t.id===a.type),start=a.start||t?.start,end=a.end||t?.end;const mins=v=>/^\d{2}:\d{2}$/.test(v||'')?Number(v.slice(0,2))*60+Number(v.slice(3)):NaN;let m=mins(end)-mins(start);if(m<0)m+=1440;return Number.isFinite(m)?m/60:0;}
   function intentFor(q){
@@ -265,6 +295,8 @@
     if(s.loading)return response('Daten werden geladen','Bitte warte, bis das Unternehmen vollständig geladen ist, und stelle deine Frage erneut.',{context:{}});
     if(s.error)return response('Daten derzeit nicht bereit','Die Planungsdaten konnten nicht zuverlässig geladen werden. Bitte prüfe die Cloud-Verbindung und lade das Unternehmen erneut.',{context:{}});
     const q=normalize(question).trim();if(!q)return response('Deine Frage','Schreibe eine Frage zur Planung oder wähle eines der Beispiele.',{context:previous});
+    const currentTopic=currentHelpTopic(q,s.helpArticles);
+    if(currentTopic)return response(currentTopic.title,currentTopic.text,{notes:['Quelle: SchichtFunk Hilfe-Center. Maßgeblich sind die geladenen Regeln des ausgewählten Unternehmens.'],actions:[{help:true,query:currentTopic.title,label:'Anleitung im Hilfe-Center öffnen'}],context:{}});
     const period=parsePeriod(q,s);if(period.error)return response('Datum prüfen',period.error,{context:previous});
     const detected=/^(?:(?:und|auch|fuer)\s+)?team\s+[a-e][?.!]*$/.test(q)&&previous.intent?previous.intent:intentFor(q),followup=previous.pending||/^(und|auch|dafuer|dazu|diese|diesen|am|im|fuer|team|fd\b|sd\b|nd\b|\d)/.test(q)||(!detected&&(period.explicit||parseShift(q,s)));
     const intent=detected||(followup?previous.intent:null);
@@ -459,7 +491,7 @@
     const suggestions=[...(/personal|mitarbeiter|team/.test(q)?['Welche Mitarbeiter haben keine Schichtfreigabe?','Bei welchen Mitarbeitern fehlt eine Teamzuordnung?','Geplante Stunden prüfen']:/plan|dienst|besetz|ersatz/.test(q)?['Monatscheck starten','Engpasslöser starten','Offene Dienste prüfen','Ersatz für einen Dienst suchen']:['Monatscheck starten','Offene Dienste prüfen','Ersatz für einen Dienst suchen','Geplante Stunden prüfen','Welche Hilfethemen kennst du?']),'Welche Fragen kann ich stellen?'];
     return response('Welches Thema meinst du?','Für diese Frage habe ich noch keine zuverlässige Auswertung. Wähle ein passendes Thema oder formuliere die Frage genauer. Bei einzelnen Diensten helfen Datum und Schichtart.',{suggestions,context:{}});
   }
-  const api={answer,normalize,parsePeriod,parseRange,rangeDates,parseShift,coverage,periodLabel,validDate,team,findHelp,questionGroups,intentFor};
+  const api={answer,normalize,parsePeriod,parseRange,rangeDates,parseShift,coverage,periodLabel,validDate,team,findHelp,questionGroups,intentFor,companyHelpArticles};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.SFPlanningAssistantCore=api;
 })(typeof window==='undefined'?globalThis:window);
 
