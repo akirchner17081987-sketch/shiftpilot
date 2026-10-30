@@ -2936,6 +2936,12 @@
       "category": "assistant",
       "area": "Begleitete Zielaufträge mit begrenzter Strategiefolge, Benutzer-/Unternehmensspeicherung und datenstandgebundenen Entscheidungen",
       "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/planning-vocabulary-v1.js",
+      "category": "assistant",
+      "area": "Wortschatz und validierte Begriffe für Planungsthemen und aktive Schichten",
+      "kind": "feature-or-support"
     }
   ],
   "categoryCoverage": [
@@ -3600,7 +3606,7 @@
     "correctedArticleCount": 2,
     "articleCount": 276,
     "categoryCount": 22,
-    "assetJavaScriptCount": 235
+    "assetJavaScriptCount": 236
   },
   "incrementalUpdate": {
     "date": "2026-10-27",
