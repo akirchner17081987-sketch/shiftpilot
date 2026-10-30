@@ -315,6 +315,7 @@ test('vocabulary handles typos, dictionary terms and read-only weekend and shift
  const a=Core.answer('Offene Dienste im Dezember 2026',s),weekend=Core.answer('Nur Wochenende',s,a.context);
  assert.ok(weekend.context.dates.length>0);assert.ok(weekend.context.dates.every(d=>[0,6].includes(new Date(d+'T12:00:00Z').getUTCDay())));
  const shift=Core.answer('Nur ND',s,weekend.context);assert.equal(shift.context.type,'ND');assert.deepEqual(shift.context.dates,weekend.context.dates);
+ const person=Core.answer('Geplante Stunden für Anna Plan im Dezember 2026',s),personWeekend=Core.answer('Nur Wochenende',s,person.context);assert.deepEqual(personWeekend.context.employeeIds,['e1']);assert.equal(personWeekend.rows.length,1);
  assert.equal(Core.answer('Wer ist frei?',s).clarification.length,2);
  assert.equal(Core.answer('Lösche alle Dienste',s).context.intent,'write');
  assert.equal(Core.answer('Nachtrunde', {...s,authorized:false}).title,'Anmeldung erforderlich');
