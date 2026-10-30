@@ -151,3 +151,11 @@
 .sf-chat-basis-warning{font-size:11px!important;color:var(--amber)!important;margin:8px 0 0!important}
 .sf-chat-clarification{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.sf-chat-clarification button,.sf-chat-report-button{max-width:100%;min-height:44px;border:1px solid var(--teal);border-radius:9px;background:var(--panel);color:var(--text);padding:9px 12px;font:inherit;font-size:12px;text-align:left;white-space:normal;overflow-wrap:anywhere}
 .sf-chat-report-button{margin:8px 0 12px}.sf-chat-report-button:disabled{opacity:.65;cursor:wait}
+
+.sf-chat-stale{margin:12px 0;padding:12px;border:1px solid var(--amber,#ffb84d);border-radius:10px;background:var(--panel);overflow-wrap:anywhere}
+.sf-chat-stale p{margin:0 0 8px!important;color:var(--text)}
+.sf-chat-task-plan{display:grid;gap:10px;list-style:none;padding:0;margin:14px 0}
+.sf-chat-task-plan li{display:grid;gap:4px;min-width:0;padding:10px;border:1px solid var(--line);border-radius:10px}
+.sf-chat-task-plan li span,.sf-chat-task-complete{font-size:11px;color:var(--muted)}
+.sf-chat-task-plan button{margin:0!important;text-align:left;max-width:100%;white-space:normal;overflow-wrap:anywhere}
+.sf-chat-message [data-sf-sensitive]:disabled{opacity:.55;cursor:not-allowed}

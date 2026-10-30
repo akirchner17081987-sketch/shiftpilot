@@ -56,6 +56,8 @@
   ];
   function duration(a,shifts){const t=shifts.find(t=>t.id===a.type),start=a.start||t?.start,end=a.end||t?.end;const mins=v=>/^\d{2}:\d{2}$/.test(v||'')?Number(v.slice(0,2))*60+Number(v.slice(3)):NaN;let m=mins(end)-mins(start);if(m<0)m+=1440;return Number.isFinite(m)?m/60:0;}
   function intentFor(q){
+    q=naturalQuestion(q);
+    if(!/^(?:wie|wo|was|warum)\b/.test(q)&&/planungsbericht|pdf[- ]?bericht/.test(q)&&/erstell|erzeug|export|herunterlad|mach|bitte/.test(q))return 'report';
     if(/^(?:(?:bitte\s+)?(?:erstelle?|erzeuge?|exportiere?)\b.*planungsbericht|planungsbericht\s+(?:erstellen|exportieren|herunterladen|als pdf))/.test(q))return 'report';
     if(/lernpr(?:ae|e)ferenz|lernende planung|aus.*korrekturen.*lernen/.test(q))return 'learning';
     if(/aenderungscheck|folgepruefung|automatische.*(?:aenderung|pruefung)/.test(q))return 'followup';
@@ -82,6 +84,7 @@
     if(/(?:warum|weshalb|wieso).*(?:kann|darf|mitarbeiter|geeignet|passt)/.test(q)&&!/anmeld|login|passwort|speicher|qr|pause|urlaub|beantrag|zeiterfass|stundenkonto|mfa|kamera|zugang|export|auto.?plan/.test(q))return 'employeeDiagnosis';
     if(/team\s+[a-e]\b/.test(q)&&/(?:heute|morgen|uebermorgen|am\s+\d|rhythmus.*tag)/.test(q)&&/rhythm|schicht|frei|arbeitet/.test(q))return 'teamDay';
     if(/(?:dienste|schichten).*(?:hat|fuer|von|team\s+[a-e])|(?:wann|wo).*arbeitet|(?:dienstplan|planung)\s+(?:fuer|von)/.test(q))return 'employeePlan';
+    if(/(?:zeig\w*|pruef\w*)\s+(?:mir\s+)?(?:ihre|seine|meine|die)\s+(?:dienste|schichten)\b/.test(q))return 'employeePlan';
     if(/\b(export|excel|pdf|ausdruck|drucken)\w*/.test(q))return 'export';
     if(/veroeffentlich|freigeben|freigabe.*plan/.test(q))return 'publish';
     if(/\b(team|teams)\b/.test(q)&&/rhythm|rhytm|zyklus|tagesfolge|einstieg/.test(q)&&/\b(wie|wo|einstell|aender|einricht|hilfe)\w*/.test(q))return 'rhythmHelp';
@@ -99,7 +102,62 @@
     if(/\b(hilfe|help|unterstuetzung|funktionen|hilfethemen|wissensdatenbank|anleitungen)\b|was kannst/.test(q))return 'help';
     return null;
   }
+  function naturalQuestion(value){
+    const original=normalize(value).trim().replace(/^(?:hallo|hey|guten morgen|guten tag)[!, .]+/,''),plain=original.replace(/^(?:(?:kannst|koenntest|wuerdest) du(?: mir)?|ich (?:moechte|haette gerne|wuerde gerne))\s+(?:bitte\s+)?/,'').replace(/^bitte\s+/,'');
+    const action=plain.match(/\b(loeschen|speichern|uebernehmen|veroeffentlichen)[?.!]*$/);
+    if(plain!==original&&action)return ({loeschen:'loesche',speichern:'speichere',uebernehmen:'uebernimm',veroeffentlichen:'veroeffentliche'})[action[1]]+' '+plain.slice(0,action.index).trim();
+    return plain;
+  }
+  // A range must never silently degrade to its first day. Dates remain local
+  // calendar dates; the existing planning engine handles duty time zones.
+  function explicitRange(q,s){
+    if(!/\bbis\b|[–—]|\d\s*-\s*\d/.test(q))return null;
+    const y=Number((s.defaultDates?.[0]||s.today).slice(0,4)),join='\\s*(?:bis(?:\\s+zum)?|[-–—])\\s*';
+    let m=q.match(new RegExp('(\\d{4}-\\d{2}-\\d{2})'+join+'(\\d{4}-\\d{2}-\\d{2})'));
+    if(m)return {...rangeDates(m[1],m[2]),explicit:true};
+    let first,last;
+    m=q.match(new RegExp('\\b(\\d{1,2})\\.(\\d{1,2})(?:\\.(20\\d{2}))?\\.?'+join+'(\\d{1,2})\\.(\\d{1,2})(?:\\.(20\\d{2}))?\\.?(?!\\d)'));
+    if(!m)m=q.match(new RegExp('\\b(\\d{1,2})\\.\\s*(?:(\\d{1,2})\\.\\s*)?(?:(20\\d{2})\\b)?'+join+'(\\d{1,2})\\.\\s*(?:(\\d{1,2})\\.\\s*)?(?:(20\\d{2})\\b)?'));
+    if(m&&(m[2]||m[5])){first={d:+m[1],m:+(m[2]||m[5]),y:m[3]?+m[3]:null};last={d:+m[4],m:+(m[5]||m[2]),y:m[6]?+m[6]:null};}
+    if(!first){
+      const names=months.join('|');
+      m=q.match(new RegExp('\\b(\\d{1,2})\\.?(?:\\s*('+names+'))?(?:\\s+(20\\d{2}))?'+join+'(\\d{1,2})\\.?\\s*('+names+')(?:\\s+(20\\d{2}))?\\b'));
+      if(m){first={d:+m[1],m:months.indexOf(m[2]||m[5])+1,y:m[3]?+m[3]:null};last={d:+m[4],m:months.indexOf(m[5])+1,y:m[6]?+m[6]:null};}
+    }
+    if(first){
+      if(!first.y&&!last.y){first.y=y;last.y=y+(last.m<first.m?1:0);}
+      else if(!first.y)first.y=last.y-(first.m>last.m?1:0);
+      else if(!last.y)last.y=first.y+(last.m<first.m?1:0);
+      return {...rangeDates(day(first.y,first.m,first.d),day(last.y,last.m,last.d)),explicit:true};
+    }
+    if(new RegExp('\\d{1,2}\\.|\\d{4}-\\d{2}-\\d{2}|\\b(?:'+months.join('|')+')\\b').test(q)&&/\bbis\b|[–—]/.test(q))return {error:'Bitte den Zeitraum mit gültigem Beginn und Ende angeben, zum Beispiel 01.11.2026 bis 15.11.2026.',explicit:true};
+    return null;
+  }
+  const taskLabels={open:'Offene Dienste prüfen',coverage:'Besetzung prüfen',workload:'Stunden prüfen',loadCheck:'Belastung prüfen',report:'PDF-Planungsbericht erstellen',planningCheck:'Monatscheck durchführen',replacement:'Ersatz prüfen',forecast:'Vertretungsreserve prüfen',employeePlan:'Geplante Dienste anzeigen',overstaffed:'Überbesetzung prüfen',improvements:'Verbesserungen prüfen',bottlenecks:'Engpasslöser prüfen',write:'Gewünschte Änderung im passenden Bereich prüfen',export:'Dienstplanexport öffnen'};
+  function requestPlan(question,s,previous={}){
+    const q=naturalQuestion(question),verbs='(?:zeige?\\w*|pruefe?\\w*|kontrolliere?\\w*|erstelle?\\w*|erzeuge?\\w*|exportiere?\\w*|suche?\\w*|finde?\\w*|loesche?\\w*|speichere?\\w*|uebernimm|veroeffentliche?\\w*|welche|wer|wie viele|mach\\w*|kannst du|koenntest du)';
+    let parts=q.split(new RegExp('\\s*;\\s*|\\s+(?:und(?: dann| anschliessend)?|danach|anschliessend|ausserdem|sowie)\\s+(?='+verbs+'\\b)')).map(p=>p.trim()).filter(Boolean);
+    if(parts.length===1&&/^(?:pruef\w*|kontrollier\w*|zeig\w*)\b/.test(q)&&/\bund\b|,/.test(q)&&!intentFor(q)?.match(/write|publish|changeImpact|leaveImpact/)){
+      const topics=[[/\b(?:offene dienste|luecken)\b/,'Offene Dienste'],[/\bbesetzung\b/,'Besetzung prüfen'],[/\b(?:geplante stunden|planstunden|stunden)\b/,/geplante stunden|planstunden/.test(q)?'Geplante Stunden prüfen':/erfasst|tatsaechlich|geleistet/.test(q)?'Tatsächlich erfasste Stunden prüfen':'Stunden prüfen'],[/\bbelastung\b/,'Belastungscheck'],[/\b(?:planungsbericht|pdf[- ]?bericht)\b/,'Planungsbericht erstellen']].filter(([re])=>re.test(q));
+      if(topics.length>1)parts=topics.map(([,text])=>text);
+    }
+    if(parts.length<2)return null;
+    const period=parsePeriod(q,s);if(period.error)return response('Datum prüfen',period.error,{context:{}});
+    if(parts.length>4)return response('Auftrag bitte aufteilen','Ich habe mehr als vier Anliegen erkannt. Bitte stelle höchstens vier Aufgaben gemeinsam, damit jedes Anliegen vollständig geprüft werden kann.',{context:{}});
+    const dates=period.explicit?period.dates:previous.dates||period.dates,staff=s.employees||[],explicitPeople=employeeMatches(q,staff),reference=/\b(?:ihre|seine|dafuer|dazu|auch)\b/.test(q),people=explicitPeople.length?explicitPeople:reference?staff.filter(e=>previous.employeeIds?.includes(String(e.id))):[],teamId=q.match(/\bteam\s+([a-e])\b/)?.[1]||(reference?previous.team:null),sharedType=parseShift(q,s);
+    for(const part of parts){const own=parsePeriod(part,{...s,defaultDates:dates});if(own.error)return response('Datum prüfen',own.error,{context:{}});}
+    const tasks=parts.map(part=>{
+      const own=parsePeriod(part,{...s,defaultDates:dates}),taskDates=own.explicit?own.dates:dates,scope=' vom '+taskDates[0]+' bis '+taskDates.at(-1);
+      let intent=intentFor(part);if(/pdf[- ]?bericht/.test(part)&&!/dienstplan/.test(part)&&!/^(?:wie|wo)\b/.test(part)){intent='report';part='Planungsbericht erstellen';}
+      const person=people.length===1&&['workload','employeePlan','employeeDiagnosis','outage'].includes(intent)&&!employeeMatches(part,staff).length?' für '+name(people[0]):teamId&&['workload','employeePlan'].includes(intent)&&!/team\s+[a-e]/.test(part)?' für Team '+teamId.toUpperCase():'';
+      const type=sharedType&&['replacement','diagnosis','open','coverage','overstaffed'].includes(intent)&&!parseShift(part,s)?' · '+sharedType:'';
+      return {label:taskLabels[intent]||'Anliegen klären',question:part+person+scope+type,intent};
+    });
+    return response('Auftrag in '+tasks.length+' Schritten','Ich habe diese Anliegen erkannt. Starte mit einem Schritt; nach der Auswertung kannst du mit dem nächsten fortfahren. Änderungen werden einzeln als Vorschau geprüft und erst nach Bestätigung gespeichert.',{taskPlan:{tasks},context:{dates}});
+  }
   function parsePeriod(q,s){
+    q=normalize(q);
+    const range=explicitRange(q,s);if(range)return range;
     const base=s.defaultDates?.[0]||s.today,year=Number(base.slice(0,4));
     const upcoming=q.match(/naechsten?\s+(\d+)\s+tag/);if(upcoming){const n=Number(upcoming[1]);return n>=1&&n<=62?{dates:Array.from({length:n},(_,i)=>addDays(s.today,i)),explicit:true}:{error:'Bitte einen Zeitraum von 1 bis 62 Tagen wählen.'};}
     const iso=q.match(/\b(\d{4}-\d{2}-\d{2})\b/);
@@ -118,6 +176,8 @@
     return{dates:s.defaultDates||[s.today],explicit:false};
   }
   function parseRange(q,s){
+    q=normalize(q);
+    const range=explicitRange(q,s);if(range?.error)return {error:range.error};if(range?.dates)return {startDate:range.dates[0],endDate:range.dates.at(-1)};
     const year=Number((s.defaultDates?.[0]||s.today).slice(0,4)),iso=[...q.matchAll(/\b\d{4}-\d{2}-\d{2}\b/g)].map(m=>m[0]);
     let values=iso.length?iso:[...q.matchAll(/\b(\d{1,2})\.(\d{1,2})\.(?:(\d{4})\b)?/g)].map(m=>day(m[3]?+m[3]:year,+m[2],+m[1]));
     if(!values.length){const month=months.findIndex(m=>new RegExp('\\b'+m+'\\b').test(q));if(month>=0){const m=q.match(/(?:vom|von|ab)\s+(\d{1,2})\.?\s*(?:bis|[-–])\s*(\d{1,2})\.?/);if(m){const y=Number(q.match(/\b20\d{2}\b/)?.[0]||year);values=[day(y,month+1,+m[1]),day(y,month+1,+m[2])];}}}
@@ -296,20 +356,20 @@
     if(s.loading)return response('Daten werden geladen','Bitte warte, bis das Unternehmen vollständig geladen ist, und stelle deine Frage erneut.',{context:{}});
     if(s.error)return response('Daten derzeit nicht bereit','Die Planungsdaten konnten nicht zuverlässig geladen werden. Bitte prüfe die Cloud-Verbindung und lade das Unternehmen erneut.',{context:{}});
     if(previous.hoursQuestion){const matches=employeeMatches(normalize(question),s.employees||[]);if(matches.length===1)return answerRaw(previous.hoursQuestion+' · '+name(matches[0]),s,{});}
-    const q=normalize(question).trim();if(!q)return response('Deine Frage','Schreibe eine Frage zur Planung oder wähle eines der Beispiele.',{context:previous});
+    const q=naturalQuestion(question);if(!q)return response('Deine Frage','Schreibe eine Frage zur Planung oder wähle eines der Beispiele.',{context:previous});
     const detectedIntent=intentFor(q);
     const currentTopic=detectedIntent==='report'?null:currentHelpTopic(q,s.helpArticles);
     if(currentTopic)return response(currentTopic.title,currentTopic.text,{notes:['Quelle: SchichtFunk Hilfe-Center. Maßgeblich sind die geladenen Regeln des ausgewählten Unternehmens.'],actions:[{help:true,query:currentTopic.title,label:'Anleitung im Hilfe-Center öffnen'}],context:{}});
     if(!previous.pending&&detectedIntent==='workload'&&!/^(?:warum|weshalb|wieso)\b/.test(q)&&/stunden/.test(q)&&!/geplant|planstunden|planung|soll|vertrag|auslastung|ueberlast|unterlast/.test(q)&&employeeMatches(q,s.employees||[]).length<=1&&!(/\bfuer\s+[a-z]/.test(q)&&!employeeMatches(q,s.employees||[]).length)){
       const requested=parsePeriod(q,s);if(requested.error)return response('Datum prüfen',requested.error,{context:{}});
       const explicitActual=/tatsaechlich|erfasst|ist[- ]?stunden|geleistet|gearbeitet/.test(q);
-      if(explicitActual)return response('Tatsächlich erfasste Arbeitszeit','Für erfasste oder bestätigte Arbeitszeiten öffne Auswertungen und wähle dort den gewünschten Zeitraum. Der Planungsassistent berechnet Planstunden; diese werden nicht als tatsächlich geleistete Arbeit ausgegeben.',{actions:[{view:'reports',label:'Erfasste Arbeitszeit auswerten'}],context:{}});
+      if(explicitActual)return response('Tatsächlich erfasste Arbeitszeit','Für erfasste oder bestätigte Arbeitszeiten öffne Auswertungen und wähle dort den gewünschten Zeitraum. Der Planungsassistent berechnet Planstunden; diese werden nicht als tatsächlich geleistete Arbeit ausgegeben.',{actions:[{view:'reports',label:'Erfasste Arbeitszeit auswerten'}],context:{intent:'actualHours',dates:requested.explicit?requested.dates:previous.dates||requested.dates}});
       const planned=String(question).replace(/stunden/i,'geplante Stunden'),actual=String(question).replace(/stunden/i,'tatsächlich erfasste Stunden');
-      return response('Welche Stunden meinst du?','Möchtest du geplante Dienste prüfen oder tatsächlich erfasste Arbeitszeit ansehen?',{clarification:[{label:'Geplante Stunden',question:planned},{label:'Erfasste Arbeitszeit',question:actual}],context:{}});
+      return response('Welche Stunden meinst du?','Möchtest du geplante Dienste prüfen oder tatsächlich erfasste Arbeitszeit ansehen?',{clarification:[{label:'Geplante Stunden',question:planned},{label:'Erfasste Arbeitszeit',question:actual}],context:{clarify:'hours',originalQuestion:question,dates:requested.explicit?requested.dates:previous.dates||requested.dates}});
     }
-    if(/^(?:(?:hilfe (?:bei|zur) )?(?:planung|dienstplan)|kannst du (?:mir )?(?:bei der |mit der )?planung helfen)[?.!]*$/.test(q))return response('Wobei soll ich dir helfen?','Wähle eine Prüfung der aktuellen Planung oder eine Erklärung zur Bedienung.',{clarification:[{label:'Planung prüfen',question:'Monatscheck starten'},{label:'Bedienung erklären',question:'Wie erstelle und übernehme ich Auto-Planungsvorschläge?'},{label:'PDF-Bericht erstellen',question:'Planungsbericht erstellen'}],context:{}});
+    if(/^(?:(?:hilfe (?:bei|zur) )?(?:planung|dienstplan)|(?:bei der |mit der )?planung helfen)[?.!]*$/.test(q))return response('Wobei soll ich dir helfen?','Wähle eine Prüfung der aktuellen Planung oder eine Erklärung zur Bedienung.',{clarification:[{label:'Planung prüfen',question:'Monatscheck starten'},{label:'Bedienung erklären',question:'Wie erstelle und übernehme ich Auto-Planungsvorschläge?'},{label:'PDF-Bericht erstellen',question:'Planungsbericht erstellen'}],context:{}});
     const period=parsePeriod(q,s);if(period.error)return response('Datum prüfen',period.error,{context:previous});
-    const detected=/^(?:(?:und|auch|fuer)\s+)?team\s+[a-e][?.!]*$/.test(q)&&previous.intent?previous.intent:intentFor(q),followup=previous.pending||/^(und|auch|dafuer|dazu|diese|diesen|am|im|fuer|team|fd\b|sd\b|nd\b|\d)/.test(q)||(!detected&&(period.explicit||parseShift(q,s)));
+    const detected=/^(?:(?:und|auch|fuer)\s+)?team\s+[a-e][?.!]*$/.test(q)&&previous.intent?previous.intent:intentFor(q),followup=previous.pending||/^(und|auch|dafuer|dazu|diese|diesen|am|im|fuer|team|fd\b|sd\b|nd\b|\d)/.test(q)||/\b(?:dafuer|dazu|davon|derselbe|denselben|dieselben|seine|ihre)\b/.test(q)||(!detected&&(period.explicit||parseShift(q,s)));
     const intent=detected||(followup?previous.intent:null);
     const selected=s.selectedService&&validDate(s.selectedService.date)&&s.shifts.some(t=>t.id===s.selectedService.type)?s.selectedService:null;
     const useService=selected&&['replacement','diagnosis','employeeDiagnosis'].includes(intent)&&(/\b(dieser|diesen|diesem|diese|hier|dafuer)\b/.test(q)||!period.explicit&&!previous.pending);
@@ -518,6 +578,16 @@
     return {company:s.companyName||'Ausgewähltes Unternehmen',from:dates[0],to:dates.at(-1),days:dates.length,timezone:s.timezone||'Europe/Berlin',checkedAt:new Date().toISOString(),readAt:readAt||null,planStatus:`Entwürfe und veröffentlichte Dienste (${counts.draft} Entwürfe, ${counts.published} veröffentlicht, ${counts.unknown} ohne eindeutigen Status)`+(result.proposal?.proposed?.length?' · Verbesserungsvorschlag separat, noch nicht gespeichert':''),scope:`${(s.employees||[]).filter(e=>e.status==='active'&&!e.deletedAt).length} aktive Mitarbeiter · ${rows.length} Dienste im Zeitraum · ${(s.absences||[]).length} geladene Abwesenheiten`,completeness:matched&&!data.possibleLimit?'Unternehmensabruf erfolgreich; Prüfung des geladenen Bestands':'Vollständigkeit nicht bestätigt',warnings};
   }
   function answer(question,s,previous={}){
+    if(s.authorized&&!s.loading&&!s.error){
+      const q=naturalQuestion(question);
+      if(previous.clarify==='hours'&&/^(?:(?:die|nur|bitte|ich meine)\s+)*(?:geplant\w*|planstunden|erfasst\w*|tatsaechlich\w*|ist[- ]?stunden|geleistet\w*)(?:\s+(?:stunden|arbeitszeit|bitte|meine ich))*[.!?]*$/.test(q)){
+        const actual=/erfasst|tatsaechlich|ist[- ]?stunden|geleistet/.test(q),revised=previous.originalQuestion.replace(/stunden/i,actual?'tatsächlich erfasste Stunden':'geplante Stunden');
+        return answer(revised,{...s,defaultDates:previous.dates||s.defaultDates},{...previous,clarify:null});
+      }
+      if(previous.clarify==='hours'&&/^(?:ja|nein|okay|ok|bitte)[.!?]*$/.test(q))return answer(previous.originalQuestion,{...s,defaultDates:previous.dates||s.defaultDates},{});
+      if(previous.dates&&/^(?:(?:und|auch|das|bitte|dann|dafuer)\s+)*(?:als\s+)?pdf(?:[- ]?bericht)?(?:\s+bitte)?[.!?]*$/.test(q))return answer('Planungsbericht erstellen',{...s,defaultDates:previous.dates},{});
+      if(!s.analysisRequest){const plan=requestPlan(question,s,previous);if(plan)return plan;}
+    }
     const result=answerRaw(question,s,previous);
     if(s.authorized&&!s.loading&&!s.error&&result.context?.pending&&result.context.intent==='workload'&&/stunden/.test(normalize(question))&&!/geplant|planstunden|planung|soll|vertrag/.test(normalize(question)))result.context={...result.context,hoursQuestion:question};
     if(!s.authorized||s.loading||s.error||result.title==='Datum prüfen'||result.clarification||result.context?.pending||result.notes?.some(n=>/^Quelle: SchichtFunk Hilfe-Center/.test(n))||result.profileManager||result.form)return result;
@@ -527,7 +597,7 @@
     }
     return result;
   }
-  const api={answer,normalize,parsePeriod,parseRange,rangeDates,parseShift,coverage,periodLabel,validDate,team,findHelp,questionGroups,intentFor,companyHelpArticles,analysisBasis,paidHours,plannedHours,fullMonth};
+  const api={answer,normalize,naturalQuestion,requestPlan,parsePeriod,parseRange,rangeDates,parseShift,coverage,periodLabel,validDate,team,findHelp,questionGroups,intentFor,companyHelpArticles,analysisBasis,paidHours,plannedHours,fullMonth};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.SFPlanningAssistantCore=api;
 })(typeof window==='undefined'?globalThis:window);
 

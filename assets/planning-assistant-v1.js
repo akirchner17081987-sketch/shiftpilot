@@ -9,6 +9,7 @@
   let protectedAssignmentIds=new Set(),profiles=[],profileError='',changeRequest=null,changeReport=null;
   let observedOwner=null,observedState=null,pendingChange=null,changeDue=0,changeRevision='',lastObserved=0,changeAcknowledged=false;
   let helpContext=null;
+  let activeTask=null,lastAnswerCheck=0,submitting=false;
   const withRows=(rows,fn)=>{const original=assignments;try{assignments=rows;return fn()}finally{assignments=original}};
   const signature=()=>JSON.stringify([identity(),window.SFCompliance?.policy,window.SFCompliance?.publications,window.SFPlanningLearning?.signature(),window.SFPlanningTeams?.rules,employees,assignments,absences,TYPES,typeof globalSoll==='undefined'?null:globalSoll,typeof dailySoll==='undefined'?null:dailySoll]);
   const B=()=>window.SFBackend||{};
@@ -18,7 +19,7 @@
   const busy=()=>!!(B().companySwitching||B().bootPromise||B().suppressSync||applyingProposal||refreshingProposal);
   const ownRefresh=()=>!!(refreshingProposal&&refreshingProposal.owner===identity()&&refreshingProposal.request===requestId&&!B().companySwitching&&!B().bootPromise);
   const el=id=>document.getElementById(id);
-  function reset(){requestId++;context={};messages=[];selectedMonth='';selectedService=null;planningRuns=[];journalError='';profiles=[];profileError='';protectedAssignmentIds=new Set();el('sfAssignmentImpactPreview')?.remove();el('sfAssignmentImpactButton')?.remove();el('sfPlanningChatLog')?.replaceChildren();toggleQuestionGuide(false);setProgress(false);updateService();}
+  function reset(){requestId++;context={};messages=[];activeTask=null;selectedMonth='';selectedService=null;planningRuns=[];journalError='';profiles=[];profileError='';protectedAssignmentIds=new Set();el('sfAssignmentImpactPreview')?.remove();el('sfAssignmentImpactButton')?.remove();el('sfPlanningChatLog')?.replaceChildren();toggleQuestionGuide(false);setProgress(false);updateService();}
   function close(restore=true){
     const dialog=el('sfPlanningChat'),docked=dialog?.classList.contains('sf-chat-docked');
     if(dialog?.open)dialog.close();showChangeNotice();
@@ -35,6 +36,7 @@
     if(selectedService&&!contextDates().includes(selectedService.date)){selectedService=null;context={};updatePeriod();}
     const button=el('sfPlanningAssistantButton');if(button){button.hidden=!authorized();button.disabled=busy();}
     syncPlacement();bindEditFunction();if(!next)clearChangeNotice();
+    markStaleAnswers();
     document.querySelectorAll?.('.sf-chat-service-open').forEach(button=>{button.hidden=!authorized();button.disabled=busy();});
   }
   function syncPlacement(){
@@ -186,13 +188,33 @@
     if(pendingChange&&Date.now()>=changeDue){const request=pendingChange;pendingChange=null;try{const current=snapshot();if(current.loading||current.error)return;changeReport=Workflows.followup(current,request);changeRequest=request;changeRevision=signature();showChangeNotice();}catch{changeReport={title:'Änderungscheck noch offen',text:'Die automatische Folgeprüfung konnte nicht abgeschlossen werden. Bitte erneut prüfen.'};changeRequest=request;showChangeNotice();}}
   }
   const reportAccess=()=>JSON.stringify([identity(),B().accessRole||'',B().accessPermissions||[]]);
-  function ask(question,analysisRequest){
-    syncScope();const state={...snapshot(),analysisRequest},answer=Core.answer(question,state,context);
+  function ask(question,analysisRequest,conversation=context){
+    syncScope();const state={...snapshot(),analysisRequest},answer=Core.answer(question,state,conversation);
     if(answer.reportRequest){
       try{if(!Report)throw Error('Der PDF-Bericht ist noch nicht vollständig geladen. Bitte Seite neu laden.');answer.report=Report.collect(Core,state,answer.context.dates);answer.basis=answer.report.basis;answer.columns=['Kennzahl','Positionen'];answer.rows=answer.report.summary;Object.assign(answer.report,{owner:reportAccess(),revision:signature(),selection:JSON.stringify(contextDates())});}
       catch(error){return {title:'Planungsbericht derzeit nicht verfügbar',text:error.message,context:{}};}
     }
+    if(answer.basis||answer.proposal)answer.checkedRevision=planRevision();
     return answer;
+  }
+  function markStaleAnswers(force=false){
+    if(!authorized()||busy()||!el('sfPlanningChat')?.open||!messages.some(m=>m.answer?.checkedRevision))return;
+    if(!force&&Date.now()-lastAnswerCheck<1400)return;lastAnswerCheck=Date.now();
+    const revision=planRevision(),selection=JSON.stringify(contextDates());
+    for(const message of messages){
+      if(!message.answer?.checkedRevision||message.stale)continue;
+      if(message.answer.checkedRevision!==revision||message.selection!==selection){message.stale=true;const article=message.element;if(article)showStaleAnswer(message,article);}
+    }
+  }
+  function showStaleAnswer(message,article){
+    if(article.querySelector('.sf-chat-stale'))return;
+    const notice=node('div',undefined,'sf-chat-stale');notice.setAttribute('role','status');notice.appendChild(node('p','Planungsdaten oder Zeitraum wurden geändert. Diese Antwort ist nicht mehr aktuell.'));
+    const refresh=node('button','Erneut prüfen','sf-chat-row-action');refresh.type='button';refresh.onclick=()=>{const dates=message.answer.context?.dates||[],period=Core.parsePeriod(Core.normalize(message.question),{today:today(),defaultDates:dates.length?dates:contextDates()}),range=dates.length&&!period.explicit?(dates.length===1?' am '+dates[0]:' vom '+dates[0]+' bis '+dates.at(-1)):'';submit(message.question+range+(message.answer.context?.type?' · '+message.answer.context.type:''),message.analysisRequest,{previous:message.previous});};notice.appendChild(refresh);article.querySelector('h3')?.after(notice);
+    article.querySelectorAll('[data-sf-sensitive]').forEach(button=>button.disabled=true);
+  }
+  function renderTaskPlan(plan,host){
+    const list=node('ol',undefined,'sf-chat-task-plan');list.setAttribute('aria-label','Erkannte Aufgaben');
+    plan.tasks.forEach((task,index)=>{const row=node('li'),button=node('button',(task.done?'Erneut: ':index+1+'. ')+task.label,'sf-chat-row-action');button.type='button';button.onclick=()=>submit(task.question,undefined,{task:{plan,index}});row.append(button,node('span',task.done?'Bearbeitet':'Noch offen'));list.appendChild(row);});host.appendChild(list);
   }
   async function downloadReport(report,button){
     const assertFresh=()=>{if(!authorized()||busy()||report.owner!==reportAccess()||report.revision!==signature()||report.selection!==JSON.stringify(contextDates()))throw Error('Unternehmen, Zeitraum oder Planungsdaten wurden geändert. Bitte einen neuen Planungsbericht erstellen.');};
@@ -344,13 +366,14 @@
     if(open)guide.querySelector('summary')?.focus();
   }
   function setProgress(active){
+    submitting=active;
     const progress=el('sfPlanningChatProgress');if(progress)progress.hidden=!active;
     el('sfPlanningChatLog')?.setAttribute('aria-busy',String(active));
   }
   function mountQuestionGuide(){
     const guide=node('section',undefined,'sf-chat-question-guide');guide.id='sfPlanningQuestionGuide';guide.hidden=true;
     guide.setAttribute('aria-label','Fragen und Beispiele');guide.appendChild(node('h3','Welche Fragen kann ich stellen?'));
-    guide.appendChild(node('p','Du kannst eigene Fragen zu diesen Themen formulieren. Bei einem Dienst helfen Datum und Schichtart, bei Personen Name oder Personalnummer. Der Assistent erkennt unterstützte Themen; er ist kein allgemeiner KI-Chat.'));
+    guide.appendChild(node('p','Du kannst eigene Fragen zu diesen Themen formulieren. Bei einem Dienst helfen Datum und Schichtart, bei Personen Name oder Personalnummer. Du kannst mehrere Anliegen verbinden und kurz auf Rückfragen antworten. Der Assistent behält dabei den Zeitraum und eindeutig erkannte Personen im Gespräch. Er unterstützt die hier aufgeführten Planungsthemen.'));
     for(const [title,questions] of Core.questionGroups){const group=node('details',undefined,'sf-chat-details');group.appendChild(node('summary',title));const examples=node('div',undefined,'sf-chat-examples');quickButtons(examples,questions);group.appendChild(examples);guide.appendChild(group);}
     const back=node('button','Zurück zum Gespräch','sf-chat-row-action');back.type='button';back.onclick=()=>{toggleQuestionGuide(false);el('sfPlanningChatInput').focus();};guide.appendChild(back);
     el('sfPlanningChatLog').before(guide);
@@ -442,7 +465,8 @@
       const a=message.answer;article.appendChild(node('h3',a.title));article.appendChild(node('p',a.text));
       if(a.clarification?.length){const choices=node('div',undefined,'sf-chat-clarification');choices.setAttribute('role','group');choices.setAttribute('aria-label','Rückfrage beantworten');for(const choice of a.clarification){const button=node('button',choice.label);button.type='button';button.onclick=()=>submit(choice.question);choices.appendChild(button);}article.appendChild(choices);}
       if(a.basis){const b=a.basis,details=node('details',undefined,'sf-chat-basis');details.open=true;details.appendChild(node('summary','Prüfgrundlage · '+b.company+' · '+b.from+' bis '+b.to));const fields=node('dl');for(const [label,value] of [['Planstatus',b.planStatus],['Datenumfang',b.scope],['Letzter Abruf',Report?Report.dateTime(b.readAt,b.timezone):b.readAt||'Nicht bestätigt'],['Prüfung erstellt',Report?Report.dateTime(b.checkedAt,b.timezone):b.checkedAt],['Vollständigkeit',b.completeness]]){const row=node('div');row.append(node('dt',label),node('dd',value));fields.appendChild(row);}details.appendChild(fields);for(const warning of b.warnings||[])details.appendChild(node('p',warning,'sf-chat-basis-warning'));article.appendChild(details);}
-      if(a.report){const button=node('button','Planungsbericht als PDF herunterladen','sf-chat-report-button');button.type='button';button.onclick=()=>downloadReport(a.report,button);article.appendChild(button);}
+      if(a.taskPlan)renderTaskPlan(a.taskPlan,article);
+      if(a.report){const button=node('button','Planungsbericht als PDF herunterladen','sf-chat-report-button');button.type='button';button.dataset.sfSensitive='';button.onclick=()=>downloadReport(a.report,button);article.appendChild(button);}
       if(a.blockers?.length){const section=node('section',undefined,'sf-chat-blockers'),list=node('ul');section.appendChild(node('h4','Verbleibende Engpässe'));a.blockers.forEach(text=>list.appendChild(node('li',text)));section.appendChild(list);article.appendChild(section);}
       if(a.rows?.length){
         const results=node('div',undefined,'sf-chat-results');results.setAttribute('aria-label',a.title+' – Ergebnisse');
@@ -478,25 +502,27 @@
       if(a.wizard)renderWizard(a.wizard,article);
       if(a.profileManager)renderProfileManager(article);
       if(a.variants){const actions=node('div',undefined,'sf-chat-actions');for(const variant of a.variants){const button=node('button',variant.label+' prüfen');button.type='button';button.onclick=()=>variant.profileId?submit('Planungsprofil ausführen',{kind:'profile',profileId:variant.profileId,strategy:variant.key,month:variant.month}):submit('Planvariante prüfen',{kind:'variant',strategy:variant.key,month:variant.month,focus:variant.focus?.length===1?'person:'+variant.focus[0]:'all',focusIds:variant.focus});actions.appendChild(button);}article.appendChild(actions);}
-      if((a.proposal?.proposed?.length||a.proposal?.undoId)&&a.proposal.owner){const button=node('button',a.proposal.undoId?'Rücknahme bestätigen':'Vorschläge als Entwurf übernehmen','sf-chat-row-action');button.type='button';button.onclick=()=>applyProposal(a.proposal,button);article.appendChild(button);}
+      if((a.proposal?.proposed?.length||a.proposal?.undoId)&&a.proposal.owner){const button=node('button',a.proposal.undoId?'Rücknahme bestätigen':'Vorschläge als Entwurf übernehmen','sf-chat-row-action');button.type='button';button.dataset.sfSensitive='';button.onclick=()=>applyProposal(a.proposal,button);article.appendChild(button);}
+      if(message.completedTask){const {plan,index}=message.completedTask,following=plan.tasks.findIndex((task,i)=>i>index&&!task.done),nextIndex=following<0?plan.tasks.findIndex(task=>!task.done):following,next=plan.tasks[nextIndex];if(next){const button=node('button','Nächster Schritt: '+next.label,'sf-chat-row-action');button.type='button';button.onclick=()=>submit(next.question,undefined,{task:{plan,index:nextIndex}});article.appendChild(button);}else article.appendChild(node('p','Alle Schritte dieses Auftrags wurden bearbeitet.','sf-chat-task-complete'));}
       if(a.suggestions?.length){const examples=node('div',undefined,'sf-chat-examples');quickButtons(examples,a.suggestions);article.appendChild(examples);}
       article.appendChild(node('small',a.basis?'Prüf- und Abrufzeit siehe Prüfgrundlage.':a.notes?.some(n=>/^Quelle: SchichtFunk Hilfe-Center/.test(n))?'SchichtFunk Hilfe-Center':'Planungsassistent · Unterstützte Abläufe','sf-chat-source'));
     }
-    log.appendChild(article);
+    message.element=article;if(message.stale)showStaleAnswer(message,article);log.appendChild(article);
   }
-  async function submit(raw,analysisRequest){
-    syncScope();if(!authorized()||busy())return;
+  async function submit(raw,analysisRequest,options={}){
+    syncScope();if(!authorized()||busy()||submitting)return;
     const input=el('sfPlanningChatInput'),text=String(raw??input?.value??'').trim().slice(0,1200);if(!text)return;
-    let answer;const owner=identity(),request=++requestId;
+    let answer;const owner=identity(),request=++requestId,conversation=options.previous||(options.task?{}:context),task=options.task||activeTask;
+    if(options.task)activeTask=options.task;
     toggleQuestionGuide(false);setProgress(true);
     el('sfPlanningChatStatus').textContent='Planungsdaten werden geprüft.';
     try{
       if(['report','bottlenecks','forecast','leaveImpact','changeImpact','order','multiBalance','undo','wizard','variants','profiles','followup'].includes(Core.intentFor(Core.normalize(text))))await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       if(owner!==identity()||request!==requestId)return;
-      if(Core.intentFor(Core.normalize(text))==='report'||/protokoll|gespeicherte|planungsgruende|besetzung.*verhindert/.test(Core.normalize(text)))await loadRuns();
+      if(/pdf|planungsbericht|protokoll|gespeicherte|planungsgruende|besetzung.*verhindert/.test(Core.normalize(text)))await loadRuns();
       if(Core.intentFor(Core.normalize(text))==='profiles')await loadProfiles();
       if(owner!==identity()||request!==requestId)return;
-      answer=ask(text,analysisRequest);
+      answer=ask(text,analysisRequest,conversation);
       if(answer.proposal&&(answer.proposal.proposed?.length||answer.proposal.undoId)){
         if(!demo()){
           if(B().syncing||window.SFMonthOptimizer?.isBusy?.())throw Error('Eine Planung oder Speicherung läuft. Bitte danach erneut prüfen.');
@@ -510,7 +536,7 @@
             }finally{refreshingProposal=null;syncScope();}
           if(owner!==identity()||request!==requestId)return;
           protectedAssignmentIds=new Set(q.data.protectedIds||[]);
-          answer=ask(text,analysisRequest);if(answer.proposal){const protectedIds=protectedAssignmentIds;if((answer.proposal.removed||answer.proposal.changes.filter(c=>c.replaces).map(c=>c.replaces)).some(a=>protectedIds.has(a._dbId||B().asgDb?.get(String(a.id)))))throw Error('Ein vorgeschlagener Wechsel betrifft einen geschützten Dienst. Bitte im Dienstplan einzeln prüfen.');answer.proposal.fingerprint=q.data.fingerprint;}
+          answer=ask(text,analysisRequest,conversation);if(answer.proposal){const protectedIds=protectedAssignmentIds;if((answer.proposal.removed||answer.proposal.changes.filter(c=>c.replaces).map(c=>c.replaces)).some(a=>protectedIds.has(a._dbId||B().asgDb?.get(String(a.id)))))throw Error('Ein vorgeschlagener Wechsel betrifft einen geschützten Dienst. Bitte im Dienstplan einzeln prüfen.');answer.proposal.fingerprint=q.data.fingerprint;}
         }
         if(answer.proposal)Object.assign(answer.proposal,{owner,signature:signature(),created:Date.now(),label:answer.title});
       }
@@ -521,12 +547,16 @@
     if(answer.wizard){try{const state=loadWork();state.activeMonth=answer.wizard.month;saveWork(state);}catch{answer.notes=[...(answer.notes||[]),'Fortschritt konnte in diesem Browser nicht gespeichert werden.'];}}
     if(Core.intentFor(Core.normalize(text))==='followup'){changeAcknowledged=true;clearChangeNotice();}
     const activeMonth=loadWork().activeMonth;if(activeMonth&&!answer.wizard)answer.actions=[...(answer.actions||[]),{question:'Geführte Monatsplanung '+activeMonth,label:'Planung fortsetzen'}];
+    let completedTask=null;
+    if(answer.taskPlan)activeTask=null;
+    else if(task&&!answer.context?.pending&&!answer.clarification&&!answer.form&&(answer.basis||answer.context?.intent==='actualHours')&&(answer.context?.intent===task.plan.tasks[task.index].intent||task.plan.tasks[task.index].intent==='workload'&&answer.context?.intent==='actualHours')){task.plan.tasks[task.index].done=true;completedTask=task;activeTask=null;}
+    else if(task&&!answer.context?.pending&&!answer.context?.clarify&&!answer.form)activeTask=null;
     context=answer.context||{};if(input)input.value='';
-    messages.push({user:true,text},{answer});if(messages.length>40)messages=messages.slice(-40);
+    messages.push({user:true,text},{answer,question:text,analysisRequest,previous:conversation,selection:JSON.stringify(contextDates()),completedTask});if(messages.length>40)messages=messages.slice(-40);
     el('sfPlanningChatWelcome')?.remove();el('sfPlanningChatLog')?.replaceChildren();messages.forEach(message=>renderMessage(message));
     const log=el('sfPlanningChatLog'),question=log?.querySelector('.is-user:nth-last-child(2)');if(log&&question)log.scrollTop=question.offsetTop;
     el('sfPlanningChatStatus').textContent=answer.title;input?.focus();
-    updatePeriod();
+    updatePeriod();markStaleAnswers(true);
     if(answer.form){const form=log?.lastElementChild?.querySelector('.sf-chat-analysis-form');if(form){log.scrollTop=Math.max(0,form.offsetTop-12);form.querySelector('select,input')?.focus({preventScroll:true});}}
   }
   function updatePeriod(){if(el('sfPlanningChatPeriod'))el('sfPlanningChatPeriod').textContent=Core.periodLabel(context.dates||contextDates());updateService();}
@@ -592,8 +622,8 @@
       el('sfPlanningChatForm').onsubmit=event=>{event.preventDefault();submit();};
       el('sfPlanningChatInput').onkeydown=event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();submit();}};
       el('sfPlanningChatReset').onclick=()=>{reset();el('sfPlanningChatMonth').value='';welcome();updatePeriod();el('sfPlanningChatInput').focus();};
-      el('sfPlanningChatMonth').onchange=event=>{requestId++;selectedMonth=event.target.value;selectedService=null;context={};updatePeriod();event.target.closest('details').open=false;};
-      el('sfPlanningChatCurrent').onclick=()=>{requestId++;selectedMonth='';selectedService=null;context={};el('sfPlanningChatMonth').value='';updatePeriod();el('sfPlanningChatMonth').closest('details').open=false;};
+      el('sfPlanningChatMonth').onchange=event=>{requestId++;setProgress(false);activeTask=null;selectedMonth=event.target.value;selectedService=null;context={};updatePeriod();markStaleAnswers(true);event.target.closest('details').open=false;};
+      el('sfPlanningChatCurrent').onclick=()=>{requestId++;setProgress(false);activeTask=null;selectedMonth='';selectedService=null;context={};el('sfPlanningChatMonth').value='';updatePeriod();markStaleAnswers(true);el('sfPlanningChatMonth').closest('details').open=false;};
     }
     if(!messages.length)welcome();else{el('sfPlanningChatLog').replaceChildren();messages.forEach(message=>renderMessage(message));}
     syncPlacement();el('sfPlanningChatMonth').value=selectedMonth;updatePeriod();dialog.show();showChangeNotice();
@@ -620,7 +650,7 @@
     const id=target.dataset.assignmentId||target.dataset.id,a=snapshot().assignments?.find(a=>String(a.id)===String(id));
     if(a)setService(a.date,a.type,a.id);
   },true);
-  document.addEventListener('sf:schedule-period-changed',()=>{requestId++;selectedService=null;context={};updatePeriod();});
+  document.addEventListener('sf:schedule-period-changed',()=>{requestId++;setProgress(false);activeTask=null;selectedService=null;context={};updatePeriod();markStaleAnswers(true);});
   document.addEventListener('sf:planning-analysis-ready',event=>{saveRun(event.detail).catch(()=>{journalError='Das Planungsprotokoll konnte nicht gespeichert werden.';window.showSaveToast?.('Planungsprotokoll nicht gespeichert',journalError);});});
   let queued=false;new MutationObserver(records=>{if(queued||!records.some(r=>r.type==='childList'||r.target===el('view-auto')))return;queued=true;queueMicrotask(()=>{queued=false;mount();});}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
