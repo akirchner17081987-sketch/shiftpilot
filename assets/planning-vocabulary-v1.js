@@ -24,5 +24,6 @@ function constraints(q,shifts){q=normalize(q).replace(/[?.!]+$/,'');const neg=q.
  if(/\b(?:ohne|ausser|nicht|keine|keinen)\b/.test(base.replace(/\bnicht (?:besetzt|eingeplant|verfuegbar|geeignet|beruecksichtigt)\b/g,'')))return {matched:true,error:'Diese Verneinung ist nicht eindeutig unterstützt. Bitte grenze nach Schicht, Wochenende oder Teamleitern ein.'};
  return{matched,base:base.replace(/[,;]/g,' ').replace(/\b(?:aber|und)\s*$/,'').replace(/^\s*(?:und|aber)\s+/,'').replace(/\s+/g,' ').trim(),state,labels,error:state.error};
 }
-const api={normalize,clean,topics,entries,expand,replaceTerm,wordKey,corpus,suggest,learnable,constraints};if(typeof module==='object'&&module.exports)module.exports=api;else root.SFPlanningVocabulary=api;
+function scopeSuffix(c){if(!c)return '';return [c.type?'nur '+c.type:'',c.week==='weekdays'?'ohne Wochenende':c.week==='weekends'?'nur Wochenende':'',c.excludeLeaders?'ohne Teamleiter':'',...(c.excludeTypes||[]).map(t=>'ohne '+t)].filter(Boolean).join(' ');}
+const api={normalize,clean,topics,entries,expand,replaceTerm,wordKey,corpus,suggest,learnable,constraints,scopeSuffix};if(typeof module==='object'&&module.exports)module.exports=api;else root.SFPlanningVocabulary=api;
 })(typeof window==='undefined'?globalThis:window);

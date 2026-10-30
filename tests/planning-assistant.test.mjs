@@ -340,3 +340,5 @@ test('context resolves free services, absences and spare plan hours while neutra
 });
 
 test('an hour clarification takes precedence over a short only filter',()=>{const s=fixture(),a=Core.answer('Wie viele Stunden hat Anna Plan im Dezember?',s),b=Core.answer('nur die geplanten',s,a.context);assert.equal(b.context.intent,'workload');assert.deepEqual(b.context.employeeIds,['e1']);});
+
+test('conversation follow-ups retain an earlier exclusion instead of expanding the checked period',()=>{const s=fixture(),a=Core.answer('Offene Dienste im Dezember 2026',s),b=Core.answer('Nur ND ohne Wochenende',s,a.context),c=Core.answer('die freien',s,b.context),d=Core.answer('Und im Januar 2027?',s,b.context);assert.equal(c.context.type,'ND');assert.ok(c.context.dates.every(x=>![0,6].includes(new Date(x+'T12:00:00Z').getUTCDay())));assert.equal(d.context.dates[0],'2027-01-01',JSON.stringify(d));assert.ok(d.context.dates.every(x=>![0,6].includes(new Date(x+'T12:00:00Z').getUTCDay())));});
