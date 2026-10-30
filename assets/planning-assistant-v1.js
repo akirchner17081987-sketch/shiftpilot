@@ -8,6 +8,7 @@
   const Insights=window.SFPlanningInsights,Workflows=window.SFPlanningWorkflows;
   let protectedAssignmentIds=new Set(),profiles=[],profileError='',changeRequest=null,changeReport=null;
   let observedOwner=null,observedState=null,pendingChange=null,changeDue=0,changeRevision='',lastObserved=0,changeAcknowledged=false;
+  let helpContext=null;
   const withRows=(rows,fn)=>{const original=assignments;try{assignments=rows;return fn()}finally{assignments=original}};
   const signature=()=>JSON.stringify([identity(),window.SFCompliance?.policy,window.SFCompliance?.publications,window.SFPlanningLearning?.signature(),window.SFPlanningTeams?.rules,employees,assignments,absences,TYPES,typeof globalSoll==='undefined'?null:globalSoll,typeof dailySoll==='undefined'?null:dailySoll]);
   const B=()=>window.SFBackend||{};
@@ -28,8 +29,9 @@
     }
   }
   function syncScope(){
-    const next=identity();if(scope!==next){observedOwner=next;observedState=null;pendingChange=null;changeRequest=null;changeReport=null;changeRevision='';clearChangeNotice();}
-    if(scope!==next||(busy()&&!ownRefresh())){close(false);reset();scope=next;}
+    const next=identity(),nextHelp=next?JSON.stringify(Core.companyHelpArticles(window.SFHelpContent?.articles||{},B(),demo())):null;
+    if(scope!==next){observedOwner=next;observedState=null;pendingChange=null;changeRequest=null;changeReport=null;changeRevision='';clearChangeNotice();}
+    if(scope!==next||helpContext!==nextHelp||(busy()&&!ownRefresh())){close(false);reset();scope=next;helpContext=nextHelp;}
     if(selectedService&&!contextDates().includes(selectedService.date)){selectedService=null;context={};updatePeriod();}
     const button=el('sfPlanningAssistantButton');if(button){button.hidden=!authorized();button.disabled=busy();}
     syncPlacement();bindEditFunction();if(!next)clearChangeNotice();
@@ -137,7 +139,7 @@
       hourLimits:e=>typeof autoHourLimits==='function'?autoHourLimits(e):null,isPublished:date=>!!window.SFCompliance?.isWeekPublished?.(date),
       movable:a=>!!a.id&&!a.rhythmOverride&&!a.fixed&&!a.locked&&!a.protected&&!protectedAssignmentIds.has(a._dbId||B().asgDb?.get(String(a.id))||a.id)&&!a.publishedAt&&(!a._dbStatus||a._dbStatus==='DRAFT')&&a.status!=='PUBLISHED'&&!a._marketApproved&&!/markt|market|freiwill|tausch/i.test(a.note||'')&&!window.SFCompliance?.isWeekPublished?.(a.date)&&!((typeof timeEntries!=='undefined')&&(timeEntries[a.id]?.actualStart||timeEntries[a.id]?.actualEnd))&&window.sfRhythmCheck?.(employees.find(e=>String(e.id)===String(a.employeeId)),a.type,a.date)?.mode!=='required',
       openSlots:(wanted,rows)=>withRows(rows,()=>{const slots=[];for(const date of wanted)for(const t of TYPES.filter(t=>t.active!==false)){const info=window.SFShiftModels?.coverageInfo?.(date,t.id);if(info&&info.representative!==t.id)continue;const raw=getSoll(date,t.id),need=window.SFShiftModels?.requiredSoll?.(date,t.id,raw)??raw,count=rows.filter(a=>a.date===date&&a.type===t.id).length,missing=info?info.missing:Math.max(0,need-count);for(let n=0;n<missing;n++)slots.push({date,type:t.id,...(info?{alternatives:info.alternatives}:{})});}return slots;}),
-      planningRuns,journalError,teamRulesReady:window.SFPlanningTeams?.isLoaded?.()??false,helpCategories:window.SFHelpContent?.categories||[],teamRules:window.SFPlanningTeams?.isLoaded?.()?window.SFPlanningTeams.rules:[],helpArticles:window.SFHelpContent?.articles||{}};
+      planningRuns,journalError,teamRulesReady:window.SFPlanningTeams?.isLoaded?.()??false,helpCategories:window.SFHelpContent?.categories||[],teamRules:window.SFPlanningTeams?.isLoaded?.()?window.SFPlanningTeams.rules:[],helpArticles:Core.companyHelpArticles(window.SFHelpContent?.articles||{},B(),demo())};
   }
   async function loadProfiles(){
     const owner=identity(),company=B().companyId;if(!owner)return;
