@@ -192,8 +192,10 @@
     // A restored AAL1 session can require MFA before a login form or app exists.
     // Let the real security dialog stay above the decorative entry surface.
     const mfaReady = isVisible(document.getElementById('sfMfaModal'));
+    const teamInvitation = document.getElementById('sfUserModal');
     const auxiliaryReady = isVisible(document.getElementById('sfPasswordResetBackdrop')) ||
-      isVisible(document.getElementById('sfEmployeeRegister'));
+      isVisible(document.getElementById('sfEmployeeRegister')) ||
+      (isVisible(teamInvitation) && teamInvitation.dataset.sfInvitation === 'true');
     root.classList.toggle('sf-entry-mfa-ready', mfaReady);
     root.classList.toggle('sf-entry-dialog-ready', auxiliaryReady);
     root.inert = mfaReady || auxiliaryReady || welcoming;
