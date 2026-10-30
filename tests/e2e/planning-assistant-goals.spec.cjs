@@ -27,9 +27,19 @@ async function setup(page,db={rows:[]},demo=false){
  await page.getByRole('button',{name:'Planungsassistent',exact:true}).click();return errors;
 }
 async function ask(page,q){await page.locator('#sfPlanningChatInput').fill(q);await page.getByRole('button',{name:'Frage senden'}).click();await expect(page.locator('#sfPlanningChatProgress')).toBeHidden();}
-async function start(page,goal='both'){await ask(page,'Bereite Dezember 2026 vor, schließe Lücken und verteile die Stunden fair');await expect(last(page).locator('form[data-kind="goalOrder"]')).toBeVisible();await last(page).locator('select[name=goal]').selectOption(goal);await last(page).getByRole('button',{name:'Auftrag starten',exact:true}).click();}
+async function start(page,goal='both'){await ask(page,'Bereite Dezember 2026 vor, schließe Lücken und verteile die Stunden fair');await expect(last(page).locator('form[data-kind="goalOrder"]')).toBeVisible();await last(page).locator('select[name=goal]').selectOption(goal);await last(page).getByRole('button',{name:'Prüfung starten',exact:true}).click();}
 async function settled(page){await expect(page.locator('#sfPlanningChatProgress')).toBeHidden({timeout:30000});}
 async function clean(page,errors){expect(await page.evaluate(()=>__writes)).toBe(0);expect(errors).toEqual([]);expect(await page.evaluate(()=>__errors)).toEqual([]);}
+test('clear entry points open the guided improvement form and preserve other tools',async({page})=>{
+ const errors=await setup(page,{rows:[]});const welcome=page.locator('#sfPlanningChatWelcome');
+ await expect(welcome.locator('.sf-chat-primary')).toHaveCount(4);
+ await expect(welcome.getByText('Weitere Funktionen')).toBeVisible();
+ await welcome.getByRole('button',{name:/Plan verbessern/}).click();await settled(page);
+ const form=last(page).locator('form[data-kind="goalOrder"]');await expect(form).toBeVisible();
+ await expect(form).toContainText('Unternehmen:');await expect(form.locator('input[name=month]')).not.toHaveValue('');
+ await expect(form.locator('select[name=goal]')).toHaveValue('both');await expect(form.locator('select[name=focus]')).toHaveValue('all');
+ await expect(form.getByRole('button',{name:'Prüfung starten'})).toBeVisible();await clean(page,errors);
+});
 test('goal orders evaluate strategies, persist a receipt and require confirmation before any duty write',async({page})=>{
  const db={rows:[]},errors=await setup(page,db);await start(page);await settled(page);await expect(last(page).locator('.sf-chat-goal-receipt')).toContainText('Gespeicherter Auftrag');await expect(last(page).getByRole('button',{name:'Vorschläge als Entwurf übernehmen',exact:true})).toBeVisible();await expect(last(page)).toContainText('0');expect(db.rows).toHaveLength(1);expect(db.rows[0].status).toBe('awaiting_approval');expect(db.rows[0].state.steps.length).toBeGreaterThan(0);expect(db.rows[0].state.latest.open).toBe(0);expect(JSON.stringify(db.rows[0].state)).not.toMatch(/first|last|note|proposed|assignments/);await clean(page,errors);
 });
