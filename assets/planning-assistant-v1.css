@@ -179,6 +179,7 @@
 .sf-chat-launcher-chevron{flex:none;color:var(--teal,#36cbb7);font-size:20px;line-height:1}
 .sf-chat-launcher[aria-expanded=true] .sf-chat-launcher-chevron{transform:rotate(180deg)}
 .sf-chat-launcher:disabled{opacity:.65;cursor:wait}
+body:has(#spAssignModal)>.sf-chat-launcher,body:has(dialog:modal)>.sf-chat-launcher{visibility:hidden;pointer-events:none}
 .sf-planning-chat:not(.sf-chat-docked){bottom:calc(max(20px,env(safe-area-inset-bottom)) + 88px);height:min(720px,calc(100dvh - 134px));max-height:calc(100dvh - 134px)}
 body.sf-orbit-manager .sf-planning-chat:not(.sf-chat-docked){bottom:calc(198px + env(safe-area-inset-bottom))!important;height:min(720px,calc(100dvh - 218px));max-height:calc(100dvh - 218px)!important}
 @media(max-width:650px){body.sf-orbit-manager .sf-planning-chat:not(.sf-chat-docked){bottom:calc(294px + env(safe-area-inset-bottom))!important;height:min(720px,calc(100dvh - 314px));max-height:calc(100dvh - 314px)!important}}
