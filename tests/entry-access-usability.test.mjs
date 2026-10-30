@@ -80,3 +80,55 @@ test('legal pages reject arbitrary return targets and leave external and section
     assert.deepEqual([...w.document.querySelectorAll('.toc a')].map(a=>a.getAttribute('href')),headingLinks);assert.equal(w.document.querySelector('a[href^="https://outside.invalid"]').getAttribute('href'),'https://outside.invalid/datenschutz');
   }finally{await w.happyDOM.close();}
 });
+
+async function teamInvitationFixture({signedIn=false,rewriteAddress=false,invite=true}={}){
+  const token='synthetic-invitation-token',w=new Window({url:'https://schichtfunk.de/'+(invite?'?teamInvite='+token:'')}),calls=[];
+  const B=w.SFBackend={ready:false,user:null,client:{auth:{signUp:async input=>{calls.push(input);return {data:{session:null}}}}},init:async()=>{
+    if(signedIn){B.ready=true;B.user={id:'existing-user'};}
+    if(rewriteAddress)w.history.replaceState(null,'','/#app');
+  }};
+  w.eval(read('assets/team-admin-v1.js'));await B.init();
+  return {w,B,calls,token,$:id=>w.document.getElementById(id),close:()=>w.happyDOM.close()};
+}
+
+test('an anonymous invitation keeps its token through initialization and submits it only on explicit registration',async()=>{
+  const h=await teamInvitationFixture({rewriteAddress:true});try{
+    const {$,calls,token}=h;
+    assert.equal($('sfUserModal').dataset.sfInvitation,'true');
+    assert.equal($('sfUserDialogTitle').textContent,'Einladung annehmen');
+    assert.equal(calls.length,0,'opening the invitation cannot create an account');
+    $('sfTeamRegEmail').value='invited@example.invalid';$('sfTeamRegPassword').value='synthetic-password';
+    await $('sfTeamRegSubmit').onclick();
+    assert.equal(calls.length,1);assert.equal(calls[0].email,'invited@example.invalid');
+    assert.equal(calls[0].options.data.sf_company_invite,token);
+    assert.match($('sfUserMsg').textContent,/bestätige jetzt deine E-Mail/);
+  }finally{await h.close();}
+});
+
+test('an existing session sees invitation guidance without creating or changing an account',async()=>{
+  const h=await teamInvitationFixture({signedIn:true,rewriteAddress:true});try{
+    const {$,B,calls}=h;
+    assert.equal($('sfUserModal').dataset.sfInvitation,'true');
+    assert.equal($('sfUserDialogTitle').textContent,'Einladung annehmen');
+    assert.match($('sfUserModal').textContent,/bereits.*angemeldet/);
+    assert.match($('sfUserModal').textContent,/privaten Browserfenster/);
+    assert.equal($('sfTeamRegPassword'),null);assert.equal(calls.length,0);
+    assert.equal(B.user.id,'existing-user');assert.equal(B.ready,true);
+  }finally{await h.close();}
+});
+
+test('ordinary startup does not open an invitation dialog',async()=>{
+  const h=await teamInvitationFixture({invite:false});try{assert.equal(h.$('sfUserModal'),null);assert.equal(h.calls.length,0);}finally{await h.close();}
+});
+
+
+test('the loader can open an invitation after initialization ran before its hook, without duplicate dialogs',async()=>{
+  const h=await teamInvitationFixture({invite:false});try{
+    const {$,B}=h;
+    B.showTeamInvitation('synthetic-late-token');const modal=$('sfUserModal');
+    assert.equal(modal.dataset.sfInvitation,'true');
+    $('sfTeamRegEmail').value='invited@example.invalid';
+    B.showTeamInvitation('synthetic-late-token');
+    assert.equal($('sfUserModal'),modal);assert.equal($('sfTeamRegEmail').value,'invited@example.invalid');
+  }finally{await h.close();}
+});

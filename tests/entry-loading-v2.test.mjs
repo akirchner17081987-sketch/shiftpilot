@@ -74,7 +74,7 @@ test('failed global session revocation keeps the current session and does not re
 function entryHarness({reducedMotion=true}={}) {
   const timers = new Map(), nodes = new Map(), events = new Map();
   const frames = []; let changed; let timerId = 0;
-  const element = (id) => ({id,isConnected:true,style:{},hidden:false,textContent:'',
+  const element = (id) => ({id,isConnected:true,style:{},dataset:{},hidden:false,textContent:'',
     classList:{values:new Set(),add(value){this.values.add(value)},contains(value){return this.values.has(value)},toggle(value,on){on?this.values.add(value):this.values.delete(value)}},
     addEventListener(){},remove(){this.isConnected=false;nodes.delete(id)}});
   const root = element('sfEntryOverlay'); nodes.set(root.id,root);
@@ -240,3 +240,18 @@ test('entry preserves the production page-ready and role-gated loader', () => {
 });
 
 
+
+
+test('a team invitation takes priority over the chooser and releases it when closed',()=>{
+  const h=entryHarness();
+  const modal=h.add('sfUserModal');modal.dataset={sfInvitation:'true'};h.change();
+  assert.equal(h.root.inert,true);
+  assert.ok(h.root.classList.contains('sf-entry-dialog-ready'));
+  assert.ok(![...h.timers.values()].some(timer=>timer.ms===20000));
+  const entryZ=Number(read('assets/sf-entry-access-v1.css').match(/#sfEntryOverlay\.sf-entry-dialog-ready\{z-index:(\d+)/)[1]);
+  const modalZ=Number(read('assets/users-permissions-v2.css').match(/#sfUserModal\{[^}]*z-index:(\d+)/)[1]);
+  assert.ok(entryZ<=modalZ,'the later invitation must not be below the entry surface');
+  modal.remove();h.change();
+  assert.equal(h.root.inert,false);
+  assert.ok(!h.root.classList.contains('sf-entry-dialog-ready'));
+});

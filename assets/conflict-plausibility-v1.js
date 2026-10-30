@@ -158,7 +158,8 @@
         return bootPromise;
       };
     }
-    const init=()=>{window.SFStartupScripts?.assertReady?.();return Promise.resolve(B.init?.()).then(()=>window.SFStartupScripts?.ready())};
+    const invitation=new URL(location.href).searchParams.get('teamInvite');
+    const init=()=>{window.SFStartupScripts?.assertReady?.();return Promise.resolve(B.init?.()).then(()=>{B.showTeamInvitation?.(invitation);window.SFStartupScripts?.ready()})};
     Promise.resolve(window.SFPageReady).then(init).catch(failLoad);
   };
   const load=i=>{
