@@ -1492,6 +1492,36 @@
         "assets/planning-assistant-report-v1.js",
         "assets/planning-assistant-v1.js"
       ]
+    },
+    {
+      "category": "assistant",
+      "question": "Wie starte ich einen begleiteten Planungsauftrag?",
+      "sources": [
+        "assets/planning-assistant-goals-v1.js",
+        "assets/planning-assistant-core-v1.js",
+        "assets/planning-assistant-v1.js",
+        "supabase/migrations/20261030060806_planning_assistant_goal_orders.sql"
+      ]
+    },
+    {
+      "category": "assistant",
+      "question": "Wie setze ich einen Planungsauftrag auf einem anderen Gerät fort?",
+      "sources": [
+        "assets/planning-assistant-goals-v1.js",
+        "assets/planning-assistant-core-v1.js",
+        "assets/planning-assistant-v1.js",
+        "supabase/migrations/20261030060806_planning_assistant_goal_orders.sql"
+      ]
+    },
+    {
+      "category": "assistant",
+      "question": "Was bedeutet ein gespeicherter Entscheidungsvermerk im Auftrag?",
+      "sources": [
+        "assets/planning-assistant-goals-v1.js",
+        "assets/planning-assistant-core-v1.js",
+        "assets/planning-assistant-v1.js",
+        "supabase/migrations/20261030060806_planning_assistant_goal_orders.sql"
+      ]
     }
   ],
   "moduleInventory": [
@@ -2900,6 +2930,12 @@
       "source": "assets/planning-assistant-report-v1.js",
       "category": "assistant",
       "area": "PDF-Planungsbericht mit Prüfgrundlage und begrenzter aktueller Diagnose"
+    },
+    {
+      "source": "assets/planning-assistant-goals-v1.js",
+      "category": "assistant",
+      "area": "Begleitete Zielaufträge mit begrenzter Strategiefolge, Benutzer-/Unternehmensspeicherung und datenstandgebundenen Entscheidungen",
+      "kind": "feature-or-support"
     }
   ],
   "categoryCoverage": [
@@ -3096,7 +3132,10 @@
         "Welche Unternehmensregeln verwendet der Planungsassistent?",
         "Warum fragt der Assistent nach geplanten oder erfassten Stunden?",
         "Was zeigt die Prüfgrundlage unter einer Analyse?",
-        "Warum muss ich einen Planungsbericht vor dem Download erneut erstellen?"
+        "Warum muss ich einen Planungsbericht vor dem Download erneut erstellen?",
+        "Wie starte ich einen begleiteten Planungsauftrag?",
+        "Wie setze ich einen Planungsauftrag auf einem anderen Gerät fort?",
+        "Was bedeutet ein gespeicherter Entscheidungsvermerk im Auftrag?"
       ]
     },
     {
@@ -3557,11 +3596,11 @@
   "currentAudit": {
     "date": "2026-10-30",
     "baselineArticleCount": 270,
-    "addedArticleCount": 3,
+    "addedArticleCount": 6,
     "correctedArticleCount": 2,
-    "articleCount": 273,
+    "articleCount": 276,
     "categoryCount": 22,
-    "assetJavaScriptCount": 234
+    "assetJavaScriptCount": 235
   },
   "incrementalUpdate": {
     "date": "2026-10-27",

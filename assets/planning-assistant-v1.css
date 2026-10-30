@@ -159,3 +159,9 @@
 .sf-chat-task-plan li span,.sf-chat-task-complete{font-size:11px;color:var(--muted)}
 .sf-chat-task-plan button{margin:0!important;text-align:left;max-width:100%;white-space:normal;overflow-wrap:anywhere}
 .sf-chat-message [data-sf-sensitive]:disabled{opacity:.55;cursor:not-allowed}
+
+.sf-chat-goal-card,.sf-chat-goal-receipt,.sf-chat-goal-decision{margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:12px;min-width:0;overflow-wrap:anywhere;background:var(--panel)}
+.sf-chat-goal-card h4,.sf-chat-goal-receipt h4,.sf-chat-goal-decision h4{margin:0 0 8px;font-size:13px}
+.sf-chat-goal-card p,.sf-chat-goal-receipt p{font-size:12px;line-height:1.55}
+.sf-chat-goal-receipt ol{padding-left:20px;font-size:12px;line-height:1.6}
+#sfGoalCancel{margin:4px 18px 10px;min-height:44px}

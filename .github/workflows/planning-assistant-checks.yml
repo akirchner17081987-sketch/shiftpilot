@@ -45,10 +45,10 @@ jobs:
         with:
           node-version: '22'
       - run: npm ci
-      - run: node --test tests/planning-assistant.test.mjs tests/planning-assistant-report.test.cjs tests/planning-assistant-insights.test.cjs tests/planning-assistant-bottlenecks.test.cjs tests/planning-assistant-scenarios.test.cjs tests/planning-assistant-workflows.test.cjs tests/planning-assistant-workflows-sql.test.cjs tests/planning-assistant-productivity.test.cjs tests/planning-assistant-profiles-sql.test.cjs tests/planning-assistant-learning-sql.test.cjs tests/planning-experience.test.cjs tests/solid-planning.test.cjs tests/solid-planning-ui.test.cjs
+      - run: node --test tests/planning-assistant.test.mjs tests/planning-assistant-report.test.cjs tests/planning-assistant-goals.test.cjs tests/planning-assistant-goals-sql.test.cjs tests/planning-assistant-insights.test.cjs tests/planning-assistant-bottlenecks.test.cjs tests/planning-assistant-scenarios.test.cjs tests/planning-assistant-workflows.test.cjs tests/planning-assistant-workflows-sql.test.cjs tests/planning-assistant-productivity.test.cjs tests/planning-assistant-profiles-sql.test.cjs tests/planning-assistant-learning-sql.test.cjs tests/planning-experience.test.cjs tests/solid-planning.test.cjs tests/solid-planning-ui.test.cjs
       - run: node scripts/build-static.mjs
       - run: npx playwright install ffmpeg
-      - run: npx playwright test tests/e2e/planning-assistant.spec.cjs tests/e2e/planning-assistant-report.spec.cjs tests/e2e/planning-assistant-dialog.spec.cjs tests/e2e/planning-assistant-insights.spec.cjs tests/e2e/planning-assistant-bottlenecks.spec.cjs tests/e2e/planning-assistant-scenarios.spec.cjs tests/e2e/planning-assistant-workflows.spec.cjs tests/e2e/planning-assistant-productivity.spec.cjs tests/e2e/planning-experience.spec.cjs
+      - run: npx playwright test tests/e2e/planning-assistant.spec.cjs tests/e2e/planning-assistant-report.spec.cjs tests/e2e/planning-assistant-dialog.spec.cjs tests/e2e/planning-assistant-goals.spec.cjs tests/e2e/planning-assistant-insights.spec.cjs tests/e2e/planning-assistant-bottlenecks.spec.cjs tests/e2e/planning-assistant-scenarios.spec.cjs tests/e2e/planning-assistant-workflows.spec.cjs tests/e2e/planning-assistant-productivity.spec.cjs tests/e2e/planning-experience.spec.cjs --retries=0 --max-failures=1
         env:
           SF_ASSISTANT_BROWSER_EXECUTABLE: /usr/bin/google-chrome
       - uses: actions/upload-artifact@v4

@@ -189,10 +189,10 @@
     if(baseline.unknown.length)return response('Engpasslöser – Daten prüfen','Die Prüfung ist unvollständig. Bitte zuerst die fehlenden Daten ergänzen.',{notes:baseline.unknown,context});
     const allowedIssues=new Set(baseline.issues.map(key));
     const started=Date.now();let checks=0,limited=false,rows=original.slice();
-    const budget=()=>{if(checks>=240||Date.now()-started>1800){limited=true;return false;}return true;};
+    const budget=()=>{if(checks>=240||Date.now()-started>1800||Number.isFinite(options.deadline)&&Date.now()>=options.deadline){limited=true;return false;}return true;};
     const eligible=(slot,plan,exclude=new Set())=>{if(!budget())return [];checks++;const list=candidates(s,slot,plan,exclude),scores=options.balanceScore?new Map(list.map(c=>[c,options.balanceScore([...plan,c.a])])):null;return list.sort((a,b)=>{
       const gain=c=>Math.min(paid(s,c.a),Math.max(0,target(c.e)-hours(s,c.e,plan,dates)));
-      return Number(focused(b.e))-Number(focused(a.e))||(scores?scores.get(a)-scores.get(b):0)||(options.reserve?(a.e.shifts||[]).length-(b.e.shifts||[]).length:0)||gain(b)-gain(a)||person(a.e).localeCompare(person(b.e),'de');
+      return (options.candidateOrder?options.candidateOrder(a,b,plan):0)||Number(focused(b.e))-Number(focused(a.e))||(scores?scores.get(a)-scores.get(b):0)||(options.reserve?(a.e.shifts||[]).length-(b.e.shifts||[]).length:0)||gain(b)-gain(a)||person(a.e).localeCompare(person(b.e),'de');
     });};
     const canMove=a=>!options.directOnly&&(!options.allowedDates||options.allowedDates.has(a.date))&&original.includes(a)&&staff.some(e=>String(e.id)===String(a.employeeId))&&dates.includes(a.date)&&!s.isPublished?.(a.date)&&!!s.movable?.(a);
     const finalValid=plan=>{
@@ -241,7 +241,7 @@
       for(const c of eligible({date:donor.date,type:donor.type},without,new Set([String(donor.employeeId)]))){
         if(!focused(c.e)||hours(s,c.e,rows,dates)>=target(c.e)-0.05)continue;
         const a=model(s,{...c.a,start:donor.start||c.a.start,end:donor.end||c.a.end,note:donor.note||'',pause:Number(donor.pause||0)}),plan=[...without,a];
-        if((options.balanceScore?options.balanceScore(plan)<options.balanceScore(rows)-0.05:focusIds?deficit(plan,true)<beforeFocus-0.05:deficit(plan)<before-0.05)&&accept(plan))break;
+        if((options.balanceBetter?options.balanceBetter(plan,rows):options.balanceScore?options.balanceScore(plan)<options.balanceScore(rows)-0.05:focusIds?deficit(plan,true)<beforeFocus-0.05:deficit(plan)<before-0.05)&&accept(plan))break;
       }
     }
     const removed=original.filter(a=>!rows.includes(a)),base=original.filter(a=>rows.includes(a)),proposed=rows.filter(a=>!original.includes(a));
