@@ -221,7 +221,7 @@
     button.disabled=true;button.textContent='PDF wird erstellt …';let status=button.parentElement.querySelector('.sf-chat-export-status');if(!status){status=node('p',undefined,'sf-chat-export-status');status.setAttribute('role','status');button.after(status);}status.textContent='PDF wird auf diesem Gerät erstellt.';
     try{await Report.download(report,assertFresh);if(report.owner===reportAccess()){button.textContent='PDF erneut herunterladen';status.textContent='PDF wurde erstellt.';}}
     catch(error){if(report.owner===reportAccess()){window.showSaveToast?.('PDF nicht erstellt',error.message);status.textContent=error.message;status.setAttribute('role','alert');}button.textContent='PDF erneut versuchen';}
-    finally{button.disabled=false;}
+    finally{button.disabled=!!button.parentElement?.querySelector('.sf-chat-stale');}
   }
   async function loadRuns(){
     const owner=identity();if(!owner)return;
