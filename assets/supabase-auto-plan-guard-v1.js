@@ -26,7 +26,13 @@
   }
   const passesShiftTransitions=(employeeId,type,date,simulated=[])=>!transitionConflict(employeeId,type,date,simulated);
 
+  const intervalCache=new Map();let intervalHits=0,intervalMisses=0;
   const interval=(date,start,end)=>{
+    const zone=window.SFCompliance?.policy?.solidPlanningRules?.enabled?window.SFCompliance.policy.solidPlanningRules.timezone:null,key=JSON.stringify([date,start,end,zone]);
+    if(intervalCache.has(key)){intervalHits++;const v=intervalCache.get(key);return {start:new Date(v[0]),end:new Date(v[1])};}intervalMisses++;
+    const result=calculateInterval(date,start,end);intervalCache.set(key,[+result.start,+result.end]);if(intervalCache.size>4096)intervalCache.delete(intervalCache.keys().next().value);return result;
+  };
+  const calculateInterval=(date,start,end)=>{
     const rules=window.SFCompliance?.policy?.solidPlanningRules;if(rules?.enabled&&window.SFSolidPlanningCore){const i=window.SFSolidPlanningCore.interval(date,start,end,rules.timezone);return {start:new Date(i.start),end:new Date(i.end)}}
     const s=new Date(`${date}T${start}:00`),e=new Date(`${date}T${end}:00`);
     if(e<=s)e.setDate(e.getDate()+1);
@@ -104,5 +110,5 @@
     };
   }
 
-  window.SFAutoPlanGuard={passesTimeRules,shiftDurationIssue,maxShiftHours,allowsTransition,passesShiftTransitions,transitionConflict,withBlockCandidates};
+  window.SFAutoPlanGuard={getTimingStats:()=>({intervalHits,intervalMisses,entries:intervalCache.size}),passesTimeRules,shiftDurationIssue,maxShiftHours,allowsTransition,passesShiftTransitions,transitionConflict,withBlockCandidates};
 })();

@@ -295,5 +295,5 @@
     const entries=(run.analysis?.entries||[]).filter(x=>dates.includes(x.date)&&(!type||x.type===type));
     return response('Gespeicherte Planungsgründe','Stand des Laufs vom '+new Date(run.created_at).toLocaleString('de-DE')+'. '+run.analysis.open+' offene Positionen im damaligen Ergebnis.',{columns:['Datum','Schicht','Ausschlussgründe im Ergebnis'],rows:entries.map(x=>[x.date,x.type,x.reasons.map(r=>r.count+' × '+r.label).join('; ')||'Keine passende Besetzung unter den geprüften Regeln.']),notes:['Gespeicherte Prüfung am Ende des Planungslaufs. Dies ist keine vollständige Aufzeichnung aller Suchschritte.','Im verwendeten Browser gespeichert, getrennt nach Benutzer und Unternehmen; bis zu 20 Läufe der letzten 90 Tage. Keine Synchronisierung zwischen Geräten.','Das aktuelle Ergebnis kann nach späteren Änderungen abweichen.',...(run.analysis.truncated?['Die Detailansicht wurde auf 200 Schichten begrenzt.']:[])],context:{intent:'runReasons',dates,type}});
   }
-  return {audit,workload,improvements,bottlenecks,checkedPlan,absenceConflict,forecast,leaveImpact,changeImpact,journal,person,hours,paid,capacity,slots};
+  return {candidates,audit,workload,improvements,bottlenecks,checkedPlan,absenceConflict,forecast,leaveImpact,changeImpact,journal,person,hours,paid,capacity,slots};
 });
