@@ -141,14 +141,21 @@
         else { cancelWelcome(); checkReady(); }
       }, 6000);
     }
-    if (!window.SFEntryLocation || !window.SFEntryDive) { begin(null); return; }
+    // Allow the decorative globe to complete its own sequence before the
+    // camera dive. Login/MFA remain usable throughout the transformation.
+    const globeSettled=window.SFEntryGlobePresentation?.waitUntilSettled();
+    if (!window.SFEntryLocation || !window.SFEntryDive) {
+      if(globeSettled)globeSettled.then(()=>begin(null));else begin(null);
+      return;
+    }
     let timeout;
     const bounded = new Promise(resolve => { timeout = setTimeout(() => resolve(null), 1000); });
-    Promise.race([
+    const locationReady=Promise.race([
       Promise.all([window.SFEntryLocation.forBackend(window.SFBackend), window.SFEntryDive.prepare()])
         .then(([site]) => site).catch(() => null),
       bounded
-    ]).then(site => { clearTimeout(timeout); begin(site); });
+    ]).then(site => { clearTimeout(timeout); return site; });
+    Promise.all([locationReady,globeSettled]).then(([site])=>begin(site));
   }
 
   function syncAuthLoading() {

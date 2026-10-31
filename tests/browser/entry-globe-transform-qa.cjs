@@ -32,18 +32,24 @@ const root=path.resolve(__dirname,'../..'),out=path.join(root,'test-results/entr
     assert.equal(await page.locator('#sfEntryOverlay').getAttribute('data-globe-phase'),'surface','changing motion preference does not replay the completed transformation');checks++;
    }
    if(mode==='normal'){
-    await page.evaluate(()=>advance(18));
+    await page.evaluate(()=>advance(36));
     assert.equal(await page.locator('#sfEntryOverlay').getAttribute('data-globe-phase'),'transforming','intermediate frames remain visible');checks++;
     await page.screenshot({path:path.join(out,'02-Transformation.png')});
+    await page.evaluate(()=>document.getElementById('sfEntryOverlay').classList.add('sf-entry-success'));
+    await page.waitForTimeout(25);
+    assert.equal(await page.locator('#sfEntryOverlay').getAttribute('data-globe-phase'),'transforming','auth readiness must not snap the decorative transformation to its final frame');checks++;
+    await page.evaluate(()=>{window.globeSettled=false;SFEntryGlobePresentation.waitUntilSettled().then(()=>window.globeSettled=true)});
+
     const smooth=await page.evaluate(()=>{
      const c=document.querySelector('canvas'),ctx=c.getContext('2d'),background=[4,16,27];let before=ctx.getImageData(0,0,c.width,c.height).data,max=0;
      // Compare visible colors over the actual background. Unpremultiplied RGB
      // in an almost transparent halo is not its displayed brightness.
-     for(let i=0;i<36;i++){advance();const after=ctx.getImageData(0,0,c.width,c.height).data;let sum=0;for(let p=0;p<after.length;p+=4)for(let k=0;k<3;k++){const a=(after[p+k]*after[p+3]+background[k]*(255-after[p+3]))/255,b=(before[p+k]*before[p+3]+background[k]*(255-before[p+3]))/255;sum+=Math.abs(a-b);}max=Math.max(max,sum/(c.width*c.height*3));before=after;}
+     for(let i=0;i<54;i++){advance();const after=ctx.getImageData(0,0,c.width,c.height).data;let sum=0;for(let p=0;p<after.length;p+=4)for(let k=0;k<3;k++){const a=(after[p+k]*after[p+3]+background[k]*(255-after[p+3]))/255,b=(before[p+k]*before[p+3]+background[k]*(255-before[p+3]))/255;sum+=Math.abs(a-b);}max=Math.max(max,sum/(c.width*c.height*3));before=after;}
      return max;
     });
     assert.ok(smooth<3,'no hard frame switch or brightness flash: '+smooth);checks++;
     assert.equal(await page.locator('#sfEntryOverlay').getAttribute('data-globe-phase'),'surface');checks++;
+    await page.waitForFunction(()=>window.globeSettled);checks++;
     await page.screenshot({path:path.join(out,'03-Neue-Oberflaeche.png')});
     console.log('Maximum average RGB change per 50 ms frame: '+smooth.toFixed(4));
    }
