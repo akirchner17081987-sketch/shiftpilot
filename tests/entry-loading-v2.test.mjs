@@ -71,7 +71,7 @@ test('failed global session revocation keeps the current session and does not re
   assert.deepEqual(h.navigations,[]);assert.deepEqual(h.storageCleared,[]);assert.equal(h.B.ready,true);
 });
 
-function entryHarness({reducedMotion=true}={}) {
+function entryHarness({reducedMotion=true,globePresentation}={}) {
   const timers = new Map(), nodes = new Map(), events = new Map();
   const frames = []; let changed; let timerId = 0;
   const element = (id) => ({id,isConnected:true,style:{},dataset:{},hidden:false,textContent:'',
@@ -85,7 +85,7 @@ function entryHarness({reducedMotion=true}={}) {
   const backend = {client:{},ready:false,user:{id:'test-user'}};
   runInNewContext(boot,{
     document:{readyState:'loading',documentElement:{},body:{},getElementById:id=>nodes.get(id),addEventListener:(name,fn)=>events.set(name,fn)},
-    window:{SFBackend:backend,addEventListener:(name,fn)=>events.set(name,fn),removeEventListener(){},matchMedia:()=>({matches:reducedMotion})},
+    window:{SFBackend:backend,SFEntryGlobePresentation:globePresentation,addEventListener:(name,fn)=>events.set(name,fn),removeEventListener(){},matchMedia:()=>({matches:reducedMotion})},
     getComputedStyle:el=>({display:el.style.display||'block',visibility:'visible'}),
     performance:{now:()=>1,mark(){},getEntriesByType:()=>[]},
     location:{search:''},URL,URLSearchParams,
@@ -254,4 +254,26 @@ test('a team invitation takes priority over the chooser and releases it when clo
   modal.remove();h.change();
   assert.equal(h.root.inert,false);
   assert.ok(!h.root.classList.contains('sf-entry-dialog-ready'));
+});
+
+
+test('a fast login waits for the independent globe sequence before diving into the workspace',async()=>{
+  let finish;
+  const settled=new Promise(resolve=>finish=resolve);
+  const h=entryHarness({reducedMotion:false,globePresentation:{waitUntilSettled:()=>settled}});
+  h.add('sfAuthBackdrop');h.backend.ready=true;h.add('appShell');
+  assert.ok(!h.root.classList.contains('sf-entry-success'));
+  assert.ok(!h.root.classList.contains('sf-entry-out'));
+  finish();await Promise.resolve();
+  assert.ok(h.root.classList.contains('sf-entry-success'));
+});
+
+test('MFA appearing during the globe sequence cancels the pending workspace dive',async()=>{
+  let finish;
+  const h=entryHarness({reducedMotion:false,globePresentation:{waitUntilSettled:()=>new Promise(resolve=>finish=resolve)}});
+  h.add('sfAuthBackdrop');h.backend.ready=true;h.add('appShell');h.add('sfMfaModal');
+  finish();await Promise.resolve();
+  assert.ok(!h.root.classList.contains('sf-entry-success'));
+  assert.ok(!h.root.classList.contains('sf-entry-out'));
+  assert.equal(h.root.inert,true);
 });

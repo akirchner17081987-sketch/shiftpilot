@@ -46,6 +46,19 @@
   // surface never blocks the login or extends the protected entry's lifetime.
   const surfaceCanvas=document.createElement('canvas'),surfaceContext=surfaceCanvas.getContext('2d');
   let surface=null, engine=null, projection=null, revealAt=null, surfaceComplete=false;
+  // A presentation clock, never a boot-progress clock. Keep the old globe
+  // readable, then dissolve at a fixed pace once the new image can be drawn.
+  const outlineHoldMs=900, transformMs=2400;
+  const waiters=new Set();
+  function finishPresentation(){for(const finish of [...waiters])finish();}
+  window.SFEntryGlobePresentation={waitUntilSettled(){
+    if(surfaceComplete||disposed||motion.matches||root.classList.contains('sf-entry-skip-animation'))return Promise.resolve();
+    return new Promise(resolve=>{
+      // Missing graphics must never hold a verified workspace indefinitely.
+      const finish=()=>{clearTimeout(timeout);waiters.delete(finish);resolve();};
+      const timeout=setTimeout(finish,4500);waiters.add(finish);
+    });
+  }};
   let size = 600, frame = 0, last = 0, elapsed = 0, disposed = false;
   root.dataset.globePhase='outline';
   function resize() {
@@ -65,10 +78,10 @@
       projection.rotate([-longitude,-21]).translate([c,c]).scale(r);
       surfaceContext.clearRect(0,0,size,size);
       if(surface.render(surfaceContext,projection,size,size,elapsed)){
-        if(revealAt===null)revealAt=Math.max(elapsed,650);
-        const quiet=motion.matches||root.classList.contains('sf-entry-skip-animation')||root.classList.contains('sf-entry-success');
-        const t=surfaceComplete||quiet?1:Math.max(0,Math.min(1,(elapsed-revealAt)/1600));
-        if(t===1)surfaceComplete=true;
+        if(revealAt===null)revealAt=elapsed+outlineHoldMs;
+        const quiet=motion.matches||root.classList.contains('sf-entry-skip-animation');
+        const t=surfaceComplete||quiet?1:Math.max(0,Math.min(1,(elapsed-revealAt)/transformMs));
+        if(t===1){surfaceComplete=true;finishPresentation();}
         blend=t*t*(3-2*t);
         surfaceContext.beginPath();engine.d3.geoPath(projection,surfaceContext)(engine.countries);surfaceContext.strokeStyle='#c1e3df30';surfaceContext.lineWidth=.45;surfaceContext.stroke();
       }
@@ -124,13 +137,13 @@
     ctx.beginPath(); ctx.arc(c, c, r, 0, Math.PI * 2); ctx.stroke();
   }
   function dispose() {
-    disposed = true; surface?.dispose();surfaceCanvas.width=surfaceCanvas.height=1;cancelAnimationFrame(frame); observer.disconnect(); resizeObserver.disconnect();
+    disposed = true; finishPresentation(); surface?.dispose();surfaceCanvas.width=surfaceCanvas.height=1;cancelAnimationFrame(frame); observer.disconnect(); resizeObserver.disconnect();
     document.removeEventListener('visibilitychange', restart);document.removeEventListener('DOMContentLoaded',enhance);document.removeEventListener('sf:entry-dive-ready',enhance); motion.removeEventListener('change', restart);
   }
   function tick(now) {
     frame = 0;
     if (!root.isConnected || root.classList.contains('sf-entry-out')) { dispose(); return; }
-    if (document.hidden || motion.matches || root.classList.contains('sf-entry-skip-animation') || root.classList.contains('sf-entry-success')) return;
+    if (document.hidden || motion.matches || root.classList.contains('sf-entry-skip-animation')) return;
     if (!last) last = now;
     const delta = now - last;
     if (delta >= 33) { elapsed += Math.min(delta, 250);draw();last = now; }
@@ -139,13 +152,13 @@
   function restart() {
     if (disposed) return;
     cancelAnimationFrame(frame); frame = 0; last = 0; draw();
-    if (!document.hidden && !motion.matches && !root.classList.contains('sf-entry-skip-animation') && !root.classList.contains('sf-entry-success')) frame = requestAnimationFrame(tick);
+    if (!document.hidden && !motion.matches && !root.classList.contains('sf-entry-skip-animation')) frame = requestAnimationFrame(tick);
   }
   const resizeObserver = new ResizeObserver(resize);
   resizeObserver.observe(canvas);
   const observer = new MutationObserver(() => {
     if (!root.isConnected || root.classList.contains('sf-entry-out')) dispose();
-    else if (root.classList.contains('sf-entry-skip-animation') || root.classList.contains('sf-entry-success') || !frame) restart();
+    else if (root.classList.contains('sf-entry-skip-animation') || !frame) restart();
   });
   observer.observe(root, {attributes:true, attributeFilter:['class']});
   observer.observe(root.parentNode, {childList:true});
