@@ -83,7 +83,6 @@
   const rows=[...base(),...autoPlanPreview].filter(active),dates=autoPlanningDates(),out=[],S=window.SFSolidPlanningCore;
   if(revision)out.push(...check(autoPlanPreview,autoPlanPreview.filter(a=>a.rhythmOverride),dates));
   if(prepared()?.needsReplan)out.push('Ein gespeicherter Dienst wurde geändert. Bitte die Vorplanung vor der Übernahme neu berechnen.');
-  if(prepared()?.solid&&prepared().criticalOpen)out.push('Verbindliche Pflichtbesetzung: noch '+prepared().criticalOpen+' Positionen offen.');
   for(const e of employees.filter(e=>e.status==='active'&&!e.deletedAt)){
    if(revision&&policy()?.enabled)out.push(...(S?.errors(e,automaticRows(rows),policy(),dates)||[]).map(v=>label(e)+': '+v.message));
    const rule=window.SFRhythm?.config(e);if(!rule||rule.mode!=='required')continue;

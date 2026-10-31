@@ -114,6 +114,21 @@ test('concurrent planning changes cannot be approved by a staffing exception res
  await c.applyAutoPlanPreview();assert.equal(c.saves,undefined);assert.match(c.toast.copy,/neu berechnen/);
 });
 
+test('open monthly positions require a scoped explicit confirmation and use the incomplete-draft RPC',async()=>{
+ const {c,run}=harness();c.SFCompliance={policy:{solidPlanningRules:{}},isWeekPublished:()=>false};await c.SFMonthOptimizer.optimize();const prepared=c.SFMonthOptimizer.getResult();run('autoPlanPreview.pop()');prepared.fingerprint='current';
+ prepared.autonomousAssurance={canApply:false,open:1,critical:0,errors:0,spread:0,maximumShift:8,currentData:true};
+ await c.applyAutoPlanPreview();assert.equal(c.saves,undefined);assert.match(c.toast.copy,/ausdrücklich bestätigt/);
+ c.SFAutoPlanWorkspace.consumeIncompleteConfirmation=()=>({count:1,phrase:'OFFEN ÜBERNEHMEN'});let rpc;
+ Object.assign(c.SFBackend,{ready:true,empDb:new Map([['a','db-a'],['b','db-b']]),asgDb:new Map(c.assignments.map(a=>[a.id,'db-'+a.id])),hydrate:async()=>{}});
+ c.SFBackend.client={rpc:async(name,args)=>{rpc={name,args};return{data:{created:args.p_assignments.length}};}};
+ await c.applyAutoPlanPreview();assert.ok(rpc,c.toast?.copy);assert.equal(rpc.name,'apply_confirmed_incomplete_draft');assert.equal(rpc.args.p_confirmation,'OFFEN ÜBERNEHMEN');assert.equal(rpc.args.p_open_positions,1);assert.equal(rpc.args.p_first_month,'2026-12-01');assert.equal(rpc.args.p_mode,'month');assert.equal(rpc.args.p_month,undefined);
+});
+test('incomplete-draft adoption cannot override unavailable review, stale data or unrelated server errors',async()=>{
+ const {c}=harness();await c.SFMonthOptimizer.optimize();const prepared=c.SFMonthOptimizer.getResult();let confirmed=0;c.SFAutoPlanWorkspace.confirmApply=async()=>{confirmed++;return true;};
+ for(const extra of [{reviewUnavailable:true},{currentData:false},{errors:1},{spread:16}]){prepared.autonomousAssurance={canApply:false,open:1,critical:0,errors:0,spread:0,maximumShift:8,...extra};await c.applyAutoPlanPreview();}
+ assert.equal(confirmed,0);assert.equal(c.saves,undefined);
+});
+
 test('optimized bulk apply transmits manual rhythm exceptions and retains them after hydration',async()=>{
  const {c,run}=harness();c.SFCompliance={policy:{solidPlanningRules:{}},isWeekPublished:()=>false};await c.SFMonthOptimizer.optimize();const prepared=c.SFMonthOptimizer.getResult(),a=run('autoPlanPreview[0]');
  Object.assign(c.SFBackend,{ready:true,role:'PLANNER',empDb:new Map([['a','db-a'],['b','db-b']]),asgDb:new Map(c.assignments.map(x=>[x.id,'db-'+x.id]))});c.SFPlanningRuleSettings={context:()=>({})};c.SFCompliance={policy:{solidPlanningRules:{}},isWeekPublished:()=>false};

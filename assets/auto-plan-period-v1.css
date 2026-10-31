@@ -277,3 +277,13 @@ html[data-sf-theme="light"] #sfAutonomousPlanning input,html[data-sf-theme="ligh
 #sfStaffingExceptionDialog .sf-staffing-dialog-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
 #sfStaffingExceptionDialog [data-close]{flex:none;width:44px;min-width:44px;height:44px;margin:0;padding:0;font-size:24px;line-height:1}
 @media(max-width:650px){#sfStaffingExceptionDialog :is(input,textarea){font-size:16px}.sf-auto-staffing-target{min-height:44px}}
+.sf-auto-confirm-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.sf-auto-confirm-head [data-close]{flex:none;width:44px;min-width:44px;height:44px;margin:0;padding:0;font-size:24px;line-height:1}
+.sf-incomplete-check{display:flex;align-items:flex-start;gap:10px;margin:18px 0;line-height:1.5}
+.sf-incomplete-check input{flex:none;width:20px;height:20px;margin-top:2px}
+.sf-incomplete-text{display:grid;gap:8px;margin:18px 0}
+.sf-incomplete-text input{width:100%;box-sizing:border-box;padding:12px;border:1px solid var(--line,#29445e);border-radius:8px;background:var(--bg,#0b1723);color:var(--text,#edf4fa);font:inherit}
+#sfAutoConfirmDialog .sf-auto-confirm{max-height:90dvh;overflow:auto}
+#sfAutoConfirmDialog footer{flex-wrap:wrap}
+#sfAutoConfirmDialog [data-accept]:disabled{opacity:.5;cursor:not-allowed}
+@media(max-width:650px){.sf-incomplete-text input{font-size:16px}}
