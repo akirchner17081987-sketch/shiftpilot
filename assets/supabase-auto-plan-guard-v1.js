@@ -28,7 +28,8 @@
 
   const intervalCache=new Map();let intervalHits=0,intervalMisses=0;
   const interval=(date,start,end)=>{
-    const zone=window.SFCompliance?.policy?.solidPlanningRules?.enabled?window.SFCompliance.policy.solidPlanningRules.timezone:null,key=JSON.stringify([date,start,end,zone]);
+    const policy=window.SFCompliance?.policy?.solidPlanningRules;if(!policy?.enabled||!window.SFSolidPlanningCore){intervalMisses++;return calculateInterval(date,start,end);}
+    const zone=policy.timezone,key=JSON.stringify([date,start,end,zone]);
     if(intervalCache.has(key)){intervalHits++;const v=intervalCache.get(key);return {start:new Date(v[0]),end:new Date(v[1])};}intervalMisses++;
     const result=calculateInterval(date,start,end);intervalCache.set(key,[+result.start,+result.end]);if(intervalCache.size>4096)intervalCache.delete(intervalCache.keys().next().value);return result;
   };

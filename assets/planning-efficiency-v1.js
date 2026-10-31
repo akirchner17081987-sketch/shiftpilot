@@ -7,9 +7,9 @@ const identity=()=>B().ready&&B().companyId&&roles.includes(B().role)&&!B().comp
 const writable=()=>!!identity()&&!B().accessPermissions?.includes('read_only');
 const stamp=()=>JSON.stringify([identity(),typeof assignments==='undefined'?[]:assignments,typeof employees==='undefined'?[]:employees,typeof absences==='undefined'?[]:absences,typeof TYPES==='undefined'?[]:TYPES,typeof globalSoll==='undefined'?{}:globalSoll,typeof dailySoll==='undefined'?{}:dailySoll,window.SFCompliance?.policy,el('autoPlanMonth')?.value,el('autoPlanPeriod')?.value,window.SFAutonomousPlanning?.getState?.()?.config]);
 const time=()=>window.performance?.now?.()??Date.now(),format=n=>Number(n||0).toLocaleString('de-DE',{maximumFractionDigits:1});
-function record(label,ms,counts={}){if(!identity())return;records.unshift({label,ms:Math.max(0,Number(ms)||0),requests:Number(counts.requests)||0,hits:Number(counts.hits)||0,misses:Number(counts.misses)||0});records=records.slice(0,20);}
+function record(label,ms,counts={}){if(!identity()||identity()!==owner)return;records.unshift({label,ms:Math.max(0,Number(ms)||0),requests:Number(counts.requests)||0,hits:Number(counts.hits)||0,misses:Number(counts.misses)||0});records=records.slice(0,20);}
 function dialog(title){
- el('sfPlanningEfficiencyDialog')?.remove();const d=make('dialog');d.id='sfPlanningEfficiencyDialog';d.className='sf-eff-dialog';d.setAttribute('aria-labelledby','sfEfficiencyTitle');
+ el('sfPlanningEfficiencyDialog')?.sfClose?.();el('sfPlanningEfficiencyDialog')?.remove();const d=make('dialog');d.id='sfPlanningEfficiencyDialog';d.className='sf-eff-dialog';d.setAttribute('aria-labelledby','sfEfficiencyTitle');
  const head=make('header'),heading=make('h2',title),x=make('button','×');heading.id='sfEfficiencyTitle';x.type='button';x.setAttribute('aria-label','Planungsfenster schließen');head.append(heading,x);d.append(head);
  const main=make('div');main.className='sf-eff-body';const footer=make('footer'),cancel=make('button','Abbrechen');cancel.type='button';footer.append(cancel);d.append(main,footer);
  let resolve=()=>{};const closed=new Promise(r=>resolve=r),scope=identity();
@@ -19,15 +19,16 @@ function dialog(title){
 function addAction(host,label,fn){const button=make('button',label);button.type='button';button.onclick=fn;host.appendChild(button);return button;}
 function period(){const s=A()?.snapshot();return s?.defaultDates?.length?s.defaultDates:[];}
 function metrics(){
- const m=dialog('Laufzeiten der Planung');m.cancel.textContent='Schließen';m.main.append(make('p','Messungen dieses Browsers und Unternehmens. Die beobachtete Serverwartezeit enthält Warten und den Abstand bis zur nächsten Statusmeldung. Es werden keine Personendaten oder Messwerte versendet.'));
+ if(saving||!identity()||identity()!==owner)return;const m=dialog('Laufzeiten der Planung');m.cancel.textContent='Schließen';m.main.append(make('p','Messungen dieses Browsers und Unternehmens. Die beobachtete Serverwartezeit enthält Warten und den Abstand bis zur nächsten Statusmeldung. Es werden keine Personendaten oder Messwerte versendet.'));
  if(!records.length)m.main.append(make('p','Noch keine Messung vorhanden. Starte eine Machbarkeits- oder Ersatzprüfung.'));
  for(const r of records){const row=make('p',r.label+': '+format(r.ms)+' ms'+(r.requests?' · '+r.requests+' Kandidatenabfragen · '+r.hits+' wiederverwendet':''));m.main.appendChild(row);}
  const stats=window.SFAutoPlanGuard?.getTimingStats?.();if(stats)m.main.append(make('p','Zeitintervalle im Browser: '+stats.intervalHits+' wiederverwendet, '+stats.intervalMisses+' berechnet. Der Cache enthält höchstens 4.096 reine Zeitintervalle.'));
 }
 async function preflight(dates=period(),options={}){
- if(!identity()||!A()||!Core)return false;const m=dialog(options.beforeRun?'Vorprüfung vor dem Planungslauf':'Machbarkeit prüfen'),scope=identity();m.main.append(make('p','Bedarf, verfügbare Personen und Planungsregeln werden geprüft …'));let basis;
+ if(saving||!identity()||!A()||!Core)return false;const m=dialog(options.beforeRun?'Vorprüfung vor dem Planungslauf':'Machbarkeit prüfen'),scope=identity();m.main.append(make('p','Bedarf, verfügbare Personen und Planungsregeln werden geprüft …'));let basis;
  try{
   await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+  if(scope!==identity()||!m.d.isConnected)return false;
   let protectedIds=null;
   if(options.beforeRun&&sessionStorage.getItem('sf_demo_session_v1')!=='active'){
    if(B().syncing)throw Error('Eine Speicherung läuft. Bitte anschließend erneut starten.');
@@ -50,7 +51,7 @@ async function preflight(dates=period(),options={}){
  return m.closed;
 }
 function repair(){
- if(!identity()||!A())return;const s=A().snapshot();if(s.loading||s.error)return;const dates=period();if(!dates.length)return;
+ if(saving||!identity()||!A())return;const s=A().snapshot();if(s.loading||s.error)return;const dates=period();if(!dates.length)return;
  const m=dialog('Ausfall gezielt nachplanen'),form=make('form'),personLabel=make('label','Betroffene Person'),person=make('select');person.id='sfRepairEmployee';
  for(const e of s.employees.filter(e=>!e.deletedAt&&s.assignments.some(a=>String(a.employeeId)===String(e.id)))){const option=make('option',[e.first,e.last].filter(Boolean).join(' '));option.value=e.id;person.appendChild(option);}personLabel.appendChild(person);
  const fromLabel=make('label','Von'),from=make('input'),toLabel=make('label','Bis'),to=make('input');from.type=to.type='date';from.id='sfRepairFrom';to.id='sfRepairTo';from.value=dates[0];to.value=dates.at(-1);fromLabel.append(from);toLabel.append(to);form.append(personLabel,fromLabel,toLabel);m.main.append(form,make('p','Die Vorschau ersetzt nur Dienste dieser Person an den ausgewählten Tagen. Andere Dienste bleiben erhalten. Für veröffentlichte Dienste wird der Störfallablauf angeboten. Eine Abwesenheit wird nicht automatisch erfasst.'));
@@ -84,6 +85,6 @@ function tick(){
  if(!next)return;decorate();
  for(const run of window.SFAutonomousPlanning?.getState?.()?.runs||[]){if(['QUEUED','PREPARING','CALCULATING','ASSESS_QUEUED','ASSESSING'].includes(run.status)){if(!running.has(run.id))running.set(run.id,time());}else if(running.has(run.id)){record('Serverlauf beobachtet (inkl. Wartezeit)',time()-running.get(run.id));running.delete(run.id);}if(running.size>20)running.delete(running.keys().next().value);}
 }
-window.SFPlanningEfficiency={preflight,repair,lockDialog,record,getMetrics:()=>identity()?records.slice():[],beforeRun:(month)=>{if(!writable()){window.showSaveToast?.('Nur Leserechte','Ein Planungslauf benötigt schreibende Planungsrechte.');return false;}const count=Math.max(1,Math.min(12,Number(window.SFAutonomousPlanning?.getState?.()?.config?.month_count)||1)),dates=window.SFPlanningWorkflows.months(month,count).flatMap(window.SFPlanningWorkflows.datesFor);return preflight(dates,{beforeRun:true});}};
+window.SFPlanningEfficiency={preflight,repair,lockDialog,record,getMetrics:()=>identity()&&identity()===owner?records.slice():[],beforeRun:(month)=>{if(!writable()){window.showSaveToast?.('Nur Leserechte','Ein Planungslauf benötigt schreibende Planungsrechte.');return false;}const count=Math.max(1,Math.min(12,Number(window.SFAutonomousPlanning?.getState?.()?.config?.month_count)||1)),dates=window.SFPlanningWorkflows.months(month,count).flatMap(window.SFPlanningWorkflows.datesFor);return preflight(dates,{beforeRun:true});}};
 setInterval(tick,700);document.addEventListener('sf:schedule-period-changed',()=>{if(!saving)el('sfPlanningEfficiencyDialog')?.sfClose?.();});
 })();
