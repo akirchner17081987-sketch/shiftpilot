@@ -20,6 +20,18 @@ async function openRuleSection(page,key){
 }
 async function previewEditor(page){await page.addScriptTag({content:read('assets/auto-plan-preview-editor-v1.js')});await page.evaluate(()=>renderAutoPlanning());}
 async function completeApply(page){await expect(page.locator('#sfAutoApplyTitle')).toHaveText('Entwurf übernommen');await page.locator('.sf-auto-apply [data-close]').click();}
+test('planner changes a short staffed day through the server only after a successful save',async({page})=>{
+ await fixture(page);await page.addScriptTag({content:read('assets/shift-models-v1.js')});
+ await page.evaluate(()=>{
+  SFShiftModels.apply([{code:'FD',active:true,default_start:'06:00',default_end:'14:00'}],SFBackend.companyId);globalSoll={FD:3};getSoll=(d,t)=>SFShiftModels.requiredSoll(d,t,d==='2026-12-01'?3:0);
+  SFCompliance.policy.solidPlanningRules={timezone:'Europe/Paris'};SFBackend.ready=true;SFBackend.role='PLANNER';window.__staffingFail=true;window.__staffingCalls=0;
+  SFBackend.client={rpc:async(name,p)=>{if(name!=='set_planning_staffing_exception')throw Error(name);__staffingCalls++;if(__staffingFail)return{error:{message:'Speicherung fehlgeschlagen'}};return{data:{rules:{staffingExceptions:{[p.p_date]:{[p.p_code]:{required:p.p_required,reason:p.p_reason}}}},daily:[{date:p.p_date,code:p.p_code,required:p.p_required}],oldFingerprint:null,newFingerprint:null}};}};
+  autoPlanPreview=[{id:'a',employeeId:'test',type:'FD',date:'2026-12-01',start:'06:00',end:'14:00'}];autoPlanAnalyzed=true;autoPlanApplied=0;
+ });await previewEditor(page);const cell=page.locator('[data-staffing-shift="FD"] td').first();await cell.locator('.sf-auto-staffing-target').click();
+ await page.getByLabel('SOLL für diesen Tag',{exact:true}).fill('1');await page.getByLabel('Begründung der Besetzungsausnahme').fill('Reduzierte Besetzung abgestimmt');await page.getByRole('button',{name:'Nur für diesen Tag speichern',exact:true}).click();
+ await expect(page.locator('#sfStaffingExceptionDialog [data-error]')).toContainText('Speicherung fehlgeschlagen');await expect(cell).toContainText('SOLL 3');
+ await page.evaluate(()=>__staffingFail=false);await page.getByRole('button',{name:'Nur für diesen Tag speichern',exact:true}).click();await expect(page.locator('#sfStaffingExceptionDialog')).toHaveCount(0);await expect(cell).toContainText('SOLL 1');expect(await page.evaluate(()=>SFCompliance.policy.solidPlanningRules.timezone)).toBe('Europe/Paris');expect(await page.evaluate(()=>__staffingCalls)).toBe(2);
+});
 for(const theme of ['dark','light'])test('planner changes a short staffed day target, preserves other days and restores it in '+theme,async({page})=>{
  await fixture(page,theme);await page.addScriptTag({content:read('assets/shift-models-v1.js')});
  await page.evaluate(()=>{

@@ -204,7 +204,7 @@
      reply={rules:next,daily,oldFingerprint:prepared?.fingerprint??null,newFingerprint:prepared?.fingerprint??null};
     }
     if(B.companyId!==company){saving=false;close();return;}
-    window.SFCompliance.policy.solidPlanningRules=reply.rules;
+    window.SFCompliance.policy.solidPlanningRules={...reply.rules,timezone:rules.timezone||B.companyTimeZone||'Europe/Berlin'};if(B.ready)B.planningRulesBaseline=reply.rules;
     for(const row of reply.daily||[]){dailySoll[row.date]??={};if(row.required===null)delete dailySoll[row.date][row.code];else dailySoll[row.date][row.code]=row.required;}
     if(!B.ready)saveAll();saving=false;close();optimizer()?.staffingChanged?.(reply,prepared);if(!prepared){const previous=autoPlanUnresolved;autoPlanUnresolved=withRows([...base(),...autoPlanPreview],()=>autoOpenSlots().map(slot=>({...slot,reason:previous.find(s=>s.date===slot.date&&s.type===slot.type)?.reason||'Offene Besetzung nach bestätigter Tagesvorgabe.'})));}renderAutoPlanning();
     showSaveToast('Tagesbesetzung gespeichert',reset?'Die reguläre Besetzung gilt wieder.':'Die bestätigte SOLL-Ausnahme gilt nur am '+date+'.');
