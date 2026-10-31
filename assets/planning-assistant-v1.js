@@ -435,7 +435,7 @@
     syncScope();if(!authorized()||busy())return;
     if(action.candidateImpact){previewVacancyCandidate(action);return;}
     if(action.learning){close();window.SFPlanningLearning?.open();return;}
-    if(action.question){submit(action.question);return;}
+    if(action.question){submit(action.question,action.analysisRequest);return;}
     if(!action.help&&!['schedule','employees','settings','auto','reports','absence'].includes(action.view))return;
     if(action.employeeId&&!snapshot().employees.some(e=>!e.deletedAt&&String(e.id)===String(action.employeeId)))return;
     close();
@@ -603,7 +603,7 @@
     article.appendChild(node('small',message.user?'Du':'Planungsassistent','sf-chat-author'));
     if(message.user)article.appendChild(node('p',message.text));
     else{
-      const a=message.answer;article.appendChild(node('h3',a.title));article.appendChild(node('p',a.text));if(a.interpretation)article.appendChild(node('p',a.interpretation,'sf-chat-basis-warning')); 
+      const a=message.answer;article.appendChild(node('h3',a.title));article.appendChild(node('p',a.text));if(a.interpretation)article.appendChild(node('p',a.interpretation,'sf-chat-basis-warning'));
       if(a.clarification?.length){const choices=node('div',undefined,'sf-chat-clarification');choices.setAttribute('role','group');choices.setAttribute('aria-label','Rückfrage beantworten');for(const choice of a.clarification){const button=node('button',choice.label);button.type='button';button.onclick=async()=>{const owner=identity(),generation=requestId;button.disabled=true;if(choice.learning)await recordVocabularyChoice(choice.learning);if(identity()===owner&&generation===requestId)await submit(choice.question);button.disabled=false;};choices.appendChild(button);}article.appendChild(choices);}
       if(a.basis){const b=a.basis,details=node('details',undefined,'sf-chat-basis');details.open=!!b.warnings?.length;details.appendChild(node('summary','Prüfgrundlage · '+b.company+' · '+b.from+' bis '+b.to));const fields=node('dl');for(const [label,value] of [['Planstatus',b.planStatus],['Datenumfang',b.scope],['Letzter Abruf',Report?Report.dateTime(b.readAt,b.timezone):b.readAt||'Nicht bestätigt'],['Prüfung erstellt',Report?Report.dateTime(b.checkedAt,b.timezone):b.checkedAt],['Vollständigkeit',b.completeness]]){const row=node('div');row.append(node('dt',label),node('dd',value));fields.appendChild(row);}details.appendChild(fields);for(const warning of b.warnings||[])details.appendChild(node('p',warning,'sf-chat-basis-warning'));article.appendChild(details);}
       if(a.taskPlan)renderTaskPlan(a.taskPlan,article);
@@ -630,6 +630,7 @@
             if(action){const button=node('button',action.label,'sf-chat-row-action');button.type='button';button.onclick=()=>openAction(action);card.appendChild(button);}
             const secondary=a.rowSecondaryActions?.[i];
             if(secondary){const button=node('button',secondary.label,'sf-chat-row-action');button.type='button';button.dataset.sfSensitive='';button.onclick=()=>openAction(secondary);card.appendChild(button);}
+            for(const alternative of a.rowAlternativeActions?.[i]||[]){const button=node('button',alternative.label,'sf-chat-row-action');button.type='button';button.onclick=()=>openAction(alternative);card.appendChild(button);}
             list.appendChild(card);
           }
           shown=end;count.textContent=`${shown} von ${a.rows.length} Einträgen`;more.hidden=shown>=a.rows.length;more.textContent=`Weitere Einträge anzeigen (${a.rows.length-shown})`;

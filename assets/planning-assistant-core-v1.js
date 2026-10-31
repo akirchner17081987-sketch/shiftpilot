@@ -263,7 +263,8 @@
     return response('Offene Stellen · '+periodLabel(dates),(all.some(x=>x.soll)?'':'Für diesen Zeitraum ist kein SOLL-Bedarf hinterlegt. Bitte die Bedarfseinstellungen prüfen. ')+total+' offene Positionen in '+rows.length+' Diensten. Heute und die nächsten drei Tage stehen zuerst; vergangene Lücken stehen am Ende. Wähle einen Dienst, um aktuell geeignete Mitarbeiter zu prüfen.',{
       columns:['Priorität','Tag','Schicht','SOLL','IST','Offen'],
       rows:rows.map(x=>[['Heute','Nächste 3 Tage','Später','Vergangen'][priority(x.date)],formatDate(x.date),x.label||x.type,String(x.soll),String(x.ist),String(x.missing)]),
-      rowActions:rows.map(x=>({question:'Ersatz für '+x.type+' am '+x.date,label:'Mitarbeiter vorschlagen'})),
+      rowActions:rows.map(x=>({question:'Ersatz für '+x.type+' am '+x.date,analysisRequest:{vacancyDates:dates},label:'Mitarbeiter vorschlagen'})),
+      rowAlternativeActions:rows.map(x=>(s.coverageInfo?.(x.date,x.type)?.alternatives||[]).filter(code=>code!==x.type&&s.shifts.some(t=>t.id===code)).map(code=>({question:'Ersatz für '+code+' am '+x.date,analysisRequest:{vacancyDates:dates},label:'Mitarbeiter für '+code+' vorschlagen'}))),
       rowSecondaryActions:rows.map(x=>({view:'schedule',date:x.date,type:x.type,label:'Dienst öffnen'})),
       notes:['Vorschläge prüfen immer einen einzelnen Dienst. Nach jeder Einplanung werden Verfügbarkeit und offene Stellen erneut berechnet. Gemeinsame Besetzungen werden einmal gezählt.'],context:{intent:'vacancies',dates,type,pending:false}});
   }
@@ -282,7 +283,7 @@
     const target=Number(s.monthTarget(e))||0;
     return {duty,employee:name(e),fit:checked.fit||['Freigabe '+type,'Aktuelle Planungsregeln erfüllt'],dates:scope,
       openBefore:before.reduce((n,x)=>n+x.missing,0),openAfter:after.reduce((n,x)=>n+x.missing,0),
-      staffingBefore:group.ist,staffingAfter:group.ist+1,target:group.soll,month,monthBefore,monthAfter:monthBefore+added,monthTarget:target,added,
+      staffingBefore:group.ist,staffingAfter:after.find(x=>x.date===date&&x.type===group.type)?.ist??group.ist+1,target:group.soll,month,monthBefore,monthAfter:monthBefore+added,monthTarget:target,added,
       published:!!s.isPublished?.(date)};
   }
 
@@ -593,7 +594,7 @@
           const limits=[c.target>0&&week>c.target+0.05?'über Wochen-SOLL':'',c.monthTarget>0&&month>c.monthTarget+0.05?'über Monats-SOLL':''].filter(Boolean);
           return[name(c.e),reasons.join('; ')+(limits.length?'. Hinweis: '+limits.join(' und '):''),hours(week)+' / '+(c.target>0?hours(c.target):'nicht hinterlegt')+' Std.',hours(month)+' / '+(c.monthTarget>0?hours(c.monthTarget):'nicht hinterlegt')+' Std.'+(c.monthTarget>0?' ('+(month>=c.monthTarget?'+':'')+hours(month-c.monthTarget)+' Std.)':''),next?formatDate(next.date)+' · '+next.type:'Kein späterer Dienst gespeichert'];
         }),rowActions:result.candidates.map(c=>({view:'employees',employeeId:c.e.id,label:'Profil öffnen'})),
-        rowSecondaryActions:result.candidates.map(c=>({candidateImpact:true,employeeId:c.e.id,date:dates[0],type,dates:(s.defaultDates||dates).includes(dates[0])?s.defaultDates:dates,label:'Auswirkung prüfen'})),
+        rowSecondaryActions:result.candidates.map(c=>({candidateImpact:true,employeeId:c.e.id,date:dates[0],type,dates:s.analysisRequest?.vacancyDates||((s.defaultDates||dates).includes(dates[0])?s.defaultDates:dates),label:'Auswirkung prüfen'})),
         notes:result.candidates.length?['Stundenwerte zeigen den Stand nach einem zusätzlichen Einsatz, ohne Pausenabzug. Geplante Werte sind keine bestätigten Überstunden.','Die Rangfolge folgt der aktuellen Auto-Planung. Angezeigt werden gespeicherte Folgedienste; eine gemeinsame Besetzung mehrerer Dienste muss erneut geprüft werden.']:result.reasons.map(r=>r.count+' Mitarbeiter: '+r.label),actions:[{view:'schedule',date:dates[0],type,label:'Dienst im Plan prüfen'}],context});
     }
     if(['open','coverage','diagnosis','overstaffed'].includes(intent)){

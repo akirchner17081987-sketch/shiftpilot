@@ -9,8 +9,8 @@ test('central overview ranks today and near dates first and keeps overdue holes 
  assert.equal(r.context.intent,'vacancies');assert.match(r.text,/13 offene Positionen/);assert.deepEqual(r.rows.map(x=>x[0]),['Heute','Nächste 3 Tage','Nächste 3 Tage','Nächste 3 Tage','Später','Später','Vergangen']);assert.equal(r.rowActions[0].question,'Ersatz für FD am 2026-12-02');assert.equal(r.rowSecondaryActions[0].date,'2026-12-02');assert.ok(r.basis);assert.equal(JSON.stringify(s),before);
 });
 test('shared coverage appears once, daily zero targets remove holes and optional coverage is excluded',()=>{
- const s=fixture();s.shifts=[{id:'TL-LE'},{id:'TL-RE'},{id:'QA'}];s.getSoll=()=>0;s.coverageInfo=(date,type)=>type.startsWith('TL')?{representative:'TL-LE',members:[{id:'TL-LE'},{id:'TL-RE'}],label:'TL LE/RE',target:date==='2026-12-02'?2:0,filled:1}:null;
- const r=Core.vacancyOverview(s,s.defaultDates);assert.equal(r.rows.length,1);assert.deepEqual(r.rows[0].slice(2),['TL LE/RE','2','1','1']);assert.equal(r.rowActions[0].question,'Ersatz für TL-LE am 2026-12-02');
+ const s=fixture();s.shifts=[{id:'TL-LE'},{id:'TL-RE'},{id:'QA'}];s.getSoll=()=>0;s.coverageInfo=(date,type)=>type.startsWith('TL')?{representative:'TL-LE',members:[{id:'TL-LE'},{id:'TL-RE'}],label:'TL LE/RE',alternatives:['TL-LE','TL-RE'],target:date==='2026-12-02'?2:0,filled:1}:null;
+ const r=Core.vacancyOverview(s,s.defaultDates);assert.equal(r.rows.length,1);assert.deepEqual(r.rows[0].slice(2),['TL LE/RE','2','1','1']);assert.equal(r.rowActions[0].question,'Ersatz für TL-LE am 2026-12-02');assert.equal(r.rowAlternativeActions[0][0].question,'Ersatz für TL-RE am 2026-12-02');
  s.coverageInfo=()=>null;assert.equal(Core.vacancyOverview(s,s.defaultDates).rows.length,0);
 });
 test('candidate impact projects actual hours and coverage without changing SOLL or duties',()=>{
