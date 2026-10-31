@@ -55,3 +55,16 @@ test('changed closed absences are blocked and a company refresh resets time base
  f.context.absences[0].note='';await f.B.sync();assert.equal(f.B.lastSyncError,null);
  f.context.timeEntries.dec={actualStart:'06:00',actualEnd:'14:00',status:'open'};await f.B.hydrate();await f.B.sync();assert.equal(f.writes.filter(x=>x.table==='time_entries').length,0,'Hydrated time rows are a fresh baseline');
 });
+
+test('schedule markers include only future active open-position offers, without counting claims twice',()=>{
+ const rows=[{kind:'OPEN_POSITION',is_claim:false,status:'MARKET_OPEN',shift_code:'ND',starts_at:'2027-01-01T23:30:00Z',remaining_count:2}];
+ const api=module(),now=Date.parse('2026-12-01T00:00Z');
+ for(const status of ['FILLED','CANCELLED','SUPERSEDED','APPLIED'])rows.push({...rows[0],status});
+ rows.push({...rows[0],is_claim:true,status:'PENDING_MANAGER'},{...rows[0],kind:'SWAP'},{...rows[0],remaining_count:0},{...rows[0],starts_at:'2026-01-01T00:00Z'});
+ const before=JSON.stringify(rows);assert.deepEqual(JSON.parse(JSON.stringify(api.activeOffers(rows,'Europe/Berlin',now))),[{date:'2027-01-02',type:'ND',count:2}]);assert.equal(JSON.stringify(rows),before);
+});
+test('duplicate offer rows never double displayed counts and malformed dates stay hidden',()=>{
+ const offer={kind:'OPEN_POSITION',is_claim:false,status:'MARKET_OPEN',shift_code:'FD',starts_at:'2027-01-01T06:00:00Z',remaining_count:3};
+ const active=module().activeOffers([offer,{...offer,remaining_count:2},{...offer,starts_at:'invalid'}],'Europe/Berlin',Date.parse('2026-12-01T00:00Z'));
+ assert.equal(active.length,1);assert.equal(active[0].count,3);
+});

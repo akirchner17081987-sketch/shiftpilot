@@ -19,3 +19,13 @@
 [data-sf-theme="light"] .sf-open-market-option input[data-count]{background:#fff;color:#172b42;border-color:#bac9d8}
 @media(max-width:720px){.sf-open-market-entry{align-items:stretch;flex-direction:column}.sf-open-market-confirm header,.sf-open-market-confirm main,.sf-open-market-confirm footer{padding:14px}.sf-open-market-confirm footer{flex-wrap:wrap}.sf-open-market-confirm footer button{flex:1}}
 
+/* A labelled state, distinct from yellow vacancies and green staffed duties. */
+.sf-shift-market-badge{display:block;box-sizing:border-box;width:fit-content;max-width:100%;margin:7px 0 3px;padding:5px 8px;border:1px solid #ad91f5;border-radius:7px;background:#342553;color:#eee5ff;font-size:11px;font-weight:700;line-height:1.4;white-space:normal;overflow-wrap:anywhere}
+.sf-in-shift-market{box-shadow:inset 0 0 0 2px #ad91f580}
+.sf-auto-staffing-cell>.sf-shift-market-badge{font-size:10px;margin:5px auto;max-width:108px}.sf-month-day>.sf-shift-market-badge{font-size:10px;padding:4px 5px}
+#sfMarketScheduleEntry{padding:16px 18px;border:1px solid var(--line,#29465d);border-left:4px solid #ad91f5;border-radius:12px;background:var(--panel,#112033);margin:12px 0 18px}#sfMarketScheduleEntry p{margin:7px 0;font-size:13px}#sfMarketScheduleEntry small{color:var(--muted,#a6b9cc)}
+.sf-open-market-entry{flex-wrap:wrap}.sf-open-market-entry>div{flex:1 1 260px}.sf-open-market-entry button{max-width:100%;white-space:normal}
+.sf-open-market-confirm header{position:relative;padding-right:72px}.sf-open-market-close{position:absolute;right:14px;top:14px;min-width:44px;min-height:44px;background:transparent;color:inherit;border:1px solid var(--line,#29465d);border-radius:9px;font-size:24px;cursor:pointer}
+.sf-open-market-confirm details{margin:14px 0}.sf-open-market-confirm details summary{cursor:pointer;min-height:32px}.sf-open-market-confirm details li{line-height:1.6}.sf-open-market-confirm main{overflow-wrap:anywhere}
+[data-sf-theme="light"] .sf-shift-market-badge{background:#eee6ff;color:#512389;border-color:#8b5ecb}
+@media print{#sfMarketScheduleEntry{display:none}.sf-shift-market-badge{background:white;color:#512389;border-color:#512389}}
