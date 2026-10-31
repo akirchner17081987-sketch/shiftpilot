@@ -23,3 +23,15 @@ window.SFHelpGuides = {
 };
 
 
+
+// Aktuelle Arbeitsabläufe: Jeder Schritt beschreibt eine bewusst auszuführende Aktion.
+Object.assign(window.SFHelpGuides, {
+  'Wie stelle ich alle offenen Dienste gleichzeitig in den Schichtmarkt?': {
+    image: 'assets/help/planung-menu-20261031.png', alt: 'Aktuelles Planungsmenü mit Dienstplan und Auto-Planung.', actual: true,
+    steps: ['Öffne den Dienstplan oder die Auto-Planung und wähle das gewünschte Unternehmen sowie den Zeitraum.', 'Falls eine Vorplanung vorhanden ist, übernimm sie zuerst als Entwurf oder entferne sie. Prüfe anschließend die offenen Plätze.', 'Wähle „Alle offenen Dienste in den Schichtmarkt“. Prüfe im Bestätigungsfenster Anzahl und Zeitraum; unter „Dienste ansehen“ findest du die einzelnen Dienste.', 'Bestätige das Angebot. Künftig beginnende offene Plätze werden im Schichtmarkt angeboten; der Dienstplan wird dadurch weder veröffentlicht noch besetzt. Anfragen müssen weiterhin freigegeben werden.']
+  },
+  'Wie übernehme ich einen Entwurf mit offenen Positionen?': {
+    image: 'assets/help/planung-menu-20261031.png', alt: 'Aktuelles Planungsmenü mit dem Zugang zur Auto-Planung.', actual: true,
+    steps: ['Prüfe die Vorschau der Auto-Planung und die noch offenen Positionen.', 'Wähle „Als Entwurf übernehmen“ und prüfe die Hinweise im Bestätigungsfenster.', 'Setze das Bestätigungshäkchen und gib genau „OFFEN ÜBERNEHMEN“ ein. Bestätige anschließend die Übernahme.', 'Die offenen Stellen und der SOLL-Bedarf bleiben bestehen und können später besetzt werden. Der Dienstplan ist als Entwurf gespeichert und wird erst gesondert veröffentlicht.']
+  }
+});

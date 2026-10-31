@@ -19,7 +19,7 @@ test('all audited features resolve to existing help and implementation sources',
  const assetSources=manifest.moduleInventory.filter(x=>x.source.startsWith('assets/')&&x.source.endsWith('.js')).map(x=>x.source);assert.equal(new Set(assetSources).size,assetSources.length);assert.deepEqual([...assetSources].sort(),fs.readdirSync(new URL('../assets/',import.meta.url)).filter(f=>f.endsWith('.js')).map(f=>'assets/'+f).sort());
  assert.deepEqual(manifest.categoryCoverage.map(x=>({id:x.id,name:x.name,questions:x.questions})),JSON.parse(JSON.stringify(h.categories.map(([id,name])=>({id,name,questions:h.articles[id].map(a=>a[0])})))));
  for(const row of manifest.moduleInventory){assert.ok(ids.includes(row.category));assert.ok(read(row.source));}
- for(const [q,guide] of Object.entries(g)){assert.ok(questions.includes(q));assert.ok(read(guide.image).includes('<svg'));assert.ok(guide.steps.length&&guide.alt);}
+ for(const [q,guide] of Object.entries(g)){assert.ok(questions.includes(q));assert.ok(fs.existsSync(new URL('../'+guide.image,import.meta.url)));assert.ok(guide.steps.length&&guide.alt);}
 });
 test('production help renderer displays each category and finds every added article',()=>{
  const c=content(),nodes=new Map(),listeners={};function node(id){if(!nodes.has(id))nodes.set(id,{value:'',innerHTML:'',textContent:'',hidden:true,addEventListener(type,fn){this[type]=fn;},setAttribute(){},focus(){}});return nodes.get(id);}
