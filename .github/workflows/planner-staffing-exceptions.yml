@@ -38,7 +38,7 @@ jobs:
       - run: npm ci
       - run: node --test tests/planner-staffing-exceptions.test.cjs tests/solid-planning.test.cjs tests/ot-weekend-staffing.test.cjs tests/shift-models.test.mjs tests/autonomous-planning.test.cjs tests/auto-plan-workspace.test.mjs tests/month-optimizer.test.mjs
       - run: npx playwright install chromium ffmpeg
-      - run: npx playwright test tests/e2e/auto-plan-workspace.spec.cjs --grep 'planner changes a short staffed day' --retries=0
+      - run: npx playwright test tests/e2e/auto-plan-workspace.spec.cjs --grep 'planner changes a short staffed day|orange.*vacancy' --retries=0
       - uses: actions/upload-artifact@v4
         if: always()
         with:
