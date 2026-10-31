@@ -3,6 +3,12 @@
   const B = (window.SFBackend = window.SFBackend || {}),
     MANAGER = new Set(["OWNER", "ADMIN", "DISPATCHER", "PLANNER"]);
   let employeeFilters={scope:'',date:'',site:'',only:false};
+  let openOfferSnapshot=null,managerReload=false;
+  const managerIdentity=()=>JSON.stringify([B.companyId,B.user?.id||'',B.role]);
+  function announceOpenOffers(data,error=''){
+    openOfferSnapshot={identity:managerIdentity(),companyId:B.companyId,offers:data||[],error,readAt:Date.now()};
+    document.dispatchEvent(new CustomEvent('sf:open-market-updated'));
+  }
   let rows = [],
     employeeBusy = false,
     managerBusy = false,
@@ -276,21 +282,26 @@
     if (error?.message) card.title = String(error.message);
   }
   async function managerLoad() {
-    if (!MANAGER.has(B.role) || !B.companyId || managerBusy) return;
+    if (!MANAGER.has(B.role) || !B.companyId) return;
+    if(managerBusy){managerReload=true;return;}
     managerBusy = true;
     managerError = "";
+    const companyId = B.companyId,owner=managerIdentity();
     try {
-      const companyId = B.companyId;
       const [legacy, open] = await Promise.all([rpc("manager_list_shift_marketplace", {p_company_id:companyId}), window.__sfDemoCloudAdapterV2 ? Promise.resolve([]) : rpc("manager_list_open_shift_market", {p_company_id:companyId})]);
-      if (B.companyId !== companyId) return;
+      if (B.companyId !== companyId||owner!==managerIdentity()) return;
       rows = [...(legacy || []), ...(open || [])];
+      announceOpenOffers(open);
       renderManager();
     } catch (e) {
+      if(owner!==managerIdentity())return;
       managerError = e?.message || "Daten konnten nicht geladen werden.";
+      announceOpenOffers([],managerError);
       console.warn("Marktplatz", e);
       renderDashboard();
     } finally {
       managerBusy = false;
+      if(managerReload){managerReload=false;setTimeout(managerLoad,0);}
     }
   }
   function reviewButton(x) {
@@ -478,7 +489,7 @@
       employeeLoad();
     else if (
       MANAGER.has(B.role) &&
-      document.querySelector("#view-overview.active,#view-marketplace.active")
+      document.querySelector("#view-overview.active,#view-marketplace.active,#view-schedule.active,#view-auto.active")
     )
       managerLoad();
   }
@@ -507,7 +518,7 @@
       }, 15000);
     }
   }, 250);
-  window.SFShiftMarketplace = {refreshManager:managerLoad, refreshEmployee:employeeLoad, refreshOfferButtons:addOfferButtons, openDashboard};
+  window.SFShiftMarketplace = {getOpenOfferState:()=>MANAGER.has(B.role)&&openOfferSnapshot?.identity===managerIdentity()?openOfferSnapshot:null,refreshManager:managerLoad, refreshEmployee:employeeLoad, refreshOfferButtons:addOfferButtons, openDashboard};
   document.addEventListener(
     "click",
     (e) => {
@@ -520,6 +531,8 @@
         return;
       }
       if (e.target.closest('[data-view="overview"]'))
+        setTimeout(managerLoad, 100);
+      if (e.target.closest('[data-view="schedule"],[data-view="auto"]'))
         setTimeout(managerLoad, 100);
     },
     true,

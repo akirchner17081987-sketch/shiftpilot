@@ -57,3 +57,26 @@ jobs:
             test-results/marketplace-*.png
             test-results/shift-swap/*.png
 
+
+  verify-live:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/codex/ionos-migration'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify published marketplace controls and schedule markers
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          import {createHash} from 'node:crypto';
+          import {setTimeout as delay} from 'node:timers/promises';
+          const files=['assets/open-shift-marketplace-v1.js','assets/open-shift-marketplace-v1.css','assets/supabase-shift-marketplace-v1.js'];
+          const hash=b=>createHash('sha256').update(b).digest('hex');
+          for(let attempt=0;attempt<110;attempt++){
+            try{for(const file of files){const r=await fetch('https://schichtfunk.de/'+file+'?market_release='+process.env.GITHUB_SHA,{signal:AbortSignal.timeout(15000)});if(!r.ok||hash(Buffer.from(await r.arrayBuffer()))!==hash(readFileSync(file)))throw Error(file+' differs');}console.log('Marketplace controls and schedule markers match release.');break;}
+            catch(error){if(attempt===109)throw error;console.log(error.message);await delay(15000);}
+          }
+          NODE
