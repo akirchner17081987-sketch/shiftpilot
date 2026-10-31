@@ -342,3 +342,21 @@ test('context resolves free services, absences and spare plan hours while neutra
 test('an hour clarification takes precedence over a short only filter',()=>{const s=fixture(),a=Core.answer('Wie viele Stunden hat Anna Plan im Dezember?',s),b=Core.answer('nur die geplanten',s,a.context);assert.equal(b.context.intent,'workload');assert.deepEqual(b.context.employeeIds,['e1']);});
 
 test('conversation follow-ups retain an earlier exclusion instead of expanding the checked period',()=>{const s=fixture(),a=Core.answer('Offene Dienste im Dezember 2026',s),b=Core.answer('Nur ND ohne Wochenende',s,a.context),c=Core.answer('die freien',s,b.context),d=Core.answer('Und im Januar 2027?',s,b.context);assert.equal(c.context.type,'ND');assert.ok(c.context.dates.every(x=>![0,6].includes(new Date(x+'T12:00:00Z').getUTCDay())));assert.equal(d.context.dates[0],'2027-01-01',JSON.stringify(d));assert.ok(d.context.dates.every(x=>![0,6].includes(new Date(x+'T12:00:00Z').getUTCDay())));});
+
+test('current planning questions find the corresponding company help without changing the plan',()=>{
+ const sandbox={window:{}};vm.runInNewContext(read('assets/help-center-content-v3.js'),sandbox);
+ const s=fixture();s.helpArticles=sandbox.window.SFHelpContent.articles;const before=JSON.stringify(s);
+ const cases=[
+  ['Wie kann ich alle offenen Dienste auf einmal in den Schichtmarkt stellen?','Wie stelle ich alle offenen Dienste gleichzeitig in den Schichtmarkt?'],
+  ['Was bedeutet die Kennzeichnung Schichtmarkt?','Was bedeutet „Im Schichtmarkt“ im Dienstplan?'],
+  ['Wie kann ich einen Entwurf mit offenen Stellen übernehmen?','Wie übernehme ich einen Entwurf mit offenen Positionen?'],
+  ['Wie kann ich das SOLL für einen Tag reduzieren?','Wie ändere ich die SOLL-Besetzung nur für einen Tag?'],
+  ['Wie kann ich einen Ausfall nachplanen?','Wie plane ich nur die Dienste eines ausgefallenen Mitarbeiters nach?'],
+  ['Wie kann ich einen Dienst fixieren?','Wie fixiere ich einen bewusst abgestimmten Dienst?'],
+  ['Was prüft die Machbarkeit vor dem Planungslauf?','Was prüft die Machbarkeit vor dem Planungslauf?'],
+  ['Wo sehe ich die Laufzeit der Planung?','Was sehe ich unter Laufzeiten der Planung?']
+ ];
+ for(const [question,title] of cases){const r=Core.answer(question,s);assert.equal(r.title,title,question);assert.ok(r.actions.some(a=>a.help&&a.query===title),question);}
+ assert.equal(JSON.stringify(s),before);
+ const unauthorized=Core.answer(cases[0][0],{...s,authorized:false});assert.match(unauthorized.title,/Anmeldung/);
+});

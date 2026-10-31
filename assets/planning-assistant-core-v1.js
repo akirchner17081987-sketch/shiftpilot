@@ -24,6 +24,14 @@
     return Object.fromEntries(Object.entries(articles).map(([category,items])=>[category,items.map(([question,answer])=>[question,typeof overrides?.[category]?.[question]==='string'?overrides[category][question]:answer])]));
   }
   const currentHelpTopics=[
+    [/(?:alle|gesammelt|gleichzeitig|auf einmal).*(?:offen|unbesetzt).*(?:schichtmarkt|marktplatz)|(?:schichtmarkt|marktplatz).*(?:alle|gesammelt|gleichzeitig|auf einmal).*(?:offen|dienst|platz)/,'marketplace','Wie stelle ich alle offenen Dienste gleichzeitig in den Schichtmarkt?'],
+    [/(?:kennzeichnung|markierung|anzeige|bedeutet).*(?:schichtmarkt|marktplatz)|(?:schichtmarkt|marktplatz).*(?:kennzeichnung|markierung|anzeige|dienstplan)/,'marketplace','Was bedeutet „Im Schichtmarkt“ im Dienstplan?'],
+    [/(?:entwurf|vorschau|plan).*(?:offen|unbesetzt).*(?:uebernehm|uebernimm|speicher)|(?:offen|unbesetzt).*(?:entwurf|vorschau).*(?:uebernehm|uebernimm|speicher)/,'auto','Wie übernehme ich einen Entwurf mit offenen Positionen?'],
+    [/(?:soll|besetzung).*(?:tag|taeglich|tagesbesetzung).*(?:aender|reduzier|anpass)|(?:tag|taeglich|tagesbesetzung).*(?:soll|besetzung).*(?:aender|reduzier|anpass)/,'auto','Wie ändere ich die SOLL-Besetzung nur für einen Tag?'],
+    [/(?:ausfall|ausgefallen|ausgefallene).*(?:nachplan|nachbesetz)|(?:nachplan|nachbesetz).*(?:ausfall|ausgefallen|mitarbeiter)/,'assistant','Wie plane ich nur die Dienste eines ausgefallenen Mitarbeiters nach?'],
+    [/(?:dienst|schicht|planerentscheidung).*(?:fixier|fixierung|entsperr)|(?:fixier|fixierung|entsperr).*(?:dienst|schicht|planerentscheidung)/,'schedule','Wie fixiere ich einen bewusst abgestimmten Dienst?'],
+    [/(?:machbarkeit|vorpruefung).*(?:plan|pruef|lauf)|(?:plan|pruef|lauf).*(?:machbarkeit|vorpruefung)/,'auto','Was prüft die Machbarkeit vor dem Planungslauf?'],
+    [/(?:laufzeit|dauer|messung).*(?:planung|planungslauf)|(?:planung|planungslauf).*(?:laufzeit|dauer|messung)/,'auto','Was sehe ich unter Laufzeiten der Planung?'],
     [/planungsbericht.*(?:pdf|export)|(?:pdf|export).*planungsbericht/,'auto','Wie exportiere ich den Planungsbericht?'],
     [/planungsbericht/,'auto','Wo finde ich den Planungsbericht und die Planungsgründe?'],
     [/empfaenger.*(?:plan|berechnung)|\b(?:wer|wen)\b.*(?:fertigmeldung|abschlussmeldung|benachrichtig)|(?:fertigmeldung|abschlussmeldung).*empfaenger/,'auto','Wer kann die Fertigmeldung der Auto-Planung erhalten?'],
@@ -46,6 +54,7 @@
     return null;
   }
   const questionGroups=[
+    ['Aktuelle Planungshilfen',['Wie plane ich nur die Dienste eines ausgefallenen Mitarbeiters nach?','Wie fixiere ich einen bewusst abgestimmten Dienst?','Was prüft die Machbarkeit vor dem Planungslauf?','Wie übernehme ich einen Entwurf mit offenen Positionen?','Wie stelle ich alle offenen Dienste gleichzeitig in den Schichtmarkt?']],
     ['Planung erleichtern',['Lernpräferenzen verwalten','Planungsprofile verwalten','November mit unserem Standardprofil vorbereiten','Änderungscheck anzeigen','Planvarianten vergleichen']],
     ['Planungsaufträge und Begleitung',['Zielauftrag starten','Meine Planungsaufträge','Setze meinen November-Auftrag fort','Planungsauftrag starten','Bringe die Teamleiter im November möglichst auf ihre Sollstunden. Bereits veröffentlichte Dienste bleiben bestehen.','Hilf mir, diesen Monat fertigzustellen','Mehrmonatsausgleich starten','Nimm die letzte Änderung des Assistenten zurück.']],
     ['Vorausschauen und Änderungen prüfen',['Frühwarnung starten','Welche Dienste sind in den nächsten 28 Tagen besonders anfällig?','Urlaubsfolgen prüfen','Dienstverschiebung prüfen']],
