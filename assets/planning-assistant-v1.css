@@ -186,3 +186,13 @@ body.sf-orbit-manager .sf-planning-chat:not(.sf-chat-docked){bottom:calc(198px +
 @media(max-width:600px){.sf-planning-chat:not(.sf-chat-docked){bottom:calc(max(12px,env(safe-area-inset-bottom)) + 88px);height:min(720px,calc(100dvh - 112px));max-height:calc(100dvh - 112px)}}
 @media(max-width:380px){.sf-chat-launcher{gap:9px;padding:12px!important}.sf-chat-launcher-copy small{font-size:11px}}
 @media print{.sf-chat-launcher,.sf-planning-chat{display:none!important}}
+.sf-vacancy-summary{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:12px 0 18px;padding:16px 20px;border:1px solid var(--line,#33465b);border-left:4px solid #eab35a;border-radius:14px;background:var(--panel,#182334);color:var(--text,#e2e8f0)}
+.sf-vacancy-summary.is-complete{border-left-color:var(--teal,#36cbb7)}
+.sf-vacancy-summary h3{margin:0 0 5px;font-size:17px}.sf-vacancy-summary p{margin:0;color:var(--muted,#a6b7c8);font-size:13px}
+.sf-vacancy-summary button{min-height:44px;white-space:normal;padding:10px 14px;border:1px solid var(--teal,#36cbb7);border-radius:10px;background:var(--panel,#182334);color:var(--text,#e2e8f0);cursor:pointer}
+.sf-vacancy-impact{box-sizing:border-box;max-height:calc(100dvh - 32px);overflow:auto;overflow-wrap:anywhere}
+.sf-vacancy-impact-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.sf-vacancy-impact-head h2{margin:0}.sf-vacancy-close{flex:none;border:1px solid var(--line,#33465b);background:transparent;color:inherit;font-size:22px;line-height:1}
+.sf-vacancy-impact-values{display:grid;gap:12px;margin:20px 0}.sf-vacancy-impact-values>div{padding:10px 12px;border:1px solid var(--line,#33465b);border-radius:10px}.sf-vacancy-impact-values dt{font-size:12px;color:var(--muted,#a6b7c8)}.sf-vacancy-impact-values dd{margin:5px 0 0;font-size:16px;font-weight:650}
+.sf-vacancy-impact button:disabled{opacity:.5;cursor:not-allowed}.sf-vacancy-impact .sf-chat-row-action{background:var(--teal,#36cbb7);color:#062e2a;border:0;font-weight:650}
+@media(max-width:600px){.sf-vacancy-summary{padding:14px}.sf-vacancy-summary>div{width:100%}.sf-vacancy-summary button{width:100%}.sf-vacancy-impact{padding:18px;width:calc(100vw - 24px)}}
+@media print{.sf-vacancy-summary,.sf-vacancy-impact{display:none!important}}

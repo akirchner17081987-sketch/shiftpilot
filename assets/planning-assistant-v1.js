@@ -10,6 +10,7 @@
   let observedOwner=null,observedState=null,pendingChange=null,changeDue=0,changeRevision='',lastObserved=0,changeAcknowledged=false;
   let helpContext=null;
   let activeTask=null,lastAnswerCheck=0,submitting=false,goalOrders=[],goalError='',runningGoal=null;
+  let lastVacancyCheck=0,vacancySummaryKey='',impactWatch=null;
   const withRows=(rows,fn)=>{const original=assignments;try{assignments=rows;return fn()}finally{assignments=original}};
   const signature=()=>JSON.stringify([identity(),window.SFCompliance?.policy,window.SFCompliance?.publications,window.SFPlanningLearning?.signature(),window.SFPlanningTeams?.rules,employees,assignments,absences,TYPES,typeof globalSoll==='undefined'?null:globalSoll,typeof dailySoll==='undefined'?null:dailySoll]);
   const B=()=>window.SFBackend||{};
@@ -19,7 +20,7 @@
   const busy=()=>!!(B().companySwitching||B().bootPromise||B().suppressSync||applyingProposal||refreshingProposal);
   const ownRefresh=()=>!!(refreshingProposal&&refreshingProposal.owner===identity()&&refreshingProposal.request===requestId&&!B().companySwitching&&!B().bootPromise);
   const el=id=>document.getElementById(id);
-  function reset(){el('sfDictionaryDialog')?.remove();runningGoal?.controller.abort();runningGoal=null;goalOrders=[];goalError='';requestId++;context={};messages=[];activeTask=null;selectedMonth='';selectedService=null;planningRuns=[];journalError='';profiles=[];profileError='';protectedAssignmentIds=new Set();el('sfAssignmentImpactPreview')?.remove();el('sfAssignmentImpactButton')?.remove();el('sfPlanningChatLog')?.replaceChildren();toggleQuestionGuide(false);setProgress(false);updateService();}
+  function reset(){el('sfVacancyImpact')?.remove();window.clearInterval?.(impactWatch);vacancySummaryKey='';lastVacancyCheck=0;el('sfVacancySummary')?.remove();el('sfDictionaryDialog')?.remove();runningGoal?.controller.abort();runningGoal=null;goalOrders=[];goalError='';requestId++;context={};messages=[];activeTask=null;selectedMonth='';selectedService=null;planningRuns=[];journalError='';profiles=[];profileError='';protectedAssignmentIds=new Set();el('sfAssignmentImpactPreview')?.remove();el('sfAssignmentImpactButton')?.remove();el('sfPlanningChatLog')?.replaceChildren();toggleQuestionGuide(false);setProgress(false);updateService();}
   function close(restore=true){
     const dialog=el('sfPlanningChat'),docked=dialog?.classList.contains('sf-chat-docked');
     if(dialog?.open)dialog.close();showChangeNotice();
@@ -35,7 +36,7 @@
     if(scope!==next||helpContext!==nextHelp||(busy()&&!ownRefresh())){close(false);reset();scope=next;helpContext=nextHelp;}
     if(selectedService&&!contextDates().includes(selectedService.date)){selectedService=null;context={};updatePeriod();}
     const button=el('sfPlanningAssistantButton');if(button){button.hidden=!authorized();button.disabled=busy();}
-    syncPlacement();bindEditFunction();if(!next)clearChangeNotice();
+    syncPlacement();bindEditFunction();syncVacancySummary();if(!next)clearChangeNotice();
     markStaleAnswers();
     document.querySelectorAll?.('.sf-chat-service-open').forEach(button=>{button.hidden=!authorized();button.disabled=busy();});
   }
@@ -57,6 +58,9 @@
   }
   function contextDates(){
     if(selectedMonth)return Core.parsePeriod(selectedMonth,{today:today(),defaultDates:[today()]}).dates;
+    return visiblePlanDates();
+  }
+  function visiblePlanDates(){
     if(el('view-auto')?.classList.contains('active')&&typeof autoPlanningDates==='function')return autoPlanningDates();
     const p=window.SchichtFunkCalendarView?.getPeriod?.();
     if(p?.start&&p?.end){const result=[];for(let d=new Date(p.start+'T12:00:00Z');d.toISOString().slice(0,10)<=p.end&&result.length<62;d.setUTCDate(d.getUTCDate()+1))result.push(d.toISOString().slice(0,10));return result;}
@@ -94,7 +98,7 @@
       }
       assessments.push({employeeId:e.id,eligible:!reason,reason:reason||'Dieser Mitarbeiter erfüllt aktuell die Auto-Planungsregeln für den Dienst.'});
       if(reason)reject(reason);else{
-        const rhythm=window.sfRhythmCheck?.(e,type,date),fit=['Freigabe '+type,'Keine harten Ausschlussgründe'];
+        const rhythm=window.sfRhythmCheck?.(e,type,date),fit=['Freigabe '+type,'Verfügbar für diesen Dienst','Keine harten Ausschlussgründe'];
         if(Core.team(e))fit.push('Team '+Core.team(e));
         if(rhythm?.allowed&&rhythm.mode==='required')fit.push('Verbindlicher Rhythmus passt');
         if(Number.isFinite(check.rest?.hours)&&check.rest.assignment)fit.push('Kürzeste angrenzende Ruhezeit: '+Number(check.rest.hours).toLocaleString('de-DE',{maximumFractionDigits:1})+' Std.');
@@ -138,6 +142,7 @@
       monthTarget:e=>typeof employeeMonthlyTarget==='function'?employeeMonthlyTarget(e):0,
       assignmentHours:a=>typeof plannedAssignmentHours==='function'?plannedAssignmentHours(a):0,
       candidates:candidateCheck,solidRules:window.SFCompliance?.policy?.solidPlanningRules,rulesReady:!!window.SFCompliance?.policy,
+      coverageRows:(dates,rows)=>withRows(rows,()=>Core.coverage({...snapshot(),assignments:rows},dates)),
       hourLimits:e=>typeof autoHourLimits==='function'?autoHourLimits(e):null,isPublished:date=>!!window.SFCompliance?.isWeekPublished?.(date),
       movable:a=>!!a.id&&!a.rhythmOverride&&!a.fixed&&!a.locked&&!a.protected&&!protectedAssignmentIds.has(a._dbId||B().asgDb?.get(String(a.id))||a.id)&&!a.publishedAt&&(!a._dbStatus||a._dbStatus==='DRAFT')&&a.status!=='PUBLISHED'&&!a._marketApproved&&!/markt|market|freiwill|tausch/i.test(a.note||'')&&!window.SFCompliance?.isWeekPublished?.(a.date)&&!((typeof timeEntries!=='undefined')&&(timeEntries[a.id]?.actualStart||timeEntries[a.id]?.actualEnd))&&window.sfRhythmCheck?.(employees.find(e=>String(e.id)===String(a.employeeId)),a.type,a.date)?.mode!=='required',
       openSlots:(wanted,rows)=>withRows(rows,()=>{const slots=[];for(const date of wanted)for(const t of TYPES.filter(t=>t.active!==false)){const info=window.SFShiftModels?.coverageInfo?.(date,t.id);if(info&&info.representative!==t.id)continue;const raw=getSoll(date,t.id),need=window.SFShiftModels?.requiredSoll?.(date,t.id,raw)??raw,count=rows.filter(a=>a.date===date&&a.type===t.id).length,missing=info?info.missing:Math.max(0,need-count);for(let n=0;n<missing;n++)slots.push({date,type:t.id,...(info?{alternatives:info.alternatives}:{})});}return slots;}),
@@ -383,10 +388,54 @@
     if(committed&&proposal.goalOrderId&&identity()===owner){await loadGoalOrders();const row=goalOrders.find(r=>r.id===proposal.goalOrderId);if(row){open();await runGoal(row);}}
   }
   const node=(tag,text,className)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(className)n.className=className;return n;};
+  function vacancyQuestion(dates){return dates.length>62?'Offene Stellen Übersicht':'Offene Stellen Übersicht vom '+dates[0]+' bis '+dates.at(-1);}
+  function syncVacancySummary(){
+    const view=el('view-schedule');
+    if(!authorized()||!view?.classList.contains('active')){el('sfVacancySummary')?.remove();return;}
+    if(busy()||hydrationFailed){el('sfVacancySummary')?.remove();vacancySummaryKey='';return;}
+    if(Date.now()-lastVacancyCheck<1500)return;lastVacancyCheck=Date.now();
+    try{
+      const dates=visiblePlanDates(),key=JSON.stringify([signature(),dates,today()]);if(key===vacancySummaryKey&&el('sfVacancySummary'))return;vacancySummaryKey=key;
+      const s=snapshot(),all=Core.coverage(s,dates),rows=all.filter(x=>x.missing),total=rows.reduce((n,x)=>n+x.missing,0),hasDemand=all.some(x=>x.soll);
+      let card=el('sfVacancySummary');if(!card){card=node('section',undefined,'sf-vacancy-summary');card.id='sfVacancySummary';card.setAttribute('aria-label','Offene Stellen im Dienstplan');view.prepend(card);}card.replaceChildren();
+      const copy=node('div');copy.append(node('h3',total?total+' offene Position'+(total===1?'':'en'):hasDemand?'Keine offenen Positionen':'Kein SOLL-Bedarf hinterlegt'),node('p',Core.periodLabel(dates)+' · '+rows.length+' Dienste mit fehlender Besetzung'));
+      const button=node('button',total?'Offene Stellen prüfen':'Besetzung prüfen','sf-chat-row-action');button.type='button';button.onclick=()=>{open();submit(vacancyQuestion(dates),undefined,{previous:{}});};card.append(copy,button);card.classList.toggle('is-complete',!total);
+    }catch{el('sfVacancySummary')?.remove();vacancySummaryKey='';}
+  }
+  function previewVacancyCandidate(action){
+    el('sfVacancyImpact')?.remove();window.clearInterval?.(impactWatch);
+    try{
+      const s=snapshot(),impact=Core.candidateImpact(s,action.date,action.type,action.employeeId,action.dates),owner=identity(),basis=signature(),selection=JSON.stringify(contextDates());
+      const dialog=node('dialog',undefined,'sf-planning-proposal-confirm sf-vacancy-impact');dialog.id='sfVacancyImpact';dialog.setAttribute('aria-labelledby','sfVacancyImpactTitle');
+      const head=node('div',undefined,'sf-vacancy-impact-head'),title=node('h2','Auswirkung der Einplanung'),x=node('button','×','sf-vacancy-close');title.id='sfVacancyImpactTitle';x.type='button';x.setAttribute('aria-label','Auswirkung schließen');head.append(title,x);dialog.append(head,node('h3',impact.employee),node('p',action.date+' · '+action.type+' · '+impact.duty.start+'–'+impact.duty.end));
+      const hours=n=>Number(n).toLocaleString('de-DE',{maximumFractionDigits:1}),fields=node('dl',undefined,'sf-vacancy-impact-values');
+      for(const [label,value] of [['Offene Positionen · '+Core.periodLabel(impact.dates),impact.openBefore+' → '+impact.openAfter],['Besetzung dieses Dienstes','IST '+impact.staffingBefore+' → '+impact.staffingAfter+' · SOLL '+impact.target],['Monatsstunden · '+impact.month,hours(impact.monthBefore)+' → '+hours(impact.monthAfter)+' h · SOLL '+(impact.monthTarget>0?hours(impact.monthTarget)+' h':'nicht hinterlegt')],['Zusätzliche Planstunden',hours(impact.added)+' h']]){const row=node('div');row.append(node('dt',label),node('dd',value));fields.appendChild(row);}dialog.appendChild(fields);
+      dialog.appendChild(node('p',impact.fit.join(' · ')));
+      if(impact.monthTarget>0&&impact.monthAfter>impact.monthTarget)dialog.appendChild(node('p','Der Einsatz liegt '+hours(impact.monthAfter-impact.monthTarget)+' h über dem Monats-SOLL. Die persönlichen Obergrenzen werden weiterhin geprüft.','sf-chat-basis-warning'));
+      const status=node('p',impact.published?'Dieser Zeitraum ist veröffentlicht. Änderungen bitte im Dienstplan prüfen.':'Die Einplanung ergänzt einen Entwurf. Vor der Bestätigung werden Bedarf und Eignung erneut geprüft.');status.setAttribute('role','status');dialog.appendChild(status);
+      const controls=node('div',undefined,'sf-chat-actions'),cancel=node('button','Abbrechen'),accept=node('button','Mitarbeiter einplanen','sf-chat-row-action');cancel.type=accept.type='button';accept.disabled=impact.published||typeof window.assignEmployeeByDrop!=='function';
+      const done=()=>{window.clearInterval?.(impactWatch);dialog.close();dialog.remove();};cancel.onclick=x.onclick=done;dialog.addEventListener('cancel',event=>{event.preventDefault();done();});
+      const fresh=()=>authorized()&&!busy()&&!hydrationFailed&&owner===identity()&&basis===signature()&&selection===JSON.stringify(contextDates());
+      impactWatch=setInterval(()=>{if(!dialog.isConnected){window.clearInterval?.(impactWatch);return;}if(!fresh()){accept.disabled=true;status.textContent='Planungsdaten oder Zeitraum wurden geändert. Bitte die Mitarbeitervorschläge erneut prüfen.';}},500);
+      accept.onclick=()=>{
+        if(!fresh()){accept.disabled=true;status.textContent='Die Vorschau ist nicht mehr aktuell. Bitte erneut prüfen.';return;}
+        try{
+          const current=snapshot();Core.candidateImpact(current,action.date,action.type,action.employeeId,action.dates);
+          if(current.isPublished(action.date))throw Error('Der Zeitraum wurde inzwischen veröffentlicht.');
+          const before=new Set(assignments.map(a=>a.id));window.assignEmployeeByDrop(impact.duty.employeeId,action.type,action.date);
+          const added=assignments.some(a=>!before.has(a.id)&&String(a.employeeId)===String(action.employeeId)&&a.date===action.date&&a.type===action.type);
+          if(!added){status.textContent='Die Einplanung wurde nicht übernommen. Bitte die Meldung der Dienstplanung prüfen.';return;}
+          done();lastVacancyCheck=0;syncVacancySummary();submit(vacancyQuestion(impact.dates),undefined,{previous:{}});
+        }catch(error){accept.disabled=true;status.textContent=error.message;}
+      };
+      controls.append(cancel,accept);dialog.appendChild(controls);document.body.appendChild(dialog);dialog.showModal();cancel.focus();
+    }catch(error){window.showSaveToast?.('Einplanung erneut prüfen',error.message);}
+  }
   function openAction(action){
     syncScope();if(!authorized()||busy())return;
+    if(action.candidateImpact){previewVacancyCandidate(action);return;}
     if(action.learning){close();window.SFPlanningLearning?.open();return;}
-    if(action.question){submit(action.question);return;}
+    if(action.question){submit(action.question,action.analysisRequest);return;}
     if(!action.help&&!['schedule','employees','settings','auto','reports','absence'].includes(action.view))return;
     if(action.employeeId&&!snapshot().employees.some(e=>!e.deletedAt&&String(e.id)===String(action.employeeId)))return;
     close();
@@ -554,7 +603,7 @@
     article.appendChild(node('small',message.user?'Du':'Planungsassistent','sf-chat-author'));
     if(message.user)article.appendChild(node('p',message.text));
     else{
-      const a=message.answer;article.appendChild(node('h3',a.title));article.appendChild(node('p',a.text));if(a.interpretation)article.appendChild(node('p',a.interpretation,'sf-chat-basis-warning')); 
+      const a=message.answer;article.appendChild(node('h3',a.title));article.appendChild(node('p',a.text));if(a.interpretation)article.appendChild(node('p',a.interpretation,'sf-chat-basis-warning'));
       if(a.clarification?.length){const choices=node('div',undefined,'sf-chat-clarification');choices.setAttribute('role','group');choices.setAttribute('aria-label','Rückfrage beantworten');for(const choice of a.clarification){const button=node('button',choice.label);button.type='button';button.onclick=async()=>{const owner=identity(),generation=requestId;button.disabled=true;if(choice.learning)await recordVocabularyChoice(choice.learning);if(identity()===owner&&generation===requestId)await submit(choice.question);button.disabled=false;};choices.appendChild(button);}article.appendChild(choices);}
       if(a.basis){const b=a.basis,details=node('details',undefined,'sf-chat-basis');details.open=!!b.warnings?.length;details.appendChild(node('summary','Prüfgrundlage · '+b.company+' · '+b.from+' bis '+b.to));const fields=node('dl');for(const [label,value] of [['Planstatus',b.planStatus],['Datenumfang',b.scope],['Letzter Abruf',Report?Report.dateTime(b.readAt,b.timezone):b.readAt||'Nicht bestätigt'],['Prüfung erstellt',Report?Report.dateTime(b.checkedAt,b.timezone):b.checkedAt],['Vollständigkeit',b.completeness]]){const row=node('div');row.append(node('dt',label),node('dd',value));fields.appendChild(row);}details.appendChild(fields);for(const warning of b.warnings||[])details.appendChild(node('p',warning,'sf-chat-basis-warning'));article.appendChild(details);}
       if(a.taskPlan)renderTaskPlan(a.taskPlan,article);
@@ -579,6 +628,9 @@
             card.appendChild(fields);
             const action=a.rowActions?.[i];
             if(action){const button=node('button',action.label,'sf-chat-row-action');button.type='button';button.onclick=()=>openAction(action);card.appendChild(button);}
+            const secondary=a.rowSecondaryActions?.[i];
+            if(secondary){const button=node('button',secondary.label,'sf-chat-row-action');button.type='button';button.dataset.sfSensitive='';button.onclick=()=>openAction(secondary);card.appendChild(button);}
+            for(const alternative of a.rowAlternativeActions?.[i]||[]){const button=node('button',alternative.label,'sf-chat-row-action');button.type='button';button.onclick=()=>openAction(alternative);card.appendChild(button);}
             list.appendChild(card);
           }
           shown=end;count.textContent=`${shown} von ${a.rows.length} Einträgen`;more.hidden=shown>=a.rows.length;more.textContent=`Weitere Einträge anzeigen (${a.rows.length-shown})`;
@@ -713,6 +765,7 @@
       dialog.innerHTML='<div class="sf-chat-frame"><header class="sf-chat-header"><div class="sf-chat-mark" aria-hidden="true">'+chatIcon+'</div><div><small>SCHICHTFUNK</small><h2 id="sfPlanningChatTitle">Planungsassistent</h2></div><button type="button" id="sfPlanningChatClose" aria-label="Planungsassistent schließen">×</button></header><div class="sf-chat-context"><details class="sf-chat-period"><summary><span>Zeitraum</span><b id="sfPlanningChatPeriod"></b></summary><div class="sf-chat-month"><label for="sfPlanningChatMonth">Monat auswählen</label><input type="month" id="sfPlanningChatMonth"><button type="button" id="sfPlanningChatCurrent">Aktueller Plan</button></div></details><button type="button" id="sfPlanningChatReset">Neuer Chat</button></div><div id="sfPlanningChatLog" class="sf-chat-log" role="log" aria-label="Fragen und Antworten"></div><div id="sfPlanningChatStatus" class="sf-chat-sr" role="status" aria-live="polite"></div><form id="sfPlanningChatForm" class="sf-chat-form"><label for="sfPlanningChatInput">Deine Frage</label><div class="sf-chat-compose"><textarea id="sfPlanningChatInput" rows="2" maxlength="1200" placeholder="Wie kann ich dir bei der Planung helfen?" required></textarea><button type="submit" aria-label="Frage senden"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7M12 5v14"/></svg></button></div><small>Aktuell geladene Daten · Speichern erst nach Bestätigung</small></form></div>';
       document.body.appendChild(dialog);
       const questions=node('button','Fragen & Beispiele');questions.type='button';questions.id='sfPlanningChatQuestions';questions.setAttribute('aria-controls','sfPlanningQuestionGuide');questions.setAttribute('aria-expanded','false');questions.onclick=()=>toggleQuestionGuide();el('sfPlanningChatReset').before(questions);mountQuestionGuide();
+      const vacancies=node('button','Offene Stellen');vacancies.type='button';vacancies.id='sfPlanningVacancies';vacancies.onclick=()=>submit(vacancyQuestion(contextDates()),undefined,{previous:{}});el('sfPlanningChatReset').before(vacancies);
       const progress=node('p','Engpässe und Planungsregeln werden geprüft …','sf-chat-progress');progress.id='sfPlanningChatProgress';progress.hidden=true;progress.setAttribute('role','status');el('sfPlanningChatForm').before(progress);
       const service=node('div',undefined,'sf-chat-service');service.id='sfPlanningChatService';service.hidden=true;el('sfPlanningChatLog').before(service);
       el('sfPlanningChatClose').onclick=()=>close();
