@@ -29,3 +29,4 @@
 .sf-open-market-confirm details{margin:14px 0}.sf-open-market-confirm details summary{cursor:pointer;min-height:32px}.sf-open-market-confirm details li{line-height:1.6}.sf-open-market-confirm main{overflow-wrap:anywhere}
 [data-sf-theme="light"] .sf-shift-market-badge{background:#eee6ff;color:#512389;border-color:#8b5ecb}
 @media print{#sfMarketScheduleEntry{display:none}.sf-shift-market-badge{background:white;color:#512389;border-color:#512389}}
+@media(max-width:720px){.sf-open-market-entry>div{flex:0 1 auto;width:100%}}
