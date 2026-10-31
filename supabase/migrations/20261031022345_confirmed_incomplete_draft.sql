@@ -2,7 +2,7 @@
 CREATE OR REPLACE FUNCTION private.apply_confirmed_incomplete_draft(
  p_company_id uuid,p_first_month date,p_month_count integer,p_fingerprint text,p_replace_ids uuid[],p_assignments jsonb,
  p_confirmation text,p_open_positions integer,p_respect_weekly boolean DEFAULT true,p_mode text DEFAULT 'period',p_individual_employee_ids uuid[] DEFAULT NULL
-) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
+) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' SET statement_timeout='60s' AS $$
 DECLARE actor_ uuid:=auth.uid();role_ text;result_ jsonb;
 BEGIN
  IF actor_ IS NULL THEN RAISE EXCEPTION USING ERRCODE='42501',MESSAGE='Anmeldung erforderlich.'; END IF;
@@ -27,7 +27,7 @@ GRANT EXECUTE ON FUNCTION private.apply_confirmed_incomplete_draft(uuid,date,int
 CREATE OR REPLACE FUNCTION public.apply_confirmed_incomplete_draft(
  p_company_id uuid,p_first_month date,p_month_count integer,p_fingerprint text,p_replace_ids uuid[],p_assignments jsonb,
  p_confirmation text,p_open_positions integer,p_respect_weekly boolean DEFAULT true,p_mode text DEFAULT 'period',p_individual_employee_ids uuid[] DEFAULT NULL
-) RETURNS jsonb LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$
+) RETURNS jsonb LANGUAGE sql SECURITY INVOKER SET search_path='' SET statement_timeout='60s' AS $$
  SELECT private.apply_confirmed_incomplete_draft(p_company_id,p_first_month,p_month_count,p_fingerprint,p_replace_ids,p_assignments,p_confirmation,p_open_positions,p_respect_weekly,p_mode,p_individual_employee_ids)
 $$;
 REVOKE ALL ON FUNCTION public.apply_confirmed_incomplete_draft(uuid,date,integer,text,uuid[],jsonb,text,integer,boolean,text,uuid[]) FROM PUBLIC,anon;
