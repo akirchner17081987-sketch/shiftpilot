@@ -1,5 +1,5 @@
 {
-  "reviewedAt": "2026-10-30",
+  "reviewedAt": "2026-10-31",
   "sourceCommit": "cc8f9f361c16b5117bb24321ad17a65e16fc4a79",
   "addedArticles": [
     {
@@ -1522,6 +1522,46 @@
         "assets/planning-assistant-v1.js",
         "supabase/migrations/20261030060806_planning_assistant_goal_orders.sql"
       ]
+    },
+    {
+      "category": "schedule",
+      "question": "Wie fixiere ich einen bewusst abgestimmten Dienst?",
+      "sources": [
+        "assets/planning-efficiency-v1.js",
+        "assets/planning-efficiency-core-v1.js",
+        "assets/planning-assistant-workflows-v1.js",
+        "supabase/migrations/20261031054806_planner_decision_protection.sql"
+      ]
+    },
+    {
+      "category": "assistant",
+      "question": "Wie plane ich nur die Dienste eines ausgefallenen Mitarbeiters nach?",
+      "sources": [
+        "assets/planning-efficiency-v1.js",
+        "assets/planning-efficiency-core-v1.js",
+        "assets/planning-assistant-workflows-v1.js",
+        "supabase/migrations/20261031054806_planner_decision_protection.sql"
+      ]
+    },
+    {
+      "category": "auto",
+      "question": "Was prüft die Machbarkeit vor dem Planungslauf?",
+      "sources": [
+        "assets/planning-efficiency-v1.js",
+        "assets/planning-efficiency-core-v1.js",
+        "assets/planning-assistant-workflows-v1.js",
+        "supabase/migrations/20261031054806_planner_decision_protection.sql"
+      ]
+    },
+    {
+      "category": "auto",
+      "question": "Was sehe ich unter Laufzeiten der Planung?",
+      "sources": [
+        "assets/planning-efficiency-v1.js",
+        "assets/planning-efficiency-core-v1.js",
+        "assets/planning-assistant-workflows-v1.js",
+        "supabase/migrations/20261031054806_planner_decision_protection.sql"
+      ]
     }
   ],
   "moduleInventory": [
@@ -2942,6 +2982,18 @@
       "category": "assistant",
       "area": "Wortschatz und validierte Begriffe für Planungsthemen und aktive Schichten",
       "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/planning-efficiency-core-v1.js",
+      "category": "auto",
+      "area": "Optimistische Machbarkeit, Matching gemeinsamer Kandidaten und begrenzte Wiederverwendung unveränderter Prüfungen",
+      "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/planning-efficiency-v1.js",
+      "category": "auto",
+      "area": "Gezielte Ersatzplanung, ausdrückliche Fixierung, Vorprüfung vor dem Lauf und lokale Laufzeitmessung",
+      "kind": "feature-or-support"
     }
   ],
   "categoryCoverage": [
@@ -3002,7 +3054,8 @@
         "Für welchen Zeitraum wird ein Dienstplan veröffentlicht?",
         "Wo sehe ich Planänderungen und ausstehende Rückmeldungen?",
         "Kann ich einen ganzen Planungsmonat löschen?",
-        "Wie plane ich trotz eines freien Rhythmustags einen zusätzlichen Dienst?"
+        "Wie plane ich trotz eines freien Rhythmustags einen zusätzlichen Dienst?",
+        "Wie fixiere ich einen bewusst abgestimmten Dienst?"
       ]
     },
     {
@@ -3121,7 +3174,9 @@
         "Wie erhalte ich eine Benachrichtigung, wenn die Planung fertig ist?",
         "Wer kann die Fertigmeldung der Auto-Planung erhalten?",
         "Wo finde ich den Planungsbericht und die Planungsgründe?",
-        "Wie exportiere ich den Planungsbericht?"
+        "Wie exportiere ich den Planungsbericht?",
+        "Was prüft die Machbarkeit vor dem Planungslauf?",
+        "Was sehe ich unter Laufzeiten der Planung?"
       ]
     },
     {
@@ -3141,7 +3196,8 @@
         "Warum muss ich einen Planungsbericht vor dem Download erneut erstellen?",
         "Wie starte ich einen begleiteten Planungsauftrag?",
         "Wie setze ich einen Planungsauftrag auf einem anderen Gerät fort?",
-        "Was bedeutet ein gespeicherter Entscheidungsvermerk im Auftrag?"
+        "Was bedeutet ein gespeicherter Entscheidungsvermerk im Auftrag?",
+        "Wie plane ich nur die Dienste eines ausgefallenen Mitarbeiters nach?"
       ]
     },
     {
@@ -3600,13 +3656,13 @@
     "entry": "index.html"
   },
   "currentAudit": {
-    "date": "2026-10-30",
+    "date": "2026-10-31",
     "baselineArticleCount": 270,
-    "addedArticleCount": 6,
+    "addedArticleCount": 10,
     "correctedArticleCount": 2,
-    "articleCount": 276,
+    "articleCount": 280,
     "categoryCount": 22,
-    "assetJavaScriptCount": 236
+    "assetJavaScriptCount": 238
   },
   "incrementalUpdate": {
     "date": "2026-10-27",

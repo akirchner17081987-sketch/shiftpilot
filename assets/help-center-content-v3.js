@@ -1,4 +1,4 @@
-// Aktive SchichtFunk-Hilfe: begleitete Aufträge und gespeicherte Entscheidungen · 30.10.2026.
+// Aktive SchichtFunk-Hilfe: gezielte Nachplanung, Fixierungen und Vorprüfung · 31.10.2026.
 window.SFHelpContent = {
   "categories": [
     [
@@ -263,6 +263,10 @@ window.SFHelpContent = {
       [
         "Wie plane ich trotz eines freien Rhythmustags einen zusätzlichen Dienst?",
         "Wähle den Mitarbeiter bei der manuellen Dienstzuweisung im Dienstplan aus. „Laut Rhythmus frei“ wird in allen Unternehmen bei der manuellen Planung als Hinweis angezeigt. Gib eine Begründung ein und bestätige „Trotzdem einplanen“. Die Ausnahme gilt nur für diesen Dienst; sein Rhythmus wird nicht geändert. Sie wird mit dem Dienst gespeichert und im Audit protokolliert. „Rhythmus bearbeiten“ öffnet die dauerhafte Mitarbeitervorgabe. Auch in der Vorplanung kannst du an einem laut Rhythmus freien Tag oder abweichend von der vorgesehenen Schicht einen Dienst setzen. „In Vorplanung übernehmen“ bestätigt die dokumentierte Ausnahme; bei der späteren Entwurfsübernahme bleibt sie gespeichert. Die Information findest du unter Einstellungen → Planung → Manuelle Rhythmusausnahmen. Bestätigte Ausnahmen bleiben beim Optimieren als bestehende Dienste geschützt. Die Auto-Planung darf selbst keine Rhythmusausnahmen erzeugen. Andere Prüfungen wie Schichtfreigaben, Abwesenheiten, Überschneidungen und Erholung bleiben wirksam. Für veröffentlichte Pläne gelten zusätzlich der bestehende Änderungsablauf und erforderliche Freigaben. Bestätigte Rhythmusausnahmen werden zusätzlich für den sichtbaren Planungszeitraum zusammengefasst. Sie sind separat von offenen Regelkonflikten ausgewiesen."
+      ],
+      [
+        "Wie fixiere ich einen bewusst abgestimmten Dienst?",
+        "Öffne den Dienst im Dienstplan und wähle „Als Planerentscheidung fixieren“. Nach deiner Bestätigung bleibt er bei automatischen Planungsläufen erhalten und ist als „Fixiert“ gekennzeichnet. Für Änderungen zuerst „Fixierung aufheben“ bestätigen. Die Fixierung verlangt aktive schreibende Planungsrechte, MFA und den aktuellen Dienststand. Sie hebt keine Stunden-, Ruhezeit- oder sonstigen Regeln auf. Ein unveränderter fixierter Entwurf kann weiterhin veröffentlicht werden."
       ]
     ],
     "employees": [
@@ -687,6 +691,14 @@ window.SFHelpContent = {
       [
         "Wie exportiere ich den Planungsbericht?",
         "Öffne den Planungsassistenten, wähle den Zeitraum und klicke Planungsbericht oder schreibe Planungsbericht erstellen. Prüfe die angezeigte Grundlage und wähle Planungsbericht als PDF herunterladen. Die PDF enthält den geprüften Zeitraum, Unternehmen, Abruf- und Prüfzeit, Planstatus und Datenumfang, Besetzung, alle offenen Positionen, Stunden und Monatsabweichungen sowie Prüfpunkte und gekennzeichnete manuelle Einplanungen. Gespeicherte Planungsgründe stehen getrennt als historischer Stand. Die aktuelle Einzelprüfung wird auf höchstens 40 offene Schichten und ein Zeitbudget begrenzt; alle Positionen werden aufgeführt und ungeprüfte Ursachen gekennzeichnet. Monats-SOLL wird nur für einen vollständigen einzelnen Monat bewertet. Der Bericht umfasst höchstens 62 Kalendertage. Er wird auf diesem Gerät erstellt und nicht automatisch versendet oder hochgeladen. Ein Dienstplan- oder Arbeitszeitexport ist ein anderer Bericht."
+      ],
+      [
+        "Was prüft die Machbarkeit vor dem Planungslauf?",
+        "„Machbarkeit prüfen“ unterscheidet personelle Grenzen, verbindliche Regelkonflikte und fehlende Daten. Die Prüfung erkennt auch, wenn verschiedene offene Dienste dieselben verfügbaren Personen benötigen. Vor einem manuell gestarteten autonomen Lauf erscheint diese Vorprüfung mit dem aktuellen gespeicherten Plan und geschützten Diensten. Personalbedarf und verfügbare Stunden sind optimistische Grenzen; vollständige Blöcke, Ruhezeiten und die gemeinsame Verteilung können weitere Grenzen setzen. Höchstens 62 Tage, 500 Dienstgruppen und ein begrenztes Zeitbudget werden vorgeprüft. Eine Teilanalyse wird sichtbar benannt und ist kein Unlösbarkeitsnachweis. Personalmangel verhindert den eigentlichen Planungslauf nicht; dessen vollständige Regelprüfung bleibt verbindlich."
+      ],
+      [
+        "Was sehe ich unter Laufzeiten der Planung?",
+        "„Laufzeiten“ zeigt Messungen aus diesem Browser: Laden des Planungsstands, Bedarf, Kandidatenprüfung, gemeinsame Personalgrenzen und Regelprüfung. Die beobachtete Serverwartezeit enthält auch Warteschlange und den Abstand bis zur nächsten Statusmeldung; sie ist keine exakte Messung einzelner interner Solverphasen. Kandidaten werden nur innerhalb derselben Prüfung mit unverändertem Plan-/Regelbezug wiederverwendet. Zeitintervalle werden begrenzt nach Datum, Uhrzeit und Unternehmenszeitzone gespeichert. Höchstens 20 Messungen bleiben ohne Namen im Arbeitsspeicher und werden beim Kontextwechsel entfernt. Es werden keine Messdaten extern versendet und kein Sprachmodell verwendet."
       ]
     ],
     "reports": [
@@ -1259,8 +1271,12 @@ window.SFHelpContent = {
       [
         "Was bedeutet ein gespeicherter Entscheidungsvermerk im Auftrag?",
         "Als geprüft vermerken oder Später entscheiden speichert deine Entscheidung zu einem verbleibenden Prüfpunkt. Die Lücke oder Stundenabweichung bleibt trotzdem sichtbar und gilt nicht als behoben. Eine zurückgestellte Übernahme wird bei unverändertem Datenstand nicht erneut angeboten; du kannst sie wieder zur Prüfung öffnen. Entscheidungen gelten nur für den bestätigten Datenstand einschließlich Planungsregeln. Beim Fortsetzen mit geänderten Daten werden alte Vermerke nicht als aktuelle Bestätigung verwendet. Zwischenzeitlich geänderte Aufträge müssen neu geladen werden. Die Entscheidung ersetzt keine Dienstplanfreigabe."
+      ],
+      [
+        "Wie plane ich nur die Dienste eines ausgefallenen Mitarbeiters nach?",
+        "Wähle bei der Übersicht offener Stellen oder in der Auto-Planung „Ausfall nachplanen“, danach die Person und den Zeitraum. Die Vorschau sucht direkte Ersatzbesetzungen und erhält alle übrigen gespeicherten Dienste. Eine Abwesenheit wird dabei nicht erfasst. Veröffentlichte Dienste führen zum bestehenden Störfall- und Freigabeablauf; fixierte Dienste müssen zuerst ausdrücklich entsperrt werden. Vor der Übernahme wird der aktuelle Stand erneut geprüft. Bleiben Positionen offen, bestätige das Häkchen und gib „OFFEN ÜBERNEHMEN“ ein. SOLL-Werte bleiben erhalten."
       ]
     ]
   },
-  "reviewedAt": "2026-10-30"
+  "reviewedAt": "2026-10-31"
 };
