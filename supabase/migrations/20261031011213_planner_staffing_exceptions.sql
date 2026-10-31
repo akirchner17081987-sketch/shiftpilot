@@ -23,7 +23,8 @@ BEGIN
  END IF;
  IF p_snapshot_mode IS NULL OR p_snapshot_mode NOT IN('none','period','month') OR p_month_count IS NULL OR p_month_count NOT BETWEEN 1 AND 12 THEN RAISE EXCEPTION 'Ungültiger Prüfzeitraum.'; END IF;
  IF p_snapshot_mode<>'none' AND (p_first_month IS NULL OR p_date<p_first_month OR p_date>=(p_first_month+make_interval(months=>p_month_count))::date) THEN RAISE EXCEPTION 'Tag liegt außerhalb der Vorplanung.'; END IF;
- IF EXISTS(SELECT 1 FROM public.plan_publications WHERE company_id=p_company_id AND week_start=(p_date-(extract(isodow FROM p_date)::int-1)) AND published_at IS NOT NULL) THEN RAISE EXCEPTION 'Veröffentlichte Wochen können hier nicht geändert werden.'; END IF;
+ IF EXISTS(SELECT 1 FROM public.plan_publications WHERE company_id=p_company_id AND week_start=(p_date-(extract(isodow FROM p_date)::int-1)) AND published_at IS NOT NULL)
+ OR EXISTS(SELECT 1 FROM public.shift_assignments a JOIN public.companies c ON c.id=a.company_id WHERE a.company_id=p_company_id AND a.status='PUBLISHED' AND (a.starts_at AT TIME ZONE c.timezone)::date=p_date) THEN RAISE EXCEPTION 'Veröffentlichte Wochen können hier nicht geändert werden.'; END IF;
  SELECT nullif(coverage_group,'') INTO group_ FROM public.shift_templates WHERE company_id=p_company_id AND code=p_code AND active;
  IF NOT FOUND THEN RAISE EXCEPTION 'Aktive Schicht dieses Unternehmens erforderlich.'; END IF;
  SELECT array_agg(code ORDER BY code) INTO codes_ FROM public.shift_templates WHERE company_id=p_company_id AND active AND (code=p_code OR group_ IS NOT NULL AND coverage_group=group_);
