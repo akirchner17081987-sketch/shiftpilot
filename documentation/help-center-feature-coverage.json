@@ -1562,6 +1562,34 @@
         "assets/planning-assistant-workflows-v1.js",
         "supabase/migrations/20261031054806_planner_decision_protection.sql"
       ]
+    },
+    {
+      "category": "marketplace",
+      "question": "Wie stelle ich alle offenen Dienste gleichzeitig in den Schichtmarkt?",
+      "sources": [
+        "assets/open-shift-marketplace-v1.js"
+      ]
+    },
+    {
+      "category": "marketplace",
+      "question": "Was bedeutet „Im Schichtmarkt“ im Dienstplan?",
+      "sources": [
+        "assets/open-shift-marketplace-v1.js"
+      ]
+    },
+    {
+      "category": "auto",
+      "question": "Wie übernehme ich einen Entwurf mit offenen Positionen?",
+      "sources": [
+        "assets/auto-plan-workspace-v1.js"
+      ]
+    },
+    {
+      "category": "auto",
+      "question": "Wie ändere ich die SOLL-Besetzung nur für einen Tag?",
+      "sources": [
+        "assets/auto-plan-preview-editor-v1.js"
+      ]
     }
   ],
   "moduleInventory": [
@@ -3176,7 +3204,9 @@
         "Wo finde ich den Planungsbericht und die Planungsgründe?",
         "Wie exportiere ich den Planungsbericht?",
         "Was prüft die Machbarkeit vor dem Planungslauf?",
-        "Was sehe ich unter Laufzeiten der Planung?"
+        "Was sehe ich unter Laufzeiten der Planung?",
+        "Wie übernehme ich einen Entwurf mit offenen Positionen?",
+        "Wie ändere ich die SOLL-Besetzung nur für einen Tag?"
       ]
     },
     {
@@ -3338,7 +3368,9 @@
       "questions": [
         "Wie veröffentliche ich offene Plätze?",
         "Dürfen Mitarbeiter zusätzliche Dienste übernehmen?",
-        "Was bewirkt „Alle Angebote zurückziehen“?"
+        "Was bewirkt „Alle Angebote zurückziehen“?",
+        "Wie stelle ich alle offenen Dienste gleichzeitig in den Schichtmarkt?",
+        "Was bedeutet „Im Schichtmarkt“ im Dienstplan?"
       ]
     },
     {
@@ -3658,9 +3690,9 @@
   "currentAudit": {
     "date": "2026-10-31",
     "baselineArticleCount": 270,
-    "addedArticleCount": 10,
+    "addedArticleCount": 14,
     "correctedArticleCount": 2,
-    "articleCount": 280,
+    "articleCount": 284,
     "categoryCount": 22,
     "assetJavaScriptCount": 238
   },

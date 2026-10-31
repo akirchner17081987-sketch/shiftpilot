@@ -699,6 +699,14 @@ window.SFHelpContent = {
       [
         "Was sehe ich unter Laufzeiten der Planung?",
         "„Laufzeiten“ zeigt Messungen aus diesem Browser: Laden des Planungsstands, Bedarf, Kandidatenprüfung, gemeinsame Personalgrenzen und Regelprüfung. Die beobachtete Serverwartezeit enthält auch Warteschlange und den Abstand bis zur nächsten Statusmeldung; sie ist keine exakte Messung einzelner interner Solverphasen. Kandidaten werden nur innerhalb derselben Prüfung mit unverändertem Plan-/Regelbezug wiederverwendet. Zeitintervalle werden begrenzt nach Datum, Uhrzeit und Unternehmenszeitzone gespeichert. Höchstens 20 Messungen bleiben ohne Namen im Arbeitsspeicher und werden beim Kontextwechsel entfernt. Es werden keine Messdaten extern versendet und kein Sprachmodell verwendet."
+      ],
+      [
+        "Wie übernehme ich einen Entwurf mit offenen Positionen?",
+        "Prüfe die Vorschau und wähle „Als Entwurf übernehmen“. Zeigt die Bestätigung offene Positionen, setze das Bestätigungshäkchen und gib genau „OFFEN ÜBERNEHMEN“ ein. Erst danach kannst du die Übernahme bestätigen. Die offenen Stellen und der SOLL-Bedarf bleiben bestehen und können später besetzt werden. Andere verbindliche Planungsprüfungen gelten weiterhin. Die Übernahme speichert einen Entwurf; der Dienstplan wird erst gesondert veröffentlicht."
+      ],
+      [
+        "Wie ändere ich die SOLL-Besetzung nur für einen Tag?",
+        "Öffne in der Auto-Planung das betreffende IST/SOLL-Feld und wähle die Änderung der Tagesbesetzung. Gib die benötigte Mitarbeiterzahl und eine Begründung ein und bestätige „Nur für diesen Tag speichern“. Auch SOLL 0 ist möglich. Die Ausnahme wird sofort für diesen Tag und das ausgewählte Unternehmen gespeichert; die reguläre Besetzung bleibt bestehen. Gemeinsame Besetzungsgruppen teilen sich den Wert. Bereits eingeplante Dienste werden nicht gelöscht, und andere Planungsprüfungen gelten weiterhin. Eine bestehende Ausnahme kannst du im selben Fenster aufheben."
       ]
     ],
     "reports": [
@@ -974,7 +982,7 @@ window.SFHelpContent = {
     "marketplace": [
       [
         "Wie veröffentliche ich offene Plätze?",
-        "Öffne die Auto-Planung und prüfe den tatsächlichen Restbedarf. Übernimm gewünschte Vorschläge zuerst als Entwurf oder entferne sie. Wähle anschließend die offenen Dienste und bestätige Im Marktplatz veröffentlichen. Mitarbeiter sehen die veröffentlichten Angebote; eine Meldung ist zunächst eine Anfrage."
+        "Öffne die Auto-Planung und prüfe den tatsächlichen Restbedarf. Übernimm gewünschte Vorschläge zuerst als Entwurf oder entferne sie. Wähle anschließend die offenen Dienste und bestätige Im Marktplatz veröffentlichen. Mitarbeiter sehen die veröffentlichten Angebote; eine Meldung ist zunächst eine Anfrage. Du kannst stattdessen im Dienstplan oder in der Auto-Planung mit „Alle offenen Dienste in den Schichtmarkt“ die künftig beginnenden offenen Plätze des angezeigten Zeitraums gesammelt anbieten."
       ],
       [
         "Dürfen Mitarbeiter zusätzliche Dienste übernehmen?",
@@ -983,6 +991,14 @@ window.SFHelpContent = {
       [
         "Was bewirkt „Alle Angebote zurückziehen“?",
         "Die Verwaltung bestätigt das Zurückziehen aller noch offenen Angebote und ausstehenden Übernahmeanfragen im aktuellen Unternehmen. Die Aktion gilt unabhängig von den gerade ausgewählten Filtern und Zeiträumen. Bereits freigegebene Schichten und der veröffentlichte Dienstplan bleiben erhalten. Ein zurückgezogenes Angebot steht nicht mehr zur freiwilligen Übernahme bereit."
+      ],
+      [
+        "Wie stelle ich alle offenen Dienste gleichzeitig in den Schichtmarkt?",
+        "Wähle im Dienstplan oder in der Auto-Planung den gewünschten Zeitraum und „Alle offenen Dienste in den Schichtmarkt“. Übernimm eine vorhandene Vorplanung zuerst als Entwurf oder entferne sie. Im Bestätigungsfenster siehst du Anzahl und Zeitraum; unter „Dienste ansehen“ stehen die einzelnen Dienste. Nach deiner ausdrücklichen Bestätigung werden alle künftig beginnenden offenen Plätze dieses Zeitraums angeboten. Bestehende Angebote werden aktualisiert statt doppelt angelegt. Der Dienstplan wird dabei nicht veröffentlicht oder besetzt. Eine Anfrage von Mitarbeitern benötigt weiterhin deine Freigabe."
+      ],
+      [
+        "Was bedeutet „Im Schichtmarkt“ im Dienstplan?",
+        "Die Kennzeichnung „Im Schichtmarkt“ zeigt aktive Angebote für künftig beginnende offene Plätze und deren Anzahl. Die Plätze bleiben bis zur bestätigten Besetzung offen. Wird ein Angebot besetzt oder zurückgezogen, entfällt die entsprechende Kennzeichnung nach der Aktualisierung. Kann der Status nicht geladen werden, zeigt die Anwendung einen Hinweis; prüfe die Verbindung und lade die Ansicht erneut."
       ]
     ],
     "disruptions": [
@@ -1238,7 +1254,7 @@ window.SFHelpContent = {
       ],
       [
         "Speichert der Planungsassistent automatisch Änderungen?",
-        "Die Fragen nach Besetzung, Belastung oder Ersatz lesen und prüfen den aktuellen Stand. Auch „Ausfall durchspielen“ bucht keine Abwesenheit und verändert keinen Dienst. Nur eine angebotene Verbesserungsvorschau kann über „Vorschläge als Entwurf übernehmen“ nach ausdrücklicher Bestätigung gespeichert werden. Vorher werden Datenstand, Regeln und Schutz erneut geprüft. Eine Übernahme veröffentlicht den Plan nicht."
+        "Die Fragen nach Besetzung, Belastung oder Ersatz lesen und prüfen den aktuellen Stand. Auch „Ausfall durchspielen“ bucht keine Abwesenheit und verändert keinen Dienst. Eine angebotene Verbesserungsvorschau oder gezielte Ausfallnachplanung kann erst nach ausdrücklicher Bestätigung als Entwurf gespeichert werden. Vorher werden Datenstand, Regeln und Schutz erneut geprüft. Eine Übernahme veröffentlicht den Plan nicht."
       ],
       [
         "Wo finde ich gespeicherte Planungsgründe und wie lange bleiben sie erhalten?",
