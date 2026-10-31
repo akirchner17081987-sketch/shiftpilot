@@ -1,0 +1,70 @@
+name: Planner daily staffing exceptions
+on:
+  pull_request:
+    paths:
+      - 'assets/auto-plan-preview-editor-v1.js'
+      - 'assets/auto-plan-period-v1.css'
+      - 'assets/solid-planning-core-v1.js'
+      - 'assets/shift-models-v1.js'
+      - 'assets/ot-weekend-holiday-policy.js'
+      - 'assets/schichtfunk-schedule-core-v1.js'
+      - 'assets/month-optimizer-v1.js'
+      - 'assets/autonomous-planning-core-v1.js'
+      - 'tests/planner-staffing-exceptions.test.cjs'
+      - 'tests/e2e/auto-plan-workspace.spec.cjs'
+      - 'supabase/migrations/*planner_staffing_exceptions.sql'
+      - '.github/workflows/planner-staffing-exceptions.yml'
+  push:
+    branches: [codex/ionos-migration]
+    paths:
+      - 'assets/auto-plan-preview-editor-v1.js'
+      - 'assets/auto-plan-period-v1.css'
+      - 'assets/solid-planning-core-v1.js'
+      - 'assets/shift-models-v1.js'
+      - 'assets/month-optimizer-v1.js'
+      - 'tests/planner-staffing-exceptions.test.cjs'
+      - '.github/workflows/planner-staffing-exceptions.yml'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: node --test tests/planner-staffing-exceptions.test.cjs tests/solid-planning.test.cjs tests/ot-weekend-staffing.test.cjs tests/shift-models.test.mjs tests/autonomous-planning.test.cjs tests/auto-plan-workspace.test.mjs tests/month-optimizer.test.mjs
+      - run: npx playwright install chromium ffmpeg
+      - run: npx playwright test tests/e2e/auto-plan-workspace.spec.cjs --grep 'planner changes a short staffed day' --retries=0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: staffing-exception-browser-results
+          path: |
+            playwright-report/
+            test-results/
+  verify-live:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify published staffing exception assets
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          import {createHash} from 'node:crypto';
+          import {setTimeout as delay} from 'node:timers/promises';
+          const files=['assets/auto-plan-preview-editor-v1.js','assets/auto-plan-period-v1.css','assets/solid-planning-core-v1.js','assets/shift-models-v1.js','assets/ot-weekend-holiday-policy.js','assets/schichtfunk-schedule-core-v1.js','assets/month-optimizer-v1.js','assets/autonomous-planning-core-v1.js'];
+          const hash=b=>createHash('sha256').update(b).digest('hex');
+          for(let attempt=0;attempt<90;attempt++){
+            try{for(const file of files){const r=await fetch('https://schichtfunk.de/'+file+'?staffing_release='+process.env.GITHUB_SHA,{signal:AbortSignal.timeout(15000)});if(!r.ok||hash(Buffer.from(await r.arrayBuffer()))!==hash(readFileSync(file)))throw Error(file+' differs');}console.log('All staffing exception assets match the release.');break;}
+            catch(error){if(attempt===89)throw error;console.log(error.message);await delay(15000);}
+          }
+          NODE

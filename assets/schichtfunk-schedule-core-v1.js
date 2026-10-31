@@ -90,7 +90,7 @@
     selectedType=t;if(typeof renderLibrary==='function')renderLibrary();
   };
 
-  window.getSoll=function(date,type){if(type==='OT'&&!isOTDay(date))return 0;const key=canonicalDate(date)||date;const value=dailySoll?.[key]?.[type] ?? globalSoll?.[type] ?? 0;return window.SFShiftModels?.requiredSoll?.(key,type,value)??value;};
+  window.getSoll=function(date,type){const exception=window.SFSolidPlanningCore?.staffingException?.(date,type,window.SFCompliance?.policy?.solidPlanningRules);if(type==='OT'&&!isOTDay(date)&&exception==null)return 0;const key=canonicalDate(date)||date;const value=dailySoll?.[key]?.[type] ?? globalSoll?.[type] ?? 0;return window.SFShiftModels?.requiredSoll?.(key,type,value)??value;};
   window.absent=function(employeeId,date){return absences.some(a=>a.employeeId===employeeId&&absenceCovers(a,date));};
   window.isEligible=function(emp,type,date){if(!emp||emp.status!=='active')return false;if(!(emp.shifts||[]).includes(type))return false;if(window.SFShiftModels?.allowsEmployee?.(type,emp,date)===false)return false;if(type==='OT'&&!isOTDay(date))return false;if(window.absent(emp.id,date))return false;return !employeeHasConflict(emp.id,date,type);};
 

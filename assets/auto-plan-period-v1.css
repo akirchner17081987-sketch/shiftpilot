@@ -268,3 +268,10 @@ html[data-sf-theme="light"] #sfAutonomousPlanning input,html[data-sf-theme="ligh
 #sfAutoPlanNotifications label b{display:block;font-size:12px;font-weight:700;line-height:1.5}
 #sfAutoPlanNotifications label small{display:block;font-size:11px;line-height:1.5;opacity:.75;margin-top:3px}
 #sfAutoPlanNotifications button{white-space:normal;max-width:100%}
+.sf-auto-staffing-target{display:block;width:100%;min-height:36px;margin-top:4px;padding:6px 3px;border:1px solid var(--line,#29445e);border-radius:6px;background:var(--panel,#102033);color:var(--teal,#36cbb7);font:inherit;font-size:11px;white-space:normal;cursor:pointer}
+.sf-auto-staffing-target:focus-visible{outline:2px solid var(--teal,#36cbb7);outline-offset:-2px}
+.sf-auto-staffing-cell[data-staffing-exception=true] .sf-auto-staffing-target{border-style:dashed}
+#sfStaffingExceptionDialog label{display:grid;gap:7px;margin:16px 0;font-size:13px}
+#sfStaffingExceptionDialog :is(input,textarea){box-sizing:border-box;width:100%;min-width:0;padding:11px;border:1px solid var(--line,#29445e);border-radius:8px;background:var(--bg,#0b1723);color:var(--text,#edf4fa);font:inherit}
+#sfStaffingExceptionDialog [data-error]{color:var(--amber,#ffb84d);white-space:pre-line}
+@media(max-width:650px){#sfStaffingExceptionDialog :is(input,textarea){font-size:16px}.sf-auto-staffing-target{min-height:44px}}

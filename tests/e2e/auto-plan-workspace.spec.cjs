@@ -20,6 +20,26 @@ async function openRuleSection(page,key){
 }
 async function previewEditor(page){await page.addScriptTag({content:read('assets/auto-plan-preview-editor-v1.js')});await page.evaluate(()=>renderAutoPlanning());}
 async function completeApply(page){await expect(page.locator('#sfAutoApplyTitle')).toHaveText('Entwurf übernommen');await page.locator('.sf-auto-apply [data-close]').click();}
+for(const theme of ['dark','light'])test('planner changes a short staffed day target, preserves other days and restores it in '+theme,async({page})=>{
+ await fixture(page,theme);await page.addScriptTag({content:read('assets/shift-models-v1.js')});
+ await page.evaluate(()=>{
+  SFShiftModels.apply([{code:'FD',active:true,default_start:'06:00',default_end:'14:00'}],SFBackend.companyId);
+  globalSoll={FD:3};getSoll=(d,t)=>SFShiftModels.requiredSoll(d,t,d==='2026-12-01'||d==='2026-12-02'?3:0);
+  employees=[{id:'a',first:'Test',last:'A',status:'active',shifts:['FD'],weeklyHours:40},{id:'b',first:'Test',last:'B',status:'active',shifts:['FD'],weeklyHours:40}];
+  autoPlanPreview=employees.map(e=>({id:e.id,employeeId:e.id,type:'FD',date:'2026-12-01',start:'06:00',end:'14:00'}));autoPlanAnalyzed=true;autoPlanApplied=0;
+ });await previewEditor(page);
+ const cell=page.locator('[data-staffing-shift="FD"] td').first();
+ await expect(cell).toContainText('SOLL 3');await expect(cell.locator('.sf-auto-staffing-add')).toBeVisible();
+ await cell.getByRole('button',{name:'2026-12-01 · FD · SOLL ändern',exact:true}).click();
+ await page.getByLabel('SOLL für diesen Tag',{exact:true}).fill('2');await page.getByLabel('Begründung der Besetzungsausnahme').fill('Personalmangel abgestimmt');
+ await page.getByRole('button',{name:'Nur für diesen Tag speichern',exact:true}).click();
+ await expect(page.locator('#sfStaffingExceptionDialog')).toHaveCount(0);await expect(cell).toContainText('SOLL 2');await expect(cell).not.toHaveClass(/is-short/);
+ expect(await page.evaluate(()=>getSoll('2026-12-02','FD'))).toBe(3);expect(await page.evaluate(()=>autoPlanPreview.length)).toBe(2);
+ await cell.locator('.sf-auto-staffing-target').click();await page.getByLabel('SOLL für diesen Tag',{exact:true}).fill('0');await page.getByRole('button',{name:'Nur für diesen Tag speichern',exact:true}).click();
+ await expect(cell).toContainText('SOLL 0');expect(await page.evaluate(()=>autoPlanPreview.length)).toBe(2);
+ await cell.locator('.sf-auto-staffing-target').click();await page.getByRole('button',{name:'Ausnahme aufheben',exact:true}).click();await expect(cell).toContainText('SOLL 3');
+ await page.evaluate(()=>{SFBackend.ready=true;SFBackend.role='EMPLOYEE';renderAutoPlanning()});await expect(page.locator('.sf-auto-staffing-target')).toHaveCount(0);
+});
 test('automatic repair backfills a flexible employee and closes a cross-day qualification bottleneck',async({page})=>{
  await fixture(page);await page.locator('#autoFairDistribution').uncheck();await page.evaluate(()=>{
   employees=[{id:'flex',first:'Flexible',last:'Person',status:'active',employment:'Teilzeit',monthlyHours:8,weeklyHours:40,shifts:['FD','ND']},{id:'single',first:'Frühdienst',last:'Person',status:'active',employment:'Teilzeit',monthlyHours:8,weeklyHours:40,shifts:['FD']}];
