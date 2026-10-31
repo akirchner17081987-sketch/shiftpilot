@@ -453,7 +453,7 @@ test('individual January planning enforces night recovery, reports shortages and
  });
  await page.locator('#applyAutoPlanBtn').click();await confirmDraft(page);await expect(page.locator('#sfAutoApplyTitle')).toHaveText('Übernahme nicht abgeschlossen');await expect(page.locator('#sfAutoApplyDetail')).toContainText('Transaktion abgelehnt');await page.locator('.sf-auto-apply [data-close]').click();
  await expect.poll(()=>page.evaluate(()=>rpcCalls.length)).toBe(1);
- const rpc=await page.evaluate(()=>rpcCalls[0]);expect(rpc.name).toBe('apply_individual_month_optimization');expect(rpc.args.p_individual_employee_ids).toHaveLength(17);expect(rpc.args.p_assignments).toHaveLength(result.preview);expect(rpc.args.p_company_id).toBe('a');expect(rpc.args.p_month).toBe('2027-01-01');expect(rpc.args.p_respect_weekly).toBe(true);
+ const rpc=await page.evaluate(()=>rpcCalls[0]);expect(rpc.name).toBe('apply_confirmed_incomplete_draft');expect(rpc.args.p_mode).toBe('individual');expect(rpc.args.p_confirmation).toBe('OFFEN ÜBERNEHMEN');expect(rpc.args.p_open_positions).toBeGreaterThanOrEqual(result.open);expect(rpc.args.p_month_count).toBe(1);expect(rpc.args.p_individual_employee_ids).toHaveLength(17);expect(rpc.args.p_assignments).toHaveLength(result.preview);expect(rpc.args.p_company_id).toBe('a');expect(rpc.args.p_first_month).toBe('2027-01-01');expect(rpc.args.p_respect_weekly).toBe(true);
  expect(await page.evaluate(()=>JSON.stringify(assignments))).toBe(before);expect(await page.evaluate(()=>autoPlanPreview.length)).toBe(result.preview);expect(await page.evaluate(()=>lastToast.copy)).toContain('Transaktion abgelehnt');expect(errors).toEqual([]);
 });
 
