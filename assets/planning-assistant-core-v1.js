@@ -93,6 +93,7 @@
     if(/veroeffentlich|freigeben|freigabe.*plan/.test(q))return 'publish';
     if(/\b(team|teams)\b/.test(q)&&/rhythm|rhytm|zyklus|tagesfolge|einstieg/.test(q)&&/\b(wie|wo|einstell|aender|einricht|hilfe)\w*/.test(q))return 'rhythmHelp';
     if(/(ohne|fehl\w*|kein\w*|nicht).*team|team.*(fehl\w*|ohne|nicht zugeordnet|keine zuordnung)/.test(q))return 'unassigned';
+    if(/offene (?:stellen|positionen).*uebersicht|(?:zentrale|dringende).*offene (?:stellen|dienste)|besetzungsuebersicht/.test(q))return 'vacancies';
     if(/ersatz|einspring|aushilf|aushelfen|vertretung suchen|uebernehmen|infrage|in frage|wer .*kann|passende.*mitarbeiter|verfuegbar.*mitarbeiter|mitarbeiter.*verfuegbar|wer.*verfuegbar|vertretung|besetz.*vorschlag/.test(q))return 'replacement';
     if(/(?:warum|weshalb|wieso).*(?:plan|dienst|schicht|besetz)|nicht besetz|keine vorschlaege|kein vorschlag|autoplanung.*(fehler|problem)|auto.?planung.*(fehler|problem)/.test(q))return 'diagnosis';
     if(/stunden|auslastung|ueberlast|unterlast|ueber.*(?:vertrags|monats).?soll|unter.*(?:vertrags|monats).?soll/.test(q))return 'workload';
@@ -254,6 +255,37 @@
     return rows;
   }
 
+  function vacancyOverview(s,dates,type){
+    const all=coverage(s,dates,type),rows=all.filter(x=>x.missing);
+    const priority=date=>date<s.today?3:date===s.today?0:date<=new Date(Date.parse(s.today+'T12:00:00Z')+3*86400000).toISOString().slice(0,10)?1:2;
+    rows.sort((a,b)=>priority(a.date)-priority(b.date)||a.date.localeCompare(b.date)||a.type.localeCompare(b.type));
+    const total=rows.reduce((n,x)=>n+x.missing,0);
+    return response('Offene Stellen · '+periodLabel(dates),(all.some(x=>x.soll)?'':'Für diesen Zeitraum ist kein SOLL-Bedarf hinterlegt. Bitte die Bedarfseinstellungen prüfen. ')+total+' offene Positionen in '+rows.length+' Diensten. Heute und die nächsten drei Tage stehen zuerst; vergangene Lücken stehen am Ende. Wähle einen Dienst, um aktuell geeignete Mitarbeiter zu prüfen.',{
+      columns:['Priorität','Tag','Schicht','SOLL','IST','Offen'],
+      rows:rows.map(x=>[['Heute','Nächste 3 Tage','Später','Vergangen'][priority(x.date)],formatDate(x.date),x.label||x.type,String(x.soll),String(x.ist),String(x.missing)]),
+      rowActions:rows.map(x=>({question:'Ersatz für '+x.type+' am '+x.date,label:'Mitarbeiter vorschlagen'})),
+      rowSecondaryActions:rows.map(x=>({view:'schedule',date:x.date,type:x.type,label:'Dienst öffnen'})),
+      notes:['Vorschläge prüfen immer einen einzelnen Dienst. Nach jeder Einplanung werden Verfügbarkeit und offene Stellen erneut berechnet. Gemeinsame Besetzungen werden einmal gezählt.'],context:{intent:'vacancies',dates,type,pending:false}});
+  }
+
+  function candidateImpact(s,date,type,employeeId,dates){
+    if(!s.authorized||s.loading||s.error||!validDate(date))throw Error('Die Planungsdaten sind derzeit nicht bereit.');
+    const t=s.shifts.find(t=>t.id===type),e=s.employees.find(e=>String(e.id)===String(employeeId)&&e.status==='active'&&!e.deletedAt);
+    if(!t||!e)throw Error('Mitarbeiter oder Schicht ist nicht mehr verfügbar.');
+    const group=coverage(s,[date],type).find(x=>x.missing>0);
+    if(!group)throw Error('Dieser Dienst ist inzwischen vollständig besetzt.');
+    const checked=s.candidates(type,date).candidates.find(c=>String(c.e.id)===String(e.id));
+    if(!checked)throw Error('Der Mitarbeiter erfüllt die aktuellen Planungsregeln nicht mehr.');
+    const duty={employeeId:e.id,date,type,start:t.start,end:t.end},scope=Array.isArray(dates)&&dates.includes(date)?dates:[date],next=[...s.assignments,duty];
+    const rows=(rows)=>s.coverageRows?s.coverageRows(scope,rows):coverage({...s,assignments:rows},scope);
+    const before=rows(s.assignments),after=rows(next),month=date.slice(0,7),monthBefore=s.assignments.filter(a=>String(a.employeeId)===String(e.id)&&a.date.startsWith(month)).reduce((n,a)=>n+paidHours(s,a),0),added=paidHours(s,duty);
+    const target=Number(s.monthTarget(e))||0;
+    return {duty,employee:name(e),fit:checked.fit||['Freigabe '+type,'Aktuelle Planungsregeln erfüllt'],dates:scope,
+      openBefore:before.reduce((n,x)=>n+x.missing,0),openAfter:after.reduce((n,x)=>n+x.missing,0),
+      staffingBefore:group.ist,staffingAfter:group.ist+1,target:group.soll,month,monthBefore,monthAfter:monthBefore+added,monthTarget:target,added,
+      published:!!s.isPublished?.(date)};
+  }
+
   const escapePattern=v=>String(v).replace(/[^a-z0-9]/g,c=>'\\'+c);
   function employeeMatches(q,staff){
     const has=value=>{const v=normalize(value).trim();return v&&new RegExp('(?:^|[^a-z0-9])'+escapePattern(v)+'(?:$|[^a-z0-9])').test(q);};
@@ -386,6 +418,7 @@
     const context={intent,dates,type,team:requestedTeam,pending:false},label=periodLabel(dates),shiftLabel=id=>{const t=s.shifts.find(t=>t.id===id);return t?.name&&t.name!==id?`${id} · ${t.name}`:id;};
     if(intent==='report')return response('Planungsbericht · '+label,'Der Bericht enthält die aktuelle Besetzung, offene Positionen mit geprüften Gründen, Stundenabweichungen, Regelhinweise und gekennzeichnete manuelle Einplanungen. Prüfe die Grundlage und lade anschließend die PDF herunter.',{reportRequest:true,context});
     const staff=s.employees.filter(e=>!e.deletedAt&&e.status==='active');
+    if(intent==='vacancies')return vacancyOverview(s,dates,type);
     const nav=(view,label)=>({view,label});
     if(intent==='goalOrders'||intent==='goalResume')return response('Meine Planungsaufträge','Gespeicherte Ziele, Prüfschritte und Entscheidungen des aktuellen Benutzers und Unternehmens. Beim Fortsetzen wird der aktuelle Plan erneut geprüft.',{goalManager:{resume:intent==='goalResume',month:period.explicit?dates[Math.floor(dates.length/2)].slice(0,7):null},context});
     if(intent==='goalOrder'){
@@ -560,6 +593,7 @@
           const limits=[c.target>0&&week>c.target+0.05?'über Wochen-SOLL':'',c.monthTarget>0&&month>c.monthTarget+0.05?'über Monats-SOLL':''].filter(Boolean);
           return[name(c.e),reasons.join('; ')+(limits.length?'. Hinweis: '+limits.join(' und '):''),hours(week)+' / '+(c.target>0?hours(c.target):'nicht hinterlegt')+' Std.',hours(month)+' / '+(c.monthTarget>0?hours(c.monthTarget):'nicht hinterlegt')+' Std.'+(c.monthTarget>0?' ('+(month>=c.monthTarget?'+':'')+hours(month-c.monthTarget)+' Std.)':''),next?formatDate(next.date)+' · '+next.type:'Kein späterer Dienst gespeichert'];
         }),rowActions:result.candidates.map(c=>({view:'employees',employeeId:c.e.id,label:'Profil öffnen'})),
+        rowSecondaryActions:result.candidates.map(c=>({candidateImpact:true,employeeId:c.e.id,date:dates[0],type,dates:(s.defaultDates||dates).includes(dates[0])?s.defaultDates:dates,label:'Auswirkung prüfen'})),
         notes:result.candidates.length?['Stundenwerte zeigen den Stand nach einem zusätzlichen Einsatz, ohne Pausenabzug. Geplante Werte sind keine bestätigten Überstunden.','Die Rangfolge folgt der aktuellen Auto-Planung. Angezeigt werden gespeicherte Folgedienste; eine gemeinsame Besetzung mehrerer Dienste muss erneut geprüft werden.']:result.reasons.map(r=>r.count+' Mitarbeiter: '+r.label),actions:[{view:'schedule',date:dates[0],type,label:'Dienst im Plan prüfen'}],context});
     }
     if(['open','coverage','diagnosis','overstaffed'].includes(intent)){
@@ -657,13 +691,13 @@
     if(s.authorized&&!s.loading&&!s.error&&result.context?.pending&&result.context.intent==='workload'&&/stunden/.test(normalize(question))&&!/geplant|planstunden|planung|soll|vertrag/.test(normalize(question)))result.context={...result.context,hoursQuestion:question};
     if(!s.authorized||s.loading||s.error||result.title==='Datum prüfen'||result.clarification||result.context?.pending||result.notes?.some(n=>/^Quelle: SchichtFunk Hilfe-Center/.test(n))||result.profileManager||result.form)return result;
     const intent=result.context?.intent||intentFor(normalize(question));
-    if(['report','planningCheck','loadCheck','workload','open','coverage','diagnosis','overstaffed','replacement','employeePlan','employeeDiagnosis','missingPermissions','unassigned','teamDay','outage','improvements','bottlenecks','forecast','leaveImpact','changeImpact','order','multiBalance','variants','followup','runReasons','rules','wizard'].includes(intent)){
+    if(['report','planningCheck','loadCheck','workload','vacancies','open','coverage','diagnosis','overstaffed','replacement','employeePlan','employeeDiagnosis','missingPermissions','unassigned','teamDay','outage','improvements','bottlenecks','forecast','leaveImpact','changeImpact','order','multiBalance','variants','followup','runReasons','rules','wizard'].includes(intent)){
       const dates=result.context?.dates||parsePeriod(normalize(question),s).dates||s.defaultDates||[s.today];result.basis=analysisBasis(s,dates,result);
     }
     return result;
   }
   function isReportFollowup(question,previous){return !!(previous?.dates&&/^(?:(?:und|auch|das|bitte|dann|dafuer)\s+)*(?:als\s+)?pdf(?:[- ]?bericht)?(?:\s+bitte)?[.!?]*$/.test(naturalQuestion(question)));}
-  const api={answer,normalize,naturalQuestion,isReportFollowup,requestPlan,parsePeriod,parseRange,rangeDates,parseShift,coverage,periodLabel,validDate,team,findHelp,questionGroups,intentFor,companyHelpArticles,analysisBasis,paidHours,plannedHours,fullMonth};
+  const api={answer,vacancyOverview,candidateImpact,normalize,naturalQuestion,isReportFollowup,requestPlan,parsePeriod,parseRange,rangeDates,parseShift,coverage,periodLabel,validDate,team,findHelp,questionGroups,intentFor,companyHelpArticles,analysisBasis,paidHours,plannedHours,fullMonth};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.SFPlanningAssistantCore=api;
 })(typeof window==='undefined'?globalThis:window);
 
