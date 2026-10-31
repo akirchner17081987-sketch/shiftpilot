@@ -24,6 +24,7 @@
     const old = document.getElementById('sfEntryGlobe');
     if (!old) return false;
     const sourceRect = old.getBoundingClientRect(), rootRect = root.getBoundingClientRect();
+    const sourceLongitude = Number(old.dataset.longitude || 8);
     const source = {x: sourceRect.x + sourceRect.width / 2 - rootRect.x,
       y: sourceRect.y + sourceRect.height / 2 - rootRect.y, radius: sourceRect.width * .39};
     const canvas = document.createElement('canvas');
@@ -77,13 +78,13 @@
       atlasContext?.setTransform(atlasRatio,0,0,atlasRatio,0,0);atlasKey = '';
     }
     function draw(now) {
-      const t = now - started, move = ease((t - 350) / 1900);
+      const t = now - started, move = ease((t - 150) / 3300);
       // Every successful login dives into the globe; a workplace only determines the named destination.
-      const zoom = ease((t - 2350) / 2800);
+      const zoom = ease((t - 850) / 4300);
       const cx = source.x + (width * .5 - source.x) * move;
       const cy = source.y + (height * .46 - source.y) * move;
       const radius = Math.max(1,source.radius) * Math.exp(zoom * 3.45);
-      const lon = 8 * (1 - move) + cameraTarget[0] * move;
+      const lon = sourceLongitude * (1 - move) + cameraTarget[0] * move;
       const lat = 21 * (1 - move) + cameraTarget[1] * move;
       const center = [lon,lat];
       projection.rotate([-lon,-lat,0]).translate([cx,cy]).scale(radius);
@@ -152,7 +153,7 @@
     function tick(now) {
       if (disposed) return;
       if (!root.isConnected || !root.classList.contains('sf-entry-success')) { stop(); return; }
-      if (!document.hidden && now - last >= 32) { draw(now);last = now; }
+      if (!document.hidden) { draw(now);last = now; }
       if (now - started < 6000) frame = requestAnimationFrame(tick);
     }
     const observer = new ResizeObserver(resize);observer.observe(root);

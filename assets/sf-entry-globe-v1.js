@@ -73,6 +73,7 @@
   function draw() {
     const c = size / 2, r = size * .39, longitude=8+elapsed*.0015;
     ctx.clearRect(0, 0, size, size);
+    canvas.dataset.longitude=longitude.toFixed(4);
     let blend=0;
     if(surface&&projection&&surfaceContext){
       projection.rotate([-longitude,-21]).translate([c,c]).scale(r);
