@@ -22,8 +22,8 @@
    // Retain a truthful world outline when a future site is outside Central Europe.
    ctx.beginPath();path(engine.countries);ctx.fillStyle='#0f253f';ctx.fill();
    // Composite regional detail separately so the dataset bounds never form a hard seam.
-   const output=ctx;detailCanvas.width=output.canvas.width;detailCanvas.height=output.canvas.height;
-   ctx=detailCanvas.getContext('2d');ctx.setTransform(output.getTransform());ctx.save();path.context(ctx);
+   const output=ctx;if(detailCanvas.width!==output.canvas.width)detailCanvas.width=output.canvas.width;if(detailCanvas.height!==output.canvas.height)detailCanvas.height=output.canvas.height;
+   ctx=detailCanvas.getContext('2d');ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,detailCanvas.width,detailCanvas.height);ctx.setTransform(output.getTransform());ctx.save();path.context(ctx);
    if(data){const b=data.bounds,a=projection([b[0],b[3]]),z=projection([b[2],b[1]]);ctx.beginPath();ctx.rect(a[0],a[1],z[0]-a[0],z[1]-a[1]);ctx.clip();ctx.fillStyle=water;ctx.fillRect(0,0,width,height);}
    ctx.beginPath();path(countries);ctx.fillStyle='#0f253f';ctx.fill();
    if(atlas){

@@ -4,6 +4,28 @@
   const root = document.getElementById('sfEntryOverlay');
   if (!root) return;
   let preparing = null, stopActive = null;
+  let points = null;
+  function fallbackPoints(engine) {
+      const {d3,countries:land}=engine;
+      if (points) return points;
+    // Build the fallback points only if the GPU renderer is unavailable.
+    const texture = document.createElement('canvas');texture.width = 720;texture.height = 360;
+    const tc = texture.getContext('2d', {willReadFrequently:true});
+    if (!tc) return [];
+    const texProjection = d3.geoEquirectangular().scale(720 / (2 * Math.PI)).translate([360,180]);
+    tc.fillStyle = '#fff';tc.beginPath();d3.geoPath(texProjection, tc)(land);tc.fill();
+    const pixels = tc.getImageData(0,0,720,360).data; points = [];
+    for (let lat = -58;lat < 81;lat += 1.9) {
+      const step = 1.9 / Math.cos(lat * Math.PI / 180);
+      for (let lon = -180;lon < 180;lon += step) {
+        const xy = texProjection([lon,lat]);
+        const row = Math.min(359,Math.max(0,Math.floor(xy[1]))), col = Math.min(719,Math.max(0,Math.floor(xy[0])));
+        const onLand = pixels[(row * 720 + col) * 4 + 3] > 20;
+        if (onLand || Math.round((lon + 180) / step) % 5 === 0) points.push({geo:[lon,lat],land:onLand,shine:(lon * 13 + lat * 7) * .01745});
+      }
+    }
+      return points;
+    }
   function prepare() {
     // Share the actual daily overview's night atlas, without delaying login.
     window.SFRegionAtlas?.prepare();
@@ -36,22 +58,6 @@
     const projection = d3.geoOrthographic().clipAngle(90).precision(.4);
     const surface=window.SFGlobeSurface?.create(engine,{maxPixels:600000,onReady(){if(!disposed)draw(performance.now());}});
     const path = d3.geoPath(projection, ctx), grid = d3.geoGraticule10();
-    // Rasterize published Natural Earth geometry once to sample the illuminated continents.
-    const texture = document.createElement('canvas');texture.width = 720;texture.height = 360;
-    const tc = texture.getContext('2d', {willReadFrequently:true});
-    if (!tc) { canvas.remove(); return false; }
-    const texProjection = d3.geoEquirectangular().scale(720 / (2 * Math.PI)).translate([360,180]);
-    tc.fillStyle = '#fff';tc.beginPath();d3.geoPath(texProjection, tc)(land);tc.fill();
-    const pixels = tc.getImageData(0,0,720,360).data, points = [];
-    for (let lat = -58;lat < 81;lat += 1.9) {
-      const step = 1.9 / Math.cos(lat * Math.PI / 180);
-      for (let lon = -180;lon < 180;lon += step) {
-        const xy = texProjection([lon,lat]);
-        const row = Math.min(359,Math.max(0,Math.floor(xy[1]))), col = Math.min(719,Math.max(0,Math.floor(xy[0])));
-        const onLand = pixels[(row * 720 + col) * 4 + 3] > 20;
-        if (onLand || Math.round((lon + 180) / step) % 5 === 0) points.push({geo:[lon,lat],land:onLand,shine:(lon * 13 + lat * 7) * .01745});
-      }
-    }
     const target = site?.coordinates || null;
     // Unassigned accounts enter Germany; the country geometry supplies the camera center.
     const germany = land.features.find(feature => feature.properties?.id === 'DEU');
@@ -59,7 +65,7 @@
     let width = root.clientWidth, height = root.clientHeight, frame = 0, disposed = false, last = 0;
     const atlasCanvas = document.createElement('canvas'), atlasContext = atlasCanvas.getContext('2d');
     const atlasProjection = d3.geoMercator().precision(.15);
-    let atlasReady = false, atlasKey = '', atlasRevealAt = 3450;
+    let atlasReady = false, atlasKey = '', atlasRevealAt = 3450, atlasSnapshot = null;
     const atlas = window.SFRegionAtlas?.create(engine, {onReady(ready) {
       atlasReady = !!ready;atlasRevealAt = Math.max(3450,performance.now() - started);
       if (!disposed) draw(performance.now());
@@ -75,7 +81,7 @@
       // Fixed dimensions throughout the animation keep the city lights stable.
       const atlasRatio = Math.min(ratio,Math.sqrt(1000000 / Math.max(1,width * height)));
       atlasCanvas.width = Math.max(1,Math.round(width * atlasRatio));atlasCanvas.height = Math.max(1,Math.round(height * atlasRatio));
-      atlasContext?.setTransform(atlasRatio,0,0,atlasRatio,0,0);atlasKey = '';
+      atlasContext?.setTransform(atlasRatio,0,0,atlasRatio,0,0);atlasKey = '';atlasSnapshot = null;
     }
     function draw(now) {
       const t = now - started, move = ease((t - 150) / 3300);
@@ -105,7 +111,7 @@
       ctx.save();ctx.beginPath();ctx.arc(cx,cy,radius,0,Math.PI * 2);ctx.clip();
       ctx.beginPath();path(land);ctx.fillStyle = '#1c5e641c';ctx.fill();ctx.strokeStyle = '#6dd2ce32';ctx.lineWidth = .65;ctx.stroke();
       ctx.beginPath();path(grid);ctx.strokeStyle = '#75c0d41d';ctx.lineWidth = .6;ctx.stroke();
-      for (const point of points) {
+      for (const point of fallbackPoints(engine)) {
         const distance = d3.geoDistance(center,point.geo);
         if (distance > Math.PI / 2) continue;
         const xy = projection(point.geo);
@@ -129,11 +135,17 @@
         // Both the terrain and its labels come from the shared atlas renderer.
         atlasProjection.center(center).translate([cx,cy]).scale(radius * Math.cos(lat * Math.PI / 180));
         const key = [width,height,lon,lat,radius].join('|');
-        if (key !== atlasKey) {
+        // Redraw expensive geographic details at most every 80 ms; transform
+        // the cached map between redraws so the camera continues every frame.
+        if (!atlasSnapshot || (key !== atlasKey && (t-atlasSnapshot.time >= 80 || zoom === 1))) {
           atlasContext.clearRect(0,0,width,height);
           atlas.render(atlasContext,atlasProjection,width,height,{top:35});atlasKey = key;
+          atlasSnapshot = {time:t,scale:atlasProjection.scale(),anchor:atlasProjection([10,50])};
         }
-        ctx.save();ctx.globalAlpha *= atlasBlend;ctx.drawImage(atlasCanvas,0,0,width,height);ctx.restore();
+        const anchor=atlasProjection([10,50]), ratio=atlasProjection.scale()/atlasSnapshot.scale;
+        ctx.save();ctx.globalAlpha *= atlasBlend;
+        ctx.translate(anchor[0],anchor[1]);ctx.scale(ratio,ratio);
+        ctx.drawImage(atlasCanvas,-atlasSnapshot.anchor[0],-atlasSnapshot.anchor[1],width,height);ctx.restore();
       }
       if (target && d3.geoDistance(center,target) < Math.PI / 2) {
         const globePin = projection(target), mapPin = atlasBlend ? atlasProjection(target) : globePin;
@@ -164,4 +176,8 @@
   function stop() { const stopCurrent = stopActive;stopActive = null;stopCurrent?.(); }
   window.SFEntryDive = {prepare,start,stop};
   document.dispatchEvent(new Event('sf:entry-dive-ready'));
+  // Prepare the fallback on an idle turn while the login remains interactive.
+  const warmFallback=()=>prepare().then(engine=>{if(engine&&root.isConnected)fallbackPoints(engine);});
+  if(window.requestIdleCallback)window.requestIdleCallback(warmFallback,{timeout:5000});
+  else setTimeout(warmFallback,1200);
 })();
