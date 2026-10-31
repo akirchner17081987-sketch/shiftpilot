@@ -14,9 +14,9 @@ test('January weekend OT reserves three different employees every Saturday and S
  assert.match(el('autoRuleText').innerHTML,/OT · Wochenenden/);assert.match(el('autoRuleText').innerHTML,/Mindestens 3 OT-Mitarbeiter/);
  for(const e of c.employees)assert.deepEqual(Array.from(c.SFSolidPlanningCore.errors(e,preview,c.SFCompliance.policy.solidPlanningRules)),[]);
 });
-test('weekend OT shortage blocks UI and programmatic apply without issuing a commit',async()=>{
+test('weekend OT shortage permits confirmation but programmatic apply without acknowledgement cannot commit',async()=>{
  const {c,calls,el}=weekendFixture(2);await c.SFMonthOptimizer.optimize();assert.ok(c.SFMonthOptimizer.getResult().criticalOpen>=10);
- assert.equal(el('applyAutoPlanBtn').disabled,true);await c.applyAutoPlanPreview();assert.equal(calls.filter(x=>x.name==='apply_planning_period').length,0);assert.match(c.toast.copy,/Pflichtpositionen/);
+ assert.equal(el('applyAutoPlanBtn').disabled,false);await c.applyAutoPlanPreview();assert.equal(calls.filter(x=>x.name.startsWith('apply_')).length,0);assert.match(c.toast.copy,/ausdrücklich bestätigt/);
 });
 test('background payload includes normal weekend OT as critical and preserves the minimum after checkpoints',async()=>{
  const {c,run}=weekendFixture();let payload;c.SFBackgroundAutoPlanCore=require('../assets/background-auto-plan-core-v1.js');
@@ -44,7 +44,7 @@ test('background planning persists and restores the comparison baseline with the
  const job={id:'saved-job',company_id:'co',first_month:'2027-01-01',month_count:1,result:{preview,metadata:payload.metadata}};
  await c.SFMonthOptimizer.restoreBackground(job);assert.ok(c.SFMonthOptimizer.getResult(),c.toast?.copy);assert.deepEqual(c.SFMonthOptimizer.getResult().reviewBefore,payload.metadata.reviewBefore);assert.match(el('autoPlanComparison').innerHTML,/Was verändert/);
  delete job.result.metadata.reviewBefore;await c.SFMonthOptimizer.restoreBackground(job);assert.match(el('autoPlanComparison').innerHTML,/Was verändert/);assert.equal(c.SFMonthOptimizer.getResult().reviewBefore.openCount,2);
- await c.SFMonthOptimizer.restoreBackground(job,false,{canApply:false,open:2,errors:1,spread:10});assert.match(el('autoMonthHours').innerHTML,/Manuelle Entscheidung erforderlich/);assert.match(el('autoMonthHours').innerHTML,/2 Pflichtpositionen offen · 1 Regelkonflikte/);assert.equal(el('applyAutoPlanBtn').disabled,true);
+ await c.SFMonthOptimizer.restoreBackground(job,false,{canApply:false,open:2,errors:1,spread:10});assert.match(el('autoMonthHours').innerHTML,/Regelprüfung erforderlich/);assert.match(el('autoMonthHours').innerHTML,/2 Pflichtpositionen offen · 1 Regelkonflikte/);assert.equal(el('applyAutoPlanBtn').disabled,true);
 });
 test('directly opened autonomous jobs always use the server review status and fail closed',async()=>{
  const {c,el,run,calls}=harness();el('autoPlanMonthCount').value='1';await c.SFMonthOptimizer.optimize();const preview=JSON.parse(JSON.stringify(run('autoPlanPreview')));let payload;
@@ -74,7 +74,7 @@ test('period seed cannot retain a duty outside exclusive employee scope',async()
 });
 
 test('an unfilled third OT2 does not prevent applying the confirmed minimum of two',async()=>{
- const{c,el,calls}=harness();el('autoPlanMonthCount').value='1';
+ const{c,el,calls,run}=harness();el('autoPlanMonthCount').value='1';
  c.employees.forEach(e=>e.shifts=['OT2']);c.TYPES=[{id:'OT2',start:'08:00',end:'18:00'}];c.globalSoll={OT2:3};c.getSoll=d=>d==='2027-01-01'?3:0;
  c.SFCompliance.policy.solidPlanningRules.criticalShifts=[{code:'OT2',minimum:2,weekdays:[5]}];
  // Only the first Friday has planning demand and employees; later Friday minima still block.
@@ -82,7 +82,8 @@ test('an unfilled third OT2 does not prevent applying the confirmed minimum of t
  c.SFCompliance.policy.solidPlanningRules.criticalShifts=[{code:'OT2',minimum:2,weekdays:[5]}];
  c.assignments=['2027-01-08','2027-01-15','2027-01-22','2027-01-29'].flatMap(date=>['x','y'].map(employeeId=>({id:date+employeeId,employeeId,date,type:'OT2',start:'08:00',end:'18:00',_dbStatus:'PUBLISHED'})));
  await c.SFMonthOptimizer.optimize();assert.equal(c.SFMonthOptimizer.getResult().criticalOpen,0);
- await c.applyAutoPlanPreview();assert.equal(calls.at(-1).name,'apply_planning_period');assert.equal(calls.at(-1).args.p_assignments.length,2);
+ c.SFAutoPlanWorkspace.consumeIncompleteConfirmation=()=>({count:c.SFAutoPlanWorkspace.coverageSummary(c.autoPlanningDates(),[...c.SFMonthOptimizer.getResult().base,...run('autoPlanPreview')]).open,phrase:'OFFEN ÜBERNEHMEN'});
+ await c.applyAutoPlanPreview();assert.equal(calls.at(-1).name,'apply_confirmed_incomplete_draft');assert.equal(calls.at(-1).args.p_confirmation,'OFFEN ÜBERNEHMEN');assert.equal(calls.at(-1).args.p_mode,'period');assert.equal(calls.at(-1).args.p_assignments.length,2);
 });
 
 test('movable next-month drafts do not block a valid cross-month replacement',async()=>{
