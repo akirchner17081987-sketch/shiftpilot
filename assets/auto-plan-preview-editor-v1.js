@@ -176,10 +176,46 @@
   const keydown=event=>{if(event.key==='Escape'){event.preventDefault();close();}else if(event.key==='Tab'){const focusable=[...back.querySelectorAll('button,input:not([type=hidden]),select')].filter(n=>!n.disabled),first=focusable[0],last=focusable.at(-1);if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}}};
   back.onclick=event=>{if(event.target===back)close();};document.addEventListener('keydown',keydown);$('sfPreviewSearch')?.addEventListener('input',candidates);$('sfPreviewEmployee').addEventListener('change',()=>rhythmNote(employees.find(e=>same(e.id,$('sfPreviewEmployee').value))));candidates();(fixedEmployee?$('sfPreviewShift').disabled?back.querySelector('[data-cancel]'):$('sfPreviewShift'):staffing?$('sfPreviewSearch'):$('sfPreviewFrom')).focus();
  }
+ function openStaffing({date,type}){
+  if(!editable()||!autoPlanningDates().includes(date)||!typeById(type))return;
+  document.getElementById('sfStaffingExceptionDialog')?.remove();
+  const B=window.SFBackend||{},company=B.companyId,group=window.SFShiftModels?.coverageGroup?.(type),rules=window.SFCompliance?.policy?.solidPlanningRules||{};
+  const current=rules.staffingExceptions?.[date]?.[type],target=group?window.SFShiftModels.coverageTarget(date,type):window.SFShiftModels?.requiredSoll?.(date,type,getSoll(date,type),autoPlanPreview)??getSoll(date,type);
+  const back=document.createElement('div');back.id='sfStaffingExceptionDialog';back.className='sf-auto-confirm-back';
+  back.innerHTML=`<section class="sf-auto-confirm sf-auto-preview-dialog" role="dialog" aria-modal="true" aria-labelledby="sfStaffingExceptionTitle"><div class="eyebrow">TAGESBESETZUNG · PLANERENTSCHEIDUNG</div><h2 id="sfStaffingExceptionTitle">SOLL für diesen Tag ändern</h2><p>${esc(date)} · ${esc(group?.label||window.SFShiftModels?.label?.(type)||type)}</p><p>Die Ausnahme wird sofort gespeichert und gilt nur für diesen Tag in diesem Unternehmen. Die reguläre Besetzung bleibt bestehen.${group?' Die verbundenen Schichtalternativen teilen sich diesen SOLL-Wert.':''}</p><form><label>Benötigte Mitarbeiter<input name="required" aria-label="SOLL für diesen Tag" type="number" min="0" max="99" step="1" required value="${Number(target)||0}"></label><label>Begründung<textarea name="reason" aria-label="Begründung der Besetzungsausnahme" rows="2" minlength="3" maxlength="500" required placeholder="Zum Beispiel: Personalmangel, reduzierte Besetzung abgestimmt">${esc(current?.reason||'')}</textarea></label><p>Auch SOLL 0 ist möglich. Bereits eingeplante Dienste werden nicht gelöscht. Andere Planungsprüfungen gelten weiterhin.</p><p role="status" data-error></p><footer>${current?'<button type="button" class="ghost" data-reset>Ausnahme aufheben</button>':''}<button type="button" class="ghost" data-cancel>Abbrechen</button><button type="submit" class="primary">Nur für diesen Tag speichern</button></footer></form></section>`;
+  document.body.appendChild(back);const form=back.querySelector('form'),previous=document.activeElement;let saving=false;
+  const close=()=>{if(saving)return;back.remove();document.removeEventListener('keydown',keydown);if(previous?.isConnected)previous.focus({preventScroll:true});};
+  const keydown=e=>{if(e.key==='Escape'){e.preventDefault();close();}if(e.key==='Tab'){const nodes=[...back.querySelectorAll('input,textarea,button')].filter(n=>!n.disabled),first=nodes[0],last=nodes.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}};
+  const save=async reset=>{
+   if(saving||!editable()||B.companyId!==company)return;
+   if(!reset&&!form.reportValidity())return;
+   const count=reset?null:Number(form.elements.required.value),reason=reset?'Tagesausnahme aufgehoben':form.elements.reason.value.trim();
+   if(!reset&&(!Number.isInteger(count)||count<0||count>99||reason.length<3)){back.querySelector('[data-error]').textContent='Bitte einen ganzzahligen SOLL-Wert 0–99 und eine Begründung eingeben.';return;}
+   saving=true;back.querySelectorAll('button').forEach(b=>b.disabled=true);back.querySelector('[data-error]').textContent='Tagesbesetzung wird gespeichert …';
+   try{
+    const prepared=optimizer()?.getResult(),period=prepared?{p_first_month:prepared.month+'-01',p_month_count:prepared.months?.length||1,p_snapshot_mode:prepared.solid?'period':'month'}:{};
+    let reply;
+    if(B.ready&&B.client){
+     if(B.syncing||B.bootPromise||B.companySwitching)throw Error('Daten werden gerade gespeichert oder geladen. Bitte gleich erneut versuchen.');
+     const q=await B.client.rpc('set_planning_staffing_exception',{p_company_id:company,p_date:date,p_code:type,p_required:count,p_reason:reason,...period});if(q.error)throw q.error;reply=q.data;
+    }else{
+     const next=JSON.parse(JSON.stringify(rules)),codes=group?.active?.map(t=>t.id)||[type];next.staffingExceptions??={};next.staffingExceptions[date]??={};const daily=[];
+     for(const code of codes){const old=next.staffingExceptions[date][code];if(reset){delete next.staffingExceptions[date][code];daily.push({date,code,required:old?.originalDaily??null});}else{next.staffingExceptions[date][code]={required:count,reason,originalDaily:old&&Object.hasOwn(old,'originalDaily')?old.originalDaily:dailySoll[date]?.[code]??null};daily.push({date,code,required:count});}}
+     reply={rules:next,daily,oldFingerprint:prepared?.fingerprint??null,newFingerprint:prepared?.fingerprint??null};
+    }
+    if(B.companyId!==company){saving=false;close();return;}
+    window.SFCompliance.policy.solidPlanningRules={...reply.rules,timezone:rules.timezone||B.companyTimeZone||'Europe/Berlin'};if(B.ready)B.planningRulesBaseline=reply.rules;
+    for(const row of reply.daily||[]){dailySoll[row.date]??={};if(row.required===null)delete dailySoll[row.date][row.code];else dailySoll[row.date][row.code]=row.required;}
+    if(!B.ready)saveAll();saving=false;close();optimizer()?.staffingChanged?.(reply,prepared);if(!prepared){const previous=autoPlanUnresolved;autoPlanUnresolved=withRows([...base(),...autoPlanPreview],()=>autoOpenSlots().map(slot=>({...slot,reason:previous.find(s=>s.date===slot.date&&s.type===slot.type)?.reason||'Offene Besetzung nach bestätigter Tagesvorgabe.'})));}renderAutoPlanning();
+    showSaveToast('Tagesbesetzung gespeichert',reset?'Die reguläre Besetzung gilt wieder.':'Die bestätigte SOLL-Ausnahme gilt nur am '+date+'.');
+   }catch(e){saving=false;back.querySelector('[data-error]').textContent=e.message||String(e);back.querySelectorAll('button').forEach(b=>b.disabled=false);}
+  };
+  form.onsubmit=e=>{e.preventDefault();save(false);};back.querySelector('[data-reset]')?.addEventListener('click',()=>save(true));back.querySelector('[data-cancel]').onclick=close;back.onclick=e=>{if(e.target===back)close();};document.addEventListener('keydown',keydown);form.elements.required.focus();
+ }
  function decorate(){
   contextChanged();const host=$('autoStaircase');if(!host)return;
   let tools=$('sfAutoPreviewTools');if(!tools){tools=document.createElement('div');tools.id='sfAutoPreviewTools';tools.className='sf-auto-preview-tools';host.before(tools);}
-  tools.hidden=!editable();if(!editable()){(delete host.dataset.sfRangeScope,host.querySelectorAll('.sf-auto-edit-cell,.sf-auto-staffing-add')).forEach(button=>{if(button.classList.contains('sf-auto-staffing-add'))button.querySelector('span')?.remove();button.replaceWith(...button.childNodes);});if(available()&&typeof window.editAssignment==='function')decorateEmployeeCells(host,true);return;}
+  tools.hidden=!editable();if(!editable()){host.querySelectorAll('.sf-auto-staffing-target').forEach(n=>n.remove());(delete host.dataset.sfRangeScope,host.querySelectorAll('.sf-auto-edit-cell,.sf-auto-staffing-add')).forEach(button=>{if(button.classList.contains('sf-auto-staffing-add'))button.querySelector('span')?.remove();button.replaceWith(...button.childNodes);});if(available()&&typeof window.editAssignment==='function')decorateEmployeeCells(host,true);return;}
   const issues=reviewIssues();tools.innerHTML=`<div><b>Vorplanung bearbeiten</b><p>Mitarbeiterzelle anklicken: Dienst auswählen, ändern oder entfernen. Mit gedrückter linker Maustaste über mehrere Tage derselben Zeile ziehen und danach Vorschlagsdienste gemeinsam entfernen oder einen Dienst für die Auswahl wählen. Orange IST/SOLL-Stelle anklicken: passende Mitarbeiter auswählen. Vorschlagsänderungen werden erst mit der Übernahme als Entwurf gespeichert. Bereits gespeicherte Dienste öffnen die normale Bearbeitung.</p></div><div class="sf-auto-edit-actions"><button type="button" class="primary" data-add>Dienst hinzufügen</button><button type="button" class="ghost" data-undo ${history.length?'':'disabled'}>Rückgängig</button></div>${issues.length?`<div class="sf-auto-edit-review" role="status"><b>Vor der Übernahme korrigieren</b><p>${issues.slice(0,5).map(esc).join('<br>')}${issues.length>5?'<br>Weitere '+(issues.length-5)+' Konflikte.':''}</p></div>`:''}`;
   tools.querySelector('[data-add]').onclick=()=>open();tools.querySelector('[data-undo]').onclick=undo;
   if(issues.length&&$('applyAutoPlanBtn'))$('applyAutoPlanBtn').disabled=true;
@@ -187,13 +223,18 @@
   const dates=autoPlanningDates(),shown=dates.filter(d=>d.startsWith(host.querySelector('.sf-auto-preview-nav select')?.value||dates[0]?.slice(0,7)));
   for(const row of host.querySelectorAll('.sf-auto-staffing tr[data-staffing-shift],.sf-auto-staffing tr[data-staffing-group]')){
    const group=row.dataset.staffingGroup,type=row.dataset.staffingShift||TYPES.find(t=>window.SFShiftModels?.coverageGroup?.(t.id)?.key===group)?.id;if(!type)continue;
-   [...row.querySelectorAll('td')].forEach((cell,i)=>{const date=shown[i];if(!date||!cell.classList.contains('is-short')||cell.querySelector('button'))return;const button=document.createElement('button');button.type='button';button.className='sf-auto-staffing-add';button.innerHTML=cell.innerHTML+'<span>+ Besetzen</span>';button.title=cell.title+' · Mitarbeiter auswählen';button.setAttribute('aria-label',date+' · '+(group||type)+' · offene Stelle besetzen');button.onclick=()=>open({date,type,group,staffing:true});cell.replaceChildren(button);});
+   [...row.querySelectorAll('td')].forEach((cell,i)=>{
+    const date=shown[i];if(!date)return;
+    if(cell.classList.contains('is-short')&&!cell.querySelector('.sf-auto-staffing-add')){const button=document.createElement('button');button.type='button';button.className='sf-auto-staffing-add';button.innerHTML=cell.innerHTML+'<span>+ Besetzen</span>';button.title=cell.title+' · Mitarbeiter auswählen';button.setAttribute('aria-label',date+' · '+(group||type)+' · offene Stelle besetzen');button.onclick=()=>open({date,type,group,staffing:true});cell.replaceChildren(button);}
+    if(cell.querySelector('[data-staffing-exception]'))return;
+    const button=document.createElement('button');button.type='button';button.className='sf-auto-staffing-target';button.dataset.staffingException='1';const exception=window.SFCompliance?.policy?.solidPlanningRules?.staffingExceptions?.[date]?.[type];button.textContent=exception?'SOLL-Ausnahme ändern':'SOLL ändern';button.setAttribute('aria-label',date+' · '+type+' · SOLL ändern');button.onclick=()=>openStaffing({date,type});cell.appendChild(button);if(exception){cell.dataset.staffingException='true';button.title=exception.reason;}
+   });
   }
   for(const row of document.querySelectorAll('#autoSuggestions .sf-auto-suggestion-row')){if(row.querySelector('[data-preview-edit]'))continue;const removeButton=row.querySelector('button'),index=Number(removeButton?.getAttribute('onclick')?.match(/\((\d+)\)/)?.[1]);if(!Number.isInteger(index)||!autoPlanPreview[index])continue;const button=document.createElement('button');button.type='button';button.className='ghost';button.dataset.previewEdit='1';button.textContent='Ändern';button.onclick=()=>open({id:autoPlanPreview[index]?.id});row.appendChild(button);removeButton.title='Nur diesen Dienst entfernen';}
  }
  const render=window.SFAutoPlanWorkspace.render;window.SFAutoPlanWorkspace.render=function(){const value=render.apply(this,arguments);decorate();return value;};
  const confirm=window.SFAutoPlanWorkspace.confirmApply;window.SFAutoPlanWorkspace.confirmApply=function(){const issues=reviewIssues();if(issues.length){showSaveToast('Vorplanung unvollständig',issues[0]);return Promise.resolve(false);}return confirm.apply(this,arguments);};
  window.removeAutoSuggestion=index=>remove(index);
- window.SFAutoPlanPreviewEditor={open,openSaved,remove,undo,check,reviewIssues,decorate,commit,isManual,manualPayload,automaticRows};
+ window.SFAutoPlanPreviewEditor={openStaffing,open,openSaved,remove,undo,check,reviewIssues,decorate,commit,isManual,manualPayload,automaticRows};
  document.addEventListener('toggle',event=>{if(event.target.matches?.('#autoSuggestions details[data-auto-day]')&&event.target.open)decorate();},true);
 })();

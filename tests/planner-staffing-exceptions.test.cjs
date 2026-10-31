@@ -1,0 +1,56 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
+const {PGlite}=require('@electric-sql/pglite'),S=require('../assets/solid-planning-core-v1.js');
+const migration=fs.readFileSync('supabase/migrations/20261031011213_planner_staffing_exceptions.sql','utf8');
+const company='11111111-1111-1111-1111-111111111111',other='22222222-2222-2222-2222-222222222222',actor='aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+test('daily planner decisions override exact staffing, minimums and roster demand only on the selected date',()=>{
+ const rules={enabled:true,exactStaffing:{OT:3},otDailyMinimumStaffing:3,staffingExceptions:{'2027-01-02':{OT:{required:1},O3:{required:0}}}};
+ assert.equal(S.required('2027-01-02','OT',[],rules),1);assert.equal(S.dailyStaffingMinimum('2027-01-02','OT',rules),1);
+ assert.equal(S.required('2027-01-03','OT',[],rules),3);assert.equal(S.required('2027-01-02','O3',[],rules),0);
+ assert.equal(S.required('2027-01-02','OT',[],{...rules,staffingExceptions:{}}),3);
+ assert.equal(S.staffingException('2027-01-02','OT',{staffingExceptions:{'2027-01-02':{OT:{required:-1}}}}),null);
+});
+test('SQL planner exception persists, audits, restores prior values and enforces tenant, role, MFA and publication boundaries',async()=>{
+ const db=new PGlite();try{
+ await db.exec(`create schema private;create schema auth;create role authenticated;create role anon;create role service_role;
+ create function auth.uid() returns uuid language sql as $$select nullif(current_setting('test.actor',true),'')::uuid$$;
+ create function private.sf_assert_aal2(text) returns void language plpgsql as $$begin if current_setting('test.mfa',true)<>'yes' then raise exception '2FA erforderlich';end if;end$$;
+ create table company_members(company_id uuid,user_id uuid,status text,role text);
+ create table companies(id uuid primary key,timezone text);
+ create table company_compliance_policy(company_id uuid primary key,solid_planning_rules jsonb);
+ create table plan_publications(company_id uuid,week_start date,published_at timestamptz);
+ create table shift_templates(company_id uuid,code text,active boolean,coverage_group text,coverage_required int,default_start time,default_end time);
+ create table daily_staffing_overrides(company_id uuid,work_date date,shift_code text,required_count int,unique(company_id,work_date,shift_code));
+ create table global_staffing_requirements(company_id uuid,shift_code text,required_count int);
+ create table shift_assignments(company_id uuid,employee_id uuid,status text,shift_code text,starts_at timestamptz,ends_at timestamptz);
+ create table audit_events(company_id uuid,event_type text,entity_type text,entity_id uuid,actor_id uuid,actor_role text,old_values jsonb,new_values jsonb,metadata jsonb);
+ create function private.sf_ot_day_holiday(uuid,date) returns boolean language sql as $$select false$$;
+ create function public.preview_planning_period(uuid,date,int) returns jsonb language sql as $$select jsonb_build_object('fingerprint',md5(solid_planning_rules::text)) from public.company_compliance_policy where company_id=$1$$;
+ create function public.preview_month_optimization(uuid,date) returns jsonb language sql as $$select public.preview_planning_period($1,$2,1)$$;
+ set test.mfa='yes';set test.actor='${actor}';`);
+ await db.exec(migration);
+ await db.exec('create trigger audit_rules after update of solid_planning_rules on company_compliance_policy for each row execute function private.sf_audit_planning_rule_change()');
+ await db.query("insert into company_members values($1,$2,'ACTIVE','PLANNER');",[company,actor]);
+ await db.query("insert into companies values($1,'Europe/Berlin')",[company]);
+ const rules={enabled:true,exactStaffing:{OT:3},criticalShifts:[{code:'OT',minimum:3,exact:true,weekdays:[6,7]}]};
+ await db.query('insert into company_compliance_policy values($1,$2)',[company,rules]);
+ await db.query("insert into shift_templates values($1,'OT',true,null,0,'08:00','18:00'),($1,'TL-LE',true,'TL',1,'21:00','06:00'),($1,'TL-RE',true,'TL',1,'21:00','06:00')",[company]);
+ await db.query("insert into daily_staffing_overrides values($1,'2027-01-02','OT',4)",[company]);
+ const call=async(code='OT',count=2,c=company)=>(await db.query("select public.set_planning_staffing_exception($1,'2027-01-02',$2,$3,'Personalmangel','2027-01-01',1,'period') r",[c,code,count])).rows[0].r;
+ await db.query(`insert into shift_assignments select $1,md5(i::text)::uuid,'DRAFT','OT',(d::date+'08:00'::time) at time zone 'Europe/Berlin',(d::date+'18:00'::time) at time zone 'Europe/Berlin' from generate_series('2027-01-01'::date,'2027-01-31'::date,'1 day') d cross join generate_series(1,3) i where extract(isodow from d) in(6,7) and (d::date<>'2027-01-02' or i<=2)`,[company]);
+ await assert.rejects(db.query("select private.sf_assert_solid_critical_coverage($1,'2027-01-01')",[company]),/unvollständig|fehlen/);
+ let r=await call();await db.query("select private.sf_assert_solid_critical_coverage($1,'2027-01-01')",[company]);assert.equal(r.rules.staffingExceptions['2027-01-02'].OT.required,2);assert.notEqual(r.oldFingerprint,r.newFingerprint);
+ assert.equal((await db.query("select private.sf_solid_conditional_required($1,'2027-01-02','OT') n",[company])).rows[0].n,2);
+ assert.equal((await db.query("select private.sf_ot_weekend_minimum($1,'2027-01-02') n",[company])).rows[0].n,2);
+ assert.equal((await db.query("select private.sf_solid_conditional_required($1,'2027-01-03','OT') n",[company])).rows[0].n,3);
+ r=await call('OT',0);assert.equal(r.rules.staffingExceptions['2027-01-02'].OT.originalDaily,4);
+ await call('OT',null);assert.equal((await db.query("select required_count n from daily_staffing_overrides where shift_code='OT'")).rows[0].n,4);
+ await call('TL-LE',0);assert.deepEqual((await db.query("select shift_code,required_count from daily_staffing_overrides where shift_code like 'TL%' order by 1")).rows,[{shift_code:'TL-LE',required_count:0},{shift_code:'TL-RE',required_count:0}]);
+ await call('TL-RE',null);assert.equal((await db.query("select count(*) n from daily_staffing_overrides where shift_code like 'TL%'")).rows[0].n,0);
+ assert.ok((await db.query('select count(*) n from audit_events')).rows[0].n>=5);
+ await assert.rejects(call('OT',-1),/SOLL/);await assert.rejects(call('OT',1,other),/Planungsrechte/);
+ await db.exec("set test.mfa='no'");await assert.rejects(call(),/2FA/);await db.exec("set test.mfa='yes';update company_members set role='EMPLOYEE'");await assert.rejects(call(),/Planungsrechte/);
+ await db.exec("update company_members set role='PLANNER'");await assert.rejects(db.query("update company_compliance_policy set solid_planning_rules=jsonb_set(solid_planning_rules,'{maxConsecutiveShifts}','9')"),/nur Inhaber/);
+ await db.query("insert into plan_publications values($1,'2026-12-28',now())",[company]);await assert.rejects(call(),/Veröffentlichte/);
+ await db.exec('set role anon');await assert.rejects(call(),/permission denied/);
+ }finally{await db.close();}
+});

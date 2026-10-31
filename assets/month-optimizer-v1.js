@@ -98,10 +98,10 @@
   function criticalNeeds(base,dates){return withBase(base,()=>{
     const out=new Map(),rules=solidRules(),active=base.filter(a=>a.status!=='CANCELLED'&&a._dbStatus!=='CANCELLED');
     for(const date of dates){
-      for(const rule of rules.criticalShifts||[]){if(solid.otCodes.includes(rule.code)&&solid.otDayHoliday(date,rules))continue;if(rule.weekdays?.length&&!rule.weekdays.includes(solid.weekday(date)))continue;const filled=new Set(active.filter(a=>a.date===date&&a.type===rule.code).map(a=>String(a.employeeId))).size;out.set(date+'|'+rule.code,Math.max(out.get(date+'|'+rule.code)||0,Number(rule.minimum||0)-filled,0));}
-      for(const group of rules.criticalCoverageGroups||[]){const members=TYPES.filter(t=>window.SFShiftModels?.coverageGroup(t.id)?.key===group),required=Math.max(0,...members.map(t=>Number(window.SFShiftModels.coverageGroup(t.id).required)||0)),info=members.length&&window.SFShiftModels.coverageInfo(date,members[0].id);out.set(date+'|'+group,Math.max(0,required-(info?.filled||0)));}
+      for(const rule of rules.criticalShifts||[]){if(solid.otCodes.includes(rule.code)&&solid.otDayHoliday(date,rules))continue;if(rule.weekdays?.length&&!rule.weekdays.includes(solid.weekday(date)))continue;const filled=new Set(active.filter(a=>a.date===date&&a.type===rule.code).map(a=>String(a.employeeId))).size;out.set(date+'|'+rule.code,Math.max(out.get(date+'|'+rule.code)||0,(solid.staffingException(date,rule.code,rules)??Number(rule.minimum||0))-filled,0));}
+      for(const group of rules.criticalCoverageGroups||[]){const members=TYPES.filter(t=>window.SFShiftModels?.coverageGroup(t.id)?.key===group),required=Math.max(0,...members.map(t=>Number(window.SFShiftModels.coverageTarget(date,t.id))||0)),info=members.length&&window.SFShiftModels.coverageInfo(date,members[0].id);out.set(date+'|'+group,Math.max(0,required-(info?.filled||0)));}
     }
-    if(solid.otRoster(rules))for(const date of dates){if(!solid.rosterDay(date,rules))continue;const filled=new Set(active.filter(a=>a.date===date&&solid.otCodes.includes(a.type)&&employees.some(e=>String(e.id)===String(a.employeeId)&&solid.rosterEmployee(e,rules))).map(a=>String(a.employeeId))).size;const distributionGap=solid.otRoster(rules).allowDaysOff?solid.rosterMissing(date,active,rules):0;out.set(date+'|OT-DAY',Math.max(distributionGap,solid.rosterMinimum(rules)-filled,0));}
+    if(solid.otRoster(rules))for(const date of dates){if(!solid.rosterDay(date,rules))continue;const filled=new Set(active.filter(a=>a.date===date&&solid.otCodes.includes(a.type)&&employees.some(e=>String(e.id)===String(a.employeeId)&&solid.rosterEmployee(e,rules))).map(a=>String(a.employeeId))).size;const distributionGap=solid.otRoster(rules).allowDaysOff?solid.rosterMissing(date,active,rules):0;out.set(date+'|OT-DAY',Math.max(distributionGap,solid.rosterDayMinimum(date,active,rules)-filled,0));}
     return [...out];
   })}
   function solidBuild(base,month,seed,criticalOnly=false){return withBase(base,()=>{
@@ -275,7 +275,16 @@
     refreshPreview();
   }
   document.addEventListener('sf:manual-assignment-edited',event=>{if(event.detail?.companyId===B.companyId&&event.detail.before?.id){savedAssignmentChanged(event.detail.before.id);if(result)renderAutoPlanning();}});
-  window.SFMonthOptimizer={optimize,apply,buildInput,solidBuild,restoreBackground,resumeBackground,changeIndividualBlocks,refreshPreview,savedAssignmentChanged,getResult:()=>result,isBusy:()=>busy};
+  function staffingChanged(reply,expected=result){
+    if(!result||result!==expected)return;
+    if(result.fingerprint!==reply.oldFingerprint){result.needsReplan=true;return;}
+    result.fingerprint=reply.newFingerprint;result.localSignature=signature();
+    result.demandHours=withBase([...result.base,...autoPlanPreview],()=>autoPlanningDates().reduce((n,date)=>n+TYPES.reduce((v,t)=>v+getSoll(date,t.id)*plannedAssignmentHours({date,type:t.id,start:t.start,end:t.end}),0),0));
+    refreshPreview();
+    const a=result.autonomousAssurance;
+    if(a){a.open=autoPlanUnresolved.length;a.critical=result.criticalOpen||0;a.canApply=!a.reviewUnavailable&&!a.open&&!a.critical&&!a.errors&&Number(a.spread||0)<=Number(a.maximumShift||0)+.001;}
+  }
+  window.SFMonthOptimizer={staffingChanged,optimize,apply,buildInput,solidBuild,restoreBackground,resumeBackground,changeIndividualBlocks,refreshPreview,savedAssignmentChanged,getResult:()=>result,isBusy:()=>busy};
 })();
 
 

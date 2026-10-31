@@ -100,6 +100,20 @@ test('editing an already saved duty refreshes its base row and blocks stale opti
  c.assignments=c.assignments.filter(a=>a.id!=='01');c.SFMonthOptimizer.savedAssignmentChanged('01');assert.ok(!result.base.some(a=>a.id==='01'));
 });
 
+test('confirmed staffing change refreshes the preview fingerprint while retaining independent rule conflicts',async()=>{
+ const {c,run}=harness();await c.SFMonthOptimizer.optimize();const prepared=c.SFMonthOptimizer.getResult(),rows=run('JSON.stringify(autoPlanPreview)');
+ prepared.fingerprint='before';prepared.autonomousAssurance={canApply:false,open:1,critical:1,errors:0,spread:8,maximumShift:8};
+ c.SFMonthOptimizer.staffingChanged({oldFingerprint:'before',newFingerprint:'after'},prepared);
+ assert.equal(prepared.fingerprint,'after');assert.equal(run('JSON.stringify(autoPlanPreview)'),rows);assert.equal(prepared.needsReplan,undefined);assert.equal(prepared.autonomousAssurance.canApply,true);
+ prepared.autonomousAssurance.errors=1;c.SFMonthOptimizer.staffingChanged({oldFingerprint:'after',newFingerprint:'next'},prepared);assert.equal(prepared.autonomousAssurance.canApply,false);
+ c.SFMonthOptimizer.staffingChanged({oldFingerprint:'next',newFingerprint:'ignored'},{});assert.equal(prepared.fingerprint,'next');
+});
+test('concurrent planning changes cannot be approved by a staffing exception response',async()=>{
+ const {c,run}=harness();await c.SFMonthOptimizer.optimize();const prepared=c.SFMonthOptimizer.getResult(),rows=run('JSON.stringify(autoPlanPreview)');prepared.fingerprint='local';
+ c.SFMonthOptimizer.staffingChanged({oldFingerprint:'changed-on-server',newFingerprint:'after'});assert.equal(prepared.needsReplan,true);assert.equal(prepared.fingerprint,'local');assert.equal(run('JSON.stringify(autoPlanPreview)'),rows);
+ await c.applyAutoPlanPreview();assert.equal(c.saves,undefined);assert.match(c.toast.copy,/neu berechnen/);
+});
+
 test('optimized bulk apply transmits manual rhythm exceptions and retains them after hydration',async()=>{
  const {c,run}=harness();c.SFCompliance={policy:{solidPlanningRules:{}},isWeekPublished:()=>false};await c.SFMonthOptimizer.optimize();const prepared=c.SFMonthOptimizer.getResult(),a=run('autoPlanPreview[0]');
  Object.assign(c.SFBackend,{ready:true,role:'PLANNER',empDb:new Map([['a','db-a'],['b','db-b']]),asgDb:new Map(c.assignments.map(x=>[x.id,'db-'+x.id]))});c.SFPlanningRuleSettings={context:()=>({})};c.SFCompliance={policy:{solidPlanningRules:{}},isWeekPublished:()=>false};
