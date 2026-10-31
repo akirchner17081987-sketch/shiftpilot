@@ -1,0 +1,81 @@
+name: Planning efficiency checks
+on:
+  pull_request:
+    paths:
+      - 'assets/planning-efficiency-*'
+      - 'assets/planning-assistant-v1.js'
+      - 'assets/planning-assistant-workflows-v1.js'
+      - 'assets/planning-assistant-insights-v1.js'
+      - 'assets/supabase-auto-plan-guard-v1.js'
+      - 'assets/supabase-data-v1.js'
+      - 'assets/month-optimizer-v1.js'
+      - 'assets/autonomous-planning-v1.js'
+      - 'supabase/migrations/*planner_decision_protection.sql'
+      - 'tests/planning-efficiency*'
+      - 'tests/planner-decision-protection*'
+      - 'tests/e2e/planning-efficiency*'
+      - '.github/workflows/planning-efficiency-checks.yml'
+  push:
+    branches: [codex/ionos-migration]
+    paths:
+      - 'assets/planning-efficiency-*'
+      - 'assets/planning-assistant-v1.js'
+      - 'assets/planning-assistant-workflows-v1.js'
+      - 'assets/planning-assistant-insights-v1.js'
+      - 'assets/supabase-auto-plan-guard-v1.js'
+      - 'assets/supabase-data-v1.js'
+      - 'assets/month-optimizer-v1.js'
+      - 'assets/autonomous-planning-v1.js'
+      - 'supabase/migrations/*planner_decision_protection.sql'
+      - 'tests/planning-efficiency*'
+      - 'tests/planner-decision-protection*'
+      - 'tests/e2e/planning-efficiency*'
+      - '.github/workflows/planning-efficiency-checks.yml'
+permissions:
+  contents: read
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: node --test tests/planning-efficiency.test.cjs tests/planner-decision-protection.test.cjs tests/planning-assistant-workflows.test.cjs tests/planning-assistant.test.mjs tests/solid-planning-ui.test.cjs tests/autonomous-planning-ui.test.cjs
+      - run: node scripts/build-static.mjs
+      - run: npx playwright install chromium ffmpeg
+      - run: npx playwright test tests/e2e/planning-efficiency.spec.cjs --retries=0 --max-failures=1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: planning-efficiency-browser-results
+          path: |
+            playwright-report/
+            test-results/
+  verify-live:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify deployed planning tools and guards
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          import {createHash} from 'node:crypto';
+          import {setTimeout as delay} from 'node:timers/promises';
+          const files=['assets/planning-efficiency-core-v1.js','assets/planning-efficiency-v1.js','assets/planning-efficiency-v1.css','assets/supabase-auto-plan-guard-v1.js','assets/supabase-data-v1.js','assets/month-optimizer-v1.js','assets/planning-assistant-workflows-v1.js','assets/planning-assistant-insights-v1.js','assets/planning-assistant-v1.js','assets/autonomous-planning-v1.js'];
+          const hash=b=>createHash('sha256').update(b).digest('hex');
+          for(let attempt=0;attempt<110;attempt++){
+            try{const html=await (await fetch('https://schichtfunk.de/?efficiency_release='+process.env.GITHUB_SHA)).text();if(!html.includes('assets/planning-efficiency-v1.js'))throw Error('Planning tools reference missing');for(const file of files){const r=await fetch('https://schichtfunk.de/'+file+'?efficiency_release='+process.env.GITHUB_SHA,{signal:AbortSignal.timeout(15000)});if(!r.ok||hash(Buffer.from(await r.arrayBuffer()))!==hash(readFileSync(file)))throw Error(file+' differs');}console.log('Planning tools and guards match release.');break;}
+            catch(error){if(attempt===109)throw error;console.log(error.message);await delay(15000);}
+          }
+          NODE

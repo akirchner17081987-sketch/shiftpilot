@@ -144,7 +144,7 @@
       candidates:candidateCheck,solidRules:window.SFCompliance?.policy?.solidPlanningRules,rulesReady:!!window.SFCompliance?.policy,
       coverageRows:(dates,rows)=>withRows(rows,()=>Core.coverage({...snapshot(),assignments:rows},dates)),
       hourLimits:e=>typeof autoHourLimits==='function'?autoHourLimits(e):null,isPublished:date=>!!window.SFCompliance?.isWeekPublished?.(date),
-      movable:a=>!!a.id&&!a.rhythmOverride&&!a.fixed&&!a.locked&&!a.protected&&!protectedAssignmentIds.has(a._dbId||B().asgDb?.get(String(a.id))||a.id)&&!a.publishedAt&&(!a._dbStatus||a._dbStatus==='DRAFT')&&a.status!=='PUBLISHED'&&!a._marketApproved&&!/markt|market|freiwill|tausch/i.test(a.note||'')&&!window.SFCompliance?.isWeekPublished?.(a.date)&&!((typeof timeEntries!=='undefined')&&(timeEntries[a.id]?.actualStart||timeEntries[a.id]?.actualEnd))&&window.sfRhythmCheck?.(employees.find(e=>String(e.id)===String(a.employeeId)),a.type,a.date)?.mode!=='required',
+      movable:a=>!!a.id&&!a.plannerLocked&&!a.rhythmOverride&&!a.fixed&&!a.locked&&!a.protected&&!protectedAssignmentIds.has(a._dbId||B().asgDb?.get(String(a.id))||a.id)&&!a.publishedAt&&(!a._dbStatus||a._dbStatus==='DRAFT')&&a.status!=='PUBLISHED'&&!a._marketApproved&&!/markt|market|freiwill|tausch/i.test(a.note||'')&&!window.SFCompliance?.isWeekPublished?.(a.date)&&!((typeof timeEntries!=='undefined')&&(timeEntries[a.id]?.actualStart||timeEntries[a.id]?.actualEnd))&&window.sfRhythmCheck?.(employees.find(e=>String(e.id)===String(a.employeeId)),a.type,a.date)?.mode!=='required',
       openSlots:(wanted,rows)=>withRows(rows,()=>{const slots=[];for(const date of wanted)for(const t of TYPES.filter(t=>t.active!==false)){const info=window.SFShiftModels?.coverageInfo?.(date,t.id);if(info&&info.representative!==t.id)continue;const raw=getSoll(date,t.id),need=window.SFShiftModels?.requiredSoll?.(date,t.id,raw)??raw,count=rows.filter(a=>a.date===date&&a.type===t.id).length,missing=info?info.missing:Math.max(0,need-count);for(let n=0;n<missing;n++)slots.push({date,type:t.id,...(info?{alternatives:info.alternatives}:{})});}return slots;}),
       publicHelpArticles:window.SFHelpContent?.articles||{},dictionary:!demo()&&B().companyPrivateConfiguration?.companyId===B().companyId?B().companyPrivateConfiguration.data?.planningDictionary||[]:[],planningRuns,journalError,teamRulesReady:window.SFPlanningTeams?.isLoaded?.()??false,helpCategories:window.SFHelpContent?.categories||[],teamRules:window.SFPlanningTeams?.isLoaded?.()?window.SFPlanningTeams.rules:[],helpArticles:Core.companyHelpArticles(window.SFHelpContent?.articles||{},B(),demo())};
   }
@@ -281,7 +281,9 @@
   }
   const reportAccess=()=>JSON.stringify([identity(),B().accessRole||'',B().accessPermissions||[]]);
   function ask(question,analysisRequest,conversation=context){
-    syncScope();const state={...snapshot(),analysisRequest},answer=Core.answer(question,state,conversation);
+    syncScope();const state={...snapshot(),analysisRequest},started=Date.now(),cache=analysisRequest?.kind==='targetedRepair'&&window.SFPlanningEfficiencyCore?.cachedSnapshot(state),answer=cache?Workflows.targetedRepair(cache.snapshot,analysisRequest):Core.answer(question,state,conversation);
+    if(cache&&B().accessPermissions?.includes('read_only')){answer.proposal=null;answer.notes=[...(answer.notes||[]),'Lesemodus: Die Vorschau kann nicht übernommen werden.'];}
+    if(cache){answer.basis=Core.analysisBasis(state,answer.context?.dates||state.defaultDates,answer);window.SFPlanningEfficiency?.record?.('Gezielte Ersatzprüfung',Date.now()-started,cache.stats);}
     if(answer.reportRequest){
       try{if(!Report)throw Error('Der PDF-Bericht ist noch nicht vollständig geladen. Bitte Seite neu laden.');answer.report=Report.collect(Core,state,answer.context.dates);answer.basis=answer.report.basis;answer.columns=['Kennzahl','Positionen'];answer.rows=answer.report.summary;Object.assign(answer.report,{owner:reportAccess(),revision:signature(),selection:JSON.stringify(contextDates())});}
       catch(error){return {title:'Planungsbericht derzeit nicht verfügbar',text:error.message,context:{}};}
@@ -343,12 +345,21 @@
       const title=node('h2',proposal.undoId?'Assistentenänderungen zurücknehmen?':'Geprüfte Änderungen als Entwurf übernehmen?');title.id='sfPlanningProposalTitle';dialog.appendChild(title);
       dialog.appendChild(node('p',proposal.undoId?'Rücknahme: '+(proposal.removed||[]).length+' Assistentendienste entfernen und '+proposal.proposed.length+' frühere Entwurfsdienste wiederherstellen. Dadurch können Besetzungslücken erneut entstehen.':proposal.proposed.length+' Zuweisungen werden gespeichert. '+(proposal.removed||proposal.changes.filter(c=>c.replaces)).length+' bestehende Entwurfszuweisungen werden ersetzt.'));
       const actions=node('div',undefined,'sf-chat-actions'),cancel=node('button','Abbrechen'),accept=node('button',proposal.undoId?'Rücknahme jetzt bestätigen':'Jetzt als Entwurf übernehmen');cancel.type=accept.type='button';
-      const done=value=>{dialog.close();dialog.remove();resolve(value)};cancel.onclick=()=>done(false);accept.onclick=()=>done(true);dialog.addEventListener('cancel',e=>{e.preventDefault();done(false)});
+      let acknowledgement=null,typed=null;proposal.openAcknowledgement=null;
+      const open=proposal.allowIncompleteConfirmation?Insights.slots(snapshot(),proposal.dates,[...proposal.base,...proposal.proposed]).length:0;
+      if(open){dialog.appendChild(node('p',open+' Positionen bleiben im Entwurf offen. Die bisherigen SOLL-Werte bleiben erhalten. Bitte bestätige die offenen Stellen ausdrücklich.'));
+        const label=node('label'),checkbox=node('input');checkbox.type='checkbox';checkbox.id='sfRepairOpenAck';label.append(checkbox,document.createTextNode(' Ich möchte den Entwurf mit offenen Positionen übernehmen.'));dialog.appendChild(label);
+        const textLabel=node('label','Zur Bestätigung OFFEN ÜBERNEHMEN eingeben');typed=node('input');typed.id='sfRepairOpenText';typed.autocomplete='off';textLabel.appendChild(typed);dialog.appendChild(textLabel);acknowledgement=checkbox;
+        accept.disabled=true;accept.textContent='Mit offenen Positionen übernehmen';const check=()=>accept.disabled=!checkbox.checked||typed.value.trim()!=='OFFEN ÜBERNEHMEN';checkbox.onchange=typed.oninput=check;
+      }
+
+      const done=value=>{dialog.close();dialog.remove();resolve(value)};cancel.onclick=()=>done(false);accept.onclick=()=>{if(open&&(!acknowledgement.checked||typed.value.trim()!=='OFFEN ÜBERNEHMEN'))return;if(open)proposal.openAcknowledgement={count:open,phrase:'OFFEN ÜBERNEHMEN'};done(true);};dialog.addEventListener('cancel',e=>{e.preventDefault();done(false)});
+      const x=node('button','×','sf-eff-confirm-close');x.type='button';x.setAttribute('aria-label','Bestätigungsfenster schließen');x.onclick=cancel.onclick;dialog.appendChild(x);
       actions.append(cancel,accept);dialog.append(actions);document.body.appendChild(dialog);dialog.showModal();cancel.focus();
     });
   }
   async function applyProposal(proposal,button){
-    if(!authorized()||busy()||submitting||runningGoal||!proposal||(!proposal.proposed?.length&&!proposal.undoId))return;
+    if(!authorized()||busy()||submitting||runningGoal||!proposal||(!proposal.proposed?.length&&!proposal.undoId&&!(proposal.allowIncompleteConfirmation&&proposal.removed?.length)))return;
     const owner=identity();let committed=false,controls=[],priorSuppression=B().suppressSync;
     try{
       if(proposal.signature!==signature()||proposal.owner!==owner||Date.now()-proposal.created>15*60*1000)throw Error('Diese Vorschau ist nicht mehr aktuell. Bitte neue Verbesserungsvorschläge erstellen.');
@@ -374,7 +385,7 @@
         const replace=removed.map(a=>a._dbId||B().asgDb?.get(String(a.id)));
         if(replace.some(x=>!x))throw Error('Ein Entwurf besitzt noch keine gespeicherte Kennung. Bitte neu laden.');
         const rows=generated.map((a,i)=>{const t=window.SFSolidPlanningCore.interval(a.date,a.start,a.end,current.solidRules.timezone),id=B().empDb?.get(String(a.employeeId));if(!id)throw Error('Die Mitarbeiterzuordnung ist nicht aktuell.');return {employee_id:id,shift_code:a.type,starts_at:new Date(t.start).toISOString(),ends_at:new Date(t.end).toISOString(),legacy_id:a.id,note:a.note,break_minutes:Number(a.pause||0)}});
-        const q=await B().client.rpc('apply_planning_period',{p_company_id:B().companyId,p_first_month:proposal.dates[0].slice(0,7)+'-01',p_month_count:proposal.monthCount||1,p_fingerprint:proposal.fingerprint,p_replace_ids:replace,p_assignments:rows,p_respect_weekly:true});
+        const ack=proposal.allowIncompleteConfirmation?proposal.openAcknowledgement:null;proposal.openAcknowledgement=null;const q=await B().client.rpc(ack?'apply_confirmed_incomplete_draft':'apply_planning_period',{p_company_id:B().companyId,p_first_month:proposal.dates[0].slice(0,7)+'-01',p_month_count:proposal.monthCount||1,p_fingerprint:proposal.fingerprint,p_replace_ids:replace,p_assignments:rows,p_respect_weekly:true,...(ack?{p_confirmation:ack.phrase,p_open_positions:ack.count,p_mode:'period'}:{})});
         if(q.error)throw q.error;committed=true;
         // Record success before hydration; an interrupted refresh must not lose the undo receipt.
         entry.pending=false;const committedState=loadWork();if(proposal.undoId){const old=committedState.entries.find(e=>e.id===proposal.undoId);if(old)old.undone=true;}else committedState.entries=committedState.entries.map(e=>e.id===entry.id?entry:e);saveWork(committedState);
@@ -434,6 +445,8 @@
   function openAction(action){
     syncScope();if(!authorized()||busy())return;
     if(action.candidateImpact){previewVacancyCandidate(action);return;}
+    if(action.plannerLock){window.SFPlanningEfficiency?.lockDialog(action.plannerLock);return;}
+    if(action.disruptionAssignmentId){if(!snapshot().assignments.some(a=>String(a.id)===String(action.disruptionAssignmentId)))return;close();window.SFDisruptionAutopilot?.openReplacement(action.disruptionAssignmentId);return;}
     if(action.learning){close();window.SFPlanningLearning?.open();return;}
     if(action.question){submit(action.question,action.analysisRequest);return;}
     if(!action.help&&!['schedule','employees','settings','auto','reports','absence'].includes(action.view))return;
@@ -648,7 +661,7 @@
       if(a.wizard)renderWizard(a.wizard,article);
       if(a.profileManager)renderProfileManager(article);
       if(a.variants){const actions=node('div',undefined,'sf-chat-actions');for(const variant of a.variants){const button=node('button',variant.label+' prüfen');button.type='button';button.onclick=()=>variant.profileId?submit('Planungsprofil ausführen',{kind:'profile',profileId:variant.profileId,strategy:variant.key,month:variant.month}):submit('Planvariante prüfen',{kind:'variant',strategy:variant.key,month:variant.month,focus:variant.focus?.length===1?'person:'+variant.focus[0]:'all',focusIds:variant.focus});actions.appendChild(button);}article.appendChild(actions);}
-      if((a.proposal?.proposed?.length||a.proposal?.undoId)&&a.proposal.owner&&!goalDeferred(a)){const button=node('button',a.proposal.undoId?'Rücknahme bestätigen':'Vorschläge als Entwurf übernehmen','sf-chat-row-action');button.type='button';button.dataset.sfSensitive='';button.onclick=()=>applyProposal(a.proposal,button);article.appendChild(button);}
+      if((a.proposal?.proposed?.length||a.proposal?.undoId||a.proposal?.allowIncompleteConfirmation&&a.proposal?.removed?.length)&&a.proposal.owner&&!goalDeferred(a)){const button=node('button',a.proposal.undoId?'Rücknahme bestätigen':'Vorschläge als Entwurf übernehmen','sf-chat-row-action');button.type='button';button.dataset.sfSensitive='';button.onclick=()=>applyProposal(a.proposal,button);article.appendChild(button);}
       if(message.completedTask){const {plan,index}=message.completedTask,following=plan.tasks.findIndex((task,i)=>i>index&&!task.done),nextIndex=following<0?plan.tasks.findIndex(task=>!task.done):following,next=plan.tasks[nextIndex];if(next){const button=node('button','Nächster Schritt: '+next.label,'sf-chat-row-action');button.type='button';button.onclick=()=>submit(next.question,undefined,{task:{plan,index:nextIndex}});article.appendChild(button);}else article.appendChild(node('p','Alle Schritte dieses Auftrags wurden bearbeitet.','sf-chat-task-complete'));}
       if(a.suggestions?.length){const examples=node('div',undefined,'sf-chat-examples');quickButtons(examples,a.suggestions);article.appendChild(examples);}
       article.appendChild(node('small',a.basis?'Prüf- und Abrufzeit siehe Prüfgrundlage.':a.notes?.some(n=>/^Quelle: SchichtFunk Hilfe-Center/.test(n))?'SchichtFunk Hilfe-Center':'Planungsassistent · Unterstützte Abläufe','sf-chat-source'));
@@ -663,14 +676,14 @@
     toggleQuestionGuide(false);setProgress(true);
     el('sfPlanningChatStatus').textContent='Planungsdaten werden geprüft.';
     try{
-      if(['report','bottlenecks','forecast','leaveImpact','changeImpact','order','multiBalance','undo','wizard','variants','profiles','followup','goalOrders','goalResume'].includes(Core.intentFor(Core.normalize(text))))await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+      if(analysisRequest?.kind==='targetedRepair'||['report','bottlenecks','forecast','leaveImpact','changeImpact','order','multiBalance','undo','wizard','variants','profiles','followup','goalOrders','goalResume'].includes(Core.intentFor(Core.normalize(text))))await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       if(owner!==identity()||request!==requestId)return;
       if(Core.intentFor(Core.normalize(text))==='report'||Core.isReportFollowup(text,conversation)||/protokoll|gespeicherte|planungsgruende|besetzung.*verhindert/.test(Core.normalize(text)))await loadRuns();
       if(Core.intentFor(Core.normalize(text))==='profiles')await loadProfiles();
       if(['goalOrders','goalResume'].includes(Core.intentFor(Core.normalize(text))))await loadGoalOrders();
       if(owner!==identity()||request!==requestId)return;
       answer=ask(text,analysisRequest,conversation);
-      if(answer.proposal&&(answer.proposal.proposed?.length||answer.proposal.undoId)){
+      if(answer.proposal&&(answer.proposal.proposed?.length||answer.proposal.undoId||answer.proposal.allowIncompleteConfirmation&&answer.proposal.removed?.length)){
         if(!demo()){
           if(B().syncing||window.SFMonthOptimizer?.isBusy?.())throw Error('Eine Planung oder Speicherung läuft. Bitte danach erneut prüfen.');
           clearTimeout(B().syncTimer);B().syncTimer=null;await B().sync();if(B().lastSyncError)throw B().lastSyncError;
@@ -799,7 +812,7 @@
     }
   }
   const dictionarySettings=()=>{const host=el('view-settings');let b=el('sfDictionarySettings');if(!authorized()||demo()){b?.remove();return;}if(host&&!b){b=node('button','Gemeinsamen Wortschatz ansehen');b.type='button';b.id='sfDictionarySettings';b.onclick=openDictionary;host.appendChild(b);}};setInterval(dictionarySettings,1000);
-  window.SFPlanningAssistant={open,close,ask,reset,snapshot,setService};
+  window.SFPlanningAssistant={open,close,ask,reset,snapshot,setService,repair:request=>{open();return submit('Gezielt nachplanen',{...request,kind:'targetedRepair'},{previous:{}})}};
   document.addEventListener('click',event=>{
     const target=event.target.closest?.('#view-schedule [data-assignment-id],#view-schedule .assignment');if(!target)return;
     const id=target.dataset.assignmentId||target.dataset.id,a=snapshot().assignments?.find(a=>String(a.id)===String(id));

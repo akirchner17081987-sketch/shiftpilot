@@ -1,0 +1,31 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),E=require('../assets/planning-efficiency-core-v1.js'),W=require('../assets/planning-assistant-workflows-v1.js');
+function fixture(){
+ const employees=['a','b','c'].map(id=>({id,first:id,last:'Test',status:'active',employment:'Vollzeit',shifts:['FD','SD'],weeklyHours:40,monthlyHours:180})),s={authorized:true,rulesReady:true,today:'2027-01-01',timezone:'Europe/Berlin',employees,absences:[],shifts:[{id:'FD',start:'06:00',end:'14:00'},{id:'SD',start:'14:00',end:'22:00'}],assignments:[],solidRules:{enabled:true,confirmedRulesVersion:2,timezone:'Europe/Berlin',maxConsecutiveShifts:4,minBlockRestHours:11,minFreeCalendarDays:1,maxCalendarWeekHours:55,monthlyMaxHours:190,tenHourMaxShifts:18,criticalShifts:[],criticalCoverageGroups:[]},getSoll:(date,type)=>date==='2027-01-06'&&type==='FD'?1:0,monthTarget:e=>e.monthlyHours,hourLimits:()=>({monthLimit:190}),movable:a=>!a.plannerLocked&&!a.publishedAt,isPublished:()=>false};
+ s.candidates=(type,date,rows=[])=>({candidates:employees.filter(e=>!rows.some(a=>a.employeeId===e.id&&a.date===date)).map(e=>({e,fit:['Freigabe '+type]})),reasons:[]});return s;
+}
+test('matching exposes shared staff bottlenecks even when each service individually has enough candidates',()=>{
+ assert.deepEqual(E.matching([{missing:1,people:['a']},{missing:1,people:['a']}]),{required:2,possible:1,shortfall:1});assert.equal(E.matching([{missing:1000000,people:['a']}]).shortfall,999999);
+});
+test('analysis cache reuses a checked snapshot, clones results and invalidates plan and policy changes',()=>{
+ const s=fixture();let calls=0;const fn=s.candidates;s.candidates=(...args)=>{calls++;return fn(...args);};const c=E.cachedSnapshot(s),r=c.snapshot.candidates('FD','2027-01-06',[]);r.candidates.pop();assert.equal(c.snapshot.candidates('FD','2027-01-06',[]).candidates.length,3);assert.equal(calls,1);assert.equal(c.stats.hits,1);
+ c.snapshot.candidates('FD','2027-01-06',[{employeeId:'a',date:'2027-01-06',type:'FD'}]);s.solidRules.maxCalendarWeekHours=40;c.snapshot.candidates('FD','2027-01-06',[]);assert.equal(calls,3);const fresh=E.cachedSnapshot(s);fresh.snapshot.candidates('FD','2027-01-06',[]);assert.equal(calls,4);
+});
+test('preflight separates personnel shortages from rule conflicts and unverified data without changing assignments',()=>{
+ const s=fixture();s.getSoll=(date,type)=>date==='2027-01-06'?1:0;s.employees=s.employees.slice(0,1);s.candidates=()=>({candidates:[{e:s.employees[0]}],reasons:[]});const before=JSON.stringify(s),r=E.preflight(s,['2027-01-06']);assert.equal(r.complete,true);assert.equal(r.open,2);assert.ok(r.rows.some(x=>x.kind==='capacity'&&/dieselben/.test(x.message)));assert.equal(r.rows.filter(x=>x.kind==='rule').length,0);assert.equal(r.optimistic,true);assert.equal(JSON.stringify(s),before);assert.ok(r.phases.every(x=>x.ms>=0));
+ s.rulesReady=false;assert.ok(E.preflight(s,['2027-01-06']).rows.some(x=>x.kind==='missing'));
+});
+test('incomplete prechecks do not report untested hours as available or prove infeasibility',()=>{
+ const s=fixture(),r=E.preflight(s,['2027-01-06'],{budgetMs:-1});assert.equal(r.complete,false);assert.equal(r.months[0].optimisticAvailableHours,null);assert.ok(r.rows.some(x=>x.kind==='missing'));assert.throws(()=>E.preflight({...s,authorized:false},['2027-01-06']),/autorisierten/);
+});
+test('targeted outage repair replaces only selected duties and excludes the unavailable person without recording an absence',()=>{
+ const s=fixture(),source={id:'source',employeeId:'a',date:'2027-01-06',type:'FD',start:'06:00',end:'14:00'},other={id:'other',employeeId:'a',date:'2027-01-11',type:'FD',start:'06:00',end:'14:00'};s.assignments=[source,other];const before=JSON.stringify(s),r=W.targetedRepair(s,{employeeId:'a',dates:['2027-01-06']});assert.ok(r.proposal,r.blockers?.join(' '));assert.deepEqual(r.proposal.removed,[source]);assert.ok(r.proposal.base.includes(other));assert.equal(r.proposal.proposed.length,1);assert.notEqual(r.proposal.proposed[0].employeeId,'a');assert.equal(r.proposal.proposed[0].date,'2027-01-06');assert.equal(r.proposal.monthCount,1);assert.equal(JSON.stringify(s),before);assert.equal(s.absences.length,0);
+});
+test('a failed replacement can leave a draft hole only with the dedicated incomplete-confirmation path',()=>{
+ const s=fixture();s.assignments=[{id:'source',employeeId:'a',date:'2027-01-06',type:'FD',start:'06:00',end:'14:00'}];s.candidates=()=>({candidates:[],reasons:[]});const r=W.targetedRepair(s,{employeeId:'a',dates:['2027-01-06']});assert.ok(r.proposal);assert.equal(r.proposal.proposed.length,0);assert.equal(r.proposal.removed.length,1);assert.equal(r.proposal.allowIncompleteConfirmation,true);
+});
+test('planner-fixed and published sources remain blocked and link to the explicit lock or disruption flow',()=>{
+ const s=fixture();s.assignments=[{id:'source',employeeId:'a',date:'2027-01-06',type:'FD',start:'06:00',end:'14:00',plannerLocked:true}];let r=W.targetedRepair(s,{employeeId:'a',dates:['2027-01-06']});assert.equal(r.proposal,undefined);assert.equal(r.rowActions[0].plannerLock,'source');s.assignments[0].plannerLocked=false;s.assignments[0].publishedAt='2027-01-01';s.isPublished=()=>true;r=W.targetedRepair(s,{employeeId:'a',dates:['2027-01-06']});assert.equal(r.proposal,undefined);assert.equal(r.rowActions[0].disruptionAssignmentId,'source');
+});
+test('pure interval reuse retains exact UTC/ DST values and never reuses a different company timezone',()=>{
+ const solid=require('../assets/solid-planning-core-v1.js'),c={window:{SFCompliance:{policy:{solidPlanningRules:{enabled:true,timezone:'Europe/Berlin'}}},SFSolidPlanningCore:solid},assignments:[],employees:[],typeById:()=>({start:'22:00',end:'06:00'}),Date,Map,Set};vm.runInNewContext(fs.readFileSync('assets/supabase-auto-plan-guard-v1.js','utf8'),c);const g=c.window.SFAutoPlanGuard;assert.equal(g.shiftDurationIssue('ND','2026-10-24'),null);assert.equal(g.shiftDurationIssue('ND','2026-10-24'),null);assert.equal(g.getTimingStats().intervalHits,1);assert.equal(g.getTimingStats().intervalMisses,1);c.window.SFCompliance.policy.solidPlanningRules.timezone='UTC';g.shiftDurationIssue('ND','2026-10-24');assert.equal(g.getTimingStats().intervalMisses,2);assert.equal(g.getTimingStats().entries,2);
+});
