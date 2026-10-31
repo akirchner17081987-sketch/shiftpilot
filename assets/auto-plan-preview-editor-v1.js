@@ -206,7 +206,7 @@
     if(B.companyId!==company){saving=false;close();return;}
     window.SFCompliance.policy.solidPlanningRules=reply.rules;
     for(const row of reply.daily||[]){dailySoll[row.date]??={};if(row.required===null)delete dailySoll[row.date][row.code];else dailySoll[row.date][row.code]=row.required;}
-    if(!B.ready)saveAll();saving=false;close();optimizer()?.staffingChanged?.(reply);if(!prepared){const previous=autoPlanUnresolved;autoPlanUnresolved=withRows([...base(),...autoPlanPreview],()=>autoOpenSlots().map(slot=>({...slot,reason:previous.find(s=>s.date===slot.date&&s.type===slot.type)?.reason||'Offene Besetzung nach bestätigter Tagesvorgabe.'})));}renderAutoPlanning();
+    if(!B.ready)saveAll();saving=false;close();optimizer()?.staffingChanged?.(reply,prepared);if(!prepared){const previous=autoPlanUnresolved;autoPlanUnresolved=withRows([...base(),...autoPlanPreview],()=>autoOpenSlots().map(slot=>({...slot,reason:previous.find(s=>s.date===slot.date&&s.type===slot.type)?.reason||'Offene Besetzung nach bestätigter Tagesvorgabe.'})));}renderAutoPlanning();
     showSaveToast('Tagesbesetzung gespeichert',reset?'Die reguläre Besetzung gilt wieder.':'Die bestätigte SOLL-Ausnahme gilt nur am '+date+'.');
    }catch(e){saving=false;back.querySelector('[data-error]').textContent=e.message||String(e);back.querySelectorAll('button').forEach(b=>b.disabled=false);}
   };

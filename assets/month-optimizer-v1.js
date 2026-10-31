@@ -275,8 +275,8 @@
     refreshPreview();
   }
   document.addEventListener('sf:manual-assignment-edited',event=>{if(event.detail?.companyId===B.companyId&&event.detail.before?.id){savedAssignmentChanged(event.detail.before.id);if(result)renderAutoPlanning();}});
-  function staffingChanged(reply){
-    if(!result)return;
+  function staffingChanged(reply,expected=result){
+    if(!result||result!==expected)return;
     if(result.fingerprint!==reply.oldFingerprint){result.needsReplan=true;return;}
     result.fingerprint=reply.newFingerprint;result.localSignature=signature();
     result.demandHours=withBase([...result.base,...autoPlanPreview],()=>autoPlanningDates().reduce((n,date)=>n+TYPES.reduce((v,t)=>v+getSoll(date,t.id)*plannedAssignmentHours({date,type:t.id,start:t.start,end:t.end}),0),0));
