@@ -43,6 +43,9 @@ for(const theme of ['dark','light'])test('planner changes a short staffed day ta
  const cell=page.locator('[data-staffing-shift="FD"] td').first();
  await expect(cell).toContainText('SOLL 3');await expect(cell.locator('.sf-auto-staffing-add')).toBeVisible();
  await cell.getByRole('button',{name:'2026-12-01 · FD · SOLL ändern',exact:true}).click();
+ await page.getByLabel('SOLL für diesen Tag',{exact:true}).fill('1');await page.getByLabel('Begründung der Besetzungsausnahme').fill('Eingabe bleibt erhalten');
+ await page.locator('#sfStaffingExceptionDialog').click({position:{x:2,y:2}});await expect(page.locator('#sfStaffingExceptionDialog')).toBeVisible();await expect(page.getByLabel('SOLL für diesen Tag',{exact:true})).toHaveValue('1');await expect(page.getByLabel('Begründung der Besetzungsausnahme')).toHaveValue('Eingabe bleibt erhalten');
+ await page.getByRole('button',{name:'Fenster schließen',exact:true}).click();await expect(page.locator('#sfStaffingExceptionDialog')).toHaveCount(0);await expect(cell).toContainText('SOLL 3');await cell.locator('.sf-auto-staffing-target').click();
  await page.getByLabel('SOLL für diesen Tag',{exact:true}).fill('2');await page.getByLabel('Begründung der Besetzungsausnahme').fill('Personalmangel abgestimmt');
  await page.getByRole('button',{name:'Nur für diesen Tag speichern',exact:true}).click();
  await expect(page.locator('#sfStaffingExceptionDialog')).toHaveCount(0);await expect(cell).toContainText('SOLL 2');await expect(cell).not.toHaveClass(/is-short/);

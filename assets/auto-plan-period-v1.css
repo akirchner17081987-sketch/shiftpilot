@@ -274,4 +274,6 @@ html[data-sf-theme="light"] #sfAutonomousPlanning input,html[data-sf-theme="ligh
 #sfStaffingExceptionDialog label{display:grid;gap:7px;margin:16px 0;font-size:13px}
 #sfStaffingExceptionDialog :is(input,textarea){box-sizing:border-box;width:100%;min-width:0;padding:11px;border:1px solid var(--line,#29445e);border-radius:8px;background:var(--bg,#0b1723);color:var(--text,#edf4fa);font:inherit}
 #sfStaffingExceptionDialog [data-error]{color:var(--amber,#ffb84d);white-space:pre-line}
+#sfStaffingExceptionDialog .sf-staffing-dialog-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+#sfStaffingExceptionDialog [data-close]{flex:none;width:44px;min-width:44px;height:44px;margin:0;padding:0;font-size:24px;line-height:1}
 @media(max-width:650px){#sfStaffingExceptionDialog :is(input,textarea){font-size:16px}.sf-auto-staffing-target{min-height:44px}}
