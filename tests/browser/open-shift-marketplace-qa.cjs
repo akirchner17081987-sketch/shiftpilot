@@ -72,7 +72,7 @@ async function run(){
   await page.evaluate(()=>{assignments.push({id:'fill-a',employeeId:'a',date:'2026-12-01',type:'FD'},{id:'fill-b',employeeId:'b',date:'2026-12-01',type:'FD'});SFOpenShiftMarket.decorateSchedule()});await fd.locator('.sf-shift-market-badge').waitFor({state:'detached'});
   await page.evaluate(()=>{assignments=assignments.filter(a=>!a.id.startsWith('fill-'));SFOpenShiftMarket.decorateSchedule()});await fd.locator('.sf-shift-market-badge').waitFor();
   await page.evaluate(()=>{SFBackend.role='EMPLOYEE';SFOpenShiftMarket.decorateSchedule()});assert.equal(await page.locator('.sf-shift-market-badge').count(),0,'Manager badges cannot leak into employee access');
-  await page.evaluate(async()=>{SFBackend.role='EMPLOYEE';await SFShiftMarketplace.refreshEmployee()});await page.locator('#sfMarketEmployee [data-take]').first().click();await page.locator('#sfMarketModal [data-submit]').click();await page.waitForFunction(()=>__open[0]?.status==='PENDING_MANAGER');
+  await page.evaluate(async()=>{SFBackend.role='EMPLOYEE';await SFShiftMarketplace.refreshEmployee()});await page.locator('#sfMarketEmployee [data-take]').first().click();await page.locator('#sfMarketModal [data-submit]').click();await page.waitForFunction(()=>__open.some(x=>x.is_claim&&x.status==='PENDING_MANAGER'));
   assert.equal(await page.evaluate(()=>__reviews.length),0,'Employee claim cannot approve itself');
   await page.evaluate(async()=>{SFBackend.role='PLANNER';await SFShiftMarketplace.refreshManager();SFShiftMarketplace.openDashboard()});
   await page.locator('#view-marketplace [data-review="APPROVE"]').click();await page.locator('#sfMarketModal [data-submit]').click();assert.equal(await page.evaluate(()=>__reviews.length),0,'Rhythm confirmation is mandatory');
