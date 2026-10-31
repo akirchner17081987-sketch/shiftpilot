@@ -10,3 +10,23 @@
 .sf-help-guide li{counter-increment:helpstep;display:grid;grid-template-columns:26px 1fr;gap:10px;align-items:start;line-height:1.5}
 .sf-help-guide li:before{content:counter(helpstep);display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#164840;color:#b5fff0;font-weight:800}
 @media(max-width:720px){.sf-help-guide img{max-height:280px}.sf-help-guide li{gap:8px}}
+/* Guide-Einstieg und schrittweise Navigation */
+#sfHelpModal .sf-help{width:min(1180px,96vw);background:radial-gradient(circle at 85% 14%,#11394a,#0b1725 48%)}
+#sfHelpModal .sf-help-kicker{letter-spacing:.17em} #sfHelpModal .sf-help-main{min-width:0}
+#sfHelpModal .sf-guide-welcome{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:18px;margin:0 0 24px;padding:22px;border:1px solid #31596a;border-radius:15px;background:linear-gradient(125deg,#102d3d,#102233)}
+#sfHelpModal .sf-guide-welcome small{color:#67e0d3;font-size:10px;letter-spacing:.13em;font-weight:800}
+#sfHelpModal .sf-guide-welcome h4{color:#efffff;font-size:24px;line-height:1.2;margin:9px 0} #sfHelpModal .sf-guide-welcome p{color:#afc8d5;font-size:12px;line-height:1.5;margin:8px 0 15px}
+#sfHelpModal .sf-guide-shortcuts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+#sfHelpModal .sf-guide-shortcuts button{display:grid;grid-template-columns:30px 1fr;gap:1px 8px;align-items:center;text-align:left;padding:12px;background:#102a39;border:1px solid #315469;border-radius:10px;color:#8ce9dc;font-size:18px}
+#sfHelpModal .sf-guide-shortcuts b{font-size:12px;color:#efffff} #sfHelpModal .sf-guide-shortcuts span{grid-column:2;color:#abc4d1;font-size:11px}
+#sfHelpModal .sf-guide-welcome aside{border:1px solid #305c68;border-radius:12px;padding:18px 12px;background:#123747;text-align:center;align-self:stretch;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#edfffd;font-size:13px}
+#sfHelpModal .sf-guide-orb{display:grid;place-items:center;width:64px;height:64px;border-radius:50%;margin:0 0 15px;color:#e4fffa;font-size:30px;background:radial-gradient(circle,#69eadd,#188b8d 68%,#16505f);box-shadow:0 0 26px #4ee6d66b}
+#sfHelpModal .sf-guide-more{margin:0 0 3px;color:#b9d5dc;font-size:13px}
+#sfHelpModal .sf-guide-step{background:#0a2330;border:1px solid #315769;border-radius:10px;padding:14px;margin-bottom:15px}
+#sfHelpModal .sf-guide-count{font-size:11px;color:#81e9d9;font-weight:700} #sfHelpModal .sf-guide-track{height:4px;background:#284555;border-radius:6px;margin:9px 0 15px;overflow:hidden} #sfHelpModal .sf-guide-track span{display:block;height:100%;background:#46dfc4}
+#sfHelpModal .sf-guide-panel{display:flex;align-items:flex-start;gap:11px;min-height:58px} #sfHelpModal .sf-guide-panel[hidden]{display:none} #sfHelpModal .sf-guide-panel p{margin:1px 0 12px;color:#e1f2f5} #sfHelpModal .sf-guide-number{flex:0 0 26px;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:#1c655c;color:#d6fff7;font-weight:800}
+#sfHelpModal .sf-help-article .sf-guide-controls{display:flex;justify-content:space-between;gap:10px}
+#sfHelpModal .sf-help-article .sf-guide-controls button{width:auto;min-height:38px;display:block;padding:8px 14px;background:#1c625b;border:1px solid #398b7e;border-radius:7px;color:#ecfffb;font-size:12px}
+#sfHelpModal .sf-help-article .sf-guide-controls button:disabled{opacity:.4;cursor:default}
+@media(max-width:720px){#sfHelpModal .sf-guide-welcome{grid-template-columns:1fr;padding:16px}#sfHelpModal .sf-guide-welcome aside{display:none}#sfHelpModal .sf-guide-welcome h4{font-size:20px}}
+@media(max-width:380px){#sfHelpModal .sf-guide-shortcuts{grid-template-columns:1fr}}
