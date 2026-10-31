@@ -6,7 +6,7 @@ const source=readFileSync(new URL('../assets/sf-entry-globe-v1.js',import.meta.u
 function harness({reduced=false,available=true}={}){
   let id=0,now=100,changed;const frames=new Map(),timers=new Map(),classes=new Set();
   const ctx=new Proxy({}, {get:(o,k)=>o[k]||(()=>k==='createRadialGradient'?{addColorStop(){}}:undefined),set:(o,k,v)=>(o[k]=v,true)});
-  const canvas={getContext:()=>ctx,getBoundingClientRect:()=>({width:400})};
+  const canvas={dataset:{},getContext:()=>ctx,getBoundingClientRect:()=>({width:400})};
   const root={isConnected:true,dataset:{},classList:{contains:k=>classes.has(k)},parentNode:{}};
   const projection={rotate(){return this},translate(){return this},scale(){return this}};
   const window={devicePixelRatio:1,matchMedia:()=>({matches:reduced,addEventListener(){},removeEventListener(){}}),
