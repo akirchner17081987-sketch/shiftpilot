@@ -24,7 +24,7 @@ test('manual preview edit keeps the visible table and page position',async({page
  const cell=page.locator('#autoStaircase [data-sf-range-employee="test"][data-sf-range-date="2026-12-22"]');await cell.scrollIntoViewIfNeeded();await cell.focus();
  await cell.evaluate(el=>el.addEventListener('pointerdown',()=>{window.__beforeManualEdit={left:document.querySelector('.sf-auto-stair-scroll').scrollLeft,top:document.querySelector('.main').scrollTop,y:window.scrollY}},{once:true}));
  await cell.click();const before=await page.evaluate(()=>window.__beforeManualEdit);await page.locator('#sfPreviewEditForm').waitFor();await page.locator('#sfPreviewEditForm [type=submit]').click();await expect(page.locator('#sfPreviewEditForm')).toHaveCount(0);
- const after=await page.evaluate(()=>({left:document.querySelector('.sf-auto-stair-scroll').scrollLeft,top:document.querySelector('.main').scrollTop,y:window.scrollY,focused:document.activeElement?.dataset.sfRangeDate}));
+ const after=await page.evaluate(()=>({left:document.querySelector('.sf-auto-stair-scroll').scrollLeft,top:document.querySelector('.main').scrollTop,y:window.scrollY,focused:document.activeElement?.dataset.sfRangeDate,active:document.activeElement?.outerHTML?.slice(0,300),cells:document.querySelectorAll('#autoStaircase [data-sf-range-employee]').length}));console.log('scroll check',JSON.stringify({before,after}));
  expect(Math.abs(after.left-before.left)).toBeLessThanOrEqual(1);expect(Math.abs(after.top-before.top)).toBeLessThanOrEqual(1);expect(Math.abs(after.y-before.y)).toBeLessThanOrEqual(1);expect(after.focused).toBe('2026-12-22');
 });
 async function confirmDraft(page){
