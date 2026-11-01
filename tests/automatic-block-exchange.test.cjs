@@ -72,6 +72,12 @@ test('regional repair prefers the earlier ordered employee when coverage is equa
  f.input.solidRules={...policy,regionalDayStaffing:{target:1,weekdayCodes:['TL'],specialCodes:[],statesBySite:{}},orderedMonthlyShiftEmployees:[{employeeId:'a',code:'TL'},{employeeId:'b',code:'TL'}]};
  const {result}=await optimize(f.input,[row('b')],{maxPasses:6});assert.equal(result.quality.open,0);assert.equal(result.preview[0].employeeId,'a');
 });
+test('regional repair accepts a slightly larger option set while retaining the normal safety limit',()=>{
+ const f=small();f.input.adaptiveSearch=true;f.input.groups[0].options=Array.from({length:12001},()=>f.input.groups[0].options[0]);
+ assert.equal(E.start(f.input,f.preview).status,'unsupported');
+ f.input.solidRules={...policy,regionalDayStaffing:{target:1,weekdayCodes:['TL'],specialCodes:[],statesBySite:{}}};
+ assert.equal(E.start(f.input,f.preview).status,'searching');
+});
 test('approved fragments joined by the allocator remain movable even when the capped options omit their combined block',()=>{
  const f=small();f.input.adaptiveSearch=true;const a=f.input.groups[0];a.fullWorkRest=false;
  a.options.push([a.options[0][0]],[a.options[0][1]]);

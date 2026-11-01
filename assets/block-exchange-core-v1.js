@@ -47,7 +47,8 @@ function blockPenalty(rows,group,p){
 }
 function start(input,preview){
  const cp={version:1,pass:0,best:[],working:[],fixed:[],original:copyRows(preview),lastImprovement:0,initialOpen:0,improvements:0,maxPasses:input.adaptiveSearch?96:128,adaptive:!!input.adaptiveSearch,seedOffset:input.adaptiveSeed||0,globalPasses:0,status:'searching'};
- if(!S.confirmed(input.solidRules)||(input.solidRules.conditionalStaffing||[]).length||input.capacities.some(([k])=>k.endsWith('|OT-DAY'))||input.groups.reduce((n,g)=>n+g.options.length,0)>12000||input.capacities.length>200){cp.status='unsupported';return cp;}
+ const optionLimit=input.solidRules.regionalDayStaffing?14000:12000;
+ if(!S.confirmed(input.solidRules)||(input.solidRules.conditionalStaffing||[]).length||input.capacities.some(([k])=>k.endsWith('|OT-DAY'))||input.groups.reduce((n,g)=>n+g.options.length,0)>optionLimit||input.capacities.length>200){cp.status='unsupported';return cp;}
  const p=prepared(input,[],preview),excluded=excludedPeople(p);
  let cols=columns(p,excluded),by=new Map(cols.map((c,i)=>[c.sig,i]));
  for(const block of canonical(preview.filter(a=>!excluded.has(String(a.employeeId)))))if(!by.has(signature(block)))excluded.add(String(block[0].employeeId));
@@ -60,7 +61,7 @@ function start(input,preview){
  for(const block of canonical(preview.filter(a=>!excluded.has(String(a.employeeId))))){const index=by.get(signature(block));if(index===undefined){cp.status='unsupported';return cp;}cp.best.push(index);}
  cp.working=cp.best.slice();cp.initialOpen=C.solidQuality(q,M.state(q,cp.best.map(i=>cols[i]))).open;
  cp.bestOpen=cp.initialOpen;
- if(!cols.length||cols.length>12000||new Set(cols.map(c=>String(c.group.employee.id))).size>24)cp.status='unsupported';
+ if(!cols.length||cols.length>optionLimit||new Set(cols.map(c=>String(c.group.employee.id))).size>24)cp.status='unsupported';
  return cp;
 }
 // Eliminate fixed columns exactly before entering the solver. The immutable
