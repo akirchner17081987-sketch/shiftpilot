@@ -49,3 +49,11 @@ test('manual range keeps rhythm exceptions but never announces an unconfirmed se
  w.employees[0].qualifications=['__sp:rhythmMode=required','__sp:rhythmStart=2027-01-04','__sp:rhythmPattern=FREI,FREI,ALLE','__sp:rhythmKind=cycle'];const result=w.SFManualRangePlanning.evaluate('one',dates.slice(0,2),'T');assert.equal(result.issues.length,0);assert.ok(result.rows.every(a=>a.rhythmOverride?.reason));assert.equal(w.sfRhythmCheck(w.employees[0],'T',dates[0]).allowed,false);
  w.SFBackend.sync=async()=>{w.SFBackend.lastSyncError=Error('Offline');};w.SFManualRangePlanning.openSchedule('one',dates.slice(0,2));$('#sfManualRangeDialog form').dispatchEvent(new w.Event('submit',{cancelable:true}));await new Promise(r=>setTimeout(r,0));assert.match($('#sfRangeCheck').textContent,/nicht bestätigt/);assert.equal($('#sfManualRangeDialog [type=submit]').disabled,true);assert.equal(w.notice,undefined);assert.equal(w.SFBackend.autoPlanApplying,undefined);
  }finally{await close();}});
+test('tablet selection is opt-in, spans days and cancels without changing the plan',async()=>{const {w,$,dates,cell,pointer,close}=await setup();try{
+ await new Promise(r=>setTimeout(r,0));const a=cell('one',dates[0]),b=cell('one',dates[2]);w.document.elementFromPoint=()=>b;
+ const touch=(n,t)=>pointer(n,t,{pointerType:'touch',buttons:0});touch(a,'pointerdown');touch(b,'pointermove');touch(b,'pointerup');assert.equal(!!$('.sf-auto-preview-dialog'),false);
+ const root=a.closest('[data-sf-range-scope]'),toggle=root.previousElementSibling.querySelector('button');toggle.click();assert.equal(toggle.getAttribute('aria-pressed'),'true');
+ touch(a,'pointerdown');touch(b,'pointermove');touch(b,'pointerup');assert.match($('.sf-auto-row-context').textContent,/3 Tage/);assert.equal(w.autoPlanPreview.length,0);
+ $('.sf-auto-preview-dialog [data-cancel]')?.click();w.SFManualRangePlanning.cancel();toggle.click();assert.equal(root.classList.contains('sf-range-touch-mode'),false);
+ toggle.click();touch(a,'pointerdown');touch(b,'pointermove');touch(b,'pointercancel');assert.equal(w.document.querySelectorAll('.sf-range-marked').length,0);assert.equal(w.assignments.length,0);
+ }finally{await close();}});
