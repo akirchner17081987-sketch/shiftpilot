@@ -2026,6 +2026,12 @@
       "kind": "feature-or-support"
     },
     {
+      "source": "assets/ot-regional-staffing-core-v1.js",
+      "area": "Schichtmodelle, Bedarf, Teams und Feiertagsregeln",
+      "category": "settings",
+      "kind": "feature-or-support"
+    },
+    {
       "source": "assets/ot-weekend-holiday-policy.js",
       "area": "Schichtmodelle, Bedarf, Teams und Feiertagsregeln",
       "category": "settings",
@@ -3694,7 +3700,7 @@
     "correctedArticleCount": 2,
     "articleCount": 284,
     "categoryCount": 22,
-    "assetJavaScriptCount": 238
+    "assetJavaScriptCount": 239
   },
   "incrementalUpdate": {
     "date": "2026-10-27",
