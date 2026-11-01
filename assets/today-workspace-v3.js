@@ -1,7 +1,7 @@
 // Company-scoped operational overview. Refreshes only read data; actions open existing workflows.
 (function(){
  'use strict';
- if(window.SFToday||sessionStorage.getItem('sf_demo_session_v1')==='active')return;
+ if(window.SFToday)return;
  const B=window.SFBackend=window.SFBackend||{},C=window.SFTodayCore,R=window.SFReportsCore,T=window.SFToday={},roles=new Set(['OWNER','ADMIN','PLANNER','DISPATCHER']);
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  let current=null,result=null,siteResult=null,seq=0,pending=null,loaded=0,contextKey='',failed=false,lastCheck=0;
