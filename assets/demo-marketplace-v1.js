@@ -87,6 +87,22 @@
 
   let marketRows=seedMarketplace(),disruptionRows=seedDisruptionOffers(),timeRows=seedTime(),datev=seedDatev(),accountSettings=seedAccountSettings();
   const saveMarket=()=>write(MARKET_KEY,marketRows),saveDisruptions=()=>write(DISRUPTION_KEY,disruptionRows),saveDatev=()=>write(DATEV_KEY,datev),saveAccount=()=>write(ACCOUNT_KEY,accountSettings);
+  function linkSampleOffers(){
+    if(!marketRows.some(r=>String(r.assignment_id||'').startsWith('demo-as-market-')))return;
+    const people=read('sf_demo_data_employees',[]),plans=read('sf_demo_data_assignments',[]),core=window.SFSolidPlanningCore;
+    if(!people.length||!plans.length||!core?.instant)return;
+    const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Berlin',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()),used=new Set();
+    marketRows=marketRows.filter(row=>{
+      if(!String(row.assignment_id||'').startsWith('demo-as-market-'))return true;
+      if(!['MARKET_OPEN','PENDING_MANAGER'].includes(row.status))return false;
+      const person=people.find(p=>[p.first,p.last].filter(Boolean).join(' ')===row.offered_by);
+      const plan=plans.find(a=>a.employeeId===person?.id&&a.date>=today&&(a.publishedAt||a._dbStatus==='PUBLISHED')&&a.start&&a.end&&!used.has(a.id));
+      if(!plan)return false;
+      used.add(plan.id);const end=new Date(plan.date+'T12:00:00Z');if(plan.end<=plan.start)end.setUTCDate(end.getUTCDate()+1);
+      row.assignment_id=plan.id;row.shift_code=plan.type;row.starts_at=new Date(core.instant(plan.date,plan.start,'Europe/Berlin')).toISOString();row.ends_at=new Date(core.instant(end.toISOString().slice(0,10),plan.end,'Europe/Berlin')).toISOString();
+      return true;
+    });saveMarket();
+  }
   function syncTimeRows(){
     const people=read('sf_demo_data_employees',[]),plans=read('sf_demo_data_assignments',[]),entries=read('sf_demo_data_timeEntries',{}),rows=read(TIME_KEY,timeRows);
     if(!Array.isArray(plans)||!window.SFSolidPlanningCore?.instant)return rows;
@@ -219,8 +235,9 @@
       let count=0;for(const row of marketRows)if(['MARKET_OPEN','PENDING_MANAGER'].includes(row.status)){row.status='CANCELLED';row.manager_comment=args.p_note||'';row.updated_at=new Date().toISOString();count++;}saveMarket();
       return {data:{withdrawnOffers:count,withdrawnLegacyOffers:count,withdrawnOpenOffers:0,endedClaims:0},error:null};
     }
-    if(name==='manager_list_shift_marketplace')return {data:clone(marketRows),error:null};
+    if(name==='manager_list_shift_marketplace'){linkSampleOffers();return {data:clone(marketRows),error:null};}
     if(name==='employee_list_shift_marketplace'){
+      linkSampleOffers();
       const employeeName='Anna Becker';
       const rows=marketRows
         .filter(row=>row.status==='MARKET_OPEN'||row.offered_by===employeeName||row.claimed_by===employeeName)
