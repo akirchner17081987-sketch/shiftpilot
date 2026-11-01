@@ -96,3 +96,30 @@ test('employee perspective uses the same published demo duties and recorded time
   assert.equal(data.timeEntries[0].actual_start,data.shifts[0].starts_at);
  }finally{await w.happyDOM.abort();w.close()}
 });
+
+test('the demo bootstrap seeds exactly five fictional employees and no dangling absences',async()=>{
+ const {Window}=await import('happy-dom');const w=new Window({url:'https://schichtfunk.de/demo'});
+ try{
+  w.sessionStorage.setItem('sf_demo_session_v1','active');
+  w.document.body.innerHTML='<main id="landingPage"></main><main id="appShell"><section id="view-overview"></section></main>';
+  w.employees=[];w.assignments=[];w.absences=[];w.globalSoll={};w.dailySoll={};w.timeEntries={};w.weekStart=new Date();w.store={};w.TYPES=[];
+  w.SFBackend={client:{__sfDemoLocalClientV1:true}};w.SFDemoAPI={fetchAuth:async()=>({ok:true,json:async()=>({})})};
+  w.setTimeout=()=>0;w.scrollTo=()=>{};
+  w.eval(fs.readFileSync('assets/demo-mode-v1.js','utf8'));
+  w.document.dispatchEvent(new w.Event('DOMContentLoaded'));
+  await new Promise(resolve=>setImmediate(resolve));
+  const employees=JSON.parse(w.sessionStorage.getItem('sf_demo_data_employees'));
+  const absences=JSON.parse(w.sessionStorage.getItem('sf_demo_data_absences'));
+  assert.equal(employees.length,5);
+  assert.ok(employees.every(e=>e.email.endsWith('@demo.schichtfunk.invalid')));
+  assert.ok(absences.every(a=>employees.some(e=>e.id===a.employeeId)));
+  w.SFSolidPlanningCore=planning;
+  w.eval(fs.readFileSync('assets/demo-marketplace-v1.js','utf8'));
+  const client=w.SFDemoDataClient.create();
+  const times=await client.rpc('manager_list_time_entries',{});
+  assert.ok(times.data.every(t=>employees.some(e=>e.id===t.employee_id)));
+  const market=await client.rpc('manager_list_shift_marketplace',{});
+  const names=new Set(employees.map(e=>e.first+' '+e.last));
+  assert.ok(market.data.every(m=>names.has(m.offered_by)&&(!m.claimed_by||names.has(m.claimed_by))));
+ }finally{await w.happyDOM.abort();w.close()}
+});

@@ -21,23 +21,13 @@
     O1:['07:00','15:00'],O1S:['18:00','04:00'],O2:['15:00','23:00'],QA:['20:00','06:00'],
     Teamleiter:['08:00','16:00'],O3:['23:00','07:00'],OT1:['10:00','18:00'],OT2:['12:00','20:00'],OT:['18:00','02:00']
   };
-  const staffing={O1:3,O1S:0,O2:2,QA:0,Teamleiter:2,O3:2,OT1:1,OT2:2,OT:3};
+  const staffing={O1:1,O1S:0,O2:1,QA:0,Teamleiter:1,O3:0,OT1:0,OT2:0,OT:0};
   const staff=[
     ['D001','Anna','Becker','Sicherheitsmitarbeiter','Vollzeit',40,'O1',['O1','O2']],
-    ['D002','Lukas','Fischer','Sicherheitsmitarbeiter','Vollzeit',40,'O1',['O1','O2']],
-    ['D003','Mira','Schulz','Sicherheitsmitarbeiter','Vollzeit',40,'O1',['O1','O2']],
-    ['D004','Jonas','Wagner','Sicherheitsmitarbeiter','Vollzeit',40,'O2',['O2','O1']],
-    ['D005','Lea','Hoffmann','Sicherheitsmitarbeiter','Teilzeit',32,'O2',['O2','O1']],
-    ['D006','Daniel','Koch','Teamleiter','Vollzeit',40,'Teamleiter',['Teamleiter','O1','O2']],
-    ['D007','Sophie','Richter','Teamleiter','Vollzeit',40,'Teamleiter',['Teamleiter','O1','O2']],
-    ['D008','Paul','Klein','Sicherheitsmitarbeiter','Vollzeit',40,'O3',['O3','OT']],
-    ['D009','Nina','Wolf','Sicherheitsmitarbeiter','Vollzeit',40,'O3',['O3','OT']],
-    ['D010','Tim','Neumann','Sicherheitsmitarbeiter','Teilzeit',32,'OT1',['OT1','OT2']],
-    ['D011','Marie','Schwarz','Sicherheitsmitarbeiter','Vollzeit',40,'OT2',['OT2','OT1','OT']],
-    ['D012','Emil','Zimmermann','Sicherheitsmitarbeiter','Vollzeit',40,'OT2',['OT2','OT1','OT']],
-    ['D013','Laura','Braun','Sicherheitsmitarbeiter','Vollzeit',40,'OT',['OT','O3','OT2']],
-    ['D014','Felix','Krüger','Sicherheitsmitarbeiter','Vollzeit',40,'OT',['OT','O3','OT2']],
-    ['D015','Jana','Hartmann','Sicherheitsmitarbeiter','Teilzeit',32,'OT',['OT','O3','OT2']]
+    ['D002','Lukas','Fischer','Sicherheitsmitarbeiter','Vollzeit',40,'O2',['O1','O2','O3']],
+    ['D003','Mira','Schulz','Sicherheitsmitarbeiter','Vollzeit',40,'O1S',['O1','O1S','O2']],
+    ['D004','Jonas','Wagner','Sicherheitsmitarbeiter','Vollzeit',40,'QA',['QA','O2','OT']],
+    ['D005','Lea','Hoffmann','Teamleiter','Vollzeit',40,'Teamleiter',['Teamleiter','O1','O2']]
   ];
 
   function writeDemo(k,v){try{sessionStorage.setItem(DATA_PREFIX+k,JSON.stringify(v))}catch{}}
@@ -64,7 +54,7 @@
       absences=[
         {id:'demo-a1',employeeId:'demo-e03',date:dates[2],startDate:dates[2],endDate:dates[2],type:'Urlaub',status:'Genehmigt',fullDay:true,note:'Demo-Abwesenheit'},
         {id:'demo-a2',employeeId:'demo-e05',date:dates[3],startDate:dates[3],endDate:dates[3],type:'Fortbildung',status:'Genehmigt',fullDay:true,note:'Demo-Fortbildung'},
-        {id:'demo-a3',employeeId:'demo-e09',date:dates[4],startDate:dates[4],endDate:dates[4],type:'Krank',status:'Erfasst',fullDay:true,note:'Demo-Krankmeldung'}
+        {id:'demo-a3',employeeId:'demo-e04',date:dates[4],startDate:dates[4],endDate:dates[4],type:'Krank',status:'Erfasst',fullDay:true,note:'Demo-Krankmeldung'}
       ];
       const absentKeys=new Set(absences.map(a=>`${a.employeeId}|${a.date}`));
       assignments=[];
@@ -74,8 +64,8 @@
           assignments.push(assignmentFor(emp,dates[day],day));
         }
       }
-      const sat=['D001','D004','D006','D008','D010','D011','D013','D014'];
-      const sun=['D002','D007','D009','D012','D015'];
+      const sat=['D001','D003','D005'];
+      const sun=['D002','D004'];
       for(const [day,nos] of [[5,sat],[6,sun]])for(const no of nos){const emp=employees.find(e=>e.personnelNo===no);if(emp)assignments.push(assignmentFor(emp,dates[day],day))}
       // Das feste Demo-Profil D001 erhält zusätzlich zwei rollierende Vorschau-Schichten.
       // So bleiben „Nächste Schicht“ und die 7-Tage-Vorschau auch am Wochenende aussagekräftig.
@@ -203,11 +193,11 @@
     const august=sessionStorage.getItem('sf_demo_data_august_standard_v1')==='ready';
     const localClient=B.client?.__sfDemoLocalClientV1===true&&B.ready===true;
     let savedEmployees=readDemo('employees',[]),savedAssignments=readDemo('assignments',[]),savedEntries=readDemo('timeEntries',{});
-    let records=Array.isArray(savedEmployees)&&savedEmployees.length>=15&&Array.isArray(savedAssignments)&&savedAssignments.some(a=>String(a.id||'').startsWith('demo-aug26-'))&&Object.keys(savedEntries||{}).some(id=>id.startsWith('demo-aug26-'));
+    let records=Array.isArray(savedEmployees)&&savedEmployees.length>=5&&Array.isArray(savedAssignments)&&savedAssignments.some(a=>String(a.id||'').startsWith('demo-aug26-'))&&Object.keys(savedEntries||{}).some(id=>id.startsWith('demo-aug26-'));
     if(august&&!records&&typeof window.SchichtFunkDemoAugust2026?.ensurePrepared==='function'){
       window.SchichtFunkDemoAugust2026.ensurePrepared();
       savedEmployees=readDemo('employees',[]);savedAssignments=readDemo('assignments',[]);savedEntries=readDemo('timeEntries',{});
-      records=Array.isArray(savedEmployees)&&savedEmployees.length>=15&&Array.isArray(savedAssignments)&&savedAssignments.some(a=>String(a.id||'').startsWith('demo-aug26-'))&&Object.keys(savedEntries||{}).some(id=>id.startsWith('demo-aug26-'));
+      records=Array.isArray(savedEmployees)&&savedEmployees.length>=5&&Array.isArray(savedAssignments)&&savedAssignments.some(a=>String(a.id||'').startsWith('demo-aug26-'))&&Object.keys(savedEntries||{}).some(id=>id.startsWith('demo-aug26-'));
     }
     const gate=document.getElementById('sfDemoBootGate');if(gate){gate.dataset.storedReady=String(stored);gate.dataset.augustReady=String(august);gate.dataset.clientReady=String(localClient);gate.dataset.recordsReady=String(records)}
     return stored&&august&&localClient&&records;

@@ -8,14 +8,18 @@
   const ACTIVE_KEY='sf_demo_scenario_v1';
   const BASELINE_KEY='sf_demo_scenario_baseline_v1';
   const DISRUPTION_KEY='sf_demo_disruptions_v1';
-  const MONTH='2026-08';
-  const STAFFING_DATE='2026-08-10';
+  const TODAY=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Berlin',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+  const addDays=(date,n)=>{const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
+  const display=date=>new Intl.DateTimeFormat('de-DE',{timeZone:'UTC',day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date(date+'T12:00:00Z'));
+  const MONTH=TODAY.slice(0,7);
+  const STAFFING_DATE=TODAY;
+  const VACATION_START=addDays(TODAY,7),VACATION_END=addDays(TODAY,8);
   const STAFFING_SHIFT='O1';
   const ABSENCE_ID='demo-scenario-vacation';
   const scenarios={
     outage:{icon:'⚡',title:'Kurzfristiger Ausfall',badge:'Störfall-Autopilot',description:'Anna Becker fällt kurzfristig für die O1-Schicht aus. Passende Ersatzkräfte sind bereits priorisiert.',target:'disruptions',result:'Ausfall erkannt · 3 passende Ersatzkräfte verfügbar'},
-    understaffing:{icon:'◔',title:'Unterbesetzung',badge:'Dienstplan',description:'Am 10. August fehlt in der O1-Schicht eine Person gegenüber der benötigten Besetzung.',target:'schedule',result:'10.08.2026 · O1 · eine Person unter Soll'},
-    vacation:{icon:'☀',title:'Urlaubsantrag',badge:'Abwesenheiten',description:'Anna Becker hat für den 24. und 25. August Urlaub beantragt. Der Antrag wartet auf eine Entscheidung.',target:'absence',result:'Anna Becker · 24.–25.08.2026 · Beantragt'},
+    understaffing:{icon:'◔',title:'Unterbesetzung',badge:'Dienstplan',description:'In der O1-Schicht fehlt eine Person gegenüber der benötigten Besetzung.',target:'schedule',result:display(STAFFING_DATE)+' · O1 · eine Person unter Soll'},
+    vacation:{icon:'☀',title:'Urlaubsantrag',badge:'Abwesenheiten',description:'Anna Becker hat Urlaub beantragt. Der Antrag wartet auf eine Entscheidung.',target:'absence',result:'Anna Becker · '+display(VACATION_START)+'–'+display(VACATION_END)+' · Beantragt'},
     deviation:{icon:'◷',title:'Zeitabweichung',badge:'Zeiterfassung',description:'Bei Anna Becker weicht die gemeldete Ist-Zeit deutlich von der geplanten O1-Schicht ab.',target:'time',result:'Anna Becker · +32 Minuten netto · Prüfung offen'},
     swap:{icon:'⇄',title:'Schichttausch',badge:'Schicht-Marktplatz',description:'Lea Hoffmann möchte eine O2-Schicht von Jonas Wagner übernehmen. Die Freigabe durch die Planung steht aus.',target:'marketplace',result:'Jonas Wagner → Lea Hoffmann · Freigabe ausstehend'}
   };
@@ -68,16 +72,17 @@
   function prepareVacation(){
     try{
       const anna=employees.find(e=>e.personnelNo==='D001')||employees[0];if(!anna)return;
-      absences=absences.filter(a=>String(a.id)!==ABSENCE_ID).concat({id:ABSENCE_ID,employeeId:anna.id,date:'2026-08-24',startDate:'2026-08-24',endDate:'2026-08-25',type:'Urlaub',status:'Beantragt',fullDay:true,note:'Vorbereitetes Demo-Szenario'});saveDemoData();
+      absences=absences.filter(a=>String(a.id)!==ABSENCE_ID).concat({id:ABSENCE_ID,employeeId:anna.id,date:VACATION_START,startDate:VACATION_START,endDate:VACATION_END,type:'Urlaub',status:'Beantragt',fullDay:true,note:'Vorbereitetes Demo-Szenario'});saveDemoData();
     }catch{}
   }
 
   function disruptionState(){
     const saved=read(DISRUPTION_KEY,null);if(saved)return saved;
-    const data={incident:{id:'demo-disruption-01',status:'OPEN',incident_type:'SICKNESS',shift_code:'O1',starts_at:'2026-09-05T07:00:00+02:00',original_employee:'Anna Becker',note:'Kurzfristige Krankmeldung vor Schichtbeginn',pending_count:0,accepted_employee:null},candidates:[
-      {employee_id:'demo-e02',employee_name:'Lukas Fischer',employee_role:'Maschinenführer',planned_hours:30,score:96,reasons:['O1 freigegeben','Ruhezeit erfüllt','Erreichbar'],offer_status:null},
-      {employee_id:'demo-e03',employee_name:'Mira Schulz',employee_role:'Produktion',planned_hours:27.5,score:91,reasons:['O1 freigegeben','Keine Überschneidung'],offer_status:null},
-      {employee_id:'demo-e07',employee_name:'Sophie Richter',employee_role:'Springerin',planned_hours:24,score:88,reasons:['Kurzfristig verfügbar','Wochenstunden passen'],offer_status:null}
+    const start=new Date(window.SFSolidPlanningCore.instant(addDays(TODAY,1),'07:00','Europe/Berlin')).toISOString();
+    const data={incident:{id:'demo-disruption-01',status:'OPEN',incident_type:'SICKNESS',shift_code:'O1',starts_at:start,original_employee:'Anna Becker',note:'Kurzfristige Krankmeldung vor Schichtbeginn',pending_count:0,accepted_employee:null},candidates:[
+      {employee_id:'demo-e02',employee_name:'Lukas Fischer',employee_role:'Sicherheitsmitarbeiter',planned_hours:30,score:96,reasons:['O1 freigegeben','Ruhezeit erfüllt','Erreichbar'],offer_status:null},
+      {employee_id:'demo-e03',employee_name:'Mira Schulz',employee_role:'Sicherheitsmitarbeiter',planned_hours:27.5,score:91,reasons:['O1 freigegeben','Keine Überschneidung'],offer_status:null},
+      {employee_id:'demo-e05',employee_name:'Lea Hoffmann',employee_role:'Teamleiterin',planned_hours:24,score:88,reasons:['Kurzfristig verfügbar','Wochenstunden passen'],offer_status:null}
     ]};write(DISRUPTION_KEY,data);return data;
   }
   function patchRpc(){

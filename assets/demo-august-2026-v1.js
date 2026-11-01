@@ -17,8 +17,7 @@
     Teamleiter:['08:00','16:00'],O3:['23:00','07:00'],OT1:['10:00','18:00'],OT2:['12:00','20:00'],OT:['18:00','02:00']
   };
   const primaryByNo={
-    D001:'O1',D002:'O1',D003:'O1S',D004:'QA',D005:'O2',D006:'Teamleiter',D007:'Teamleiter',
-    D008:'O3',D009:'O3',D010:'OT1',D011:'OT2',D012:'OT2',D013:'OT',D014:'OT',D015:'OT'
+    D001:'O1',D002:'O2',D003:'O1S',D004:'QA',D005:'Teamleiter'
   };
   let rpcPatched=false,seeded=false;
   let augustAssignments=[],augustEntries=[],augustBundle={employees:[],details:[]};
