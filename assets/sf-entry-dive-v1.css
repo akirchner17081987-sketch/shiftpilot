@@ -23,3 +23,13 @@
  #sfEntryOverlay .sf-entry-welcome{bottom:max(80px,12vh)}
 }
 @media(prefers-reduced-motion:reduce){#sfEntryDiveCanvas{transition:none}#sfEntryOverlay.sf-entry-success .sf-entry-welcome,#sfEntryOverlay .sf-entry-welcome-line::after{animation:none}}
+
+/* Let the entry map dissolve into the real overview while its controls arrive. */
+@media (prefers-reduced-motion:no-preference){
+ #sfEntryOverlay.sf-entry-success.sf-entry-out{transition:opacity 1.5s ease-in-out,visibility 1.5s ease-in-out}
+ #appShell.sf-entry-page-reveal > .topbar{animation:sf-entry-page-in 1.25s .15s both ease-out}
+ #appShell.sf-entry-page-reveal #sfTodayWorkspace .sf-orbit-hero-content,
+ #appShell.sf-entry-page-reveal #sfTodayWorkspace .sf-orbit-status-scope{animation:sf-entry-page-in 1.3s .35s both ease-out}
+ #appShell.sf-entry-page-reveal #sfTodayWorkspace .sf-orbit-daily-group{animation:sf-entry-page-in 1.25s .6s both ease-out}
+}
+@keyframes sf-entry-page-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}

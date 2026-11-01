@@ -70,10 +70,16 @@
     clearTimeout(welcomeTimer);
     observer?.disconnect();
     window.removeEventListener('load', onLoad);
+    const cinematic = root.classList.contains('sf-entry-success') &&
+      !document.hidden && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const shell = document.getElementById('appShell');
+    const overview = document.getElementById('view-overview');
+    const reveal = cinematic && isVisible(shell) && overview?.classList.contains('active');
+    if (reveal) shell.classList.add('sf-entry-page-reveal');
     root.classList.add('sf-entry-out');
-    const exitMs = root.classList.contains('sf-entry-success') &&
-      !window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 650 : 500;
+    const exitMs = reveal ? 1500 : cinematic ? 650 : 500;
     setTimeout(() => { window.SFEntryDive?.stop(); root.remove(); }, exitMs);
+    if (reveal) setTimeout(() => shell.classList.remove('sf-entry-page-reveal'), 2200);
   }
 
   function isVisible(el) {
