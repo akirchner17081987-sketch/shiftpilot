@@ -35,7 +35,7 @@ for (const mode of [{displayMode: true}, {ios: true}]) {
     assert.equal(window.SFEntryAccess.isChoosing(), true);
     assert.equal(document.getElementById('sfEntryChoice').hidden, false);
     assert.equal(document.getElementById('sfEntryLoginSlot').hidden, true);
-    assert.equal(document.querySelectorAll('[data-entry-area]').length, 3);
+    assert.equal(document.querySelectorAll('[data-entry-area]').length, 4);
     assert.equal(location.hash, '');
     assert.equal(location.search, '?source=homescreen');
   });

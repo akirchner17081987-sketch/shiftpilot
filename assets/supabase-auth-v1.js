@@ -41,6 +41,7 @@
     e.querySelector('#sfAuthSubmit').onclick=async()=>{
       const email=emailField.value.trim(),password=passwordField.value;
       emailField.removeAttribute('aria-invalid');passwordField.removeAttribute('aria-invalid');emailField.value=email;
+      if(window.SFEntryAccess?.isDemo())return window.SFEntryAccess.submitDemo(email,password);
       if(!email)return invalid(emailField,'Bitte deine E-Mail-Adresse eingeben.');
       if(emailField.validity.typeMismatch)return invalid(emailField,'Bitte eine gültige E-Mail-Adresse eingeben, zum Beispiel name@firma.de.');
       if(!password)return invalid(passwordField,'Bitte dein Passwort eingeben.');

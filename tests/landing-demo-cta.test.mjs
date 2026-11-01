@@ -34,10 +34,10 @@ test('production login stays separate from protected demo',()=>{
 
 test('entry screen offers the protected demo alongside the existing areas',()=>{
   const entry=index.match(/<section id="sfEntryChoice"[\s\S]*?<\/section>/)?.[0]||'';
-  assert.match(entry,/<a\b[^>]*id="sfEntryDemo"[^>]*href="\/demo"/);
+  assert.match(entry,/<button\b[^>]*id="sfEntryDemo"[^>]*data-entry-area="demo"/);
   assert.match(entry,/Demo ausprobieren/);
   assert.match(entry,/Geschützter Zugang mit fiktiven Beispieldaten/);
-  assert.equal((entry.match(/data-entry-area=/g)||[]).length,3);
+  assert.equal((entry.match(/data-entry-area=/g)||[]).length,4);
 });
 
 test('demo page requires username and password before sandbox start',()=>{
