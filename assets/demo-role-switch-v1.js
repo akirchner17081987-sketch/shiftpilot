@@ -93,9 +93,10 @@
   function localStamp(assignment,end=false){
     const date=String(assignment.date||'').slice(0,10),time=String(end?assignment.end:assignment.start||'00:00').slice(0,5);
     const start=String(assignment.start||'00:00'),finish=String(assignment.end||'00:00');
-    const d=new Date(`${date}T${time}:00`);
-    if(end&&finish<=start)d.setDate(d.getDate()+1);
-    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:00+02:00`;
+    const d=new Date(date+'T12:00:00Z');
+    if(end&&finish<=start)d.setUTCDate(d.getUTCDate()+1);
+    const day=d.toISOString().slice(0,10);
+    return new Date(window.SFSolidPlanningCore.instant(day,time,'Europe/Berlin')).toISOString();
   }
 
   function demoEmployee(){
@@ -107,15 +108,13 @@
     const changeState=shiftChanges();
     let allAssignments=[],allAbsences=[],entries={};
     try{allAssignments=assignments;allAbsences=absences;entries=timeEntries||{}}catch{}
-    const futureShifts=allAssignments.filter(a=>String(a.employeeId)===String(employee.id)).map(a=>({
+    const ownAssignments=allAssignments.filter(a=>String(a.employeeId)===String(employee.id)&&(a.publishedAt||a._dbStatus==='PUBLISHED'));
+    const shifts=ownAssignments.map(a=>({
       id:a.id,employee_id:employee.id,shift_code:a.type||'Schicht',starts_at:localStamp(a),ends_at:localStamp(a,true),break_minutes:Number(a.pause||30),status:'PUBLISHED',published_at:a.publishedAt||'2026-07-27T08:00:00.000Z'
-    })).filter(s=>new Date(s.ends_at).getTime()>Date.now()).sort((a,b)=>new Date(a.starts_at)-new Date(b.starts_at)).slice(0,2);
-    const patterns=[['O1','07:00','15:00'],['O2','15:00','23:00'],['O1S','08:00','16:00'],['O1','07:00','15:00'],['O2','15:00','23:00'],['O1','07:00','15:00']];
-    const pastShifts=patterns.map((p,index)=>({id:`demo-employee-shift-${pad(index+1)}`,employee_id:employee.id,shift_code:p[0],starts_at:futureStamp(-(index+1),p[1]),ends_at:futureStamp(-(index+1),p[2]),break_minutes:30,status:'PUBLISHED',published_at:futureStamp(-20,'08:00')}));
-    const shifts=[...pastShifts,...futureShifts];
+    })).sort((a,b)=>new Date(a.starts_at)-new Date(b.starts_at));
     const ownAbsences=[...absenceRequests(employee.id),...allAbsences.filter(a=>String(a.employeeId)===String(employee.id)).map(a=>({id:a.id,employee_id:employee.id,absence_type:a.type||'Abwesenheit',start_date:a.startDate||a.date,end_date:a.endDate||a.startDate||a.date,status:a.status||'Genehmigt',full_day:a.fullDay!==false,note:a.note||'',review_note:a.reviewNote||'',requested_at:a.requestedAt||futureStamp(-12,'09:00')}))];
-    const saved=read(TIME_KEY,[]),states=['recorded','confirmed','correction_requested','confirmed','recorded','open'];
-    pastShifts.forEach((shift,index)=>{if(saved.some(row=>row.assignment_id===shift.id))return;const actual=index===5?null:{start:new Date(new Date(shift.starts_at).getTime()+(index===0?4:index===2?12:0)*60000).toISOString(),end:new Date(new Date(shift.ends_at).getTime()+(index===1?15:index===4?20:0)*60000).toISOString()};saved.push({assignment_id:shift.id,employee_id:employee.id,employee_name:`${employee.first} ${employee.last}`,shift_code:shift.shift_code,starts_at:shift.starts_at,ends_at:shift.ends_at,planned_break_minutes:shift.break_minutes,actual_start:actual?.start||null,actual_end:actual?.end||null,actual_break_minutes:actual?30:null,entry_status:states[index],employee_note:index===0?'Verkehrsbedingt wenige Minuten später gestartet.':index===4?'Übergabe dauerte etwas länger.':'',manager_note:states[index]==='confirmed'?'Geprüft und bestätigt.':'',correction_note:states[index]==='correction_requested'?'Bitte tatsächliches Ende noch einmal prüfen.':''})});
+    const saved=read(TIME_KEY,[]);
+    ownAssignments.forEach(a=>{const entry=entries[a.id];if(!entry?.actualStart||saved.some(row=>row.assignment_id===a.id))return;const shift=shifts.find(item=>item.id===a.id);const actual={...a,start:entry.actualStart,end:entry.actualEnd||entry.actualStart};saved.push({assignment_id:a.id,employee_id:employee.id,employee_name:`${employee.first} ${employee.last}`,shift_code:shift.shift_code,starts_at:shift.starts_at,ends_at:shift.ends_at,planned_break_minutes:shift.break_minutes,actual_start:localStamp(actual),actual_end:entry.actualEnd?localStamp(actual,true):null,actual_break_minutes:Number(entry.breakMin)||0,entry_status:entry.status||'recorded',employee_note:'',manager_note:'',correction_note:''})});
     write(TIME_KEY,saved);
     const ownEntries=saved.filter(row=>shifts.some(shift=>shift.id===row.assignment_id)).map(row=>({assignment_id:row.assignment_id,starts_at:row.starts_at,actual_start:row.actual_start,actual_end:row.actual_end,break_minutes:row.actual_break_minutes,status:row.entry_status,employee_note:row.employee_note||'',manager_note:row.manager_note||'',correction_note:row.correction_note||''}));
     return {

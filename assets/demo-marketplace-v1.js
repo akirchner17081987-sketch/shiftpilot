@@ -143,7 +143,7 @@
   function demoRpc(name,args={}){
     const demoSites=()=>[{id:'demo-site-east',name:'Demo Leipzig',code:'LE',latitude:51.3397,longitude:12.3731,is_active:true,geocode_status:'verified'},{id:'demo-site-west',name:'Demo Recklinghausen',code:'RE',latitude:51.6141,longitude:7.1979,is_active:true,geocode_status:'verified'}];
     if(name==='manager_company_profile')return {data:{company_id:args.p_company_id,name:'SchichtFunk Demo GmbH',timezone:'Europe/Berlin',contacts:[],sites:demoSites(),can_edit:false},error:null};
-    if(name==='manager_today_workspace'){
+    if(name==='manager_today_workspace'||name==='manager_reports_workspace'){
       // The current overview consumes this shape.  Keep its source entirely
       // inside the demo session rather than querying any customer data.
       const people=read('sf_demo_data_employees',[]);
@@ -152,18 +152,27 @@
       const daily=read('sf_demo_data_dailySoll',{});
       const absent=read('sf_demo_data_absences',[]);
       const entries=read('sf_demo_data_timeEntries',{});
-      const localDate='2026-08-17', zone='Europe/Berlin';
+      const zone='Europe/Berlin',now=new Date();
+      const localDate=new Intl.DateTimeFormat('sv-SE',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit'}).format(now);
+      if(args.p_company_id!=='demo-local-company')return {data:null,error:demoError('Unternehmen',args.p_company_id)};
+      const report=name==='manager_reports_workspace';
+      const from=report?String(args.p_start_date||''):localDate,to=report?String(args.p_end_date||''):localDate;
+      const validDate=value=>/^\d{4}-\d{2}-\d{2}$/.test(value)&&Number.isFinite(Date.parse(value+'T12:00:00Z'))&&new Date(value+'T12:00:00Z').toISOString().slice(0,10)===value;
+      if(!validDate(from)||!validDate(to)||from>to||Date.parse(to)-Date.parse(from)>366*86400000)return {data:null,error:{message:'Ungültiger Demo-Zeitraum.'}};
       const sites=demoSites();
       const siteFor=id=>sites[Math.max(0,people.findIndex(p=>p.id===id))%sites.length].id;
       const dayAfter=date=>{const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+1);return d.toISOString().slice(0,10)};
       const instant=(date,time)=>new Date(window.SFSolidPlanningCore.instant(date,String(time||'00:00').slice(0,5),zone)).toISOString();
-      const relevant=plans.filter(a=>a.date>='2026-08-16'&&a.date<='2026-08-18'&&a.id&&a.employeeId&&a.type&&a.start&&a.end);
+      const dayBefore=date=>{const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()-1);return d.toISOString().slice(0,10)};
+      const relevant=plans.filter(a=>a.date>=dayBefore(from)&&a.date<=dayAfter(to)&&a.id&&a.employeeId&&a.type&&a.start&&a.end);
       const codes=[...new Set([...Object.keys(demand),...relevant.map(a=>a.type)])];
       const models=codes.map(code=>{const a=relevant.find(row=>row.type===code)||{};return {code,name:code,active:true,default_start:a.start||'08:00',default_end:a.end||'16:00',optional_weekdays:[1,2,3,4,5,6,7],planning_mode:'required'};});
       const assignments=relevant.map(a=>({id:a.id,legacy_id:a.id,employee_id:a.employeeId,date:a.date,shift:a.type,start:instant(a.date,a.start),end:instant(a.end<=a.start?dayAfter(a.date):a.date,a.end),status:a.publishedAt?'PUBLISHED':'DRAFT',site_id:siteFor(a.employeeId)}));
-      const times=relevant.flatMap(a=>{const e=entries[a.id];if(!e?.actualStart)return [];return [{id:a.id,employee_id:a.employeeId,start:instant(a.date,e.actualStart),end:e.actualEnd?instant(e.actualEnd<=e.actualStart?dayAfter(a.date):a.date,e.actualEnd):null,site_id:siteFor(a.employeeId),break_minutes:Number(e.breakMin)||0,breaks:[]}];});
-      return {data:{company_id:args.p_company_id,company_name:'SchichtFunk Demo GmbH',timezone:zone,today:localDate,as_of:'2026-08-17T20:30:00Z',can_time:true,
-        employees:people.map(p=>({id:p.id,first:p.first,last:p.last,personnel_no:p.personnelNo})),models,sites,global:demand,
+      const times=relevant.flatMap(a=>{const e=entries[a.id];if(!e?.actualStart)return [];return [{id:a.id,employee_id:a.employeeId,date:a.date,shift:a.type,status:e.status||'confirmed',start:instant(a.date,e.actualStart),end:e.actualEnd?instant(e.actualEnd<=e.actualStart?dayAfter(a.date):a.date,e.actualEnd):null,site_id:siteFor(a.employeeId),break_minutes:Number(e.breakMin)||0,breaks:[]}];});
+      const weekdays=(start,end)=>{let count=0;for(let date=start;date<=end;date=dayAfter(date)){const day=new Date(date+'T12:00:00Z').getUTCDay();if(day>0&&day<6)count++;}return count;};
+      const employees=people.map(p=>{const own=times.filter(t=>t.employee_id===p.id&&t.date>=from&&t.date<=to&&t.end&&Date.parse(t.end)<=now.getTime());return {id:p.id,first:p.first,last:p.last,personnel_no:p.personnelNo,status:'active',shifts:p.shifts||[],employment:p.employment,role:p.role,weekly_hours:Number(p.weeklyHours)||40,target_minutes:weekdays(from,to)*(Number(p.weeklyHours)||40)*12,confirmed_minutes:own.reduce((sum,t)=>sum+Math.max(0,(Date.parse(t.end)-Date.parse(t.start))/60000-t.break_minutes),0),credit_minutes:0,elapsed_target_minutes:0,elapsed_credit_minutes:0};});
+      return {data:{company_id:args.p_company_id,company_name:'SchichtFunk Demo GmbH',timezone:zone,today:localDate,from,to,as_of:now.toISOString(),can_time:true,
+        employees,models,sites,global:demand,
         daily:Object.entries(daily).flatMap(([date,shifts])=>Object.entries(shifts||{}).map(([shift,required])=>({date,shift,required}))),rules:{},assignments,times,qr:[],
         absences:absent.map(a=>({employee_id:a.employeeId,from:a.startDate||a.date,to:a.endDate||a.date,type:a.type,status:a.status,full_day:a.fullDay!==false})),incidents:[]},error:null};
     }
