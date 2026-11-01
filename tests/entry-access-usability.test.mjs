@@ -43,11 +43,13 @@ test('demo uses the original login form and never sends demo credentials to the 
     const {$,w,calls}=h;let request;
     w.SFDemoAPI={fetchAuth:async options=>{request=options;return {ok:false,status:401,json:async()=>({})}}};
     assert.equal($('sfAuthTitle').textContent,'Demo-Zugang');assert.equal($('sfEmail').type,'text');
+    assert.ok($('sfEntryOverlay').classList.contains('sf-entry-demo-active'));
     assert.equal(w.document.querySelector('label[for="sfEmail"]').textContent,'Benutzer');
     $('sfEmail').value='synthetic-demo';$('sfPassword').value='synthetic-password';$('sfAuthSubmit').click();await tick();
     assert.equal(JSON.parse(request.body).username,'synthetic-demo');assert.equal(calls.length,0);
     assert.match($('sfAuthMsg').textContent,/Benutzer oder Passwort ist nicht korrekt/);
     $('sfEntryBack').click();await tick();w.document.querySelector('[data-entry-area="verwaltung"]').click();await tick();
+    assert.equal($('sfEntryOverlay').classList.contains('sf-entry-demo-active'),false);
     assert.equal($('sfEmail').type,'email');assert.equal(w.document.querySelector('label[for="sfEmail"]').textContent,'E-Mail');
     assert.equal($('sfPassword').value,'');assert.equal($('sfAuthTitle').textContent,'Verwaltung');
   }finally{await h.close()}

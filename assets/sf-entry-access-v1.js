@@ -69,6 +69,7 @@
     if (area === 'zeitkonto' && window.SFBackend) window.SFBackend.pendingView = 'time';
   }
   function render() {
+    root.classList.toggle('sf-entry-demo-active', area === 'demo');
     choice.hidden = !ready || area !== null;
     selected.hidden = !ready || area === null;
     time.hidden = area !== 'zeit';
