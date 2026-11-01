@@ -42,7 +42,7 @@
     if (!allowed.has(area) || area === 'demo') return;
     try { window.localStorage.setItem('sf_entry_area', area); } catch (_) { /* Navigation works without storage. */ }
   }
-  let ready = false, switching = false, lastSelection = null, scannerPromise = null, demoExpiryShown = false;
+  let ready = false, switching = false, lastSelection = null, scannerPromise = null, demoExpiryShown = false, selectionVersion = 0;
   root.classList.add('sf-entry-access-enabled');
 
   function setAddress() {
@@ -91,7 +91,7 @@
   }
   async function select(next, button) {
     if (switching || !ready || !root.isConnected || root.inert) return;
-    switching = true;
+    switching = true;selectionVersion++;
     const outgoing = area === null ? choice : selected;
     try {
       if (button?.matches('[data-entry-area]')) {
@@ -144,6 +144,7 @@
     finally { button.disabled = false; }
   });
   async function submitDemo(username,password){
+    const requestedVersion=selectionVersion;
     const user=document.getElementById('sfEmail'),secret=document.getElementById('sfPassword'),message=document.getElementById('sfAuthMsg'),button=document.getElementById('sfAuthSubmit');
     const say=text=>{message.textContent=text;message.className='sf-auth-msg bad';};
     if(!username){user.setAttribute('aria-invalid','true');say('Bitte Ihren Demo-Benutzer eingeben.');user.focus();return}
@@ -153,7 +154,7 @@
     try{
       const response=await window.SFDemoAPI.fetchAuth({method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
       const result=await response.json().catch(()=>({}));
-      if(area!=='demo'||!root.isConnected)return;
+      if(area!=='demo'||!root.isConnected||requestedVersion!==selectionVersion)return;
       if(result.failureToken)window.SFDemoAPI.setFailureToken(result.failureToken);
       if(response.status===429){const minutes=Math.max(1,Math.ceil(Number(result.retryAfter||60)/60));say(`Zu viele Versuche. Bitte in ${minutes} Minute${minutes===1?'':'n'} erneut versuchen.`);return}
       if(!response.ok||!result.accessToken){say(response.status===503?'Der Demo-Zugang wird gerade eingerichtet. Bitte später erneut versuchen.':'Benutzer oder Passwort ist nicht korrekt.');return}

@@ -55,6 +55,17 @@ test('demo uses the original login form and never sends demo credentials to the 
   }finally{await h.close()}
 });
 
+test('a delayed demo login cannot override a later area selection',async()=>{
+  const h=await loginFixture({entry:true,url:'https://schichtfunk.de/?bereich=demo'});try{
+    const {$,w}=h;let finish,saved=false;
+    w.SFDemoAPI={fetchAuth:()=>new Promise(resolve=>finish=resolve),setAccessToken:()=>{saved=true},clearFailureToken(){}};
+    $('sfEmail').value='synthetic-demo';$('sfPassword').value='synthetic-password';$('sfAuthSubmit').click();
+    $('sfEntryBack').click();await tick();w.document.querySelector('[data-entry-area="verwaltung"]').click();await tick();
+    finish({ok:true,status:200,json:async()=>({accessToken:'synthetic-token'})});await tick();
+    assert.equal(saved,false);assert.equal($('sfAuthTitle').textContent,'Verwaltung');
+  }finally{await h.close()}
+});
+
 test('password help has a named modal, labelled field, focus loop and Escape return',async()=>{
   const h=await loginFixture({reset:true});try{
     const {B,w,$}=h;B.passwordResetRequestDialog('fixture@example.invalid');
