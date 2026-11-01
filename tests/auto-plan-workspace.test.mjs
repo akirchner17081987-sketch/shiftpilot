@@ -12,6 +12,12 @@ function harness(){
  vm.runInNewContext(planning,c);vm.runInNewContext(read('assets/auto-plan-workspace-v1.js'),c);c.window.SFAutoPlanWorkspace.confirmApply=async()=>true;
  return{c,id,api:c.window.SFAutoPlanWorkspace,run:code=>vm.runInNewContext(code,c)};
 }
+test('redrawing the preview preserves the table scroll position',()=>{
+ const {c,id}=harness(),host=id('autoStaircase');host.id='autoStaircase';let scroll={scrollLeft:0,scrollTop:0},markup='';
+ host.querySelector=()=>scroll;Object.defineProperty(host,'innerHTML',{get:()=>markup,set:value=>{markup=value;scroll={scrollLeft:0,scrollTop:0}}});
+ c.generateAutoPlanPreview();scroll.scrollLeft=175;scroll.scrollTop=12;c.employees[0].first='Geändert';c.renderAutoPlanning();
+ assert.equal(scroll.scrollLeft,175);assert.equal(scroll.scrollTop,12);
+});
 test('general return preserves the selected calendar week despite different auto-planning dates',()=>{
  for(const planningPeriod of ['date','week','month']){
   const {c,id,api}=harness();id('autoPlanPeriod').value=planningPeriod;

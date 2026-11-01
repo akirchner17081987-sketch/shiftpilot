@@ -6,7 +6,7 @@
   const dateFormatter=new Intl.DateTimeFormat('de-DE',{weekday:'long',day:'2-digit',month:'2-digit'}),weekdayFormatter=new Intl.DateTimeFormat('de-DE',{weekday:'short'}),monthFormatter=new Intl.DateTimeFormat('de-DE',{month:'long',year:'numeric'}),dateLabels=new Map();
   const dateLabel=date=>{if(!dateLabels.has(date))dateLabels.set(date,dateFormatter.format(new Date(date+'T12:00:00')));return dateLabels.get(date)};
   const written=new WeakMap();
-  const html=(node,value)=>{if(!node||written.get(node)===value)return;node.innerHTML=value;written.set(node,value)};
+  const html=(node,value)=>{if(!node||written.get(node)===value)return;const old=node.id==='autoStaircase'?node.querySelector('.sf-auto-stair-scroll'):null,left=old?.scrollLeft,top=old?.scrollTop;node.innerHTML=value;written.set(node,value);if(old){const next=node.querySelector('.sf-auto-stair-scroll');if(next){next.scrollLeft=left;next.scrollTop=top;}}};
   let suggestionKey='',suggestionHost=null,stairMonth='',unresolvedPage=0,unresolvedKey='',siteLoadKey='';
   const shiftLabel=code=>{const t=typeById(code),label=window.SFShiftModels?.label?.(code)||code;return t?.name&&t.name!==label?`${label} · ${t.name}`:label};
   const slotSite=slot=>{const codes=slot.alternatives?.length?slot.alternatives:[slot.type],labels=codes.map(code=>{const model=window.SFShiftModels?.find?.(code)||typeById(code),id=model?.siteId;if(!id)return 'Kein Standort zugeordnet';return window.SFCompanyProfile?.siteLabel?.(id)||'Zugeordneter Standort (Name nicht geladen)'});return [...new Set(labels)].join(' / ')};

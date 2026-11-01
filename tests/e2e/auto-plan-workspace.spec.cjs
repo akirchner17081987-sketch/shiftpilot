@@ -19,6 +19,14 @@ async function openRuleSection(page,key){
  const section=overview.locator(`[data-rule-section="${key}"]`);if(await section.getAttribute('open')===null)await section.locator(':scope > summary').click();return section;
 }
 async function previewEditor(page){await page.addScriptTag({content:read('assets/auto-plan-preview-editor-v1.js')});await page.evaluate(()=>renderAutoPlanning());}
+test('manual preview edit keeps the visible table and page position',async({page})=>{
+ await fixture(page);await page.evaluate(()=>{autoPlanPreview=[];autoPlanAnalyzed=true;renderAutoPlanning();});await previewEditor(page);
+ const cell=page.locator('#autoStaircase [data-sf-range-employee="test"][data-sf-range-date="2026-12-22"]');await cell.scrollIntoViewIfNeeded();await cell.focus();
+ const before=await page.evaluate(()=>({left:document.querySelector('.sf-auto-stair-scroll').scrollLeft,top:document.querySelector('.main').scrollTop,y:window.scrollY}));
+ await cell.click();await page.locator('#sfPreviewEditForm').waitFor();await page.locator('#sfPreviewEditForm [type=submit]').click();await expect(page.locator('#sfPreviewEditForm')).toHaveCount(0);
+ const after=await page.evaluate(()=>({left:document.querySelector('.sf-auto-stair-scroll').scrollLeft,top:document.querySelector('.main').scrollTop,y:window.scrollY,focused:document.activeElement?.dataset.sfRangeDate}));
+ expect(Math.abs(after.left-before.left)).toBeLessThanOrEqual(1);expect(Math.abs(after.top-before.top)).toBeLessThanOrEqual(1);expect(Math.abs(after.y-before.y)).toBeLessThanOrEqual(1);expect(after.focused).toBe('2026-12-22');
+});
 async function confirmDraft(page){
  if(await page.locator('#sfIncompleteConfirmText').isVisible()){
   await page.locator('#sfIncompleteAcknowledgement').check();await page.locator('#sfIncompleteConfirmText').fill('OFFEN ÜBERNEHMEN');

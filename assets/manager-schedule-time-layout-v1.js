@@ -3,6 +3,7 @@
   if(window.__sfManagerScheduleTimeLayoutV1)return;
   window.__sfManagerScheduleTimeLayoutV1=true;
   document.addEventListener('focusin',e=>{
+    if(window.__sfKeepScheduleScroll)return;
     const wrap=e.target.closest?.('#sfWeekBoardV2');if(!wrap)return;
     const item=e.target.getBoundingClientRect(),box=wrap.getBoundingClientRect(),style=getComputedStyle(wrap);
     const left=box.left+wrap.clientLeft+parseFloat(style.paddingLeft),right=box.left+wrap.clientLeft+wrap.clientWidth-parseFloat(style.paddingRight);

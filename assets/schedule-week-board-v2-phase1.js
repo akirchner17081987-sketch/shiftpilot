@@ -283,7 +283,7 @@
       const selection=target,fromInline=!!inlineAnchor;
       if(fromInline)dismissInlinePicker(false);
       window.SFCompliance?.save?.(e,selection.type,selection.date,t.start,t.end,{onSaved:()=>{
-        if(fromInline){const trigger=[...document.querySelectorAll('#sfWeekBoardV2 [data-open-assign]')].find(b=>{const shift=b.closest('.sf-week-shift');return shift?.dataset.date===selection.date&&shift.dataset.type===selection.type});trigger?.focus({preventScroll:true})}
+        if(fromInline){const trigger=[...document.querySelectorAll('#sfWeekBoardV2 [data-open-assign]')].find(b=>{const shift=b.closest('.sf-week-shift');return shift?.dataset.date===selection.date&&shift.dataset.type===selection.type});window.__sfKeepScheduleScroll=true;try{trigger?.focus({preventScroll:true})}finally{window.__sfKeepScheduleScroll=false}}
       }});
       renderCandidates();
     });
@@ -361,6 +361,7 @@
   }
   function renderBoard(){
     const wrap=ensureUi();if(!wrap)return;
+    const previousLeft=wrap.scrollLeft,previousTop=wrap.scrollTop;
     ensureManualUi();
     const ds=currentWeekDates(),ids=shiftOrder().filter(id=>!shiftFilter||id===shiftFilter);
     if(mode==='compact'){
@@ -386,6 +387,7 @@
     markTarget();
     const result=document.getElementById('sfManualFilterResult');if(result)result.textContent=wrap.querySelectorAll('.sf-week-shift:not(.is-inactive)').length+' Dienste angezeigt';
     applyMode();
+    wrap.scrollLeft=previousLeft;wrap.scrollTop=previousTop;
   }
 
   const original=window.renderCalendar;
