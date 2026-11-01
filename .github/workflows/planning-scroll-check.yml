@@ -1,0 +1,21 @@
+name: Planning scroll position
+on:
+  push:
+    paths:
+      - 'assets/auto-plan-preview-editor-v1.js'
+      - 'assets/auto-plan-workspace-v1.js'
+      - 'tests/e2e/auto-plan-workspace.spec.cjs'
+      - '.github/workflows/planning-scroll-check.yml'
+  workflow_dispatch:
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test tests/e2e/auto-plan-workspace.spec.cjs --grep 'manual preview edit keeps' --retries=0

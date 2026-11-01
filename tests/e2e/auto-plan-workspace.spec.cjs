@@ -22,8 +22,8 @@ async function previewEditor(page){await page.addScriptTag({content:read('assets
 test('manual preview edit keeps the visible table and page position',async({page})=>{
  await fixture(page);await page.evaluate(()=>{autoPlanPreview=[];autoPlanAnalyzed=true;renderAutoPlanning();});await previewEditor(page);
  const cell=page.locator('#autoStaircase [data-sf-range-employee="test"][data-sf-range-date="2026-12-22"]');await cell.scrollIntoViewIfNeeded();await cell.focus();
- const before=await page.evaluate(()=>({left:document.querySelector('.sf-auto-stair-scroll').scrollLeft,top:document.querySelector('.main').scrollTop,y:window.scrollY}));
- await cell.click();await page.locator('#sfPreviewEditForm').waitFor();await page.locator('#sfPreviewEditForm [type=submit]').click();await expect(page.locator('#sfPreviewEditForm')).toHaveCount(0);
+ await cell.evaluate(el=>el.addEventListener('pointerdown',()=>{window.__beforeManualEdit={left:document.querySelector('.sf-auto-stair-scroll').scrollLeft,top:document.querySelector('.main').scrollTop,y:window.scrollY}},{once:true}));
+ await cell.click();const before=await page.evaluate(()=>window.__beforeManualEdit);await page.locator('#sfPreviewEditForm').waitFor();await page.locator('#sfPreviewEditForm [type=submit]').click();await expect(page.locator('#sfPreviewEditForm')).toHaveCount(0);
  const after=await page.evaluate(()=>({left:document.querySelector('.sf-auto-stair-scroll').scrollLeft,top:document.querySelector('.main').scrollTop,y:window.scrollY,focused:document.activeElement?.dataset.sfRangeDate}));
  expect(Math.abs(after.left-before.left)).toBeLessThanOrEqual(1);expect(Math.abs(after.top-before.top)).toBeLessThanOrEqual(1);expect(Math.abs(after.y-before.y)).toBeLessThanOrEqual(1);expect(after.focused).toBe('2026-12-22');
 });
