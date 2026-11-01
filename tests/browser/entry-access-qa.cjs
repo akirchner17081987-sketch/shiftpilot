@@ -29,11 +29,16 @@ async function main(){
   context.setDefaultTimeout(12000);page.on('pageerror',e=>errors.push(e.message));
   await page.route('**/*',route=>{if(new URL(route.request().url()).origin!==origin){external.push(route.request().url());return route.abort()}return route.continue()});
   await page.goto(origin);await page.locator('#sfEntryChoice').waitFor({state:'visible'});
-  check(await page.locator('[data-entry-area]').count(),3,'three choices');check(await page.locator('#sfEmail').isVisible(),false,'no premature email login');
+  check(await page.locator('[data-entry-area]').count(),4,'four choices');check(await page.locator('#sfEmail').isVisible(),false,'no premature email login');
   check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'no overflow '+width);
-  const demo=page.getByRole('link',{name:/Demo ausprobieren/});check(await demo.getAttribute('href'),'/demo','demo is a separate same-origin entry');
+  const demo=page.getByRole('button',{name:/Demo ausprobieren/});
   await page.route('**/demo',route=>route.fulfill({status:200,contentType:'text/html',body:'<h1>Demo-Anmeldung</h1>'}));
-  await demo.click();await page.getByRole('heading',{name:'Demo-Anmeldung'}).waitFor();check(new URL(page.url()).pathname,'/demo','demo choice opens the demo login');
+  await demo.click();await page.locator('#sfEmail').waitFor({state:'visible'});check(await page.locator('#sfAuthTitle').innerText(),'Demo-Zugang','demo uses the existing login card');
+  check(await page.locator('label[for="sfEmail"]').innerText(),'Benutzer','demo user label');
+  await page.evaluate(()=>{window.SFDemoAPI={fetchAuth:async()=>({ok:true,status:200,json:async()=>({accessToken:'synthetic-demo-token'})}),setAccessToken:t=>sessionStorage.setItem('sf_demo_access_token_v2',t),clearFailureToken(){}}});
+  await page.locator('#sfEmail').fill('demo-user');await page.locator('#sfPassword').fill('synthetic-password');await page.locator('#sfAuthSubmit').click();
+  await page.getByRole('heading',{name:'Demo-Anmeldung'}).waitFor();check(new URL(page.url()).pathname,'/demo','verified demo session opens sandbox');
+  check(await page.evaluate(()=>sessionStorage.getItem('sf_demo_access_token_v2')),'synthetic-demo-token','demo token remains in session storage');
   await page.goto(origin);await page.locator('#sfEntryChoice').waitFor({state:'visible'});
   await page.evaluate(()=>window.originalAuth=document.getElementById('sfAuthBackdrop'));
   for(const area of ['mitarbeiter','verwaltung']){
