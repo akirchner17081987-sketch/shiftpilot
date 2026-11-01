@@ -36,14 +36,14 @@ test('DATEV demo uses numeric personnel numbers and an absence example',()=>{
   assert.match(source,/absence_credit_minutes:480/);
 });
 
-test('August is selected as the initial demo month without affecting production mode',()=>{
+test('current planning month and historical DATEV example are kept separate',()=>{
   assert.match(source,/sf_demo_session_v1/);
-  assert.match(source,/calendar\.setMonth\(MONTH\)/);
+  assert.match(source,/calendar\.setMonth\(currentMonth\)/);
   assert.match(source,/TIME_MONTH_KEY='sf\.time\.selectedMonth'/);
   assert.match(source,/timeInput\.value=MONTH/);
   assert.match(source,/accountInput\.value=MONTH/);
   assert.match(fs.readFileSync(new URL('../assets/datev-lodas-export-v1.js',import.meta.url),'utf8'),/sf_demo_session_v1'\)==='active'\?'2026-08':/);
-  assert.match(navigation,/demo-august-2026-v1\.js\?v=20260907-startgate2/);
+  assert.match(navigation,/demo-august-2026-v1\.js\?v=20261101-current-month1/);
   assert.match(source,/sf_demo_data_assignments/);
   assert.match(source,/sf_demo_data_timeEntries/);
   assert.match(source,/ensurePrepared/);

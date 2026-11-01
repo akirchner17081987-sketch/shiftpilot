@@ -86,7 +86,7 @@ test('employee portal uses the full workspace width',()=>{
 });
 
 test('demo time entries persist and monthly accounts use compatible data',()=>{
-  assert.match(roles,/demo-employee-shift-/);
+  assert.match(roles,/ownAssignments\.forEach/);
   assert.match(adapter,/employee_submit_time_entry/);
   assert.match(adapter,/row\.entry_status='recorded'/);
   assert.match(adapter,/return \{data:managerAccountRows\(args\.p_month\),error:null\}/);

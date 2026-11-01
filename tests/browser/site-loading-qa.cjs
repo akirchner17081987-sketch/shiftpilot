@@ -207,7 +207,7 @@ async function main(){fs.mkdirSync(out,{recursive:true});const counters=new Map(
  await demoPage.addInitScript(()=>sessionStorage.setItem('sf_demo_tour_seen_v1','complete'));
  await demoPage.goto(origin+'/demo.html');await demoPage.waitForFunction(()=>window.__sfDemoReadyV1===true,{timeout:45000}).catch(async e=>{console.error({demoErrors,demoExternal,gate:await demoPage.locator('#sfDemoBootGate').evaluate(n=>({text:n.innerText,dataset:{...n.dataset}})).catch(()=>null)});throw e});
  assert.equal(await demoPage.locator('#sfDemoResetBtn').count(),1);await demoPage.locator('#sfDemoResetBtn').click();await demoPage.locator('.sf-demo-reset-modal').waitFor();await demoPage.locator('.sf-demo-reset-cancel').click();assert.deepEqual(demoErrors,[],'Demo JS errors');assert.deepEqual(demoExternal,[],'Demo must not reach production data');
- assert.equal(await demoPage.evaluate(()=>SFBackend.client.__sfDemoLocalClientV1),true);assert.ok(await demoPage.evaluate(()=>employees.length>=15));
+ assert.equal(await demoPage.evaluate(()=>SFBackend.client.__sfDemoLocalClientV1),true);assert.equal(await demoPage.evaluate(()=>employees.length),5,'Demo uses five fictional employees');
  await demoPage.evaluate(()=>SFDemoPerspective.set('employee'));assert.equal(await demoPage.locator('#sfEmployeePortal').count(),1);await demoPage.evaluate(()=>SFDemoPerspective.set('manager'));assert.equal(await demoPage.evaluate(()=>SFBackend.role),'ADMIN');
  assert.deepEqual(demoErrors,[]);metrics.demo={ready:true,localClient:true,perspectives:['manager','employee']};await demoContext.close();
  const result=[...counters].filter(([key])=>key.startsWith('current|')).map(([key,count])=>({path:key.slice(8),count}));metrics.requestPaths=result.length;

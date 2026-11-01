@@ -17,8 +17,7 @@
     Teamleiter:['08:00','16:00'],O3:['23:00','07:00'],OT1:['10:00','18:00'],OT2:['12:00','20:00'],OT:['18:00','02:00']
   };
   const primaryByNo={
-    D001:'O1',D002:'O1',D003:'O1S',D004:'QA',D005:'O2',D006:'Teamleiter',D007:'Teamleiter',
-    D008:'O3',D009:'O3',D010:'OT1',D011:'OT2',D012:'OT2',D013:'OT',D014:'OT',D015:'OT'
+    D001:'O1',D002:'O2',D003:'O1S',D004:'QA',D005:'Teamleiter'
   };
   let rpcPatched=false,seeded=false;
   let augustAssignments=[],augustEntries=[],augustBundle={employees:[],details:[]};
@@ -39,7 +38,6 @@
     // Staggered 5/2 rotation for full-time and 4/3 for part-time employees.
     const target=Number(emp.weeklyHours||40)>=40?5:4;
     const cycle=((day-1)+(index*2))%7;
-    if(emp.personnelNo==='D005'&&(day===17||day===18))return false; // Demo-Urlaub
     return cycle<target;
   }
 
@@ -50,7 +48,7 @@
     for(let day=1;day<=31;day++){
       const date=`2026-08-${pad(day)}`;
       employees.forEach((emp,index)=>{
-        if(!employeeWorks(emp,index,day))return;
+        if(!employeeWorks(emp,index,day)||emp.personnelNo==='D005'&&(day===17||day===18))return; // Demo-Urlaub
         const type=primaryByNo[emp.personnelNo]||emp._demoPrimary||emp.shifts?.[0]||'O1';
         const times=shiftTimes[type]||['08:00','16:00'];
         const id=`demo-aug26-${pad(day)}-${emp.personnelNo||pad(index+1)}`;
@@ -76,6 +74,40 @@
     return true;
   }
 
+  // Keep the historical payroll example, while giving the current schedule
+  // its own fictional, rolling reference data.
+  function seedCurrentPlanning(){
+    const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Berlin',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+    const now=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Berlin',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date());
+    const [year,month]=today.split('-').map(Number),currentMonth=today.slice(0,7);
+    const generated=[];
+    for(const offset of [-1,0,1]){
+      const first=new Date(Date.UTC(year,month-1+offset,1));
+      const yearForMonth=first.getUTCFullYear(),monthForYear=first.getUTCMonth()+1;
+      const targetMonth=localDate(yearForMonth,monthForYear,1).slice(0,7);
+      if(targetMonth===MONTH)continue;
+      const prefix='demo-current-'+targetMonth+'-';
+      for(let day=1;day<=new Date(Date.UTC(yearForMonth,monthForYear,0)).getUTCDate();day++){
+      const date=localDate(yearForMonth,monthForYear,day),counts={};
+      employees.forEach((emp,index)=>{
+        if(!employeeWorks(emp,index,day))return;
+        const type=primaryByNo[emp.personnelNo]||emp._demoPrimary||'O1',times=shiftTimes[type]||['08:00','16:00'];
+        const id=prefix+pad(day)+'-'+(emp.personnelNo||pad(index+1));
+        generated.push({id,date,type,employeeId:emp.id,start:times[0],end:times[1],pause:30,note:'Fiktiver Demo-Dienst',version:1,publishedAt:new Date().toISOString()});
+        counts[type]=(counts[type]||0)+1;
+        if(date<today||date===today&&times[0]<=now){
+          const finished=date<today||times[1]>times[0]&&times[1]<=now;
+          const status=finished?(['confirmed','confirmed','recorded','correction_requested'][(day+index)%4]):'open';
+          timeEntries[id]={actualStart:times[0],actualEnd:finished?times[1]:null,breakMin:30,status};
+        }
+      });
+      dailySoll[date]=counts;
+      }
+    }
+    assignments=assignments.filter(a=>!String(a.id||'').startsWith('demo-current-')).concat(generated);
+    sessionStorage.setItem('sf_demo_current_seeded_v1',currentMonth);
+  }
+
   function seedPlanning(){
     if(seeded)return true;
     try{
@@ -92,6 +124,7 @@
         const start=new Date(e.actual_start),end=new Date(e.actual_end);
         timeEntries[e.assignment_id]={actualStart:`${pad(start.getHours())}:${pad(start.getMinutes())}`,actualEnd:`${pad(end.getHours())}:${pad(end.getMinutes())}`,breakMin:30,status:'confirmed'};
       }
+      seedCurrentPlanning();
       store.set('assignments',assignments);store.set('dailySoll',dailySoll);store.set('absences',absences);store.set('timeEntries',timeEntries);
       // Im Demo-Modus koennen spaet geladene Produktiv-Bridges store.set abfangen.
       // Der vorbereitete Referenzmonat muss deshalb zusaetzlich sicher in der
@@ -110,7 +143,8 @@
     if(sessionStorage.getItem(VIEW_KEY)==='1')return true;
     const calendar=window.SchichtFunkCalendarView;
     if(typeof calendar?.setMonth!=='function')return false;
-    calendar.setMonth(MONTH);
+    const currentMonth=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Berlin',year:'numeric',month:'2-digit'}).format(new Date());
+    calendar.setMonth(currentMonth);
     sessionStorage.setItem(VIEW_KEY,'1');
     return true;
   }

@@ -43,30 +43,20 @@
     const old=read(MARKET_KEY,null);if(old)return old;
     const rows=[
       {id:'demo-market-01',assignment_id:'demo-as-market-01',shift_code:'O1',starts_at:stamp(1,7),offered_by:'Anna Becker',claimed_by:null,reason:'Privater Termin am Vormittag',status:'MARKET_OPEN',colleague_comment:null},
-      {id:'demo-market-02',assignment_id:'demo-as-market-02',shift_code:'OT',starts_at:stamp(3,18),offered_by:'Felix Krüger',claimed_by:null,reason:'Tausch wegen Familienfeier',status:'MARKET_OPEN',colleague_comment:null},
-      {id:'demo-market-03',assignment_id:'demo-as-market-03',shift_code:'OT2',starts_at:stamp(5,12),offered_by:'Marie Schwarz',claimed_by:null,reason:'Kurzfristige Terminüberschidung',status:'MARKET_OPEN',colleague_comment:null},
+      {id:'demo-market-02',assignment_id:'demo-as-market-02',shift_code:'O2',starts_at:stamp(3,15),offered_by:'Lukas Fischer',claimed_by:null,reason:'Tausch wegen Familienfeier',status:'MARKET_OPEN',colleague_comment:null},
+      {id:'demo-market-03',assignment_id:'demo-as-market-03',shift_code:'O1S',starts_at:stamp(5,18),offered_by:'Mira Schulz',claimed_by:null,reason:'Kurzfristige Terminüberschneidung',status:'MARKET_OPEN',colleague_comment:null},
       {id:'demo-market-04',assignment_id:'demo-as-market-04',shift_code:'O2',starts_at:stamp(2,15),offered_by:'Jonas Wagner',claimed_by:'Lea Hoffmann',reason:'Arzttermin',status:'PENDING_MANAGER',colleague_comment:'Ich kann die Schicht vollständig übernehmen.'},
-      {id:'demo-market-05',assignment_id:'demo-as-market-05',shift_code:'Teamleiter',starts_at:stamp(4,8),offered_by:'Daniel Koch',claimed_by:'Sophie Richter',reason:'Fortbildung',status:'PENDING_MANAGER',colleague_comment:'Teamleiter-Freigabe und Zeitfenster passen.'},
-      {id:'demo-market-06',assignment_id:'demo-as-market-06',shift_code:'O3',starts_at:stamp(-2,23),offered_by:'Paul Klein',claimed_by:'Nina Wolf',reason:'Privater Termin',status:'APPLIED',colleague_comment:'Übernahme bestätigt.'},
+      {id:'demo-market-05',assignment_id:'demo-as-market-05',shift_code:'O1',starts_at:stamp(4,7),offered_by:'Anna Becker',claimed_by:'Mira Schulz',reason:'Fortbildung',status:'PENDING_MANAGER',colleague_comment:'Zeitfenster passt.'},
+      {id:'demo-market-06',assignment_id:'demo-as-market-06',shift_code:'O2',starts_at:stamp(-2,15),offered_by:'Lukas Fischer',claimed_by:'Jonas Wagner',reason:'Privater Termin',status:'APPLIED',colleague_comment:'Übernahme bestätigt.'},
       {id:'demo-market-07',assignment_id:'demo-as-market-07',shift_code:'O1',starts_at:stamp(-5,7),offered_by:'Lukas Fischer',claimed_by:'Mira Schulz',reason:'Behördentermin',status:'APPLIED',colleague_comment:'Dienstplan wurde angepasst.'},
-      {id:'demo-market-08',assignment_id:'demo-as-market-08',shift_code:'OT1',starts_at:stamp(-7,10),offered_by:'Tim Neumann',claimed_by:'Emil Zimmermann',reason:'Terminüberschneidung',status:'REJECTED_MANAGER',colleague_comment:'Wochenstunden hätten die Übernahme überschritten.'},
-      {id:'demo-market-09',assignment_id:'demo-as-market-09',shift_code:'OT',starts_at:stamp(-9,18),offered_by:'Laura Braun',claimed_by:null,reason:'Angebot nicht mehr benötigt',status:'CANCELLED',colleague_comment:null}
+      {id:'demo-market-08',assignment_id:'demo-as-market-08',shift_code:'O2',starts_at:stamp(-7,15),offered_by:'Lukas Fischer',claimed_by:'Lea Hoffmann',reason:'Terminüberschneidung',status:'REJECTED_MANAGER',colleague_comment:'Wochenstunden hätten die Übernahme überschritten.'},
+      {id:'demo-market-09',assignment_id:'demo-as-market-09',shift_code:'QA',starts_at:stamp(-9,20),offered_by:'Jonas Wagner',claimed_by:null,reason:'Angebot nicht mehr benötigt',status:'CANCELLED',colleague_comment:null}
     ];write(MARKET_KEY,rows);return rows;
   }
 
   function seedTime(){
     const old=read(TIME_KEY,null);if(old)return old;
-    const mon=mondayOf(new Date()),d=i=>plusDays(mon,i),next=i=>plusDays(mon,i+1);
-    const rows=[
-      {assignment_id:'demo-time-01',employee_id:'demo-e01',employee_name:'Anna Becker',shift_code:'O1',starts_at:isoLocal(d(0),7),ends_at:isoLocal(d(0),15),planned_break_minutes:30,actual_start:isoLocal(d(0),7,4),actual_end:isoLocal(d(0),15,12),actual_break_minutes:30,entry_status:'recorded',employee_note:'Verkehrsbedingt wenige Minuten später gestartet.',manager_note:'',correction_note:''},
-      {assignment_id:'demo-time-02',employee_id:'demo-e02',employee_name:'Lukas Fischer',shift_code:'O1',starts_at:isoLocal(d(0),7),ends_at:isoLocal(d(0),15),planned_break_minutes:30,actual_start:isoLocal(d(0),6,55),actual_end:isoLocal(d(0),15,20),actual_break_minutes:30,entry_status:'confirmed',employee_note:'Übergabe verlängert.',manager_note:'Geprüft und bestätigt.',correction_note:''},
-      {assignment_id:'demo-time-03',employee_id:'demo-e03',employee_name:'Mira Schulz',shift_code:'O1',starts_at:isoLocal(d(1),7),ends_at:isoLocal(d(1),15),planned_break_minutes:30,actual_start:isoLocal(d(1),7,20),actual_end:isoLocal(d(1),15),actual_break_minutes:30,entry_status:'recorded',employee_note:'Verspäteter Dienstantritt gemeldet.',manager_note:'',correction_note:''},
-      {assignment_id:'demo-time-04',employee_id:'demo-e04',employee_name:'Jonas Wagner',shift_code:'O2',starts_at:isoLocal(d(1),15),ends_at:isoLocal(d(1),23),planned_break_minutes:30,actual_start:isoLocal(d(1),15),actual_end:isoLocal(d(1),23),actual_break_minutes:30,entry_status:'confirmed',employee_note:'',manager_note:'Planmäßig.',correction_note:''},
-      {assignment_id:'demo-time-05',employee_id:'demo-e06',employee_name:'Daniel Koch',shift_code:'Teamleiter',starts_at:isoLocal(d(2),8),ends_at:isoLocal(d(2),16),planned_break_minutes:30,actual_start:isoLocal(d(2),8),actual_end:isoLocal(d(2),16,35),actual_break_minutes:30,entry_status:'correction_requested',employee_note:'Längere Einsatznachbesprechung.',manager_note:'',correction_note:'Bitte Ende der Nachbesprechung noch einmal prüfen.'},
-      {assignment_id:'demo-time-06',employee_id:'demo-e08',employee_name:'Paul Klein',shift_code:'O3',starts_at:isoLocal(d(2),23),ends_at:isoLocal(next(2),7),planned_break_minutes:30,actual_start:isoLocal(d(2),23,5),actual_end:isoLocal(next(2),7),actual_break_minutes:30,entry_status:'confirmed',employee_note:'',manager_note:'Bestätigt.',correction_note:''},
-      {assignment_id:'demo-time-07',employee_id:'demo-e11',employee_name:'Marie Schwarz',shift_code:'OT2',starts_at:isoLocal(d(3),12),ends_at:isoLocal(d(3),20),planned_break_minutes:30,actual_start:null,actual_end:null,actual_break_minutes:null,entry_status:'open',employee_note:'',manager_note:'',correction_note:''},
-      {assignment_id:'demo-time-08',employee_id:'demo-e13',employee_name:'Laura Braun',shift_code:'OT',starts_at:isoLocal(d(3),18),ends_at:isoLocal(next(3),2),planned_break_minutes:30,actual_start:isoLocal(d(3),17,55),actual_end:isoLocal(next(3),2,18),actual_break_minutes:30,entry_status:'recorded',employee_note:'Objektübergabe dauerte länger.',manager_note:'',correction_note:''}
-    ];write(TIME_KEY,rows);return rows;
+    write(TIME_KEY,[]);return [];
   }
 
   function seedDatev(){
@@ -96,10 +86,49 @@
   }
 
   let marketRows=seedMarketplace(),disruptionRows=seedDisruptionOffers(),timeRows=seedTime(),datev=seedDatev(),accountSettings=seedAccountSettings();
-  const saveMarket=()=>write(MARKET_KEY,marketRows),saveDisruptions=()=>write(DISRUPTION_KEY,disruptionRows),saveTime=()=>write(TIME_KEY,timeRows),saveDatev=()=>write(DATEV_KEY,datev),saveAccount=()=>write(ACCOUNT_KEY,accountSettings);
+  const saveMarket=()=>write(MARKET_KEY,marketRows),saveDisruptions=()=>write(DISRUPTION_KEY,disruptionRows),saveDatev=()=>write(DATEV_KEY,datev),saveAccount=()=>write(ACCOUNT_KEY,accountSettings);
+  function linkSampleOffers(){
+    if(!marketRows.some(r=>String(r.assignment_id||'').startsWith('demo-as-market-')))return;
+    const people=read('sf_demo_data_employees',[]),plans=read('sf_demo_data_assignments',[]),core=window.SFSolidPlanningCore;
+    if(!people.length||!plans.length||!core?.instant)return;
+    const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Berlin',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()),used=new Set();
+    marketRows=marketRows.filter(row=>{
+      if(!String(row.assignment_id||'').startsWith('demo-as-market-'))return true;
+      if(!['MARKET_OPEN','PENDING_MANAGER'].includes(row.status))return false;
+      const person=people.find(p=>[p.first,p.last].filter(Boolean).join(' ')===row.offered_by);
+      const plan=plans.find(a=>a.employeeId===person?.id&&a.date>=today&&(a.publishedAt||a._dbStatus==='PUBLISHED')&&a.start&&a.end&&!used.has(a.id));
+      if(!plan)return false;
+      used.add(plan.id);const end=new Date(plan.date+'T12:00:00Z');if(plan.end<=plan.start)end.setUTCDate(end.getUTCDate()+1);
+      row.assignment_id=plan.id;row.shift_code=plan.type;row.starts_at=new Date(core.instant(plan.date,plan.start,'Europe/Berlin')).toISOString();row.ends_at=new Date(core.instant(end.toISOString().slice(0,10),plan.end,'Europe/Berlin')).toISOString();
+      return true;
+    });saveMarket();
+  }
+  function syncTimeRows(){
+    const people=read('sf_demo_data_employees',[]),plans=read('sf_demo_data_assignments',[]),entries=read('sf_demo_data_timeEntries',{}),rows=read(TIME_KEY,timeRows);
+    if(!Array.isArray(plans)||!window.SFSolidPlanningCore?.instant)return rows;
+    const known=new Set(rows.map(row=>row.assignment_id));
+    for(const row of rows){const plan=plans.find(a=>a.id===row.assignment_id),person=people.find(p=>p.id===plan?.employeeId);if(plan&&person&&!row.actual_start){row.employee_id=person.id;row.employee_name=[person.first,person.last].filter(Boolean).join(' ')}}
+    const nextDay=date=>{const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+1);return d.toISOString().slice(0,10)};
+    const stampAt=(date,time)=>new Date(window.SFSolidPlanningCore.instant(date,String(time).slice(0,5),'Europe/Berlin')).toISOString();
+    for(const a of plans){
+      if(!a?.id||!a.date||!a.start||!a.end||!a.employeeId||known.has(a.id)||!(a.publishedAt||a._dbStatus==='PUBLISHED'))continue;
+      const employee=people.find(p=>p.id===a.employeeId);if(!employee)continue;
+      const entry=entries[a.id],endDate=a.end<=a.start?nextDay(a.date):a.date;
+      const actualEnd=entry?.actualEnd?(entry.actualEnd<=entry.actualStart?nextDay(a.date):a.date):null;
+      rows.push({assignment_id:a.id,employee_id:a.employeeId,employee_name:[employee.first,employee.last].filter(Boolean).join(' '),shift_code:a.type,starts_at:stampAt(a.date,a.start),ends_at:stampAt(endDate,a.end),planned_break_minutes:Number(a.pause)||0,actual_start:entry?.actualStart?stampAt(a.date,entry.actualStart):null,actual_end:actualEnd?stampAt(actualEnd,entry.actualEnd):null,actual_break_minutes:entry?.actualStart?Number(entry.breakMin)||0:null,entry_status:entry?.status||'open',employee_note:'',manager_note:'',correction_note:''});
+    }
+    write(TIME_KEY,rows);return rows;
+  }
+  function saveTime(){
+    write(TIME_KEY,timeRows);
+    const data=read('sf_demo_data_timeEntries',{}),parts=stamp=>stamp?new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Berlin',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(stamp)):null;
+    for(const row of timeRows){if(!row.assignment_id||!row.actual_start)continue;data[row.assignment_id]={actualStart:parts(row.actual_start),actualEnd:parts(row.actual_end),breakMin:Number(row.actual_break_minutes)||0,status:row.entry_status};}
+    write('sf_demo_data_timeEntries',data);
+    try{if(typeof timeEntries!=='undefined')timeEntries=data}catch{}
+  }
 
   function timeBundle(){
-    const names=[['demo-e01','Anna Becker','1001',2250],['demo-e02','Lukas Fischer','1002',2310],['demo-e03','Mira Schulz','1003',1800],['demo-e04','Jonas Wagner','1004',2250],['demo-e06','Daniel Koch','1006',2400],['demo-e08','Paul Klein','1008',2190],['demo-e11','Marie Schwarz','1011',2070],['demo-e13','Laura Braun','1013',2280]];
+    const names=[['demo-e01','Anna Becker','1001',2250],['demo-e02','Lukas Fischer','1002',2310],['demo-e03','Mira Schulz','1003',1800],['demo-e04','Jonas Wagner','1004',2250],['demo-e05','Lea Hoffmann','1005',2400]];
     return {employees:names.map(x=>({employee_id:x[0],employee_name:x[1],personnel_no:x[2],confirmed_work_minutes:x[3]})),details:[{employee_id:'demo-e03',employee_name:'Mira Schulz',work_date:'2026-08-17',absence_types:'Urlaub',absence_credit_minutes:480}]};
   }
 
@@ -123,7 +152,9 @@
     try{return (assignments||[]).map(a=>({id:a.id,company_id:'demo-local-company',employee_id:a.employeeId,shift_code:a.type,starts_at:`${a.date}T${a.start}:00+02:00`,ends_at:`${a.date}T${a.end}:00+02:00`,status:'PUBLISHED',version:1}))}catch{return []}
   }
   function absenceRows(){
-    try{return (absences||[]).map(a=>({id:a.id,company_id:'demo-local-company',employee_id:a.employeeId,absence_type:a.type,start_date:a.startDate||a.date,end_date:a.endDate||a.startDate||a.date,status:a.status||'Genehmigt',full_day:a.fullDay!==false,note:a.note||'',request_source:a.requestSource||'MANAGER',requested_at:a.requestedAt||new Date().toISOString()}))}catch{return []}
+    const stored=read('sf_demo_data_absences',[]),requests=read(ABSENCE_KEY,[]);
+    const mapped=stored.map(a=>({id:a.id,company_id:'demo-local-company',employee_id:a.employeeId,absence_type:a.type,start_date:a.startDate||a.date,end_date:a.endDate||a.startDate||a.date,status:a.status||'Genehmigt',full_day:a.fullDay!==false,note:a.note||'',request_source:a.requestSource||'MANAGER',requested_at:a.requestedAt||new Date().toISOString()}));
+    const ids=new Set(mapped.map(a=>a.id));return mapped.concat(requests.filter(a=>!ids.has(a.id)).map(a=>({...a,company_id:'demo-local-company',request_source:'EMPLOYEE'})));
   }
   function employeeAccount(monthValue){
     const month=String(monthValue||new Date().toISOString().slice(0,7)).slice(0,7),holidays=monthlyHolidays(month).holidays;
@@ -141,6 +172,41 @@
   }
 
   function demoRpc(name,args={}){
+    const demoSites=()=>[{id:'demo-site-east',name:'Demo Leipzig',code:'LE',latitude:51.3397,longitude:12.3731,is_active:true,geocode_status:'verified'},{id:'demo-site-west',name:'Demo Recklinghausen',code:'RE',latitude:51.6141,longitude:7.1979,is_active:true,geocode_status:'verified'}];
+    if(name==='manager_company_profile')return {data:{company_id:args.p_company_id,name:'SchichtFunk Demo GmbH',timezone:'Europe/Berlin',contacts:[],sites:demoSites(),can_edit:false},error:null};
+    if(name==='manager_today_workspace'||name==='manager_reports_workspace'){
+      // The current overview consumes this shape.  Keep its source entirely
+      // inside the demo session rather than querying any customer data.
+      const people=read('sf_demo_data_employees',[]);
+      const plans=read('sf_demo_data_assignments',[]);
+      const demand=read('sf_demo_data_globalSoll',{});
+      const daily=read('sf_demo_data_dailySoll',{});
+      const absent=read('sf_demo_data_absences',[]);
+      const entries=read('sf_demo_data_timeEntries',{});
+      const zone='Europe/Berlin',now=new Date();
+      const localDate=new Intl.DateTimeFormat('sv-SE',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit'}).format(now);
+      if(args.p_company_id!=='demo-local-company')return {data:null,error:demoError('Unternehmen',args.p_company_id)};
+      const report=name==='manager_reports_workspace';
+      const from=report?String(args.p_start_date||''):localDate,to=report?String(args.p_end_date||''):localDate;
+      const validDate=value=>/^\d{4}-\d{2}-\d{2}$/.test(value)&&Number.isFinite(Date.parse(value+'T12:00:00Z'))&&new Date(value+'T12:00:00Z').toISOString().slice(0,10)===value;
+      if(!validDate(from)||!validDate(to)||from>to||Date.parse(to)-Date.parse(from)>366*86400000)return {data:null,error:{message:'Ungültiger Demo-Zeitraum.'}};
+      const sites=demoSites();
+      const siteFor=id=>sites[Math.max(0,people.findIndex(p=>p.id===id))%sites.length].id;
+      const dayAfter=date=>{const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+1);return d.toISOString().slice(0,10)};
+      const instant=(date,time)=>new Date(window.SFSolidPlanningCore.instant(date,String(time||'00:00').slice(0,5),zone)).toISOString();
+      const dayBefore=date=>{const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()-1);return d.toISOString().slice(0,10)};
+      const relevant=plans.filter(a=>a.date>=dayBefore(from)&&a.date<=dayAfter(to)&&a.id&&a.employeeId&&a.type&&a.start&&a.end);
+      const codes=[...new Set([...Object.keys(demand),...relevant.map(a=>a.type)])];
+      const models=codes.map(code=>{const a=relevant.find(row=>row.type===code)||{};return {code,name:code,active:true,default_start:a.start||'08:00',default_end:a.end||'16:00',optional_weekdays:[1,2,3,4,5,6,7],planning_mode:'required'};});
+      const assignments=relevant.map(a=>({id:a.id,legacy_id:a.id,employee_id:a.employeeId,date:a.date,shift:a.type,start:instant(a.date,a.start),end:instant(a.end<=a.start?dayAfter(a.date):a.date,a.end),status:a.publishedAt?'PUBLISHED':'DRAFT',site_id:siteFor(a.employeeId)}));
+      const times=relevant.flatMap(a=>{const e=entries[a.id];if(!e?.actualStart)return [];return [{id:a.id,employee_id:a.employeeId,date:a.date,shift:a.type,status:e.status||'confirmed',start:instant(a.date,e.actualStart),end:e.actualEnd?instant(e.actualEnd<=e.actualStart?dayAfter(a.date):a.date,e.actualEnd):null,site_id:siteFor(a.employeeId),break_minutes:Number(e.breakMin)||0,breaks:[]}];});
+      const weekdays=(start,end)=>{let count=0;for(let date=start;date<=end;date=dayAfter(date)){const day=new Date(date+'T12:00:00Z').getUTCDay();if(day>0&&day<6)count++;}return count;};
+      const employees=people.map(p=>{const own=times.filter(t=>t.employee_id===p.id&&t.date>=from&&t.date<=to&&t.end&&Date.parse(t.end)<=now.getTime());return {id:p.id,first:p.first,last:p.last,personnel_no:p.personnelNo,status:'active',shifts:p.shifts||[],employment:p.employment,role:p.role,weekly_hours:Number(p.weeklyHours)||40,target_minutes:weekdays(from,to)*(Number(p.weeklyHours)||40)*12,confirmed_minutes:own.reduce((sum,t)=>sum+Math.max(0,(Date.parse(t.end)-Date.parse(t.start))/60000-t.break_minutes),0),credit_minutes:0,elapsed_target_minutes:0,elapsed_credit_minutes:0};});
+      return {data:{company_id:args.p_company_id,company_name:'SchichtFunk Demo GmbH',timezone:zone,today:localDate,from,to,as_of:now.toISOString(),can_time:true,
+        employees,models,sites,global:demand,
+        daily:Object.entries(daily).flatMap(([date,shifts])=>Object.entries(shifts||{}).map(([shift,required])=>({date,shift,required}))),rules:{},assignments,times,qr:[],
+        absences:absent.map(a=>({employee_id:a.employeeId,from:a.startDate||a.date,to:a.endDate||a.date,type:a.type,status:a.status,full_day:a.fullDay!==false})),incidents:[]},error:null};
+    }
     if(name==='employee_list_disruption_offers')return {data:clone(disruptionRows),error:null};
     if(name==='employee_respond_disruption_offer'){
       const offer=disruptionRows.find(item=>String(item.offer_id)===String(args.p_offer_id));
@@ -169,8 +235,9 @@
       let count=0;for(const row of marketRows)if(['MARKET_OPEN','PENDING_MANAGER'].includes(row.status)){row.status='CANCELLED';row.manager_comment=args.p_note||'';row.updated_at=new Date().toISOString();count++;}saveMarket();
       return {data:{withdrawnOffers:count,withdrawnLegacyOffers:count,withdrawnOpenOffers:0,endedClaims:0},error:null};
     }
-    if(name==='manager_list_shift_marketplace')return {data:clone(marketRows),error:null};
+    if(name==='manager_list_shift_marketplace'){linkSampleOffers();return {data:clone(marketRows),error:null};}
     if(name==='employee_list_shift_marketplace'){
+      linkSampleOffers();
       const employeeName='Anna Becker';
       const rows=marketRows
         .filter(row=>row.status==='MARKET_OPEN'||row.offered_by===employeeName||row.claimed_by===employeeName)
@@ -207,21 +274,28 @@
     if(name==='manager_review_shift_swap'){
       const row=marketRows.find(x=>x.id===args.p_swap_id);if(!row)return {data:null,error:{message:'Demo-Vorgang wurde nicht gefunden.'}};
       if(row.status!=='PENDING_MANAGER')return {data:null,error:{message:'Dieser Demo-Vorgang wurde bereits bearbeitet.'}};
+      if(!['APPROVE','REJECT'].includes(args.p_decision))return {data:null,error:{message:'Ungültige Entscheidung.'}};
+      if(args.p_decision==='APPROVE'){
+        const plans=read('sf_demo_data_assignments',[]),people=read('sf_demo_data_employees',[]),plan=plans.find(a=>a.id===row.assignment_id),target=people.find(p=>[p.first,p.last].filter(Boolean).join(' ')===row.claimed_by);
+        if(!plan||!target)return {data:null,error:{message:'Dieses Beispielangebot ist nicht mit einem Dienst verknüpft und kann nicht übernommen werden.'}};
+        if(read('sf_demo_data_timeEntries',{})[plan.id]?.actualStart)return {data:null,error:{message:'Ein Dienst mit erfasster Arbeitszeit kann nicht übertragen werden.'}};
+        plan.employeeId=target.id;write('sf_demo_data_assignments',plans);try{if(typeof assignments!=='undefined')assignments=plans}catch{}
+      }
       row.status=args.p_decision==='APPROVE'?'APPLIED':'REJECTED_MANAGER';row.manager_comment=args.p_comment||'';row.reviewed_at=new Date().toISOString();saveMarket();return {data:{id:row.id,status:row.status},error:null};
     }
-    if(name==='manager_central_time_entries'){timeRows=read(TIME_KEY,timeRows);return {data:{as_of:new Date().toISOString(),timezone:'Europe/Berlin',rows:clone(timeRows),qr_rows:[],confirmed_summary:[]},error:null}}
-    if(name==='manager_list_time_entries'){timeRows=read(TIME_KEY,timeRows);return {data:clone(timeRows),error:null}}
+    if(name==='manager_central_time_entries'){timeRows=syncTimeRows();return {data:{as_of:new Date().toISOString(),timezone:'Europe/Berlin',rows:clone(timeRows),qr_rows:[],confirmed_summary:[]},error:null}}
+    if(name==='manager_list_time_entries'){timeRows=syncTimeRows();return {data:clone(timeRows),error:null}}
     if(name==='manager_save_time_entry'){
-      timeRows=read(TIME_KEY,timeRows);
+      timeRows=syncTimeRows();
       const row=timeRows.find(x=>x.assignment_id===args.p_assignment_id);if(!row)return {data:null,error:{message:'Demo-Zeiteintrag wurde nicht gefunden.'}};
       row.actual_start=args.p_actual_start;row.actual_end=args.p_actual_end;row.actual_break_minutes=Number(args.p_break_minutes||0);row.manager_note=args.p_note||'';row.entry_status=args.p_confirm?'confirmed':'recorded';row.correction_note='';saveTime();return {data:clone(row),error:null};
     }
     if(name==='manager_bulk_record_time_entries'){
-      timeRows=read(TIME_KEY,timeRows);const start=String(args.p_start_date||''),end=String(args.p_end_date||''),now=Date.now();let updated=0,existing=0,future=0;
+      timeRows=syncTimeRows();const start=String(args.p_start_date||''),end=String(args.p_end_date||''),now=Date.now();let updated=0,existing=0,future=0;
       timeRows.filter(row=>String(row.starts_at||'').slice(0,10)>=start&&String(row.starts_at||'').slice(0,10)<=end).forEach(row=>{if(row.entry_status!=='open'||row.actual_start||row.actual_end){existing++;return}if(new Date(row.ends_at).getTime()>now){future++;return}row.actual_start=row.starts_at;row.actual_end=row.ends_at;row.actual_break_minutes=Number(row.planned_break_minutes||0);row.manager_note=args.p_note||'';row.entry_status=args.p_confirm?'confirmed':'recorded';row.correction_note='';updated++});saveTime();return {data:{total:updated+existing+future,updated,status:args.p_confirm?'confirmed':'recorded',skippedExisting:existing,skippedFuture:future,skippedClosed:0,skippedUnpublished:0,skippedInvalid:0},error:null};
     }
     if(name==='manager_review_time_entry'){
-      timeRows=read(TIME_KEY,timeRows);
+      timeRows=syncTimeRows();
       const row=timeRows.find(x=>x.assignment_id===args.p_assignment_id);if(!row)return {data:null,error:{message:'Demo-Zeiteintrag wurde nicht gefunden.'}};
       if(args.p_decision==='CORRECTION'){row.entry_status='correction_requested';row.correction_note=args.p_comment||'Bitte Zeitangabe prüfen.';}saveTime();return {data:clone(row),error:null};
     }
@@ -247,21 +321,44 @@
     if(name==='employee_my_time_account_month')return {data:employeeAccount(args.p_month),error:null};
     if(name==='employee_list_shift_swaps')return {data:clone(marketRows.filter(x=>x.status!=='MARKET_OPEN').map(x=>({...x,direction:x.claimed_by==='Anna Becker'?'INCOMING':'OUTGOING',other_employee_name:x.claimed_by||x.offered_by}))),error:null};
     if(name==='employee_list_shift_swap_candidates')return {data:employeeRows().filter(x=>x.id!=='demo-e01').slice(0,5).map(x=>({employee_id:x.id,display_name:`${x.first_name} ${x.last_name}`,employee_role:'Sicherheitsmitarbeiter'})),error:null};
-    if(name==='employee_create_shift_swap')return {data:{id:`demo-swap-${Date.now()}`,status:'PENDING_COLLEAGUE'},error:null};
-    if(name==='employee_respond_shift_swap')return {data:{saved:true,demo:true},error:null};
-    if(name==='employee_submit_absence_request'){
+    if(name==='employee_create_shift_swap'){
+      const plan=assignmentRows().find(a=>a.id===args.p_assignment_id&&a.employee_id==='demo-e01'),target=employeeRows().find(p=>p.id===args.p_target_employee_id&&p.id!=='demo-e01');
+      if(!plan||!target)return {data:null,error:{message:'Dienst oder Zielperson wurde nicht gefunden.'}};
+      if(marketRows.some(r=>r.assignment_id===plan.id&&['MARKET_OPEN','PENDING_COLLEAGUE','PENDING_MANAGER'].includes(r.status)))return {data:null,error:{message:'Für diesen Dienst liegt bereits eine Anfrage vor.'}};
+      const row={id:`demo-swap-${Date.now()}`,assignment_id:plan.id,shift_code:plan.shift_code,starts_at:plan.starts_at,ends_at:plan.ends_at,offered_by:'Anna Becker',claimed_by:`${target.first_name} ${target.last_name}`,reason:String(args.p_reason||'').slice(0,1000),status:'PENDING_COLLEAGUE',requested_at:new Date().toISOString()};marketRows.unshift(row);saveMarket();return {data:{id:row.id,status:row.status},error:null};
+    }
+    if(name==='employee_respond_shift_swap'){
+      const row=marketRows.find(r=>r.id===args.p_swap_id&&r.claimed_by==='Anna Becker');
+      if(!row||row.status!=='PENDING_COLLEAGUE')return {data:null,error:{message:'Diese Anfrage ist nicht mehr verfügbar.'}};
+      if(!['APPROVE','REJECT'].includes(args.p_decision))return {data:null,error:{message:'Ungültige Entscheidung.'}};
+      row.status=args.p_decision==='APPROVE'?'PENDING_MANAGER':'REJECTED_COLLEAGUE';row.colleague_comment=String(args.p_comment||'').slice(0,1000);row.updated_at=new Date().toISOString();saveMarket();return {data:{id:row.id,status:row.status},error:null};
+    }
+    if(name==='employee_submit_absence_request'||name==='employee_submit_absence_request_for_company'){
+      if(name==='employee_submit_absence_request_for_company'&&args.p_company_id!=='demo-local-company')return {data:null,error:demoError('Unternehmen',args.p_company_id)};
       const rows=read(ABSENCE_KEY,[]),from=String(args.p_start_date||''),to=String(args.p_end_date||'');
       if(!from||!to||to<from)return {data:null,error:{message:'Bitte einen gültigen Zeitraum wählen.'}};
+      if(args.p_full_day===false&&(!args.p_start_time||!args.p_end_time||args.p_end_time<=args.p_start_time))return {data:null,error:{message:'Bitte gültige Zeiten für die Teilabwesenheit wählen.'}};
       const row={id:`demo-absence-${Date.now()}`,employee_id:'demo-e01',absence_type:String(args.p_absence_type||'Sonstiges'),start_date:from,end_date:to,status:'Beantragt',full_day:args.p_full_day!==false,start_time:args.p_start_time||null,end_time:args.p_end_time||null,note:String(args.p_note||'').slice(0,2000),requested_at:new Date().toISOString()};
-      rows.unshift(row);write(ABSENCE_KEY,rows);return {data:{id:row.id,status:row.status,saved:true,demo:true},error:null};
+      rows.unshift(row);write(ABSENCE_KEY,rows);return {data:name==='employee_submit_absence_request_for_company'?row.id:{id:row.id,status:row.status,saved:true,demo:true},error:null};
     }
     if(name==='employee_submit_time_entry'){
-      timeRows=read(TIME_KEY,timeRows);let row=timeRows.find(x=>String(x.assignment_id)===String(args.p_assignment_id));
+      timeRows=syncTimeRows();let row=timeRows.find(x=>String(x.assignment_id)===String(args.p_assignment_id));
       if(!row){const assignment=assignmentRows().find(x=>String(x.id)===String(args.p_assignment_id));row={assignment_id:String(args.p_assignment_id),employee_id:assignment?.employee_id||'demo-e01',employee_name:'Anna Becker',shift_code:assignment?.shift_code||'Schicht',starts_at:assignment?.starts_at||args.p_actual_start,ends_at:assignment?.ends_at||args.p_actual_end,planned_break_minutes:Number(args.p_break_minutes||0),manager_note:'',correction_note:''};timeRows.push(row)}
       row.actual_start=args.p_actual_start;row.actual_end=args.p_actual_end;row.actual_break_minutes=Number(args.p_break_minutes||0);row.employee_note=String(args.p_note||'').slice(0,1000);row.entry_status='recorded';row.submitted_at=new Date().toISOString();row.correction_note='';saveTime();return {data:clone(row),error:null};
     }
     if(name==='manager_absence_overview')return {data:clone(absenceRows()),error:null};
-    if(name==='manager_review_absence_request')return {data:args.p_decision==='APPROVE'?'Genehmigt':'Abgelehnt',error:null};
+    if(name==='manager_review_absence_request'){
+      const requests=read(ABSENCE_KEY,[]),row=requests.find(a=>String(a.id)===String(args.p_absence_id));
+      if(!row)return {data:null,error:{message:'Demo-Antrag wurde nicht gefunden.'}};
+      if(!['Beantragt','In Prüfung'].includes(row.status))return {data:null,error:{message:'Dieser Demo-Antrag wurde bereits bearbeitet.'}};
+      if(!['APPROVE','REJECT'].includes(args.p_decision))return {data:null,error:{message:'Ungültige Entscheidung.'}};
+      row.status=args.p_decision==='APPROVE'?'Genehmigt':'Abgelehnt';row.review_note=String(args.p_review_note||'').slice(0,2000);row.reviewed_at=new Date().toISOString();write(ABSENCE_KEY,requests);
+      if(args.p_decision==='APPROVE'){
+        const items=read('sf_demo_data_absences',[]);items.push({id:row.id,employeeId:row.employee_id,type:row.absence_type,startDate:row.start_date,endDate:row.end_date,status:row.status,fullDay:row.full_day,note:row.note,requestSource:'EMPLOYEE',requestedAt:row.requested_at});write('sf_demo_data_absences',items);
+        try{if(typeof absences!=='undefined')absences=items}catch{}
+      }
+      return {data:row.status,error:null};
+    }
     return null;
   }
 
@@ -278,7 +375,7 @@
       if(table==='shift_swap_requests')source=marketRows;
       if(table==='employees')source=employeeRows();
       if(table==='shift_assignments')source=assignmentRows();
-      if(table==='time_entries'){timeRows=read(TIME_KEY,timeRows);source=timeRows.map(x=>({assignment_id:x.assignment_id,actual_start:x.actual_start,actual_end:x.actual_end,break_minutes:x.actual_break_minutes,status:x.entry_status,employee_note:x.employee_note,manager_note:x.manager_note,correction_note:x.correction_note,submitted_at:x.submitted_at||null,confirmed_at:x.confirmed_at||null,version:x.version||1}))}
+      if(table==='time_entries'){timeRows=syncTimeRows();source=timeRows.map(x=>({assignment_id:x.assignment_id,actual_start:x.actual_start,actual_end:x.actual_end,break_minutes:x.actual_break_minutes,status:x.entry_status,employee_note:x.employee_note,manager_note:x.manager_note,correction_note:x.correction_note,submitted_at:x.submitted_at||null,confirmed_at:x.confirmed_at||null,version:x.version||1}))}
       if(table==='shift_assignment_confirmations')source=[];
       if(table==='absences')source=absenceRows();
       if(source){

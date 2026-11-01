@@ -1,4 +1,4 @@
-/* Three destinations share the existing Earth and protected authentication. */
+/* Access choices share the existing Earth and protected authentication. */
 #sfEntryOverlay.sf-entry-dialog-ready{z-index:24000;pointer-events:none}
 #sfEntryOverlay.sf-entry-access-enabled .sf-entry-access{min-height:510px;display:grid;align-items:center;padding:0}
 #sfEntryOverlay .sf-entry-choice,#sfEntryOverlay .sf-entry-selected{grid-area:1/1;min-width:0;width:100%}
@@ -10,6 +10,8 @@
 #sfEntryOverlay .sf-entry-choice-intro{color:#91a7b1;font-size:14px;margin:0 0 27px}
 #sfEntryOverlay .sf-entry-choices{display:flex;flex-direction:column;gap:10px}
 #sfEntryOverlay .sf-entry-choice-button{appearance:none;display:grid;grid-template-columns:28px minmax(0,1fr) 18px;align-items:center;gap:16px;position:relative;width:100%;min-height:93px;padding:18px;text-align:left;border:1px solid #20343e;border-radius:12px;background:#091820;color:#ecf2f5;font:inherit;cursor:pointer;overflow:hidden;transition:background .25s,border-color .25s,transform .25s,opacity .3s,box-shadow .25s}
+#sfEntryOverlay a.sf-entry-choice-button{box-sizing:border-box;text-decoration:none}
+#sfEntryOverlay .sf-entry-demo-choice{border-color:#285b59;background:#0a2025}
 #sfEntryOverlay .sf-entry-choice-button::before{content:"";position:absolute;left:0;top:20px;bottom:20px;width:2px;background:#62dbcb;transform:scaleY(0);transition:transform .25s}
 #sfEntryOverlay .sf-entry-choice-button:hover,#sfEntryOverlay .sf-entry-choice-button:focus-visible{background:#0b2129;border-color:#467b80;transform:translateX(3px);box-shadow:0 0 22px #36c8b50b}
 #sfEntryOverlay .sf-entry-choice-button:hover::before,#sfEntryOverlay .sf-entry-choice-button:focus-visible::before{transform:scaleY(1)}

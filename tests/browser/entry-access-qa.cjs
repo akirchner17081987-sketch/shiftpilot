@@ -31,6 +31,10 @@ async function main(){
   await page.goto(origin);await page.locator('#sfEntryChoice').waitFor({state:'visible'});
   check(await page.locator('[data-entry-area]').count(),3,'three choices');check(await page.locator('#sfEmail').isVisible(),false,'no premature email login');
   check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'no overflow '+width);
+  const demo=page.getByRole('link',{name:/Demo ausprobieren/});check(await demo.getAttribute('href'),'/demo','demo is a separate same-origin entry');
+  await page.route('**/demo',route=>route.fulfill({status:200,contentType:'text/html',body:'<h1>Demo-Anmeldung</h1>'}));
+  await demo.click();await page.getByRole('heading',{name:'Demo-Anmeldung'}).waitFor();check(new URL(page.url()).pathname,'/demo','demo choice opens the demo login');
+  await page.goto(origin);await page.locator('#sfEntryChoice').waitFor({state:'visible'});
   await page.evaluate(()=>window.originalAuth=document.getElementById('sfAuthBackdrop'));
   for(const area of ['mitarbeiter','verwaltung']){
    await page.locator('[data-entry-area="'+area+'"]').click();await page.locator('#sfEmail').waitFor({state:'visible'});
