@@ -91,6 +91,7 @@
     const people=read('sf_demo_data_employees',[]),plans=read('sf_demo_data_assignments',[]),entries=read('sf_demo_data_timeEntries',{}),rows=read(TIME_KEY,timeRows);
     if(!Array.isArray(plans)||!window.SFSolidPlanningCore?.instant)return rows;
     const known=new Set(rows.map(row=>row.assignment_id));
+    for(const row of rows){const plan=plans.find(a=>a.id===row.assignment_id),person=people.find(p=>p.id===plan?.employeeId);if(plan&&person&&!row.actual_start){row.employee_id=person.id;row.employee_name=[person.first,person.last].filter(Boolean).join(' ')}}
     const nextDay=date=>{const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+1);return d.toISOString().slice(0,10)};
     const stampAt=(date,time)=>new Date(window.SFSolidPlanningCore.instant(date,String(time).slice(0,5),'Europe/Berlin')).toISOString();
     for(const a of plans){
@@ -135,7 +136,9 @@
     try{return (assignments||[]).map(a=>({id:a.id,company_id:'demo-local-company',employee_id:a.employeeId,shift_code:a.type,starts_at:`${a.date}T${a.start}:00+02:00`,ends_at:`${a.date}T${a.end}:00+02:00`,status:'PUBLISHED',version:1}))}catch{return []}
   }
   function absenceRows(){
-    try{return (absences||[]).map(a=>({id:a.id,company_id:'demo-local-company',employee_id:a.employeeId,absence_type:a.type,start_date:a.startDate||a.date,end_date:a.endDate||a.startDate||a.date,status:a.status||'Genehmigt',full_day:a.fullDay!==false,note:a.note||'',request_source:a.requestSource||'MANAGER',requested_at:a.requestedAt||new Date().toISOString()}))}catch{return []}
+    const stored=read('sf_demo_data_absences',[]),requests=read(ABSENCE_KEY,[]);
+    const mapped=stored.map(a=>({id:a.id,company_id:'demo-local-company',employee_id:a.employeeId,absence_type:a.type,start_date:a.startDate||a.date,end_date:a.endDate||a.startDate||a.date,status:a.status||'Genehmigt',full_day:a.fullDay!==false,note:a.note||'',request_source:a.requestSource||'MANAGER',requested_at:a.requestedAt||new Date().toISOString()}));
+    const ids=new Set(mapped.map(a=>a.id));return mapped.concat(requests.filter(a=>!ids.has(a.id)).map(a=>({...a,company_id:'demo-local-company',request_source:'EMPLOYEE'})));
   }
   function employeeAccount(monthValue){
     const month=String(monthValue||new Date().toISOString().slice(0,7)).slice(0,7),holidays=monthlyHolidays(month).holidays;
@@ -254,6 +257,13 @@
     if(name==='manager_review_shift_swap'){
       const row=marketRows.find(x=>x.id===args.p_swap_id);if(!row)return {data:null,error:{message:'Demo-Vorgang wurde nicht gefunden.'}};
       if(row.status!=='PENDING_MANAGER')return {data:null,error:{message:'Dieser Demo-Vorgang wurde bereits bearbeitet.'}};
+      if(!['APPROVE','REJECT'].includes(args.p_decision))return {data:null,error:{message:'Ungültige Entscheidung.'}};
+      if(args.p_decision==='APPROVE'){
+        const plans=read('sf_demo_data_assignments',[]),people=read('sf_demo_data_employees',[]),plan=plans.find(a=>a.id===row.assignment_id),target=people.find(p=>[p.first,p.last].filter(Boolean).join(' ')===row.claimed_by);
+        if(!plan||!target)return {data:null,error:{message:'Dieses Beispielangebot ist nicht mit einem Dienst verknüpft und kann nicht übernommen werden.'}};
+        if(read('sf_demo_data_timeEntries',{})[plan.id]?.actualStart)return {data:null,error:{message:'Ein Dienst mit erfasster Arbeitszeit kann nicht übertragen werden.'}};
+        plan.employeeId=target.id;write('sf_demo_data_assignments',plans);try{if(typeof assignments!=='undefined')assignments=plans}catch{}
+      }
       row.status=args.p_decision==='APPROVE'?'APPLIED':'REJECTED_MANAGER';row.manager_comment=args.p_comment||'';row.reviewed_at=new Date().toISOString();saveMarket();return {data:{id:row.id,status:row.status},error:null};
     }
     if(name==='manager_central_time_entries'){timeRows=syncTimeRows();return {data:{as_of:new Date().toISOString(),timezone:'Europe/Berlin',rows:clone(timeRows),qr_rows:[],confirmed_summary:[]},error:null}}
@@ -294,8 +304,18 @@
     if(name==='employee_my_time_account_month')return {data:employeeAccount(args.p_month),error:null};
     if(name==='employee_list_shift_swaps')return {data:clone(marketRows.filter(x=>x.status!=='MARKET_OPEN').map(x=>({...x,direction:x.claimed_by==='Anna Becker'?'INCOMING':'OUTGOING',other_employee_name:x.claimed_by||x.offered_by}))),error:null};
     if(name==='employee_list_shift_swap_candidates')return {data:employeeRows().filter(x=>x.id!=='demo-e01').slice(0,5).map(x=>({employee_id:x.id,display_name:`${x.first_name} ${x.last_name}`,employee_role:'Sicherheitsmitarbeiter'})),error:null};
-    if(name==='employee_create_shift_swap')return {data:{id:`demo-swap-${Date.now()}`,status:'PENDING_COLLEAGUE'},error:null};
-    if(name==='employee_respond_shift_swap')return {data:{saved:true,demo:true},error:null};
+    if(name==='employee_create_shift_swap'){
+      const plan=assignmentRows().find(a=>a.id===args.p_assignment_id&&a.employee_id==='demo-e01'),target=employeeRows().find(p=>p.id===args.p_target_employee_id&&p.id!=='demo-e01');
+      if(!plan||!target)return {data:null,error:{message:'Dienst oder Zielperson wurde nicht gefunden.'}};
+      if(marketRows.some(r=>r.assignment_id===plan.id&&['MARKET_OPEN','PENDING_COLLEAGUE','PENDING_MANAGER'].includes(r.status)))return {data:null,error:{message:'Für diesen Dienst liegt bereits eine Anfrage vor.'}};
+      const row={id:`demo-swap-${Date.now()}`,assignment_id:plan.id,shift_code:plan.shift_code,starts_at:plan.starts_at,ends_at:plan.ends_at,offered_by:'Anna Becker',claimed_by:`${target.first_name} ${target.last_name}`,reason:String(args.p_reason||'').slice(0,1000),status:'PENDING_COLLEAGUE',requested_at:new Date().toISOString()};marketRows.unshift(row);saveMarket();return {data:{id:row.id,status:row.status},error:null};
+    }
+    if(name==='employee_respond_shift_swap'){
+      const row=marketRows.find(r=>r.id===args.p_swap_id&&r.claimed_by==='Anna Becker');
+      if(!row||row.status!=='PENDING_COLLEAGUE')return {data:null,error:{message:'Diese Anfrage ist nicht mehr verfügbar.'}};
+      if(!['APPROVE','REJECT'].includes(args.p_decision))return {data:null,error:{message:'Ungültige Entscheidung.'}};
+      row.status=args.p_decision==='APPROVE'?'PENDING_MANAGER':'REJECTED_COLLEAGUE';row.colleague_comment=String(args.p_comment||'').slice(0,1000);row.updated_at=new Date().toISOString();saveMarket();return {data:{id:row.id,status:row.status},error:null};
+    }
     if(name==='employee_submit_absence_request'){
       const rows=read(ABSENCE_KEY,[]),from=String(args.p_start_date||''),to=String(args.p_end_date||'');
       if(!from||!to||to<from)return {data:null,error:{message:'Bitte einen gültigen Zeitraum wählen.'}};
@@ -308,7 +328,18 @@
       row.actual_start=args.p_actual_start;row.actual_end=args.p_actual_end;row.actual_break_minutes=Number(args.p_break_minutes||0);row.employee_note=String(args.p_note||'').slice(0,1000);row.entry_status='recorded';row.submitted_at=new Date().toISOString();row.correction_note='';saveTime();return {data:clone(row),error:null};
     }
     if(name==='manager_absence_overview')return {data:clone(absenceRows()),error:null};
-    if(name==='manager_review_absence_request')return {data:args.p_decision==='APPROVE'?'Genehmigt':'Abgelehnt',error:null};
+    if(name==='manager_review_absence_request'){
+      const requests=read(ABSENCE_KEY,[]),row=requests.find(a=>String(a.id)===String(args.p_absence_id));
+      if(!row)return {data:null,error:{message:'Demo-Antrag wurde nicht gefunden.'}};
+      if(!['Beantragt','In Prüfung'].includes(row.status))return {data:null,error:{message:'Dieser Demo-Antrag wurde bereits bearbeitet.'}};
+      if(!['APPROVE','REJECT'].includes(args.p_decision))return {data:null,error:{message:'Ungültige Entscheidung.'}};
+      row.status=args.p_decision==='APPROVE'?'Genehmigt':'Abgelehnt';row.review_note=String(args.p_review_note||'').slice(0,2000);row.reviewed_at=new Date().toISOString();write(ABSENCE_KEY,requests);
+      if(args.p_decision==='APPROVE'){
+        const items=read('sf_demo_data_absences',[]);items.push({id:row.id,employeeId:row.employee_id,type:row.absence_type,startDate:row.start_date,endDate:row.end_date,status:row.status,fullDay:row.full_day,note:row.note,requestSource:'EMPLOYEE',requestedAt:row.requested_at});write('sf_demo_data_absences',items);
+        try{if(typeof absences!=='undefined')absences=items}catch{}
+      }
+      return {data:row.status,error:null};
+    }
     return null;
   }
 

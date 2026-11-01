@@ -33,6 +33,12 @@ test('current overview receives local demo records and rejects unhandled RPCs',a
  assert.equal(require('../assets/reports-workspace-core-v1.js').analyze(report.data).summary.duties,1);
  assert.equal((await client.rpc('manager_reports_workspace',{p_company_id:'other-company',p_start_date:todayDate(),p_end_date:todayDate()})).error.code,'SF_DEMO_UNHANDLED');
  assert.ok((await client.rpc('manager_reports_workspace',{p_company_id:'demo-local-company',p_start_date:'2026-02-30',p_end_date:'2026-03-01'})).error);
+ const request=await client.rpc('employee_submit_absence_request',{p_absence_type:'Krank',p_start_date:todayDate(),p_end_date:todayDate()});
+ assert.equal(request.error,null);
+ assert.equal((await client.rpc('manager_absence_overview')).data.find(a=>a.id===request.data.id).status,'Beantragt');
+ assert.equal((await client.rpc('manager_review_absence_request',{p_absence_id:request.data.id,p_decision:'APPROVE'})).data,'Genehmigt');
+ assert.equal((await client.rpc('manager_today_workspace',{p_company_id:'demo-local-company'})).data.absences.find(a=>a.employee_id==='demo-e01').status,'Genehmigt');
+ assert.ok((await client.rpc('manager_review_absence_request',{p_absence_id:request.data.id,p_decision:'APPROVE'})).error);
  assert.equal((await client.rpc('unknown_write')).error.code,'SF_DEMO_UNHANDLED');
  await assert.rejects(()=>window.fetch('https://example.supabase.co/rest/v1/employees'),/SF_DEMO_NETWORK_BLOCKED/);
 });
@@ -53,6 +59,21 @@ test('demo renders the current overview with local data',async()=>{
   assert.equal(w.SFToday.getResult().summary.planned,1);
   assert.equal(w.SFToday.getResult().summary.present,0);
  }finally{await w.happyDOM.abort();w.close()}
+});
+
+test('approving a demo marketplace claim updates the shared schedule',async()=>{
+ const plans=[{id:'duty',employeeId:'demo-e02',date:todayDate(),type:'O1',start:'07:00',end:'15:00',publishedAt:'2026-01-01'}];
+ const people=[{id:'demo-e01',first:'Anna',last:'Becker'},{id:'demo-e02',first:'Lukas',last:'Fischer'}];
+ const values=new Map(Object.entries({sf_demo_session_v1:'active',sf_demo_data_employees:JSON.stringify(people),sf_demo_data_assignments:JSON.stringify(plans),sf_demo_marketplace_v1:JSON.stringify([{id:'offer',assignment_id:'duty',offered_by:'Lukas Fischer',claimed_by:'Anna Becker',status:'PENDING_MANAGER'}])}));
+ const sessionStorage={getItem:k=>values.get(k)||null,setItem:(k,v)=>values.set(k,String(v))};
+ const XMLHttpRequest=function(){};XMLHttpRequest.prototype.open=function(){};
+ const window={SFBackend:{},fetch:async()=>{throw Error('unexpected network')}};
+ const ctx={window,sessionStorage,XMLHttpRequest,location:{href:'https://schichtfunk.de/demo'},URL,document:{getElementById:()=>null},setTimeout:()=>0,console,Date,Map,Set,JSON,Promise,assignments:plans,employees:people};
+ vm.runInNewContext(fs.readFileSync('assets/demo-marketplace-v1.js','utf8'),ctx);
+ const client=window.SFDemoDataClient.create();
+ assert.equal((await client.rpc('manager_review_shift_swap',{p_swap_id:'offer',p_decision:'APPROVE'})).data.status,'APPLIED');
+ assert.equal(JSON.parse(values.get('sf_demo_data_assignments'))[0].employeeId,'demo-e01');
+ assert.ok((await client.rpc('manager_review_shift_swap',{p_swap_id:'offer',p_decision:'APPROVE'})).error);
 });
 
 test('the demo seeds the current planning month while preserving August payroll examples',()=>{
