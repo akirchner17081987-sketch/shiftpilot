@@ -39,6 +39,11 @@ test('current overview receives local demo records and rejects unhandled RPCs',a
  assert.equal((await client.rpc('manager_review_absence_request',{p_absence_id:request.data.id,p_decision:'APPROVE'})).data,'Genehmigt');
  assert.equal((await client.rpc('manager_today_workspace',{p_company_id:'demo-local-company'})).data.absences.find(a=>a.employee_id==='demo-e01').status,'Genehmigt');
  assert.ok((await client.rpc('manager_review_absence_request',{p_absence_id:request.data.id,p_decision:'APPROVE'})).error);
+ const v3=await client.rpc('employee_submit_absence_request_for_company',{p_company_id:'demo-local-company',p_absence_type:'Krank',p_start_date:todayDate(),p_end_date:todayDate()});
+ assert.equal(typeof v3.data,'string');
+ assert.ok((await client.rpc('manager_absence_overview')).data.some(a=>a.id===v3.data));
+ assert.ok((await client.rpc('employee_submit_absence_request_for_company',{p_company_id:'other-company'})).error);
+ assert.ok((await client.rpc('employee_submit_absence_request_for_company',{p_company_id:'demo-local-company',p_start_date:todayDate(),p_end_date:todayDate(),p_full_day:false})).error);
  assert.equal((await client.rpc('unknown_write')).error.code,'SF_DEMO_UNHANDLED');
  await assert.rejects(()=>window.fetch('https://example.supabase.co/rest/v1/employees'),/SF_DEMO_NETWORK_BLOCKED/);
 });

@@ -23,9 +23,9 @@ test('current demo uses five fictional staff and blocks production data',async({
  expect(initial.data).toBeTruthy();
  const workflow=await page.evaluate(async()=>{
   const client=window.SFBackend.client,day=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Berlin',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-  const submitted=await client.rpc('employee_submit_absence_request',{p_absence_type:'Krank',p_start_date:day,p_end_date:day});
+  const submitted=await client.rpc('employee_submit_absence_request_for_company',{p_company_id:'demo-local-company',p_absence_type:'Krank',p_start_date:day,p_end_date:day});
   if(submitted.error)return {error:submitted.error.message};
-  const reviewed=await client.rpc('manager_review_absence_request',{p_absence_id:submitted.data.id,p_decision:'APPROVE'});
+  const reviewed=await client.rpc('manager_review_absence_request',{p_absence_id:submitted.data,p_decision:'APPROVE'});
   const overview=await client.rpc('manager_today_workspace',{p_company_id:'demo-local-company'});
   const market=await client.rpc('manager_list_shift_marketplace',{});
   const pending=market.data?.find(row=>row.status==='PENDING_MANAGER');

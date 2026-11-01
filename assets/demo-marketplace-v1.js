@@ -333,11 +333,13 @@
       if(!['APPROVE','REJECT'].includes(args.p_decision))return {data:null,error:{message:'Ungültige Entscheidung.'}};
       row.status=args.p_decision==='APPROVE'?'PENDING_MANAGER':'REJECTED_COLLEAGUE';row.colleague_comment=String(args.p_comment||'').slice(0,1000);row.updated_at=new Date().toISOString();saveMarket();return {data:{id:row.id,status:row.status},error:null};
     }
-    if(name==='employee_submit_absence_request'){
+    if(name==='employee_submit_absence_request'||name==='employee_submit_absence_request_for_company'){
+      if(name==='employee_submit_absence_request_for_company'&&args.p_company_id!=='demo-local-company')return {data:null,error:demoError('Unternehmen',args.p_company_id)};
       const rows=read(ABSENCE_KEY,[]),from=String(args.p_start_date||''),to=String(args.p_end_date||'');
       if(!from||!to||to<from)return {data:null,error:{message:'Bitte einen gültigen Zeitraum wählen.'}};
+      if(args.p_full_day===false&&(!args.p_start_time||!args.p_end_time||args.p_end_time<=args.p_start_time))return {data:null,error:{message:'Bitte gültige Zeiten für die Teilabwesenheit wählen.'}};
       const row={id:`demo-absence-${Date.now()}`,employee_id:'demo-e01',absence_type:String(args.p_absence_type||'Sonstiges'),start_date:from,end_date:to,status:'Beantragt',full_day:args.p_full_day!==false,start_time:args.p_start_time||null,end_time:args.p_end_time||null,note:String(args.p_note||'').slice(0,2000),requested_at:new Date().toISOString()};
-      rows.unshift(row);write(ABSENCE_KEY,rows);return {data:{id:row.id,status:row.status,saved:true,demo:true},error:null};
+      rows.unshift(row);write(ABSENCE_KEY,rows);return {data:name==='employee_submit_absence_request_for_company'?row.id:{id:row.id,status:row.status,saved:true,demo:true},error:null};
     }
     if(name==='employee_submit_time_entry'){
       timeRows=syncTimeRows();let row=timeRows.find(x=>String(x.assignment_id)===String(args.p_assignment_id));
