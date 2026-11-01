@@ -229,7 +229,12 @@
     restorePreparedSnapshot();patchAuthLayer();
     const perspective=sessionStorage.getItem(PERSPECTIVE_KEY)==='employee'?'employee':'manager';
     window.SFDemoPerspective.set(perspective);
-    if(perspective==='manager')rerender();
+    if(perspective==='manager'){
+      rerender();
+      // A first dashboard request may have started before the example plan
+      // finished seeding. Wait for it, then reload the prepared snapshot.
+      if(window.SFToday?.reload){await window.SFToday.reload();await window.SFToday.reload();}
+    }
     await nextPaint();
     const gate=document.getElementById('sfDemoBootGate');if(gate)gate.setAttribute('aria-busy','false');
     document.documentElement.classList.remove('sf-demo-booting');
