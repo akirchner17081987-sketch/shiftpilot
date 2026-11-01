@@ -1,7 +1,7 @@
 -- Apply the confirmed regional day-service rule to the three named companies.
 -- Existing dated planner decisions and all assignments are retained.
 DO $configure$
-DECLARE item_ record; company_ uuid; rules_ jsonb; configured_ jsonb; code_ text; filtered_ jsonb;
+DECLARE item_ record; company_ uuid; rules_ jsonb; configured_ jsonb; code_ text; filtered_ jsonb; tl_group_ text; tl_required_ integer;
 BEGIN
  FOR item_ IN SELECT * FROM (VALUES
    ('Secontec Services',ARRAY['OT1','OT2','OT3']::text[],ARRAY['OT']::text[]),
@@ -34,8 +34,18 @@ BEGIN
      WHERE t.active AND ((c.name='Secontec Services' AND t.code IN('TL-LE','TL-RE'))
        OR (c.name IN('Secontec Services - 8h','Secontec Services - 9h') AND t.code='TL')))<>4
  THEN RAISE EXCEPTION 'Die vier aktiven Teamleitungsmodelle sind nicht vollständig vorhanden.'; END IF;
+ SELECT min(t.coverage_group),min(t.coverage_required) INTO tl_group_,tl_required_ FROM public.shift_templates t JOIN public.companies c ON c.id=t.company_id
+   WHERE c.name='Secontec Services' AND t.active AND t.code IN('TL-LE','TL-RE');
+ IF tl_group_ IS NULL OR tl_required_ IS NULL OR (SELECT count(*) FROM public.shift_templates t JOIN public.companies c ON c.id=t.company_id
+   WHERE c.name='Secontec Services' AND t.active AND t.code IN('TL-LE','TL-RE') AND t.coverage_group=tl_group_ AND t.coverage_required=tl_required_)<>2
+ THEN RAISE EXCEPTION 'Gemeinsame Teamleitungsgruppe ist nicht eindeutig.'; END IF;
+ IF EXISTS(SELECT 1 FROM public.shift_templates t JOIN public.companies c ON c.id=t.company_id WHERE c.name='Secontec Services' AND t.coverage_group=tl_group_ AND t.code NOT IN('TL-LE','TL-RE','Teamleiter')) THEN RAISE EXCEPTION 'Unerwartetes Modell in der Teamleitungsgruppe.'; END IF;
+ UPDATE public.shift_templates t SET coverage_group=NULL,coverage_required=0 FROM public.companies c
+   WHERE c.id=t.company_id AND c.name='Secontec Services' AND t.coverage_group=tl_group_;
  UPDATE public.shift_templates t SET default_start='22:00'::time,default_end='06:00'::time,updated_at=now()
-   FROM public.companies c WHERE c.id=t.company_id AND t.active
-    AND ((c.name='Secontec Services' AND t.code IN('TL-LE','TL-RE'))
-      OR (c.name IN('Secontec Services - 8h','Secontec Services - 9h') AND t.code='TL'));
+   FROM public.companies c WHERE c.id=t.company_id
+    AND ((c.name='Secontec Services' AND t.code IN('TL-LE','TL-RE','Teamleiter'))
+      OR (c.name IN('Secontec Services - 8h','Secontec Services - 9h') AND t.active AND t.code='TL'));
+ UPDATE public.shift_templates t SET coverage_group=tl_group_,coverage_required=tl_required_ FROM public.companies c
+   WHERE c.id=t.company_id AND c.name='Secontec Services' AND t.code IN('TL-LE','TL-RE','Teamleiter');
 END; $configure$;
