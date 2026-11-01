@@ -24,7 +24,7 @@ function prepared(input,fixed=[],incumbent=[]){
  }}
  return M.prepare({...input,...wishes,groups:[...input.groups,...extra],base:[...input.base,...additional],capacities:[...capacity],criticalCapacities:[...critical]});
 }
-function excludedPeople(p){const ids=new Set();for(const e of p.people.values())if(C.priorityRule(e,p)||!p.groups.some(g=>String(g.employee.id)===String(e.id)))ids.add(String(e.id));return ids;}
+function excludedPeople(p){const ids=new Set(),regionalRepair=p.adaptiveSearch&&p.solidRules?.regionalDayStaffing;for(const e of p.people.values())if((C.priorityRule(e,p)&&!regionalRepair)||!p.groups.some(g=>String(g.employee.id)===String(e.id)))ids.add(String(e.id));return ids;}
 function columns(p,excluded){const out=[],seen=new Set(),base=M.state(p);p.groups.forEach((group,gi)=>{if(excluded.has(String(group.employee.id)))return;group.options.forEach((option,oi)=>{const rows=option.slice().sort((a,b)=>a.date.localeCompare(b.date)),sig=signature(rows);if(seen.has(sig)||!rows.length||rows.some((a,i)=>(p.capacity.get(a.resource)||0)<1||!a.date.startsWith(p.month)||i&&(a.date!==S.plus(rows[i-1].date,1)||a.startMs<rows[i-1].endMs+Math.max(11,Number(p.minRestHours)||11)*H-1))||p.accept&&!p.accept(group.employee,[],option)||base.people.get(String(group.employee.id)).duties.length&&!M.feasible(p,base,group,option))return;seen.add(sig);out.push({group,option,rows,ref:[gi,oi],sig});});});return out;}
 function recoveryEnd(rows,e,p,minStart){
  const rules=S.employeeRules(e,p.solidRules),own=new Map(p.base.filter(a=>String(a.employeeId)===String(e.id)).map(a=>[a.date,a]));for(const a of rows)own.set(a.date,a);
@@ -36,7 +36,7 @@ function recoveryEnd(rows,e,p,minStart){
 function canonical(rows){const groups=new Map();for(const a of rows){const id=String(a.employeeId),list=groups.get(id)||[];list.push(a);groups.set(id,list);}const blocks=[];for(const list of groups.values()){let block;for(const a of list.sort((a,b)=>a.date.localeCompare(b.date))){if(!block||a.date!==S.plus(block.at(-1).date,1)){block=[];blocks.push(block);}block.push(a);}}return blocks;}
 function peerPairs(p){const buckets=new Map(),pairs=[];for(const e of p.people.values()){const k=JSON.stringify([e.target,[...new Set(e.shifts||[])].sort()]),list=buckets.get(k)||[];list.push(String(e.id));buckets.set(k,list);}for(const list of buckets.values())for(let i=0;i<list.length;i++)for(let j=i+1;j<list.length;j++)pairs.push([list[i],list[j]]);return pairs;}
 function peerQuality(p,s){const limit=Math.max(0,...p.base.map(a=>a.hours||0),...s.records.flatMap(r=>r.option.map(a=>a.hours))),gaps=peerPairs(p).map(([a,b])=>Math.abs(s.people.get(a).hours-s.people.get(b).hours));return{peerSpread:Math.max(0,...gaps),peerExcess:gaps.reduce((n,g)=>n+Math.max(0,g-limit),0)};}
-function better(a,b,adaptive=false){for(const k of adaptive?['leaderOpen','critical','open','priorityDeficit','peerExcess','teamLeaderDeficit','blockPenalty','imbalance','priorityPenalty','penalty','deficit']:['leaderOpen','critical','priorityDeficit','open','peerExcess','teamLeaderDeficit','imbalance','priorityPenalty','penalty','deficit']){const x=Number(a[k])||0,y=Number(b[k])||0;if(x<y-1e-6)return true;if(x>y+1e-6)return false;}return false;}
+function better(a,b,adaptive=false){for(const k of adaptive?['leaderOpen','critical','open','orderedDeficits','priorityDeficit','peerExcess','teamLeaderDeficit','blockPenalty','imbalance','priorityPenalty','penalty','deficit']:['leaderOpen','critical','priorityDeficit','open','peerExcess','teamLeaderDeficit','imbalance','priorityPenalty','penalty','deficit']){if(k==='orderedDeficits'){for(let i=0;i<Math.max(a[k]?.length||0,b[k]?.length||0);i++){const x=Number(a[k]?.[i])||0,y=Number(b[k]?.[i])||0;if(x<y-1e-6)return true;if(x>y+1e-6)return false;}continue;}const x=Number(a[k])||0,y=Number(b[k])||0;if(x<y-1e-6)return true;if(x>y+1e-6)return false;}return false;}
 // A preference is never turned into a hard restriction. Month-edge fragments
 // and required work/rest options keep their existing meaning.
 function blockPenalty(rows,group,p){
@@ -60,7 +60,7 @@ function start(input,preview){
  for(const block of canonical(preview.filter(a=>!excluded.has(String(a.employeeId))))){const index=by.get(signature(block));if(index===undefined){cp.status='unsupported';return cp;}cp.best.push(index);}
  cp.working=cp.best.slice();cp.initialOpen=C.solidQuality(q,M.state(q,cp.best.map(i=>cols[i]))).open;
  cp.bestOpen=cp.initialOpen;
- if(!cols.length||cols.length>10000||new Set(cols.map(c=>String(c.group.employee.id))).size>24)cp.status='unsupported';
+ if(!cols.length||cols.length>12000||new Set(cols.map(c=>String(c.group.employee.id))).size>24)cp.status='unsupported';
  return cp;
 }
 // Eliminate fixed columns exactly before entering the solver. The immutable
@@ -79,8 +79,19 @@ function compactModel(model,lower,upper,incumbent){
 function context(input,cp){
  if(cp.version!==1)throw Error('Unbekannter Blocktausch-Zwischenstand.');
  if(cp.status==='unsupported')return{step:()=>false,result:()=>({preview:cp.original,quality:null})};
- const p=prepared(input,cp.fixed,cp.original),excluded=new Set(cp.excluded||excludedPeople(p)),cols=columns(p,excluded),state=indices=>M.state(p,indices.map(i=>cols[i])),score=indices=>{const s=state(indices);return{...C.solidQuality(p,s),...peerQuality(p,s),blockPenalty:indices.reduce((n,i)=>n+blockPenalty(cols[i].rows,cols[i].group,p),0)};};
- const initial=()=>({preview:cp.fixed.concat(cp.best.flatMap(i=>cols[i].option.map(a=>({...a,blockId:cols[i].group.id})))),quality:{...score(cp.best),searchLimited:cp.status!=='optimal',blockExchange:{passes:cp.pass,improvements:cp.improvements,closed:Math.max(0,cp.initialOpen-score(cp.best).open),status:cp.status,adaptive:!!cp.adaptive,globalPasses:cp.globalPasses||0}}});
+ const p=prepared(input,cp.fixed,cp.original),excluded=new Set(cp.excluded||excludedPeople(p)),cols=columns(p,excluded),state=indices=>M.state(p,indices.map(i=>cols[i])),scoreState=s=>({...C.solidQuality(p,s),...peerQuality(p,s),blockPenalty:s.records.reduce((n,r)=>n+blockPenalty(r.option.slice().sort((a,b)=>a.date.localeCompare(b.date)),r.group,p),0)}),score=indices=>scoreState(state(indices));
+ const initial=()=>{
+  let best=state(cp.best),quality=scoreState(best);
+  // A repair can trade hours between the ordered OT-only staff while closing
+  // another gap. Restore their joint roster after the last exchange, but only
+  // when the checked result is strictly better and no coverage is lost.
+  if(cp.status!=='searching'&&cp.adaptive&&p.solidRules.regionalDayStaffing){
+   const allowed=(s,r)=>{if(!M.feasible(p,s,r.group,r.option))return false;const all=[...p.base,...s.records.flatMap(x=>x.option),...r.option];return r.option.every(a=>{const need=S.required(a.date,a.type,all,p.solidRules);return need===null||all.filter(b=>b.date===a.date&&b.type===a.type).length<=need;});};
+   const restored=C.restoreOrderedRoster(p,best.records,allowed);
+   if(restored){const q=scoreState(restored),all=[...p.base,...restored.records.flatMap(r=>r.option)],valid=[...restored.remaining.values()].every(n=>n>=0)&&[...p.people.values()].every(e=>!S.errors(e,all,p.solidRules,all.filter(a=>String(a.employeeId)===String(e.id)).map(a=>a.date)).length);if(valid&&better(q,quality,true)){best=restored;quality=q;}}
+  }
+  return {preview:cp.fixed.concat(best.records.flatMap(r=>r.option.map(a=>({...a,blockId:r.group.id})))),quality:{...quality,searchLimited:cp.status!=='optimal',blockExchange:{passes:cp.pass,improvements:cp.improvements,closed:Math.max(0,cp.initialOpen-quality.open),status:cp.status,adaptive:!!cp.adaptive,globalPasses:cp.globalPasses||0}}};
+ };
  if(cp.status!=='searching')return{result:initial,step:()=>false};
  const crew=[...p.people.values()].filter(e=>cols.some(c=>String(c.group.employee.id)===String(e.id))),N=cols.length,monthStart=S.instant(p.month+'-01','00:00',p.solidRules.timezone),next=new Date(p.month+'-01T12:00:00Z');next.setUTCMonth(next.getUTCMonth()+1);const monthEnd=S.instant(next.toISOString().slice(0,10),'00:00',p.solidRules.timezone);
  const baseState=M.state(p),minutes=cols.flatMap(c=>c.option.map(a=>Math.round(a.hours*60))),quantum=minutes.reduce((n,h)=>gcd(n,h),0)/60;
@@ -105,8 +116,8 @@ function context(input,cp){
   const own=cols.flatMap((c,i)=>String(c.group.employee.id)===String(e.id)?[i]:[]),base=baseState.people.get(String(e.id)),rules=S.employeeRules(e,p.solidRules),first=Math.min(...own.map(i=>cols[i].rows[0].day)),last=Math.max(...own.map(i=>cols[i].rows.at(-1).day))+10,minStart=Math.min(...own.flatMap(i=>cols[i].rows.map(a=>Number(a.start.slice(0,2))*60+Number(a.start.slice(3,5)))));
   const intervals=new Map(own.map(i=>[i,[cols[i].rows[0].day,recoveryEnd(cols[i].rows,e,p,minStart)]]));
   for(let d=first;d<=last;d++)constraint(own.filter(i=>intervals.get(i)[0]<=d&&intervals.get(i)[1]>=d).map(i=>[i,1]),0,1);
-  const countLimit=Math.max(0,Math.floor((e.monthLimit-base.hours+1e-6)/quantum)),level=[];
-  for(let k=1;k<=countLimit;k++){const before=base.hours+(k-1)*quantum,after=before+quantum,leaderTarget=C.teamLeaderTarget(e,p),leader=Math.max(0,leaderTarget-before)-Math.max(0,leaderTarget-after);level.push(variable(M.hoursCost(after,e.target)-M.hoursCost(before,e.target)-leader*100));}
+  const countLimit=Math.max(0,Math.floor((e.monthLimit-base.hours+1e-6)/quantum)),level=[],ordered=p.solidRules.regionalDayStaffing&&cp.adaptive?p.solidRules.orderedMonthlyShiftEmployees||[]:[],priorityIndex=ordered.findIndex(r=>String(r.employeeId)===String(e._dbId||e.id));
+  for(let k=1;k<=countLimit;k++){const before=base.hours+(k-1)*quantum,after=before+quantum,leaderTarget=C.teamLeaderTarget(e,p),leader=Math.max(0,leaderTarget-before)-Math.max(0,leaderTarget-after),priority=priorityIndex<0?0:Math.max(0,Math.min(after,e.target)-before)*(ordered.length-priorityIndex)*1000;level.push(variable(M.hoursCost(after,e.target)-M.hoursCost(before,e.target)-leader*100-priority));}
   levels.push({id:String(e.id),indices:level,baseHours:base.hours});constraint(own.map(i=>[i,cols[i].option.hours/quantum]).concat(level.map(i=>[i,-1])),0,0);
   if(Number.isFinite(e.maxMonthlyShifts))constraint(own.map(i=>[i,cols[i].option.length]),0,Math.max(0,e.maxMonthlyShifts-base.monthDuties));
   if(Number.isFinite(e.calendarLimit)){const baseHours=base.duties.reduce((n,a)=>n+Math.max(0,Math.min(a.endMs,monthEnd)-Math.max(a.startMs,monthStart))/H,0);constraint(own.map(i=>[i,cols[i].option.reduce((n,a)=>n+Math.max(0,Math.min(a.endMs,monthEnd)-Math.max(a.startMs,monthStart))/H,0)]),0,Math.max(0,e.calendarLimit-baseHours));}

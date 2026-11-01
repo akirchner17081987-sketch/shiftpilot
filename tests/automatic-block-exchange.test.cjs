@@ -60,6 +60,18 @@ test('adaptive repair reassigns a complete blocked chain and keeps published dut
  assert.ok(cp.improvements>0);assert.equal(f.input.base[0]._dbStatus,'PUBLISHED');
  assert.ok(result.preview.every(a=>a.employeeId==='a'));
 });
+test('regional repair may move a priority employee to close a shared position',async()=>{
+ const f=small();f.input.adaptiveSearch=true;f.input.solidRules={...policy,regionalDayStaffing:{target:3,weekdayCodes:['TL'],specialCodes:[],statesBySite:{}},orderedMonthlyShiftEmployees:[{employeeId:'a',code:'TL'}]};
+ const cp=E.start(f.input,f.preview);assert.equal(cp.status,'searching');assert.ok(!cp.excluded.includes('a'));
+ const {result}=await optimize(f.input,f.preview);assert.equal(result.quality.open,0);assert.equal(result.preview.length,3);assert.ok(result.preview.every(a=>a.employeeId==='a'));
+});
+test('regional repair prefers the earlier ordered employee when coverage is equal',async()=>{
+ const f=small();f.input.adaptiveSearch=true;f.input.employees=f.input.employees.slice(0,2).map(e=>({...e,target:9,monthLimit:9,calendarLimit:9}));
+ const row=id=>({employeeId:id,date:'2027-01-04',type:'TL',start:'21:00',end:'06:00',resource:'2027-01-04|TL'});
+ f.input.groups=f.input.employees.map(e=>({id:e.id,employee:e,options:[[row(e.id)]]}));f.input.capacities=[['2027-01-04|TL',1]];
+ f.input.solidRules={...policy,regionalDayStaffing:{target:1,weekdayCodes:['TL'],specialCodes:[],statesBySite:{}},orderedMonthlyShiftEmployees:[{employeeId:'a',code:'TL'},{employeeId:'b',code:'TL'}]};
+ const {result}=await optimize(f.input,[row('b')],{maxPasses:6});assert.equal(result.quality.open,0);assert.equal(result.preview[0].employeeId,'a');
+});
 test('approved fragments joined by the allocator remain movable even when the capped options omit their combined block',()=>{
  const f=small();f.input.adaptiveSearch=true;const a=f.input.groups[0];a.fullWorkRest=false;
  a.options.push([a.options[0][0]],[a.options[0][1]]);

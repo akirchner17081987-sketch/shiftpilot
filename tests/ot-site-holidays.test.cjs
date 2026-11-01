@@ -10,6 +10,14 @@ test('unknown site gets national holidays only and invalid dates fail closed',()
  assert.equal(api.applies('2027-11-01',[api.siteState('',mapping)]),false);assert.equal(api.applies('2027-02-30',['SN']),false);
 });
 function browser(){const c={window:{SFCompliance:{policy:{solidPlanningRules:{otHolidayStatesBySite:mapping}}}},document:{readyState:'loading',addEventListener(){}}};vm.runInNewContext(source,c);return c;}
+test('calendar uses the shared regional requirement even on an ordinary weekday',()=>{
+ let ready,tick;
+ const regional={target:3,statesBySite:mapping,weekdayCodes:['OT'],specialCodes:['OT-WE']};
+ const c={window:{getSoll:()=>0,SFShiftModels:{requiredSoll:(date,code)=>date==='2027-05-26'&&code==='OT'?3:0},SFCompliance:{policy:{solidPlanningRules:{regionalDayStaffing:regional,otHolidayStatesBySite:mapping}}}},
+  document:{readyState:'loading',getElementById:()=>null,addEventListener:(name,fn)=>{if(name==='DOMContentLoaded')ready=fn;}},setInterval:fn=>{tick=fn;return 1;},clearInterval(){}};
+ vm.runInNewContext(source,c);ready();tick();
+ assert.equal(c.window.getSoll('2027-05-26','OT'),3);
+});
 test('weekend OT demand cannot fall below the fixed minimum through optional or daily targets',()=>{
  const c=browser();c.window.SFBackend={companyId:'co'};c.sessionStorage={getItem:()=>null};c.TYPES=[];c.globalSoll={OT:1};c.dailySoll={'2027-01-02':{OT:0},'2027-01-03':{OT:1}};c.assignments=[];c.selectedType=null;c.document.getElementById=()=>null;
  vm.runInNewContext(fs.readFileSync(require.resolve('../assets/solid-planning-core-v1.js'),'utf8'),c);

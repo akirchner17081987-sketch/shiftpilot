@@ -15,6 +15,12 @@ test('shared labels survive grouping while ordinary slot payloads keep their exi
  const api=module(),plain=api.groups([{date:'2026-12-01',type:'FD'}])[0];assert.deepEqual(Object.keys(plain).sort(),['count','date','type']);
  const shared=api.groups([{date:'2026-12-01',type:'TL-LE',coverageLabel:'TL LE/RE'}])[0];assert.equal(shared.coverageLabel,'TL LE/RE');assert.equal(shared.count,1);
 });
+test('regional variants expose every eligible shift while counting shared positions once',()=>{
+ const api=module(),slots=Array.from({length:3},()=>({date:'2027-05-27',type:'OT1',coverageGroup:'REGIONAL-DAY',coverageLabel:'Tagesbesetzung',alternatives:['OT1','OT2','OT-WE']}));
+ const grouped=api.groups(slots);assert.deepEqual(Array.from(grouped,x=>x.type),['OT-WE','OT1','OT2']);
+ assert.ok(grouped.every(x=>x.count===3&&x.sharedKey==='2027-05-27|REGIONAL-DAY'));
+ assert.equal(api.positionCount(grouped),3);assert.equal(api.positionCount([...grouped,{date:'2027-05-27',type:'O3',count:2}]),5);
+});
 
 // Real sync implementation: immutable August history plus a new December draft.
 function syncFixture(){

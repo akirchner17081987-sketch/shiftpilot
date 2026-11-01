@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
+import {createRequire} from 'node:module';
+const require=createRequire(import.meta.url);
 const source=fs.readFileSync(new URL('../assets/shift-models-v1.js',import.meta.url),'utf8');
 const row=(code,active=true)=>({code,name:code,default_start:'06:00:00',default_end:'14:00:00',css_class:'teal',active});
 const model={code:'F8',name:' Frühdienst ',start:'22:00',end:'06:00',soll:2,color:'teal'};
@@ -11,6 +13,19 @@ function harness(){
   const c={window:{SFBackend:B},document:{getElementById:()=>null},sessionStorage:{getItem:()=>null},clearTimeout(){},TYPES:[{id:'old'}],selectedType:'old',globalSoll:{},dailySoll:{}};
   vm.runInNewContext(source,c);c.window.SFShiftModels.apply([row('F8')],'a');return{c,B,M:c.window.SFShiftModels,calls,tables};
 }
+test('regional day slots share one count despite different shift times',()=>{
+  const {c,M}=harness();
+  c.window.SFRegionalDayStaffing=require('../assets/ot-regional-staffing-core-v1.js');
+  c.window.SFCompliance={policy:{solidPlanningRules:{regionalDayStaffing:{target:3,statesBySite:{Leipzig:'SN',Recklinghausen:'NW'},weekdayCodes:['OT1','OT2','OT3'],specialCodes:['OT-WE']}}}};
+  M.apply([{...row('OT1'),default_start:'06:00',default_end:'16:00'},{...row('OT2'),default_start:'08:00',default_end:'18:00'},{...row('OT3'),default_start:'10:00',default_end:'20:00'},{...row('OT-WE'),default_start:'08:00',default_end:'18:00'}],'a');
+  c.assignments=[{date:'2027-05-27',type:'OT1',employeeId:'a'},{date:'2027-05-27',type:'OT-WE',employeeId:'b'}];
+  const g=M.coverageInfo('2027-05-27','OT1');
+  assert.equal(g.key,'REGIONAL-DAY');assert.equal(g.target,3);assert.equal(g.filled,2);assert.equal(g.missing,1);
+  assert.deepEqual(Array.from(g.alternatives),['OT1','OT2','OT3','OT-WE']);
+  assert.equal(M.requiredSoll('2027-05-27','OT1',3),2);
+  assert.equal(M.requiredSoll('2027-05-27','OT-WE',3),1);
+  assert.deepEqual(Array.from(M.coverageInfo('2027-01-01','OT1').alternatives),['OT-WE']);
+});
 test('active catalogue replaces defaults, preserves archived lookup and clears empty selection',()=>{
   const {c,M}=harness();M.apply([row('NEW'),row('OLD',false)],'a');assert.deepEqual(Array.from(M.activeCodes()),['NEW']);assert.equal(M.find('OLD').active,false);assert.equal(c.selectedType,'NEW');
   M.apply([],'a');assert.equal(c.TYPES.length,0);assert.equal(c.selectedType,null);assert.equal(M.find('OLD'),undefined);

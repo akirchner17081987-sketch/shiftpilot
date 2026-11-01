@@ -59,6 +59,8 @@
   }
 
   function isOTDay(date){
+    const regional=window.SFCompliance?.policy?.solidPlanningRules?.regionalDayStaffing;
+    if(regional&&[...(regional.weekdayCodes||[]),...(regional.specialCodes||[])].includes('OT'))return true;
     if(window.SFOtPolicy)return window.SFOtPolicy.applies(date);
     const d=parseISODate(date); if(!d) return false;
     const day=d.getDay();

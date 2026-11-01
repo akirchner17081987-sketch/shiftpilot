@@ -307,18 +307,21 @@
     const rules=orderedPriorityRules(p),code=rules[0]?.code;if(rules.length<3||rules.length>6||!rules.every(r=>r.code===code)||p.criticalOnly||p.criticalPeriod)return null;
     const people=rules.map(r=>[...p.people.values()].find(e=>String(e._dbId||e.id)===String(r.employeeId)));
     if(people.some(e=>!e||e.shifts?.some(shift=>shift!==code))||p.base.some(a=>people.some(e=>String(e.id)===String(a.employeeId)))||initial.some(r=>r.option.some(a=>a.type===code)))return null;
-    const dates=[...p.capacity].filter(([key,n])=>key.endsWith('|'+code)&&n>0).map(([key])=>key.slice(0,10)).sort();
-    if(dates.length<2||dates.length>40||dates.some((d,i)=>i&&solid.plus(dates[i-1],1)!==d))return null;
-    const count=p.capacity.get(dates[0]+'|'+code);if(!Number.isInteger(count)||count<1||dates.some(d=>p.capacity.get(d+'|'+code)!==count))return null;
-    const byDate=dates.map(date=>people.map(e=>{const key=date+'|'+code;return p.groups.flatMap(g=>String(g.employee.id)===String(e.id)?g.options.filter(o=>o.length===1&&o[0].resource===key&&o[0].type===code).map(option=>({group:g,option})):[])[0]||null;}));
+    const regional=(p.solidRules.regionalDayStaffing?.weekdayCodes||[]).includes(code),resource=date=>date+'|'+(regional?'REGIONAL-DAY':code);
+    // A shared resource has no OT code in its key. Only include days on which
+    // an ordered employee can actually perform OT; weekends belong to OT-WE.
+    const dates=[...p.capacity].filter(([key,n])=>key.endsWith('|'+(regional?'REGIONAL-DAY':code))&&n>0&&(!regional||p.groups.some(g=>people.some(e=>String(e.id)===String(g.employee.id))&&g.options.some(o=>o.length===1&&o[0].resource===key&&o[0].type===code)))).map(([key])=>key.slice(0,10)).sort();
+    if(dates.length<2||dates.length>40||(!regional&&dates.some((d,i)=>i&&solid.plus(dates[i-1],1)!==d)))return null;
+    const count=p.capacity.get(resource(dates[0]));if(!Number.isInteger(count)||count<1||dates.some(d=>p.capacity.get(resource(d))!==count))return null;
+    const byDate=dates.map(date=>people.map(e=>{const key=resource(date);return p.groups.flatMap(g=>String(g.employee.id)===String(e.id)?g.options.filter(o=>o.length===1&&o[0].resource===key&&o[0].type===code).map(option=>({group:g,option})):[])[0]||null;}));
     if(byDate.some(day=>day.filter(Boolean).length<count))return null;
     const targets=people.map((e,i)=>Math.floor(employeeShiftTarget(e,p)/(byDate.find(day=>day[i])?.[i]?.option.hours||Infinity))),maxWork=people.map(e=>Math.min(Number(e.maxConsecutive)||Number(p.solidRules.maxConsecutiveShifts)||4,Number(p.solidRules.maxConsecutiveShifts)||4)),rest=Math.max(0,Number(p.solidRules.minFreeCalendarDays??2));
     const combos=[];for(let mask=0;mask<2**people.length;mask++)if(mask.toString(2).replace(/0/g,'').length===count)combos.push(mask);
     const compare=(a,b)=>{for(let i=0;i<people.length;i++)if(a.count[i]!==b.count[i])return b.count[i]-a.count[i];return 0;};
     let beam=[{count:people.map(()=>0),run:people.map(()=>0),off:people.map(()=>rest),weekly:people.map(()=>0),path:[]}];
     for(let d=0;d<dates.length;d++){
-      const candidates=[],seen=new Set(),newWeek=d&&week(dates[d])!==week(dates[d-1]);
-      for(const state of beam)for(const mask of combos){const hours=people.map((_,i)=>byDate[d][i]?.option.hours||0),counts=state.count.slice(),run=state.run.slice(),off=state.off.slice(),weekly=newWeek?people.map(()=>0):state.weekly.slice();let valid=true;
+      const candidates=[],seen=new Set(),newWeek=d&&week(dates[d])!==week(dates[d-1]),gap=d?Math.round((Date.parse(dates[d])-Date.parse(dates[d-1]))/86400000)-1:0;
+      for(const state of beam)for(const mask of combos){const hours=people.map((_,i)=>byDate[d][i]?.option.hours||0),counts=state.count.slice(),run=gap?people.map(()=>0):state.run.slice(),off=state.off.map(n=>n+gap),weekly=newWeek?people.map(()=>0):state.weekly.slice();let valid=true;
         for(let i=0;i<people.length;i++)if(mask&(1<<i)){if(!byDate[d][i]||run[i]>=maxWork[i]||!run[i]&&off[i]<rest||counts[i]>=targets[i]||weekly[i]+hours[i]>Number(people[i].weeklyLimit||people[i].maxWeeklyHours||p.solidRules.maxCalendarWeekHours||55)+.001){valid=false;break}counts[i]++;run[i]++;off[i]=0;weekly[i]+=hours[i];}else{run[i]=0;off[i]++;}
         if(!valid)continue;const key=[...counts,...run,...off.map(x=>Math.min(rest,x)),...weekly].join(',');if(seen.has(key))continue;seen.add(key);candidates.push({count:counts,run,off,weekly,path:[...state.path,mask]});
       }

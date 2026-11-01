@@ -5,6 +5,34 @@ function snapshot(month='2027-01',zone='Europe/Berlin'){
  return {version:1,company:'one',runId:'run',fingerprint:'current',timezone:zone,months:[month],policy:{standard_max_shift_hours:10,monthly_planning_max_hours:220,solid_planning_rules:{enabled:false}},employees,types:[{id:'TAG',start:'08:00',end:'16:00',active:true}],base:[],original:[],movable:[],demand:dates.map(date=>({date,type:'TAG',count:1})),candidates:dates.flatMap(date=>employees.map(e=>({employeeId:e.id,date,type:'TAG'}))),rhythms:[],unavailableDays:[],wishes:[],learned:[]};
 }
 function finish(p){let cp=B.start(p),steps=0;while(cp.stage!=='done'){const c=B.context(p,cp);for(let i=0;i<10&&cp.stage!=='done';i++)if(!c.step())break;cp=JSON.parse(JSON.stringify(cp));assert.ok(++steps<5000);}return B.result(p,cp);}
+test('required rhythms never reserve duties that violate recovery after an existing night block',()=>{
+ const s=snapshot('2027-05');s.employees=s.employees.slice(0,1);s.employees[0].shifts=['O3'];s.types=[{id:'O3',start:'22:00',end:'06:00'}];s.policy.solid_planning_rules={enabled:true,confirmedRulesVersion:2,minFreeCalendarDays:2,minNightRecoveryCalendarDays:3,minBlockRestHours:48};
+ s.base=[{employeeId:'a',date:'2027-04-30',type:'O3',start:'22:00',end:'06:00'}];s.demand=[{date:'2027-05-03',type:'O3',count:1}];s.candidates=[{employeeId:'a',date:'2027-05-03',type:'O3'}];s.rhythms=[{employeeId:'a',date:'2027-05-03',mode:'required',expected:'O3'}];
+ const p=A.build(s);assert.equal(p.monthInputs[0].reserved.length,0);assert.equal(new Map(p.monthInputs[0].capacities).get('2027-05-03|O3'),1);
+});
+test('ordered regional OT crew fills workdays across a weekend without counting OT-WE as extra demand',()=>{
+ const M=require('../assets/month-optimizer-core-v1.js'),s=snapshot('2027-01');
+ s.employees=['a','b','c','d','e'].map(id=>({id,shifts:['OT'],weeklyHours:55,employment:'Vollzeit',qualifications:['__sp:team=Leipzig','__sp:monthlyHours=180']}));
+ s.types=[{id:'OT',start:'07:00',end:'16:00'},{id:'OT-WE',start:'07:00',end:'16:00'}];
+ s.policy.solid_planning_rules={enabled:true,confirmedRulesVersion:2,maxConsecutiveShifts:4,minFreeCalendarDays:2,minBlockRestHours:48,maxCalendarWeekHours:55,regionalDayStaffing:{target:3,weekdayCodes:['OT'],specialCodes:['OT-WE'],statesBySite:{Leipzig:'SN',Recklinghausen:'NW'}},orderedMonthlyShiftEmployees:s.employees.map(e=>({employeeId:e.id,code:'OT'}))};
+ const dates=['04','05','06','07','08','11','12','13','14','15'].map(d=>'2027-01-'+d);s.demand=dates.flatMap(date=>s.types.map(t=>({date,type:t.id,count:3})));s.candidates=dates.flatMap(date=>s.employees.map(e=>({employeeId:e.id,date,type:'OT'})));
+ const input=B.unpack(A.build(s).monthInputs[0]),p=M.prepare(input),records=M.checkpointPrimitives.orderedRosterSeed(p,[],(state,r)=>M.feasible(p,state,r.group,r.option));
+ assert.ok(records);const rows=records.flatMap(r=>r.option);assert.equal(rows.length,30);for(const date of dates)assert.equal(rows.filter(a=>a.date===date).length,3);for(const e of p.people.values())assert.deepEqual(S.errors(e,rows,p.solidRules),[]);
+ const E=require('../assets/block-exchange-core-v1.js'),swapped=rows.map(a=>({...a,employeeId:a.employeeId==='a'?'e':a.employeeId==='e'?'a':a.employeeId}));input.adaptiveSearch=true;const cp=E.start(input,swapped);assert.equal(cp.status,'searching');cp.status='limited';const restored=E.context(input,cp).result();assert.equal(restored.preview.length,30);assert.equal(restored.quality.open,0);assert.ok(restored.preview.filter(a=>a.employeeId==='a').length>swapped.filter(a=>a.employeeId==='a').length);for(const e of p.people.values())assert.deepEqual(S.errors(e,restored.preview,p.solidRules),[]);
+});
+test('autonomous preparation shares three regional day positions across all models',()=>{
+ const regional=require('../assets/ot-regional-staffing-core-v1.js');
+ for(const [normal,special,start,end] of [['OT2','OT','08:00','18:00'],['FD','FD-WE','06:00','14:00'],['OT','OT-WE','07:00','16:00']]){
+  const s=snapshot('2027-05'),date='2027-05-27',rule={target:3,statesBySite:{Leipzig:'SN',Recklinghausen:'NW'},weekdayCodes:[normal],specialCodes:[special]};
+  s.policy.solid_planning_rules={enabled:true,timezone:'Europe/Berlin',regionalDayStaffing:rule};
+  s.employees=[['a','Leipzig',normal],['b','Recklinghausen',normal],['c','Recklinghausen',normal],['d','Leipzig',special],['e','Recklinghausen',special],['f','Recklinghausen',special]].map(([id,site,code])=>({id,shifts:[code],weeklyHours:55,employment:'Vollzeit',qualifications:['__sp:team='+site,'__sp:monthlyHours=180'],status:'active'}));
+  s.types=[{id:normal,start,end,active:true},{id:special,start,end,active:true}];s.demand=s.types.map(t=>({date,type:t.id,count:3}));
+  s.candidates=s.employees.filter(e=>regional.allowed(date,e.qualifications[0].split('=')[1],e.shifts[0],rule)).map(e=>({employeeId:e.id,date,type:e.shifts[0]}));
+  const p=A.build(s),requirements=p.metadata.requirements.filter(r=>r.date===date),out=finish(p);
+  assert.equal(requirements.length,1);assert.equal(requirements[0].resource,date+'|REGIONAL-DAY');assert.equal(requirements[0].total,3);
+  assert.equal(out.preview.length,3);assert.ok(out.preview.every(a=>regional.allowed(date,s.employees.find(e=>e.id===a.employeeId).qualifications[0].split('=')[1],a.type,rule)));
+ }
+});
 test('block recovery is available by default for every company and retains the explicit internal fallback',()=>{for(const company of ['one','another-company','new-company']){const s={...snapshot(),company},p=A.build(s);assert.equal(p.monthInputs[0].scopedBlockRecovery,true);assert.equal(p.minimumInput.scopedBlockRecovery,true);assert.doesNotThrow(()=>B.check(p));s.scopedBlockRecovery=false;assert.equal(A.build(s).monthInputs[0].scopedBlockRecovery,false);}});
 test('server snapshot builds a durable legacy-company plan and independently checks full capacity and hours',()=>{const s=snapshot(),before=JSON.stringify(s),p=A.combine([A.build(s)],s),out=finish(p),audit=A.assess(p,out);assert.equal(audit.open,0);assert.equal(audit.errors,0);assert.equal(audit.canApply,true);assert.equal(JSON.stringify(s),before);assert.equal(out.preview.length,4);assert.ok(audit.spread<=8);const forged={...out,preview:out.preview.map((a,i)=>i?{...a,employeeId:out.preview[0].employeeId}:a)};assert.ok(A.assess(p,forged).errors>0);});
 test('unsupported eligibility and candidate shortages stay reviewable, never automatically save',()=>{const s=snapshot();s.candidates=[];const p=A.combine([A.build(s)],s),audit=A.assess(p,finish(p));assert.equal(audit.open,4);assert.equal(audit.canApply,false);assert.equal(audit.diagnosis.classification,'CAPACITY_BOTTLENECK');assert.equal(audit.diagnosis.shortfall,4);});

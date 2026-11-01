@@ -124,6 +124,7 @@
   function explain(slot,simulated=[]){
     const {type,date}=slot;
     if(slot.coverageGroup==='OT-DAY')return 'Die feste OT-Tagdienstgruppe ist unvollständig. Abwesenheiten, persönliche Stundenlimits und Ruhezeiten der hinterlegten Mitarbeiter prüfen.';
+    if(slot.coverageGroup==='REGIONAL-DAY')return 'Die gemeinsame Tagesbesetzung ist offen. Verfügbarkeit, Standort, Feiertag und Schichtfreigaben prüfen.';
     if(slot.coverageGroup){const alternatives=slot.alternatives||[type];return `Gemeinsame Leitung ${slot.coverageLabel}: kein verfügbarer TL unter den aktuellen Regeln. `+alternatives.map(code=>`${code}: ${explain({type:code,date},simulated)}`).join(' ')}
     const durationIssue=window.SFAutoPlanGuard?.shiftDurationIssue?.(type,date);
     if(durationIssue){const t=typeById(type),label=window.SFShiftModels?.description?.(type)||window.SFShiftModels?.label?.(type)||type;return `${label} (${t.start}–${t.end}) dauert ${durationIssue.hours.toLocaleString('de-DE')} Stunden. Die Auto-Planung erlaubt derzeit höchstens ${durationIssue.maximum} Stunden je Schicht. Die Unternehmensgrenze findest du unter Einstellungen → Planung → Maximale Schichtdauer.`;}

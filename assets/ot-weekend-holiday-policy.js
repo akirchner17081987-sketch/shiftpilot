@@ -17,6 +17,8 @@
   function installPolicy(){
     if(typeof root.getSoll!=='function'||root.getSoll.__otPolicy)return false;
     const original=root.getSoll,wrapped=function(date,type){
+      const regional=root.SFCompliance?.policy?.solidPlanningRules?.regionalDayStaffing;
+      if(regional&&[...(regional.weekdayCodes||[]),...(regional.specialCodes||[])].includes(String(type).toUpperCase()))return root.SFShiftModels?.requiredSoll?.(date,String(type).toUpperCase(),original.apply(this,arguments))??original.apply(this,arguments);
       const exception=root.SFSolidPlanningCore?.staffingException?.(date,String(type).toUpperCase(),root.SFCompliance?.policy?.solidPlanningRules);if(exception!=null)return original.apply(this,arguments);
       if(['OT1','OT2','OT3'].includes(String(type).toUpperCase())&&root.SFSolidPlanningCore?.otDayHoliday(date,root.SFCompliance?.policy?.solidPlanningRules))return 0;
       if(String(type).toUpperCase()==='OT'&&!applies(date))return 0;

@@ -31,12 +31,13 @@
     const t=M.find(code),no=String(employee.personnelNo??employee.personnel_no??''),exclusive=M.models.find(x=>x.active&&x.exclusiveEmployees&&x.allowedPersonnelNos?.map(String).includes(no));
     if(exclusive&&exclusive.id!==code)return `Personalnummer ${no} ist ausschließlich für ${exclusive.id} freigegeben.`;
     if(!t)return null;
-    if(['OT1','OT2','OT3'].includes(code)&&date&&solid?.otDayHoliday(date,rules))return 'An Feiertagen entfällt OT1 / OT2 / OT3; bitte die normale OT-Schicht prüfen.';
-    if(code==='OT'&&date&&window.SFOtPolicy?.configured()&&!window.SFOtPolicy.applies(date,employee))return 'OT ist nur am Wochenende oder an einem Feiertag am Einsatzort zulässig.';
+    const regional=rules?.regionalDayStaffing,regionalCodes=regional?[...(regional.weekdayCodes||[]),...(regional.specialCodes||[])]:[];
+    if(!regionalCodes.includes(code)&&['OT1','OT2','OT3'].includes(code)&&date&&solid?.otDayHoliday(date,rules))return 'An Feiertagen entfällt OT1 / OT2 / OT3; bitte die normale OT-Schicht prüfen.';
+    if(!regionalCodes.includes(code)&&code==='OT'&&date&&window.SFOtPolicy?.configured()&&!window.SFOtPolicy.applies(date,employee))return 'OT ist nur am Wochenende oder an einem Feiertag am Einsatzort zulässig.';
     if(t.allowedPersonnelNos&&!t.allowedPersonnelNos.map(String).includes(no))return `${(window.SFShiftModels?.label?.(code)||code)} ist nur für Personalnummern ${t.allowedPersonnelNos.join(', ')} freigegeben.`;
     const team=employee.planningTeam??String((employee.qualifications||[]).find(x=>String(x).startsWith('__sp:planningTeam='))||'').slice(18);
     if(t.requiresPlanningTeam&&!['A','B','C','D','E'].includes(team))return `${(window.SFShiftModels?.label?.(code)||code)} ist ausschließlich für Mitarbeiter in Teams A–E freigegeben.`;
-    if(t.strictWeekdays&&date&&!t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7))return `${code} ist an diesem Wochentag nicht zulässig.`;
+    if(!regionalCodes.includes(code)&&t.strictWeekdays&&date&&!t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7))return `${code} ist an diesem Wochentag nicht zulässig.`;
     if(t.strictTimes&&((start&&start!==t.start)||(end&&end!==t.end)))return `${code} gilt ausschließlich von ${t.start} bis ${t.end} Uhr.`;
     return null;
   };
@@ -46,6 +47,16 @@
   M.coverageTarget=(date,code)=>{const g=M.coverageGroup(code);if(!g)return null;const exception=window.SFSolidPlanningCore?.staffingException?.(date,code,window.SFCompliance?.policy?.solidPlanningRules);if(exception!=null)return exception;const values=g.active.map(t=>typeof dailySoll==='undefined'?null:dailySoll[date]?.[t.id]).filter(x=>x!=null);return values.length?Math.max(...values.map(Number)):g.active.some(t=>t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7))?g.required:0};
   const minutes=value=>{const [h,m]=value.split(':').map(Number);return h*60+m};
   M.coverageInfo=(date,code,simulated=[])=>{
+    const regional=window.SFCompliance?.policy?.solidPlanningRules?.regionalDayStaffing;
+    const regionalCodes=regional?[...(regional.weekdayCodes||[]),...(regional.specialCodes||[])]:[];
+    if(regionalCodes.includes(code)){
+      const service=window.SFRegionalDayStaffing;if(!service)throw Error('Regionale Tagesbesetzung ist nicht verfügbar.');
+      const active=regionalCodes.map(x=>M.find(x)).filter(t=>t?.active);
+      const options=service.alternatives(date,active.map(t=>t.id),regional);
+      const all=[...(typeof assignments==='undefined'?[]:assignments),...simulated];
+      const result=service.group(date,all,regional);
+      return {...result,key:'REGIONAL-DAY',label:'Tagesbesetzung beide Standorte',members:active,active,representative:options[0]||active[0]?.id,alternatives:options,coveredCodes:[...new Set(all.filter(a=>a.date===date&&regionalCodes.includes(a.type)&&a.status!=='CANCELLED'&&a._dbStatus!=='CANCELLED').map(a=>a.type))]};
+    }
     const g=M.coverageGroup(code);if(!g)return null;
     const start=minutes(g.start),end=minutes(g.end)+(g.end<=g.start?1440:0),all=[...(typeof assignments==='undefined'?[]:assignments),...simulated];
     const covered=all.filter(a=>{const t=g.members.find(t=>t.id===a.type);if(!t||a.date!==date||a.status==='CANCELLED'||a._dbStatus==='CANCELLED')return false;const s=minutes(a.start||t.start),e=minutes(a.end||t.end)+(minutes(a.end||t.end)<=s?1440:0);return s<=start&&e>=end});
@@ -69,7 +80,7 @@
     if(t?.strictWeekdays&&!t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7))return minimum(0);
     return minimum(override!=null?Number(override):t&&(t.planningMode==='optional'||!t.optionalWeekdays.includes(new Date(date+'T12:00:00').getDay()||7))?0:fallback);
   };
-  M.requiredSoll=(date,code,fallback,simulated=[])=>{const exception=window.SFSolidPlanningCore?.staffingException?.(date,code,window.SFCompliance?.policy?.solidPlanningRules);if(exception!=null){const group=M.coverageInfo(date,code,simulated);if(!group)return exception;const own=[...(typeof assignments==='undefined'?[]:assignments),...simulated].filter(a=>a.date===date&&a.type===code&&a.status!=='CANCELLED'&&a._dbStatus!=='CANCELLED').length;return own+(group.representative===code?group.missing:0)}let all;const current=()=>all??(all=[...(typeof assignments==='undefined'?[]:assignments),...simulated].filter(a=>a.status!=='CANCELLED'&&a._dbStatus!=='CANCELLED'));const rules=window.SFCompliance?.policy?.solidPlanningRules;if(rules?.enabled&&window.SFSolidPlanningCore){const rule=(rules.conditionalStaffing||[]).find(r=>r.shift===code),rows=(rule||code==='OT2'&&window.SFSolidPlanningCore.otRoster(rules))?current().map(a=>({...a,start:a.start||M.find(a.type)?.start,end:a.end||M.find(a.type)?.end})):[],need=window.SFSolidPlanningCore.required(date,code,rows,rules);if(need!==null)return need;}const g=M.coverageInfo(date,code,simulated);if(g){const own=current().filter(a=>a.date===date&&a.type===code&&a.status!=='CANCELLED').length;return own+(g.representative===code?g.missing:0)}
+  M.requiredSoll=(date,code,fallback,simulated=[])=>{const config=window.SFCompliance?.policy?.solidPlanningRules?.regionalDayStaffing,codes=config?[...(config.weekdayCodes||[]),...(config.specialCodes||[])]:[];if(codes.includes(code)){const group=M.coverageInfo(date,code,simulated),own=[...(typeof assignments==='undefined'?[]:assignments),...simulated].filter(a=>a.date===date&&a.type===code&&a.status!=='CANCELLED'&&a._dbStatus!=='CANCELLED').length;return own+(group.representative===code?group.missing:0)}const exception=window.SFSolidPlanningCore?.staffingException?.(date,code,window.SFCompliance?.policy?.solidPlanningRules);if(exception!=null){const group=M.coverageInfo(date,code,simulated);if(!group)return exception;const own=[...(typeof assignments==='undefined'?[]:assignments),...simulated].filter(a=>a.date===date&&a.type===code&&a.status!=='CANCELLED'&&a._dbStatus!=='CANCELLED').length;return own+(group.representative===code?group.missing:0)}let all;const current=()=>all??(all=[...(typeof assignments==='undefined'?[]:assignments),...simulated].filter(a=>a.status!=='CANCELLED'&&a._dbStatus!=='CANCELLED'));const rules=window.SFCompliance?.policy?.solidPlanningRules;if(rules?.enabled&&window.SFSolidPlanningCore){const rule=(rules.conditionalStaffing||[]).find(r=>r.shift===code),rows=(rule||code==='OT2'&&window.SFSolidPlanningCore.otRoster(rules))?current().map(a=>({...a,start:a.start||M.find(a.type)?.start,end:a.end||M.find(a.type)?.end})):[],need=window.SFSolidPlanningCore.required(date,code,rows,rules);if(need!==null)return need;}const g=M.coverageInfo(date,code,simulated);if(g){const own=current().filter(a=>a.date===date&&a.type===code&&a.status!=='CANCELLED').length;return own+(g.representative===code?g.missing:0)}
     const raw=M.rawRequired(date,code,fallback);
     if(['OT1','OT2'].includes(code)&&M.find('OT2')?.morningOtMinimum&&M.morningOtSwitch(date,current())){
       const own=current().filter(a=>a.date===date&&a.type==='OT1'&&a.status!=='CANCELLED').length;
