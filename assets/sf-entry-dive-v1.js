@@ -68,7 +68,7 @@
     let atlasReady = false, atlasKey = '', atlasRevealAt = 3450, atlasSnapshot = null;
     const atlas = window.SFRegionAtlas?.create(engine, {onReady(ready) {
       atlasReady = !!ready;atlasRevealAt = Math.max(3450,performance.now() - started);
-      if (!disposed) draw(performance.now());
+      if (!disposed && atlasReady) prepareAtlas();
     }});
     const started = performance.now();
     const clamp = value => Math.max(0,Math.min(1,value));
@@ -79,9 +79,25 @@
       canvas.width = Math.round(width * ratio);canvas.height = Math.round(height * ratio);
       ctx.setTransform(ratio,0,0,ratio,0,0);
       // Fixed dimensions throughout the animation keep the city lights stable.
-      const atlasRatio = Math.min(ratio,Math.sqrt(1000000 / Math.max(1,width * height)));
+      const atlasRatio = Math.min(ratio,Math.sqrt(2000000 / Math.max(1,width * height)));
       atlasCanvas.width = Math.max(1,Math.round(width * atlasRatio));atlasCanvas.height = Math.max(1,Math.round(height * atlasRatio));
       atlasContext?.setTransform(atlasRatio,0,0,atlasRatio,0,0);atlasKey = '';atlasSnapshot = null;
+      if (atlasReady) prepareAtlas();
+    }
+    // Draw the shared map once, before it becomes visible. The same camera
+    // then moves this prepared image continuously with the approaching globe.
+    function prepareAtlas() {
+      if (!atlas || !atlasContext || !atlasReady || !width || !height) return;
+      const at = 3450, move = ease((at - 150) / 3300), zoom = ease((at - 850) / 4300);
+      const x = source.x + (width * .5 - source.x) * move;
+      const y = source.y + (height * .46 - source.y) * move;
+      const lon = sourceLongitude * (1 - move) + cameraTarget[0] * move;
+      const lat = 21 * (1 - move) + cameraTarget[1] * move;
+      const radius = Math.max(1,source.radius) * Math.exp(zoom * 3.45);
+      atlasProjection.center([lon,lat]).translate([x,y]).scale(radius * Math.cos(lat * Math.PI / 180));
+      atlasContext.clearRect(0,0,width,height);
+      atlas.render(atlasContext,atlasProjection,width,height,{top:35});
+      atlasSnapshot = {scale:atlasProjection.scale(),anchor:atlasProjection([10,50])};
     }
     function draw(now) {
       const t = now - started, move = ease((t - 150) / 3300);
@@ -134,18 +150,12 @@
         // The local scale of Mercator matches the zoomed sphere at its center.
         // Both the terrain and its labels come from the shared atlas renderer.
         atlasProjection.center(center).translate([cx,cy]).scale(radius * Math.cos(lat * Math.PI / 180));
-        const key = [width,height,lon,lat,radius].join('|');
-        // Redraw expensive geographic details at most every 80 ms; transform
-        // the cached map between redraws so the camera continues every frame.
-        if (!atlasSnapshot || (key !== atlasKey && (t-atlasSnapshot.time >= 80 || zoom === 1))) {
-          atlasContext.clearRect(0,0,width,height);
-          atlas.render(atlasContext,atlasProjection,width,height,{top:35});atlasKey = key;
-          atlasSnapshot = {time:t,scale:atlasProjection.scale(),anchor:atlasProjection([10,50])};
+        if (atlasSnapshot) {
+          const anchor=atlasProjection([10,50]), ratio=atlasProjection.scale()/atlasSnapshot.scale;
+          ctx.save();ctx.globalAlpha *= atlasBlend;
+          ctx.translate(anchor[0],anchor[1]);ctx.scale(ratio,ratio);
+          ctx.drawImage(atlasCanvas,-atlasSnapshot.anchor[0],-atlasSnapshot.anchor[1],width,height);ctx.restore();
         }
-        const anchor=atlasProjection([10,50]), ratio=atlasProjection.scale()/atlasSnapshot.scale;
-        ctx.save();ctx.globalAlpha *= atlasBlend;
-        ctx.translate(anchor[0],anchor[1]);ctx.scale(ratio,ratio);
-        ctx.drawImage(atlasCanvas,-atlasSnapshot.anchor[0],-atlasSnapshot.anchor[1],width,height);ctx.restore();
       }
       if (target && d3.geoDistance(center,target) < Math.PI / 2) {
         const globePin = projection(target), mapPin = atlasBlend ? atlasProjection(target) : globePin;
