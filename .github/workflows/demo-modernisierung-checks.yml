@@ -1,0 +1,29 @@
+name: Demo isolation and current views
+on:
+  push:
+    branches: [codex/demo-modernisierung-20261101]
+  pull_request:
+    paths:
+      - 'assets/demo-*.js'
+      - 'assets/today-workspace-v3.js'
+      - 'demo.html'
+      - 'tests/e2e/demo-current.spec.mjs'
+      - '.github/workflows/demo-modernisierung-checks.yml'
+permissions:
+  contents: read
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630c7d41591448aeed058efed
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - run: |
+          node tests/demo-fixture-server.cjs &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          E2E_BASE_URL=http://127.0.0.1:4173 npx playwright test tests/e2e/demo-current.spec.mjs --retries=0 --workers=1

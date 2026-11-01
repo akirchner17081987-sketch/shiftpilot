@@ -56,14 +56,7 @@
 
   function seedTime(){
     const old=read(TIME_KEY,null);if(old)return old;
-    const mon=mondayOf(new Date()),d=i=>plusDays(mon,i),next=i=>plusDays(mon,i+1);
-    const rows=[
-      {assignment_id:'demo-time-01',employee_id:'demo-e01',employee_name:'Anna Becker',shift_code:'O1',starts_at:isoLocal(d(0),7),ends_at:isoLocal(d(0),15),planned_break_minutes:30,actual_start:isoLocal(d(0),7,4),actual_end:isoLocal(d(0),15,12),actual_break_minutes:30,entry_status:'recorded',employee_note:'Verkehrsbedingt wenige Minuten später gestartet.',manager_note:'',correction_note:''},
-      {assignment_id:'demo-time-02',employee_id:'demo-e02',employee_name:'Lukas Fischer',shift_code:'O2',starts_at:isoLocal(d(0),15),ends_at:isoLocal(d(0),23),planned_break_minutes:30,actual_start:isoLocal(d(0),14,55),actual_end:isoLocal(d(0),23,20),actual_break_minutes:30,entry_status:'confirmed',employee_note:'Übergabe verlängert.',manager_note:'Geprüft und bestätigt.',correction_note:''},
-      {assignment_id:'demo-time-03',employee_id:'demo-e03',employee_name:'Mira Schulz',shift_code:'O1S',starts_at:isoLocal(d(1),18),ends_at:isoLocal(next(1),4),planned_break_minutes:30,actual_start:isoLocal(d(1),18,20),actual_end:isoLocal(next(1),4),actual_break_minutes:30,entry_status:'recorded',employee_note:'Verspäteter Dienstantritt gemeldet.',manager_note:'',correction_note:''},
-      {assignment_id:'demo-time-04',employee_id:'demo-e04',employee_name:'Jonas Wagner',shift_code:'QA',starts_at:isoLocal(d(1),20),ends_at:isoLocal(next(1),6),planned_break_minutes:30,actual_start:isoLocal(d(1),20),actual_end:isoLocal(next(1),6),actual_break_minutes:30,entry_status:'confirmed',employee_note:'',manager_note:'Planmäßig.',correction_note:''},
-      {assignment_id:'demo-time-05',employee_id:'demo-e05',employee_name:'Lea Hoffmann',shift_code:'Teamleiter',starts_at:isoLocal(d(2),8),ends_at:isoLocal(d(2),16),planned_break_minutes:30,actual_start:isoLocal(d(2),8),actual_end:isoLocal(d(2),16,35),actual_break_minutes:30,entry_status:'correction_requested',employee_note:'Längere Einsatznachbesprechung.',manager_note:'',correction_note:'Bitte Ende der Nachbesprechung noch einmal prüfen.'}
-    ];write(TIME_KEY,rows);return rows;
+    write(TIME_KEY,[]);return [];
   }
 
   function seedDatev(){
@@ -93,7 +86,29 @@
   }
 
   let marketRows=seedMarketplace(),disruptionRows=seedDisruptionOffers(),timeRows=seedTime(),datev=seedDatev(),accountSettings=seedAccountSettings();
-  const saveMarket=()=>write(MARKET_KEY,marketRows),saveDisruptions=()=>write(DISRUPTION_KEY,disruptionRows),saveTime=()=>write(TIME_KEY,timeRows),saveDatev=()=>write(DATEV_KEY,datev),saveAccount=()=>write(ACCOUNT_KEY,accountSettings);
+  const saveMarket=()=>write(MARKET_KEY,marketRows),saveDisruptions=()=>write(DISRUPTION_KEY,disruptionRows),saveDatev=()=>write(DATEV_KEY,datev),saveAccount=()=>write(ACCOUNT_KEY,accountSettings);
+  function syncTimeRows(){
+    const people=read('sf_demo_data_employees',[]),plans=read('sf_demo_data_assignments',[]),entries=read('sf_demo_data_timeEntries',{}),rows=read(TIME_KEY,timeRows);
+    if(!Array.isArray(plans)||!window.SFSolidPlanningCore?.instant)return rows;
+    const known=new Set(rows.map(row=>row.assignment_id));
+    const nextDay=date=>{const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+1);return d.toISOString().slice(0,10)};
+    const stampAt=(date,time)=>new Date(window.SFSolidPlanningCore.instant(date,String(time).slice(0,5),'Europe/Berlin')).toISOString();
+    for(const a of plans){
+      if(!a?.id||!a.date||!a.start||!a.end||!a.employeeId||known.has(a.id)||!(a.publishedAt||a._dbStatus==='PUBLISHED'))continue;
+      const employee=people.find(p=>p.id===a.employeeId);if(!employee)continue;
+      const entry=entries[a.id],endDate=a.end<=a.start?nextDay(a.date):a.date;
+      const actualEnd=entry?.actualEnd?(entry.actualEnd<=entry.actualStart?nextDay(a.date):a.date):null;
+      rows.push({assignment_id:a.id,employee_id:a.employeeId,employee_name:[employee.first,employee.last].filter(Boolean).join(' '),shift_code:a.type,starts_at:stampAt(a.date,a.start),ends_at:stampAt(endDate,a.end),planned_break_minutes:Number(a.pause)||0,actual_start:entry?.actualStart?stampAt(a.date,entry.actualStart):null,actual_end:actualEnd?stampAt(actualEnd,entry.actualEnd):null,actual_break_minutes:entry?.actualStart?Number(entry.breakMin)||0:null,entry_status:entry?.status||'open',employee_note:'',manager_note:'',correction_note:''});
+    }
+    write(TIME_KEY,rows);return rows;
+  }
+  function saveTime(){
+    write(TIME_KEY,timeRows);
+    const data=read('sf_demo_data_timeEntries',{}),parts=stamp=>stamp?new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Berlin',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(stamp)):null;
+    for(const row of timeRows){if(!row.assignment_id||!row.actual_start)continue;data[row.assignment_id]={actualStart:parts(row.actual_start),actualEnd:parts(row.actual_end),breakMin:Number(row.actual_break_minutes)||0,status:row.entry_status};}
+    write('sf_demo_data_timeEntries',data);
+    try{if(typeof timeEntries!=='undefined')timeEntries=data}catch{}
+  }
 
   function timeBundle(){
     const names=[['demo-e01','Anna Becker','1001',2250],['demo-e02','Lukas Fischer','1002',2310],['demo-e03','Mira Schulz','1003',1800],['demo-e04','Jonas Wagner','1004',2250],['demo-e05','Lea Hoffmann','1005',2400]];
@@ -241,19 +256,19 @@
       if(row.status!=='PENDING_MANAGER')return {data:null,error:{message:'Dieser Demo-Vorgang wurde bereits bearbeitet.'}};
       row.status=args.p_decision==='APPROVE'?'APPLIED':'REJECTED_MANAGER';row.manager_comment=args.p_comment||'';row.reviewed_at=new Date().toISOString();saveMarket();return {data:{id:row.id,status:row.status},error:null};
     }
-    if(name==='manager_central_time_entries'){timeRows=read(TIME_KEY,timeRows);return {data:{as_of:new Date().toISOString(),timezone:'Europe/Berlin',rows:clone(timeRows),qr_rows:[],confirmed_summary:[]},error:null}}
-    if(name==='manager_list_time_entries'){timeRows=read(TIME_KEY,timeRows);return {data:clone(timeRows),error:null}}
+    if(name==='manager_central_time_entries'){timeRows=syncTimeRows();return {data:{as_of:new Date().toISOString(),timezone:'Europe/Berlin',rows:clone(timeRows),qr_rows:[],confirmed_summary:[]},error:null}}
+    if(name==='manager_list_time_entries'){timeRows=syncTimeRows();return {data:clone(timeRows),error:null}}
     if(name==='manager_save_time_entry'){
-      timeRows=read(TIME_KEY,timeRows);
+      timeRows=syncTimeRows();
       const row=timeRows.find(x=>x.assignment_id===args.p_assignment_id);if(!row)return {data:null,error:{message:'Demo-Zeiteintrag wurde nicht gefunden.'}};
       row.actual_start=args.p_actual_start;row.actual_end=args.p_actual_end;row.actual_break_minutes=Number(args.p_break_minutes||0);row.manager_note=args.p_note||'';row.entry_status=args.p_confirm?'confirmed':'recorded';row.correction_note='';saveTime();return {data:clone(row),error:null};
     }
     if(name==='manager_bulk_record_time_entries'){
-      timeRows=read(TIME_KEY,timeRows);const start=String(args.p_start_date||''),end=String(args.p_end_date||''),now=Date.now();let updated=0,existing=0,future=0;
+      timeRows=syncTimeRows();const start=String(args.p_start_date||''),end=String(args.p_end_date||''),now=Date.now();let updated=0,existing=0,future=0;
       timeRows.filter(row=>String(row.starts_at||'').slice(0,10)>=start&&String(row.starts_at||'').slice(0,10)<=end).forEach(row=>{if(row.entry_status!=='open'||row.actual_start||row.actual_end){existing++;return}if(new Date(row.ends_at).getTime()>now){future++;return}row.actual_start=row.starts_at;row.actual_end=row.ends_at;row.actual_break_minutes=Number(row.planned_break_minutes||0);row.manager_note=args.p_note||'';row.entry_status=args.p_confirm?'confirmed':'recorded';row.correction_note='';updated++});saveTime();return {data:{total:updated+existing+future,updated,status:args.p_confirm?'confirmed':'recorded',skippedExisting:existing,skippedFuture:future,skippedClosed:0,skippedUnpublished:0,skippedInvalid:0},error:null};
     }
     if(name==='manager_review_time_entry'){
-      timeRows=read(TIME_KEY,timeRows);
+      timeRows=syncTimeRows();
       const row=timeRows.find(x=>x.assignment_id===args.p_assignment_id);if(!row)return {data:null,error:{message:'Demo-Zeiteintrag wurde nicht gefunden.'}};
       if(args.p_decision==='CORRECTION'){row.entry_status='correction_requested';row.correction_note=args.p_comment||'Bitte Zeitangabe prüfen.';}saveTime();return {data:clone(row),error:null};
     }
@@ -288,7 +303,7 @@
       rows.unshift(row);write(ABSENCE_KEY,rows);return {data:{id:row.id,status:row.status,saved:true,demo:true},error:null};
     }
     if(name==='employee_submit_time_entry'){
-      timeRows=read(TIME_KEY,timeRows);let row=timeRows.find(x=>String(x.assignment_id)===String(args.p_assignment_id));
+      timeRows=syncTimeRows();let row=timeRows.find(x=>String(x.assignment_id)===String(args.p_assignment_id));
       if(!row){const assignment=assignmentRows().find(x=>String(x.id)===String(args.p_assignment_id));row={assignment_id:String(args.p_assignment_id),employee_id:assignment?.employee_id||'demo-e01',employee_name:'Anna Becker',shift_code:assignment?.shift_code||'Schicht',starts_at:assignment?.starts_at||args.p_actual_start,ends_at:assignment?.ends_at||args.p_actual_end,planned_break_minutes:Number(args.p_break_minutes||0),manager_note:'',correction_note:''};timeRows.push(row)}
       row.actual_start=args.p_actual_start;row.actual_end=args.p_actual_end;row.actual_break_minutes=Number(args.p_break_minutes||0);row.employee_note=String(args.p_note||'').slice(0,1000);row.entry_status='recorded';row.submitted_at=new Date().toISOString();row.correction_note='';saveTime();return {data:clone(row),error:null};
     }
@@ -310,7 +325,7 @@
       if(table==='shift_swap_requests')source=marketRows;
       if(table==='employees')source=employeeRows();
       if(table==='shift_assignments')source=assignmentRows();
-      if(table==='time_entries'){timeRows=read(TIME_KEY,timeRows);source=timeRows.map(x=>({assignment_id:x.assignment_id,actual_start:x.actual_start,actual_end:x.actual_end,break_minutes:x.actual_break_minutes,status:x.entry_status,employee_note:x.employee_note,manager_note:x.manager_note,correction_note:x.correction_note,submitted_at:x.submitted_at||null,confirmed_at:x.confirmed_at||null,version:x.version||1}))}
+      if(table==='time_entries'){timeRows=syncTimeRows();source=timeRows.map(x=>({assignment_id:x.assignment_id,actual_start:x.actual_start,actual_end:x.actual_end,break_minutes:x.actual_break_minutes,status:x.entry_status,employee_note:x.employee_note,manager_note:x.manager_note,correction_note:x.correction_note,submitted_at:x.submitted_at||null,confirmed_at:x.confirmed_at||null,version:x.version||1}))}
       if(table==='shift_assignment_confirmations')source=[];
       if(table==='absences')source=absenceRows();
       if(source){

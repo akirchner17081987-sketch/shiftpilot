@@ -20,6 +20,14 @@ test('current overview receives local demo records and rejects unhandled RPCs',a
  assert.equal(result.data.assignments[0].employee_id,'e1');
  assert.equal(result.data.assignments[0].status,'PUBLISHED');
  assert.doesNotThrow(()=>today.analyze(result.data));
+ const initial=await client.rpc('manager_list_time_entries',{});
+ assert.equal(initial.data[0].assignment_id,'a1');
+ assert.equal(initial.data[0].actual_start,null);
+ const planned=result.data.assignments[0];
+ assert.equal((await client.rpc('manager_save_time_entry',{p_assignment_id:'a1',p_actual_start:planned.start,p_actual_end:planned.end,p_break_minutes:30,p_confirm:true})).error,null);
+ const refreshed=await client.rpc('manager_today_workspace',{p_company_id:'demo-local-company'});
+ assert.equal(refreshed.data.times[0].id,'a1');
+ assert.equal(refreshed.data.times[0].status,'confirmed');
  const report=await client.rpc('manager_reports_workspace',{p_company_id:'demo-local-company',p_start_date:todayDate(),p_end_date:todayDate()});
  assert.equal(report.error,null);
  assert.equal(require('../assets/reports-workspace-core-v1.js').analyze(report.data).summary.duties,1);
