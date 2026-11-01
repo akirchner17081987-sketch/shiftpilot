@@ -30,3 +30,59 @@
 #sfHelpModal .sf-help-article .sf-guide-controls button:disabled{opacity:.4;cursor:default}
 @media(max-width:720px){#sfHelpModal .sf-guide-welcome{grid-template-columns:1fr;padding:16px}#sfHelpModal .sf-guide-welcome aside{display:none}#sfHelpModal .sf-guide-welcome h4{font-size:20px}}
 @media(max-width:380px){#sfHelpModal .sf-guide-shortcuts{grid-template-columns:1fr}}
+/* Übersicht: Themen in überschaubare Bereiche bündeln. */
+#sfHelpModal .sf-help{grid-template-columns:190px minmax(0,1fr);color:#edf8ff}
+#sfHelpModal .sf-help-head{background:#0c1b2a}
+#sfHelpModal .sf-help-main{scroll-behavior:smooth;padding:26px 30px 38px}
+#sfHelpModal .sf-help-main>h3{font-size:23px;letter-spacing:-.025em}
+#sfHelpModal .sf-help-main>p{margin-bottom:18px}
+#sfHelpModal .sf-help-nav{padding:18px 11px}
+#sfHelpModal .sf-help-nav button{min-height:46px;margin-bottom:5px}
+#sfHelpModal .sf-help-nav b{font-size:12px}
+#sfHelpModal .sf-help-hero{position:relative;display:flex;align-items:center;justify-content:space-between;min-height:176px;overflow:hidden;padding:23px 29px;border:1px solid #285669;border-radius:17px;background:radial-gradient(circle at 85% 50%,#176b72 0,#153b4b 25%,#102737 67%,#112333 100%)}
+#sfHelpModal .sf-help-hero>div:first-child{z-index:1}
+#sfHelpModal .sf-help-eyebrow,#sfHelpModal .sf-help-section-head span{color:#55dccb;font-size:10px;letter-spacing:.16em;font-weight:800}
+#sfHelpModal .sf-help-hero h4{margin:8px 0;color:#f4ffff;font-size:28px;line-height:1.12;letter-spacing:-.03em}
+#sfHelpModal .sf-help-hero p{margin:8px 0 14px;color:#b5ced8;font-size:12px}
+#sfHelpModal .sf-help-hero button{display:inline-flex;gap:20px;align-items:center;background:#42dec4;color:#062b29;border:0;border-radius:8px;padding:9px 13px;font-size:12px;font-weight:800;cursor:pointer}
+#sfHelpModal .sf-help-hero-orb{width:140px;height:140px;flex:0 0 140px;display:grid;place-items:center;border:1px solid #6eecda65;border-radius:50%;background:radial-gradient(circle,#7cf4df 0,#1a9d98 30%,#154a59 58%,transparent 70%);box-shadow:0 0 45px #36dac73d,inset 0 0 30px #5ddcc833}
+#sfHelpModal .sf-help-hero-orb span{color:white;font-size:44px;text-shadow:0 0 20px #e4fff7}
+#sfHelpModal .sf-help-section-head{margin:23px 0 10px}
+#sfHelpModal .sf-help-section-head h4{margin:5px 0 0;font-size:16px;color:#edf9fc}
+#sfHelpModal .sf-help-group-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+#sfHelpModal .sf-help-group-card,#sfHelpModal .sf-help-category-card,#sfHelpModal .sf-help-feature-card{display:flex;align-items:center;gap:11px;min-width:0;text-align:left;border:1px solid #25475a;border-radius:11px;background:#102536;color:#eaf8fc;cursor:pointer}
+#sfHelpModal .sf-help-group-card{padding:13px;min-height:78px}
+#sfHelpModal .sf-help-group-card:hover,#sfHelpModal .sf-help-category-card:hover,#sfHelpModal .sf-help-feature-card:hover{border-color:#4bdac7;background:#153344}
+#sfHelpModal .sf-help-group-card>span:nth-child(2),#sfHelpModal .sf-help-category-card>span:first-child,#sfHelpModal .sf-help-feature-card>span:nth-child(2){display:flex;flex:1;min-width:0;flex-direction:column;gap:4px}
+#sfHelpModal .sf-help-group-card b,#sfHelpModal .sf-help-category-card b,#sfHelpModal .sf-help-feature-card b{font-size:12px;line-height:1.3;color:#f0fbff}
+#sfHelpModal .sf-help-group-card small,#sfHelpModal .sf-help-category-card small,#sfHelpModal .sf-help-feature-card small{font-size:11px;line-height:1.4;color:#a5c2ce}
+#sfHelpModal .sf-help-group-icon,#sfHelpModal .sf-help-feature-icon{display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;border-radius:10px;background:#17474a;color:#72ebd7;font-size:18px}
+#sfHelpModal .sf-help-card-arrow{align-self:flex-start;color:#6ddacb}
+#sfHelpModal .sf-help-feature-grid,#sfHelpModal .sf-help-category-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+#sfHelpModal .sf-help-feature-card,#sfHelpModal .sf-help-category-card{padding:12px;min-height:68px}
+#sfHelpModal .sf-help-back{align-self:flex-start;margin-bottom:8px;padding:5px 0;border:0;background:transparent;color:#74e5d4;font-size:12px;font-weight:700;cursor:pointer}
+#sfHelpModal .sf-help-article em{display:inline-block;margin:3px 0 0 8px;border-radius:5px;padding:2px 6px;background:#17483f;color:#9af2df;font-size:10px;font-style:normal;font-weight:700;white-space:nowrap}
+#sfHelpModal .sf-help-more-detail{margin-top:15px;color:#b4c7d7}
+#sfHelpModal .sf-help-more-detail summary{cursor:pointer;color:#8ce8d5;font-weight:700}
+#sfHelpModal .sf-help-more-detail div{margin-top:10px}
+#sfHelpModal .sf-help-guide{margin-top:0;border-top:0;padding-top:5px}
+#sfHelpModal :is(button,input):focus-visible{outline:2px solid #6aebd8;outline-offset:2px}
+html[data-sf-theme="light"] #sfHelpModal .sf-help-head{background:#f5fafb}
+html[data-sf-theme="light"] #sfHelpModal .sf-help-hero{background:radial-gradient(circle at 85% 50%,#c7f2ed,#dcefed 35%,#eff9f8 80%);border-color:#a9d6d0}
+html[data-sf-theme="light"] #sfHelpModal .sf-help-hero h4,html[data-sf-theme="light"] #sfHelpModal .sf-help-section-head h4,html[data-sf-theme="light"] #sfHelpModal :is(.sf-help-group-card,.sf-help-category-card,.sf-help-feature-card) b{color:#113b48}
+html[data-sf-theme="light"] #sfHelpModal .sf-help-eyebrow,html[data-sf-theme="light"] #sfHelpModal .sf-help-section-head span{color:#087a70}
+html[data-sf-theme="light"] #sfHelpModal :is(.sf-help-group-card,.sf-help-category-card,.sf-help-feature-card){background:#f5fbfc;border-color:#c6dfe2;color:#183b48}
+html[data-sf-theme="light"] #sfHelpModal :is(.sf-help-group-card,.sf-help-category-card,.sf-help-feature-card):hover{background:#e4f6f3;border-color:#4daea3}
+html[data-sf-theme="light"] #sfHelpModal .sf-help-group-icon,html[data-sf-theme="light"] #sfHelpModal .sf-help-feature-icon{background:#d2f0e9;color:#0b766a}
+html[data-sf-theme="light"] #sfHelpModal .sf-help-article em{background:#ddf4ed;color:#176a5c}
+html[data-sf-theme="light"] #sfHelpModal .sf-help-back,html[data-sf-theme="light"] #sfHelpModal .sf-help-more-detail summary{color:#087a70}
+@media(max-width:900px){#sfHelpModal .sf-help-group-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:720px){#sfHelpModal .sf-help{grid-template-columns:minmax(0,1fr)}#sfHelpModal .sf-help-main{padding:16px 15px 28px}#sfHelpModal .sf-help-nav button{flex:0 0 auto;width:auto;min-width:0;max-width:none;min-height:40px;padding:8px 12px}#sfHelpModal .sf-help-hero{padding:20px;min-height:165px}#sfHelpModal .sf-help-hero h4{font-size:23px}#sfHelpModal .sf-help-hero-orb{width:84px;height:84px;flex-basis:84px}#sfHelpModal .sf-help-hero-orb span{font-size:28px}}
+@media(max-width:450px){#sfHelpModal .sf-help-group-grid,#sfHelpModal .sf-help-feature-grid,#sfHelpModal .sf-help-category-grid{grid-template-columns:1fr}#sfHelpModal .sf-help-hero-orb{width:60px;height:60px;flex-basis:60px}#sfHelpModal .sf-help-hero{padding:17px}#sfHelpModal .sf-help-group-card{min-height:65px}}
+html[data-sf-theme="light"] #sfHelpModal .sf-help-guide,html[data-sf-theme="light"] #sfHelpModal .sf-help-more-detail{color:#294953}
+html[data-sf-theme="light"] #sfHelpModal .sf-help-guide h4{color:#173d48}
+html[data-sf-theme="light"] #sfHelpModal .sf-guide-step{background:#eaf8f6;border-color:#badbd6}
+html[data-sf-theme="light"] #sfHelpModal .sf-guide-count{color:#087a70}
+html[data-sf-theme="light"] #sfHelpModal .sf-help-guide figure{background:#f6fbfc;border-color:#bdd8da}
+html[data-sf-theme="light"] #sfHelpModal .sf-help-guide figcaption{border-color:#bdd8da;color:#365a62}
+html[data-sf-theme="light"] #sfHelpModal .sf-help-guide figcaption a{color:#087a70}
