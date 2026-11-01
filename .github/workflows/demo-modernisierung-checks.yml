@@ -7,6 +7,9 @@ on:
       - 'assets/demo-*.js'
       - 'assets/today-workspace-v3.js'
       - 'demo.html'
+      - 'index.html'
+      - 'assets/sf-entry-access-v1.css'
+      - 'tests/browser/entry-access-qa.cjs'
       - 'tests/e2e/demo-current.spec.mjs'
       - '.github/workflows/demo-modernisierung-checks.yml'
 permissions:
@@ -22,6 +25,7 @@ jobs:
           node-version: '22'
       - run: npm ci --no-audit --no-fund
       - run: npx playwright install --with-deps chromium
+      - run: npm run build && node tests/browser/entry-access-qa.cjs
       - run: |
           node tests/demo-fixture-server.cjs &
           server_pid=$!
