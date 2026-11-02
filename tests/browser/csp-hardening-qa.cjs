@@ -87,7 +87,7 @@ async function main(){
   demoCalls.push(u.pathname+':'+request.method());
   const logged=request.method()==='POST'||!!request.headers().authorization;
   await r.fulfill({status:logged?200:401,headers,contentType:'application/json',body:JSON.stringify({ok:logged,accessToken:'fictitious-demo-token',expiresAt:new Date(Date.now()+3600000).toISOString()})});return true;
- });await demo.page.locator('#demoUser').fill('FIKTIV');await demo.page.locator('#demoPassword').fill('fiktives-demo-passwort');await demo.page.locator('#demoSubmit').click();
+ });await demo.page.locator('#sfEmail').fill('FIKTIV');await demo.page.locator('#sfPassword').fill('fiktives-demo-passwort');await demo.page.locator('#sfAuthSubmit').click();
  await demo.page.waitForFunction(()=>window.__sfDemoModeV1&&window.SFBackend?.ready&&!document.documentElement.classList.contains('sf-demo-booting'),null,{timeout:45000}).catch(async e=>{console.error('Demo',demo.errors,await demo.page.evaluate(()=>({violations:cspViolations,text:document.body.innerText.slice(-1500)})));throw e;});
  assert.ok(demoCalls.some(x=>x.endsWith('demo-auth:POST')));await clean(demo,'demo document rewrite and boot');
  const exports=await pageFor('/__exports');const generated=await exports.page.evaluate(async()=>{
