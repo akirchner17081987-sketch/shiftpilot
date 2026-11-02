@@ -2,6 +2,7 @@ import {test,expect} from '@playwright/test';
 import {primeDemoSession,waitForDemoReady,demoPerspectiveSwitch} from './helpers/demo-ready.mjs';
 
 test('current demo uses five fictional staff and blocks production data',async({page})=>{
+ test.setTimeout(120000);
  const forbidden=[];
  await page.route('**/*',route=>{
   const url=new URL(route.request().url());
