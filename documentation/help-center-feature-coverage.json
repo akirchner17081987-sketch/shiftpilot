@@ -3028,6 +3028,12 @@
       "category": "auto",
       "area": "Gezielte Ersatzplanung, ausdrückliche Fixierung, Vorprüfung vor dem Lauf und lokale Laufzeitmessung",
       "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/sf-dialog-v1.js",
+      "category": "settings",
+      "area": "Zentrale Bestätigungsdialoge für Unternehmens- und Standortverwaltung",
+      "kind": "feature-or-support"
     }
   ],
   "categoryCoverage": [
@@ -3700,7 +3706,7 @@
     "correctedArticleCount": 2,
     "articleCount": 284,
     "categoryCount": 22,
-    "assetJavaScriptCount": 239
+    "assetJavaScriptCount": 240
   },
   "incrementalUpdate": {
     "date": "2026-10-27",
