@@ -23,12 +23,14 @@ begin
    if handovers>0 then reasons:=array_append(reasons,handovers||' Schichtübergabe(n)'); end if;
    raise exception using errcode='23503', message='Löschen nicht möglich. Zugeordnet: '||array_to_string(reasons,', ')||'. Bitte Zuordnungen prüfen oder Standort archivieren.';
  end if;
- delete from public.company_locations where id=p_site_id and company_id=p_company_id;
+ begin
+  delete from public.company_locations where id=p_site_id and company_id=p_company_id;
+ exception when foreign_key_violation then
+  raise exception using errcode='23503',message='Der Standort wird noch verwendet. Bitte Zuordnungen prüfen oder Standort archivieren.';
+ end;
  insert into public.audit_events(company_id,event_type,entity_type,entity_id,actor_id,actor_role,old_values,new_values,metadata)
  select p_company_id,'COMPANY_LOCATION_DELETED','company_location',p_site_id,auth.uid(),cm.role,to_jsonb(s),null,jsonb_build_object('backendCaptured',true)
  from public.company_members cm where cm.company_id=p_company_id and cm.user_id=auth.uid();
-exception when foreign_key_violation then
- raise exception using errcode='23503',message='Der Standort wird noch verwendet. Bitte Zuordnungen prüfen oder Standort archivieren.';
 end;
 $$;
 create or replace function public.manager_delete_company_location(p_company_id uuid,p_site_id uuid,p_expected_revision bigint)
