@@ -47,16 +47,18 @@ const root=path.resolve(__dirname,'../..');
     return{data:{ok:true,pin_required:false,employees:[{employee_id:'employee',name:'Fiktive Testperson',personnel_no:'FIKTIV',pin_ready:false,legacy_allowed:true}]}};
    }}};
   });
+  await page.addScriptTag({path:path.join(root,'assets/sf-dialog-v1.js')});
   await page.addScriptTag({path:path.join(root,'assets/supabase-qr-terminal-admin-v1.js')});
   await page.evaluate(()=>window.SFBackend.qrTerminalAdmin.refresh());
-  page.on('dialog',d=>d.accept());await page.locator('[data-qrt-desktop]').click();await page.waitForFunction(()=>window.desktopEnabled);
+  await page.locator('[data-qrt-desktop]').click();await page.locator('[data-sf-dialog-confirm]').click();await page.waitForFunction(()=>window.desktopEnabled);
   await page.waitForFunction(()=>document.querySelector('[data-qrt-desktop]').textContent.includes('ausschalten'));
   assert.ok(await page.evaluate(()=>window.syntheticCalls.some(c=>c.name==='manager_qr_desktop_access'&&c.p_terminal_id==='terminal'&&c.p_enabled===true&&c.p_expected_enabled===false)));passed++;
   assert.equal(await page.locator('#sfQrTerminalAdmin > :first-child').getAttribute('id'),'sfQrPinAccess');assert.equal(await page.locator('#sfQrPinAdminOpen').isVisible(),true);await page.locator('#sfQrPinAdminOpen').click();await page.locator('#sfQrPinAdminModal').waitFor();assert.equal(await page.locator('#sfQrPinEnable').isDisabled(),true);assert.ok(await page.evaluate(()=>window.syntheticMfa>0));passed++;
-  await page.locator('[data-pin-code]').click();await page.locator('#sfQrPinSetupCode').waitFor();assert.equal(await page.locator('#sfQrPinSetupCode').textContent(),'482719530618');assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);passed++;
+  await page.locator('[data-pin-code]').click();await page.locator('[data-sf-dialog-confirm]').click();await page.locator('#sfQrPinSetupCode').waitFor();assert.equal(await page.locator('#sfQrPinSetupCode').textContent(),'482719530618');assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);passed++;
   await page.evaluate(()=>window.SFBackend.companyId='different');await page.locator('#sfQrPinAdminModal').waitFor({state:'detached'});assert.equal(await page.locator('#sfQrPinSetupCode').count(),0);passed++;
   await context.close();
  }
  console.log(JSON.stringify({passed,viewports:['desktop','mobile'],realServiceCalls:0}));
  }finally{await browser.close()}
 })().catch(e=>{console.error(e);process.exitCode=1});
+
