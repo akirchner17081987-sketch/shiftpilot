@@ -36,6 +36,12 @@ test('current demo uses five fictional staff and blocks production data',async({
   return {duplicates:keys.filter((key,i)=>keys.indexOf(key)!==i),canPlan:window.SFBackend.can('plan'),role:window.SFBackend.accessRole};
  });
  expect(planIntegrity.duplicates).toEqual([]);expect(planIntegrity.canPlan).toBe(true);expect(planIntegrity.role).toBe('ADMIN');
+ const assignmentCheck=await page.evaluate(()=>{
+  const date=new Date();date.setDate(date.getDate()+120);const day=[date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-');
+  window.assignEmployeeByDrop('demo-e01','O1',day);
+  return JSON.parse(sessionStorage.getItem('sf_demo_data_assignments')||'[]').some(a=>a.employeeId==='demo-e01'&&a.type==='O1'&&a.date===day);
+ });
+ expect(assignmentCheck).toBe(true);
 
  await page.evaluate(()=>window.switchView('schedule'));
  await expect(page.locator('#view-schedule')).toHaveClass(/active/);
