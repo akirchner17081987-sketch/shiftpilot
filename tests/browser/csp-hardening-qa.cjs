@@ -17,7 +17,7 @@ async function main(){
   if(u.pathname==='/__events-fixture.js'){res.setHeader('Content-Type','text/javascript');return res.end(eventsFixture);}
   if(u.pathname==='/__prep.js'){res.setHeader('Content-Type','text/javascript');return res.end('window.qa={role:'+JSON.stringify(role)+',start:performance.now(),rpcs:[],writes:[],today:'+JSON.stringify(data)+'};');}
   if(u.pathname==='/__parsed.js'){res.setHeader('Content-Type','text/javascript');return res.end('qa.parsedMs=performance.now()-qa.start;');}
-  const rel=u.pathname==='/'?'index.html':decodeURIComponent(u.pathname).slice(1),file=path.resolve(dist,rel);
+  const rel=u.pathname==='/'?'index.html':u.pathname==='/demo'?'demo.html':decodeURIComponent(u.pathname).slice(1),file=path.resolve(dist,rel);
   if(!file.startsWith(dist+path.sep)||!fs.existsSync(file)||!fs.statSync(file).isFile()){res.statusCode=404;return res.end();}
   const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.png':'image/png','.ico':'image/x-icon','.webmanifest':'application/manifest+json'};res.setHeader('Content-Type',mime[path.extname(file)]||'application/octet-stream');
   let body=fs.readFileSync(file);
