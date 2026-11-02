@@ -37,7 +37,7 @@ test('current demo uses five fictional staff and blocks production data',async({
   const overview=await client.rpc('manager_today_workspace',{p_company_id:'demo-local-company'});
   const market=await client.rpc('manager_list_shift_marketplace',{});
   const pending=market.data?.find(row=>row.status==='PENDING_MANAGER');
-  if(!pending)return {error:'Kein verknüpftes Demo-Angebot zur Prüfung vorhanden'};
+  if(!pending)return {error:JSON.stringify({message:'Kein verknüpftes Demo-Angebot',market:market.data,marketError:market.error,people:JSON.parse(sessionStorage.getItem('sf_demo_data_employees')||'[]').map(x=>[x.id,x.first,x.last]),plans:JSON.parse(sessionStorage.getItem('sf_demo_data_assignments')||'[]').filter(x=>x.date>=day).slice(0,3),core:!!window.SFSolidPlanningCore?.instant})};
   const accepted=await client.rpc('manager_review_shift_swap',{p_swap_id:pending.id,p_decision:'APPROVE'});
   const plans=JSON.parse(sessionStorage.getItem('sf_demo_data_assignments'));
   const people=JSON.parse(sessionStorage.getItem('sf_demo_data_employees'));
