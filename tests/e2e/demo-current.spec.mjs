@@ -119,12 +119,19 @@ test('current demo uses five fictional staff and blocks production data',async({
  expect(integrity).toBe(true);
  await page.locator('#sfDemoTourRestartBtn').click();
  const tour=page.locator('#sfDemoTourCard');
- const tourTargets=['#sfTodayWorkspace','#sfTodayWorkspace','#view-schedule .cal-toolbar','#view-auto .page-head','#view-marketplace','#view-absence .page-head','#view-time .page-head','#sfReportsWorkspace','#sfDatevPanel','#sfEmployeePortal .sf-portal-main','#sfDemoControlDock'];
+ const tourTargets=['#sfTodayWorkspace .sf-td-head','#sfTodayActions .sf-td-section-head','#view-schedule .cal-toolbar','#view-auto .page-head','#sfMarketTabs','#view-absence .page-head','#view-time .page-head','#sfReportsWorkspace .sf-rp-head','#sfDatevMonth','#sfEmployeePortal .sf-portal-welcome','#sfDemoControlDock'];
  const tourTitles=['Willkommen bei SchichtFunk','Heute im Blick','Dienstplan bearbeiten','Planungsvorschlag erstellen','Schichten anbieten und übernehmen','Abwesenheiten verwalten','Arbeitszeiten prüfen','Auswertungen ansehen','DATEV-Beispiel prüfen','Mitarbeiterperspektive erleben','Demo selbst ausprobieren'];
  for(let i=0;i<tourTitles.length;i++){
   await expect(tour.locator('h2')).toHaveText(tourTitles[i],{timeout:15000});
   await expect(tour.locator('.sf-demo-tour-count')).toHaveText(`${i+1} / ${tourTitles.length}`);
   await expect(page.locator(tourTargets[i])).toHaveClass(/sf-demo-tour-target/,{timeout:10000});
+  const marker=page.locator('#sfDemoTourMarker');await expect(marker).toBeVisible();
+  await expect(marker).toHaveAttribute('data-step',String(i+1));
+  await expect(page.locator('#sfDemoTourLayer')).toHaveCount(0);
+  const geometry=await page.evaluate(()=>{const c=document.getElementById('sfDemoTourCard').getBoundingClientRect(),m=document.getElementById('sfDemoTourMarker').getBoundingClientRect();return {inside:c.top>=0&&c.left>=0&&c.right<=innerWidth+1&&c.bottom<=innerHeight+1,overlap:Math.max(0,Math.min(c.right,m.right)-Math.max(c.left,m.left))*Math.max(0,Math.min(c.bottom,m.bottom)-Math.max(c.top,m.top)),available:innerHeight-m.height};});
+  expect(geometry.inside).toBe(true);
+  if(geometry.available>340)expect(geometry.overlap).toBeLessThanOrEqual(5);
+
   if(i===9)await expect(page.locator('#sfEmployeePortal')).toBeVisible();
   await tour.locator('.sf-demo-tour-next').click();
  }

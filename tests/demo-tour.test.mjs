@@ -39,11 +39,13 @@ test('tour provides progress, navigation, skip and a separate restart button',()
 
 test('tour dialog and highlighted targets are accessible and responsive',()=>{
   assert.match(tour,/role','dialog'/);
-  assert.match(tour,/aria-modal','true'/);
+  assert.match(tour,/aria-modal','false'/);
   assert.match(tour,/aria-labelledby','sfDemoTourTitle'/);
   assert.match(tour,/scrollIntoView/);
   assert.match(tour,/@media\(max-width:680px\)/);
   assert.match(tour,/visualViewport/);
-  assert.match(tour,/max-height:calc\(100dvh - 28px\)/);
-  assert.match(tour,/setProperty\('top',`\$\{top\}px`,'important'\)/);
+  assert.match(tour,/max-height:min\(70dvh,460px\)/);
+  assert.match(tour,/sf-demo-tour-marker/);
+  assert.doesNotMatch(tour,/backdrop-filter:blur/);
+  assert.match(tour,/overlap\*1000/);
 });
