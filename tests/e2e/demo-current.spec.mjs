@@ -29,6 +29,17 @@ test('current demo uses five fictional staff and blocks production data',async({
  expect(initial.staff).toHaveLength(5);
  expect(initial.staff.every(p=>p.email.endsWith('@demo.schichtfunk.invalid'))).toBe(true);
  expect(initial.data).toBeTruthy();
+ await page.evaluate(()=>window.switchView('schedule'));
+ await expect(page.locator('#view-schedule')).toHaveClass(/active/);
+ await expect.poll(()=>page.evaluate(()=>window.SchichtFunkCalendarView?.getMode())).toBe('week');
+ await expect(page.locator('#sfWeekBoardV2')).toBeVisible();
+ await expect(page.locator('#sfWeekModeSeg [data-sf-week-mode="compact"]')).toBeVisible();
+ await page.locator('#view-schedule .cal-toolbar .seg button').nth(1).click();
+ await expect.poll(()=>page.evaluate(()=>window.SchichtFunkCalendarView?.getMode())).toBe('month');
+ await page.reload();await waitForDemoReady(page,{scenarios:true});
+ await expect.poll(()=>page.evaluate(()=>window.SchichtFunkCalendarView?.getMode())).toBe('month');
+ await page.evaluate(()=>window.SchichtFunkCalendarView.setMode('week'));
+
  const workflow=await page.evaluate(async()=>{
   const client=window.SFBackend.client,day=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Berlin',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
   const submitted=await client.rpc('employee_submit_absence_request_for_company',{p_company_id:'demo-local-company',p_absence_type:'Krank',p_start_date:day,p_end_date:day});

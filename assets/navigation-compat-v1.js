@@ -93,7 +93,7 @@
   loadIntegration('/assets/schedule-export-v1.js?v=20261004-exporttotals1&company=20261010-1','data-sf-schedule-export');
   loadIntegration('/assets/publish-dialog-design-v1.js?v=20261001-period1','data-sf-publish-dialog-design');
   loadIntegration('/assets/demo-reset-v1.js?v=20261102-account1&loading=20261011-1','data-sf-demo-reset');
-  loadIntegration('/assets/demo-august-2026-v1.js?v=20261102-resume2','data-sf-demo-august-2026');
+  loadIntegration('/assets/demo-august-2026-v1.js?v=20261102-week1','data-sf-demo-august-2026');
   loadIntegration('/assets/demo-datev-snapshot-fix-v1.js?v=20260904-2','data-sf-demo-datev-snapshot-fix');
 
   // Zentrale Planer-Startansicht: Live-Besetzung, QR-Check-ins, Ausfälle, SOLL/IST und Störfall-Autopilot.

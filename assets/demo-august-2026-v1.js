@@ -9,7 +9,7 @@
   const LAST='2026-08-31';
   const INIT_KEY='sf_demo_data_august_standard_v1';
   const PICKER_KEY='sf_demo_data_august_picker_v2';
-  const VIEW_KEY='sf_demo_data_august_view_initialized_v2';
+  const VIEW_KEY='sf_demo_data_schedule_view_initialized_v3';
   const TIME_MONTH_KEY='sf.time.selectedMonth';
   const pad=n=>String(n).padStart(2,'0');
   const shiftTimes={
@@ -145,9 +145,8 @@
     if(sessionStorage.getItem(INIT_KEY)!=='ready')return false;
     if(sessionStorage.getItem(VIEW_KEY)==='1')return true;
     const calendar=window.SchichtFunkCalendarView;
-    if(typeof calendar?.setMonth!=='function')return false;
-    const currentMonth=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Berlin',year:'numeric',month:'2-digit'}).format(new Date());
-    calendar.setMonth(currentMonth);
+    if(typeof calendar?.setMode!=='function')return false;
+    calendar.setMode('week');
     sessionStorage.setItem(VIEW_KEY,'1');
     return true;
   }
