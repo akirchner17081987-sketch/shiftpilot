@@ -11,15 +11,13 @@ test('demo loads the guided tour only inside the protected sandbox',()=>{
   assert.match(tour,/!==\s*'active'/);
 });
 
-test('tour covers six core demo stations',()=>{
-  assert.match(tour,/Willkommen bei SchichtFunk/);
-  assert.match(tour,/Alles Wichtige auf einen Blick/);
-  assert.match(tour,/view:'overview',selector:'#view-overview #overviewStats'/);
-  assert.match(tour,/Dienstplan und Besetzung/);
-  assert.match(tour,/Auf Ausfälle sofort reagieren/);
-  assert.match(tour,/Zeiten prüfen und freigeben/);
-  assert.match(tour,/DATEV-LODAS vorbereiten/);
-  assert.match(tour,/view:'billing',selector:'#sfDatevPanel'/);
+test('tour covers the current demo workspaces and explains limitations',()=>{
+  for(const title of ['Willkommen bei SchichtFunk','Heute im Blick','Dienstplan bearbeiten','Planungsvorschlag erstellen','Schichten anbieten und übernehmen','Abwesenheiten verwalten','Arbeitszeiten prüfen','Auswertungen ansehen','DATEV-Beispiel prüfen','Mitarbeiterperspektive erleben','Demo selbst ausprobieren'])assert.ok(tour.includes(title));
+  assert.match(tour,/sfTodayWorkspace/);
+  assert.match(tour,/view:'schedule'/);
+  assert.match(tour,/view:'auto'/);
+  assert.match(tour,/perspective:'employee'/);
+  assert.match(tour,/in dieser Demo noch nicht verfügbar/);
   assert.match(tour,/steps:steps\.length/);
 });
 
@@ -29,13 +27,14 @@ test('completed tour stays dismissed when an active demo is reloaded',()=>{
   assert.match(tour,/sessionStorage\.setItem\(SEEN_KEY,'complete'\)/);
 });
 
-test('tour provides progress, navigation, skip and restart through help',()=>{
+test('tour provides progress, navigation, skip and a separate restart button',()=>{
   assert.match(tour,/sf-demo-tour-bar/);
   assert.match(tour,/Tour überspringen/);
   assert.match(tour,/Zurück/);
   assert.match(tour,/Tour abschließen/);
-  assert.match(tour,/sfDemoTourHelpBtn/);
-  assert.match(tour,/Geführte Demo-Tour starten/);
+  assert.match(tour,/sfDemoTourRestartBtn/);
+  assert.match(tour,/Demo-Tour starten/);
+  assert.doesNotMatch(tour,/stopImmediatePropagation/);
 });
 
 test('tour dialog and highlighted targets are accessible and responsive',()=>{

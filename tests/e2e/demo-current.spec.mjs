@@ -117,5 +117,17 @@ test('current demo uses five fictional staff and blocks production data',async({
  await expect.poll(async()=>{const d=await demoDock.boundingBox(),n=await employeeNav.boundingBox();return d&&n?n.y-(d.y+d.height):-999}).toBeGreaterThanOrEqual(4);
  const integrity=await page.evaluate(()=>{const p=window.SFBackend.employeePortalData,ids=new Set(JSON.parse(sessionStorage.getItem('sf_demo_data_assignments')).filter(a=>a.publishedAt||a._dbStatus==='PUBLISHED').map(a=>a.id));return p.shifts.every(s=>ids.has(s.id))});
  expect(integrity).toBe(true);
+ await page.locator('#sfDemoTourRestartBtn').click();
+ const tour=page.locator('#sfDemoTourCard');
+ const tourTitles=['Willkommen bei SchichtFunk','Heute im Blick','Dienstplan bearbeiten','Planungsvorschlag erstellen','Schichten anbieten und übernehmen','Abwesenheiten verwalten','Arbeitszeiten prüfen','Auswertungen ansehen','DATEV-Beispiel prüfen','Mitarbeiterperspektive erleben','Demo selbst ausprobieren'];
+ for(let i=0;i<tourTitles.length;i++){
+  await expect(tour.locator('h2')).toHaveText(tourTitles[i],{timeout:15000});
+  await expect(tour.locator('.sf-demo-tour-count')).toHaveText(`${i+1} / ${tourTitles.length}`);
+  if(i===9)await expect(page.locator('#sfEmployeePortal')).toBeVisible();
+  await tour.locator('.sf-demo-tour-next').click();
+ }
+ await expect(tour).toHaveCount(0);
+ await expect(page.locator('#sfDemoTourRestartBtn')).toBeVisible();
+ await expect(page.locator('#sfHelpButton')).toHaveAttribute('aria-label','Hilfe öffnen');
  expect(forbidden).toEqual([]);
 });
