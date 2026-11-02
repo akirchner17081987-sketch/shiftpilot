@@ -111,7 +111,9 @@
   function seedPlanning(){
     if(seeded)return true;
     try{
-      if(typeof assignments==='undefined'||typeof dailySoll==='undefined'||typeof timeEntries==='undefined'||typeof absences==='undefined'||typeof store==='undefined')return false;
+      if(typeof employees==='undefined'||typeof assignments==='undefined'||typeof dailySoll==='undefined'||typeof timeEntries==='undefined'||typeof absences==='undefined'||typeof store==='undefined')return false;
+      const preparedEmployees=JSON.parse(sessionStorage.getItem('sf_demo_data_employees')||'null');
+      if(!Array.isArray(preparedEmployees)||!preparedEmployees.length||!preparedEmployees.every(p=>employees.some(e=>e.id===p.id)))return false;
       if(!buildAugust())return false;
       if(sessionStorage.getItem(INIT_KEY)==='ready'&&sessionStorage.getItem('sf_demo_data_assignments')!==null&&sessionStorage.getItem('sf_demo_data_timeEntries')!==null){seeded=true;return true}
       assignments=assignments.filter(a=>!String(a.id||'').startsWith('demo-aug26-')).concat(augustAssignments);
