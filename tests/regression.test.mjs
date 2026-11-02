@@ -109,15 +109,16 @@ test('mobile employee navigation exposes three main areas and an accessible more
 });
 
 test('demo controls share a bottom dock and reserve content space', () => {
-  assert.match(demoPage, /demo-control-dock-v1\.js\?v=20260907-1/);
+  assert.match(demoPage, /demo-control-dock-v1\.js\?v=20261102-nav1/);
   assert.match(demoControlDock, /id='sfDemoControlDock'/);
   assert.match(demoControlDock, /role="toolbar" aria-label="Demo bedienen"/);
   assert.match(demoControlDock, /#sfDemoBadge','#sfDemoPerspectiveSwitch','\[data-demo-scenarios\]','#sfDemoResetBtn','#sfDemoExitBtn'/);
   assert.match(demoControlDock, /#appShell \.main\{margin-bottom:var\(--sf-demo-dock-space\)!important/);
   assert.match(demoControlDock, /#sfEmployeePortal \.sf-portal-main\{bottom:var\(--sf-demo-dock-space\)!important/);
   assert.match(demoControlDock, /@media\(max-width:560px\)/);
-  assert.match(demoControlDock, /--sf-demo-dock-space:132px/);
-  assert.match(demoControlDock, /#sfDemoControlDock\.sf-demo-dock-employee\{bottom:calc\(76px \+ max\(8px,env\(safe-area-inset-bottom\)\)\)\}/);
+  assert.match(demoControlDock, /--sf-demo-nav-space/);
+  assert.match(demoControlDock, /new ResizeObserver/);
+  assert.match(demoControlDock, /\.sf-orbit-popup\.is-open/);
   assert.match(demoControlDock, /root\.classList\.toggle\('sf-demo-dock-employee',employee\)/);
   assert.match(demoControlDock, /root\.classList\.toggle\('sf-demo-dock-obscured',modal\)/);
 });
