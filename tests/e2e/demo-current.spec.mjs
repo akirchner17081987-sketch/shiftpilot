@@ -31,6 +31,21 @@ test('current demo uses five fictional staff and blocks production data',async({
  expect(initial.staff).toHaveLength(5);
  expect(initial.staff.every(p=>p.email.endsWith('@demo.schichtfunk.invalid'))).toBe(true);
  expect(initial.data).toBeTruthy();
+ const sites=await page.evaluate(async()=>{
+  const client=window.SFBackend.client,company='demo-local-company';
+  const profile=await client.rpc('manager_company_profile',{p_company_id:company});
+  const today=await client.rpc('manager_today_workspace',{p_company_id:company});
+  const date=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Berlin',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+  const reports=await client.rpc('manager_reports_workspace',{p_company_id:company,p_start_date:date,p_end_date:date});
+  return {profile:profile.data?.sites,today:today.data?.sites,reports:reports.data?.sites};
+ });
+ for(const list of Object.values(sites)){
+  expect(list.map(site=>site.name)).toEqual(['Standort Nord','Standort Süd']);
+  expect(list.every(site=>site.latitude==null&&site.longitude==null)).toBe(true);
+ }
+ await expect(page.locator('#sfTodaySite')).toContainText('Standort Nord');
+ await expect(page.locator('#sfTodaySite')).toContainText('Standort Süd');
+
  const planIntegrity=await page.evaluate(()=>{
   const rows=JSON.parse(sessionStorage.getItem('sf_demo_data_assignments')||'[]'),keys=rows.map(a=>[a.employeeId,a.date,a.type,a.start,a.end].join('|'));
   return {duplicates:keys.filter((key,i)=>keys.indexOf(key)!==i),canPlan:window.SFBackend.can('plan'),role:window.SFBackend.accessRole};

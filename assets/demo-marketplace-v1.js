@@ -172,7 +172,7 @@
   }
 
   function demoRpc(name,args={}){
-    const demoSites=()=>[{id:'demo-site-east',name:'Demo Leipzig',code:'LE',latitude:51.3397,longitude:12.3731,is_active:true,geocode_status:'verified'},{id:'demo-site-west',name:'Demo Recklinghausen',code:'RE',latitude:51.6141,longitude:7.1979,is_active:true,geocode_status:'verified'}];
+    const demoSites=()=>[{id:'demo-site-east',name:'Standort Nord',code:'NORD',latitude:null,longitude:null,is_active:true,geocode_status:'unverified'},{id:'demo-site-west',name:'Standort Süd',code:'SUED',latitude:null,longitude:null,is_active:true,geocode_status:'unverified'}];
     if(name==='manager_company_profile')return {data:{company_id:args.p_company_id,name:'SchichtFunk Demo GmbH',timezone:'Europe/Berlin',contacts:[],sites:demoSites(),can_edit:false},error:null};
     if(name==='manager_today_workspace'||name==='manager_reports_workspace'){
       // The current overview consumes this shape.  Keep its source entirely
