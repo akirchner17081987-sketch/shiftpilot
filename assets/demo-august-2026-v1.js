@@ -104,7 +104,11 @@
       dailySoll[date]=counts;
       }
     }
-    assignments=assignments.filter(a=>!String(a.id||'').startsWith('demo-current-')).concat(generated);
+    // Die initiale Wochenvorschau wird durch den rollierenden Plan ersetzt.
+    // Beide enthalten sonst dieselben Personen am selben Tag doppelt.
+    const initialIds=new Set(assignments.filter(a=>/^demo-as-\d+-D\d+$/.test(String(a.id||''))&&a.note==='Demo-Dienstplan').map(a=>a.id));
+    assignments=assignments.filter(a=>!String(a.id||'').startsWith('demo-current-')&&!initialIds.has(a.id)).concat(generated);
+    initialIds.forEach(id=>delete timeEntries[id]);
     sessionStorage.setItem('sf_demo_current_seeded_v1',currentMonth);
   }
 

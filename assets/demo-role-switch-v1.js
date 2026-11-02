@@ -190,7 +190,7 @@
 
   function renderManager(){
     B.restoreNonEmployeeShell?.();document.getElementById('sfEmployeePortal')?.remove();
-    B.role='ADMIN';B.employeePortalData=null;
+    B.role='ADMIN';B.accessRole='ADMIN';B.accessPermissions=[];B.employeePortalData=null;
     const landing=document.getElementById('landingPage'),app=document.getElementById('appShell');if(landing)landing.style.display='none';if(app)app.style.display='grid';
     const target=document.getElementById('view-'+managerView)?managerView:'overview';
     try{window.switchView?.(target)}catch{}
@@ -201,7 +201,7 @@
   function renderEmployee(){
     const data=portalData();if(!data)return;
     managerView=document.querySelector('.view.active')?.id?.replace('view-','')||managerView;
-    B.employeePortalData=data;B.role='EMPLOYEE';patchEmployeeRpc();patchEmployeeHydrate();B.openEmployeePortal();
+    B.employeePortalData=data;B.role='EMPLOYEE';B.accessRole='EMPLOYEE';B.accessPermissions=[];patchEmployeeRpc();patchEmployeeHydrate();B.openEmployeePortal();
     employeeSwitch(data);B.employeePortalNavigate?.('dashboard');
     for(const delay of [0,100,300])setTimeout(()=>B.refreshEmployeeShiftChanges?.(),delay);
     for(const delay of [0,250,800])setTimeout(()=>window.SFDisruptionAutopilot?.refresh?.(),delay);

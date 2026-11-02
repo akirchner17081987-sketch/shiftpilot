@@ -31,10 +31,18 @@ test('current demo uses five fictional staff and blocks production data',async({
  expect(initial.staff).toHaveLength(5);
  expect(initial.staff.every(p=>p.email.endsWith('@demo.schichtfunk.invalid'))).toBe(true);
  expect(initial.data).toBeTruthy();
+ const planIntegrity=await page.evaluate(()=>{
+  const rows=JSON.parse(sessionStorage.getItem('sf_demo_data_assignments')||'[]'),keys=rows.map(a=>[a.employeeId,a.date,a.type,a.start,a.end].join('|'));
+  return {duplicates:keys.filter((key,i)=>keys.indexOf(key)!==i),canPlan:window.SFBackend.can('plan'),role:window.SFBackend.accessRole};
+ });
+ expect(planIntegrity.duplicates).toEqual([]);expect(planIntegrity.canPlan).toBe(true);expect(planIntegrity.role).toBe('ADMIN');
+
  await page.evaluate(()=>window.switchView('schedule'));
  await expect(page.locator('#view-schedule')).toHaveClass(/active/);
  await expect.poll(()=>page.evaluate(()=>window.SchichtFunkCalendarView?.getMode())).toBe('week');
  await expect(page.locator('#sfWeekBoardV2')).toBeVisible();
+ await expect(page.locator('#sfManualPlanBtn')).toBeVisible();
+ await expect(page.locator('#sfPlanContext')).not.toContainText('Nur lesen');
  const compareProductStyles=async selectors=>page.evaluate(selectors=>{
   const root=document.documentElement,props=['fontSize','lineHeight','paddingTop','paddingLeft','maxWidth'];
   const snapshot=()=>selectors.map(selector=>{const el=document.querySelector(selector);if(!el)return null;const css=getComputedStyle(el);return Object.fromEntries(props.map(p=>[p,css[p]]))});
@@ -95,6 +103,7 @@ test('current demo uses five fictional staff and blocks production data',async({
  await expect.poll(()=>page.evaluate(()=>!!window.SFReports?.getResult())).toBe(true);
  await demoPerspectiveSwitch(page).locator('[data-demo-perspective="employee"]').click();
  await expect(page.locator('#sfEmployeePortal')).toBeVisible();
+ expect(await page.evaluate(()=>({role:window.SFBackend.accessRole,canPlan:window.SFBackend.can('plan')}))).toEqual({role:'EMPLOYEE',canPlan:false});
  const employeeNav=page.locator('#sfEmployeePortal .sf-orbit-dock');await expect(employeeNav).toBeVisible();
  await expect.poll(async()=>{const d=await demoDock.boundingBox(),n=await employeeNav.boundingBox();return d&&n?n.y-(d.y+d.height):-999}).toBeGreaterThanOrEqual(4);
  const integrity=await page.evaluate(()=>{const p=window.SFBackend.employeePortalData,ids=new Set(JSON.parse(sessionStorage.getItem('sf_demo_data_assignments')).filter(a=>a.publishedAt||a._dbStatus==='PUBLISHED').map(a=>a.id));return p.shifts.every(s=>ids.has(s.id))});
