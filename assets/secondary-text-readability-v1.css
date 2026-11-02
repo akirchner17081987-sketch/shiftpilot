@@ -78,7 +78,7 @@
 
 /* Demo-Hilfsskripte hängen eigene Styles erst nach dem Laden an. Die höhere
    Spezifität hält die Lesbarkeit deshalb auch in den Demo-Ansichten stabil. */
-html[data-sf-demo="1"] body #appShell .main :where(p,small,label),
+html[data-sf-demo="1"] body #appShell:not(:has(#view-schedule.active, #view-auto.active)) .main :where(p,small,label),
 html[data-sf-demo="1"] body #sfEmployeePortal :where(p,small,label){
   color:var(--sf-secondary-dark)!important;
   font-size:12px!important;

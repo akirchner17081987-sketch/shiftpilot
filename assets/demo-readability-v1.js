@@ -101,4 +101,13 @@
     }
   `;
   document.head.appendChild(style);
+  // Planung und Dienstplan verwenden die unveränderten Produktstile.
+  const app=document.getElementById('appShell');
+  const syncPlanningStyle=()=>{
+    const planning=app&&getComputedStyle(app).display!=='none'&&!!app.querySelector('#view-schedule.active,#view-auto.active');
+    if(style.sheet)style.sheet.disabled=!!planning;
+  };
+  const observer=new MutationObserver(syncPlanningStyle);
+  if(app){observer.observe(app,{attributes:true,attributeFilter:['style']});for(const id of ['view-schedule','view-auto']){const view=document.getElementById(id);if(view)observer.observe(view,{attributes:true,attributeFilter:['class']})}}
+  syncPlanningStyle();
 })();

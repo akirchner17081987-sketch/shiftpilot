@@ -35,6 +35,21 @@ test('current demo uses five fictional staff and blocks production data',async({
  await expect(page.locator('#view-schedule')).toHaveClass(/active/);
  await expect.poll(()=>page.evaluate(()=>window.SchichtFunkCalendarView?.getMode())).toBe('week');
  await expect(page.locator('#sfWeekBoardV2')).toBeVisible();
+ const compareProductStyles=async selectors=>page.evaluate(selectors=>{
+  const root=document.documentElement,props=['fontSize','lineHeight','paddingTop','paddingLeft','maxWidth'];
+  const snapshot=()=>selectors.map(selector=>{const el=document.querySelector(selector);if(!el)return null;const css=getComputedStyle(el);return Object.fromEntries(props.map(p=>[p,css[p]]))});
+  const demo=snapshot(),value=root.getAttribute('data-sf-demo');root.removeAttribute('data-sf-demo');const original=snapshot();root.setAttribute('data-sf-demo',value);return {demo,original};
+ },selectors);
+ await expect.poll(()=>page.evaluate(()=>document.getElementById('sfDemoReadabilityV1Css')?.sheet.disabled)).toBe(true);
+ let styles=await compareProductStyles(['#appShell .main','#view-schedule .page-head h1','#view-schedule .page-head p','#view-schedule .sf-week-row-label small']);
+ expect(styles.demo.every(Boolean)).toBe(true);expect(styles.demo).toEqual(styles.original);
+ await page.evaluate(()=>window.switchView('auto'));
+ await expect(page.locator('#view-auto')).toHaveClass(/active/);
+ await expect.poll(()=>page.evaluate(()=>document.getElementById('sfDemoReadabilityV1Css')?.sheet.disabled)).toBe(true);
+ styles=await compareProductStyles(['#appShell .main','#view-auto .page-head h1','#view-auto .page-head p','#view-auto .sf-auto-steps small']);
+ expect(styles.demo.every(Boolean)).toBe(true);expect(styles.demo).toEqual(styles.original);
+ await page.evaluate(()=>window.switchView('schedule'));
+
  await expect(page.locator('#sfWeekModeSeg [data-sf-week-mode="compact"]')).toBeVisible();
  await page.locator('#view-schedule .cal-toolbar .seg button').nth(1).click();
  await expect.poll(()=>page.evaluate(()=>window.SchichtFunkCalendarView?.getMode())).toBe('month');

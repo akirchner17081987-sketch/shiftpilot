@@ -29,3 +29,8 @@ test('compact layouts retain dedicated tablet and phone rules',()=>{
   assert.match(readability,/@media\(max-width:560px\)/);
   assert.match(readability,/padding:17px 12px 76px/);
 });
+
+test('planning and schedule use product typography in the demo',()=>{
+  assert.match(readability,/view-schedule\.active,#view-auto\.active/);
+  assert.match(readability,/style\.sheet\.disabled/);
+});
