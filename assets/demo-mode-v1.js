@@ -227,10 +227,12 @@
     gateStatus('Referenzmonat und Arbeitszeiten werden vorbereitet …');
     while(Date.now()-started<READY_TIMEOUT_MS){
       patchAuthLayer();
-      if(coreDataReady()&&controlsReady())break;
+      if(typeof B.prepareManagerModules!=='function'){await wait(60);continue}
+      try{await B.prepareManagerModules()}catch(err){console.error('SchichtFunk Demo Module',err);failGate();return}
+      if(coreDataReady()&&controlsReady()&&window.__sfWeekBoardV2Phase1&&window.SchichtFunkCalendarView?.ownsVisibleCalendar)break;
       await wait(60);
     }
-    const dataReady=coreDataReady(),uiReady=controlsReady();
+    const dataReady=coreDataReady()&&window.__sfWeekBoardV2Phase1===true&&window.SchichtFunkCalendarView?.ownsVisibleCalendar===true,uiReady=controlsReady();
     if(!dataReady||!uiReady){const gate=document.getElementById('sfDemoBootGate');if(gate){gate.dataset.dataReady=String(dataReady);gate.dataset.uiReady=String(uiReady)}failGate();return}
     gateStatus('Oberfläche wird abschließend aufgebaut …');
     restorePreparedSnapshot();patchAuthLayer();

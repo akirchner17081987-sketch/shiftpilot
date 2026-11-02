@@ -14,6 +14,7 @@ test('current demo uses five fictional staff and blocks production data',async({
  await primeDemoSession(page);
  await page.goto('/demo');
  await waitForDemoReady(page,{scenarios:true});
+ await page.waitForFunction(()=>window.__sfDemoReadyV1===true,null,{timeout:30000});
  const demoDock=page.locator('#sfDemoControlDock'),managerNav=page.locator('#sfOrbitDock');
  await expect(managerNav).toBeVisible();
  await expect.poll(async()=>{const d=await demoDock.boundingBox(),n=await managerNav.boundingBox();return d&&n?n.y-(d.y+d.height):-999}).toBeGreaterThanOrEqual(4);
