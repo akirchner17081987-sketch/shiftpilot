@@ -41,8 +41,9 @@
     return Math.max(0,Number(target)-new Set(assignments.filter(a=>a.date===slot.date&&a.type===slot.type&&a.status!=='CANCELLED'&&a._dbStatus!=='CANCELLED').map(a=>String(a.employeeId))).size);
   }
   function decorateSchedule(){
-    const allowed=B.ready&&managers.has(B.role)&&B.companyId&&!B.companySwitching&&!window.__sfDemoCloudAdapterV2;
-    const state=allowed?window.SFShiftMarketplace?.getOpenOfferState?.():null;
+    const demo=!!window.__sfDemoCloudAdapterV2;
+    const allowed=B.ready&&managers.has(B.role)&&B.companyId&&!B.companySwitching;
+    const state=allowed&&!demo?window.SFShiftMarketplace?.getOpenOfferState?.():null;
     const valid=state&&!state.error&&Date.now()-state.readAt<65000;
     const offers=valid?activeOffers(state.offers,B.companyTimeZone||'Europe/Berlin').map(o=>({...o,count:Math.min(o.count,localRemaining(o))})).filter(o=>o.count>0):[];
     const marked=new Set();
@@ -63,9 +64,10 @@
     const period=currentDates()||[],label=period.length?period[0]+' bis '+period.at(-1)+' · Nur künftig beginnende Dienste':'Sichtbarer Planungszeitraum';
     if(entry.querySelector('[data-market-period]').textContent!==label)entry.querySelector('[data-market-period]').textContent=label;
     const regional=window.SFCompliance?.policy?.solidPlanningRules?.regionalDayStaffing,regionalCodes=regional?[...(regional.weekdayCodes||[]),...(regional.specialCodes||[])]:[];
-    const count=positionCount(offers.filter(o=>period.includes(o.date)).map(o=>regionalCodes.includes(o.type)?{...o,sharedKey:o.date+'|REGIONAL-DAY'}:o)),status=state?.error?'Schichtmarktstatus konnte nicht geladen werden.':valid?count+' offene Plätze dieses Zeitraums sind aktuell im Schichtmarkt.':'Schichtmarktstatus wird aktualisiert …';
+    const count=positionCount(offers.filter(o=>period.includes(o.date)).map(o=>regionalCodes.includes(o.type)?{...o,sharedKey:o.date+'|REGIONAL-DAY'}:o)),status=demo?'Das Anbieten offener Dienste ist in der Demo noch nicht verfügbar.':state?.error?'Schichtmarktstatus konnte nicht geladen werden.':valid?count+' offene Plätze dieses Zeitraums sind aktuell im Schichtmarkt.':'Schichtmarktstatus wird aktualisiert …';
     if(entry.querySelector('[data-market-state]').textContent!==status)entry.querySelector('[data-market-state]').textContent=status;
-    entry.querySelector('button').disabled=publishing||preparing||!!(typeof autoPlanPreview!=='undefined'&&autoPlanPreview.length);
+    const button=entry.querySelector('button');button.disabled=demo||publishing||preparing||!!(typeof autoPlanPreview!=='undefined'&&autoPlanPreview.length);
+    button.title=demo?'Diese Funktion ist in der Demo noch nicht verfügbar.':'';
   }
   function renderPublishEntry(state){
     const host=document.getElementById('autoAnalysis');if(!host)return;

@@ -48,6 +48,9 @@ test('current demo uses five fictional staff and blocks production data',async({
  await expect.poll(()=>page.evaluate(()=>window.SchichtFunkCalendarView?.getMode())).toBe('week');
  await expect(page.locator('#sfWeekBoardV2')).toBeVisible();
  await expect(page.locator('#sfManualPlanBtn')).toBeVisible();
+ await expect(page.locator('#sfMarketScheduleEntry')).toBeVisible();
+ await expect(page.locator('#sfMarketScheduleEntry [data-market-all]')).toBeDisabled();
+ await expect(page.locator('#sfMarketScheduleEntry [data-market-state]')).toContainText('in der Demo noch nicht verfügbar');
  await expect(page.locator('#sfPlanContext')).not.toContainText('Nur lesen');
  const compareProductStyles=async selectors=>page.evaluate(selectors=>{
   const root=document.documentElement,props=['fontSize','lineHeight','paddingTop','paddingLeft','maxWidth'];
