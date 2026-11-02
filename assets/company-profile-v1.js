@@ -143,7 +143,7 @@
     try{
       const result=await c.client.rpc('manager_delete_company_location',{p_company_id:c.company,p_site_id:site.id,p_expected_revision:site.revision});if(result.error)throw result.error;
       assert(c);await P.load({force:true});history=[];historyBefore=null;historyDone=false;paint();window.showSaveToast?.('Standort gelöscht',site.name);
-    }catch(e){if(same(c))error(e.message||'Der Standort konnte nicht gelöscht werden.');}
+    }catch(e){if(same(c))error(e.message==='MFA_REQUIRED'?'Bitte melde dich erneut an und bestätige die Zwei-Faktor-Authentifizierung.':e.message||'Der Standort konnte nicht gelöscht werden.');}
     finally{if(button.isConnected)button.disabled=false;}
   }
   async function toggleSite(site){if(!site||!editable(state))return;if(site.is_active&&!confirm('Standort archivieren? Bestehende Zuordnungen bleiben erhalten; neue Zuordnungen sind anschließend gesperrt.'))return;try{await saveSite({...site,is_active:!site.is_active},site.revision);paint();}catch(e){error(e.message)}}
