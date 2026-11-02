@@ -160,6 +160,8 @@
       if(!response.ok||!result.accessToken){say(response.status===503?'Der Demo-Zugang wird gerade eingerichtet. Bitte später erneut versuchen.':'Benutzer oder Passwort ist nicht korrekt.');return}
       sessionStorage.removeItem('sf_demo_session_v1');
       window.SFDemoAPI.setAccessToken(result.accessToken);window.SFDemoAPI.clearFailureToken();secret.value='';
+      await window.SFEntryPresentation?.playDemoTransition?.();
+      if(area!=='demo'||!root.isConnected||requestedVersion!==selectionVersion)return;
       window.location.assign('/demo');
     }catch(_){say('Der Demo-Zugang konnte nicht gestartet werden. Bitte versuchen Sie es erneut.')}
     finally{button.disabled=false}

@@ -20,6 +20,7 @@
   let metricsWritten = false;
   let raf = 0;
   let welcoming = false;
+  let demoTransitioning = false;
   let welcomeTimer = 0;
   let welcomeGeneration = 0;
   const welcome = root.querySelector('#sfEntryWelcome');
@@ -115,6 +116,33 @@
     return true;
   }};
 
+  // Only the verified demo login calls this; no company or location is queried.
+  window.SFEntryPresentation.playDemoTransition = async function () {
+    if (demoTransitioning || dismissed || !root.isConnected || document.hidden ||
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
+        root.classList.contains('sf-entry-skip-animation') || !window.SFEntryDive) return false;
+    demoTransitioning = true;root.inert = true;let completed=false;
+    try {
+      const ready = Promise.all([window.SFEntryDive.prepare(), window.SFEntryGlobePresentation?.waitUntilSettled?.() || Promise.resolve()]);
+      let timeout;
+      const prepared = await Promise.race([ready.then(([engine]) => !!engine).catch(() => false), new Promise(resolve => { timeout = setTimeout(() => resolve(false), 5000); })]);
+      clearTimeout(timeout);
+      if (!prepared || !root.isConnected || document.hidden || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+      if (welcomeTitle) welcomeTitle.textContent = 'Willkommen bei SchichtFunk.';
+      const message = welcome?.querySelector('p');if(message)message.textContent = 'Ihre Demo wird vorbereitet.';
+      if (!window.SFEntryDive.start(null)) return false;
+      if (welcome) welcome.hidden = false;
+      root.classList.add('sf-entry-success');
+      await new Promise(resolve => {
+        let timer;const finish=()=>{clearTimeout(timer);document.removeEventListener('visibilitychange',onVisibility);resolve()};
+        const onVisibility=()=>{if(document.hidden)finish()};
+        document.addEventListener('visibilitychange',onVisibility);timer=setTimeout(finish,6000);
+      });
+      completed=true;return true;
+    } catch (_) { window.SFEntryDive?.stop();return false; }
+    finally { demoTransitioning = false;if(root.isConnected){root.inert=false;if(!completed){root.classList.remove('sf-entry-success');if(welcome)welcome.hidden=true}} }
+  };
+
   function welcomeToWorkspace() {
     if (welcoming || dismissed) return;
     // Restored sessions open directly; the cinematic transition follows a real login.
@@ -201,6 +229,7 @@
   }
 
   function checkReady() {
+    if (demoTransitioning) return;
     if (dismissed) return;
     // A restored AAL1 session can require MFA before a login form or app exists.
     // Let the real security dialog stay above the decorative entry surface.

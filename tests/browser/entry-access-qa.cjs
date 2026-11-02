@@ -105,6 +105,20 @@ async function main(){
  await page.waitForFunction(()=>document.activeElement.id==='sfEntryBack');await page.locator('#sfEntryBack').click();await page.waitForFunction(()=>document.activeElement.matches('[data-entry-area]'));
  check(await page.locator('#sfEntryChoice').isVisible(),true);
  const out=path.join(root,'test-results/entry-access');fs.mkdirSync(out,{recursive:true});await page.screenshot({path:path.join(out,'entry-desktop.png'),animations:'disabled'});
+ // Verified demo login uses the same real globe-to-map renderer before opening /demo.
+ const cinematic=await browser.newPage({viewport:{width:1280,height:900},reducedMotion:'no-preference'});
+ await cinematic.route('**/*',route=>new URL(route.request().url()).origin===origin?route.continue():route.abort());
+ await cinematic.route('**/demo',route=>route.fulfill({status:200,contentType:'text/html',body:'<h1>Demo-Anmeldung</h1>'}));
+ await cinematic.goto(origin+'/?bereich=demo');await cinematic.locator('#sfEmail').waitFor({state:'visible'});
+ await cinematic.addStyleTag({url:'/assets/sf-entry-dive-v1.css'});await cinematic.addScriptTag({url:'/assets/sf-entry-dive-v1.js'});
+ await cinematic.evaluate(()=>{window.SFDemoAPI={fetchAuth:async()=>({ok:true,status:200,json:async()=>({accessToken:'synthetic-demo-token'})}),setAccessToken:t=>sessionStorage.setItem('sf_demo_access_token_v2',t),clearFailureToken(){}}});
+ await cinematic.locator('#sfEmail').fill('demo-user');await cinematic.locator('#sfPassword').fill('synthetic-password');await cinematic.locator('#sfAuthSubmit').click();
+ await cinematic.locator('#sfEntryDiveCanvas').waitFor({state:'visible',timeout:12000});
+ check(await cinematic.locator('#sfEntryOverlay').evaluate(el=>el.classList.contains('sf-entry-success')),true,'verified demo starts the real globe transition');
+ check(await cinematic.locator('#sfEntryWelcomeTitle').textContent(),'Willkommen bei SchichtFunk.','demo uses a neutral destination');
+ await cinematic.getByRole('heading',{name:'Demo-Anmeldung'}).waitFor({timeout:12000});
+ check(new URL(cinematic.url()).pathname,'/demo','animation opens the verified demo');
+ await cinematic.close();
  console.log(JSON.stringify({passed,viewports:[1440,390,320],liveServiceCalls:0}));
 }
 main().catch(error=>{console.error(error);process.exitCode=1}).finally(async()=>{await browser?.close();server?.close()});
