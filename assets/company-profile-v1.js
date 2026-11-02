@@ -141,7 +141,7 @@
     if(!confirm('Standort „'+site.code+' · '+site.name+'“ endgültig löschen? Das ist nur möglich, wenn keine Schichtmodelle, QR-Terminals oder Schichtübergaben zugeordnet sind.'))return;
     const c=state.context;button.disabled=true;
     try{
-      data(await c.client.rpc('manager_delete_company_location',{p_company_id:c.company,p_site_id:site.id,p_expected_revision:site.revision}));
+      const result=await c.client.rpc('manager_delete_company_location',{p_company_id:c.company,p_site_id:site.id,p_expected_revision:site.revision});if(result.error)throw result.error;
       assert(c);await P.load({force:true});history=[];historyBefore=null;historyDone=false;paint();window.showSaveToast?.('Standort gelöscht',site.name);
     }catch(e){if(same(c))error(e.message||'Der Standort konnte nicht gelöscht werden.');}
     finally{if(button.isConnected)button.disabled=false;}
