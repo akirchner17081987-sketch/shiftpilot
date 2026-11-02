@@ -44,7 +44,7 @@ test('generic and vacancy dialogs retain employee selection; other companies get
 
 function nativeWorkflow(w){
  Object.assign(w.SFCompliance,{esc:v=>String(v??''),uid:()=>String(Math.random()),fmt:d=>d,audit(){},refresh(){},toast(){},isPublished:a=>!!a?.publishedAt,openChangeDrawer:p=>{w.publishedRequest=p;}});
- w.confirm=()=>true;
+ w.confirm=()=>true;w.SFDialog={confirm:async(...args)=>w.confirm(...args),alert:async()=>{}};
  w.eval(fs.readFileSync('assets/compliance-workflow-v2.js','utf8'));
 }
 test('saved drafts open within preview and after apply; native edits keep row identity, times, pause and note',async()=>{
@@ -53,7 +53,7 @@ test('saved drafts open within preview and after apply; native edits keep row id
  $('[data-auto-employee="one"] td button').click();assert.equal($('#spEditEmp').options.length,1);assert.equal($('#spEditEmp').disabled,true);assert.equal($('#spEditDate').readOnly,true);assert.equal($('#spEditNote').value,'Existing note');
  assert.deepEqual([...$('#spEditType').options].map(o=>o.value),['T','S']);$('#spEditType').value='S';$('#spEditType').onchange();$('#spEditStart').value='15:00';$('#spEditEnd').value='23:00';$('#spEditPause').value='30';$('#spEditNote').value='Corrected';$('#spEditEmp').value='two';$('#spEditDate').value='2027-01-05';$('#spSaveAssign').click();
  assert.deepEqual(JSON.parse(JSON.stringify(w.assignments.map(a=>[a.id,a.employeeId,a.date,a.type,a.start,a.end,a.pause,a.note]))),[['saved','one','2027-01-04','S','15:00','23:00',30,'Corrected']]);assert.equal(w.autoPlanPreview.length,0);assert.equal(!!$('#spAssignModal'),false);
- $('[data-auto-employee="one"] td button').click();$('#spDeleteAssign').click();assert.equal(w.assignments.length,0);assert.equal(!!$('#spAssignModal'),false);
+ $('[data-auto-employee="one"] td button').click();$('#spDeleteAssign').click();await new Promise(r=>setTimeout(r,0));assert.equal(w.assignments.length,0);assert.equal(!!$('#spAssignModal'),false);
  }finally{await close();}
 });
 test('saved published shifts retain approval workflow and stale saved editors cannot write across tenant or version changes',async()=>{
@@ -161,3 +161,4 @@ test('conscious preview ranges bypass automatic hours, rest, block and staffing 
  w.SFAutoPlanPreviewEditor.undo();assert.equal(w.autoPlanPreview.length,0);
  }finally{await close();}
 });
+

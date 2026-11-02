@@ -105,9 +105,9 @@ test('incomplete database deletion reports an error rather than a success',async
   assert.ok(!toasts.some(t=>t[0]==='Löschung gespeichert'));
 });
 
-test('quick deletion does not claim cloud success before synchronization',()=>{
+test('quick deletion does not claim cloud success before synchronization',async()=>{
   const messages=[],c={window:{SFBackend:{ready:true}},assignments:[{id:'a',_dbId:'db-a',date:'2026-12-01',type:'TEST',employeeId:'e'}],employees:[{id:'e',first:'Test',last:'Person'}],confirm:()=>true,showSaveToast:(...args)=>messages.push(args),saveAll(){},Date};
-  vm.runInNewContext(read('assets/assignment-quick-delete-v1.js'),c);c.window.spQuickDeleteAssignment('a');
+  c.window.SFDialog={confirm:async()=>c.confirm()};vm.runInNewContext(read('assets/assignment-quick-delete-v1.js'),c);await c.window.spQuickDeleteAssignment('a');
   assert.equal(messages[0][0],'Löschung wird gespeichert');assert.equal(c.assignments.length,0);
 });
 
@@ -123,8 +123,9 @@ test('quick delete routes published shifts to the protected change workflow with
   assert.equal(c.assignments.length,1);assert.deepEqual(opened,['a']);assert.equal(messages[0][0],'Veröffentlichte Schicht');
 });
 
-test('repeated quick-delete clicks cannot start a second deletion for the same draft',()=>{
+test('repeated quick-delete clicks cannot start a second deletion for the same draft',async()=>{
   let saves=0,confirms=0;const c={window:{SFBackend:{ready:true}},assignments:[{id:'a',date:'2026-12-01',type:'TEST',employeeId:'e'}],employees:[{id:'e',first:'Test',last:'Person'}],confirm:()=>{confirms++;return true},showSaveToast(){},saveAll(){saves++},Date};
-  vm.runInNewContext(read('assets/assignment-quick-delete-v1.js'),c);c.window.spQuickDeleteAssignment('a');c.window.spQuickDeleteAssignment('a');
-  assert.equal(confirms,1);assert.equal(saves,1);assert.equal(c.assignments.length,0);
+  c.window.SFDialog={confirm:async()=>c.confirm()};vm.runInNewContext(read('assets/assignment-quick-delete-v1.js'),c);await Promise.all([c.window.spQuickDeleteAssignment('a'),c.window.spQuickDeleteAssignment('a')]);
+  assert.equal(confirms,2);assert.equal(saves,1);assert.equal(c.assignments.length,0);
 });
+

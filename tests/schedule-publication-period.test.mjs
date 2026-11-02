@@ -24,8 +24,9 @@ test('returning to week view keeps the selected month week and invalid months do
   api.setMonth('2028-02');assert.equal(c.window.periodTest.periodDates(api.getPeriod()).length,29);
 });
 test('accepting auto planning synchronizes the actual calendar month, cancellation leaves it unchanged',async()=>{
-  const c=harness();let accepted=false;c.confirm=()=>accepted;c.autoPlanApplying=false;c.autoPlanApplied=0;c.autoEligibleEmployees=()=>[{e:{id:1}}];c.autoPlanPreview=[{date:'2026-12-01',employeeId:1,type:'FD'}];c.autoPlanningDates=()=>['2026-12-01','2026-12-31'];c.document.getElementById=id=>id==='autoPlanPeriod'?{value:'month'}:null;c.saveAll=()=>{};c.renderAutoPlanning=()=>{};c.showSaveToast=()=>{};
+  const c=harness();let accepted=false;c.confirm=()=>accepted;c.window.SFDialog={confirm:async()=>c.confirm(),alert:async()=>{}};c.autoPlanApplying=false;c.autoPlanApplied=0;c.autoEligibleEmployees=()=>[{e:{id:1}}];c.autoPlanPreview=[{date:'2026-12-01',employeeId:1,type:'FD'}];c.autoPlanningDates=()=>['2026-12-01','2026-12-31'];c.document.getElementById=id=>id==='autoPlanPeriod'?{value:'month'}:null;c.saveAll=()=>{};c.renderAutoPlanning=()=>{};c.showSaveToast=()=>{};
   const index=read('index.html'),fn=index.slice(index.indexOf('async function applyAutoPlanPreview(){'),index.indexOf('\nfunction runAutoPlan()',index.indexOf('async function applyAutoPlanPreview(){')));vm.runInNewContext(fn,c);
   await c.applyAutoPlanPreview();assert.equal(c.window.SchichtFunkCalendarView.getMode(),'week');assert.equal(c.assignments.length,0);
   accepted=true;await c.applyAutoPlanPreview();assert.equal(c.window.SchichtFunkCalendarView.getPeriod().start,'2026-12-01');assert.equal(c.assignments.length,1);
 });
+
