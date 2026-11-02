@@ -91,12 +91,12 @@
     if(sessionStorage.getItem('sf_demo_data_august_standard_v1')!=='ready'||!marketRows.some(r=>String(r.assignment_id||'').startsWith('demo-as-market-')))return;
     const people=read('sf_demo_data_employees',[]),plans=read('sf_demo_data_assignments',[]),core=window.SFSolidPlanningCore;
     if(!people.length||!plans.length||!core?.instant)return;
-    const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Berlin',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()),used=new Set();
+    const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Berlin',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()),entries=read('sf_demo_data_timeEntries',{}),now=Date.now(),used=new Set();
     marketRows=marketRows.filter(row=>{
       if(!String(row.assignment_id||'').startsWith('demo-as-market-'))return true;
       if(!['MARKET_OPEN','PENDING_MANAGER'].includes(row.status))return false;
       const person=people.find(p=>[p.first,p.last].filter(Boolean).join(' ')===row.offered_by);
-      const plan=plans.find(a=>a.employeeId===person?.id&&a.date>=today&&(a.publishedAt||a._dbStatus==='PUBLISHED')&&a.start&&a.end&&!used.has(a.id));
+      const plan=plans.find(a=>a.employeeId===person?.id&&a.date>=today&&(a.publishedAt||a._dbStatus==='PUBLISHED')&&a.start&&a.end&&!entries[a.id]?.actualStart&&core.instant(a.date,a.start,'Europe/Berlin')>now&&!used.has(a.id));
       if(!plan)return false;
       used.add(plan.id);const end=new Date(plan.date+'T12:00:00Z');if(plan.end<=plan.start)end.setUTCDate(end.getUTCDate()+1);
       row.assignment_id=plan.id;row.shift_code=plan.type;row.starts_at=new Date(core.instant(plan.date,plan.start,'Europe/Berlin')).toISOString();row.ends_at=new Date(core.instant(end.toISOString().slice(0,10),plan.end,'Europe/Berlin')).toISOString();
@@ -440,3 +440,4 @@
 
   patch();[100,300,800,1600,3000].forEach(ms=>setTimeout(patch,ms));
 })();
+

@@ -96,6 +96,9 @@ test('current demo uses five fictional staff and blocks production data',async({
   const reviewed=await client.rpc('manager_review_absence_request',{p_absence_id:submitted.data,p_decision:'APPROVE'});
   const overview=await client.rpc('manager_today_workspace',{p_company_id:'demo-local-company'});
   const market=await client.rpc('manager_list_shift_marketplace',{});
+  const entries=JSON.parse(sessionStorage.getItem('sf_demo_data_timeEntries')||'{}');
+  const invalid=market.data?.find(row=>['MARKET_OPEN','PENDING_MANAGER'].includes(row.status)&&(entries[row.assignment_id]?.actualStart||new Date(row.starts_at).getTime()<=Date.now()));
+  if(invalid)return {error:'Demo-Angebot verweist auf einen begonnenen Dienst'};
   const pending=market.data?.find(row=>row.status==='PENDING_MANAGER');
   if(!pending)return {error:'Kein verknüpftes Demo-Angebot zur Prüfung vorhanden'};
   const accepted=await client.rpc('manager_review_shift_swap',{p_swap_id:pending.id,p_decision:'APPROVE'});
@@ -157,3 +160,4 @@ test('current demo uses five fictional staff and blocks production data',async({
  await expect(page.locator('#sfHelpButton')).toHaveAttribute('aria-label','Hilfe öffnen');
  expect(forbidden).toEqual([]);
 });
+
