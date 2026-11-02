@@ -73,6 +73,7 @@
     let best=null;
     for(const [x,y] of options){const cx=clamp(x,left+pad,right),cy=clamp(y,top+pad,bottom),overlap=Math.max(0,Math.min(cx+cardWidth,x2)-Math.max(cx,x1))*Math.max(0,Math.min(cy+cardHeight,y2)-Math.max(cy,y1));const displacement=Math.abs(cx-x)+Math.abs(cy-y);const score=overlap*1000+displacement;if(!best||score<best.score)best={x:cx,y:cy,score}}
     card.style.setProperty('left',`${best.x}px`,'important');card.style.setProperty('top',`${best.y}px`,'important');card.style.setProperty('right','auto','important');card.style.setProperty('bottom','auto','important');
+    if(marker)marker.dataset.positioned=marker.dataset.step;
   }
 
   async function draw(){
@@ -84,7 +85,7 @@
       target=locate(step.selector);target?.classList.add('sf-demo-tour-target');target?.scrollIntoView?.({block:'center',behavior:'instant'});
       let marker=document.getElementById('sfDemoTourMarker');
       if(!marker){marker=document.createElement('div');marker.id='sfDemoTourMarker';marker.className='sf-demo-tour-marker';marker.setAttribute('aria-hidden','true');document.body.appendChild(marker)}
-      marker.dataset.step=String(index+1);
+      marker.dataset.step=String(index+1);delete marker.dataset.positioned;
       let card=document.getElementById('sfDemoTourCard');
       if(!card){card=document.createElement('section');card.id='sfDemoTourCard';card.className='sf-demo-tour-card';card.setAttribute('role','dialog');card.setAttribute('aria-modal','false');card.setAttribute('aria-labelledby','sfDemoTourTitle');document.body.appendChild(card)}
       card.innerHTML=`<div class="sf-demo-tour-top"><div><div class="sf-demo-tour-eyebrow">${step.eyebrow}</div><h2 id="sfDemoTourTitle">${step.title}</h2></div><button type="button" class="sf-demo-tour-close" aria-label="Tour schließen">✕</button></div><p>${step.body}</p><div class="sf-demo-tour-progress"><div class="sf-demo-tour-track"><div class="sf-demo-tour-bar" style="width:${((index+1)/steps.length)*100}%"></div></div><span class="sf-demo-tour-count">${index+1} / ${steps.length}</span></div><div class="sf-demo-tour-actions"><button type="button" class="sf-demo-tour-skip">Tour überspringen</button><button type="button" class="sf-demo-tour-back" ${index===0?'disabled':''}>Zurück</button><button type="button" class="sf-demo-tour-next">${index===steps.length-1?'Tour abschließen':'Weiter'}</button></div>`;
