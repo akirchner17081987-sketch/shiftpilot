@@ -113,6 +113,7 @@
     try{
       if(typeof assignments==='undefined'||typeof dailySoll==='undefined'||typeof timeEntries==='undefined'||typeof absences==='undefined'||typeof store==='undefined')return false;
       if(!buildAugust())return false;
+      if(sessionStorage.getItem(INIT_KEY)==='ready'&&sessionStorage.getItem('sf_demo_data_assignments')!==null&&sessionStorage.getItem('sf_demo_data_timeEntries')!==null){seeded=true;return true}
       assignments=assignments.filter(a=>!String(a.id||'').startsWith('demo-aug26-')).concat(augustAssignments);
       for(const date of monthDates()){
         const counts={};augustAssignments.filter(a=>a.date===date).forEach(a=>counts[a.type]=(counts[a.type]||0)+1);

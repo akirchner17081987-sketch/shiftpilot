@@ -158,6 +158,7 @@
       if(result.failureToken)window.SFDemoAPI.setFailureToken(result.failureToken);
       if(response.status===429){const minutes=Math.max(1,Math.ceil(Number(result.retryAfter||60)/60));say(`Zu viele Versuche. Bitte in ${minutes} Minute${minutes===1?'':'n'} erneut versuchen.`);return}
       if(!response.ok||!result.accessToken){say(response.status===503?'Der Demo-Zugang wird gerade eingerichtet. Bitte später erneut versuchen.':'Benutzer oder Passwort ist nicht korrekt.');return}
+      sessionStorage.removeItem('sf_demo_session_v1');
       window.SFDemoAPI.setAccessToken(result.accessToken);window.SFDemoAPI.clearFailureToken();secret.value='';
       window.location.assign('/demo');
     }catch(_){say('Der Demo-Zugang konnte nicht gestartet werden. Bitte versuchen Sie es erneut.')}

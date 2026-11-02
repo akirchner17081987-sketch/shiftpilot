@@ -43,6 +43,13 @@
     try{
       if(typeof employees==='undefined'||typeof assignments==='undefined'||typeof absences==='undefined'||typeof globalSoll==='undefined'||typeof dailySoll==='undefined'||typeof timeEntries==='undefined'||typeof weekStart==='undefined'||typeof store==='undefined'||typeof TYPES==='undefined')return false;
       const mon=mondayOf(new Date());
+      const savedEmployees=readDemo('employees',null),savedAssignments=readDemo('assignments',null),savedAbsences=readDemo('absences',null),savedGlobal=readDemo('globalSoll',null),savedDaily=readDemo('dailySoll',null),savedTime=readDemo('timeEntries',null);
+      if(sessionStorage.getItem('sf_demo_data_august_standard_v1')==='ready'&&Array.isArray(savedEmployees)&&Array.isArray(savedAssignments)&&Array.isArray(savedAbsences)&&savedGlobal&&savedDaily&&savedTime){
+        employees=savedEmployees;assignments=savedAssignments;absences=savedAbsences;globalSoll=savedGlobal;dailySoll=savedDaily;timeEntries=savedTime;weekStart=mon;
+        const savedTimes=readDemo('shiftTimes',{});TYPES.forEach(t=>{const v=savedTimes[t.id];if(v){t.start=v.start;t.end=v.end}});
+        store.get=(k,d)=>readDemo(k,d);store.set=(k,v)=>writeDemo(k,v);
+        return true;
+      }
       const dates=Array.from({length:7},(_,i)=>localIso(plusDays(mon,i)));
       employees=staff.map((r,i)=>({
         id:'demo-e'+pad(i+1),personnelNo:r[0],first:r[1],last:r[2],role:r[3],employment:r[4],weeklyHours:r[5],monthlyHours:'',
@@ -192,12 +199,12 @@
     const stored=required.every(key=>sessionStorage.getItem(key)!==null);
     const august=sessionStorage.getItem('sf_demo_data_august_standard_v1')==='ready';
     const localClient=B.client?.__sfDemoLocalClientV1===true&&B.ready===true;
-    let savedEmployees=readDemo('employees',[]),savedAssignments=readDemo('assignments',[]),savedEntries=readDemo('timeEntries',{});
-    let records=Array.isArray(savedEmployees)&&savedEmployees.length>=5&&Array.isArray(savedAssignments)&&savedAssignments.some(a=>String(a.id||'').startsWith('demo-aug26-'))&&Object.keys(savedEntries||{}).some(id=>id.startsWith('demo-aug26-'));
+    let savedEmployees=readDemo('employees',null),savedAssignments=readDemo('assignments',null),savedEntries=readDemo('timeEntries',null);
+    let records=Array.isArray(savedEmployees)&&Array.isArray(savedAssignments)&&savedEntries&&typeof savedEntries==='object';
     if(august&&!records&&typeof window.SchichtFunkDemoAugust2026?.ensurePrepared==='function'){
       window.SchichtFunkDemoAugust2026.ensurePrepared();
       savedEmployees=readDemo('employees',[]);savedAssignments=readDemo('assignments',[]);savedEntries=readDemo('timeEntries',{});
-      records=Array.isArray(savedEmployees)&&savedEmployees.length>=5&&Array.isArray(savedAssignments)&&savedAssignments.some(a=>String(a.id||'').startsWith('demo-aug26-'))&&Object.keys(savedEntries||{}).some(id=>id.startsWith('demo-aug26-'));
+      records=Array.isArray(savedEmployees)&&Array.isArray(savedAssignments)&&savedEntries&&typeof savedEntries==='object';
     }
     const gate=document.getElementById('sfDemoBootGate');if(gate){gate.dataset.storedReady=String(stored);gate.dataset.augustReady=String(august);gate.dataset.clientReady=String(localClient);gate.dataset.recordsReady=String(records)}
     return stored&&august&&localClient&&records;
