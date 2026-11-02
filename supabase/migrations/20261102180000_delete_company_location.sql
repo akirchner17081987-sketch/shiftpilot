@@ -6,6 +6,7 @@ begin
  if not private.sf_company_profile_can_write(p_company_id) then
    raise exception using errcode='42501', message='Nur Inhaber und Administratoren dürfen Standorte löschen.';
  end if;
+ perform private.sf_assert_company_admin_mfa(p_company_id,'manager_delete_company_location');
  if p_site_id is null or p_expected_revision is null then
    raise exception using errcode='22023', message='Standort oder Versionsstand fehlt.';
  end if;
