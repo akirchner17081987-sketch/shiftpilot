@@ -47,7 +47,7 @@ const auditReaderHardening = read('supabase/migrations/20260901202920_harden_aud
 const auditPolicyHardening = read('supabase/migrations/20260902112933_restrict_audit_events_to_admins.sql');
 
 test('secondary text is readable across public, manager, demo and employee surfaces', () => {
-  assert.match(index, /secondary-text-readability-v1\.css\?v=20260906-1/);
+  assert.match(index, /secondary-text-readability-v1\.css\?v=20261102-planning1/);
   assert.match(demoPage, /secondary-text-readability-v1\.css\?v=20260906-1/);
   assert.match(secondaryTextReadability, /--muted:#a9bbcf/);
   assert.match(secondaryTextReadability, /#appShell \.main small/);
