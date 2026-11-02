@@ -12,7 +12,7 @@ function html(body,scripts=[]){return '<!doctype html><html><head><meta charset=
 async function main(){
  server=http.createServer((req,res)=>{const u=new URL(req.url,'http://localhost'),report=u.searchParams.get('mode')==='report',role=u.searchParams.get('role');
   res.setHeader(report?'Content-Security-Policy-Report-Only':'Content-Security-Policy',policy);res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');
-  if(u.pathname==='/__events'){res.setHeader('Content-Type','text/html');return res.end(html(`<button id="choose" data-sf-click="${action.choose}" data-sf-click-arg0="FD"><span id="nested">Auswahl</span></button><button id="day" data-sf-click="${action.day}" data-sf-click-arg0="2027-01-04"><span id="day-child">Tag</span></button><a id="back" href="/#wrong" data-sf-click="${action.back}">Zurück</a><input id="month" data-sf-change="${action.month}"><input id="keys" data-sf-keydown="${action.keydown}"><button id="mouse" data-sf-mousedown="${action.mouse}" data-sf-mousedown-arg0="employee">Wählen</button>`,['/__events-fixture.js','/assets/assignment-quick-delete-v1.js']));}
+  if(u.pathname==='/__events'){res.setHeader('Content-Type','text/html');return res.end(html(`<button id="choose" data-sf-click="${action.choose}" data-sf-click-arg0="FD"><span id="nested">Auswahl</span></button><button id="day" data-sf-click="${action.day}" data-sf-click-arg0="2027-01-04"><span id="day-child">Tag</span></button><a id="back" href="/#wrong" data-sf-click="${action.back}">Zurück</a><input id="month" data-sf-change="${action.month}"><input id="keys" data-sf-keydown="${action.keydown}"><button id="mouse" data-sf-mousedown="${action.mouse}" data-sf-mousedown-arg0="employee">Wählen</button>`,['/__events-fixture.js','/assets/sf-dialog-v1.js','/assets/assignment-quick-delete-v1.js']));}
   if(u.pathname==='/__exports'){res.setHeader('Content-Type','text/html');return res.end(html('<canvas id="qr"></canvas>',['/assets/vendor/xlsx-0.18.5.min.js','/assets/vendor/jspdf-2.5.2.min.js','/assets/vendor/jspdf-autotable-3.8.4.min.js','/assets/vendor/qrcode-1.5.4.min.js','/assets/vendor/jsqr-1.4.0.js']));}
   if(u.pathname==='/__events-fixture.js'){res.setHeader('Content-Type','text/javascript');return res.end(eventsFixture);}
   if(u.pathname==='/__prep.js'){res.setHeader('Content-Type','text/javascript');return res.end('window.qa={role:'+JSON.stringify(role)+',start:performance.now(),rpcs:[],writes:[],today:'+JSON.stringify(data)+'};');}
@@ -63,7 +63,7 @@ async function main(){
   await p.evaluate(()=>{const n=document.getElementById('choose');n.onclick=()=>qa.overrides++;n.click();});assert.equal(await p.evaluate(()=>qa.overrides),1);assert.equal(await p.evaluate(()=>qa.calls.length),2);
   await p.evaluate(k=>{const n=document.createElement('button');n.setAttribute('data-sf-click',k);n.setAttribute('data-sf-click-arg0','dynamic');document.body.append(n);n.click();const focus=document.createElement('input');focus.setAttribute('data-sf-focus',k);document.body.append(focus);focus.focus();},action.choose);assert.equal(await p.evaluate(()=>qa.calls.length),3);
   await p.evaluate(()=>{document.body.insertAdjacentHTML('beforeend','<section id="assignment">'+renderAssignments('2027-01-04')+'</section>');document.getElementById('assignment').addEventListener('click',()=>qa.unwantedBubble=true);});
-  p.removeAllListeners('dialog');p.on('dialog',d=>d.accept());await p.locator('.sp-assignment-x').click();assert.equal(await p.evaluate(()=>assignments.length),0);assert.equal(await p.evaluate(()=>qa.writes),1);assert.equal(await p.evaluate(()=>qa.edited),undefined);assert.equal(await p.evaluate(()=>qa.unwantedBubble),undefined);
+  await p.locator('.sp-assignment-x').click();await p.locator('[data-sf-dialog-confirm]').click();await p.waitForFunction(()=>assignments.length===0);assert.equal(await p.evaluate(()=>qa.writes),1);assert.equal(await p.evaluate(()=>qa.edited),undefined);assert.equal(await p.evaluate(()=>qa.unwantedBubble),undefined);
   await clean(h,'callbacks '+viewport.width);
  }
 
@@ -106,3 +106,4 @@ async function main(){
  console.log(JSON.stringify({passed,results,realServiceCalls:0}));
 }
 main().catch(e=>{console.error(e);process.exitCode=1}).finally(async()=>{await browser?.close();if(server)await new Promise(r=>{server.closeAllConnections();server.close(r);});});
+

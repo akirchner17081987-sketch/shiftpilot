@@ -29,11 +29,11 @@ window.__rowCount=()=>rows.length;
  const browser=await chromium.launch({headless:true});
  try{
   const page=await browser.newPage();await page.route('https://sf.test/**',route=>route.fulfill({contentType:'text/html',body:'<!doctype html><html><body><button id="delete">Schicht löschen</button></body></html>'}));await page.goto('https://sf.test/');
-  await page.addScriptTag({content:setup});await page.addScriptTag({content:read('assets/supabase-data-v1.js')});await page.addScriptTag({content:read('assets/assignment-quick-delete-v1.js')});
+  await page.addScriptTag({content:setup});await page.addScriptTag({content:read('assets/sf-dialog-v1.js')});await page.addScriptTag({content:read('assets/supabase-data-v1.js')});await page.addScriptTag({content:read('assets/assignment-quick-delete-v1.js')});
   const loadMs=await page.evaluate(async()=>{const t=performance.now();await SFBackend.hydrate();return performance.now()-t});
   assert.equal(await page.evaluate(()=>assignments.length),1000);
   await page.evaluate(()=>{document.getElementById('delete').onclick=()=>spQuickDeleteAssignment('shift-0')});
-  const deleteMs=await page.evaluate(async()=>{const t=performance.now();document.getElementById('delete').click();await __syncPromise;return performance.now()-t});
+  await page.locator('#delete').click();await page.locator('[data-sf-dialog-confirm]').click();const deleteMs=await page.evaluate(async()=>{const t=performance.now();await __syncPromise;return performance.now()-t});
   assert.equal(await page.evaluate(()=>__rowCount()),999);assert.equal(await page.evaluate(()=>SFBackend.lastSyncError),null);
   assert.ok(await page.evaluate(()=>__toasts.some(t=>t[0]==='Löschung wird gespeichert')));assert.ok(await page.evaluate(()=>__toasts.some(t=>t[0]==='Löschung gespeichert')));
   const bulkMs=await page.evaluate(async()=>{assignments=assignments.slice(200);const t=performance.now();await SFBackend.sync();return performance.now()-t});
@@ -43,3 +43,4 @@ window.__rowCount=()=>rows.length;
   assert.deepEqual(await page.evaluate(()=>__errors),[]);console.log(JSON.stringify({fixtures:1000,loadMs,deleteMs,bulkMs,batches,backend:'mock with 3ms per request'}));
  }finally{await browser.close()}
 })().catch(e=>{console.error(e);process.exitCode=1});
+

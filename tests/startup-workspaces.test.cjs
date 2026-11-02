@@ -21,7 +21,7 @@ function harness({demo=false,role='OWNER'}={}){
   querySelector:sel=>sel==='#appShell .content'?nodes.get('content'):sel==='.company-card b'?nodes.get('company-name'):null,
   querySelectorAll:()=>['sidebar','topbar','view-overview'].map(id=>nodes.get(id))};
  const c={SFBackend:B,document,sessionStorage:{getItem:()=>demo?'active':null},location:{reload:()=>events.push(['reload'])},performance:{now:()=>100},console:{error:()=>{}},alert:t=>events.push(['alert']),setTimeout,clearTimeout,
-  switchView:view=>events.push(['view',view]),showSaveToast:(...a)=>events.push(['toast',...a])};c.window=c;vm.createContext(c);
+  switchView:view=>events.push(['view',view]),showSaveToast:(...a)=>events.push(['toast',...a])};c.window=c;c.SFDialog={alert:async t=>events.push(['alert',t])};vm.createContext(c);
  vm.runInContext(read('assets/supabase-startup-v1.js'),c);
  const data=read('assets/supabase-data-v1.js');vm.runInContext('const B=SFBackend;'+data.slice(data.indexOf('  B.boot='),data.lastIndexOf('\n})();')),c);
  const mfa=read('assets/supabase-mfa-v1.js');vm.runInContext(mfa.slice(mfa.indexOf('  function wrapBoot(){'),mfa.lastIndexOf('\n})();')),c);
@@ -66,3 +66,4 @@ test('a lazy module failure never opens an incomplete workspace and offers a pag
  h.nodes.get('sfStartupStatus').querySelector('[data-startup-reload]').onclick();assert.ok(h.events.some(e=>e[0]==='reload'));
  h.B.managerViewNeedsLoading=()=>false;h.c.switchView('schedule');assert.deepEqual(h.events.filter(e=>e[0]==='view'),[['view','schedule']]);assert.equal(h.nodes.has('sfStartupStatus'),false);
 });
+

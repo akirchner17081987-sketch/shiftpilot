@@ -14,7 +14,7 @@ window.SFBackend={role:'OWNER',companyId:'company-a',user:{id:'owner'},updateSta
  }}};
 window.showSaveToast=()=>{};const original=URL.createObjectURL.bind(URL);URL.createObjectURL=b=>{qa.blobs.push(b);return original(b)};
 `;
-const html=`<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>*{box-sizing:border-box}body{margin:0;padding:16px;background:#07111d;color:white;font-family:Arial}</style></head><body><section id="sfTimeAccounts"><div class="sf-ta-head"><input id="sfTaMonth" type="month" value="2026-09"><button id="sfTaSettings">Einstellungen</button></div><div id="sfTaSummary"></div><table><tbody id="sfTaBody"><tr><td><button data-opening="e0">Startsaldo</button></td></tr></tbody></table></section><section id="view-billing" class="active"><div id="sfBillingContent"></div></section><script>${fixture}</script><script src="/assets/supabase-time-month-close-v1.js"></script><script src="/assets/supabase-report-export-v2.js"></script><script src="/assets/datev-lodas-export-v1.js"></script></body></html>`;
+const html=`<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>*{box-sizing:border-box}body{margin:0;padding:16px;background:#07111d;color:white;font-family:Arial}</style></head><body><section id="sfTimeAccounts"><div class="sf-ta-head"><input id="sfTaMonth" type="month" value="2026-09"><button id="sfTaSettings">Einstellungen</button></div><div id="sfTaSummary"></div><table><tbody id="sfTaBody"><tr><td><button data-opening="e0">Startsaldo</button></td></tr></tbody></table></section><section id="view-billing" class="active"><div id="sfBillingContent"></div></section><script>${fixture}</script><script src="/assets/sf-dialog-v1.js"></script><script src="/assets/supabase-time-month-close-v1.js"></script><script src="/assets/supabase-report-export-v2.js"></script><script src="/assets/datev-lodas-export-v1.js"></script></body></html>`;
 (async()=>{const browser=await chromium.launch({headless:true,...(process.env.SF_QA_CHROMIUM?{executablePath:process.env.SF_QA_CHROMIUM}:{})});try{
 for(const width of [1440,390,360]){
  const page=await browser.newPage({viewport:{width,height:900},locale:'de-DE'});page.setDefaultTimeout(10000);const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.dismiss());
@@ -49,3 +49,4 @@ for(const width of [1440,390,360]){
  assert.deepEqual(errors,[]);console.log(JSON.stringify({width,passed:true,status_requests_settle:true,month_company_guard:true,close_reopen_retry:true}));await page.close();
 }
 }finally{await browser.close()}})().catch(e=>{console.error(e);process.exitCode=1});
+
