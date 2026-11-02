@@ -54,7 +54,7 @@
     if(cloud&&B.ready){if(cloud.textContent!=='✓ Cloud verbunden')cloud.textContent='✓ Cloud verbunden';const mins=Math.max(0,Math.floor((Date.now()-statusCheckedAt)/60000)),checked=mins<1?'gerade eben':mins===1?'vor 1 Minute':`vor ${mins} Minuten`;cloud.dataset.info=`CLOUD VERBUNDEN\nAutomatische Synchronisierung aktiv\nAngemeldet als: ${B.user?.email||'Cloud-Konto'}\nStatus geprüft: ${checked}`;cloud.classList.add('sp-cloud-passive');cloud.setAttribute('role','status');cloud.setAttribute('aria-label','Cloud verbunden und synchronisiert. Weitere Informationen beim Darüberfahren.');cloud.title='';cloud.tabIndex=0;cloud.onclick=e=>{e.preventDefault();e.stopPropagation()}}
     else if(cloud){cloud.classList.remove('sp-cloud-passive');cloud.removeAttribute('role');cloud.title='Mit der SchichtFunk Cloud anmelden';cloud.tabIndex=0}
     let btn=document.getElementById('spTopbarLogout');
-    if(!btn){btn=document.createElement('button');btn.id='spTopbarLogout';btn.type='button';btn.className='ghost sp-topbar-logout';btn.innerHTML='<i>↪</i><span>Abmelden</span>';btn.title='Sicher abmelden';btn.setAttribute('aria-label','Abmelden');host.appendChild(btn);btn.onclick=async()=>{if(btn.disabled||!B.ready||!B.client)return;if(!await confirmLogout())return;btn.disabled=true;btn.innerHTML='<i>◌</i><span>Wird abgemeldet …</span>';try{B.showLoading?.('Sichere Abmeldung läuft …');const {error}=await B.client.auth.signOut();if(error)throw error}catch(e){B.hideLoading?.();btn.disabled=false;btn.innerHTML='<i>↪</i><span>Abmelden</span>';alert('Abmelden fehlgeschlagen: '+(e?.message||String(e)))}}}
+    if(!btn){btn=document.createElement('button');btn.id='spTopbarLogout';btn.type='button';btn.className='ghost sp-topbar-logout';btn.innerHTML='<i>↪</i><span>Abmelden</span>';btn.title='Sicher abmelden';btn.setAttribute('aria-label','Abmelden');host.appendChild(btn);btn.onclick=async()=>{if(btn.disabled||!B.ready||!B.client)return;if(!await confirmLogout())return;btn.disabled=true;btn.innerHTML='<i>◌</i><span>Wird abgemeldet …</span>';try{B.showLoading?.('Sichere Abmeldung läuft …');const {error}=await B.client.auth.signOut();if(error)throw error}catch(e){B.hideLoading?.();btn.disabled=false;btn.innerHTML='<i>↪</i><span>Abmelden</span>';await window.SFDialog.alert('Abmelden fehlgeschlagen: '+(e?.message||String(e)))}}}
     btn.style.display=B.ready?'inline-flex':'none';
   }
   const update=B.updateState;
@@ -64,3 +64,4 @@
   setTimeout(ensure,300);setTimeout(ensure,1400);setInterval(ensure,30000);
   B.confirmLogout=confirmLogout;
 })();
+

@@ -100,22 +100,22 @@
 
   async function toggleDesktop(t){
     const companyId=B.companyId,userId=B.user?.id,enabled=desktopAccess.get(t.id);
-    if(!confirm(enabled?'PC-Zugang für „'+t.name+'“ ausschalten? Der QR-Code bleibt nutzbar.':'PC-Zugang für „'+t.name+'“ freigeben? Der Betriebs- und Terminalname erscheint dann auf der öffentlichen Anmeldeseite. Die Anmeldung erfolgt mit persönlicher PIN oder während der Umstellung mit Eintrittsdatum. Bereits eingerichtete PINs bleiben erforderlich.'))return;
+    if(!await window.SFDialog.confirm(enabled?'PC-Zugang für „'+t.name+'“ ausschalten? Der QR-Code bleibt nutzbar.':'PC-Zugang für „'+t.name+'“ freigeben? Der Betriebs- und Terminalname erscheint dann auf der öffentlichen Anmeldeseite. Die Anmeldung erfolgt mit persönlicher PIN oder während der Umstellung mit Eintrittsdatum. Bereits eingerichtete PINs bleiben erforderlich.'))return;
     try{
       await B.requireSensitiveMfa?.();if(companyId!==B.companyId||userId!==B.user?.id||B.companySwitching)return;
       const q=await B.client.rpc('manager_qr_desktop_access',{p_company_id:companyId,p_terminal_id:t.id,p_enabled:!enabled,p_expected_enabled:enabled});
       if(q.error)throw q.error;if(companyId!==B.companyId||userId!==B.user?.id)return;await refresh();
-    }catch(e){alert(rpcError(e))}
+    }catch(e){await window.SFDialog.alert(rpcError(e))}
   }
 
   async function saveTerminalSite(t,row){
     if(B.companyProfileSaving)return;const companyId=B.companyId,userId=B.user?.id,siteId=row.querySelector('[data-qrt-site]').value||null;if(siteId===(t.site_id||null))return;
     B.companyProfileSaving=true;row.querySelectorAll('button,select').forEach(e=>e.disabled=true);
-    try{const q=await B.client.rpc('manager_set_time_qr_terminal_site',{p_company_id:companyId,p_terminal_id:t.id,p_site_id:siteId,p_expected_site_id:t.site_id||null});if(q.error)throw q.error;if(companyId!==B.companyId||userId!==B.user?.id)return;await window.SFCompanyProfile?.load({force:true});await refresh();window.showSaveToast?.('Standort gespeichert',t.name)}catch(e){alert(rpcError(e))}finally{B.companyProfileSaving=false;if(row.isConnected)row.querySelectorAll('button,select').forEach(e=>e.disabled=false)}
+    try{const q=await B.client.rpc('manager_set_time_qr_terminal_site',{p_company_id:companyId,p_terminal_id:t.id,p_site_id:siteId,p_expected_site_id:t.site_id||null});if(q.error)throw q.error;if(companyId!==B.companyId||userId!==B.user?.id)return;await window.SFCompanyProfile?.load({force:true});await refresh();window.showSaveToast?.('Standort gespeichert',t.name)}catch(e){await window.SFDialog.alert(rpcError(e))}finally{B.companyProfileSaving=false;if(row.isConnected)row.querySelectorAll('button,select').forEach(e=>e.disabled=false)}
   }
   async function createTerminal(name,locationNote,siteId=null){
     name=String(name||'').trim();locationNote=String(locationNote||'').trim();if(!name){document.getElementById('sfQrtName')?.focus();return}
-    try{B.showLoading?.('QR-Terminal wird angelegt …');const q=await B.client.rpc(B.client?.__sfDemoLocalClientV1?'manager_create_time_qr_terminal':'manager_create_time_qr_terminal_at_site',{p_company_id:B.companyId,p_name:name,p_location_note:locationNote,...(B.client?.__sfDemoLocalClientV1?{}:{p_site_id:siteId})});if(q.error)throw q.error;await refresh();openQrModal({id:q.data.id,name:q.data.name,location_note:q.data.location_note||locationNote},q.data.qr_path);if(typeof showSaveToast==='function')showSaveToast('QR-Terminal angelegt',name)}catch(e){alert(rpcError(e))}finally{B.hideLoading?.()}
+    try{B.showLoading?.('QR-Terminal wird angelegt …');const q=await B.client.rpc(B.client?.__sfDemoLocalClientV1?'manager_create_time_qr_terminal':'manager_create_time_qr_terminal_at_site',{p_company_id:B.companyId,p_name:name,p_location_note:locationNote,...(B.client?.__sfDemoLocalClientV1?{}:{p_site_id:siteId})});if(q.error)throw q.error;await refresh();openQrModal({id:q.data.id,name:q.data.name,location_note:q.data.location_note||locationNote},q.data.qr_path);if(typeof showSaveToast==='function')showSaveToast('QR-Terminal angelegt',name)}catch(e){await window.SFDialog.alert(rpcError(e))}finally{B.hideLoading?.()}
   }
 
   async function showTerminalQr(t){
@@ -128,33 +128,33 @@
     }catch(e){
       const msg=rpcError(e);
       if(/nicht wiederherstellbar|Bitte QR erneuern/i.test(msg)){
-        if(confirm(`Für „${t.name}“ liegt noch kein wiederherstellbarer QR-Schlüssel im sicheren Speicher. Soll jetzt ein neuer QR-Code erzeugt werden? Der bisherige Ausdruck wird dadurch ungültig.`))await rotateTerminal(t,true);
+        if(await window.SFDialog.confirm(`Für „${t.name}“ liegt noch kein wiederherstellbarer QR-Schlüssel im sicheren Speicher. Soll jetzt ein neuer QR-Code erzeugt werden? Der bisherige Ausdruck wird dadurch ungültig.`))await rotateTerminal(t,true);
         return;
       }
-      alert(msg);
+      await window.SFDialog.alert(msg);
     }finally{B.hideLoading?.()}
   }
 
   async function rotateTerminal(t,skipConfirm=false){
-    if(!skipConfirm&&!confirm(`Neuen QR-Code für „${t.name}“ erzeugen? Der bisherige Ausdruck wird sofort ungültig.`))return;
-    try{B.showLoading?.('QR-Code wird neu erzeugt …');const q=await B.client.rpc('manager_rotate_time_qr_terminal',{p_terminal_id:t.id});if(q.error)throw q.error;await refresh();openQrModal({...t,name:q.data.name||t.name},q.data.qr_path);if(typeof showSaveToast==='function')showSaveToast('Neuer QR-Code erzeugt',t.name)}catch(e){alert(rpcError(e))}finally{B.hideLoading?.()}
+    if(!skipConfirm&&!await window.SFDialog.confirm(`Neuen QR-Code für „${t.name}“ erzeugen? Der bisherige Ausdruck wird sofort ungültig.`))return;
+    try{B.showLoading?.('QR-Code wird neu erzeugt …');const q=await B.client.rpc('manager_rotate_time_qr_terminal',{p_terminal_id:t.id});if(q.error)throw q.error;await refresh();openQrModal({...t,name:q.data.name||t.name},q.data.qr_path);if(typeof showSaveToast==='function')showSaveToast('Neuer QR-Code erzeugt',t.name)}catch(e){await window.SFDialog.alert(rpcError(e))}finally{B.hideLoading?.()}
   }
 
   async function toggleTerminal(t){
-    const next=!t.is_active;if(!confirm(`${t.name} ${next?'aktivieren':'deaktivieren'}?${next?'':' Der ausgehängte QR-Code ist danach nicht mehr nutzbar.'}`))return;
-    try{B.showLoading?.(next?'Terminal wird aktiviert …':'Terminal wird deaktiviert …');const q=await B.client.rpc('manager_set_time_qr_terminal_active',{p_terminal_id:t.id,p_is_active:next});if(q.error)throw q.error;await refresh();if(typeof showSaveToast==='function')showSaveToast(next?'QR-Terminal aktiviert':'QR-Terminal deaktiviert',t.name)}catch(e){alert(rpcError(e))}finally{B.hideLoading?.()}
+    const next=!t.is_active;if(!await window.SFDialog.confirm(`${t.name} ${next?'aktivieren':'deaktivieren'}?${next?'':' Der ausgehängte QR-Code ist danach nicht mehr nutzbar.'}`))return;
+    try{B.showLoading?.(next?'Terminal wird aktiviert …':'Terminal wird deaktiviert …');const q=await B.client.rpc('manager_set_time_qr_terminal_active',{p_terminal_id:t.id,p_is_active:next});if(q.error)throw q.error;await refresh();if(typeof showSaveToast==='function')showSaveToast(next?'QR-Terminal aktiviert':'QR-Terminal deaktiviert',t.name)}catch(e){await window.SFDialog.alert(rpcError(e))}finally{B.hideLoading?.()}
   }
 
   async function deleteTerminal(t){
     if(t.is_active)return;
-    if(!confirm(`„${t.name}“ dauerhaft löschen? Der QR-Code wird ungültig. Terminals mit Zeitbuchungen können nicht gelöscht werden.`))return;
+    if(!await window.SFDialog.confirm(`„${t.name}“ dauerhaft löschen? Der QR-Code wird ungültig. Terminals mit Zeitbuchungen können nicht gelöscht werden.`))return;
     try{
       B.showLoading?.('QR-Terminal wird gelöscht …');
       const q=await B.client.rpc('manager_delete_time_qr_terminal',{p_terminal_id:t.id});
       if(q.error)throw q.error;
       await refresh();
       if(typeof showSaveToast==='function')showSaveToast('QR-Terminal gelöscht',t.name);
-    }catch(e){alert(rpcError(e))}finally{B.hideLoading?.()}
+    }catch(e){await window.SFDialog.alert(rpcError(e))}finally{B.hideLoading?.()}
   }
 
   function updatePinSummary(){
@@ -172,7 +172,7 @@
       if(q.error)throw q.error;
       if(companyId!==B.companyId||userId!==B.user?.id||B.companySwitching)return;
       showPinAdmin(q.data,companyId,userId);
-    }catch(e){alert(rpcError(e))}
+    }catch(e){await window.SFDialog.alert(rpcError(e))}
   }
   function showPinAdmin(data,companyId,userId){
     css();document.getElementById('sfQrPinAdminModal')?.remove();
@@ -209,14 +209,14 @@
       }catch(e){if(valid())result.textContent=rpcError(e)}
       finally{if(valid())back.querySelectorAll('button').forEach(b=>{b.disabled=b.id==='sfQrPinEnable'?(!canEnable||b.dataset.stale==='1'):b.hasAttribute('data-pin-code')&&!rows.find(e=>e.employee_id===b.closest('[data-pin-employee]')?.dataset.pinEmployee)?.personnel_no})}
     }
-    back.querySelectorAll('[data-pin-code]').forEach(button=>button.onclick=()=>{
+    back.querySelectorAll('[data-pin-code]').forEach(button=>button.onclick=async ()=>{
       const employeeId=button.closest('[data-pin-employee]').dataset.pinEmployee;
       const person=rows.find(e=>e.employee_id===employeeId);
-      if(!confirm(`Einrichtungscode für ${person?.name||'diese Person'} erzeugen? Ein bisheriger Code und bestehende QR-Anmeldungen werden ungültig. Eine bestehende PIN wird zurückgesetzt.`))return;
+      if(!await window.SFDialog.confirm(`Einrichtungscode für ${person?.name||'diese Person'} erzeugen? Ein bisheriger Code und bestehende QR-Anmeldungen werden ungültig. Eine bestehende PIN wird zurückgesetzt.`))return;
       perform('ISSUE_CODE',employeeId);
     });
-    back.querySelector('#sfQrPinEnable')?.addEventListener('click',()=>{
-      if(confirm('PIN-Pflicht für alle aktivieren? Ab dann ist keine Anmeldung mit Eintrittsdatum mehr möglich. Auch neue Mitarbeitende benötigen zuerst einen persönlichen Einrichtungscode.'))perform('ENABLE_REQUIRED');
+    back.querySelector('#sfQrPinEnable')?.addEventListener('click',async ()=>{
+      if(await window.SFDialog.confirm('PIN-Pflicht für alle aktivieren? Ab dann ist keine Anmeldung mit Eintrittsdatum mehr möglich. Auch neue Mitarbeitende benötigen zuerst einen persönlichen Einrichtungscode.'))perform('ENABLE_REQUIRED');
     });
     // Remove a displayed code immediately on company/account change, including hidden tabs.
     const watcher=setInterval(()=>{if(!valid()){clearInterval(watcher);back.remove()}},250);
@@ -228,4 +228,5 @@
   B.qrTerminalAdmin={refresh};
   setTimeout(()=>{if(document.getElementById('view-time')?.classList.contains('active'))refresh()},1000);
 })();
+
 

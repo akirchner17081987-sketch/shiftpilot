@@ -111,7 +111,7 @@
   if(typeof baseRender==='function')window.renderEmployees=function(){baseRender();renderEmployeeStats();setTimeout(markSelectedEmployee,0)};
 
   window.addAbsenceForSelected=function(){
-    if(!selectedEmployeeId){alert('Bitte zuerst einen Mitarbeiter auswählen.');return}
+    if(!selectedEmployeeId){void window.SFDialog.alert('Bitte zuerst einen Mitarbeiter auswählen.');return}
     const emp=employees.find(e=>e.id===selectedEmployeeId);if(!emp)return;
     if(typeof openAbsenceDialog!=='function'){return}
     openAbsenceDialog();
@@ -124,21 +124,22 @@
   };
 
   const baseDelete=window.deleteEmployee;
-  if(typeof baseDelete==='function')window.deleteEmployee=function(){
+  if(typeof baseDelete==='function')window.deleteEmployee=async function(){
     if(!selectedEmployeeId)return;
     const e=employees.find(x=>x.id===selectedEmployeeId);if(!e)return;
     const hasAssignments=(assignments||[]).some(a=>a.employeeId===e.id);
     const hasAbsences=(absences||[]).some(a=>a.employeeId===e.id);
     if(hasAssignments||hasAbsences){
       if(e.status==='active'){
-        if(confirm(`${e.first} ${e.last} besitzt bereits Planungs- oder Abwesenheitsdaten.\n\nStatt diese Historie zu löschen, den Mitarbeiter auf „Inaktiv“ setzen?`)){
+        if(await window.SFDialog.confirm(`${e.first} ${e.last} besitzt bereits Planungs- oder Abwesenheitsdaten.\n\nStatt diese Historie zu löschen, den Mitarbeiter auf „Inaktiv“ setzen?`)){
           e.status='inactive';saveAll();renderEmployees();renderPlanEmployeePool?.();renderCalendar?.();updateStats?.();selectEmployee(e.id);showSaveToast?.('Mitarbeiter deaktiviert',`${e.first} ${e.last} bleibt mit seiner Historie erhalten.`);
         }
         return;
       }
-      if(!confirm(`${e.first} ${e.last} ist bereits inaktiv, besitzt aber Historiedaten. Wirklich endgültig löschen?`))return;
+      if(!await window.SFDialog.confirm(`${e.first} ${e.last} ist bereits inaktiv, besitzt aber Historiedaten. Wirklich endgültig löschen?`))return;
     }
-    baseDelete();renderEmployeeStats();
+    if(selectedEmployeeId!==e.id||!employees.includes(e))return;
+    await baseDelete();renderEmployeeStats();
   };
 
   function bind(){
@@ -150,3 +151,4 @@
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
 })();
+

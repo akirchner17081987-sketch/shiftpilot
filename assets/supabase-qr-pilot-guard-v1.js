@@ -68,7 +68,7 @@
         if(q.error)throw q.error;
         if(typeof showSaveToast==='function')showSaveToast('QR-Betriebsart gespeichert',nextPilot?'Pilotbetrieb':'Allgemeiner Betrieb');
         await B.qrTerminalAdmin?.refresh?.();schedule(true);
-      }catch(err){alert(String(err?.message||err||'Betriebsart konnte nicht geändert werden.'));schedule(true)}
+      }catch(err){await window.SFDialog.alert(String(err?.message||err||'Betriebsart konnte nicht geändert werden.'));schedule(true)}
     });
 
     box.querySelector('[data-qrt-pilot-select]')?.addEventListener('change',async e=>{
@@ -78,7 +78,7 @@
         if(q.error)throw q.error;
         if(typeof showSaveToast==='function')showSaveToast('Pilotfreigabe gespeichert',employeeIds.length?`${employeeIds.length} Mitarbeiter freigegeben`:'Freigabe entfernt');
         await B.qrTerminalAdmin?.refresh?.();schedule(true);
-      }catch(err){alert(String(err?.message||err||'Pilotfreigabe konnte nicht gespeichert werden.'));schedule(true)}
+      }catch(err){await window.SFDialog.alert(String(err?.message||err||'Pilotfreigabe konnte nicht gespeichert werden.'));schedule(true)}
     });
   }
 
@@ -106,7 +106,7 @@
     const button=e.target.closest?.('#sfQrTerminalAdmin [data-qrt-toggle]');if(!button||!ADMIN.has(B.role))return;
     const row=button.closest('.sf-qrt-row[data-qrt-id]'),t=terminals.find(x=>same(x.id,row?.dataset.qrtId));
     if(!t||t.is_active||!isPilot(t))return;
-    if(selectedIds(t).length<1){e.preventDefault();e.stopImmediatePropagation();alert(candidates.length?'Bitte zuerst mindestens einen Pilot-Mitarbeiter auswählen. Alternativ die Betriebsart auf „Allgemeiner Betrieb“ stellen.':'Pilotbetrieb kann noch nicht aktiviert werden: Zuerst einen aktiven Mitarbeiter mit SchichtFunk-Login einrichten.');}
+    if(selectedIds(t).length<1){e.preventDefault();e.stopImmediatePropagation();void window.SFDialog.alert(candidates.length?'Bitte zuerst mindestens einen Pilot-Mitarbeiter auswählen. Alternativ die Betriebsart auf „Allgemeiner Betrieb“ stellen.':'Pilotbetrieb kann noch nicht aktiviert werden: Zuerst einen aktiven Mitarbeiter mit SchichtFunk-Login einrichten.');}
   },true);
 
   const observer=new MutationObserver(records=>{const relevant=records.some(r=>[...r.addedNodes].some(n=>n.nodeType===1&&(n.matches?.('#sfQrTerminalAdmin,.sf-qrt-row')||n.querySelector?.('#sfQrTerminalAdmin,.sf-qrt-row'))));if(relevant)schedule()});
@@ -117,3 +117,4 @@
   B.qrOperationGuard={refresh:()=>refresh()};
   setTimeout(()=>schedule(true),1200);
 })();
+

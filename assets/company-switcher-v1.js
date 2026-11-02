@@ -39,7 +39,7 @@
       B.showLoading?.('Unternehmen wird gewechselt …');
       if(B.syncTimer){clearTimeout(B.syncTimer);B.syncTimer=null;await B.sync?.();if(B.lastSyncError)throw B.lastSyncError;}
       if(window.SFCompanyProfile?.hasUnsavedChanges()){
-        if(!confirm('Ungespeicherte Unternehmensdaten verwerfen und das Unternehmen wechseln?')){B.hideLoading?.();return false;}
+        if(!await window.SFDialog.confirm('Ungespeicherte Unternehmensdaten verwerfen und das Unternehmen wechseln?')){B.hideLoading?.();return false;}
         window.SFCompanyProfile.discardDraft();
       }
       remember(id);
@@ -124,4 +124,5 @@
   });
   styles();bind();
 })();
+
 

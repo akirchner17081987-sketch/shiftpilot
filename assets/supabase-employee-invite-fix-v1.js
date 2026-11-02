@@ -14,7 +14,7 @@
     const list=employeeList();
     const employee=list.find(x=>String(x.id)===String(employeeId));
     if(!employee){
-      alert('Der ausgewählte Mitarbeiter konnte nicht geladen werden. Bitte Seite neu laden und erneut auswählen.');
+      await window.SFDialog.alert('Der ausgewählte Mitarbeiter konnte nicht geladen werden. Bitte Seite neu laden und erneut auswählen.');
       return;
     }
 
@@ -27,7 +27,7 @@
       return await original(employeeId);
     }catch(err){
       console.error('Mitarbeiterzugang konnte nicht eingerichtet werden:',err);
-      alert(err?.message||'Mitarbeiterzugang konnte nicht eingerichtet werden.');
+      await window.SFDialog.alert(err?.message||'Mitarbeiterzugang konnte nicht eingerichtet werden.');
     }finally{
       if(hadOwn)window.employees=previous;
       else delete window.employees;

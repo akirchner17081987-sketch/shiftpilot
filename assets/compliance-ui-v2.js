@@ -82,7 +82,7 @@
     if(payload.rhythmOverride?.reason){el.querySelector('#sfReasonText').value=payload.rhythmOverride.reason;el.querySelector('#sfReason').value='Zusätzlicher Personalbedarf';}
     el.querySelector('#sfSubmitChange')?.addEventListener('click',()=>{
       const reasonCode=el.querySelector('#sfReason').value,reasonText=el.querySelector('#sfReasonText').value.trim(),predictable=el.querySelector('#sfPredictable').value;
-      if(C.policy.requireReason&&!reasonCode){alert('Bitte einen Grund für die veröffentlichte Schichtänderung auswählen.');return}
+      if(C.policy.requireReason&&!reasonCode){void window.SFDialog.alert('Bitte einen Grund für die veröffentlichte Schichtänderung auswählen.');return}
       const req=C.createRequest(payload,{reasonCode,reasonText,predictable},result);C.closeChangeDrawer();
       if(req.status==='READY_TO_APPLY')C.applyRequest(req.id);else{C.refresh();C.toast('Änderung angefragt',statusLabel[req.status]||req.status);C.openComplianceCenter()}
     });
@@ -103,9 +103,9 @@
     const b=document.createElement('div');b.id='sfComplianceCenterBackdrop';b.className='sf-center-backdrop';b.innerHTML=`<div class="sf-center"><div class="sf-center-head"><div><div class="eyebrow">🛡 COMPLIANCE</div><h2>Schichtänderungen & Audit</h2><p style="margin:0;color:#8fa5bd">Offene Freigaben, blockierte Änderungen und Verlauf.</p></div><button class="sf-c-close" data-sf-click="click-f11c22db8918">✕</button></div><div class="sf-center-body"><div class="sf-tabs-title">OFFENE VORGÄNGE · ${open.length}</div>${open.length?open.map(requestHtml).join(''):'<div class="notice">✓ Keine offenen Änderungsvorgänge.</div>'}<div class="sf-tabs-title">VERLAUF</div>${history.length?history.map(requestHtml).join(''):'<div class="empty">Noch kein Änderungsverlauf vorhanden.</div>'}<div class="sf-tabs-title">AUDIT-LOG</div>${C.auditEvents.slice(0,30).map(a=>`<div class="sf-audit"><b>${C.esc(a.event)}</b> · ${new Date(a.at).toLocaleString('de-DE')} · ${C.esc(a.actor||'System')}</div>`).join('')||'<div class="empty">Noch keine Audit-Ereignisse.</div>'}</div></div>`;document.body.appendChild(b)
   };window.spOpenComplianceCenter=C.openComplianceCenter;
 
-  C.publishCurrentWeek=()=>{
+  C.publishCurrentWeek=async ()=>{
     const key=C.weekKey(C.iso(weekStart));if(C.publications[key]?.publishedAt){C.toast('Dienstplan bereits veröffentlicht',new Date(C.publications[key].publishedAt).toLocaleString('de-DE'));return}
-    if(!confirm('Dienstplan für die aktuelle Woche veröffentlichen?\n\nAb diesem Zeitpunkt laufen spätere Änderungen über die Compliance-Prüfung und werden protokolliert.'))return;
+    if(!await window.SFDialog.confirm('Dienstplan für die aktuelle Woche veröffentlichen?\n\nAb diesem Zeitpunkt laufen spätere Änderungen über die Compliance-Prüfung und werden protokolliert.'))return;
     const now=new Date().toISOString();C.publications[key]={publishedAt:now,publishedBy:'Administrator'};const dates=currentWeekDates().map(C.iso);assignments.filter(a=>dates.includes(a.date)).forEach(a=>{a.publishedAt=a.publishedAt||now;a.version=a.version||1});C.audit('PLAN_PUBLISHED',key,{dates});C.refresh();C.updateScheduleControls();C.toast('Dienstplan veröffentlicht','Spätere Änderungen werden ab jetzt als Änderungsvorgang dokumentiert.')
   };window.spPublishCurrentWeek=C.publishCurrentWeek;
 
@@ -138,3 +138,4 @@
   injectStyles();installEmployeeWorkModel();C.updateScheduleControls();C.decorateAssignments();if(document.getElementById('view-settings')?.classList.contains('active'))C.renderComplianceSettings();
   document.addEventListener('click',e=>{const v=e.target.closest('[data-view]')?.dataset.view;if(v==='schedule')setTimeout(()=>{C.updateScheduleControls();C.decorateAssignments()},0);if(v==='settings')setTimeout(C.renderComplianceSettings,0);if(v==='employees')setTimeout(installEmployeeWorkModel,0)});
 })();
+

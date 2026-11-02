@@ -74,7 +74,7 @@
   async function saveRule(id,m){
     try{const C=await loadCore(),row={company_id:B.companyId,label:m.querySelector('#sfDatevRuleLabel').value.trim(),source_type:m.querySelector('#sfDatevRuleSource').value,source_key:m.querySelector('#sfDatevRuleKey').value.trim()||null,wage_type:m.querySelector('#sfDatevRuleWage').value.trim(),cost_center:m.querySelector('#sfDatevRuleCost').value.trim()||null,sort_order:Number(m.querySelector('#sfDatevRuleSort').value||100),active:m.querySelector('#sfDatevRuleActive').checked,updated_at:new Date().toISOString(),updated_by:B.user?.id||null};if(row.source_type==='WORK_TOTAL')row.source_key=null;const errs=C.validateRules([row]);if(!row.label)errs.push('Bezeichnung fehlt.');if(errs.length)return showModalErrors(m,errs);let q;if(id)q=await B.client.from('datev_lodas_rules').update(row).eq('id',id).eq('company_id',B.companyId);else q=await B.client.from('datev_lodas_rules').insert({...row,created_by:B.user?.id||null});if(q.error)throw q.error;m.remove();configLoaded=false;await loadConfig(true);renderRules();setStatus('Lohnarten-Zuordnung gespeichert ✓','good')}catch(e){showModalErrors(m,[e?.message||String(e)])}
   }
-  async function deleteRule(id,m){if(!confirm('Diese DATEV-Lohnarten-Zuordnung wirklich löschen?'))return;try{const q=await B.client.from('datev_lodas_rules').delete().eq('id',id).eq('company_id',B.companyId);if(q.error)throw q.error;m.remove();configLoaded=false;await loadConfig(true);renderRules();setStatus('Lohnarten-Zuordnung gelöscht.','good')}catch(e){showModalErrors(m,[e?.message||String(e)])}}
+  async function deleteRule(id,m){if(!await window.SFDialog.confirm('Diese DATEV-Lohnarten-Zuordnung wirklich löschen?'))return;try{const q=await B.client.from('datev_lodas_rules').delete().eq('id',id).eq('company_id',B.companyId);if(q.error)throw q.error;m.remove();configLoaded=false;await loadConfig(true);renderRules();setStatus('Lohnarten-Zuordnung gelöscht.','good')}catch(e){showModalErrors(m,[e?.message||String(e)])}}
 
   async function preflight(month){
     const scope=exportContext();assertExportContext(scope);const C=await loadCore();assertExportContext(scope);await loadConfig(true);assertExportContext(scope);if(configCompany!==scope.company||month!==scope.month)throw Error('Die Abrechnungsauswahl hat sich geändert. Bitte erneut prüfen.');const exportSettings={...settings},exportRules=rules.map(r=>({...r}));const errors=[...C.validateSettings(settings),...C.validateRules(rules)],warnings=[];let status=null,bundle=null,entries=[];
@@ -113,3 +113,4 @@
   B.datevLodas={refresh:ensure};
   setTimeout(()=>scheduleEnsure(0),2400);
 })();
+

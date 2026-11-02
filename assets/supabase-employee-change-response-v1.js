@@ -124,7 +124,7 @@
   async function respond(id,decision){
     if(!id||!B.client||B.role!=='EMPLOYEE')return;
     const approve=decision==='APPROVED';
-    const ok=confirm(approve?'Diese Schicht\u00e4nderung verbindlich best\u00e4tigen?':'Diese Schicht\u00e4nderung ablehnen? Die bisherige Planung bleibt bestehen.');
+    const ok=await window.SFDialog.confirm(approve?'Diese Schicht\u00e4nderung verbindlich best\u00e4tigen?':'Diese Schicht\u00e4nderung ablehnen? Die bisherige Planung bleibt bestehen.');
     if(!ok)return;
     try{
       B.showLoading?.(approve?'Schicht\u00e4nderung wird best\u00e4tigt \u2026':'Schicht\u00e4nderung wird abgelehnt \u2026');
@@ -149,3 +149,4 @@
   B.openEmployeePortal=function(){const r=base.apply(this,arguments);setTimeout(enhance,0);return r};
   setTimeout(enhance,0);
 })();
+

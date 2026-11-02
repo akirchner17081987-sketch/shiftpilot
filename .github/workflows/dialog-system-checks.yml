@@ -1,0 +1,17 @@
+name: Dialoge und Bestätigungen
+on:
+  pull_request:
+  push:
+    branches: [codex/ionos-migration]
+jobs:
+  dialogs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/browser/dialog-system-qa.cjs

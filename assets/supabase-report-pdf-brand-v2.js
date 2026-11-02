@@ -75,7 +75,7 @@
         const hol=(data.holidays||[]).map(x=>`${dmy(x.date)} ${x.name}`).join(' · ')||'Keine Feiertage in diesem Monat.';const y=(doc.lastAutoTable?.finalY||160)+5;if(y<doc.internal.pageSize.getHeight()-16){doc.setFontSize(6.8);doc.setTextColor(91,108,121);doc.text('Feiertage: '+hol,14,y,{maxWidth:265});doc.setTextColor(0,0,0)}
       }
       footerAll(doc);doc.save(safe(`SchichtFunk_${employeeId?emp?.employee_name:'Gesamtauswertung'}_${monthValue()}`)+'.pdf');setStatus('PDF erstellt ✓');
-    }catch(e){console.error(e);setStatus('PDF-Export fehlgeschlagen');alert('PDF-Export fehlgeschlagen: '+(e?.message||e))}finally{busy(false)}
+    }catch(e){console.error(e);setStatus('PDF-Export fehlgeschlagen');await window.SFDialog.alert('PDF-Export fehlgeschlagen: '+(e?.message||e))}finally{busy(false)}
   }
 
   function employeeIdForButton(btn){
@@ -90,7 +90,7 @@
     const isMini=btn.classList.contains('sf-exp-mini')&&btn.textContent.trim().toUpperCase()==='PDF';
     if(!isMain&&!isMini)return;
     e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
-    const employeeId=employeeIdForButton(btn);if(btn.id==='sfExpEmpPdf'&&!employeeId){alert('Bitte zuerst einen Mitarbeiter auswählen.');return}
+    const employeeId=employeeIdForButton(btn);if(btn.id==='sfExpEmpPdf'&&!employeeId){void window.SFDialog.alert('Bitte zuerst einen Mitarbeiter auswählen.');return}
     exportPdf(employeeId||null);
   },true);
 })();

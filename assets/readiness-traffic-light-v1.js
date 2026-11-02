@@ -122,7 +122,7 @@
     try{
       const q=await B.client.from('shift_assignment_confirmations').upsert({assignment_id:shift.id,company_id:shift.company_id,employee_id:employee.id,status,note:String(note||'').trim(),responded_at:new Date().toISOString(),updated_at:new Date().toISOString()},{onConflict:'assignment_id,employee_id'});
       if(q.error)throw q.error;await augmentEmployee();B.notifications?.refresh?.();showSaveToast?.(status==='CONFIRMED'?'Schicht bestätigt':'Problem gemeldet',status==='CONFIRMED'?'Deine Einsatzbereitschaft wurde gespeichert.':'Die Disposition sieht deine Meldung in der Einsatzbereitschafts-Ampel.');
-    }catch(e){alert('Rückmeldung konnte nicht gespeichert werden: '+(e.message||String(e)))}finally{B.hideLoading?.()}
+    }catch(e){await window.SFDialog.alert('Rückmeldung konnte nicht gespeichert werden: '+(e.message||String(e)))}finally{B.hideLoading?.()}
   }
 
   function issueDialog(shift){
@@ -145,3 +145,4 @@
   document.addEventListener('sf:schedule-period-changed',refresh);
   window.SFReadiness={evaluate,refresh,confirmationReason};
 })();
+

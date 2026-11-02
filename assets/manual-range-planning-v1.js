@@ -44,7 +44,7 @@
   const check=()=>{const r=evaluate(employeeId,dates,$('sfRangeShift').value);$('sfRangeCheck').textContent=r.issues.length?r.issues.slice(0,5).join('\n'):r.warnings.length?'Hinweise – mit dem Speichern bewusst bestätigen:\n'+r.warnings.slice(0,6).join('\n'):'Die gesamte Auswahl ist geprüft.';$('sfRangeCheck').classList.toggle('sf-range-errors',!!r.issues.length);back.querySelector('[type=submit]').disabled=!!r.issues.length||!types.length||uncertain;return r;};$('sfRangeShift').onchange=check;check();$('sfRangeShift').focus();
   back.querySelector('[data-delete]').onclick=async()=>{if(saving||uncertain||!canStart())return;let wrote=false,controls=[],previousApplying=B().autoPlanApplying;
    try{if(company!==B().companyId||signature!==stateKey()||!authorized())throw Error('Die Planungsdaten haben sich geändert. Bitte erneut markieren.');const selected=deleteSelection(employeeId,dates);if(!selected.drafts.length)return;const count=selected.drafts.length;
-    if(!window.confirm(`${count} Entwurfsdienst${count===1?'':'e'} für ${name(e)} aus diesem Dienstplan löschen?${selected.blocked?'\n\n'+selected.blocked+' veröffentlichte Dienste bleiben erhalten.':''}`))return;
+    if(!await window.SFDialog.confirm(`${count} Entwurfsdienst${count===1?'':'e'} für ${name(e)} aus diesem Dienstplan löschen?${selected.blocked?'\n\n'+selected.blocked+' veröffentlichte Dienste bleiben erhalten.':''}`))return;
     saving=true;busy=true;B().autoPlanApplying=true;controls=[...document.querySelectorAll('#appShell button,#appShell input,#appShell select,#appShell textarea')].map(node=>({node,disabled:node.disabled}));controls.forEach(x=>x.node.disabled=true);back.querySelectorAll('button,select').forEach(n=>n.disabled=true);
     if(B().ready&&typeof B().sync==='function'){if(B().syncTimer){clearTimeout(B().syncTimer);B().syncTimer=null;}await B().sync();if(B().lastSyncError)throw B().lastSyncError;}
     if(company!==B().companyId||signature!==stateKey()||!authorized())throw Error('Die Planungsdaten haben sich geändert. Bitte erneut markieren.');
@@ -82,3 +82,4 @@
  window.SFManualRangePlanning={openSchedule,evaluate,renderSchedule,cancel,isBusy:()=>busy};
  const render=window.renderCalendar;if(render)window.renderCalendar=function(){const value=render.apply(this,arguments);renderSchedule();return value;};document.addEventListener('sf:backend-hydrated',renderSchedule);document.addEventListener('sf:schedule-period-changed',()=>{cancel();renderSchedule();});styles();renderSchedule();
 })();
+

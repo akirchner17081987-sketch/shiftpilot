@@ -90,7 +90,7 @@
   }
   async function incidentAction(incident,work){const ctx=capture();if(busyIncidents.has(incident.id)||B.disruptionSaving||managerBusy||managerError||!ctx.valid())return;busyIncidents.add(incident.id);B.disruptionSaving=true;renderManager();try{await work(ctx);if(ctx.valid()){await managerLoad();B.notifications?.refresh?.();}}catch(e){if(ctx.valid()){managerError=e.message||String(e);renderManager();}}finally{busyIncidents.delete(incident.id);B.disruptionSaving=false;if(ctx.valid())renderManager();}}
   async function send(incident,ids,retry=false){if(!ids.length)return;return incidentAction(incident,async ctx=>{const n=retry?await rpc('manager_retry_disruption_offer',{p_incident_id:incident.id,p_employee_id:ids[0],p_confirmed:true}):await rpc('manager_send_disruption_offers',{p_incident_id:incident.id,p_employee_ids:ids});if(ctx.valid())toast('Ersatzanfragen',Number(n)?`${n} Ersatzanfrage(n) versendet.`:'Keine neue Anfrage versendet. Bereits angefragte Personen wurden übersprungen.');});}
-  async function cancel(incident){if(!confirm('Diesen Störfall ohne Ersatz beenden? Offene Anfragen und ausstehende Ersatzübernahmen können danach nicht angewendet werden.'))return;return incidentAction(incident,()=>rpc('manager_cancel_disruption',{p_incident_id:incident.id,p_comment:''}));}
+  async function cancel(incident){if(!await window.SFDialog.confirm('Diesen Störfall ohne Ersatz beenden? Offene Anfragen und ausstehende Ersatzübernahmen können danach nicht angewendet werden.'))return;return incidentAction(incident,()=>rpc('manager_cancel_disruption',{p_incident_id:incident.id,p_comment:''}));}
   function candidateHtml(x,disabled){const prior=!!x.offer_status,active=x.offer_status==='OFFERED',accepted=x.offer_status==='ACCEPTED';return `<article class="sf-candidate" data-employee="${esc(x.employee_id)}"><div class="sf-candidate-head"><div><b>${esc(x.employee_name)}</b><small>${esc(x.employee_role)} · ${Number(x.planned_hours||0).toFixed(1)} h geplant</small></div><span class="sf-candidate-score">${Number(x.score)} Punkte</span></div><div class="sf-candidate-reasons">${(x.reasons||[]).map(r=>`<span>${esc(r)}</span>`).join('')}</div>${prior?`<small>${esc(statusLabel(x.offer_status))}</small>`:''}<button class="ghost ${active?'sent':''}" ${prior?'data-retry-one':'data-send-one'} ${disabled||active||accepted?'disabled':''}>${active?'Antwort ausstehend':accepted?'Zusage eingegangen':prior?'Erneut anfragen':'Anfrage senden'}</button></article>`;}
   function renderManager(){
     ensureView();const view=document.getElementById('view-disruptions');if(!view||!canPlan())return;const open=incidents.filter(x=>x.status==='OPEN').length,resolved=incidents.filter(x=>x.status==='RESOLVED').length,pending=incidents.reduce((n,x)=>n+Number(x.pending_count||0),0);
@@ -103,7 +103,7 @@
     list.querySelectorAll('[data-reload]').forEach(b=>{b.disabled=managerBusy;b.onclick=()=>managerLoad();});
     list.querySelectorAll('[data-send-top]').forEach(b=>b.onclick=()=>{const i=incident(b);send(i,unasked(candidates.get(i.id)||[]).slice(0,3).map(c=>c.employee_id));});
     list.querySelectorAll('[data-send-one]').forEach(b=>b.onclick=()=>send(incident(b),[b.closest('[data-employee]').dataset.employee]));
-    list.querySelectorAll('[data-retry-one]').forEach(b=>b.onclick=()=>{if(confirm('Diese Person hat bereits eine Anfrage erhalten. Nach neuer Rücksprache wirklich erneut anfragen?'))send(incident(b),[b.closest('[data-employee]').dataset.employee],true);});
+    list.querySelectorAll('[data-retry-one]').forEach(b=>b.onclick=async ()=>{if(await window.SFDialog.confirm('Diese Person hat bereits eine Anfrage erhalten. Nach neuer Rücksprache wirklich erneut anfragen?'))send(incident(b),[b.closest('[data-employee]').dataset.employee],true);});
     list.querySelectorAll('[data-cancel]').forEach(b=>b.onclick=()=>cancel(incident(b)));list.querySelectorAll('[data-replace]').forEach(b=>b.onclick=()=>openReplacement(incident(b).assignment_id));list.querySelectorAll('[data-approvals]').forEach(b=>b.onclick=()=>window.SFCompliance?.openComplianceCenter?.());
   }
 
@@ -126,3 +126,4 @@
   window.SFDisruptionAutopilot={refresh,open:openDashboard,openIncident,openReplacement};
   if(sessionStorage.getItem('sf_demo_session_v1')==='active')for(const delay of [0,250,800])setTimeout(()=>{if(B.role==='EMPLOYEE'&&document.getElementById('sfEmployeePortal'))employeeLoad()},delay);
 })();
+

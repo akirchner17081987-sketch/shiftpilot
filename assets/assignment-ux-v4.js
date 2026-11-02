@@ -105,11 +105,12 @@
     search.addEventListener('input',render);render();search.focus();
   };
 
-  function deleteAssignmentWithConfirm(a,emp){
+  async function deleteAssignmentWithConfirm(a,emp){
+    const signature=JSON.stringify(a);
     const t=typeById(a.type);const start=a.start||t?.start||'',end=a.end||t?.end||'';
     const dateLabel=new Date(a.date+'T00:00:00').toLocaleDateString('de-DE',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'});
-    const ok=confirm(`Schicht wirklich löschen?\n\n${(window.SFShiftModels?.label?.(a.type)||a.type)} · ${emp.first} ${emp.last}\n${dateLabel} · ${start}–${end}\n\nDie Zuweisung wird aus dem Dienstplan entfernt.`);
-    if(!ok)return false;
+    const ok=await window.SFDialog.confirm(`Schicht wirklich löschen?\n\n${(window.SFShiftModels?.label?.(a.type)||a.type)} · ${emp.first} ${emp.last}\n${dateLabel} · ${start}–${end}\n\nDie Zuweisung wird aus dem Dienstplan entfernt.`);
+    if(!ok||JSON.stringify(assignments.find(x=>x.id===a.id))!==signature)return false;
     assignments=assignments.filter(x=>x.id!==a.id);
     refreshAfterChange();
     closeModal();
@@ -138,3 +139,4 @@
 
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('spAssignModal'))closeModal()});
 })();
+

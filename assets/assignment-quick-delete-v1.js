@@ -10,9 +10,9 @@
     if(typeof updateStats==='function') updateStats();
   }
 
-  window.spQuickDeleteAssignment=function(id,ev){
+  window.spQuickDeleteAssignment=async function(id,ev){
     if(ev){ev.preventDefault();ev.stopPropagation();}
-    const a=(assignments||[]).find(x=>x.id===id);if(!a)return false;
+    const a=(assignments||[]).find(x=>x.id===id);if(!a)return false;const signature=JSON.stringify(a);
     const published=a._dbStatus==='PUBLISHED'||!!a.publishedAt||!!window.SFCompliance?.isPublished?.(a);
     if(published){
       if(typeof showSaveToast==='function')showSaveToast('Veröffentlichte Schicht', 'Bitte die Löschung über die Änderungsprüfung durchführen.');
@@ -24,8 +24,8 @@
     const start=a.start||t?.start||'',end=a.end||t?.end||'';
     const dateLabel=new Date(a.date+'T00:00:00').toLocaleDateString('de-DE',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'});
     const name=emp?`${emp.first} ${emp.last}`:'Mitarbeiter';
-    const ok=confirm(`Schicht wirklich löschen?\n\n${a.type} · ${name}\n${dateLabel} · ${start}–${end}`);
-    if(!ok)return false;
+    const ok=await window.SFDialog.confirm(`Schicht wirklich löschen?\n\n${a.type} · ${name}\n${dateLabel} · ${start}–${end}`);
+    if(!ok||JSON.stringify((assignments||[]).find(x=>x.id===id))!==signature)return false;
     assignments=assignments.filter(x=>x.id!==id);
     refresh();
     if(typeof showSaveToast==='function'){
@@ -53,3 +53,4 @@
   wrapped.__quickDeleteV1=true;
   window.renderAssignments=wrapped;
 })();
+

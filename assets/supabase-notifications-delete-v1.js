@@ -26,7 +26,7 @@
 
   async function refresh(){try{await B.notifications?.refresh?.()}catch{}setTimeout(enhance,60)}
   async function removeOne(id){if(busy||!id||!B.client||!B.user?.id)return;busy=true;try{const q=await B.client.from('notifications').delete().eq('id',id).eq('user_id',B.user.id);if(q.error)throw q.error;await refresh()}catch(e){console.warn('Mitteilung konnte nicht gelöscht werden',e)}finally{busy=false}}
-  async function removeAll(){if(busy||!B.client||!B.user?.id)return;if(!confirm('Alle Benachrichtigungen wirklich löschen?\n\nDieser Vorgang kann nicht rückgängig gemacht werden.'))return;busy=true;try{const q=await B.client.from('notifications').delete().eq('user_id',B.user.id);if(q.error)throw q.error;await refresh()}catch(e){console.warn('Benachrichtigungen konnten nicht gelöscht werden',e)}finally{busy=false}}
+  async function removeAll(){if(busy||!B.client||!B.user?.id)return;if(!await window.SFDialog.confirm('Alle Benachrichtigungen wirklich löschen?\n\nDieser Vorgang kann nicht rückgängig gemacht werden.'))return;busy=true;try{const q=await B.client.from('notifications').delete().eq('user_id',B.user.id);if(q.error)throw q.error;await refresh()}catch(e){console.warn('Benachrichtigungen konnten nicht gelöscht werden',e)}finally{busy=false}}
 
   document.addEventListener('click',e=>{
     const del=e.target?.closest?.('.sf-notify-delete');if(del){e.preventDefault();e.stopImmediatePropagation();const item=del.closest('.sf-notify-item[data-id]');removeOne(item?.dataset?.id);return}
@@ -35,3 +35,4 @@
   document.addEventListener('keydown',e=>{const del=e.target?.closest?.('.sf-notify-delete');if(del&&(e.key==='Enter'||e.key===' ')){e.preventDefault();e.stopImmediatePropagation();removeOne(del.closest('.sf-notify-item[data-id]')?.dataset?.id)}},true);
   setInterval(enhance,700);setTimeout(enhance,900)
 })();
+

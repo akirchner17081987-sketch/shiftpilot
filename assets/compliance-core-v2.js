@@ -131,6 +131,7 @@
     return{level,findings,employeeApproval,worksCouncil,published};
   };
   C.refresh=()=>{saveAll();C.persist();renderCalendar();renderPlanEmployeePool();renderOverview();updateStats()};
-  C.toast=(t,x)=>typeof showSaveToast==='function'?showSaveToast(t,x):alert(t+'\n'+x);
+  C.toast=(t,x)=>typeof showSaveToast==='function'?showSaveToast(t,x):void window.SFDialog.alert(t+'\n'+x);
   window.SchichtFunkConflictAudit={check:C.check,complianceCheck:C.complianceCheck,isWeekPublished:C.isWeekPublished,requests:()=>C.requests,audit:()=>C.auditEvents};
 })();
+

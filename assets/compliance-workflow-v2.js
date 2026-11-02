@@ -41,7 +41,7 @@
   C.directSave=(emp,type,date,start,end,extra={})=>{
     const existing=extra.ignoreId?assignments.find(x=>x.id===extra.ignoreId):null;
     const c=(C.manualCheck||C.check)(emp,type,date,start,end,existing?.id||null);
-    if(c.hard.length){alert('Zuweisung nicht möglich:\n\n'+c.hard.join('\n'));return false}
+    if(c.hard.length){void window.SFDialog.alert('Zuweisung nicht möglich:\n\n'+c.hard.join('\n'));return false}
     if(c.soft.length&&!extra.softConfirmed){C.openPlausibilityDialog(c.soft,()=>C.directSave(emp,type,date,start,end,{...extra,softConfirmed:true}));return false}
     const learningBefore=existing?{...existing}:null;
     if(existing){
@@ -195,14 +195,14 @@
     document.body.appendChild(m);const val=x=>m.querySelector('#'+x).value;
     if((a._dbStatus==='PUBLISHED'||a.publishedAt)&&window.SFDisruptionAutopilot?.openReplacement){
       const fields=['spEditEmp','spEditType','spEditDate','spEditStart','spEditEnd','spEditPause','spEditNote'],originalValues=fields.map(val),button=document.createElement('button');button.className='ghost';button.type='button';button.id='spReplaceAssign';button.textContent='⚡ Ausfall / Ersatz';
-      button.onclick=()=>{if(window.SFBackend?.companyId!==editingCompany)return;if(fields.some((field,index)=>val(field)!==originalValues[index])){alert('Bitte die Änderungen zuerst speichern oder den Dienst erneut öffnen.');return;}window.SFDisruptionAutopilot.openReplacement(a.id);};
+      button.onclick=()=>{if(window.SFBackend?.companyId!==editingCompany)return;if(fields.some((field,index)=>val(field)!==originalValues[index])){void window.SFDialog.alert('Bitte die Änderungen zuerst speichern oder den Dienst erneut öffnen.');return;}window.SFDisruptionAutopilot.openReplacement(a.id);};
       m.querySelector('.sp-assign-foot').insertBefore(button,m.querySelector('#spDeleteAssign').nextSibling);
     }
     const validate=()=>{const e=options.fixedEmployee?emp:employees.find(x=>x.id===val('spEditEmp')),type=val('spEditType'),tt=typeById(type),date=options.fixedDate?a.date:val('spEditDate'),start=val('spEditStart')||tt?.start,end=val('spEditEnd')||tt?.end,c=e&&tt?(C.manualCheck||C.check)(e,type,date,start,end,a.id):{hard:['Ungültige Eingabe'],soft:[]};const box=m.querySelector('#spEditCheck');box.className='sp-edit-check '+(c.hard.length?'bad':c.soft.length?'warn':'good');box.innerHTML=c.hard.length?'⛔ '+C.esc(c.hard.join(' ')):c.soft.length?'⚠ '+C.esc(c.soft.join(' ')):'✓ Keine Standardverletzung erkannt.';return{e,type,date,start,end,c}};
     ['spEditEmp','spEditType','spEditDate','spEditStart','spEditEnd'].forEach(x=>m.querySelector('#'+x).onchange=validate);validate();
     m.querySelector('#spEditType').onchange=()=>{const model=typeById(val('spEditType'));if(model){m.querySelector('#spEditStart').value=model.start;m.querySelector('#spEditEnd').value=model.end;}validate();};
     m.querySelector('#spSaveAssign').onclick=()=>{if(options.fromPreview&&(window.SFBackend?.companyId!==editingCompany||JSON.stringify(assignments.find(x=>x.id===id))!==editSignature)){C.toast?.('Planungsdaten geändert','Bitte den Dienst erneut öffnen.');return;}const v=validate();if(!v.e)return;if(!C.isPublished(a)&&v.c.hard.length)return;C.save(v.e,v.type,v.date,v.start,v.end,{ignoreId:a.id,pause:val('spEditPause'),note:val('spEditNote'),onSaved:options.onSaved});closeAssign()};
-    m.querySelector('#spDeleteAssign').onclick=()=>{if(options.fromPreview&&(window.SFBackend?.companyId!==editingCompany||JSON.stringify(assignments.find(x=>x.id===id))!==editSignature))return;if(C.isPublished(a)){closeAssign();C.openChangeDrawer?.({action:'DELETE',assignment:a,employeeId:a.employeeId,type:a.type,date:a.date,start:a.start||t.start,end:a.end||t.end,pause:a.pause||0,note:a.note||''});return}if(!confirm(`Schicht ${a.type} für ${emp.first} ${emp.last} wirklich löschen?`))return;assignments=assignments.filter(x=>x.id!==a.id);C.audit('SHIFT_DELETED_DRAFT',a.id);C.refresh();options.onDeleted?.();closeAssign();C.toast('Schicht gelöscht',`${a.type} · ${emp.first} ${emp.last}`)};
+    m.querySelector('#spDeleteAssign').onclick=async ()=>{if(options.fromPreview&&(window.SFBackend?.companyId!==editingCompany||JSON.stringify(assignments.find(x=>x.id===id))!==editSignature))return;if(C.isPublished(a)){closeAssign();C.openChangeDrawer?.({action:'DELETE',assignment:a,employeeId:a.employeeId,type:a.type,date:a.date,start:a.start||t.start,end:a.end||t.end,pause:a.pause||0,note:a.note||''});return}if(!await window.SFDialog.confirm(`Schicht ${a.type} für ${emp.first} ${emp.last} wirklich löschen?`))return;if(window.SFBackend?.companyId!==editingCompany||JSON.stringify(assignments.find(x=>x.id===id))!==editSignature)return;assignments=assignments.filter(x=>x.id!==a.id);C.audit('SHIFT_DELETED_DRAFT',a.id);C.refresh();options.onDeleted?.();closeAssign();C.toast('Schicht gelöscht',`${a.type} · ${emp.first} ${emp.last}`)};
   };
 
   if(typeof window.applyAutoPlanPreview==='function'){
@@ -210,3 +210,4 @@
     window.applyAutoPlanPreview=function(){if((typeof autoPlanPreview!=='undefined'?autoPlanPreview:[]).some(a=>C.isWeekPublished(a.date))){C.toast?.('Bereits veröffentlichter Zeitraum','Änderungen an freigegebenen Wochen bitte einzeln im Dienstplan prüfen.');return}return baseAuto.apply(this,arguments)};
   }
 })();
+
