@@ -1,17 +1,18 @@
-// SchichtFunk – gebündelte Demo-Steuerung am unteren Bildschirmrand V1
+// SchichtFunk – Demo-Steuerung über der jeweiligen Hauptnavigation
 (function(){
   if(window.__sfDemoControlDockV1)return;
   if(sessionStorage.getItem('sf_demo_session_v1')!=='active')return;
   window.__sfDemoControlDockV1=true;
 
-  let syncing=false,queued=false;
+  let syncing=false,queued=false,resizeObserver=null;
 
   function ensureCss(){
     if(document.getElementById('sfDemoControlDockCss'))return;
     const style=document.createElement('style');style.id='sfDemoControlDockCss';style.textContent=`
-      html[data-sf-demo="1"]{--sf-demo-dock-space:86px}
-      #sfDemoControlDock{position:fixed;z-index:30000;left:50%;bottom:max(10px,env(safe-area-inset-bottom));transform:translateX(-50%);width:max-content;max-width:calc(100vw - 22px);padding:7px;border:1px solid #31536a;border-radius:15px;background:rgba(7,20,31,.96);box-shadow:0 18px 55px rgba(0,0,0,.48);backdrop-filter:blur(14px);color:#eaf5fd}
+      html[data-sf-demo="1"]{--sf-demo-nav-space:0px;--sf-demo-dock-height:70px;--sf-demo-dock-space:calc(var(--sf-demo-nav-space) + var(--sf-demo-dock-height) + 20px)}
+      #sfDemoControlDock{position:fixed;z-index:30000;left:50%;bottom:max(calc(var(--sf-demo-nav-space) + 8px),calc(env(safe-area-inset-bottom) + 8px));transform:translateX(-50%);width:max-content;max-width:calc(100vw - 22px);padding:7px;border:1px solid #31536a;border-radius:15px;background:rgba(7,20,31,.96);box-shadow:0 18px 55px rgba(0,0,0,.48);backdrop-filter:blur(14px);color:#eaf5fd}
       #sfDemoControlDock.sf-demo-dock-obscured{opacity:0;visibility:hidden;pointer-events:none}
+      body:has(.sf-orbit-popup.is-open) #sfDemoControlDock{opacity:0;visibility:hidden;pointer-events:none}
       #sfDemoControlDock .sf-demo-dock-controls{display:flex;align-items:center;justify-content:center;gap:7px;max-width:100%;overflow-x:auto;overscroll-behavior-inline:contain;scrollbar-width:thin;scrollbar-color:#31536a transparent}
       #sfDemoControlDock #sfDemoBadge{position:static!important;right:auto!important;bottom:auto!important;display:block!important;flex:0 0 auto;margin:0;padding:7px 10px;box-shadow:none;white-space:nowrap}
       #sfDemoControlDock .sf-demo-perspective{position:static!important;inset:auto!important;transform:none!important;flex:0 0 auto;margin:0!important;box-shadow:none}
@@ -22,9 +23,7 @@
       html[data-sf-demo="1"] #appShell .main{margin-bottom:var(--sf-demo-dock-space)!important;padding-bottom:40px!important;scroll-padding-bottom:24px}
       html[data-sf-demo="1"] #sfEmployeePortal .sf-portal-main{bottom:var(--sf-demo-dock-space)!important;padding-bottom:40px!important;scroll-padding-bottom:24px}
       @media(max-width:560px){
-        html[data-sf-demo="1"]{--sf-demo-dock-space:132px}
-        #sfDemoControlDock{width:calc(100vw - 16px);bottom:max(8px,env(safe-area-inset-bottom));padding:7px 6px;border-radius:14px}
-        #sfDemoControlDock.sf-demo-dock-employee{bottom:calc(76px + max(8px,env(safe-area-inset-bottom)))}
+        #sfDemoControlDock{width:calc(100vw - 16px);padding:7px 6px;border-radius:14px}
         #sfDemoControlDock .sf-demo-dock-controls{justify-content:flex-start;flex-wrap:nowrap;gap:5px;overflow-x:auto;overflow-y:hidden}
         #sfDemoControlDock #sfDemoBadge{width:74px;font-size:0;padding:6px 8px;text-align:center}
         #sfDemoControlDock #sfDemoBadge:after{content:'DEMO';font-size:9px;letter-spacing:.1em}
@@ -44,6 +43,17 @@
     document.body.appendChild(root);return root;
   }
 
+  function layout(root){
+    const nav=[...document.querySelectorAll('#appShell .sf-orbit-dock,#sfEmployeePortal .sf-orbit-dock,#sfEmployeeMobileDock')].find(node=>{
+      const box=node.getBoundingClientRect(),style=getComputedStyle(node);return box.width>0&&box.height>0&&style.display!=='none'&&style.visibility!=='hidden';
+    });
+    if(nav&&resizeObserver)resizeObserver.observe(nav);
+    const navSpace=nav?Math.max(0,Math.ceil(innerHeight-nav.getBoundingClientRect().top)):0;
+    const dockHeight=Math.ceil(root.getBoundingClientRect().height)||70,style=document.documentElement.style;
+    if(style.getPropertyValue('--sf-demo-nav-space')!==`${navSpace}px`)style.setProperty('--sf-demo-nav-space',`${navSpace}px`);
+    if(style.getPropertyValue('--sf-demo-dock-height')!==`${dockHeight}px`)style.setProperty('--sf-demo-dock-height',`${dockHeight}px`);
+  }
+
   function sync(){
     if(syncing||!document.body)return;syncing=true;
     try{
@@ -55,12 +65,13 @@
       const modal=[...document.querySelectorAll('[role="dialog"],[aria-modal="true"]')].some(node=>!root.contains(node)&&node.getClientRects().length>0);
       root.classList.toggle('sf-demo-dock-obscured',modal);
       if(managerExit)managerExit.hidden=employee&&!!employeeExit;if(employeeExit)employeeExit.hidden=!employee;
+      layout(root);
       document.documentElement.dataset.sfDemoDock='1';
     }finally{syncing=false}
   }
 
   const observer=new MutationObserver(()=>{if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;sync()})});
-  function boot(){sync();observer.observe(document.body,{childList:true,subtree:true})}
+  function boot(){if(typeof ResizeObserver==='function')resizeObserver=new ResizeObserver(()=>{const root=document.getElementById('sfDemoControlDock');if(root)layout(root)});sync();const root=document.getElementById('sfDemoControlDock');if(root&&resizeObserver)resizeObserver.observe(root);observer.observe(document.body,{childList:true,subtree:true});window.addEventListener('resize',()=>{if(root)layout(root)},{passive:true})}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
   document.addEventListener('sf:demo-perspective-change',()=>setTimeout(sync,0));
 })();

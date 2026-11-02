@@ -14,6 +14,14 @@ test('current demo uses five fictional staff and blocks production data',async({
  await primeDemoSession(page);
  await page.goto('/demo');
  await waitForDemoReady(page,{scenarios:true});
+ const demoDock=page.locator('#sfDemoControlDock'),managerNav=page.locator('#sfOrbitDock');
+ await expect(managerNav).toBeVisible();
+ await expect.poll(async()=>{const d=await demoDock.boundingBox(),n=await managerNav.boundingBox();return d&&n?n.y-(d.y+d.height):-999}).toBeGreaterThanOrEqual(4);
+ await managerNav.locator('[data-orbit-category="planning"]').click();
+ await expect(page.locator('#sfOrbitPopup')).toHaveClass(/is-open/);
+ await expect(demoDock).toBeHidden();
+ await page.locator('#sfOrbitPopup button[aria-label="Auswahlmenü schließen"]').click();
+ await expect(demoDock).toBeVisible();
  await expect(page.locator('#sfTodayWorkspace')).toBeVisible();
  await expect(page.locator('#sfTodayStatus')).toContainText('fiktive');
  await expect.poll(()=>page.evaluate(()=>!!window.SFToday?.getResult())).toBe(true);
@@ -44,6 +52,8 @@ test('current demo uses five fictional staff and blocks production data',async({
  await expect.poll(()=>page.evaluate(()=>!!window.SFReports?.getResult())).toBe(true);
  await demoPerspectiveSwitch(page).locator('[data-demo-perspective="employee"]').click();
  await expect(page.locator('#sfEmployeePortal')).toBeVisible();
+ const employeeNav=page.locator('#sfEmployeePortal .sf-orbit-dock');await expect(employeeNav).toBeVisible();
+ await expect.poll(async()=>{const d=await demoDock.boundingBox(),n=await employeeNav.boundingBox();return d&&n?n.y-(d.y+d.height):-999}).toBeGreaterThanOrEqual(4);
  const integrity=await page.evaluate(()=>{const p=window.SFBackend.employeePortalData,ids=new Set(JSON.parse(sessionStorage.getItem('sf_demo_data_assignments')).filter(a=>a.publishedAt||a._dbStatus==='PUBLISHED').map(a=>a.id));return p.shifts.every(s=>ids.has(s.id))});
  expect(integrity).toBe(true);
  expect(forbidden).toEqual([]);
