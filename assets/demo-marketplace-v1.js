@@ -88,7 +88,7 @@
   let marketRows=seedMarketplace(),disruptionRows=seedDisruptionOffers(),timeRows=seedTime(),datev=seedDatev(),accountSettings=seedAccountSettings();
   const saveMarket=()=>write(MARKET_KEY,marketRows),saveDisruptions=()=>write(DISRUPTION_KEY,disruptionRows),saveDatev=()=>write(DATEV_KEY,datev),saveAccount=()=>write(ACCOUNT_KEY,accountSettings);
   function linkSampleOffers(){
-    if(!marketRows.some(r=>String(r.assignment_id||'').startsWith('demo-as-market-')))return;
+    if(sessionStorage.getItem('sf_demo_data_august_standard_v1')!=='ready'||!marketRows.some(r=>String(r.assignment_id||'').startsWith('demo-as-market-')))return;
     const people=read('sf_demo_data_employees',[]),plans=read('sf_demo_data_assignments',[]),core=window.SFSolidPlanningCore;
     if(!people.length||!plans.length||!core?.instant)return;
     const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Berlin',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()),used=new Set();
@@ -317,7 +317,7 @@
     if(name==='manager_monthly_time_accounts'){
       return {data:managerAccountRows(args.p_month),error:null};
     }
-    if(name==='manager_set_time_account_opening')return {data:{saved:true,demo:true},error:null};
+    if(name==='manager_set_time_account_opening')return {data:null,error:demoError('RPC',name)};
     if(name==='employee_my_time_account_month')return {data:employeeAccount(args.p_month),error:null};
     if(name==='employee_list_shift_swaps')return {data:clone(marketRows.filter(x=>x.status!=='MARKET_OPEN').map(x=>({...x,direction:x.claimed_by==='Anna Becker'?'INCOMING':'OUTGOING',other_employee_name:x.claimed_by||x.offered_by}))),error:null};
     if(name==='employee_list_shift_swap_candidates')return {data:employeeRows().filter(x=>x.id!=='demo-e01').slice(0,5).map(x=>({employee_id:x.id,display_name:`${x.first_name} ${x.last_name}`,employee_role:'Sicherheitsmitarbeiter'})),error:null};
@@ -379,12 +379,13 @@
       if(table==='shift_assignment_confirmations')source=[];
       if(table==='absences')source=absenceRows();
       if(source){
+        if(op!=='select')return {data:null,error:demoError('Tabellenschreiben',table)};
         const rows=source.filter(row=>Object.entries(filters).every(([key,value])=>Array.isArray(value)?value.map(String).includes(String(row[key])):String(row[key])===String(value)));
         return {data:single?(rows[0]?clone(rows[0]):null):clone(rows),error:null};
       }
       if(table==='datev_lodas_settings'){
         if(op==='select')return {data:clone(datev.settings),error:null};
-        return {data:clone(datev.settings),error:null};
+        return {data:null,error:demoError('Tabellenschreiben',table)};
       }
       if(op==='select')return {data:single?(datev.rules[0]?clone(datev.rules[0]):null):clone(datev.rules),error:null};
       if(op==='update'){
@@ -396,11 +397,11 @@
       return {data:null,error:null};
     };
     const q={
-      select(){op='select';return q},eq(k,v){filters[k]=v;return q},in(k,v){filters[k]=Array.isArray(v)?v:[];return q},order(){return q},limit(){return q},
+      select(){return q},eq(k,v){filters[k]=v;return q},in(k,v){filters[k]=Array.isArray(v)?v:[];return q},order(){return q},limit(){return q},
       single(){return Promise.resolve(run(true))},
       maybeSingle(){return Promise.resolve(run(true))},
-      upsert(row){if(table==='time_account_settings'){op='upsert';payload=row;return Promise.resolve(run(true))}datev.settings={...datev.settings,...row,company_id:datev.settings.company_id};saveDatev();return Promise.resolve({data:clone(datev.settings),error:null})},
-      insert(row){const item={...row,id:`demo-datev-rule-${Date.now()}`,company_id:datev.settings.company_id,created_at:new Date().toISOString()};datev.rules.push(item);saveDatev();return Promise.resolve({data:clone(item),error:null})},
+      upsert(row){if(table==='time_account_settings'){op='upsert';payload=row;return Promise.resolve(run(true))}if(table!=='datev_lodas_settings')return Promise.resolve({data:null,error:demoError('Tabellenschreiben',table)});datev.settings={...datev.settings,...row,company_id:datev.settings.company_id};saveDatev();return Promise.resolve({data:clone(datev.settings),error:null})},
+      insert(row){if(table!=='datev_lodas_rules')return Promise.resolve({data:null,error:demoError('Tabellenschreiben',table)});const item={...row,id:`demo-datev-rule-${Date.now()}`,company_id:datev.settings.company_id,created_at:new Date().toISOString()};datev.rules.push(item);saveDatev();return Promise.resolve({data:clone(item),error:null})},
       update(row){op='update';payload=row;return q},delete(){op='delete';return q},
       then(resolve,reject){return Promise.resolve(run(false)).then(resolve,reject)}
     };return q;

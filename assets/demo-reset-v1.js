@@ -10,6 +10,7 @@
     'sf_demo_absence_requests_v1',
     'sf_demo_time_tracking_v2',
     'sf_demo_datev_v2',
+    'sf_demo_time_account_settings_v1',
     'sf_schedule_view_mode_v1'
   ]);
   const RESET_PREFIXES=['sf_demo_data_'];

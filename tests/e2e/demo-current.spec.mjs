@@ -47,11 +47,19 @@ test('current demo uses five fictional staff and blocks production data',async({
  expect(workflow.error||workflow.reviewError||workflow.marketError).toBeFalsy();
  expect(workflow.absence).toBe(true);
  expect(workflow.assigned).toBe(workflow.target);
+ const guards=await page.evaluate(async()=>{
+  const client=window.SFBackend.client,before=sessionStorage.getItem('sf_demo_datev_v2');
+  const invalid=[await client.from('employees').insert({first_name:'X'}),await client.from('employees').upsert({id:'x'}),await client.from('employees').update({first_name:'X'}).eq('id','demo-e01'),await client.rpc('manager_set_time_account_opening',{})];
+  await client.from('time_account_settings').upsert({federal_state:'DE-BY'});
+  return {codes:invalid.map(x=>x.error?.code),datevUnchanged:before===sessionStorage.getItem('sf_demo_datev_v2')};
+ });
+ expect(guards.codes).toEqual(Array(4).fill('SF_DEMO_UNHANDLED'));expect(guards.datevUnchanged).toBe(true);
  const started=await page.evaluate(()=>sessionStorage.getItem('sf_demo_started_at_v1'));
  await page.reload();await waitForDemoReady(page,{scenarios:true});
  const resumed=await page.evaluate(({assignmentId,absenceId})=>({assignment:JSON.parse(sessionStorage.getItem('sf_demo_data_assignments')).find(a=>a.id===assignmentId)?.employeeId,absence:JSON.parse(sessionStorage.getItem('sf_demo_absence_requests_v1')).find(a=>a.id===absenceId)?.status,started:sessionStorage.getItem('sf_demo_started_at_v1')}),workflow);
  expect(resumed.assignment).toBe(workflow.target);expect(resumed.absence).toBe('Genehmigt');expect(resumed.started).toBe(started);
- await page.locator('#sfDemoResetBtn').click();await page.locator('.sf-demo-reset-confirm').click();await waitForDemoReady(page,{scenarios:true});
+ await page.locator('#sfDemoResetBtn').click();await Promise.all([page.waitForEvent('load'),page.locator('.sf-demo-reset-confirm').click()]);await waitForDemoReady(page,{scenarios:true});
+ expect(await page.evaluate(()=>JSON.parse(sessionStorage.getItem('sf_demo_time_account_settings_v1')).federal_state)).not.toBe('DE-BY');
  const reset=await page.evaluate(({assignmentId,absenceId})=>({assignment:JSON.parse(sessionStorage.getItem('sf_demo_data_assignments')).find(a=>a.id===assignmentId)?.employeeId,absence:JSON.parse(sessionStorage.getItem('sf_demo_absence_requests_v1')||'[]').some(a=>a.id===absenceId)}),workflow);
  expect(reset.assignment).not.toBe(workflow.target);expect(reset.absence).toBe(false);
  await page.evaluate(()=>window.switchView('reports'));
