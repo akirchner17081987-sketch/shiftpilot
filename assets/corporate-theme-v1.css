@@ -207,3 +207,26 @@ html[data-sf-brand-ready="true"] #sfEmployeePortal.sf-employee-orbit .sf-ac-trac
 html[data-sf-brand-ready="true"] #sfEmployeePortal.sf-employee-orbit .sf-ac-track i{background:var(--tenant-accent)}
 html[data-sf-brand-ready="true"] #sfEmployeePortal .sf-wage-rate{background-color:var(--tenant-surface)!important;color:var(--tenant-text)!important}
 html[data-sf-brand-ready="true"] #sfEmployeePortal :is(.sf-my-day-number,.sf-wv-estimate,.sf-wv-sum){color:var(--tenant-text)!important}
+
+/* Tenant palette for remaining legacy manager surfaces and template dialog. */
+html[data-sf-brand-ready="true"][data-sf-theme] #appShell :is(.sf-plan-context,.sf-open-market-entry,.sf-abs-mgr-v2.clear,.sf-set-note,.sf-set-avatar,#view-billing .sf-datev){
+  background:var(--tenant-surface)!important;border-color:var(--tenant-line)!important;color:var(--tenant-text)!important;
+}
+html[data-sf-brand-ready="true"][data-sf-theme] #appShell :is(.sf-plan-context strong,.sf-datev-head h3,.sf-datev-rule .wage,#autoPeriodRange){color:var(--tenant-text)!important}
+html[data-sf-brand-ready="true"][data-sf-theme] #appShell :is(.sf-plan-context-label,.sf-datev-head p,.sf-datev label,.sf-datev-rule small,.sf-datev-rules-head small){color:var(--tenant-muted)!important}
+html[data-sf-brand-ready="true"][data-sf-theme] #appShell :is(.sf-user-state:not(.disabled):not(.expired),.sf-auto-option-status,.sf-abs-mgr-v2.clear .sf-abs-mgr-v2-empty,.sf-abs-mgr-v2.clear .sf-abs-mgr-v2-count){
+  background:var(--tenant-surface)!important;border-color:var(--tenant-accent)!important;color:var(--tenant-text)!important;
+}
+html[data-sf-brand-ready="true"][data-sf-theme] #appShell :is(#view-billing .sf-datev input,#view-billing .sf-datev select,#view-absence select,#view-absence input:not([type="checkbox"]):not([type="radio"])){
+  background-color:var(--tenant-inset)!important;border-color:var(--tenant-line)!important;color:var(--tenant-text)!important;
+}
+html[data-sf-brand-ready="true"][data-sf-theme] #tplMgr :is(.tpl-modal,.tpl-standard-row,.tpl-row,.tpl-empty,.tpl-type,.tpl-main-tabs button,.tpl-form input,.tpl-form textarea,.tpl-form select,.tpl-foot button:not(.primary),.tpl-head .iconbtn){
+  background:var(--tenant-surface)!important;border-color:var(--tenant-line)!important;color:var(--tenant-text)!important;
+}
+html[data-sf-brand-ready="true"][data-sf-theme] #tplMgr :is(.tpl-type.active,.tpl-main-tabs button.active){border-color:var(--tenant-accent)!important;box-shadow:inset 0 -3px var(--tenant-accent)!important}
+html[data-sf-brand-ready="true"][data-sf-theme] #tplMgr :is(.tpl-backlink,.tpl-head p,.tpl-form label,.tpl-row small,.tpl-list-head p){color:var(--tenant-muted)!important}
+html[data-sf-brand-ready="true"][data-sf-theme] #tplMgr :is(.tpl-head,.tpl-foot,.tpl-main-tabs){border-color:var(--tenant-line)!important}
+html[data-sf-brand-ready="true"][data-sf-theme] #tplMgr button.primary{background:var(--tenant-accent)!important;border-color:var(--tenant-accent)!important;color:var(--tenant-accent-ink)!important}
+
+html[data-sf-brand-ready="true"][data-sf-theme] #appShell #view-settings .sf-user-state.active{background:var(--tenant-surface)!important;border-color:var(--tenant-accent)!important;color:var(--tenant-text)!important}
+html[data-sf-brand-ready="true"][data-sf-theme] #appShell .sf-tw-tabs button.active{box-shadow:inset 0 0 0 1px var(--tenant-accent)!important}
