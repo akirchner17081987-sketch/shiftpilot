@@ -40,8 +40,9 @@ test('template dialog follows the tenant palette in dark and light mode', async 
   await page.evaluate(()=>{
     const fixture=document.createElement('div');
     fixture.id='brand-legacy-fixture';
-    fixture.innerHTML='<div class="sf-plan-context"></div><div class="sf-open-market-entry"></div><div class="sf-abs-mgr-v2 clear"></div><div class="sf-auto-option-status"></div><div class="sf-set-note"></div><section class="sf-leave"><div class="sf-leave-metric">Urlaubstage</div></section><div id="view-billing"><div class="sf-datev"></div></div><div id="view-settings"><span class="sf-user-state active">Aktiv</span></div>';
+    fixture.innerHTML='<div class="sf-plan-context"></div><div class="sf-open-market-entry"></div><div class="sf-abs-mgr-v2 clear"></div><div class="sf-auto-option-status"></div><div class="sf-set-note"></div><section class="sf-leave"><div class="sf-leave-metric">Urlaubstage</div></section><div id="view-billing"><div class="sf-datev"></div></div><div id="view-settings"><span class="sf-user-state active">Aktiv</span></div><div id="view-schedule"><div class="sf-week-shift" style="--sf-shift-accent:#2ed9b8"></div><div class="sf-manual-picker"><select><option>Tag</option></select><div class="sf-manual-context">Hinweis</div></div></div>';
     document.querySelector('#appShell').append(fixture);
+    const absence=document.createElement('div'); absence.id='absenceModal'; absence.hidden=true; absence.innerHTML='<div class="abs-modal"><button class="abs-type-card active">Urlaub</button><label class="abs-switch"><input type="checkbox" checked><i></i></label></div>'; document.body.append(absence);
   });
   for (const mode of ['dark','light']) {
     await page.evaluate(mode=>{document.documentElement.dataset.sfTheme=mode},mode);
@@ -51,9 +52,14 @@ test('template dialog follows the tenant palette in dark and light mode', async 
     const actual=await page.locator('#tplMgr .tpl-modal').evaluate(el=>getComputedStyle(el).backgroundColor);
     const expected=await page.evaluate(value=>{const x=document.createElement('div');x.style.color=value;document.body.append(x);const c=getComputedStyle(x).color;x.remove();return c},surface);
     expect(actual).toBe(expected);
-    for (const selector of ['.sf-plan-context','.sf-open-market-entry','.sf-abs-mgr-v2.clear','.sf-auto-option-status','.sf-set-note','.sf-leave','.sf-leave-metric','.sf-datev','.sf-user-state.active']) {
+    for (const selector of ['.sf-plan-context','.sf-open-market-entry','.sf-abs-mgr-v2.clear','.sf-auto-option-status','.sf-set-note','.sf-leave','.sf-leave-metric','.sf-datev','.sf-user-state.active','.sf-manual-picker select','.sf-manual-context']) {
       expect(await page.locator('#brand-legacy-fixture '+selector).evaluate(el=>getComputedStyle(el).backgroundColor), selector+' '+mode).toBe(expected);
     }
+    await expect(page.locator('#absenceModal .abs-modal')).toHaveCSS('background-color',expected);
+    const accent=await page.locator('#brand-legacy-fixture .sf-week-shift').evaluate(el=>getComputedStyle(el).getPropertyValue('--sf-shift-accent').trim());
+    const accentRgb=await page.evaluate(value=>{const x=document.createElement('div');x.style.color=value;document.body.append(x);const c=getComputedStyle(x).color;x.remove();return c},accent);
+    await expect(page.locator('#absenceModal .abs-type-card.active')).toHaveCSS('border-color',accentRgb);
+    await expect(page.locator('#absenceModal .abs-switch i')).toHaveCSS('background-color',accentRgb);
     await page.locator('#tplMgr .tpl-foot button').filter({hasText:'Schließen'}).click();
   }
   await page.evaluate(()=>window.SFCorporateTheme.apply({theme_key:'original'}));
