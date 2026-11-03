@@ -50,6 +50,7 @@ test('switch rechecks access, saves pending work under old company and reloads c
   assert.equal(B.companyId,'a');assert.equal(B.ready,false);assert.equal(B.suppressSync,true);
   assert.equal(session.get('sf_active_company_v1:alex'),'b');assert.equal(session.has('sf_workspace_state_v2'),false);
   assert.equal(session.get('sf_active_view_v1'),'overview');
+  assert.ok(Number(session.get('sf_company_transition_v1'))>0);
   assert.deepEqual(events.slice(-3),[['clear',123],['sync','a'],'reload']);
   assert.ok(queries[0].filters.some(([k,v])=>k==='user_id'&&v==='alex'));
 });

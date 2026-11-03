@@ -71,11 +71,11 @@ test('failed global session revocation keeps the current session and does not re
   assert.deepEqual(h.navigations,[]);assert.deepEqual(h.storageCleared,[]);assert.equal(h.B.ready,true);
 });
 
-function entryHarness({reducedMotion=true,globePresentation}={}) {
+function entryHarness({reducedMotion=true,globePresentation,transitionStamp=null}={}) {
   const timers = new Map(), nodes = new Map(), events = new Map();
   const frames = []; let changed; let timerId = 0;
   const element = (id) => ({id,isConnected:true,style:{},dataset:{},hidden:false,textContent:'',
-    classList:{values:new Set(),add(value){this.values.add(value)},contains(value){return this.values.has(value)},toggle(value,on){on?this.values.add(value):this.values.delete(value)}},
+    classList:{values:new Set(),add(value){this.values.add(value)},remove(value){this.values.delete(value)},contains(value){return this.values.has(value)},toggle(value,on){on?this.values.add(value):this.values.delete(value)}},
     addEventListener(){},remove(){this.isConnected=false;nodes.delete(id)}});
   const root = element('sfEntryOverlay'); nodes.set(root.id,root);
   for (const id of ['sfEntryStatus','sfEntryBar','sfEntryCounter','sfEntryWarning','sfEntrySkip','sfEntryLoginSlot','sfEntryWelcome','sfEntryWelcomeTitle']) nodes.set(id,element(id));
@@ -83,9 +83,11 @@ function entryHarness({reducedMotion=true,globePresentation}={}) {
   root.querySelector = selector => nodes.get(selector.slice(1));
   nodes.get('sfEntryLoginSlot').appendChild = el => {el.parentElement=nodes.get('sfEntryLoginSlot')};
   const backend = {client:{},ready:false,user:{id:'test-user'}};
+  const html=element('html'), storage=new Map();if(transitionStamp!==null)storage.set('sf_company_transition_v1',String(transitionStamp));
   runInNewContext(boot,{
-    document:{readyState:'loading',documentElement:{},body:{},getElementById:id=>nodes.get(id),addEventListener:(name,fn)=>events.set(name,fn)},
+    document:{readyState:'loading',documentElement:html,body:{},getElementById:id=>nodes.get(id),addEventListener:(name,fn)=>events.set(name,fn)},
     window:{SFBackend:backend,SFEntryGlobePresentation:globePresentation,addEventListener:(name,fn)=>events.set(name,fn),removeEventListener(){},matchMedia:()=>({matches:reducedMotion})},
+    sessionStorage:{getItem:key=>storage.get(key)||null,removeItem:key=>storage.delete(key)},
     getComputedStyle:el=>({display:el.style.display||'block',visibility:'visible'}),
     performance:{now:()=>1,mark(){},getEntriesByType:()=>[]},
     location:{search:''},URL,URLSearchParams,
@@ -95,8 +97,38 @@ function entryHarness({reducedMotion=true,globePresentation}={}) {
   });
   const change = () => {changed();while(frames.length)frames.shift()()};
   const add = (id) => {const el=element(id);nodes.set(id,el);change();return el};
-  return {root,nodes,timers,backend,add,change,events};
+  return {root,html,storage,nodes,timers,backend,add,change,events};
 }
+
+test('company transition is neutral, one-use and never accepts another tenant theme event',()=>{
+  const h=entryHarness({transitionStamp:Date.now()});
+  assert.equal(h.storage.has('sf_company_transition_v1'),false);
+  assert.ok(h.html.classList.contains('sf-company-transition'));
+  assert.ok(h.root.classList.contains('sf-entry-company-switch'));
+  h.backend.ready=true;h.backend.companyId='company-a';
+  h.events.get('schichtfunk:corporate-theme-ready')({detail:{companyId:'company-b'}});
+  assert.ok(h.html.classList.contains('sf-company-transition'));
+  h.events.get('schichtfunk:corporate-theme-ready')({detail:{companyId:'company-a'}});
+  assert.equal(h.html.classList.contains('sf-company-transition'),false);
+  assert.ok(h.root.classList.contains('sf-entry-company-switch'));
+  h.add('sfAuthBackdrop');
+  assert.equal(h.root.classList.contains('sf-entry-company-switch'),false);
+});
+
+test('an expired company transition hint never changes the entry',()=>{
+  const h=entryHarness({transitionStamp:Date.now()-60000});
+  assert.equal(h.html.classList.contains('sf-company-transition'),false);
+  assert.equal(h.root.classList.contains('sf-entry-company-switch'),false);
+});
+
+test('a stalled company theme cannot leave the interface permanently neutral',()=>{
+  const h=entryHarness({transitionStamp:Date.now()});
+  const fallback=[...h.timers.values()].find(timer=>timer.ms===20000);
+  assert.ok(fallback);
+  fallback.fn();
+  assert.equal(h.html.classList.contains('sf-company-transition'),false);
+  assert.equal(h.root.classList.contains('sf-entry-company-switch'),false);
+});
 
 test('restored session exposes MFA without a login form and clears startup timeout', () => {
   const h=entryHarness();

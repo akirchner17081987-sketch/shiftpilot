@@ -47,6 +47,8 @@
       sessionStorage.removeItem('sf_workspace_state_v2');
       sessionStorage.setItem('sf_active_view_v1','overview');
       B.clearCompanyPrivateConfiguration?.();B.ready=false;B.suppressSync=true;
+      // A one-use, non-identifying presentation hint. It never selects a tenant.
+      try{sessionStorage.setItem('sf_company_transition_v1',String(Date.now()));}catch(_){}
       location.reload();
       return true;
     }catch(error){B.hideLoading?.();throw error;}

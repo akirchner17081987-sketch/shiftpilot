@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { primeDemoSession, waitForDemoReady, demoPerspectiveSwitch } from './helpers/demo-ready.mjs';
+import { primeDemoSession, waitForDemoReady, demoPerspectiveSwitch, openEmployeeArea } from './helpers/demo-ready.mjs';
 
 test('company palettes reach visible workspaces and dialogs without hiding content', async ({page}, testInfo) => {
   test.setTimeout(90000);
@@ -63,6 +63,51 @@ test('Secontec manager areas keep their content visible', async ({page}) => {
       await expect(area.locator('h1:visible,h2:visible,h3:visible').first(),mode+' '+view+' heading').toBeVisible();
       await expect(page.locator('#sfOrbitHome img'),mode+' '+view+' logo').toBeVisible();
       if(view==='overview')await expect(area.locator('.sf-orbit-hero[data-location-map="true"] .sf-orbit-hero-copy p')).toHaveCSS('color','rgb(198, 205, 211)');
+    }
+  }
+});
+
+test('employee portal areas remain visible with the Secontec palette', async ({page},testInfo) => {
+  test.setTimeout(180000);
+  await primeDemoSession(page);
+  await page.route('**/demo-auth', route => route.fulfill({headers:{'Access-Control-Allow-Origin':'*'},status:200,contentType:'application/json',body:JSON.stringify({expiresAt:new Date(Date.now()+3600000).toISOString()})}));
+  await page.goto('/demo.html');
+  await waitForDemoReady(page);
+  await page.evaluate(()=>window.SFCorporateTheme.apply({theme_key:'secontec',globe_accents:true}));
+  await demoPerspectiveSwitch(page).locator('[data-demo-perspective="employee"]').click();
+  const portal=page.locator('#sfEmployeePortal');
+  await expect(portal).toBeVisible();
+  const views=['shifts','disruptions','marketplace','handover','time','changes','swaps','absences','wishes','account','wage','profile','evidence'];
+  for(const mode of ['dark','light']){
+    await page.evaluate(value=>{document.documentElement.dataset.sfTheme=value},mode);
+    await expect.poll(()=>portal.evaluate(el=>getComputedStyle(el).getPropertyValue('--orbit-accent').trim().toUpperCase())).toBe(mode==='dark'?'#EA5A06':'#B74400');
+    for(const view of views){
+      await openEmployeeArea(page,view,20000);
+      await expect(portal,mode+' '+view).toHaveAttribute('data-sf-portal-active',view);
+      await expect(portal.locator(`[data-sf-portal-section="${view}"]`).first(),mode+' '+view).toBeVisible();
+      await expect(portal.locator('.sf-portal-logo img'),mode+' '+view).toBeVisible();
+      if(view==='time') {
+        const surface=mode==='dark'?'rgb(26, 32, 38)':'rgb(255, 255, 255)';
+        await expect(portal.locator('.sf-qr-scan-inline')).toHaveCSS('background-color',surface);
+        await expect(portal.locator('#sfQrBookingsFilter')).toHaveCSS('background-color',surface);
+      }
+      if(view==='changes') {
+        await expect(portal.locator('#sfEmployeeChanges .sf-ch-filters button').nth(1)).toHaveCSS('background-color',mode==='dark'?'rgb(26, 32, 38)':'rgb(255, 255, 255)');
+      }
+      if(view==='absences') {
+        await portal.locator('.sf-ae3-add').click();
+        const modal=page.locator('#sfAbsenceEmployeeV3Modal .sf-ae3-card');
+        await expect(modal).toBeVisible();
+        await expect(modal).toHaveCSS('background-color',mode==='dark'?'rgb(26, 32, 38)':'rgb(255, 255, 255)');
+        await expect(modal.locator('#sfAe3Submit')).toHaveCSS('background-color',mode==='dark'?'rgb(234, 90, 6)':'rgb(183, 68, 0)');
+        await expect(modal.locator('#sfAe3Cancel')).toHaveCSS('color',mode==='dark'?'rgb(255, 255, 255)':'rgb(32, 36, 40)');
+        await expect(modal.locator('#sfAe3Type')).toHaveCSS('outline-color',mode==='dark'?'rgb(234, 90, 6)':'rgb(183, 68, 0)');
+        expect(await modal.locator('#sfAe3From').evaluate(el=>getComputedStyle(el).backgroundImage)).toContain('data:image/svg+xml');
+        await page.screenshot({path:testInfo.outputPath(`${mode}-absence-dialog.png`)});
+        await page.locator('#sfAe3Cancel').click();
+        await expect(modal).toHaveCount(0);
+      }
+      if(['disruptions','changes','swaps','handover','time','absences','wage','profile','marketplace'].includes(view)) await page.screenshot({path:testInfo.outputPath(`${mode}-${view}.png`)});
     }
   }
 });

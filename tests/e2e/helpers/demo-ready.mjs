@@ -122,6 +122,15 @@ export async function openEmployeeArea(page, view, timeout = 10_000) {
   await portal.waitFor({ state: 'visible', timeout });
   if (await portal.getAttribute('data-sf-portal-active') === view) return;
 
+  if (await portal.locator('[data-employee-orbit]').first().isVisible().catch(() => false)) {
+    const group = {dashboard:'home',shifts:'duties',disruptions:'duties',marketplace:'duties',handover:'duties',time:'requests',changes:'requests',swaps:'requests',absences:'requests',wishes:'requests',account:'account',wage:'account',profile:'account',evidence:'account'}[view];
+    if (!group) throw new Error('Unknown employee view: '+view);
+    await portal.locator(`[data-employee-orbit="${group}"]`).click();
+    if (group !== 'home') await portal.locator(`#sfEmployeeOrbitPopup [data-employee-orbit-view="${view}"]`).click();
+    await page.waitForFunction(value => document.getElementById('sfEmployeePortal')?.dataset.sfPortalActive === value, view, {timeout});
+    return;
+  }
+
   const visibleTarget = portal.locator(`[data-sf-employee-view="${view}"]:visible`).first();
   if (await visibleTarget.isVisible().catch(() => false)) {
     await visibleTarget.scrollIntoViewIfNeeded();

@@ -254,3 +254,20 @@ html[data-sf-brand-ready="true"][data-sf-theme] #absenceModal .abs-switch input:
 html[data-sf-brand-ready="true"][data-sf-theme] #absenceModal .abs-switch input:checked+i:after{background:var(--tenant-accent-ink)!important}
 html[data-sf-brand-ready="true"][data-sf-theme] #absenceModal :is(button,input,select,textarea):focus-visible{outline-color:var(--tenant-accent)!important}
 html[data-sf-brand-ready="true"][data-sf-theme] #absenceModal input[type="date"]{background-image:var(--sf-calendar-icon)!important;background-repeat:no-repeat!important;background-position:right 9px center!important;background-size:16px 16px!important}
+
+/* Unternehmensfarben auch für die QR-Zeiterfassung im Mitarbeiterportal. */
+html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal .sf-qr-scan-inline{background:var(--tenant-surface)!important;border-color:var(--tenant-line)!important;color:var(--tenant-text)!important}
+html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal .sf-qr-scan-inline-copy b{color:var(--tenant-text)!important}
+html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal .sf-qr-scan-inline-copy small{color:var(--tenant-muted)!important}
+html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal :is(.sf-qb-sources button,.sf-qb-controls select){background-color:var(--tenant-surface)!important;border-color:var(--tenant-line)!important;color:var(--tenant-text)!important}
+html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal .sf-qb-sources button[aria-pressed="true"]{border-color:var(--tenant-accent)!important;box-shadow:inset 0 -3px var(--tenant-accent)!important}
+html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal .sf-company-context:not(.pending):not(.offline) i{background:var(--tenant-accent)!important;box-shadow:0 0 0 5px color-mix(in srgb,var(--tenant-accent) 15%,transparent)!important}
+html[data-sf-brand-ready="true"][data-sf-theme] body:has(#sfEmployeePortal.sf-employee-orbit) #sfAbsenceEmployeeV3Modal :is(.sf-ae3-foot,.sf-ae3-form-help){background:var(--tenant-surface)!important;border-color:var(--tenant-line)!important;color:var(--tenant-text)!important}
+html[data-sf-brand-ready="true"][data-sf-theme] body:has(#sfEmployeePortal.sf-employee-orbit) #sfAbsenceEmployeeV3Modal .sf-ae3-eyebrow{color:var(--tenant-accent)!important}
+html[data-sf-brand-ready="true"][data-sf-theme] body:has(#sfEmployeePortal.sf-employee-orbit) #sfAbsenceEmployeeV3Modal #sfAe3Submit{background:var(--tenant-accent)!important;border-color:var(--tenant-accent)!important;color:var(--tenant-accent-ink)!important}
+html[data-sf-brand-ready="true"][data-sf-theme] body:has(#sfEmployeePortal.sf-employee-orbit) #sfAbsenceEmployeeV3Modal :is(input,select,textarea,button):focus-visible{outline:2px solid var(--tenant-accent)!important;outline-offset:2px;box-shadow:none!important}
+html[data-sf-brand-ready="true"][data-sf-theme] body:has(#sfEmployeePortal.sf-employee-orbit) #sfAbsenceEmployeeV3Modal input[type="date"]{background-image:var(--sf-calendar-icon)!important;background-repeat:no-repeat!important;background-position:right 9px center!important;background-size:16px 16px!important}
+
+/* Employee change filters follow the selected company palette. */
+html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal #sfEmployeeChanges :is(.sf-ch-filters button,.sf-ch-more){background:var(--tenant-surface)!important;border-color:var(--tenant-line)!important;color:var(--tenant-text)!important}
+html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal #sfEmployeeChanges .sf-ch-filters button[aria-pressed="true"]{background:var(--orbit-active)!important;border-color:var(--tenant-accent)!important;color:var(--tenant-accent)!important}

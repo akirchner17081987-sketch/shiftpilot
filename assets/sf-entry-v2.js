@@ -3,6 +3,30 @@
   'use strict';
   const root = document.getElementById('sfEntryOverlay');
   if (!root) return;
+  // Do not show the preceding tenant's brand while membership is rechecked.
+  // The hint carries no tenant identity and is consumed once; it is never auth.
+  let companyTransition = false;
+  try {
+    const stamp = Number(sessionStorage.getItem('sf_company_transition_v1'));
+    sessionStorage.removeItem('sf_company_transition_v1');
+    companyTransition = stamp > 0 && Date.now() >= stamp && Date.now() - stamp < 30000;
+  } catch (_) {}
+  function clearCompanyTransition() {
+    if (!companyTransition) return;
+    companyTransition = false;
+    document.documentElement.classList.remove('sf-company-transition');
+    root.classList.remove('sf-entry-company-switch');
+  }
+  if (companyTransition) {
+    document.documentElement.classList.add('sf-company-transition');
+    root.classList.add('sf-entry-company-switch');
+    // A missing branding response must not leave the application gray forever.
+    setTimeout(clearCompanyTransition, 20000);
+    window.addEventListener('schichtfunk:corporate-theme-ready', event => {
+      if (window.SFBackend?.ready && event.detail?.companyId === window.SFBackend.companyId)
+        document.documentElement.classList.remove('sf-company-transition');
+    });
+  }
   const label = root.querySelector('#sfEntryStatus');
   const progress = root.querySelector('#sfEntryBar');
   const counter = root.querySelector('#sfEntryCounter');
@@ -202,6 +226,7 @@
 
   function morphToLogin(auth) {
     if (!slot || dismissed || !auth) return;
+    clearCompanyTransition();
     if (activeAuth !== auth) {
       // Move the real Supabase form; never create a duplicate form or listeners.
       slot.appendChild(auth);
@@ -242,6 +267,7 @@
     root.classList.toggle('sf-entry-dialog-ready', auxiliaryReady);
     root.inert = mfaReady || auxiliaryReady || welcoming;
     if (mfaReady) {
+      clearCompanyTransition();
       cancelWelcome();
       readyTarget = 'mfa';
       mark('ready');

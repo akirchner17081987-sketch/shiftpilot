@@ -1,5 +1,7 @@
 
 /* SchichtFunk 2.0 – protected entry/loading bridge; independent of app theme */
+/* Neutral during a verified company switch until that company's theme loads. */
+html.sf-company-transition #appShell, #sfEntryOverlay.sf-entry-company-switch{filter:grayscale(1)}
 #sfEntryOverlay{position:fixed;inset:0;z-index:30000;display:grid;place-items:center;background:#040e1d;color:#f4f9ff;overflow:auto;isolation:isolate;opacity:1;transition:opacity .46s ease,visibility .46s ease}
 #sfEntryOverlay.sf-entry-out{opacity:0;visibility:hidden;pointer-events:none}
 /* MFA uses z-index 26000 and must remain visible above the entry during restore. */
