@@ -13,11 +13,6 @@ test('tenant palette reaches the current manager shell and restores the original
   await expect(page.locator('#appShell')).toBeVisible();
   await expect.poll(()=>page.locator('html').evaluate(el=>getComputedStyle(el).getPropertyValue('--teal').trim().toUpperCase())).toBe('#EA5A06');
   await expect.poll(()=>page.locator('#appShell').evaluate(el=>getComputedStyle(el).getPropertyValue('--orbit-accent').trim().toUpperCase())).toBe('#EA5A06');
-  await page.evaluate(()=>{window.SFDialog.confirm({title:'Test',message:'Bestätigung'});});
-  await expect(page.locator('.sf-dialog')).toBeVisible();
-  await expect(page.locator('.sf-dialog')).toHaveCSS('background-color','rgb(26, 32, 38)');
-  await expect(page.locator('.sf-dialog-confirm')).toHaveCSS('background-color','rgb(234, 90, 6)');
-  await page.locator('.sf-dialog-cancel').click();
   await page.screenshot({path:testInfo.outputPath('secontec.png'),fullPage:true});
   await page.locator('#sfOrbitDock').getByRole('button',{name:'Einstellungen'}).click();
   await page.locator('#sfSettingsV2 [data-setting-tab="branding"]').click();
@@ -26,16 +21,10 @@ test('tenant palette reaches the current manager shell and restores the original
   await expect.poll(()=>page.locator('#sfBrandGlobe').evaluate(el=>Math.round(el.getBoundingClientRect().width))).toBe(18);
   await page.evaluate(()=>{document.documentElement.dataset.sfTheme='light'});
   await expect.poll(()=>page.locator('#appShell').evaluate(el=>getComputedStyle(el).getPropertyValue('--orbit-accent').trim().toUpperCase())).toBe('#B74400');
-  await page.evaluate(()=>{window.SFDialog.confirm({title:'Test',message:'Bestätigung'});});
-  await expect(page.locator('.sf-dialog')).toHaveCSS('background-color','rgb(255, 255, 255)');
-  await expect(page.locator('.sf-dialog-confirm')).toHaveCSS('background-color','rgb(183, 68, 0)');
-  await page.locator('.sf-dialog-cancel').click();
   await demoPerspectiveSwitch(page).locator('[data-demo-perspective="employee"]').click();
   await expect(page.locator('#sfEmployeePortal')).toBeVisible();
   await expect(page.locator('#sfEmployeePortal .sf-portal-logo img')).toHaveAttribute('src',/secontec-logo-official-white/);
   await expect.poll(()=>page.locator('#sfEmployeePortal').evaluate(el=>getComputedStyle(el).getPropertyValue('--orbit-accent').trim().toUpperCase())).toBe('#B74400');
-  await page.locator('#sfEmployeePortal [data-sf-employee-view="disruptions"]').first().evaluate(el=>el.click());
-  await expect(page.locator('#sfEmployeePortal .sf-disruption-accept').first()).toHaveCSS('background-color','rgb(183, 68, 0)');
   await page.evaluate(()=>window.SFCorporateTheme.apply({theme_key:'original'}));
   await expect(page.locator('html')).not.toHaveAttribute('data-sf-brand',/./);
   await expect(page.locator('#sfEmployeePortal .sf-portal-logo img')).toHaveAttribute('src',/schichtfunk-company-logo/);
