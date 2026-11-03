@@ -83,7 +83,8 @@ test('approving a demo marketplace claim updates the shared schedule',async()=>{
 
 test('sample marketplace offers refer to published demo duties',async()=>{
  const people=[{id:'demo-e01',first:'Anna',last:'Becker'},{id:'demo-e02',first:'Lukas',last:'Fischer'},{id:'demo-e03',first:'Mira',last:'Schulz'},{id:'demo-e04',first:'Jonas',last:'Wagner'},{id:'demo-e05',first:'Lea',last:'Hoffmann'}];
- const plans=people.flatMap((p,i)=>[0,1].map(n=>({id:`d${i}-${n}`,employeeId:p.id,date:todayDate(),type:'O1',start:'07:00',end:'15:00',publishedAt:'2026-01-01'})));
+ const tomorrow=new Date(Date.parse(todayDate()+'T12:00:00Z')+86400000).toISOString().slice(0,10);
+ const plans=people.flatMap((p,i)=>[0,1].map(n=>({id:`d${i}-${n}`,employeeId:p.id,date:tomorrow,type:'O1',start:'07:00',end:'15:00',publishedAt:'2026-01-01'})));
  const values=new Map(Object.entries({sf_demo_session_v1:'active',sf_demo_data_august_standard_v1:'ready',sf_demo_data_employees:JSON.stringify(people),sf_demo_data_assignments:JSON.stringify(plans)}));
  const sessionStorage={getItem:k=>values.get(k)||null,setItem:(k,v)=>values.set(k,String(v))};const XMLHttpRequest=function(){};XMLHttpRequest.prototype.open=function(){};
  const window={SFBackend:{},SFSolidPlanningCore:planning,fetch:async()=>{throw Error('unexpected network')}};
