@@ -17,6 +17,8 @@ test('tenant palette reaches the current manager shell and restores the original
   await page.locator('#sfOrbitDock').getByRole('button',{name:'Einstellungen'}).click();
   await page.locator('#sfSettingsV2 [data-setting-tab="branding"]').click();
   await expect(page.locator('#sfBrandPreview')).toBeVisible();
+  await expect(page.locator('#sfSettingsV2 .sf-set-head .status')).toHaveText('Für dieses Unternehmen');
+  await expect.poll(()=>page.locator('#sfBrandGlobe').evaluate(el=>Math.round(el.getBoundingClientRect().width))).toBe(18);
   await page.evaluate(()=>{document.documentElement.dataset.sfTheme='light'});
   await expect.poll(()=>page.locator('#appShell').evaluate(el=>getComputedStyle(el).getPropertyValue('--orbit-accent').trim().toUpperCase())).toBe('#B74400');
   await demoPerspectiveSwitch(page).locator('[data-demo-perspective="employee"]').click();
