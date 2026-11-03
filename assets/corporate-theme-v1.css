@@ -230,3 +230,10 @@ html[data-sf-brand-ready="true"][data-sf-theme] #tplMgr button.primary{backgroun
 
 html[data-sf-brand-ready="true"][data-sf-theme] #appShell #view-settings .sf-user-state.active{background:var(--tenant-surface)!important;border-color:var(--tenant-accent)!important;color:var(--tenant-text)!important}
 html[data-sf-brand-ready="true"][data-sf-theme] #appShell .sf-tw-tabs button.active{box-shadow:inset 0 0 0 1px var(--tenant-accent)!important}
+
+/* Urlaubskonten werden nach dem Laden separat in Verwaltung und Portal eingefügt. */
+html[data-sf-brand-ready="true"][data-sf-theme] :is(#appShell,#sfEmployeePortal) .sf-leave{
+  --leave-bg:var(--tenant-surface);--leave-panel:var(--tenant-inset);--leave-border:var(--tenant-line);
+  --leave-text:var(--tenant-text);--leave-muted:var(--tenant-muted);
+}
+html[data-sf-brand-ready="true"][data-sf-theme] :is(#appShell,#sfEmployeePortal) .sf-leave :focus-visible{outline-color:var(--tenant-accent)}
