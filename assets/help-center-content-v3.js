@@ -777,6 +777,10 @@ window.SFHelpContent = {
         "Unter Einstellungen → Unternehmen pflegen Inhaber und Administratoren Betriebsdaten, Geschäftsadresse, Exportlogo und Ansprechpartner. Speichern übernimmt diese Angaben zentral für alle Geräte. Teamleiter sehen eine Leseansicht. Ungespeicherte Eingaben, Speicherfehler und gleichzeitige Änderungen anderer Administratoren werden angezeigt. Ein lokaler alter Standort lässt sich ausdrücklich übernehmen."
       ],
       [
+        "Wie ändere ich das Unternehmensdesign?",
+        "Inhaber und Administratoren wählen das Unternehmen und öffnen Einstellungen → Erscheinungsbild. Dort lassen sich Farben für Hell und Dunkel, Logo, Hintergrund und Globus-Akzente einstellen und vor dem Speichern ansehen. Das Design gilt für alle Benutzer des gewählten Unternehmens. Anmeldung und Unternehmensauswahl bleiben im SchichtFunk-Design. Mitarbeiter wählen kein eigenes Unternehmensdesign."
+      ],
+      [
         "Wo sehe und ändere ich die aktuell geltenden Planungsregeln?",
         "Öffnen Sie Einstellungen → Planungsregeln und prüfen Sie zuerst das ausgewählte Unternehmen. Dort stehen die allgemeinen Stunden-, Block- und Erholungsgrenzen sowie getrennte Bereiche für OT1 / OT2 / OT3 · 10 Stunden, Acht-Stunden-Modelle und Teamleiter · Arbeitsblöcke und Monatsziele. Die konkreten Grenzen und personengebundenen Vorgaben werden für das angemeldete Unternehmen geladen. Inhaber und Administratoren können die angebotenen Werte speichern; Änderungen werden mit Vorher/Nachher im Audit-Verlauf dokumentiert. Schichtmodelle, SOLL-Besetzung und Teamrhythmen öffnen Sie über die zugehörigen Planungseinstellungen, persönliche Vorgaben im Mitarbeiterprofil. Eine Regeländerung gilt bei neuen Planungen und Prüfungen, verändert vorhandene Dienste aber nicht automatisch. Erstellen Sie veraltete Vorschauen neu. Bei gleichzeitiger Bearbeitung laden Sie zuerst die aktuelle gespeicherte Fassung."
       ],

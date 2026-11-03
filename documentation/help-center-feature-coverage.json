@@ -1590,6 +1590,14 @@
       "sources": [
         "assets/auto-plan-preview-editor-v1.js"
       ]
+    },
+    {
+      "category": "settings",
+      "question": "Wie ändere ich das Unternehmensdesign?",
+      "sources": [
+        "assets/corporate-theme-v1.js",
+        "assets/settings-management-v2.js"
+      ]
     }
   ],
   "moduleInventory": [
@@ -3034,6 +3042,12 @@
       "category": "settings",
       "area": "Zentrale Bestätigungsdialoge für Unternehmens- und Standortverwaltung",
       "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/corporate-theme-v1.js",
+      "area": "Unternehmensdesign",
+      "category": "settings",
+      "kind": "feature-or-support"
     }
   ],
   "categoryCoverage": [
@@ -3305,6 +3319,7 @@
         "Wer sieht betriebliche Ansprechpartner und Änderungen?",
         "Wie verwalte und verwende ich Unternehmensstandorte?",
         "Wie verwalte ich das Unternehmensprofil?",
+        "Wie ändere ich das Unternehmensdesign?",
         "Wo sehe und ändere ich die aktuell geltenden Planungsregeln?",
         "Wo ändere ich SOLL-Stärken?",
         "Wo ändere ich die allgemeinen Schichtzeiten?",
@@ -3702,11 +3717,11 @@
   "currentAudit": {
     "date": "2026-10-31",
     "baselineArticleCount": 270,
-    "addedArticleCount": 14,
+    "addedArticleCount": 15,
     "correctedArticleCount": 2,
-    "articleCount": 284,
+    "articleCount": 285,
     "categoryCount": 22,
-    "assetJavaScriptCount": 240
+    "assetJavaScriptCount": 241
   },
   "incrementalUpdate": {
     "date": "2026-10-27",

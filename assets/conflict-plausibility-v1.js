@@ -31,6 +31,7 @@
     'assets/supabase-employee-access-guard-v1.js',
     'assets/supabase-employee-access-fix-v1.js',
     'assets/supabase-employee-invite-fix-v1.js',
+    'assets/corporate-theme-v1.js',
     'assets/supabase-publish-v1.js',
     'assets/supabase-employee-change-response-v1.js',
     'assets/supabase-absence-workflow-v1.js',

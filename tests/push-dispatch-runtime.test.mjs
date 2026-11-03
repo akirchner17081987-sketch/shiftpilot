@@ -20,7 +20,7 @@ async function dispatch(options={}){
   buildPushPayload:async(payload,subscription,vapid)=>{calls.push({provider:'apple',payload,subscription});return {headers:{},body:'encrypted-test'};},
   fetch:async(url,init)=>{calls.push({provider:'fetch',url,contentType:init.headers.get('content-type')});return new Response('',{status:options.appleStatus??201});}
  };
- const js=stripTypeScriptTypes(source.replace(/^import .*;\n/gm,'').replace('export default {fetch:handler};','globalThis.handler=handler;'));
+ const js=stripTypeScriptTypes(source.replace(/^import .*;\r?\n/gm,'').replace('export default {fetch:handler};','globalThis.handler=handler;'));
  vm.runInNewContext(js,context);
  const response=await context.handler(new Request('https://example.invalid/',{method:options.method??'POST',headers:{'x-schichtfunk-push-secret':options.secret??'test-secret'},...((options.method??'POST')==='GET'?{}:{body:options.body??JSON.stringify({notification_id:id})})}));
  return {status:response.status,body:await response.json(),calls,marks,deleted};

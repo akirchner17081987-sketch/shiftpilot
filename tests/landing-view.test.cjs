@@ -28,7 +28,7 @@ test('local demo still restores its saved workspace',()=>{const h=setup({demo:tr
 test('unavailable browser storage does not block the Today landing',()=>{const h=setup({blocked:true});assert.equal(h.B.pendingView,'overview');h.B.authDialog('login');assert.deepEqual(h.calls,['login'])});
 
 test('the document load entry starts managers on Today and keeps explicit time-account links',()=>{
- const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),start=html.indexOf("window.addEventListener('load',()=>{\n  if(location.hash!=='#app')return;"),end=html.indexOf('\n})',start)+3;
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8').replace(/\r\n/g,'\n'),start=html.indexOf("window.addEventListener('load',()=>{\n  if(location.hash!=='#app')return;"),end=html.indexOf('\n})',start)+3;
  assert.ok(start>0);for(const [area,expected] of [['','overview'],['verwaltung','overview'],['zeitkonto','time']]){
   const calls=[],storage=new Map([['sf_active_view_v1','schedule'],['sf_workspace_state_v2','{"view":"schedule"}']]);
   const context={window:{addEventListener:(_,callback)=>callback()},location:{hash:'#app',search:area?'?bereich='+area:''},URLSearchParams,sessionStorage:{getItem:key=>storage.get(key)||null},document:{getElementById:()=>({})},openApp:view=>calls.push(view)};

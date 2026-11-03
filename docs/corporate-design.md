@@ -1,0 +1,11 @@
+# Unternehmensdesign
+
+Das Erscheinungsbild ist einem Unternehmen zugeordnet und wird nach der authentifizierten Unternehmensauswahl geladen. Anmeldung und Bereichsauswahl behalten das SchichtFunk-Design. Ohne gespeichertes Design wird das Original verwendet. Inhaber und Administratoren finden die Konfiguration unter **Einstellungen → Erscheinungsbild**; Mitarbeiter erhalten das Unternehmensdesign automatisch.
+
+Die Einstellungen umfassen eine Designbasis, getrennte Farben für hell und dunkel, Logo, optionales Hintergrundbild und Globus-Akzente. Die Vorschau zeigt die Farbwirkung; beim Speichern werden die Textkontraste geprüft. Logos akzeptieren PNG, JPEG oder WebP bis 2 MB, Hintergründe dieselben Formate bis 5 MB. Bilder werden vor dem Upload dekodiert und ihre Abmessungen begrenzt. SVG-Uploads sind nicht zugelassen.
+
+Die Tabelle `company_branding` ist über aktive Unternehmensmitgliedschaft bzw. aktive Mitarbeiterzuordnung mit aktivem Zugang lesbar und nur für aktive Inhaber und Administratoren beschreibbar. Bilddateien liegen im privaten Bucket `company-branding-assets` unter dem Unternehmensschlüssel und werden über zehn Minuten gültige URLs geladen, die bei aktiver Sitzung regelmäßig erneuert werden. Die Migration setzt für die vorhandenen Secontec-Services-Mandanten dieselbe orangefarbene Basis und das offizielle, mitgelieferte Logo. Die drei Mandanten besitzen getrennte Datensätze; spätere Änderungen an einem Datensatz werden nicht automatisch auf die anderen übertragen. SchichtFunk und Demo behalten das Original.
+
+Die installierbare App und Push-Benachrichtigungen behalten ihren gemeinsamen SchichtFunk-Namen und ihr gemeinsames Installationssymbol. Die Unternehmensfarben gelten innerhalb der angemeldeten Oberfläche; das System stellt keine getrennten, firmenspezifischen App-Manifeste oder Push-Symbole bereit. Die bestehende PDF-Logo-Einstellung im Unternehmensprofil bleibt unabhängig.
+
+Bei einem fehlgeschlagenen Laden wird das Original angezeigt. Die Anwendung bewahrt keine Unternehmensauswahl als persönliche Designpräferenz. Auf dem Testzweig wurden Lese- und Schreibrechte sowie Datei-Isolation für fremde Unternehmen und nicht administrative Rollen geprüft. Nach dem Deployment sind Anmeldung, Unternehmenswechsel, Logo-Upload und Darstellung im Mitarbeiterportal mit einem berechtigten Testkonto zu überprüfen.
