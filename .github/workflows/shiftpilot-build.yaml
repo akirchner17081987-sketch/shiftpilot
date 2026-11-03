@@ -21,7 +21,7 @@ jobs:
   build-project:
     name: build shiftpilot
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: checkout
         uses: actions/checkout@v4
@@ -51,6 +51,7 @@ jobs:
         run: |
           npx playwright install chromium
           node tests/browser/company-profile-qa.cjs
+          node tests/browser/internal-messages-qa.cjs
           node tests/browser/access-mfa-matrix-qa.cjs
           node tests/browser/qr-pin-qa.cjs
           node tests/browser/qr-desktop-qa.cjs
@@ -73,6 +74,12 @@ jobs:
           node tests/browser/location-geocode-qa.cjs
           node tests/browser/planning-continuity-qa.cjs
           npx playwright test tests/e2e/auto-plan-workspace.spec.cjs --grep "equal 180-hour targets|automatic repair|final audit|manual preview edit keeps" --retries=0
+          python3 -m http.server 8767 --bind 127.0.0.1 >/tmp/schichtfunk-theme-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in 1 2 3 4 5; do curl -fsS http://127.0.0.1:8767/demo.html >/dev/null && break; sleep 1; done
+          curl -fsS http://127.0.0.1:8767/demo.html >/dev/null
+          E2E_BASE_URL=http://127.0.0.1:8767 npx playwright test tests/e2e/tenant-workspaces.e2e.spec.mjs tests/e2e/corporate-theme.e2e.spec.mjs tests/e2e/date-picker.spec.cjs --retries=0 --workers=1
 
 # Please do not touch the following action
       - name: Store deployment content

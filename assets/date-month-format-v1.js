@@ -19,26 +19,45 @@
     return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
   }
 
-  function labelImage(text,disabled=false,light=false){
-    const fill=light?(disabled?'#66788b':'#172434'):(disabled?'#8fa5ba':'#e5f0fb');
+  function labelImage(text,disabled=false,light=false,companyColor=''){
+    const fill=companyColor||(light?(disabled?'#66788b':'#172434'):(disabled?'#8fa5ba':'#e5f0fb'));
     const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="124" height="20" viewBox="0 0 124 20"><text x="0" y="14" fill="${fill}" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="12" font-weight="600">${xmlEscape(text)}</text></svg>`;
     return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+  }
+
+  function syncCompanyCalendarIcon(){
+    const root=document.documentElement;
+    if(root.dataset.sfBrandReady!=='true'){
+      if(root.dataset.sfCalendarBrand){root.style.removeProperty('--sf-calendar-icon');delete root.dataset.sfCalendarBrand}
+      return;
+    }
+    const mode=root.dataset.sfTheme==='light'?'light':'dark';
+    const color=root.style.getPropertyValue('--sf-brand-'+mode+'-primary').trim();
+    if(!/^#[0-9a-f]{6}$/i.test(color))return;
+    if(root.dataset.sfCalendarBrand===color&&root.style.getPropertyValue('--sf-calendar-icon'))return;
+    const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>`;
+    root.style.setProperty('--sf-calendar-icon',`url("data:image/svg+xml,${encodeURIComponent(svg)}")`);
+    root.dataset.sfCalendarBrand=color;
   }
 
   function sync(input){
     if(!(input instanceof HTMLInputElement)||input.type!=='month')return;
     const text=formatMonthShort(input.value);
     const light=document.documentElement.dataset.sfTheme==='light';
-    const signature=`${input.value}|${input.disabled?'1':'0'}|${light?'light':'dark'}`;
+    const root=document.documentElement,field=(light?'light':'dark')+'_'+(input.disabled?'muted':'text');
+    const value=root.dataset.sfBrandReady==='true'?root.style.getPropertyValue('--sf-brand-'+field.replace('_','-')).trim():'';
+    const companyColor=/^#[0-9a-f]{6}$/i.test(value)?value:'';
+    const signature=`${input.value}|${input.disabled?'1':'0'}|${light?'light':'dark'}|${companyColor}`;
     if(input.dataset.sfMonthShortSignature===signature)return;
     input.dataset.sfMonthShortSignature=signature;
     input.dataset.sfMonthShort=text;
-    input.style.setProperty('--sf-month-label-image',labelImage(text,input.disabled,light));
+    input.style.setProperty('--sf-month-label-image',labelImage(text,input.disabled,light,companyColor));
     input.classList.add('sf-month-shortened');
     if(!input.getAttribute('aria-label')&&!input.getAttribute('title'))input.setAttribute('title',text);
   }
 
   function syncAll(root=document){
+    syncCompanyCalendarIcon();
     if(root instanceof HTMLInputElement&&root.type==='month')sync(root);
     root.querySelectorAll?.('input[type="month"]').forEach(sync);
   }

@@ -21,6 +21,14 @@ document.addEventListener('sf:company-profile-change',()=>map.sync());SFCompanyP
   });
   await page.goto('https://location-qa.invalid/');await page.evaluate(t=>document.documentElement.dataset.theme=t,theme);
   await page.waitForFunction(()=>!!document.querySelector('[data-orbit-site="object-a"]:not(.sf-unmapped)'));
+  await page.addStyleTag({url:'https://location-qa.invalid/assets/corporate-theme-v1.css'});
+  await page.evaluate(()=>{const h=document.documentElement;h.dataset.sfTheme='dark';h.dataset.sfBrandReady='true';for(const [key,value] of Object.entries({'dark-background':'#151318','dark-surface':'#26232B','dark-text':'#FFFFFF','dark-muted':'#D3CBD8','dark-primary':'#9147FF','dark-primary-ink':'#FFFFFF'}))h.style.setProperty('--sf-brand-'+key,value)});
+  assert.equal(await page.locator('.sf-location-map canvas').evaluate(el=>getComputedStyle(el).filter),'grayscale(1)');
+  await page.waitForFunction(()=>getComputedStyle(document.querySelector('[data-orbit-site="object-a"]')).backgroundColor==='rgb(38, 35, 43)');
+  assert.equal(await page.locator('[data-orbit-site="object-a"]').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(38, 35, 43)');
+  if(width===1440&&theme==='dark')await page.screenshot({path:path.join(out,'tenant-map.png')});
+  await page.evaluate(()=>{delete document.documentElement.dataset.sfBrandReady;delete document.documentElement.dataset.sfTheme});
+  assert.equal(await page.locator('.sf-location-map canvas').evaluate(el=>getComputedStyle(el).filter),'none');
   assert.equal(await page.locator('.sf-point').count(),1);assert.equal(await page.locator('.sf-geocode-attribution').isVisible(),true);
   assert.deepEqual(await page.evaluate(()=>fixture.calls),[{name:'location-geocode',body:{company_id:'company-a',site_id:'object-a'}}]);
   await page.locator('[data-orbit-site="object-a"]').click();await page.locator('.sf-popup:not([hidden])').waitFor();assert.equal(await page.locator('#sfLocationPopupTitle').textContent(),'Eigenes Objekt A');assert.doesNotMatch(await page.locator('.sf-popup-note').textContent(),/nicht verifiziert/);

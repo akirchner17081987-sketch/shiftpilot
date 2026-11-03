@@ -32,3 +32,178 @@ html[data-sf-brand="secontec"] #sfEmployeePortal .sf-portal-logo{background:#101
 #sfSettingBody .sf-brand-check input{flex:0 0 18px!important;width:18px!important;min-height:18px!important;height:18px!important;padding:0!important;margin:0!important;accent-color:var(--teal)}
 #sfSettingBody .sf-brand-check span{margin:0}
 @media(max-width:1050px){.sf-brand-layout{grid-template-columns:1fr}.sf-brand-preview-card{position:static}}@media(max-width:620px){.sf-brand-colors{grid-template-columns:1fr!important}.sf-brand-preview-body{grid-template-columns:86px 1fr}}
+
+/* Shared tokens for older workspaces and dialogs mounted outside the shell. */
+html[data-sf-brand-ready="true"][data-sf-theme="dark"]{
+  --tenant-surface:var(--sf-brand-dark-surface);--tenant-text:var(--sf-brand-dark-text);
+  --tenant-muted:var(--sf-brand-dark-muted);--tenant-accent:var(--sf-brand-dark-primary);
+  --tenant-accent-ink:var(--sf-brand-dark-primary-ink);
+  --tenant-inset:var(--sf-brand-dark-surface);
+  --tenant-line:color-mix(in srgb,var(--sf-brand-dark-muted) 40%,transparent);
+}
+html[data-sf-brand-ready="true"][data-sf-theme="light"]{
+  --tenant-surface:var(--sf-brand-light-surface);--tenant-text:var(--sf-brand-light-text);
+  --tenant-muted:var(--sf-brand-light-muted);--tenant-accent:var(--sf-brand-light-primary);
+  --tenant-accent-ink:var(--sf-brand-light-primary-ink);
+  --tenant-inset:var(--sf-brand-light-surface);
+  --tenant-line:color-mix(in srgb,var(--sf-brand-light-muted) 48%,transparent);
+}
+html[data-sf-brand-ready="true"] #view-employees :is(.sp-employee-stat,.sp-emp-list-card,.sp-emp-profile,.sp-emp-row,.sp-section,.sp-kpi){
+  background-color:var(--tenant-surface)!important;border-color:var(--tenant-line)!important;color:var(--tenant-text)!important;
+}
+html[data-sf-brand-ready="true"] #view-employees :is(.sp-employee-stat small,.sp-emp-row small,.sp-section small){color:var(--tenant-muted)!important}
+html[data-sf-brand-ready="true"] #view-employees :is(input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]),select,textarea){
+  background-color:var(--tenant-inset)!important;border-color:var(--tenant-line)!important;color:var(--tenant-text)!important;
+}
+html[data-sf-brand-ready="true"] :is(#appShell,#sfEmployeePortal) input:is([type="date"],[type="month"]){
+  --sf-date-control-bg:var(--tenant-surface);--sf-date-control-border:var(--tenant-line);
+  --sf-date-control-text:var(--tenant-text);--sf-date-control-focus:var(--tenant-accent);
+}
+html[data-sf-brand-ready="true"] #view-employees :is(.sp-emp-row.selected,.sp-profile-tab.active,.sp-filter-chip.active){
+  background-color:var(--tenant-surface)!important;
+  border-color:var(--tenant-accent)!important;color:var(--tenant-text)!important;
+}
+html[data-sf-brand-ready="true"] #appShell :is(.cal-toolbar,.sf-manual-filters,.sf-tw-tabs,.sf-rp-nav,.sf-set-shift,.sf-set-day,.sf-market-row,.sf-datev-rule){
+  background-color:var(--tenant-surface)!important;border-color:var(--tenant-line)!important;color:var(--tenant-text)!important;
+}
+html[data-sf-brand-ready="true"] #appShell :is(.sf-week-day,.sf-week-shift){background-color:var(--tenant-surface)!important}
+html[data-sf-brand-ready="true"] #appShell :is(.sf-tw-tabs button.active,.sf-rp-nav button.active){
+  background-color:var(--tenant-surface)!important;border-color:var(--tenant-accent)!important;color:var(--tenant-text)!important;
+}
+html[data-sf-brand-ready="true"] #appShell :is(.sf-datev-btn,.sf-datev-mini,.sp-filter-chip,.cal-toolbar button,.sf-tw-tabs button){
+  background-color:var(--tenant-inset);border-color:var(--tenant-line);color:var(--tenant-text);
+}
+html[data-sf-brand-ready="true"] #appShell .view .page-head p{color:var(--tenant-muted)!important}
+html[data-sf-brand-ready="true"] #appShell .view button.ghost{
+  background-color:var(--tenant-inset)!important;border-color:var(--tenant-line)!important;color:var(--tenant-text)!important;
+}
+html[data-sf-brand-ready="true"] #appShell :is(.cal-toolbar button.active,.sf-tw-tabs button.active,.sp-filter-chip.active){
+  background-color:var(--tenant-surface)!important;border-color:var(--tenant-accent)!important;color:var(--tenant-text)!important;
+}
+html[data-sf-brand-ready="true"] #appShell :is(.sf-market,.sf-market-tabs button,.sf-market-toolbar input){
+  background:var(--tenant-surface)!important;border-color:var(--tenant-line)!important;color:var(--tenant-text)!important;
+}
+html[data-sf-brand-ready="true"] #appShell .sf-market-tabs button.active{border-color:var(--tenant-accent)!important}
+html[data-sf-brand-ready="true"] #appShell :is(.auto-period-card,.sf-auto-progress:not(.is-error)){
+  background:var(--tenant-surface)!important;border-color:var(--tenant-line)!important;color:var(--tenant-text)!important;
+}
+html[data-sf-brand-ready="true"] #appShell .sf-auto-progress small{color:var(--tenant-muted)!important}
+html[data-sf-brand-ready="true"] #appShell .sf-auto-progress-track{background-color:var(--tenant-inset)}
+html[data-sf-brand-ready="true"] #appShell .sf-auto-progress-track i{background:var(--tenant-accent)}
+html[data-sf-brand-ready="true"] :is(#appShell,#sfEmployeePortal) .sf-ho{
+  --ho-bg:var(--tenant-surface);--ho-line:var(--tenant-line);--ho-text:var(--tenant-text);--ho-muted:var(--tenant-muted);
+}
+html[data-sf-brand-ready="true"] :is(#appShell,#sfEmployeePortal) .sf-ho button{
+  background-color:var(--tenant-inset);border-color:var(--tenant-line);color:var(--tenant-text);
+}
+html[data-sf-brand-ready="true"] :is(#appShell,#sfEmployeePortal) .sf-wish{
+  --wish-bg:var(--tenant-surface);--wish-text:var(--tenant-text);--wish-muted:var(--tenant-muted);--wish-line:var(--tenant-line);
+}
+html[data-sf-brand-ready="true"] :is(#appShell,#sfEmployeePortal) .sf-wish :is(input,select,textarea){
+  background-color:var(--tenant-surface);border-color:var(--tenant-line);color:var(--tenant-text);
+}
+html[data-sf-brand-ready="true"] :is(#appShell,#sfEmployeePortal) .sf-wish :is(button,input,select,textarea,summary):focus-visible{outline-color:var(--tenant-accent)}
+html[data-sf-brand-ready="true"] :is(#appShell,#sfEmployeePortal) .sf-wish-calendar button.selected{outline-color:var(--tenant-accent)}
+html[data-sf-brand-ready="true"] #sfEmployeePortal.sf-employee-orbit :is(.sf-ac-controls,.sf-ac-kpi:not(.positive):not(.negative):not(.hero),.sf-ac-panel,.sf-pr-block,.sf-pr-kpis article,.sf-wv-panel,.sf-wv-kpis article,.sf-my-month-toolbar){
+  background-color:var(--tenant-surface)!important;border-color:var(--tenant-line)!important;color:var(--tenant-text)!important;
+}
+html[data-sf-brand-ready="true"] #sfEmployeePortal.sf-employee-orbit :is(.sf-market-take,.sf-change-approve,.sf-sx-start,.sf-ae3-add){
+  background-color:var(--tenant-accent)!important;border-color:var(--tenant-accent)!important;color:var(--tenant-accent-ink)!important;
+}
+html[data-sf-brand-ready="true"] #sfEmployeePortal.sf-employee-orbit :is(.sf-ac-sync,.sf-ac-muted,.sf-pr dt,.sf-pr-kpis span,.sf-pr footer,.sf-wv-panel p){color:var(--tenant-muted)!important}
+html[data-sf-brand-ready="true"] #sfEmployeePortal.sf-employee-orbit :is(.sf-swap-refresh,.sf-sx-filter,.sf-swap-cancel,.sf-market-cancel){
+  background-color:var(--tenant-inset)!important;border-color:var(--tenant-line)!important;color:var(--tenant-text)!important;
+}
+html[data-sf-brand-ready="true"][data-sf-theme] body:has(#sfEmployeePortal.sf-employee-orbit){
+  --ep-modal-surface:var(--tenant-surface);--ep-modal-inset:var(--tenant-inset);--ep-modal-text:var(--tenant-text);
+  --ep-modal-muted:var(--tenant-muted);--ep-modal-line:var(--tenant-line);--ep-modal-accent:var(--tenant-accent);--ep-modal-ink:var(--tenant-accent-ink);
+}
+html[data-sf-brand-ready="true"] .sf-dialog{
+  background:var(--tenant-surface)!important;border-color:var(--tenant-line)!important;color:var(--tenant-text)!important;
+}
+html[data-sf-brand-ready="true"] .sf-dialog :is(.sf-dialog-top,.sf-dialog-actions){border-color:var(--tenant-line);color:var(--tenant-muted)}
+html[data-sf-brand-ready="true"] .sf-dialog h2{color:var(--tenant-text)!important}
+html[data-sf-brand-ready="true"] .sf-dialog p{color:var(--tenant-muted)!important}
+html[data-sf-brand-ready="true"] .sf-dialog :is(.sf-dialog-mark,.sf-dialog-top b){color:var(--tenant-accent);border-color:var(--tenant-accent);box-shadow:none}
+html[data-sf-brand-ready="true"] .sf-dialog :is(.sf-dialog-input,.sf-dialog-cancel,.sf-dialog-secondary){background:var(--tenant-inset);color:var(--tenant-text);border-color:var(--tenant-line)}
+html[data-sf-brand-ready="true"] .sf-dialog .sf-dialog-confirm:not(.danger){background:var(--tenant-accent);border-color:var(--tenant-accent);color:var(--tenant-accent-ink)}
+html[data-sf-brand-ready="true"] .sf-dialog :is(button,input):focus-visible{outline-color:var(--tenant-accent)}
+html[data-sf-brand-ready="true"][data-sf-theme] .sf-msg-backdrop{
+  --msg-bg:var(--tenant-surface);--msg-panel:var(--tenant-surface);--msg-line:var(--tenant-line);
+  --msg-text:var(--tenant-text);--msg-muted:var(--tenant-muted);--msg-accent:var(--tenant-accent);
+  --msg-own:var(--tenant-surface);--msg-ink:var(--tenant-accent-ink);
+}
+html[data-sf-brand-ready="true"] .sf-msg-bubble.is-own{border-color:var(--tenant-accent)}
+html[data-sf-brand-ready="true"] .sf-msg-backdrop :is(.sf-msg-head-icon,.sf-msg-list-head button,.sf-msg-avatar){color:var(--tenant-text)}
+html[data-sf-brand-ready="true"] #appShell .sf-message-launch{
+  background:var(--tenant-surface)!important;border-color:var(--tenant-line)!important;color:var(--tenant-text)!important;
+}
+html[data-sf-brand-ready="true"] #appShell .topbar .iconbtn{
+  background-color:var(--tenant-surface)!important;border-color:var(--tenant-line)!important;color:var(--tenant-text)!important;
+}
+
+/* The map artwork is a canvas, while its interactive labels and popup live
+   in separate DOM layers. Preserve the map and its accessible controls. */
+html[data-sf-brand-ready="true"] #appShell .sf-location-map canvas{filter:grayscale(1)}
+html[data-sf-brand-ready="true"] #appShell .sf-location-map .sf-scene{background:var(--sf-brand-dark-background)!important}
+html[data-sf-brand-ready="true"] #appShell .sf-location-map .sf-scene:after{background:linear-gradient(transparent,var(--sf-brand-dark-background))}
+html[data-sf-brand-ready="true"] #appShell .sf-orbit-status-hub .sf-location-map{background-color:var(--sf-brand-dark-background)!important}
+html[data-sf-brand-ready="true"] #appShell .sf-location-map .sf-map-footer{background:var(--tenant-surface)!important;color:var(--tenant-muted)!important}
+html[data-sf-brand-ready="true"] #appShell .sf-location-map .sf-map-credits{color:var(--tenant-muted)!important}
+html[data-sf-brand-ready="true"] #appShell .sf-orbit-hero[data-location-map="true"]>.sf-orbit-hero-content{
+  background:linear-gradient(180deg,color-mix(in srgb,var(--sf-brand-dark-background) 95%,transparent),color-mix(in srgb,var(--sf-brand-dark-background) 83%,transparent) 58%,transparent);
+}
+html[data-sf-brand-ready="true"] #appShell .sf-orbit-hero[data-location-map="true"] .sf-td-eyebrow{color:var(--sf-brand-dark-text)!important}
+html[data-sf-brand-ready="true"] #appShell .sf-orbit-hero[data-location-map="true"] .sf-orbit-hero-copy h1{color:var(--sf-brand-dark-text)!important}
+html[data-sf-brand-ready="true"] #appShell .sf-orbit-hero[data-location-map="true"] :is(.sf-orbit-hero-copy p,.sf-orbit-status-scope label>span){color:var(--sf-brand-dark-muted)!important}
+html[data-sf-brand-ready="true"][data-sf-theme] #appShell #sfTodayWorkspace .sf-orbit-hero[data-location-map="true"] .sf-orbit-hero-copy p{color:var(--sf-brand-dark-muted)!important}
+html[data-sf-brand-ready="true"] #appShell .sf-orbit-hero[data-location-map="true"] :is(.sf-orbit-status-scope select,[data-td-action="refresh"]){
+  background:var(--sf-brand-dark-surface)!important;color:var(--sf-brand-dark-text)!important;border-color:color-mix(in srgb,var(--sf-brand-dark-muted) 40%,transparent)!important;
+}
+html[data-sf-brand-ready="true"] #appShell .sf-location-map .sf-current:before{background:var(--sf-brand-dark-primary)}
+html[data-sf-brand-ready="true"] #appShell .sf-location-map :is(.sf-view,.sf-point,.sf-popup,.sf-pop-header){
+  background:var(--tenant-surface)!important;border-color:var(--tenant-line)!important;color:var(--tenant-text)!important;
+}
+html[data-sf-brand-ready="true"] #appShell .sf-location-map :is(.sf-point .sf-code,.sf-pop-arrow){color:var(--tenant-text)!important}
+html[data-sf-brand-ready="true"] #appShell .sf-location-map :is(.sf-pop-header h3,.sf-category,.sf-pop-value,.sf-close){color:var(--tenant-text)!important}
+html[data-sf-brand-ready="true"] #appShell .sf-location-map .sf-popup-note{color:var(--tenant-muted)!important}
+html[data-sf-brand-ready="true"] #appShell .sf-location-map :is(.sf-route,.sf-leader,.sf-label-lines path){stroke:var(--tenant-accent)!important}
+html[data-sf-brand-ready="true"] #appShell .sf-location-map :is(.sf-signal,.sf-anchors circle:not(.sf-alert-ring):not(.sf-select-pulse)){fill:var(--tenant-accent)!important;stroke:var(--tenant-accent)!important;filter:none}
+html[data-sf-brand-ready="true"] #appShell .sf-location-map .sf-category[aria-pressed="true"]{background:var(--tenant-surface)!important;box-shadow:inset 3px 0 var(--tenant-accent)!important}
+html[data-sf-brand-ready="true"] #appShell .sf-location-map :is(button,select):focus-visible{outline-color:var(--tenant-accent)}
+
+/* Successful states keep their labels and icons, but use the company palette. */
+html[data-sf-brand-ready="true"] #appShell{--sf-good:var(--tenant-text);--sf-good-surface:var(--tenant-surface);--good:var(--tenant-text)}
+html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal.sf-employee-orbit{--ep-good:var(--tenant-text);--ep-good-bg:var(--tenant-surface)}
+html[data-sf-brand-ready="true"] #view-employees .sp-employee-stat i{background:var(--tenant-surface)!important;color:var(--tenant-text)!important;border:1px solid var(--tenant-line)}
+html[data-sf-brand-ready="true"] #appShell .stat-icon{background:var(--tenant-surface)!important;color:var(--tenant-text)!important;border:1px solid var(--tenant-line)}
+html[data-sf-brand-ready="true"] #appShell :is(#sfCloudState,.sf-plan-chip.good,.sf-day-status.good,.status.active,.sp-profile-chip.good){
+  background:var(--tenant-surface)!important;border-color:var(--tenant-line)!important;color:var(--tenant-text)!important;
+}
+html[data-sf-brand-ready="true"] #sfEmployeePortal :is(.sf-home-status.running,.sf-my-published,.sf-pr-active){
+  background:var(--tenant-surface)!important;border-color:var(--tenant-line)!important;color:var(--tenant-text)!important;
+}
+html[data-sf-brand-ready="true"] :is(#appShell,#sfEmployeePortal) :is(.sf-market-count,.sf-market-state,.sf-datev-badge,.sf-time-status.confirmed,.sf-abs-v3-state.good,.sf-abs-mgr-v2-count,.sf-abs-mgr-v2-empty){
+  background-color:var(--tenant-surface)!important;border-color:var(--tenant-accent)!important;color:var(--tenant-text)!important;
+}
+html[data-sf-brand-ready="true"] :is(#appShell,#sfEmployeePortal) :is(.sf-market-approve,.sf-market-take,.sf-swap-approve,.sf-disruption-accept,.sf-change-approve,.sf-sx-start,.sf-ae3-add,.sf-pr-primary){
+  background-color:var(--tenant-accent)!important;border-color:var(--tenant-accent)!important;color:var(--tenant-accent-ink)!important;
+}
+html[data-sf-brand-ready="true"] #appShell :is(.avatar,.sp-q,.sf-pf-open,.sp-team-summary,.sp-rhythm-day,.sp-rhythm-summary,.sf-tw-count,.sf-tw-help,.sf-legacy-clear){
+  background:var(--tenant-surface)!important;border-color:var(--tenant-line)!important;color:var(--tenant-text)!important;
+}
+html[data-sf-brand-ready="true"] #appShell :is(.absence-summary-icon,.absence-count,.sf-abs-v3-kind,.sf-wage-rate,.sf-datev-status:not(.good):not(.error):not(.warning)){
+  background:var(--tenant-surface)!important;border-color:var(--tenant-line)!important;color:var(--tenant-text)!important;
+}
+html[data-sf-brand-ready="true"] #appShell .absence-cal-day{background-color:var(--tenant-surface)!important}
+html[data-sf-brand-ready="true"] #view-time :is(.sf-tw-filter,.sf-time-deviation-clear .badge,.sf-time-deviation-clear .notice){
+  background-color:var(--tenant-surface)!important;border-color:var(--tenant-line)!important;color:var(--tenant-text)!important;
+}
+html[data-sf-brand-ready="true"] #view-time .sf-time-diff.ok{color:var(--tenant-text)!important}
+html[data-sf-brand-ready="true"] #sfEmployeePortal.sf-employee-orbit :is(.sf-my-scope,.sf-my-calendar-day,.sf-my-day-details,.sf-my-tone-late,.sf-leave,.sf-ae3-refresh,.sf-ae3-icon,.sf-ae3-state.good,.sf-change-icon,.sf-pr-avatar,.sf-pr-push,.sf-pr-history,.sf-ac-track){
+  background:var(--tenant-surface)!important;border-color:var(--tenant-line)!important;color:var(--tenant-text)!important;
+}
+html[data-sf-brand-ready="true"] #sfEmployeePortal.sf-employee-orbit .sf-ac-track{border:1px solid var(--tenant-line)}
+html[data-sf-brand-ready="true"] #sfEmployeePortal.sf-employee-orbit .sf-ac-track i{background:var(--tenant-accent)}
+html[data-sf-brand-ready="true"] #sfEmployeePortal .sf-wage-rate{background-color:var(--tenant-surface)!important;color:var(--tenant-text)!important}
+html[data-sf-brand-ready="true"] #sfEmployeePortal :is(.sf-my-day-number,.sf-wv-estimate,.sf-wv-sum){color:var(--tenant-text)!important}

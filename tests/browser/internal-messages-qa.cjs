@@ -38,6 +38,11 @@ const html=employee=>`<!doctype html><html lang="de"><head><meta charset="utf-8"
   await page.goto('https://messages.test/');await page.evaluate(()=>SFBackend.messages.refresh());
   const launch=page.getByRole('button',{name:'Nachrichten, 1 ungelesen',exact:true});await launch.click();
   const dialog=page.getByRole('dialog',{name:'Nachrichten',exact:true});await dialog.getByRole('button',{name:/Test, Bob/}).click();
+  await page.addStyleTag({url:'https://messages.test/assets/corporate-theme-v1.css'});
+  await page.evaluate(()=>{const h=document.documentElement;h.dataset.sfTheme='dark';h.dataset.sfBrandReady='true';for(const [key,value] of Object.entries({'dark-surface':'#26232B','dark-text':'#FFFFFF','dark-muted':'#D3CBD8','dark-primary':'#9147FF','dark-primary-ink':'#FFFFFF'}))h.style.setProperty('--sf-brand-'+key,value)});
+  assert.equal(await dialog.evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(38, 35, 43)');
+  assert.equal(await dialog.locator('.sf-msg-thread-head h3').evaluate(el=>getComputedStyle(el).color),'rgb(255, 255, 255)');
+  await page.evaluate(()=>{delete document.documentElement.dataset.sfBrandReady;delete document.documentElement.dataset.sfTheme});
   await dialog.locator('.sf-msg-log').getByText('Kannst du morgen übernehmen?',{exact:true}).waitFor();await page.waitForFunction(()=>__messages[0].read_at!==null);
   assert.equal(await page.locator('.sf-message-badge').isVisible(),false);
   assert.equal(await dialog.locator('.sf-msg-compose').isVisible(),true);
