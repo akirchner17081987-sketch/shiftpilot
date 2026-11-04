@@ -26,9 +26,33 @@ async function rpc(name:string,body:Record<string,unknown>){
     body:JSON.stringify(body)
   })}catch{throw Object.assign(new Error('Verbindung zum Buchungsdienst unterbrochen'),{retryable:true})}
   let result;
-  try{result=await response.json()}catch{throw Object.assign(new Error('Antwort des Buchungsdienstes unvollständig'),{retryable:true})}
-  if(!response.ok)throw Object.assign(new Error(String(result?.message||'Buchung nicht möglich').slice(0,220)),{retryable:response.status>=500});
+  try{result=await response.json()}catch{throw Object.assign(new Error('Antwort des Buchungsdienstes unvollst�ndig'),{retryable:true})}
+  if(!response.ok)throw Object.assign(new Error(String(result?.message||'Buchung nicht m�glich').slice(0,220)),{retryable:response.status>=500});
   return result;
+}
+
+
+/* Branding is resolved only after the existing booking RPC validates the session. */
+async function sessionBranding(sessionToken:string){
+  const url=Deno.env.get('SUPABASE_URL')||'', key=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||'';
+  const headers={'apikey':key,'Authorization':`Bearer ${key}`};
+  const digest=hex(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(sessionToken.toLowerCase()))));
+  const q=new URLSearchParams({select:'company_id',token_hash:'eq.\\x'+digest,limit:'1'});
+  const s=await fetch(`${url}/rest/v1/time_qr_independent_sessions?${q}`,{headers,signal:AbortSignal.timeout(2500)});
+  if(!s.ok)throw new Error('branding unavailable');
+  const sessions=await s.json(),company=sessions?.[0]?.company_id;
+  if(!/^[0-9a-f-]{36}$/i.test(company||''))return null;
+  const bq=new URLSearchParams({select:'theme_key,dark_primary,dark_accent,dark_background,dark_surface,dark_text,dark_muted,logo_path',company_id:'eq.'+company,limit:'1'});
+  const b=await fetch(`${url}/rest/v1/company_branding?${bq}`,{headers,signal:AbortSignal.timeout(2500)});
+  if(!b.ok)throw new Error('branding unavailable');
+  const row=(await b.json())?.[0];if(!row)return null;
+  const path=row.logo_path;delete row.logo_path;
+  if(typeof path==='string' && path.startsWith(company+'/') && !path.includes('..')){
+    const encoded=path.split('/').map(encodeURIComponent).join('/');
+    const sign=await fetch(`${url}/storage/v1/object/sign/company-branding-assets/${encoded}`,{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify({expiresIn:600}),signal:AbortSignal.timeout(2500)});
+    if(sign.ok){const data=await sign.json();if(typeof data.signedURL==='string'&&data.signedURL.startsWith('/object/sign/'))row.logo_url=url+'/storage/v1'+data.signedURL}
+  }
+  return row;
 }
 
 Deno.serve(async(req:Request)=>{
@@ -39,27 +63,27 @@ Deno.serve(async(req:Request)=>{
     'Access-Control-Allow-Methods':'POST, OPTIONS'
   }});
   if(req.method!=='POST')return reply({ok:false,error:'Methode nicht erlaubt'},405,origin);
-  if(Number(req.headers.get('content-length')||0)>2048)return reply({ok:false,error:'Anfrage zu groß'},413,origin);
+  if(Number(req.headers.get('content-length')||0)>2048)return reply({ok:false,error:'Anfrage zu gro�'},413,origin);
   let input:Record<string,unknown>;
   try{
     const reader=req.body?.getReader(),chunks:Uint8Array[]=[];let size=0;
     if(reader)while(true){
       const part=await reader.read();if(part.done)break;
       size+=part.value.byteLength;
-      if(size>2048){await reader.cancel();return reply({ok:false,error:'Anfrage zu groß'},413,origin)}
+      if(size>2048){await reader.cancel();return reply({ok:false,error:'Anfrage zu gro�'},413,origin)}
       chunks.push(part.value);
     }
     const bytes=new Uint8Array(size);let offset=0;
     for(const part of chunks){bytes.set(part,offset);offset+=part.byteLength}
     input=JSON.parse(new TextDecoder().decode(bytes));
     if(!input||typeof input!=='object'||Array.isArray(input))throw new Error('invalid_body');
-  }catch{return reply({ok:false,error:'Ungültige Anfrage'},400,origin)}
+  }catch{return reply({ok:false,error:'Ung�ltige Anfrage'},400,origin)}
   const action=String(input.action||'').toUpperCase();
   const qrToken=String(input.qrToken||'');
   const terminalId=typeof input.terminalId==='string'?input.terminalId:'';
   const desktop=Object.hasOwn(input,'terminalId');
-  if(action!=='DESKTOP_TERMINALS'&&desktop&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(terminalId))return reply({ok:false,error:'Bitte einen Betrieb und Standort auswählen'},400,origin);
-  if(action!=='DESKTOP_TERMINALS'&&!desktop&&!tokenPattern.test(qrToken))return reply({ok:false,error:'Ungültiger QR-Code'},400,origin);
+  if(action!=='DESKTOP_TERMINALS'&&desktop&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(terminalId))return reply({ok:false,error:'Bitte einen Betrieb und Standort ausw�hlen'},400,origin);
+  if(action!=='DESKTOP_TERMINALS'&&!desktop&&!tokenPattern.test(qrToken))return reply({ok:false,error:'Ung�ltiger QR-Code'},400,origin);
   try{
     if(action==='DESKTOP_TERMINALS')return reply(await rpc('qr_desktop_terminals',{}),200,origin);
     const desktopRequest=(action:string,session:string,extra:Record<string,unknown>={})=>rpc('qr_desktop_request',{
@@ -71,45 +95,48 @@ Deno.serve(async(req:Request)=>{
       const pin=typeof input.pin==='string'?input.pin:'';
       const startDate=String(input.startDate||'');
       const setupCode=typeof input.setupCode==='string'?input.setupCode:'';
-      if(!personnelPattern.test(personnelNo))return reply({ok:false,error:'Anmeldung nicht möglich. Bitte Angaben prüfen.'},401,origin);
+      if(!personnelPattern.test(personnelNo))return reply({ok:false,error:'Anmeldung nicht m�glich. Bitte Angaben pr�fen.'},401,origin);
       const bytes=new Uint8Array(32);crypto.getRandomValues(bytes);const sessionToken=hex(bytes);
       let result;
       if(action==='SET_PIN'||Object.hasOwn(input,'pin')){
         if(!/^[0-9]{6,8}$/.test(pin)||(action==='SET_PIN'&&!/^[0-9]{12}$/.test(setupCode)))
-          return reply({ok:false,error:'PIN oder Einrichtungscode hat ein ungültiges Format.'},400,origin);
+          return reply({ok:false,error:'PIN oder Einrichtungscode hat ein ung�ltiges Format.'},400,origin);
         result=desktop?await desktopRequest(action,sessionToken,{p_personnel_no:personnelNo,p_pin:pin,p_setup_code:action==='SET_PIN'?setupCode:null}):await rpc('qr_independent_pin_login',{
           p_terminal_token:qrToken,p_personnel_no:personnelNo,p_pin:pin,
           p_session_token:sessionToken,p_setup_code:action==='SET_PIN'?setupCode:null
         });
       }else{
-        if(!datePattern.test(startDate))return reply({ok:false,error:'Anmeldung nicht möglich. Bitte Angaben prüfen.'},401,origin);
+        if(!datePattern.test(startDate))return reply({ok:false,error:'Anmeldung nicht m�glich. Bitte Angaben pr�fen.'},401,origin);
         result=desktop?await rpc('qr_desktop_legacy_login',{p_terminal_id:terminalId,p_personnel_no:personnelNo,p_start_date:startDate,p_session_token:sessionToken}):await rpc('qr_independent_login',{
           p_terminal_token:qrToken,p_personnel_no:personnelNo,p_start_date:startDate,p_session_token:sessionToken
         });
       }
-      if(!result?.ok)return reply({ok:false,error:result?.error||'Anmeldung nicht möglich.',retry_after_seconds:result?.retry_after_seconds},result?.rate_limited?429:401,origin);
+      if(!result?.ok)return reply({ok:false,error:result?.error||'Anmeldung nicht m�glich.',retry_after_seconds:result?.retry_after_seconds},result?.rate_limited?429:401,origin);
       return reply({...result,sessionToken},200,origin);
     }
     if(!['STATUS','CLOCK_IN','BREAK_START','BREAK_END','CLOCK_OUT'].includes(action))
-      return reply({ok:false,error:'Ungültige Aktion'},400,origin);
+      return reply({ok:false,error:'Ung�ltige Aktion'},400,origin);
     const sessionToken=String(input.sessionToken||'');
     if(!tokenPattern.test(sessionToken))return reply({ok:false,error:'Bitte erneut anmelden'},401,origin);
     const requestId=input.requestId==null?null:String(input.requestId).toLowerCase();
-    if(requestId!==null&&!tokenPattern.test(requestId))return reply({ok:false,error:'Ungültige Anfragekennung'},400,origin);
+    if(requestId!==null&&!tokenPattern.test(requestId))return reply({ok:false,error:'Ung�ltige Anfragekennung'},400,origin);
     const plannedMinutes=input.plannedMinutes??null;
     if(plannedMinutes!==null&&(!Number.isInteger(plannedMinutes)||![10,15,20].includes(plannedMinutes as number)||action!=='BREAK_START'))
-      return reply({ok:false,error:'Bitte 10, 15, 20 Minuten oder unbegrenzt auswählen'},400,origin);
+      return reply({ok:false,error:'Bitte 10, 15, 20 Minuten oder unbegrenzt ausw�hlen'},400,origin);
     const result=await rpc('qr_break_timer_request',{
       p_terminal_token:desktop?null:qrToken,p_terminal_id:desktop?terminalId:null,
       p_session_token:sessionToken,p_action:action,p_request_id:requestId,p_planned_minutes:plannedMinutes
     });
+    if(action==='STATUS'&&result?.ok){
+      try{result.company_branding=await sessionBranding(sessionToken)}catch{result.company_branding=null}
+    }
     return reply(result,200,origin);
   }catch(error){
-    const message=error instanceof Error?error.message:'Buchung nicht möglich';
+    const message=error instanceof Error?error.message:'Buchung nicht m�glich';
     if(error&&typeof error==='object'&&'retryable' in error&&error.retryable)
-      return reply({ok:false,error:'Verbindung zum Buchungsdienst unterbrochen. Bitte den Buchungsstatus prüfen.',retryable:true},503,origin);
+      return reply({ok:false,error:'Verbindung zum Buchungsdienst unterbrochen. Bitte den Buchungsstatus pr�fen.',retryable:true},503,origin);
     const expired=/Anmeldung abgelaufen/.test(message);
-    return reply({ok:false,error:message==='service_not_configured'?'Dienst derzeit nicht verfügbar':message},
+    return reply({ok:false,error:message==='service_not_configured'?'Dienst derzeit nicht verf�gbar':message},
       expired?401:400,origin);
   }
 });
