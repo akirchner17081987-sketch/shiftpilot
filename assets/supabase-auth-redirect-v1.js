@@ -1,7 +1,7 @@
 // SchichtFunk – feste Supabase Auth-Weiterleitung auf Produktion
 (function(){
   const B=window.SFBackend=window.SFBackend||{};
-  B.productionUrl='https://schichtfunk.de/';
+  B.productionUrl=location.origin+'/';
   const baseInit=B.init;
   if(typeof baseInit!=='function') return;
   B.init=async function(){
