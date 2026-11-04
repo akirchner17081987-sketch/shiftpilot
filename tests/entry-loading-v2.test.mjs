@@ -34,7 +34,7 @@ test('explicit local logout clears the session and hides protected views before 
   const scopes=[];const h=logoutHarness({signOut:async options=>{scopes.push(options.scope);return {}}});
   await h.B.signOutSafely();
   assert.deepEqual(scopes,['local']);
-  assert.deepEqual(h.navigations,[{url:'/',ready:false,user:null,companyId:null,role:null,appDisplay:'none',cleared:2}]);
+  assert.deepEqual(h.navigations,[{url:'/',ready:false,user:null,companyId:null,role:null,appDisplay:'none',cleared:3}]);
   assert.deepEqual(h.removed,['sfEmployeePortal','sfNotifyPanel']);
   assert.deepEqual(h.dialogs,[]);
   h.B.finishSignOut(true);
@@ -45,12 +45,12 @@ test('a stalled local signout still clears local state before returning to the a
   const h=logoutHarness({signOut:()=>new Promise(()=>{})});
   const pending=h.B.signOutSafely();h.runTimer(5000);await pending;
   assert.equal(h.navigations.length,1);assert.equal(h.navigations[0].url,'/');
-  assert.equal(h.navigations[0].cleared,2);assert.equal(h.B.ready,false);
+  assert.equal(h.navigations[0].cleared,3);assert.equal(h.B.ready,false);
 });
 
 test('session expiry keeps the existing reauthentication message without a reload loop',()=>{
   const h=logoutHarness();h.B.finishSignOut(false);h.runTimer(0);
-  assert.deepEqual(h.navigations,[]);assert.deepEqual(h.storageCleared,[]);assert.deepEqual(h.dialogs,['login']);
+  assert.deepEqual(h.navigations,[]);assert.deepEqual(h.storageCleared,[['session','sf_session_reentry_v1']]);assert.deepEqual(h.dialogs,['login']);
   assert.match(h.message.textContent,/Anmeldung ist abgelaufen/);assert.equal(h.B.__finishingSignOut,false);
 });
 
@@ -62,7 +62,7 @@ test('the separate demo logout does not restart an active demo session',async()=
 test('successful global signout also returns to the animated root',async()=>{
   const scopes=[];const h=logoutHarness({signOut:async options=>{scopes.push(options.scope);return {}}});
   assert.equal(await h.B.signOutAllSessionsSafely(),true);assert.deepEqual(scopes,['global']);
-  assert.equal(h.navigations.length,1);assert.equal(h.navigations[0].cleared,2);
+  assert.equal(h.navigations.length,1);assert.equal(h.navigations[0].cleared,3);
 });
 
 test('failed global session revocation keeps the current session and does not redirect',async()=>{
@@ -71,7 +71,7 @@ test('failed global session revocation keeps the current session and does not re
   assert.deepEqual(h.navigations,[]);assert.deepEqual(h.storageCleared,[]);assert.equal(h.B.ready,true);
 });
 
-function entryHarness({reducedMotion=true,globePresentation,transitionStamp=null}={}) {
+function entryHarness({reducedMotion=true,globePresentation,transitionStamp=null,reentry=false}={}) {
   const timers = new Map(), nodes = new Map(), events = new Map();
   const frames = []; let changed; let timerId = 0;
   const element = (id) => ({id,isConnected:true,style:{},dataset:{},hidden:false,textContent:'',
@@ -83,11 +83,11 @@ function entryHarness({reducedMotion=true,globePresentation,transitionStamp=null
   root.querySelector = selector => nodes.get(selector.slice(1));
   nodes.get('sfEntryLoginSlot').appendChild = el => {el.parentElement=nodes.get('sfEntryLoginSlot')};
   const backend = {client:{},ready:false,user:{id:'test-user'}};
-  const html=element('html'), storage=new Map();if(transitionStamp!==null)storage.set('sf_company_transition_v1',String(transitionStamp));
+  const html=element('html'), storage=new Map();if(reentry)html.classList.add('sf-session-reentry');if(transitionStamp!==null)storage.set('sf_company_transition_v1',String(transitionStamp));
   runInNewContext(boot,{
     document:{readyState:'loading',documentElement:html,body:{},getElementById:id=>nodes.get(id),addEventListener:(name,fn)=>events.set(name,fn)},
     window:{SFBackend:backend,SFEntryGlobePresentation:globePresentation,addEventListener:(name,fn)=>events.set(name,fn),removeEventListener(){},matchMedia:()=>({matches:reducedMotion})},
-    sessionStorage:{getItem:key=>storage.get(key)||null,removeItem:key=>storage.delete(key)},
+    sessionStorage:{getItem:key=>storage.get(key)||null,removeItem:key=>storage.delete(key),setItem:(key,value)=>storage.set(key,value)},
     getComputedStyle:el=>({display:el.style.display||'block',visibility:'visible'}),
     performance:{now:()=>1,mark(){},getEntriesByType:()=>[]},
     location:{search:''},URL,URLSearchParams,
@@ -100,6 +100,19 @@ function entryHarness({reducedMotion=true,globePresentation,transitionStamp=null
   return {root,html,storage,nodes,timers,backend,add,change,events};
 }
 
+test('preflight uses only a fresh non-identifying hint, and leaves demo and new logins original',()=>{
+  const code=read('assets/sf-entry-preflight-v1.js');
+  function run(stamp,search='') {
+    const classes=new Set();
+    runInNewContext(code,{document:{documentElement:{classList:{add:v=>classes.add(v)}}},sessionStorage:{getItem:key=>key==='sf_session_reentry_v1'?stamp:null},location:{search},URLSearchParams,Date});
+    return classes.has('sf-session-reentry');
+  }
+  assert.equal(run(null),false);
+  assert.equal(run(String(Date.now()-60000)),true);
+  assert.equal(run(String(Date.now()-60000),'?bereich=demo'),false);
+  assert.equal(run(String(Date.now()-86400000)),false);
+});
+
 test('company transition is neutral, one-use and never accepts another tenant theme event',()=>{
   const h=entryHarness({transitionStamp:Date.now()});
   assert.equal(h.storage.has('sf_company_transition_v1'),false);
@@ -110,9 +123,26 @@ test('company transition is neutral, one-use and never accepts another tenant th
   assert.ok(h.html.classList.contains('sf-company-transition'));
   h.events.get('schichtfunk:corporate-theme-ready')({detail:{companyId:'company-a'}});
   assert.equal(h.html.classList.contains('sf-company-transition'),false);
-  assert.ok(h.root.classList.contains('sf-entry-company-switch'));
+  assert.equal(h.root.classList.contains('sf-entry-company-switch'),false);
+  assert.ok(h.storage.has('sf_session_reentry_v1'));
   h.add('sfAuthBackdrop');
   assert.equal(h.root.classList.contains('sf-entry-company-switch'),false);
+});
+
+test('restored company presentation starts neutral and accepts only a verified matching theme',()=>{
+  const h=entryHarness({reentry:true});
+  assert.ok(h.root.classList.contains('sf-entry-company-switch'));
+  h.backend.ready=true;h.backend.companyId='company-a';
+  h.events.get('schichtfunk:corporate-theme-ready')({detail:{companyId:'company-b',theme:'secontec'}});
+  assert.ok(h.root.classList.contains('sf-entry-company-switch'));
+  assert.equal(h.storage.has('sf_session_reentry_v1'),false);
+  h.events.get('schichtfunk:corporate-theme-ready')({detail:{companyId:'company-a',theme:'secontec'}});
+  assert.equal(h.root.classList.contains('sf-entry-company-switch'),false);
+  assert.ok(h.root.classList.contains('sf-entry-company-branded'));
+  assert.ok(h.storage.has('sf_session_reentry_v1'));
+  h.add('sfAuthBackdrop');
+  assert.equal(h.root.classList.contains('sf-entry-company-branded'),false);
+  assert.equal(h.storage.has('sf_session_reentry_v1'),false);
 });
 
 test('an expired company transition hint never changes the entry',()=>{
@@ -121,13 +151,13 @@ test('an expired company transition hint never changes the entry',()=>{
   assert.equal(h.root.classList.contains('sf-entry-company-switch'),false);
 });
 
-test('a stalled company theme cannot leave the interface permanently neutral',()=>{
+test('a stalled company theme releases the workspace while its entry stays neutral',()=>{
   const h=entryHarness({transitionStamp:Date.now()});
   const fallback=[...h.timers.values()].find(timer=>timer.ms===20000);
   assert.ok(fallback);
   fallback.fn();
   assert.equal(h.html.classList.contains('sf-company-transition'),false);
-  assert.equal(h.root.classList.contains('sf-entry-company-switch'),false);
+  assert.equal(h.root.classList.contains('sf-entry-company-switch'),true);
 });
 
 test('restored session exposes MFA without a login form and clears startup timeout', () => {

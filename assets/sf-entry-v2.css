@@ -1,7 +1,7 @@
 
 /* SchichtFunk 2.0 – protected entry/loading bridge; independent of app theme */
 /* Neutral during a verified company switch until that company's theme loads. */
-html.sf-company-transition #appShell, #sfEntryOverlay.sf-entry-company-switch{filter:grayscale(1)}
+html.sf-company-transition #appShell, html.sf-session-reentry #appShell, html.sf-session-reentry #sfEntryOverlay, #sfEntryOverlay.sf-entry-company-switch{filter:grayscale(1)}
 #sfEntryOverlay{position:fixed;inset:0;z-index:30000;display:grid;place-items:center;background:#040e1d;color:#f4f9ff;overflow:auto;isolation:isolate;opacity:1;transition:opacity .46s ease,visibility .46s ease}
 #sfEntryOverlay.sf-entry-out{opacity:0;visibility:hidden;pointer-events:none}
 /* MFA uses z-index 26000 and must remain visible above the entry during restore. */
@@ -257,3 +257,13 @@ html:has(#sfEntryOverlay),body:has(#sfEntryOverlay){overflow:hidden}
 #sfEntryOverlay [data-startup-script-error]{position:relative;z-index:2;grid-area:1/1;width:100%;color:#ecf2f5;line-height:1.6}
 #sfEntryOverlay [data-startup-script-error] button{padding:12px 18px;border:1px solid #467b80;border-radius:10px;background:#0b2129;color:#ecf2f5}
 #sfEntryOverlay [data-startup-script-error] button:focus-visible{outline:2px solid #8ff5dd;outline-offset:4px}
+
+/* Verified customer accent; SchichtFunk remains the platform identity. */
+#sfEntryOverlay.sf-entry-company-branded{background:var(--tenant-surface,#101418);color:var(--tenant-text,#fff)}
+#sfEntryOverlay.sf-entry-company-branded::before{background:radial-gradient(ellipse at 28% 48%,color-mix(in srgb,var(--tenant-accent) 15%,transparent),transparent 45%)}
+#sfEntryOverlay.sf-entry-company-branded .sf-entry-world{filter:grayscale(1)}
+#sfEntryOverlay.sf-entry-company-branded .sf-entry-bar span{background:var(--tenant-accent);box-shadow:none}
+#sfEntryOverlay.sf-entry-company-branded :is(.sf-entry-state,.sf-entry-step,.sf-entry-skip){color:var(--tenant-text);border-color:var(--tenant-line)}
+.sf-entry-customer{display:flex;align-items:center;gap:12px;margin:0 0 18px;color:var(--tenant-text);font-size:12px}
+.sf-entry-customer[hidden]{display:none}
+.sf-entry-customer img{max-width:140px;max-height:48px;object-fit:contain}

@@ -17,8 +17,9 @@
 <link rel="manifest" href="/site.webmanifest" />
 <link rel="stylesheet" href="/assets/pwa-runtime-v1.css?v=20261023-1">
 <script defer src="/assets/pwa-runtime-v1.js?v=20261023-1"></script>
-<link rel="stylesheet" href="assets/sf-entry-v2.css?v=20261013-fade1">
-<script defer src="assets/sf-entry-v2.js?v=20261102-demo-dive1&csp=20261017-1"></script>
+<script src="assets/sf-entry-preflight-v1.js?v=20261104-1"></script>
+<link rel="stylesheet" href="assets/sf-entry-v2.css?v=20261104-1">
+<script defer src="assets/sf-entry-v2.js?v=20261104-tenant-entry1&csp=20261017-1"></script>
 <link rel="stylesheet" href="assets/sf-entry-access-v1.css?v=20261102-demo-login1">
 <script defer src="assets/demo-api-v2.js?v=20260912-ionos1&csp=20261017-1"></script>
 <script defer src="assets/sf-entry-access-v1.js?v=20261102-demo-dive1&csp=20261017-1"></script>
@@ -195,6 +196,7 @@ html[data-sf-theme="light"] #sfEmployeePortal{
     </div>
     <div class="sf-entry-access">
     <div class="sf-entry-loading">
+      <div id="sfEntryCustomer" class="sf-entry-customer" hidden><img id="sfEntryCustomerLogo" alt=""><span>Ihr Unternehmensbereich auf SchichtFunk</span></div>
       <p class="sf-entry-state" id="sfEntryStatus" aria-live="polite">SchichtFunk startet …</p>
       <div class="sf-entry-bar" aria-hidden="true"><span id="sfEntryBar"></span></div>
       <div class="sf-entry-footer"><span id="sfEntryCounter" class="sf-entry-step">0 / 4</span><button id="sfEntrySkip" class="sf-entry-skip" type="button">Animation überspringen</button></div>

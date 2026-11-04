@@ -5,28 +5,52 @@
   if (!root) return;
   // Do not show the preceding tenant's brand while membership is rechecked.
   // The hint carries no tenant identity and is consumed once; it is never auth.
-  let companyTransition = false;
+  let companyTransition = document.documentElement.classList.contains('sf-session-reentry');
   try {
     const stamp = Number(sessionStorage.getItem('sf_company_transition_v1'));
     sessionStorage.removeItem('sf_company_transition_v1');
-    companyTransition = stamp > 0 && Date.now() >= stamp && Date.now() - stamp < 30000;
+    companyTransition = companyTransition || (stamp > 0 && Date.now() >= stamp && Date.now() - stamp < 30000);
   } catch (_) {}
   function clearCompanyTransition() {
     if (!companyTransition) return;
     companyTransition = false;
     document.documentElement.classList.remove('sf-company-transition');
+    document.documentElement.classList.remove('sf-session-reentry');
     root.classList.remove('sf-entry-company-switch');
+    root.classList.remove('sf-entry-company-branded');
+    const customer = root.querySelector('#sfEntryCustomer');
+    if (customer) customer.hidden = true;
   }
   if (companyTransition) {
     document.documentElement.classList.add('sf-company-transition');
     root.classList.add('sf-entry-company-switch');
-    // A missing branding response must not leave the application gray forever.
-    setTimeout(clearCompanyTransition, 20000);
-    window.addEventListener('schichtfunk:corporate-theme-ready', event => {
-      if (window.SFBackend?.ready && event.detail?.companyId === window.SFBackend.companyId)
-        document.documentElement.classList.remove('sf-company-transition');
-    });
+    // Release the workspace on errors, while the unverified entry stays neutral.
+    setTimeout(() => {
+      document.documentElement.classList.remove('sf-company-transition');
+      document.documentElement.classList.remove('sf-session-reentry');
+    }, 20000);
   }
+  // Customer presentation is accepted only for the verified current company.
+  window.addEventListener('schichtfunk:corporate-theme-ready', event => {
+    const backend = window.SFBackend;
+    if (!backend?.ready || !backend.user || !backend.companyId || event.detail?.companyId !== backend.companyId) return;
+    try { sessionStorage.setItem('sf_session_reentry_v1', String(Date.now())); } catch (_) {}
+    if (!companyTransition || !root.isConnected) return;
+    document.documentElement.classList.remove('sf-company-transition');
+    document.documentElement.classList.remove('sf-session-reentry');
+    root.classList.remove('sf-entry-company-switch');
+    if (event.detail?.theme && event.detail.theme !== 'original') {
+      root.classList.add('sf-entry-company-branded');
+      const customer = root.querySelector('#sfEntryCustomer');
+      const target = root.querySelector('#sfEntryCustomerLogo');
+      const logo = document.querySelector?.('#sfEmployeePortal .sf-portal-logo img, #sfOrbitHome img');
+      if (customer && target && logo?.getAttribute('src')) {
+        target.src = logo.getAttribute('src');
+        target.alt = logo.alt || 'Unternehmenslogo';
+        customer.hidden = false;
+      }
+    }
+  });
   const label = root.querySelector('#sfEntryStatus');
   const progress = root.querySelector('#sfEntryBar');
   const counter = root.querySelector('#sfEntryCounter');
@@ -227,6 +251,7 @@
   function morphToLogin(auth) {
     if (!slot || dismissed || !auth) return;
     clearCompanyTransition();
+    try { sessionStorage.removeItem('sf_session_reentry_v1'); } catch (_) {}
     if (activeAuth !== auth) {
       // Move the real Supabase form; never create a duplicate form or listeners.
       slot.appendChild(auth);
