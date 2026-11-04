@@ -284,3 +284,6 @@ html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal :is(.sf-ae3-ca
 html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal .sf-ae3-filters button[aria-pressed="true"]{background:var(--orbit-active)!important;border-color:var(--tenant-accent)!important;color:var(--tenant-accent)!important}
 html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal :is(.sf-sx-empty>span,.sf-sx-guide i){background:var(--orbit-active)!important;border-color:var(--tenant-accent)!important;color:var(--tenant-accent)!important}
 html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal{--sf-scroll-thumb:var(--tenant-accent);--sf-scroll-hover:var(--tenant-accent);--sf-scroll-active:var(--tenant-accent)}
+
+/* Adjacent-month calendar cells follow the verified company palette. */
+html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal #sfMyShiftsMonth .sf-my-calendar-outside{background:var(--tenant-surface)!important;color:var(--tenant-muted)!important}

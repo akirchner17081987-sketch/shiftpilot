@@ -91,6 +91,12 @@ test('employee portal areas remain visible with the Secontec palette', async ({p
         await portal.locator('#sfMyShiftsMonth .sf-my-view-switch').getByRole('button',{name:'Kalender',exact:true}).click();
         await expect(portal.locator('#sfMyShiftsMonth .sf-my-month-summary > div').first()).toHaveCSS('background-image','none');
         await expect(portal.locator('#sfMyShiftsMonth .sf-my-today .sf-my-day-number i')).toHaveCSS('color',mode==='dark'?'rgb(234, 90, 6)':'rgb(183, 68, 0)');
+        const outside=portal.locator('#sfMyShiftsMonth .sf-my-calendar-outside');
+        const changedMonth=await outside.count()===0;
+        if(changedMonth)await portal.getByRole('button',{name:'Vorheriger Monat',exact:true}).click();
+        await expect(outside.first()).toHaveCSS('background-color',mode==='dark'?'rgb(26, 32, 38)':'rgb(255, 255, 255)');
+        await expect(outside.first()).toHaveCSS('color',mode==='dark'?'rgb(198, 205, 211)':'rgb(80, 90, 98)');
+        if(changedMonth)await portal.getByRole('button',{name:'Aktueller Monat',exact:true}).click();
       }
       if(view==='time') {
         const surface=mode==='dark'?'rgb(26, 32, 38)':'rgb(255, 255, 255)';
