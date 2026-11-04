@@ -311,3 +311,23 @@ html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal .sf-company-em
 html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal .sf-company-employee-contacts p{color:var(--tenant-muted)!important}
 html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal .sf-company-employee-contacts a{color:var(--tenant-text)!important;text-decoration:underline}
 html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal .sf-company-employee-contacts a:focus-visible{outline:2px solid var(--tenant-accent);outline-offset:3px}
+
+/* Push controls are inserted after startup in the portal and notification panel. */
+html[data-sf-brand-ready="true"][data-sf-theme] :is(.sf-push-card,.sf-push-panel,.sf-push-toast){
+  background:var(--tenant-surface)!important;border-color:var(--tenant-line)!important;color:var(--tenant-text)!important;
+}
+html[data-sf-brand-ready="true"][data-sf-theme] .sf-push-copy b{color:var(--tenant-text)!important}
+html[data-sf-brand-ready="true"][data-sf-theme] .sf-push-copy small{color:var(--tenant-muted)!important}
+html[data-sf-brand-ready="true"][data-sf-theme] .sf-push-icon{
+  background:color-mix(in srgb,var(--tenant-accent) 22%,var(--tenant-surface))!important;color:var(--tenant-accent)!important;
+}
+html[data-sf-brand-ready="true"][data-sf-theme] .sf-push-action{
+  background:var(--tenant-accent)!important;border-color:var(--tenant-accent)!important;color:var(--tenant-accent-ink)!important;
+}
+html[data-sf-brand-ready="true"][data-sf-theme] .sf-push-action.off{
+  background:var(--tenant-inset)!important;border-color:var(--tenant-line)!important;color:var(--tenant-text)!important;
+}
+html[data-sf-brand-ready="true"][data-sf-theme] .sf-push-action:hover:not(:disabled){border-color:var(--tenant-accent)!important;filter:brightness(1.08)}
+html[data-sf-brand-ready="true"][data-sf-theme] .sf-push-action:focus-visible{outline:2px solid var(--tenant-accent)!important;outline-offset:3px}
+html[data-sf-brand-ready="true"][data-sf-theme] :is(#sfEmployeePortal,#sfNotifyPanel) :is(.sf-push-card,.sf-push-panel)[data-mode="error"]{border-color:#a95050!important}
+html[data-sf-brand-ready="true"][data-sf-theme] :is(#sfEmployeePortal,#sfNotifyPanel) :is(.sf-push-card,.sf-push-panel)[data-mode="working"]{border-color:#7b6e38!important}
