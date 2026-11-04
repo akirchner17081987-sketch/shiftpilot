@@ -287,3 +287,8 @@ html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal{--sf-scroll-th
 
 /* Adjacent-month calendar cells follow the verified company palette. */
 html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal #sfMyShiftsMonth .sf-my-calendar-outside{background:var(--tenant-surface)!important;color:var(--tenant-muted)!important}
+
+/* Tenant colours for the employee time-account history and holiday cards. */
+html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal #sfEmployeeTimeAccount .sf-ac-actions button[data-ac="history"]{background:var(--tenant-surface)!important;border-color:var(--tenant-accent)!important;color:var(--tenant-text)!important}
+html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal #sfEmployeeTimeAccount .sf-ac-holiday-list>div{border-color:var(--tenant-line)!important}
+html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal #sfEmployeeTimeAccount .sf-ac-holiday-list :is(span,small){color:var(--tenant-muted)!important}
