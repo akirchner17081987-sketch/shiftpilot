@@ -8,6 +8,9 @@ const {chromium}=require('playwright'),fs=require('fs'),assert=require('node:ass
  await page.getByRole('button',{name:'Weitere Unternehmen'}).click();
  await page.getByText('Unternehmen 1').waitFor();
  assert.equal(await page.locator('[data-company-choice="old"]').isDisabled(),true);
+ await page.getByRole('button',{name:'Freigaben speichern'}).click();
+ await page.getByText('Bitte mindestens ein Unternehmen auswählen.').waitFor();
+ assert.equal((await page.evaluate(()=>window.__calls)).filter(c=>c.name==='manager_grant_existing_companies').length,0);
  await page.locator('[data-company-choice="one"]').check();await page.locator('[data-company-choice="two"]').check();
  await page.getByRole('button',{name:'Freigaben speichern'}).click();
  await page.getByText('Weitere Unternehmensfreigaben für lead@example.test gespeichert.').waitFor();
