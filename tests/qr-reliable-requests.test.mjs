@@ -13,7 +13,7 @@ function fixture(initial='READY'){
   const elements=new Map(),intervals=new Map(),timeouts=new Map(),events={},requests=[],saved=new Map();let timerId=0,punches=0;
   const get=id=>{if(!elements.has(id))elements.set(id,{hidden:id==='clock',disabled:false,value:'',textContent:'',className:'',handlers:{},addEventListener(event,fn){this.handlers[event]=fn},replaceChildren(){},append(){}});return elements.get(id)};
   class Clock extends Date{constructor(...args){super(...(args.length?args:[now]))}static now(){return now}}
-  const context=vm.createContext({document:{getElementById:get,createElement:()=>({append(){}}),addEventListener(name,fn){events[name]=fn},hidden:false},location:{search:'?t='+'e'.repeat(64)},URLSearchParams,Intl,Date:Clock,performance:{now:()=>now-baseline},AbortController,crypto:webcrypto,Uint8Array,
+  const context=vm.createContext({document:{documentElement:{dataset:{},style:{setProperty(){},removeProperty(){}}},querySelector:()=>null,getElementById:get,createElement:()=>({append(){}}),addEventListener(name,fn){events[name]=fn},hidden:false},location:{search:'?t='+'e'.repeat(64)},URLSearchParams,Intl,Date:Clock,performance:{now:()=>now-baseline},AbortController,crypto:webcrypto,Uint8Array,
     setTimeout(fn,ms){const id=++timerId;timeouts.set(id,{fn,at:now+ms});return id},clearTimeout(id){timeouts.delete(id)},setInterval(fn){const id=++timerId;intervals.set(id,fn);return id},clearInterval(id){intervals.delete(id)},
     fetch:async(_url,options)=>{
       const body=JSON.parse(options.body);requests.push(body);const action=body.action;

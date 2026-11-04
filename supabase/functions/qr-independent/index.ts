@@ -31,6 +31,29 @@ async function rpc(name:string,body:Record<string,unknown>){
   return result;
 }
 
+/* Branding is resolved only after the existing booking RPC validates the session. */
+async function sessionBranding(sessionToken:string){
+  const url=Deno.env.get('SUPABASE_URL')||'', key=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||'';
+  const headers={'apikey':key,'Authorization':`Bearer ${key}`};
+  const digest=hex(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(sessionToken.toLowerCase()))));
+  const q=new URLSearchParams({select:'company_id',token_hash:'eq.\\x'+digest,limit:'1'});
+  const s=await fetch(`${url}/rest/v1/time_qr_independent_sessions?${q}`,{headers,signal:AbortSignal.timeout(2500)});
+  if(!s.ok)throw new Error('branding unavailable');
+  const sessions=await s.json(),company=sessions?.[0]?.company_id;
+  if(!/^[0-9a-f-]{36}$/i.test(company||''))return null;
+  const bq=new URLSearchParams({select:'theme_key,dark_primary,dark_accent,dark_background,dark_surface,dark_text,dark_muted,logo_path',company_id:'eq.'+company,limit:'1'});
+  const b=await fetch(`${url}/rest/v1/company_branding?${bq}`,{headers,signal:AbortSignal.timeout(2500)});
+  if(!b.ok)throw new Error('branding unavailable');
+  const row=(await b.json())?.[0];if(!row)return null;
+  const path=row.logo_path;delete row.logo_path;
+  try{if(typeof path==='string' && path.startsWith(company+'/') && !path.includes('..')){
+    const encoded=path.split('/').map(encodeURIComponent).join('/');
+    const sign=await fetch(`${url}/storage/v1/object/sign/company-branding-assets/${encoded}`,{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify({expiresIn:600}),signal:AbortSignal.timeout(2500)});
+    if(sign.ok){const data=await sign.json();if(typeof data.signedURL==='string'&&data.signedURL.startsWith('/object/sign/'))row.logo_url=url+'/storage/v1'+data.signedURL}
+  }}catch{/* Logo availability must not hide the company's colors. */}
+  return row;
+}
+
 Deno.serve(async(req:Request)=>{
   const origin=req.headers.get('origin')||'';
   if(origin&&!allowed.has(origin))return reply({ok:false,error:'Ursprung nicht erlaubt'},403,origin);
@@ -103,6 +126,9 @@ Deno.serve(async(req:Request)=>{
       p_terminal_token:desktop?null:qrToken,p_terminal_id:desktop?terminalId:null,
       p_session_token:sessionToken,p_action:action,p_request_id:requestId,p_planned_minutes:plannedMinutes
     });
+    if(action==='STATUS'&&result?.ok){
+      try{result.company_branding=await sessionBranding(sessionToken)}catch{result.company_branding=null}
+    }
     return reply(result,200,origin);
   }catch(error){
     const message=error instanceof Error?error.message:'Buchung nicht möglich';
