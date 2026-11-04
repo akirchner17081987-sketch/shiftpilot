@@ -14,12 +14,14 @@ const server=http.createServer((req,res)=>{
  try{
   const page=await browser.newPage({viewport:{width:390,height:844}});let running=false;
   await page.route('**/functions/v1/qr-independent',async route=>{
+   const headers={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'content-type','Access-Control-Allow-Methods':'POST, OPTIONS'};
+   if(route.request().method()==='OPTIONS')return route.fulfill({status:204,headers});
    const input=route.request().postDataJSON(),action=input.action;let data={ok:true};
    if(action==='DESKTOP_TERMINALS')data.terminals=[{id:ids[0],company_name:'Secontec',terminal_name:'VOC EAST'},{id:ids[1],company_name:'Original',terminal_name:'Test'}];
    else if(action==='LOGIN')data.sessionToken='a'.repeat(64);
    else if(action==='STATUS')Object.assign(data,{state:running?'RUNNING':'READY',name:'Test Person',terminal_name:'Teststandort',breaks:[],as_of:new Date().toISOString(),company_branding:input.terminalId===ids[0]?orange:null});
    else Object.assign(data,{state:(running=true,'RUNNING'),name:'Test Person',breaks:[],as_of:new Date().toISOString()});
-   await route.fulfill({json:data});
+   await route.fulfill({json:data,headers});
   });
   await page.goto('http://127.0.0.1:'+server.address().port+'/qr-time?entry=desktop');
   await page.waitForFunction(()=>document.querySelector('#desktopTerminal').options.length>1);
