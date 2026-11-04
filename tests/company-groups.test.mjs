@@ -17,11 +17,10 @@ async function render(allowed,current){
 }
 test('Secontec group contains only accessible companies, with independent company separated',async()=>{
  const html=await render([ids[2],ids[0],ids[3]],ids[0]);
- assert.match(html,/<details class="sf-company-group" open>/);assert.match(html,/SECONTEC � part of Clearway/);
+ assert.match(html,/<details class="sf-company-group" open>/);assert.match(html,/SECONTEC · part of Clearway/);
  assert.ok(html.indexOf('Secontec Services</b>')<html.indexOf('Secontec Services - 9h</b>'));
  assert.doesNotMatch(html,/Secontec Services - 8h/);assert.match(html,/<div class="sf-company-other">/);assert.match(html,/Sicherheitsmanufaktur/);
 });
 test('no Secontec group is shown without a matching active membership',async()=>{
- const html=await render([ids[3]],ids[3]);assert.doesNotMatch(html,/SECONTEC � part of Clearway/);assert.match(html,/Sicherheitsmanufaktur/);
+ const html=await render([ids[3]],ids[3]);assert.doesNotMatch(html,/SECONTEC · part of Clearway/);assert.match(html,/Sicherheitsmanufaktur/);
 });
-
