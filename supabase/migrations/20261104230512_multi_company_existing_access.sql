@@ -42,3 +42,36 @@ create or replace function public.manager_grant_existing_companies(
 $$;
 revoke all on function public.manager_grant_existing_companies(uuid,uuid,uuid[]) from public, anon;
 grant execute on function public.manager_grant_existing_companies(uuid,uuid,uuid[]) to authenticated;
+
+-- Only list companies the caller can administer, and mark existing assignments.
+create or replace function private.manager_existing_company_options(p_source_company_id uuid, p_target_user_id uuid)
+returns table(company_id uuid, company_name text, assigned boolean)
+language plpgsql stable security definer set search_path = '' as $$
+declare source_row public.company_members%rowtype;
+begin
+  if auth.uid() is null or p_target_user_id is null or p_target_user_id=auth.uid()
+    or not private.can_manage_company_users(p_source_company_id) then raise exception 'Nicht berechtigt'; end if;
+  select * into source_row from public.company_members
+    where company_id=p_source_company_id and user_id=p_target_user_id and status='ACTIVE';
+  if not found or source_row.role not in ('ADMIN','PLANNER','DISPATCHER','VIEWER','TIME_TRACKING')
+    or source_row.access_role not in ('ADMIN','TEAM_LEAD','EMPLOYEE')
+  then raise exception 'Aktiver Quellzugang nicht verfügbar'; end if;
+  return query
+    select c.id,c.name,
+      (exists(select 1 from public.company_members t where t.company_id=c.id and t.user_id=p_target_user_id)
+       or exists(select 1 from public.employees e where e.company_id=c.id and e.auth_user_id=p_target_user_id and e.deleted_at is null))
+    from public.company_members actor join public.companies c on c.id=actor.company_id
+    where actor.user_id=auth.uid() and actor.status='ACTIVE'
+      and actor.role in ('OWNER','ADMIN') and actor.access_role in ('OWNER','ADMIN')
+      and c.id<>p_source_company_id
+      and (source_row.access_role<>'ADMIN' or (actor.role='OWNER' and actor.access_role='OWNER'))
+    order by c.name,c.id;
+end $$;
+revoke all on function private.manager_existing_company_options(uuid,uuid) from public, anon;
+grant execute on function private.manager_existing_company_options(uuid,uuid) to authenticated;
+create or replace function public.manager_existing_company_options(p_source_company_id uuid, p_target_user_id uuid)
+returns table(company_id uuid,company_name text,assigned boolean) language sql stable set search_path = '' as $$
+  select * from private.manager_existing_company_options(p_source_company_id,p_target_user_id)
+$$;
+revoke all on function public.manager_existing_company_options(uuid,uuid) from public, anon;
+grant execute on function public.manager_existing_company_options(uuid,uuid) to authenticated;
