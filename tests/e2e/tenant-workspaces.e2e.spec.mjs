@@ -81,20 +81,31 @@ test('employee portal areas remain visible with the Secontec palette', async ({p
   for(const mode of ['dark','light']){
     await page.evaluate(value=>{document.documentElement.dataset.sfTheme=value},mode);
     await expect.poll(()=>portal.evaluate(el=>getComputedStyle(el).getPropertyValue('--orbit-accent').trim().toUpperCase())).toBe(mode==='dark'?'#EA5A06':'#B74400');
+    await expect.poll(()=>portal.evaluate(el=>getComputedStyle(el,'::-webkit-scrollbar-thumb').backgroundColor)).toBe(mode==='dark'?'rgb(234, 90, 6)':'rgb(183, 68, 0)');
     for(const view of views){
       await openEmployeeArea(page,view,20000);
       await expect(portal,mode+' '+view).toHaveAttribute('data-sf-portal-active',view);
       await expect(portal.locator(`[data-sf-portal-section="${view}"]`).first(),mode+' '+view).toBeVisible();
       await expect(portal.locator('.sf-portal-logo img'),mode+' '+view).toBeVisible();
+      if(view==='shifts') {
+        await portal.locator('#sfMyShiftsMonth .sf-my-view-switch').getByRole('button',{name:'Kalender',exact:true}).click();
+        await expect(portal.locator('#sfMyShiftsMonth .sf-my-month-summary > div').first()).toHaveCSS('background-image','none');
+        await expect(portal.locator('#sfMyShiftsMonth .sf-my-today .sf-my-day-number i')).toHaveCSS('color',mode==='dark'?'rgb(234, 90, 6)':'rgb(183, 68, 0)');
+      }
       if(view==='time') {
         const surface=mode==='dark'?'rgb(26, 32, 38)':'rgb(255, 255, 255)';
         await expect(portal.locator('.sf-qr-scan-inline')).toHaveCSS('background-color',surface);
         await expect(portal.locator('#sfQrBookingsFilter')).toHaveCSS('background-color',surface);
+        await expect(portal.locator('.sf-qb-note')).toHaveCSS('border-left-color',mode==='dark'?'rgb(234, 90, 6)':'rgb(183, 68, 0)');
       }
       if(view==='changes') {
         await expect(portal.locator('#sfEmployeeChanges .sf-ch-filters button').nth(1)).toHaveCSS('background-color',mode==='dark'?'rgb(26, 32, 38)':'rgb(255, 255, 255)');
       }
+      if(view==='swaps') {
+        await expect(portal.locator('.sf-sx-guide i').first()).toHaveCSS('color',mode==='dark'?'rgb(234, 90, 6)':'rgb(183, 68, 0)');
+      }
       if(view==='absences') {
+        await expect(portal.locator('.sf-ae3-categories button').first()).toHaveCSS('background-color',mode==='dark'?'rgb(26, 32, 38)':'rgb(255, 255, 255)');
         await portal.locator('.sf-ae3-add').click();
         const modal=page.locator('#sfAbsenceEmployeeV3Modal .sf-ae3-card');
         await expect(modal).toBeVisible();
