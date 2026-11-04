@@ -46,11 +46,11 @@ async function sessionBranding(sessionToken:string){
   if(!b.ok)throw new Error('branding unavailable');
   const row=(await b.json())?.[0];if(!row)return null;
   const path=row.logo_path;delete row.logo_path;
-  if(typeof path==='string' && path.startsWith(company+'/') && !path.includes('..')){
+  try{if(typeof path==='string' && path.startsWith(company+'/') && !path.includes('..')){
     const encoded=path.split('/').map(encodeURIComponent).join('/');
     const sign=await fetch(`${url}/storage/v1/object/sign/company-branding-assets/${encoded}`,{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify({expiresIn:600}),signal:AbortSignal.timeout(2500)});
     if(sign.ok){const data=await sign.json();if(typeof data.signedURL==='string'&&data.signedURL.startsWith('/object/sign/'))row.logo_url=url+'/storage/v1'+data.signedURL}
-  }
+  }}catch{/* Logo availability must not hide the company's colors. */}
   return row;
 }
 
