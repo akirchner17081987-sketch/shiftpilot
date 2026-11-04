@@ -34,6 +34,7 @@
   window.addEventListener('schichtfunk:corporate-theme-ready', event => {
     const backend = window.SFBackend;
     if (!backend?.ready || !backend.user || !backend.companyId || event.detail?.companyId !== backend.companyId) return;
+    try { localStorage.setItem('sf_session_reentry_v1', String(Date.now())); } catch (_) {}
     try { sessionStorage.setItem('sf_session_reentry_v1', String(Date.now())); } catch (_) {}
     if (!companyTransition || !root.isConnected) return;
     document.documentElement.classList.remove('sf-company-transition');
@@ -251,6 +252,7 @@
   function morphToLogin(auth) {
     if (!slot || dismissed || !auth) return;
     clearCompanyTransition();
+    try { localStorage.removeItem('sf_session_reentry_v1'); } catch (_) {}
     try { sessionStorage.removeItem('sf_session_reentry_v1'); } catch (_) {}
     if (activeAuth !== auth) {
       // Move the real Supabase form; never create a duplicate form or listeners.

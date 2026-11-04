@@ -34,7 +34,7 @@ test('explicit local logout clears the session and hides protected views before 
   const scopes=[];const h=logoutHarness({signOut:async options=>{scopes.push(options.scope);return {}}});
   await h.B.signOutSafely();
   assert.deepEqual(scopes,['local']);
-  assert.deepEqual(h.navigations,[{url:'/',ready:false,user:null,companyId:null,role:null,appDisplay:'none',cleared:3}]);
+  assert.deepEqual(h.navigations,[{url:'/',ready:false,user:null,companyId:null,role:null,appDisplay:'none',cleared:4}]);
   assert.deepEqual(h.removed,['sfEmployeePortal','sfNotifyPanel']);
   assert.deepEqual(h.dialogs,[]);
   h.B.finishSignOut(true);
@@ -45,12 +45,12 @@ test('a stalled local signout still clears local state before returning to the a
   const h=logoutHarness({signOut:()=>new Promise(()=>{})});
   const pending=h.B.signOutSafely();h.runTimer(5000);await pending;
   assert.equal(h.navigations.length,1);assert.equal(h.navigations[0].url,'/');
-  assert.equal(h.navigations[0].cleared,3);assert.equal(h.B.ready,false);
+  assert.equal(h.navigations[0].cleared,4);assert.equal(h.B.ready,false);
 });
 
 test('session expiry keeps the existing reauthentication message without a reload loop',()=>{
   const h=logoutHarness();h.B.finishSignOut(false);h.runTimer(0);
-  assert.deepEqual(h.navigations,[]);assert.deepEqual(h.storageCleared,[['session','sf_session_reentry_v1']]);assert.deepEqual(h.dialogs,['login']);
+  assert.deepEqual(h.navigations,[]);assert.deepEqual(h.storageCleared,[['local','sf_session_reentry_v1'],['session','sf_session_reentry_v1']]);assert.deepEqual(h.dialogs,['login']);
   assert.match(h.message.textContent,/Anmeldung ist abgelaufen/);assert.equal(h.B.__finishingSignOut,false);
 });
 
@@ -62,7 +62,7 @@ test('the separate demo logout does not restart an active demo session',async()=
 test('successful global signout also returns to the animated root',async()=>{
   const scopes=[];const h=logoutHarness({signOut:async options=>{scopes.push(options.scope);return {}}});
   assert.equal(await h.B.signOutAllSessionsSafely(),true);assert.deepEqual(scopes,['global']);
-  assert.equal(h.navigations.length,1);assert.equal(h.navigations[0].cleared,3);
+  assert.equal(h.navigations.length,1);assert.equal(h.navigations[0].cleared,4);
 });
 
 test('failed global session revocation keeps the current session and does not redirect',async()=>{
@@ -88,6 +88,7 @@ function entryHarness({reducedMotion=true,globePresentation,transitionStamp=null
     document:{readyState:'loading',documentElement:html,body:{},getElementById:id=>nodes.get(id),addEventListener:(name,fn)=>events.set(name,fn)},
     window:{SFBackend:backend,SFEntryGlobePresentation:globePresentation,addEventListener:(name,fn)=>events.set(name,fn),removeEventListener(){},matchMedia:()=>({matches:reducedMotion})},
     sessionStorage:{getItem:key=>storage.get(key)||null,removeItem:key=>storage.delete(key),setItem:(key,value)=>storage.set(key,value)},
+    localStorage:{getItem:key=>storage.get(key)||null,removeItem:key=>storage.delete(key),setItem:(key,value)=>storage.set(key,value)},
     getComputedStyle:el=>({display:el.style.display||'block',visibility:'visible'}),
     performance:{now:()=>1,mark(){},getEntriesByType:()=>[]},
     location:{search:''},URL,URLSearchParams,
@@ -104,13 +105,13 @@ test('preflight uses only a fresh non-identifying hint, and leaves demo and new 
   const code=read('assets/sf-entry-preflight-v1.js');
   function run(stamp,search='') {
     const classes=new Set();
-    runInNewContext(code,{document:{documentElement:{classList:{add:v=>classes.add(v)}}},sessionStorage:{getItem:key=>key==='sf_session_reentry_v1'?stamp:null},location:{search},URLSearchParams,Date});
+    runInNewContext(code,{document:{documentElement:{classList:{add:v=>classes.add(v)}}},sessionStorage:{getItem:key=>key==='sf_session_reentry_v1'?stamp:null},localStorage:{getItem:key=>key==='sf_session_reentry_v1'?stamp:null},location:{search},URLSearchParams,Date});
     return classes.has('sf-session-reentry');
   }
   assert.equal(run(null),false);
   assert.equal(run(String(Date.now()-60000)),true);
   assert.equal(run(String(Date.now()-60000),'?bereich=demo'),false);
-  assert.equal(run(String(Date.now()-86400000)),false);
+  assert.equal(run(String(Date.now()-2678400000)),false);
 });
 
 test('company transition is neutral, one-use and never accepts another tenant theme event',()=>{

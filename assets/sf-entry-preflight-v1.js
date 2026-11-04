@@ -1,2 +1,2 @@
-/* A local, non-identifying presentation hint; authentication remains authoritative. */
-(function(){try{const s=sessionStorage,t=Number(s.getItem('sf_session_reentry_v1')),x=Number(s.getItem('sf_company_transition_v1')),n=Date.now();if(new URLSearchParams(location.search).get('bereich')==='demo')return;if((t>0&&n>=t&&n-t<43200000)||(x>0&&n>=x&&n-x<30000))document.documentElement.classList.add('sf-session-reentry')}catch(_){}})();
+/* A non-identifying presentation hint; authentication remains authoritative. */
+(function(){let t=0,x=0;try{t=Number(localStorage.getItem('sf_session_reentry_v1'))}catch(_){}try{t=t||Number(sessionStorage.getItem('sf_session_reentry_v1'));x=Number(sessionStorage.getItem('sf_company_transition_v1'))}catch(_){}try{const n=Date.now();if(new URLSearchParams(location.search).get('bereich')==='demo')return;if((t>0&&n>=t&&n-t<2592000000)||(x>0&&n>=x&&n-x<30000))document.documentElement.classList.add('sf-session-reentry')}catch(_){}})();
