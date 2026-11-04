@@ -11,7 +11,7 @@ async function render(allowed,current){
   const dialog={querySelector(s){return s==='header button'?header:s==='.sf-company-list'?list:error},remove(){}};
   const button={setAttribute(){},querySelector(){return null},focus(){}};
   const document={head:{appendChild(){}},body:{appendChild(){}},getElementById(){return null},createElement(tag){return tag==='style'?{}:dialog},querySelector(s){return s==='button.company-card'?button:null},addEventListener(){}};
-  const B={ready:true,user:{id:'fixture'},role:'OWNER',companyId:current,updateState(){},client:{from(table){let id;const q={select(){return q},eq(k,v){if(k==='id')id=v;return q},single(){return Promise.resolve({data:{name:names[ids.indexOf(id)]}})},then(resolve){return Promise.resolve({data:allowed.map(company_id=>({company_id,role:'OWNER',status:'ACTIVE'}))}).then(resolve)}};return q}}};
+  const B={ready:true,user:{id:'fixture'},role:'OWNER',companyId:current,updateState(){},client:{rpc(){return Promise.resolve({data:allowed.filter(x=>x!==ids[3]).map(company_id=>({company_id,group_label:'SECONTEC · part of Clearway'}))})},from(table){let id;const q={select(){return q},eq(k,v){if(k==='id')id=v;return q},single(){return Promise.resolve({data:{name:names[ids.indexOf(id)]}})},then(resolve){return Promise.resolve({data:allowed.map(company_id=>({company_id,role:'OWNER',status:'ACTIVE'}))}).then(resolve)}};return q}}};
   vm.runInNewContext(code,{window:{SFBackend:B},document,sessionStorage:{getItem(){return null},setItem(){},removeItem(){}},location:{reload(){}},console});
   await button.onclick();return list.innerHTML;
 }
