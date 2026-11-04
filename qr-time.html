@@ -6,7 +6,19 @@
 
 .employee-name{margin:0 0 12px;font-size:.875rem;overflow-wrap:anywhere}.employee-name strong{color:var(--text)}.live-overview{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.live-overview .detail{min-width:0;padding:15px}.live-overview h2{margin:0 0 8px;font-size:.875rem;font-weight:500;color:var(--muted)}.live-overview strong{display:block;line-height:1.3;overflow-wrap:anywhere}.live-overview small{display:block;margin-top:6px;font-size:.875rem;line-height:1.45;color:var(--muted)}.attendance-total{border-color:#337a76;background:#10302f}.attendance-total strong{font-size:2rem;font-variant-numeric:tabular-nums;letter-spacing:.02em;color:#a1f0db}.pause-total{margin-top:0}.location-detail strong,#begin{font-size:1.125rem}.status small{font-size:.875rem;line-height:1.5}.status b{font-size:1.125rem}.field label,.minor{font-size:.875rem}.breaks li{font-size:.875rem;flex-wrap:wrap}.actions button:focus-visible,.minor:focus-visible{outline:3px solid #a1f0db;outline-offset:3px}@media(max-width:420px){.live-overview{grid-template-columns:1fr}.live-overview .detail{padding:13px}.attendance-total strong{font-size:2rem}}
 .break-choice{border:0;padding:0;margin:15px 0}.break-choice legend{font-size:14px;font-weight:800;margin-bottom:9px}.break-options{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.break-options button{padding:10px 5px;min-height:48px;background:#10273a;border-color:var(--line);font-size:14px}.break-options button[aria-pressed="true"]{border-color:#a1f0db;background:#145747;color:#c8ffed;box-shadow:0 0 0 1px #a1f0db}.break-countdown{margin:14px 0;border:1px solid #4f9e8c;border-radius:13px;padding:14px;background:#10302f}.break-countdown strong{display:block;font-size:26px;font-variant-numeric:tabular-nums}.break-countdown small{display:block;color:var(--muted);line-height:1.5;margin-top:5px}.break-push-hint{font-size:12px;margin:8px 0 14px}.break-options button:focus-visible{outline:3px solid #a1f0db;outline-offset:3px}
-</style></head><body><main><div class="brand"><img src="assets/schichtfunk-logo.svg" alt="SchichtFunk"><span>● ZEITERFASSUNG</span></div><section class="card"><div class="eyebrow">MITARBEITER · ZEITERFASSUNG</div><h1>Arbeitszeit erfassen</h1><p id="loginIntro">Der QR-Code bezeichnet den Standort. Beginn, Ende und Pausen werden unabhängig vom Dienstplan erfasst.</p><div id="invalid" class="status" hidden><b>Ungültiger QR-Code</b><small>Bitte den aktuellen Code am Standort scannen.</small></div><form id="login"><div class="field" id="desktopTerminalField" hidden><label for="desktopTerminal">Betrieb und Buchungsstandort</label><select id="desktopTerminal"><option value="">Bitte auswählen</option></select><small>Wähle den Betrieb, bei dem deine Personalnummer geführt wird.</small></div><div class="field"><label for="personnel">Personalnummer</label><input id="personnel" autocomplete="username" required maxlength="100"></div><div class="field"><label for="loginMode">Anmeldung</label><select id="loginMode"><option value="PIN">Mit persönlicher PIN</option><option value="SETUP">PIN mit Einrichtungscode einrichten</option><option value="LEGACY">Übergang: mit Eintrittsdatum</option></select></div><div class="field" id="pinField"><label for="pin">Persönliche PIN</label><input id="pin" type="password" inputmode="numeric" autocomplete="current-password" pattern="[0-9]{6,8}" minlength="6" maxlength="8" required aria-describedby="pinHelp"><small id="pinHelp">6 bis 8 Ziffern. Keine Personalnummer, Geburts- oder Eintrittsdaten verwenden. PIN vergessen? Bitte einen neuen Einrichtungscode bei der Leitung anfordern.</small></div><div class="field" id="setupField" hidden><label for="setupCode">Einmaliger Einrichtungscode</label><input id="setupCode" type="password" inputmode="numeric" autocomplete="off" pattern="[0-9]{12}" maxlength="12"><small>Du erhältst den Code persönlich von der Leitung. Er ist 24 Stunden gültig und kann einmal verwendet werden.</small></div><div class="field" id="repeatField" hidden><label for="pinRepeat">Neue PIN wiederholen</label><input id="pinRepeat" type="password" inputmode="numeric" autocomplete="new-password" pattern="[0-9]{6,8}" maxlength="8"></div><div class="field" id="legacyField" hidden><label for="startDate">Eintrittsdatum (nur während der Umstellung)</label><input id="startDate" type="text" inputmode="numeric" autocomplete="off" placeholder="TTMMJJJJ" pattern="[0-9]{8}" maxlength="8" aria-describedby="startDateHelp" title="Acht Ziffern ohne Punkte, z. B. 16102024"><small id="startDateHelp">Nur verfügbar, solange deine PIN und die unternehmensweite PIN-Pflicht noch nicht aktiviert sind. Ohne Punkte: 16.10.2024 → 16102024</small></div><button id="loginButton" type="submit" style="width:100%">Anmelden</button></form><div id="clock" hidden><div class="status"><b id="state">Bereit</b><small id="stateDetail"></small></div><p class="employee-name">Angemeldet als <strong id="name"></strong></p><section class="live-overview" aria-label="Dein aktueller Dienst"><div class="detail"><h2>Dienstbeginn</h2><strong id="begin">–</strong><small id="beginDate">Noch nicht begonnen</small></div><div class="detail attendance-total"><h2>Anwesenheitszeit</h2><strong id="attendanceTotal" aria-describedby="attendanceUnits attendanceDetail">00:00:00</strong><small id="attendanceUnits">Stunden : Minuten : Sekunden</small><small id="attendanceDetail">Inklusive bezahlter Pausen.</small></div><section class="detail pause-total" aria-labelledby="pauseTotalLabel"><h2 id="pauseTotalLabel">Pausen gesamt</h2><strong id="pauseTotal">0 Min. 0 Sek.</strong><small id="pauseTotalDetail">Summe aller Pausen dieser Buchung.</small></section><div class="detail location-detail"><h2>Standort</h2><strong id="location">–</strong><small id="locationNote" hidden></small></div></section><ol class="breaks" id="breaks"></ol><p style="margin:15px 0">Pausen werden einzeln dokumentiert und von dir beendet. Die bezahlte Zeit zwischen Beginn und Ende wird nicht gekürzt.</p><fieldset id="breakChoice" class="break-choice"><legend>Pausendauer · freiwillige Auswahl</legend><div class="break-options"><button id="break10" type="button" aria-pressed="false">10 Min.</button><button id="break15" type="button" aria-pressed="false">15 Min.</button><button id="break20" type="button" aria-pressed="false">20 Min.</button><button id="breakUnlimited" type="button" aria-pressed="true" aria-label="Unbegrenzt, ohne Erinnerung">∞</button></div></fieldset><section id="breakCountdown" class="break-countdown" hidden aria-label="Gewählte Pausenzeit"><span id="breakCountdownLabel">Verbleibende Pausenzeit</span><strong id="breakRemaining"></strong><small id="breakCountdownDetail"></small></section><p id="breakPushHint" class="break-push-hint"></p><div class="actions"><button id="start" type="button">Arbeitszeit beginnen</button><button id="pauseStart" class="pause" type="button">Pause beginnen</button><button id="pauseEnd" class="pause" type="button">Pause beenden</button><button id="end" class="out" type="button">Arbeitszeit beenden</button></div><button id="statusRefresh" class="minor" type="button" style="margin-top:14px">Buchungsstatus prüfen</button><button id="retryBooking" class="minor" type="button" style="margin-top:14px" hidden>Buchung erneut senden</button><button id="logout" class="minor" type="button" style="margin-top:14px">Abmelden</button></div><div id="message" class="message" role="status" aria-live="polite"></div></section><p id="desktopDirectoryStatus" class="message" role="status" aria-live="polite" hidden></p><button id="desktopDirectoryRetry" class="minor" type="button" hidden>Standorte erneut laden</button><a href="/?bereich=zeit" style="color:#a7bbcb;text-align:center;font-size:14px">← Zur Bereichsauswahl</a><div class="footer">SchichtFunk · Klar geplant. Stark besetzt.<br>Jede Buchung erfolgt erst nach einem Tipp.</div></main>
+
+/* Farben des angemeldeten Unternehmens; vor Anmeldung bleibt das Standarddesign aktiv. */
+html[data-qr-brand] body{background:var(--qr-bg);color:var(--qr-text)}
+html[data-qr-brand] .card{background:var(--qr-surface);border-color:var(--qr-accent)}
+html[data-qr-brand] .brand span,html[data-qr-brand] .eyebrow{color:var(--qr-accent)}
+html[data-qr-brand] p,html[data-qr-brand] small,html[data-qr-brand] .live-overview h2{color:var(--qr-muted)}
+html[data-qr-brand] .detail,html[data-qr-brand] .status{background:var(--qr-bg);border-color:var(--qr-accent)}
+html[data-qr-brand] .attendance-total strong{color:var(--qr-accent)}
+html[data-qr-brand] button:not(.minor){background:var(--qr-primary);border-color:var(--qr-primary);color:var(--qr-button-text)}
+html[data-qr-brand] button.minor{background:var(--qr-surface);border-color:var(--qr-accent);color:var(--qr-text)}
+html[data-qr-brand] button:focus-visible{outline-color:var(--qr-accent)}
+
+</style></head><body><main><div class="brand"><img src="assets/schichtfunk-logo.svg" alt="SchichtFunk"><span>? ZEITERFASSUNG</span></div><section class="card"><div class="eyebrow">MITARBEITER � ZEITERFASSUNG</div><h1>Arbeitszeit erfassen</h1><p id="loginIntro">Der QR-Code bezeichnet den Standort. Beginn, Ende und Pausen werden unabh�ngig vom Dienstplan erfasst.</p><div id="invalid" class="status" hidden><b>Ung�ltiger QR-Code</b><small>Bitte den aktuellen Code am Standort scannen.</small></div><form id="login"><div class="field" id="desktopTerminalField" hidden><label for="desktopTerminal">Betrieb und Buchungsstandort</label><select id="desktopTerminal"><option value="">Bitte ausw�hlen</option></select><small>W�hle den Betrieb, bei dem deine Personalnummer gef�hrt wird.</small></div><div class="field"><label for="personnel">Personalnummer</label><input id="personnel" autocomplete="username" required maxlength="100"></div><div class="field"><label for="loginMode">Anmeldung</label><select id="loginMode"><option value="PIN">Mit pers�nlicher PIN</option><option value="SETUP">PIN mit Einrichtungscode einrichten</option><option value="LEGACY">�bergang: mit Eintrittsdatum</option></select></div><div class="field" id="pinField"><label for="pin">Pers�nliche PIN</label><input id="pin" type="password" inputmode="numeric" autocomplete="current-password" pattern="[0-9]{6,8}" minlength="6" maxlength="8" required aria-describedby="pinHelp"><small id="pinHelp">6 bis 8 Ziffern. Keine Personalnummer, Geburts- oder Eintrittsdaten verwenden. PIN vergessen? Bitte einen neuen Einrichtungscode bei der Leitung anfordern.</small></div><div class="field" id="setupField" hidden><label for="setupCode">Einmaliger Einrichtungscode</label><input id="setupCode" type="password" inputmode="numeric" autocomplete="off" pattern="[0-9]{12}" maxlength="12"><small>Du erh�ltst den Code pers�nlich von der Leitung. Er ist 24 Stunden g�ltig und kann einmal verwendet werden.</small></div><div class="field" id="repeatField" hidden><label for="pinRepeat">Neue PIN wiederholen</label><input id="pinRepeat" type="password" inputmode="numeric" autocomplete="new-password" pattern="[0-9]{6,8}" maxlength="8"></div><div class="field" id="legacyField" hidden><label for="startDate">Eintrittsdatum (nur w�hrend der Umstellung)</label><input id="startDate" type="text" inputmode="numeric" autocomplete="off" placeholder="TTMMJJJJ" pattern="[0-9]{8}" maxlength="8" aria-describedby="startDateHelp" title="Acht Ziffern ohne Punkte, z. B. 16102024"><small id="startDateHelp">Nur verf�gbar, solange deine PIN und die unternehmensweite PIN-Pflicht noch nicht aktiviert sind. Ohne Punkte: 16.10.2024  16102024</small></div><button id="loginButton" type="submit" style="width:100%">Anmelden</button></form><div id="clock" hidden><div class="status"><b id="state">Bereit</b><small id="stateDetail"></small></div><p class="employee-name">Angemeldet als <strong id="name"></strong></p><section class="live-overview" aria-label="Dein aktueller Dienst"><div class="detail"><h2>Dienstbeginn</h2><strong id="begin">-</strong><small id="beginDate">Noch nicht begonnen</small></div><div class="detail attendance-total"><h2>Anwesenheitszeit</h2><strong id="attendanceTotal" aria-describedby="attendanceUnits attendanceDetail">00:00:00</strong><small id="attendanceUnits">Stunden : Minuten : Sekunden</small><small id="attendanceDetail">Inklusive bezahlter Pausen.</small></div><section class="detail pause-total" aria-labelledby="pauseTotalLabel"><h2 id="pauseTotalLabel">Pausen gesamt</h2><strong id="pauseTotal">0 Min. 0 Sek.</strong><small id="pauseTotalDetail">Summe aller Pausen dieser Buchung.</small></section><div class="detail location-detail"><h2>Standort</h2><strong id="location">-</strong><small id="locationNote" hidden></small></div></section><ol class="breaks" id="breaks"></ol><p style="margin:15px 0">Pausen werden einzeln dokumentiert und von dir beendet. Die bezahlte Zeit zwischen Beginn und Ende wird nicht gek�rzt.</p><fieldset id="breakChoice" class="break-choice"><legend>Pausendauer � freiwillige Auswahl</legend><div class="break-options"><button id="break10" type="button" aria-pressed="false">10 Min.</button><button id="break15" type="button" aria-pressed="false">15 Min.</button><button id="break20" type="button" aria-pressed="false">20 Min.</button><button id="breakUnlimited" type="button" aria-pressed="true" aria-label="Unbegrenzt, ohne Erinnerung">8</button></div></fieldset><section id="breakCountdown" class="break-countdown" hidden aria-label="Gew�hlte Pausenzeit"><span id="breakCountdownLabel">Verbleibende Pausenzeit</span><strong id="breakRemaining"></strong><small id="breakCountdownDetail"></small></section><p id="breakPushHint" class="break-push-hint"></p><div class="actions"><button id="start" type="button">Arbeitszeit beginnen</button><button id="pauseStart" class="pause" type="button">Pause beginnen</button><button id="pauseEnd" class="pause" type="button">Pause beenden</button><button id="end" class="out" type="button">Arbeitszeit beenden</button></div><button id="statusRefresh" class="minor" type="button" style="margin-top:14px">Buchungsstatus pr�fen</button><button id="retryBooking" class="minor" type="button" style="margin-top:14px" hidden>Buchung erneut senden</button><button id="logout" class="minor" type="button" style="margin-top:14px">Abmelden</button></div><div id="message" class="message" role="status" aria-live="polite"></div></section><p id="desktopDirectoryStatus" class="message" role="status" aria-live="polite" hidden></p><button id="desktopDirectoryRetry" class="minor" type="button" hidden>Standorte erneut laden</button><a href="/?bereich=zeit" style="color:#a7bbcb;text-align:center;font-size:14px"> Zur Bereichsauswahl</a><div class="footer">SchichtFunk � Klar geplant. Stark besetzt.<br>Jede Buchung erfolgt erst nach einem Tipp.</div></main>
 <script type="module">
 import { attendanceMilliseconds, formatAttendance, pauseTotalMilliseconds, formatPauseTotal } from './assets/qr-pause-total-v1.js?v=20261006-live1';
 const params=new URLSearchParams(location.search);
@@ -23,7 +35,7 @@ const bookingIds=['start','pauseStart','pauseEnd','end'];
 const label={CLOCK_IN:'Beginn',BREAK_START:'Pausenbeginn',BREAK_END:'Pausenende',CLOCK_OUT:'Ende'};
 const requestId=()=>Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,'0')).join('');
 function controls(){for(const [id] of breakChoices)$(id).disabled=busy||needsStatus||!!pendingBooking;bookingIds.forEach(id=>$(id).disabled=busy||needsStatus||!!pendingBooking);$('loginButton').disabled=busy||(desktop&&!terminalId);if(desktop)$('desktopTerminal').disabled=busy;$('statusRefresh').disabled=busy;$('retryBooking').hidden=!pendingBooking;$('retryBooking').disabled=busy;$('logout').disabled=false}
-const stamp=(v,options)=>Number.isFinite(Date.parse(v))?new Intl.DateTimeFormat('de-DE',{...options,timeZone:currentStatus?.timezone||'Europe/Berlin'}).format(new Date(v)):'–';
+const stamp=(v,options)=>Number.isFinite(Date.parse(v))?new Intl.DateTimeFormat('de-DE',{...options,timeZone:currentStatus?.timezone||'Europe/Berlin'}).format(new Date(v)):'-';
 const time=v=>stamp(v,{hour:'2-digit',minute:'2-digit'});
 const msg=(value,type='')=>{const el=$('message');el.textContent=value;el.className='message '+type};
 async function call(action,extra={}){
@@ -32,7 +44,7 @@ async function call(action,extra={}){
     const request=(async()=>{
       const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',signal:controller.signal,body:JSON.stringify({action,...(desktop?{terminalId}:{qrToken}),sessionToken,...extra})});
       let data;try{data=await response.json()}catch{throw Object.assign(new Error('Die Antwort konnte nicht gelesen werden.'),{uncertain:true})}
-      if(!response.ok||!data.ok)throw Object.assign(new Error(data.error||'Buchung derzeit nicht möglich'),{uncertain:response.status>=500||!!data.retryable,expired:response.status===401||/Anmeldung abgelaufen|erneut anmelden/.test(data.error||'')});
+      if(!response.ok||!data.ok)throw Object.assign(new Error(data.error||'Buchung derzeit nicht m�glich'),{uncertain:response.status>=500||!!data.retryable,expired:response.status===401||/Anmeldung abgelaufen|erneut anmelden/.test(data.error||'')});
       return data;
     })();
     const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>{controller.abort();reject(Object.assign(new Error('Die Verbindung antwortet nicht rechtzeitig.'),{uncertain:true}))},20000)});
@@ -45,7 +57,7 @@ function showBreakPushHint(status=currentStatus){
   const state=status?.state;
   const timed=state==='BREAK'?status.break_timer?.planned_minutes:plannedMinutes;
   $('breakPushHint').hidden=!timed||!['RUNNING','BREAK'].includes(state);
-  $('breakPushHint').textContent=status?.break_push_available?'Erinnerung ca. 2 Minuten vor Ablauf an deine Geräte mit aktiviertem SchichtFunk-Push.':'Für die Push-Erinnerung bitte Push im Mitarbeiterportal auf deinem Gerät aktivieren. Die Pause kannst du trotzdem starten.';
+  $('breakPushHint').textContent=status?.break_push_available?'Erinnerung ca. 2 Minuten vor Ablauf an deine Ger�te mit aktiviertem SchichtFunk-Push.':'F�r die Push-Erinnerung bitte Push im Mitarbeiterportal auf deinem Ger�t aktivieren. Die Pause kannst du trotzdem starten.';
 }
 function updateLiveTotals(){
   if(!currentStatus)return;
@@ -56,15 +68,38 @@ function updateLiveTotals(){
   $('breakCountdown').hidden=!timer;
   if(timer){
     const remaining=Date.parse(timer.ends_at)-now,finite=Number.isFinite(remaining);
-    $('breakCountdownLabel').textContent=finite?(remaining>0?'Verbleibende Pausenzeit':'Gewählte Pausenzeit abgelaufen'):'Pause ohne Zeitlimit';
+    $('breakCountdownLabel').textContent=finite?(remaining>0?'Verbleibende Pausenzeit':'Gew�hlte Pausenzeit abgelaufen'):'Pause ohne Zeitlimit';
     const seconds=Math.max(0,Math.ceil(remaining/1000));
-    $('breakRemaining').textContent=finite?String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0'):'∞';
-    $('breakCountdownDetail').textContent=finite&&remaining<=120000&&remaining>0?'Deine gewählte Pausenzeit endet bald. Bitte anschließend selbst „Pause beenden“ wählen.':'Die Pause läuft weiter, bis du „Pause beenden“ wählst.';
+    $('breakRemaining').textContent=finite?String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0'):'8';
+    $('breakCountdownDetail').textContent=finite&&remaining<=120000&&remaining>0?'Deine gew�hlte Pausenzeit endet bald. Bitte anschlie�end selbst "Pause beenden" w�hlen.':'Die Pause l�uft weiter, bis du "Pause beenden" w�hlst.';
   }
 
 }
 function stopLiveTimer(){if(liveTimer!==null)clearInterval(liveTimer);liveTimer=null}
+
+function applyCompanyDesign(brand){
+  const root=document.documentElement,fields=['dark_primary','dark_accent','dark_background','dark_surface','dark_text','dark_muted'];
+  if(!brand||brand.theme_key==='original'||!fields.every(key=>/^#[0-9a-f]{6}$/i.test(brand[key]||''))){resetCompanyDesign();return}
+  const logo=document.querySelector('.brand img');
+  if(logo){
+    const signed=/^https:\/\/zbvloohfjleadjnqhbbh\.supabase\.co\/storage\/v1\/object\/sign\/company-branding-assets\//.test(brand.logo_url||'');
+    logo.src=signed?brand.logo_url:(brand.theme_key==='secontec'?'assets/secontec-logo-official-white.svg':'assets/schichtfunk-logo.svg');
+    logo.alt=brand.theme_key==='secontec'?'Secontec':'Unternehmenslogo';
+  }
+  for(const [key,variable] of [['dark_primary','primary'],['dark_accent','accent'],['dark_background','bg'],['dark_surface','surface'],['dark_text','text'],['dark_muted','muted']])root.style.setProperty('--qr-'+variable,brand[key]);
+  const channels=brand.dark_primary.slice(1).match(/../g).map(x=>parseInt(x,16)/255).map(v=>v<=0.04045?v/12.92:((v+0.055)/1.055)**2.4);
+  const lum=0.2126*channels[0]+0.7152*channels[1]+0.0722*channels[2];
+  root.style.setProperty('--qr-button-text',lum>0.179?'#000000':'#FFFFFF');
+  root.dataset.qrBrand='active';
+}
+function resetCompanyDesign(){
+  const root=document.documentElement;delete root.dataset.qrBrand;
+  const logo=document.querySelector('.brand img');if(logo){logo.src='assets/schichtfunk-logo.svg';logo.alt='SchichtFunk'}
+  for(const key of ['primary','accent','bg','surface','text','muted','button-text'])root.style.removeProperty('--qr-'+key);
+}
+
 function show(status){
+  if(Object.hasOwn(status,'company_branding'))applyCompanyDesign(status.company_branding);
   stopLiveTimer();currentStatus=status;
   // Anchor to the server snapshot, then advance without requests or clock changes.
   const serverNow=Date.parse(status.as_of),receivedAt=performance.now();
@@ -72,27 +107,27 @@ function show(status){
   updateLiveTotals();
   const active=['RUNNING','BREAK'].includes(status.state)&&!status.ended_at;
   if(active)liveTimer=setInterval(updateLiveTotals,1000);
-  $('attendanceDetail').textContent=status.ended_at?'Dienst beendet · Pausen vollständig bezahlt.':active?'Läuft weiter · Pausen vollständig bezahlt.':'Startet mit „Arbeitszeit beginnen“. Pausen sind bezahlt.';
+  $('attendanceDetail').textContent=status.ended_at?'Dienst beendet � Pausen vollst�ndig bezahlt.':active?'L�uft weiter � Pausen vollst�ndig bezahlt.':'Startet mit "Arbeitszeit beginnen". Pausen sind bezahlt.';
   $('loginIntro').hidden=true;
-  $('location').textContent=status.terminal_name||'Standort nicht verfügbar';
+  $('location').textContent=status.terminal_name||'Standort nicht verf�gbar';
   $('locationNote').textContent=status.location_note||'';$('locationNote').hidden=!status.location_note;
   $('beginDate').textContent=status.started_at?stamp(status.started_at,{day:'2-digit',month:'2-digit',year:'numeric'}):'Noch nicht begonnen';
   const activePause=status.state==='BREAK'&&!status.ended_at;
   $('pauseTotalDetail').textContent=activePause?'Die laufende Pause ist enthalten. Die Summe aktualisiert sich automatisch.':'Summe aller Pausen dieser Buchung.';
-  $('login').hidden=true;$('clock').hidden=false;$('name').textContent=status.name||'–';$('begin').textContent=time(status.started_at);
+  $('login').hidden=true;$('clock').hidden=false;$('name').textContent=status.name||'-';$('begin').textContent=time(status.started_at);
   const breaks=Array.isArray(status.breaks)?status.breaks:[];$('breaks').replaceChildren();
-  breaks.forEach(b=>{const li=document.createElement('li'),label=document.createElement('b'),span=document.createElement('span');label.textContent='Pause '+b.number;span.textContent=time(b.started_at)+' – '+time(b.ended_at);li.append(label,span);$('breaks').append(li)});
-  const state=status.state;$('state').textContent=state==='BREAK'?'Pause läuft':state==='RUNNING'?'Arbeitszeit läuft':status.ended_at?'Dienst beendet':'Bereit für den Arbeitsbeginn';
-  $('stateDetail').textContent=state==='BREAK'?'Nach der Pause auf „Pause beenden“ tippen. Bei Dienstende beendet „Arbeitszeit beenden“ auch die laufende Pause.':state==='RUNNING'?'Pause oder Dienstende mit einem Tipp buchen.':'Es ist keine Arbeitszeit offen.';
+  breaks.forEach(b=>{const li=document.createElement('li'),label=document.createElement('b'),span=document.createElement('span');label.textContent='Pause '+b.number;span.textContent=time(b.started_at)+' - '+time(b.ended_at);li.append(label,span);$('breaks').append(li)});
+  const state=status.state;$('state').textContent=state==='BREAK'?'Pause l�uft':state==='RUNNING'?'Arbeitszeit l�uft':status.ended_at?'Dienst beendet':'Bereit f�r den Arbeitsbeginn';
+  $('stateDetail').textContent=state==='BREAK'?'Nach der Pause auf "Pause beenden" tippen. Bei Dienstende beendet "Arbeitszeit beenden" auch die laufende Pause.':state==='RUNNING'?'Pause oder Dienstende mit einem Tipp buchen.':'Es ist keine Arbeitszeit offen.';
   $('start').hidden=state!=='READY';$('pauseStart').hidden=state!=='RUNNING'||breaks.length>=10;$('pauseEnd').hidden=state!=='BREAK';$('end').hidden=state!=='RUNNING'&&state!=='BREAK';
   $('breakChoice').hidden=state!=='RUNNING'||breaks.length>=10;
   showBreakPushHint(status);
   if(state==='RUNNING'&&breaks.length>=10)$('stateDetail').textContent='Zehn Pausen erfasst. Arbeitszeit kann beendet werden.';
 }
 function unverified(){
-  needsStatus=true;stopLiveTimer();$('state').textContent='Buchungsstatus ungeklärt';
-  $('stateDetail').textContent='Bitte den gespeicherten Status prüfen. Eine fehlende Antwort bedeutet nicht, dass die Buchung fehlgeschlagen ist.';
-  $('attendanceDetail').textContent='Zuletzt bestätigter Stand. Statusprüfung erforderlich.';
+  needsStatus=true;stopLiveTimer();$('state').textContent='Buchungsstatus ungekl�rt';
+  $('stateDetail').textContent='Bitte den gespeicherten Status pr�fen. Eine fehlende Antwort bedeutet nicht, dass die Buchung fehlgeschlagen ist.';
+  $('attendanceDetail').textContent='Zuletzt best�tigter Stand. Statuspr�fung erforderlich.';
 }
 async function reconcile(version=generation){
   const data=await call('STATUS',pendingBooking?{requestId:pendingBooking.requestId}:{});
@@ -100,8 +135,8 @@ async function reconcile(version=generation){
   show(data);needsStatus=false;
   if(pendingBooking){
     if(data.request_processed&&data.processed_action===pendingBooking.action){
-      msg(label[pendingBooking.action]+' um '+time(data.processed_at)+' Uhr gespeichert. Der Buchungsstatus wurde geprüft.','ok');pendingBooking=null;
-    }else{unverified();msg('Die Buchung ist noch nicht bestätigt. Du kannst den Status erneut prüfen oder denselben Buchungsversuch sicher erneut senden.','error')}
+      msg(label[pendingBooking.action]+' um '+time(data.processed_at)+' Uhr gespeichert. Der Buchungsstatus wurde gepr�ft.','ok');pendingBooking=null;
+    }else{unverified();msg('Die Buchung ist noch nicht best�tigt. Du kannst den Status erneut pr�fen oder denselben Buchungsversuch sicher erneut senden.','error')}
   }
   return data;
 }
@@ -109,23 +144,24 @@ async function refreshStatus(){
   if(busy||!sessionToken)return;
   const version=generation;busy=true;controls();
   try{await reconcile(version);if(version!==generation)return;if(!pendingBooking&&$('message').className.includes('error'))msg('Buchungsstatus aktualisiert.','ok')}
-  catch(error){if(version!==generation)return;if(error.expired)logout('Anmeldung abgelaufen. Bitte erneut anmelden. Eine gespeicherte Buchung bleibt erhalten.');else{unverified();msg('Der Buchungsstatus konnte nicht bestätigt werden. Bitte die Verbindung prüfen und erneut aktualisieren.','error')}}
+  catch(error){if(version!==generation)return;if(error.expired)logout('Anmeldung abgelaufen. Bitte erneut anmelden. Eine gespeicherte Buchung bleibt erhalten.');else{unverified();msg('Der Buchungsstatus konnte nicht best�tigt werden. Bitte die Verbindung pr�fen und erneut aktualisieren.','error')}}
   finally{if(version===generation){busy=false;controls()}}
 }
 async function action(value){
   if(busy||!sessionToken||(pendingBooking&&pendingBooking.action!==value)||(!pendingBooking&&needsStatus))return;
-  const version=generation;pendingBooking=pendingBooking||{action:value,requestId:requestId(),plannedMinutes:value==='BREAK_START'?plannedMinutes:null};busy=true;controls();msg('Buchung wird gespeichert …');
+  const version=generation;pendingBooking=pendingBooking||{action:value,requestId:requestId(),plannedMinutes:value==='BREAK_START'?plannedMinutes:null};busy=true;controls();msg('Buchung wird gespeichert .');
   try{const data=await call(value,{requestId:pendingBooking.requestId,...(value==='BREAK_START'?{plannedMinutes:pendingBooking.plannedMinutes}:{})});if(version!==generation)return;pendingBooking=null;needsStatus=false;show(data);msg(label[value]+' um '+time(data.punched_at)+' Uhr gespeichert.'+(data.pause_automatically_closed?' Die laufende Pause wurde automatisch zum selben Zeitpunkt beendet.':''),'ok')}
   catch(error){
     if(version!==generation)return;
-    if(error.expired){logout('Anmeldung abgelaufen. Bitte erneut anmelden und den Buchungsstatus prüfen.');return}
+    if(error.expired){logout('Anmeldung abgelaufen. Bitte erneut anmelden und den Buchungsstatus pr�fen.');return}
     if(!error.uncertain)pendingBooking=null;
-    unverified();msg(error.uncertain?'Verbindung unterbrochen. Der gespeicherte Buchungsstatus wird geprüft …':'Buchungsstatus wird geprüft …','error');
+    unverified();msg(error.uncertain?'Verbindung unterbrochen. Der gespeicherte Buchungsstatus wird gepr�ft .':'Buchungsstatus wird gepr�ft .','error');
     try{await reconcile(version);if(version!==generation)return;if(!error.uncertain)msg(error.message,'error')}
-    catch(checkError){if(version!==generation)return;if(checkError.expired)logout('Anmeldung abgelaufen. Bitte erneut anmelden und den Buchungsstatus prüfen.');else msg('Die Buchung konnte noch nicht bestätigt werden. Bitte die Verbindung prüfen und „Buchungsstatus prüfen“ wählen.','error')}
+    catch(checkError){if(version!==generation)return;if(checkError.expired)logout('Anmeldung abgelaufen. Bitte erneut anmelden und den Buchungsstatus pr�fen.');else msg('Die Buchung konnte noch nicht best�tigt werden. Bitte die Verbindung pr�fen und "Buchungsstatus pr�fen" w�hlen.','error')}
   }finally{if(version===generation){busy=false;controls()}}
 }
 function logout(notice=''){
+  resetCompanyDesign();
   plannedMinutes=null;for(const [id,minutes] of breakChoices)$(id).setAttribute?.('aria-pressed',String(minutes===null));
   generation++;for(const controller of controllers)controller.abort();controllers.clear();busy=false;pendingBooking=null;needsStatus=false;
   stopLiveTimer();currentStatus=null;displayNow=()=>Date.now();$('attendanceTotal').textContent='00:00:00';$('attendanceDetail').textContent='Inklusive bezahlter Pausen.';for(const id of ['name','begin','beginDate','location','locationNote'])$(id).textContent='';$('breaks').replaceChildren();$('loginIntro').hidden=false;msg(typeof notice==='string'?notice:'',notice?'error':'');$('pauseTotal').textContent='0 Min. 0 Sek.';$('pauseTotalDetail').textContent='Summe aller Pausen dieser Buchung.';sessionToken='';$('clock').hidden=true;$('login').hidden=false;clearSecrets();controls();
@@ -144,22 +180,22 @@ $('loginMode').addEventListener('change',chooseLoginMode);
 $('login').addEventListener('submit',async e=>{
   e.preventDefault();if(busy)return;const version=++generation;busy=true;controls();msg('');
   try{
-    if(desktop&&!terminalId)throw new Error('Bitte einen Betrieb und Buchungsstandort auswählen.');
+    if(desktop&&!terminalId)throw new Error('Bitte einen Betrieb und Buchungsstandort ausw�hlen.');
     const extra={personnelNo:$('personnel').value.trim()};let action='LOGIN';
     if(loginMode==='LEGACY'){
       const entered=$('startDate').value.trim(),parts=/^(\d{2})(\d{2})(\d{4})$/.exec(entered);
       if(!parts)throw new Error('Bitte das Eintrittsdatum als acht Ziffern ohne Punkte eingeben, z. B. 16102024');
       const iso=parts[3]+'-'+parts[2]+'-'+parts[1];
-      if(!Number.isFinite(new Date(iso).getTime())||new Date(iso).toISOString().slice(0,10)!==iso)throw new Error('Bitte ein gültiges Eintrittsdatum eingeben');
+      if(!Number.isFinite(new Date(iso).getTime())||new Date(iso).toISOString().slice(0,10)!==iso)throw new Error('Bitte ein g�ltiges Eintrittsdatum eingeben');
       extra.startDate=iso;
     }else{
       extra.pin=$('pin').value;
       if(!/^[0-9]{6,8}$/.test(extra.pin))throw new Error('Bitte eine PIN mit 6 bis 8 Ziffern eingeben.');
       if(loginMode==='SETUP'){
-        if(extra.pin!==$('pinRepeat').value)throw new Error('Die beiden PIN-Eingaben stimmen nicht überein.');
-        if(/^([0-9])\1+$/.test(extra.pin)||['123456','654321','012345','1234567','7654321','12345678','87654321'].includes(extra.pin))throw new Error('Bitte eine schwerer zu erratende PIN wählen.');
+        if(extra.pin!==$('pinRepeat').value)throw new Error('Die beiden PIN-Eingaben stimmen nicht �berein.');
+        if(/^([0-9])\1+$/.test(extra.pin)||['123456','654321','012345','1234567','7654321','12345678','87654321'].includes(extra.pin))throw new Error('Bitte eine schwerer zu erratende PIN w�hlen.');
         extra.setupCode=$('setupCode').value;
-        if(!/^[0-9]{12}$/.test(extra.setupCode))throw new Error('Bitte den zwölfstelligen Einrichtungscode eingeben.');
+        if(!/^[0-9]{12}$/.test(extra.setupCode))throw new Error('Bitte den zw�lfstelligen Einrichtungscode eingeben.');
         action='SET_PIN';
       }
     }
@@ -167,7 +203,7 @@ $('login').addEventListener('submit',async e=>{
     sessionToken=result.sessionToken;clearSecrets();
     if(action==='SET_PIN'){$('loginMode').value='PIN';chooseLoginMode()}
     const status=await call('STATUS');if(version!==generation)return;needsStatus=false;show(status);
-    if(action==='SET_PIN')msg('PIN eingerichtet. Ab jetzt meldest du dich mit deiner persönlichen PIN an.','ok');
+    if(action==='SET_PIN')msg('PIN eingerichtet. Ab jetzt meldest du dich mit deiner pers�nlichen PIN an.','ok');
   }
   catch(error){if(version!==generation)return;msg(error.message+(loginMode==='SETUP'?' Falls die Einrichtung schon gespeichert wurde, bitte mit der neuen PIN anmelden.':''),'error');sessionToken='';clearSecrets()}
   finally{if(version===generation){busy=false;controls()}}
@@ -185,12 +221,12 @@ $('logout').addEventListener('click',()=>logout());
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){updateLiveTotals();refreshStatus()}});
 globalThis.addEventListener?.('online',refreshStatus);
 async function loadDesktopTerminals(){
-  const status=$('desktopDirectoryStatus');status.hidden=false;status.textContent='Betriebe und Buchungsstandorte werden geladen …';
+  const status=$('desktopDirectoryStatus');status.hidden=false;status.textContent='Betriebe und Buchungsstandorte werden geladen .';
   $('login').hidden=true;$('desktopDirectoryRetry').hidden=true;
   try{
     const data=await call('DESKTOP_TERMINALS'),terminals=Array.isArray(data.terminals)?data.terminals:[];
-    const select=$('desktopTerminal');select.replaceChildren();const placeholder=document.createElement('option');placeholder.value='';placeholder.textContent='Bitte auswählen';select.append(placeholder);
-    for(const terminal of terminals){const option=document.createElement('option');option.value=terminal.id;option.textContent=terminal.company_name+' · '+terminal.terminal_name;select.append(option)}
+    const select=$('desktopTerminal');select.replaceChildren();const placeholder=document.createElement('option');placeholder.value='';placeholder.textContent='Bitte ausw�hlen';select.append(placeholder);
+    for(const terminal of terminals){const option=document.createElement('option');option.value=terminal.id;option.textContent=terminal.company_name+' � '+terminal.terminal_name;select.append(option)}
     terminalId='';controls();
     if(!terminals.length)throw new Error('Noch kein PC-Zugang freigegeben. Bitte die Leitung kontaktieren oder den Standort-QR-Code nutzen.');
     status.hidden=true;$('login').hidden=false;
@@ -198,7 +234,7 @@ async function loadDesktopTerminals(){
 }
 if(desktop){
   document.title='Arbeitszeit am PC erfassen | SchichtFunk';
-  $('loginIntro').textContent='Melde dich mit deiner Personalnummer und persönlichen PIN an. Während der Umstellung ist auch das Eintrittsdatum möglich, solange deine PIN und die PIN-Pflicht noch nicht aktiviert sind. Am PC und per Standort-QR-Code nutzt du denselben Buchungsstand. Die Anmeldung startet noch keine Arbeitszeit.';
+  $('loginIntro').textContent='Melde dich mit deiner Personalnummer und pers�nlichen PIN an. W�hrend der Umstellung ist auch das Eintrittsdatum m�glich, solange deine PIN und die PIN-Pflicht noch nicht aktiviert sind. Am PC und per Standort-QR-Code nutzt du denselben Buchungsstand. Die Anmeldung startet noch keine Arbeitszeit.';
   $('desktopTerminalField').hidden=false;$('desktopTerminal').required=true;
   $('desktopTerminal').addEventListener('change',()=>{logout();terminalId=$('desktopTerminal').value;$('personnel').value='';controls()});
   $('desktopDirectoryRetry').addEventListener('click',loadDesktopTerminals);
