@@ -22,7 +22,7 @@ const server=http.createServer((req,res)=>{
    await route.fulfill({json:data});
   });
   await page.goto('http://127.0.0.1:'+server.address().port+'/qr-time?entry=desktop');
-  await page.locator('#desktopTerminal option').nth(1).waitFor();
+  await page.waitForFunction(()=>document.querySelector('#desktopTerminal').options.length>1);
   async function login(id){await page.selectOption('#desktopTerminal',id);await page.fill('#personnel','123');await page.fill('#pin','123789');await page.click('#loginButton');await page.locator('#clock').waitFor({state:'visible'})}
   await login(ids[0]);
   assert.equal(await page.locator('#start').evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(234, 90, 6)');
