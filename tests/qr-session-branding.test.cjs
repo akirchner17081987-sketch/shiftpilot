@@ -1,0 +1,23 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const {webcrypto,createHash}=require('node:crypto');
+const code=fs.readFileSync(__dirname+'/../supabase/functions/qr-independent/index.ts','utf8');
+const helper=code.slice(code.indexOf('async function sessionBranding('),code.indexOf('\nDeno.serve(')).replace('sessionToken:string','sessionToken');
+const company='11111111-1111-1111-1111-111111111111',token='a'.repeat(64);
+let calls=[],session=[{company_id:company}],branding=[{theme_key:'secontec',dark_primary:'#EA5A06',logo_path:company+'/logo.png'}];
+const fetch=async(url,opts)=>{calls.push({url,opts});if(url.includes('time_qr_independent_sessions'))return {ok:true,json:async()=>session};if(url.includes('company_branding?'))return {ok:true,json:async()=>structuredClone(branding)};if(url.includes('/object/sign/'))return {ok:true,json:async()=>({signedURL:'/object/sign/company-branding-assets/test?token=example'})};throw Error('Unexpected request')};
+const env={SUPABASE_URL:'https://example.supabase.co',SUPABASE_SERVICE_ROLE_KEY:'test-secret'};
+const ctx=vm.createContext({fetch,crypto:webcrypto,TextEncoder,URLSearchParams,AbortSignal,Deno:{env:{get:k=>env[k]}},hex:data=>Array.from(data,b=>b.toString(16).padStart(2,'0')).join('')});
+vm.runInContext(helper,ctx);
+(async()=>{
+ let result=await ctx.sessionBranding(token);
+ let params=new URL(calls[0].url).searchParams;
+ assert.equal(params.get('token_hash'),'eq.\\x'+createHash('sha256').update(token).digest('hex'));
+ assert.equal(new URL(calls[1].url).searchParams.get('company_id'),'eq.'+company);
+ assert.equal(result.theme_key,'secontec');assert.equal(result.logo_path,undefined);
+ assert.match(result.logo_url,/^https:\/\/example\.supabase\.co\/storage\/v1\/object\/sign\//);
+ calls=[];session=[];assert.equal(await ctx.sessionBranding(token),null);assert.equal(calls.length,1);
+ calls=[];session=[{company_id:company}];branding=[{theme_key:'custom',logo_path:'22222222-2222-2222-2222-222222222222/logo.png'}];
+ result=await ctx.sessionBranding(token);assert.equal(calls.length,2);assert.equal(result.logo_url,undefined);
+ assert.match(code,/if\(action==='STATUS'&&result\?\.ok\)/);
+ console.log('Sitzungszuordnung, Unternehmensbindung und Logo-Zugriff: erfolgreich');
+})().catch(e=>{console.error(e);process.exitCode=1});
