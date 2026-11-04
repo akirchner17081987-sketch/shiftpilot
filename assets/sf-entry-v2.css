@@ -267,3 +267,22 @@ html:has(#sfEntryOverlay),body:has(#sfEntryOverlay){overflow:hidden}
 .sf-entry-customer{display:flex;align-items:center;gap:12px;margin:0 0 18px;color:var(--tenant-text);font-size:12px}
 .sf-entry-customer[hidden]{display:none}
 .sf-entry-customer img{max-width:140px;max-height:48px;object-fit:contain}
+
+
+/* Dedicated transition for an explicit company switch. */
+.sf-entry-handoff{display:none}
+#sfEntryOverlay.sf-entry-company-handoff .sf-entry-handoff{display:flex;align-items:center;gap:20px;max-width:430px;margin:0 0 26px}
+#sfEntryOverlay.sf-entry-company-handoff .sf-entry-state,
+#sfEntryOverlay.sf-entry-company-handoff .sf-entry-bar,
+#sfEntryOverlay.sf-entry-company-handoff .sf-entry-footer{display:none}
+.sf-entry-handoff-orbit{position:relative;flex:0 0 76px;width:76px;height:76px;border:1px solid rgba(148,198,222,.35);border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle,rgba(90,175,201,.18),transparent 70%)}
+.sf-entry-handoff-orbit:before,.sf-entry-handoff-orbit:after{content:'';position:absolute;inset:6px;border-radius:50%;border:1px solid transparent;border-top-color:#b4e3ed;border-right-color:#5f9cad;animation:sf-company-orbit 2.3s linear infinite}
+.sf-entry-handoff-orbit:after{inset:15px;border-top-color:#6eafbe;border-right-color:transparent;animation-direction:reverse;animation-duration:3.2s}
+.sf-entry-handoff-orbit svg{width:25px;height:25px;color:#d6edf2}
+.sf-entry-handoff-copy{display:grid;gap:7px;text-align:left}
+.sf-entry-handoff-copy small{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#9ec7d0;font-weight:700}
+.sf-entry-handoff-copy strong{font-size:clamp(21px,3vw,30px);line-height:1.15;color:#f2f9fb}
+.sf-entry-handoff-copy span{font-size:14px;line-height:1.5;color:#afc2ca}
+@keyframes sf-company-orbit{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.sf-entry-handoff-orbit:before,.sf-entry-handoff-orbit:after{animation:none}}
+@media(max-width:480px){#sfEntryOverlay.sf-entry-company-handoff .sf-entry-handoff{gap:14px}.sf-entry-handoff-orbit{width:58px;height:58px;flex-basis:58px}.sf-entry-handoff-orbit:after{inset:11px}}

@@ -42,6 +42,13 @@ jobs:
       - run: npm run test:csp:browser
       - name: Unternehmensdesign der Arbeitszeiterfassung im Browser
         run: node tests/browser/qr-company-design-qa.cjs
+      - name: Unternehmenswechsel im Browser prüfen
+        run: |
+          python3 -m http.server 8767 --bind 127.0.0.1 >/tmp/sf-company-test.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in 1 2 3 4 5; do curl -fsS http://127.0.0.1:8767/index.html >/dev/null && break; sleep 1; done
+          E2E_BASE_URL=http://127.0.0.1:8767 npx playwright test tests/e2e/company-switch-transition.spec.cjs tests/e2e/entry-tenant-presentation.spec.cjs --workers=1 --retries=0
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 20

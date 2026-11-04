@@ -5,15 +5,19 @@
   if (!root) return;
   // Do not show the preceding tenant's brand while membership is rechecked.
   // The hint carries no tenant identity and is consumed once; it is never auth.
+  let companySwitchPending = false;
   let companyTransition = document.documentElement.classList.contains('sf-session-reentry');
   try {
     const stamp = Number(sessionStorage.getItem('sf_company_transition_v1'));
     sessionStorage.removeItem('sf_company_transition_v1');
-    companyTransition = companyTransition || (stamp > 0 && Date.now() >= stamp && Date.now() - stamp < 30000);
+    companySwitchPending = stamp > 0 && Date.now() >= stamp && Date.now() - stamp < 30000;
+    companyTransition = companyTransition || companySwitchPending;
   } catch (_) {}
   function clearCompanyTransition() {
     if (!companyTransition) return;
     companyTransition = false;
+    companySwitchPending = false;
+    root.classList.remove('sf-entry-company-handoff');
     document.documentElement.classList.remove('sf-company-transition');
     document.documentElement.classList.remove('sf-session-reentry');
     root.classList.remove('sf-entry-company-switch');
@@ -24,10 +28,14 @@
   if (companyTransition) {
     document.documentElement.classList.add('sf-company-transition');
     root.classList.add('sf-entry-company-switch');
+    if (companySwitchPending) root.classList.add('sf-entry-company-handoff');
     // Release the workspace on errors, while the unverified entry stays neutral.
     setTimeout(() => {
+      companySwitchPending = false;
+      root.classList.remove('sf-entry-company-handoff');
       document.documentElement.classList.remove('sf-company-transition');
       document.documentElement.classList.remove('sf-session-reentry');
+      checkReady();
     }, 20000);
   }
   // Customer presentation is accepted only for the verified current company.
@@ -37,6 +45,9 @@
     try { localStorage.setItem('sf_session_reentry_v1', String(Date.now())); } catch (_) {}
     try { sessionStorage.setItem('sf_session_reentry_v1', String(Date.now())); } catch (_) {}
     if (!companyTransition || !root.isConnected) return;
+    const finishingSwitch = companySwitchPending;
+    companySwitchPending = false;
+    root.classList.remove('sf-entry-company-handoff');
     document.documentElement.classList.remove('sf-company-transition');
     document.documentElement.classList.remove('sf-session-reentry');
     root.classList.remove('sf-entry-company-switch');
@@ -51,6 +62,7 @@
         customer.hidden = false;
       }
     }
+    if (finishingSwitch) checkReady();
   });
   const label = root.querySelector('#sfEntryStatus');
   const progress = root.querySelector('#sfEntryBar');
@@ -311,6 +323,7 @@
     const managerReady = isVisible(manager) && (!!window.SFBackend?.ready || !!window.SFBackend?.shellReady);
     const employeeReady = isVisible(employee) && !!window.SFBackend?.ready;
     if (managerReady || employeeReady) {
+      if (companySwitchPending) return;
       readyTarget = employeeReady ? 'employee' : 'manager';
       welcomeToWorkspace();
       return;
