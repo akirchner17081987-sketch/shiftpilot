@@ -3,7 +3,7 @@ const fixture=`<!doctype html><html><head><script src="/assets/sf-entry-prefligh
 <div id="sfEntryOverlay"><div class="sf-entry-inner"><div class="sf-entry-loading">
 <div class="sf-entry-handoff" role="status"><div class="sf-entry-handoff-orbit"></div><div class="sf-entry-handoff-copy"><strong>Unternehmen wird gewechselt</strong><span>Arbeitsbereich und Design werden vorbereitet.</span></div></div>
 <div id="sfEntryCustomer" hidden><img id="sfEntryCustomerLogo" alt=""></div><p id="sfEntryStatus"></p><div class="sf-entry-bar"><span id="sfEntryBar"></span></div><span id="sfEntryCounter"></span><div id="sfEntryWarning" hidden></div><button id="sfEntrySkip">Weiter</button></div></div><div id="sfEntryLoginSlot"></div></div>
-<div id="appShell" style="display:none"></div><div id="sfMfaModal" style="display:none"></div></body></html>`;
+<div id="appShell" style="display:none"></div><div id="sfMfaModal" style="display:none">Sicherheitscode</div></body></html>`;
 async function prepare(page){
  await page.addInitScript(()=>{sessionStorage.setItem('sf_company_transition_v1',String(Date.now()));window.SFBackend={ready:false,shellReady:false,user:{id:'fixture'},companyId:'company-a',client:{}}});
  await page.route('**/company-handoff-test',r=>r.fulfill({status:200,contentType:'text/html',body:fixture}));
