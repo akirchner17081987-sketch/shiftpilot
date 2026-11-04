@@ -2,7 +2,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
 test('application scripts download without blocking the parser and each static module/style has one cascade position',()=>{
  const html=read('index.html'),scripts=[...html.matchAll(/<script([^>]*\bsrc="([^"]+)"[^>]*)>/g)],styles=[...html.matchAll(/<link[^>]*rel="stylesheet"[^>]*href="([^"]+)"[^>]*>/g)];
- assert.ok(scripts.length>45);assert.ok(scripts.every(m=>/\bdefer\b/.test(m[1])));
+ assert.ok(scripts.length>45);const blocking=scripts.filter(m=>!/\bdefer\b/.test(m[1]));assert.deepEqual(blocking.map(m=>m[2].split('?')[0]),['assets/sf-entry-preflight-v1.js']);assert.ok(html.indexOf('assets/sf-entry-preflight-v1.js')<html.indexOf('assets/sf-entry-v2.css'));
  const paths=scripts.map(m=>m[2].split('?')[0]);assert.equal(new Set(paths).size,paths.length);
  const css=styles.map(m=>m[1].split('?')[0]);assert.equal(new Set(css).size,css.length);
  assert.ok(html.indexOf('SFPageReady=new Promise')<html.indexOf('assets/template-manager.js'));
