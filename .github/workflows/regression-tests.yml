@@ -28,7 +28,7 @@ concurrency:
 jobs:
   csp-browser:
     name: CSP and local libraries in Chromium
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -53,6 +53,11 @@ jobs:
         run: npm ci
       - name: Statische Regressionstests ausführen
         run: npm test
+      - name: Unternehmensdesign in der Zeiterfassung prüfen
+        run: |
+          node tests/qr-company-design.test.cjs
+          node tests/qr-session-branding.test.cjs
+          node tests/qr-handler.test.cjs
       - name: Chromium für Produktions-Browsertests installieren
         if: github.event_name == 'workflow_dispatch' && inputs.run_production_browser
         run: npx playwright install --with-deps chromium
