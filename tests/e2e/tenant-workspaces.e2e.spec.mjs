@@ -112,6 +112,14 @@ test('employee portal areas remain visible with the Secontec palette', async ({p
         await expect(profile.locator('.sf-pr-request select')).toHaveCSS('background-color',surface);
         await expect(profile.locator('.sf-pr-request select')).toHaveCSS('color',ink);
         await expect(profile.locator('.sf-pr-history button')).toHaveCSS('color',ink);
+        const contact=profile.locator('[data-qa="contact-theme"]');
+        await profile.evaluate(el=>{const fixture=document.createElement('section');fixture.className='sf-company-employee-contacts';fixture.dataset.qa='contact-theme';fixture.innerHTML='<p>Keine Ansprechpartner</p><div><article><b>Ansprechpartner</b><a href="mailto:test@example.invalid">Kontakt</a></article></div>';el.appendChild(fixture)});
+        await expect(contact).toHaveCSS('background-color',surface);
+        await expect(contact.locator('article')).toHaveCSS('background-color',surface);
+        await expect(contact.locator('a')).toHaveCSS('color',ink);
+        await expect(contact.locator('a')).toHaveCSS('text-decoration-line','underline');
+        await contact.evaluate(el=>el.remove());
+
       }
       if(view==='account') {
         const history=portal.locator('#sfEmployeeTimeAccount .sf-ac-actions [data-ac="history"]');

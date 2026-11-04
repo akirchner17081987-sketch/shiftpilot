@@ -304,3 +304,10 @@ html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal #sfEmployeePro
 html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal #sfEmployeeProfile :is(dl>div,.sf-pr-qualifications li,footer){border-color:var(--tenant-line)!important}
 html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal #sfEmployeeProfile .sf-pr-qualifications li:not(.warn):not(.bad)>span{color:var(--tenant-text)!important}
 html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal #sfEmployeeProfile .sf-pr-status.completed{background:var(--tenant-surface)!important;border-color:var(--tenant-accent)!important;color:var(--tenant-text)!important}
+
+/* Employee company contacts follow the verified tenant palette. */
+html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal .sf-company-employee-contacts{background:var(--tenant-surface)!important;border-color:var(--tenant-line)!important;color:var(--tenant-text)!important}
+html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal .sf-company-employee-contacts article{background:var(--tenant-inset)!important;border-color:var(--tenant-line)!important;color:var(--tenant-text)!important}
+html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal .sf-company-employee-contacts p{color:var(--tenant-muted)!important}
+html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal .sf-company-employee-contacts a{color:var(--tenant-text)!important;text-decoration:underline}
+html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal .sf-company-employee-contacts a:focus-visible{outline:2px solid var(--tenant-accent);outline-offset:3px}
