@@ -18,7 +18,7 @@
  document.addEventListener('DOMContentLoaded',()=>{domReady=true;clearTimeout(deadline)},{once:true});
  document.addEventListener('load',event=>{if(valid(event.target))event.target.dataset.sfLoadState='loaded'},true);
  document.addEventListener('error',event=>{
-  const node=event.target;if(!valid(node))return;node.dataset.sfLoadState='failed';
+  const node=event.target;if(!valid(node)||!ours(node))return;node.dataset.sfLoadState='failed';
   // Before DOMContentLoaded authentication and booking actions have not started.
   // Recover one failed cold load, never an active workspace or a partly entered login.
   if(!domReady&&ours(node)&&!reloading){
