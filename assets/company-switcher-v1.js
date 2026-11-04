@@ -97,11 +97,23 @@
       options.sort((a,b)=>a.name.localeCompare(b.name,'de',{numeric:true,sensitivity:'base',ignorePunctuation:true}));
       if(dialog!==currentDialog)return;
       const list=dialog.querySelector('.sf-company-list');
-      const order=['3dbc2d99-78d7-4b82-bcaf-fe11db8213d3','1f23f5a3-1cbb-430f-af90-36ed34004440','ee0e5c9d-d5ae-48e6-abff-37c179a01929'];
-      const group=options.filter(o=>order.includes(o.company_id)).sort((a,b)=>order.indexOf(a.company_id)-order.indexOf(b.company_id));
-      const other=options.filter(o=>!order.includes(o.company_id));
+      const labelsByCompany=new Map();
+      try{
+        const groups=await B.client.rpc('company_switcher_groups');
+        if(!groups.error&&Array.isArray(groups.data))for(const row of groups.data){
+          const label=String(row.group_label||'').trim();
+          if(label&&label.length<=120)labelsByCompany.set(row.company_id,label);
+        }
+      }catch(_){}
+      if(dialog!==currentDialog)return;
+      const groupLabels=[...new Set(options.map(o=>labelsByCompany.get(o.company_id)).filter(Boolean))];
       const card=o=>`<button type="button" class="sf-company-option" data-company="${esc(o.company_id)}" aria-current="${o.company_id===B.companyId}"><span><b>${esc(o.name)}</b><small>${esc(roles[o.role]||o.role)}</small></span>${o.company_id===B.companyId?'✓':''}</button>`;
-      list.innerHTML=(group.length?`<details class="sf-company-group" ${group.some(o=>o.company_id===B.companyId)?'open':''}><summary>SECONTEC · part of Clearway</summary><div class="sf-company-children">${group.map(card).join('')}</div></details>`:'')+(other.length?`<div class="${group.length?'sf-company-other':''}">${other.map(card).join('')}</div>`:'')||'<p class="sf-company-note">Kein aktiver Unternehmenszugang gefunden.</p>';
+      const grouped=groupLabels.map(label=>{
+        const members=options.filter(o=>labelsByCompany.get(o.company_id)===label);
+        return `<details class="sf-company-group" ${members.some(o=>o.company_id===B.companyId)?'open':''}><summary>${esc(label)}</summary><div class="sf-company-children">${members.map(card).join('')}</div></details>`;
+      }).join('');
+      const other=options.filter(o=>!labelsByCompany.has(o.company_id));
+      list.innerHTML=grouped+(other.length?`<div class="${grouped?'sf-company-other':''}">${other.map(card).join('')}</div>`:'')||'<p class="sf-company-note">Kein aktiver Unternehmenszugang gefunden.</p>';
       if(options.length<2)list.insertAdjacentHTML('beforeend','<p class="sf-company-note">Weitere Unternehmen erscheinen hier, sobald dein Zugang dafür freigeschaltet ist.</p>');
       list.querySelectorAll('[data-company]').forEach(button=>button.onclick=async()=>{
         list.querySelectorAll('button').forEach(b=>b.disabled=true);
