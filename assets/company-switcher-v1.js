@@ -1,8 +1,8 @@
-// SchichtFunk - Unternehmensauswahl f�r aktive Teamzugeh�rigkeiten.
+// SchichtFunk – Unternehmensauswahl für aktive Teamzugehörigkeiten.
 (function(){
   const B=window.SFBackend=window.SFBackend||{};
   const key=()=>`sf_active_company_v1:${B.user?.id||''}`;
-  const roles={OWNER:'Inhaber',ADMIN:'Administrator',DISPATCHER:'Teamleiter',PLANNER:'Teamleiter',VIEWER:'Teamleiter � Nur lesen',TIME_TRACKING:'Mitarbeiter � Zeitverwaltung'};
+  const roles={OWNER:'Inhaber',ADMIN:'Administrator',DISPATCHER:'Teamleiter',PLANNER:'Teamleiter',VIEWER:'Teamleiter · Nur lesen',TIME_TRACKING:'Mitarbeiter · Zeitverwaltung'};
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const stored=()=>{try{return sessionStorage.getItem(key())}catch{return null}};
   const remember=id=>sessionStorage.setItem(key(),id);
@@ -33,10 +33,10 @@
     try{
       const rows=await memberships();
       const member=rows.find(x=>x.company_id===id);
-      if(!member)throw new Error('F�r dieses Unternehmen besteht kein aktiver Zugang.');
+      if(!member)throw new Error('Für dieses Unternehmen besteht kein aktiver Zugang.');
       if(id===B.companyId){close();return false;}
       if(B.disruptionSaving||B.planningRulesSaving||B.companyProfileSaving||B.syncing||B.autoPlanApplying||B.openMarketPublishing||B.scheduleResetting||B.schedulePublishing||B.shiftModelSaving||B.teamRhythmSaving||B.employeeRemovalBusy||B.employeeStatusSaving||B.employeeStatusConfirming||B.bootPromise||B.employeeBootPromise)throw new Error('Daten werden noch gespeichert oder geladen. Bitte versuche es gleich erneut.');
-      B.showLoading?.('Unternehmen wird gewechselt .');
+      B.showLoading?.('Unternehmen wird gewechselt …');
       if(B.syncTimer){clearTimeout(B.syncTimer);B.syncTimer=null;await B.sync?.();if(B.lastSyncError)throw B.lastSyncError;}
       if(window.SFCompanyProfile?.hasUnsavedChanges()){
         if(!await window.SFDialog.confirm('Ungespeicherte Unternehmensdaten verwerfen und das Unternehmen wechseln?')){B.hideLoading?.();return false;}
@@ -68,7 +68,7 @@
       .sf-company-option[aria-current=true]{border-color:var(--teal);background:color-mix(in srgb,var(--teal) 10%,transparent)}
       .sf-company-option:hover{border-color:var(--teal)}.sf-company-option span{flex:1;min-width:0}.sf-company-option b{display:block;overflow-wrap:anywhere}.sf-company-option small{display:block;margin-top:4px;color:var(--muted)}
       .sf-company-group{margin:8px 0 22px}.sf-company-group summary{min-height:48px;display:flex;align-items:center;gap:10px;cursor:pointer;list-style:none;padding:12px;border:1px solid var(--line,#294159);border-radius:10px;font-weight:700}
-      .sf-company-group summary::-webkit-details-marker{display:none}.sf-company-group summary::before{content:'?';color:var(--teal);transition:transform .16s ease}.sf-company-group[open] summary::before{transform:rotate(90deg)}
+      .sf-company-group summary::-webkit-details-marker{display:none}.sf-company-group summary::before{content:'▸';color:var(--teal);transition:transform .16s ease}.sf-company-group[open] summary::before{transform:rotate(90deg)}
       .sf-company-children{padding-left:16px;border-left:1px solid var(--line,#294159);margin:8px 0 0 14px}.sf-company-other{border-top:1px solid var(--line,#294159);padding-top:14px;margin-top:20px}
       .sf-company-note{color:var(--muted);line-height:1.5;font-size:12px;margin:12px 0 0}.sf-company-error{color:#ef7484;font-size:13px;line-height:1.5}
       @media(max-width:820px){#appShell.sf-mobile-nav-open .sidebar .company-card{display:grid}.sf-company-shade{padding:70px 14px 14px}}
@@ -79,7 +79,7 @@
     if(dialog){close();return;}
     opening=true;styles();
     dialog=document.createElement('div');dialog.className='sf-company-shade';dialog.id='sfCompanySwitcher';
-    dialog.innerHTML='<section class="sf-company-menu" role="dialog" aria-modal="true" aria-labelledby="sfCompanySwitcherTitle"><header><h2 id="sfCompanySwitcherTitle">Unternehmen wechseln</h2><button type="button" class="ghost" aria-label="Unternehmensauswahl schlie�en">�</button></header><div class="sf-company-list" aria-live="polite">Unternehmen werden geladen .</div><p class="sf-company-error" role="alert"></p></section>';
+    dialog.innerHTML='<section class="sf-company-menu" role="dialog" aria-modal="true" aria-labelledby="sfCompanySwitcherTitle"><header><h2 id="sfCompanySwitcherTitle">Unternehmen wechseln</h2><button type="button" class="ghost" aria-label="Unternehmensauswahl schließen">×</button></header><div class="sf-company-list" aria-live="polite">Unternehmen werden geladen …</div><p class="sf-company-error" role="alert"></p></section>';
     const currentDialog=dialog;document.body.appendChild(dialog);trigger?.setAttribute('aria-expanded','true');
     dialog.querySelector('header button').onclick=close;
     dialog.onclick=e=>{if(e.target===currentDialog)close();};
@@ -100,9 +100,9 @@
       const order=['3dbc2d99-78d7-4b82-bcaf-fe11db8213d3','1f23f5a3-1cbb-430f-af90-36ed34004440','ee0e5c9d-d5ae-48e6-abff-37c179a01929'];
       const group=options.filter(o=>order.includes(o.company_id)).sort((a,b)=>order.indexOf(a.company_id)-order.indexOf(b.company_id));
       const other=options.filter(o=>!order.includes(o.company_id));
-      const card=o=>`<button type="button" class="sf-company-option" data-company="${esc(o.company_id)}" aria-current="${o.company_id===B.companyId}"><span><b>${esc(o.name)}</b><small>${esc(roles[o.role]||o.role)}</small></span>${o.company_id===B.companyId?'V':''}</button>`;
-      list.innerHTML=(group.length?`<details class="sf-company-group" ${group.some(o=>o.company_id===B.companyId)?'open':''}><summary>SECONTEC � part of Clearway</summary><div class="sf-company-children">${group.map(card).join('')}</div></details>`:'')+(other.length?`<div class="${group.length?'sf-company-other':''}">${other.map(card).join('')}</div>`:'')||'<p class="sf-company-note">Kein aktiver Unternehmenszugang gefunden.</p>';
-      if(options.length<2)list.insertAdjacentHTML('beforeend','<p class="sf-company-note">Weitere Unternehmen erscheinen hier, sobald dein Zugang daf�r freigeschaltet ist.</p>');
+      const card=o=>`<button type="button" class="sf-company-option" data-company="${esc(o.company_id)}" aria-current="${o.company_id===B.companyId}"><span><b>${esc(o.name)}</b><small>${esc(roles[o.role]||o.role)}</small></span>${o.company_id===B.companyId?'✓':''}</button>`;
+      list.innerHTML=(group.length?`<details class="sf-company-group" ${group.some(o=>o.company_id===B.companyId)?'open':''}><summary>SECONTEC · part of Clearway</summary><div class="sf-company-children">${group.map(card).join('')}</div></details>`:'')+(other.length?`<div class="${group.length?'sf-company-other':''}">${other.map(card).join('')}</div>`:'')||'<p class="sf-company-note">Kein aktiver Unternehmenszugang gefunden.</p>';
+      if(options.length<2)list.insertAdjacentHTML('beforeend','<p class="sf-company-note">Weitere Unternehmen erscheinen hier, sobald dein Zugang dafür freigeschaltet ist.</p>');
       list.querySelectorAll('[data-company]').forEach(button=>button.onclick=async()=>{
         list.querySelectorAll('button').forEach(b=>b.disabled=true);
         try{await B.switchCompany(button.dataset.company);}
@@ -117,7 +117,7 @@
     trigger.onclick=open;trigger.disabled=!B.ready||B.role==='EMPLOYEE';
     trigger.setAttribute('aria-haspopup','dialog');trigger.setAttribute('aria-controls','sfCompanySwitcher');
     if(!dialog)trigger.setAttribute('aria-expanded','false');
-    trigger.setAttribute('aria-label',`Unternehmen wechseln - ${trigger.querySelector('b')?.textContent||'SchichtFunk'}`);
+    trigger.setAttribute('aria-label',`Unternehmen wechseln – ${trigger.querySelector('b')?.textContent||'SchichtFunk'}`);
     const icon=trigger.querySelector('.company-icon'),name=trigger.querySelector('b')?.textContent;
     if(icon&&B.ready&&name)icon.textContent=name.trim().slice(0,1).toUpperCase();
   }
@@ -133,6 +133,5 @@
   });
   styles();bind();
 })();
-
 
 
