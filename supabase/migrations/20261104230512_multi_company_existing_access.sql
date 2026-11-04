@@ -12,8 +12,8 @@ begin
   if not private.can_manage_company_users(p_source_company_id) then
     raise exception 'Nicht berechtigt';
   end if;
-  select * into source_row from public.company_members
-    where company_id=p_source_company_id and user_id=p_target_user_id and status='ACTIVE';
+  select m.* into source_row from public.company_members m
+    where m.company_id=p_source_company_id and m.user_id=p_target_user_id and m.status='ACTIVE';
   if not found or source_row.role not in ('ADMIN','PLANNER','DISPATCHER','VIEWER','TIME_TRACKING')
     or source_row.access_role not in ('ADMIN','TEAM_LEAD','EMPLOYEE') then
     raise exception 'Aktiver Quellzugang nicht verfügbar';
@@ -51,8 +51,8 @@ declare source_row public.company_members%rowtype;
 begin
   if auth.uid() is null or p_target_user_id is null or p_target_user_id=auth.uid()
     or not private.can_manage_company_users(p_source_company_id) then raise exception 'Nicht berechtigt'; end if;
-  select * into source_row from public.company_members
-    where company_id=p_source_company_id and user_id=p_target_user_id and status='ACTIVE';
+  select m.* into source_row from public.company_members m
+    where m.company_id=p_source_company_id and m.user_id=p_target_user_id and m.status='ACTIVE';
   if not found or source_row.role not in ('ADMIN','PLANNER','DISPATCHER','VIEWER','TIME_TRACKING')
     or source_row.access_role not in ('ADMIN','TEAM_LEAD','EMPLOYEE')
   then raise exception 'Aktiver Quellzugang nicht verfügbar'; end if;
