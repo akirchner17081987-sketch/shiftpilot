@@ -104,6 +104,15 @@ test('employee portal areas remain visible with the Secontec palette', async ({p
         await expect(portal.locator('#sfQrBookingsFilter')).toHaveCSS('background-color',surface);
         await expect(portal.locator('.sf-qb-note')).toHaveCSS('border-left-color',mode==='dark'?'rgb(234, 90, 6)':'rgb(183, 68, 0)');
       }
+      if(view==='profile') {
+        const profile=portal.locator('#sfEmployeeProfile');
+        const surface=mode==='dark'?'rgb(26, 32, 38)':'rgb(255, 255, 255)';
+        const ink=mode==='dark'?'rgb(255, 255, 255)':'rgb(32, 36, 40)';
+        await expect(profile.locator('.sf-pr-history')).toHaveCSS('background-color',surface);
+        await expect(profile.locator('.sf-pr-request select')).toHaveCSS('background-color',surface);
+        await expect(profile.locator('.sf-pr-request select')).toHaveCSS('color',ink);
+        await expect(profile.locator('.sf-pr-history button')).toHaveCSS('color',ink);
+      }
       if(view==='account') {
         const history=portal.locator('#sfEmployeeTimeAccount .sf-ac-actions [data-ac="history"]');
         await expect(history).toHaveCSS('background-color',mode==='dark'?'rgb(26, 32, 38)':'rgb(255, 255, 255)');

@@ -292,3 +292,15 @@ html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal #sfMyShiftsMon
 html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal #sfEmployeeTimeAccount .sf-ac-actions button[data-ac="history"]{background:var(--tenant-surface)!important;border-color:var(--tenant-accent)!important;color:var(--tenant-text)!important}
 html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal #sfEmployeeTimeAccount .sf-ac-holiday-list>div{border-color:var(--tenant-line)!important}
 html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal #sfEmployeeTimeAccount .sf-ac-holiday-list :is(span,small){color:var(--tenant-muted)!important}
+
+/* Company palette throughout the employee profile, including edit and history states. */
+html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal #sfEmployeeProfile :is(.sf-pr-request,.sf-pr-history,.sf-pr-history-item,.sf-pr-cycle,.sf-pr-tags span,.sf-pr-reply,.sf-pr-push){background:var(--tenant-surface)!important;border-color:var(--tenant-line)!important;color:var(--tenant-text)!important}
+html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal #sfEmployeeProfile :is(button:not(.sf-pr-primary),select,textarea){background:var(--tenant-surface)!important;border-color:var(--tenant-line)!important;color:var(--tenant-text)!important}
+html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal #sfEmployeeProfile button:not(.sf-pr-primary):hover:not(:disabled){border-color:var(--tenant-accent)!important}
+html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal #sfEmployeeProfile :is(button,select,textarea,[tabindex]):focus-visible{outline-color:var(--tenant-accent)!important}
+html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal #sfEmployeeProfile :is(.sf-pr-hint,.sf-pr-reply){border-left-color:var(--tenant-accent)!important}
+html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal #sfEmployeeProfile :is(.sf-pr-eyebrow,.sf-pr-feedback){color:var(--tenant-accent)!important}
+html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal #sfEmployeeProfile :is(p:not(.sf-pr-feedback):not(.sf-pr-submit-feedback):not(.sf-pr-cycle),footer,dt,label,.sf-pr-kpis span,.sf-pr-hero>div>span,.sf-pr-qualifications small,.sf-pr-history-item>small,.sf-pr-reply small,.sf-pr-empty){color:var(--tenant-muted)!important}
+html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal #sfEmployeeProfile :is(dl>div,.sf-pr-qualifications li,footer){border-color:var(--tenant-line)!important}
+html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal #sfEmployeeProfile .sf-pr-qualifications li:not(.warn):not(.bad)>span{color:var(--tenant-text)!important}
+html[data-sf-brand-ready="true"][data-sf-theme] #sfEmployeePortal #sfEmployeeProfile .sf-pr-status.completed{background:var(--tenant-surface)!important;border-color:var(--tenant-accent)!important;color:var(--tenant-text)!important}
