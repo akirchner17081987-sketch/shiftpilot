@@ -59,7 +59,7 @@
   }
 
   async function sha256(text){const bytes=new TextEncoder().encode(text),buf=await crypto.subtle.digest('SHA-256',bytes);return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('')}
-  function inviteToken(){return (crypto.randomUUID?.()||Math.random().toString(36).slice(2))+(crypto.randomUUID?.()||Math.random().toString(36).slice(2))}
+  function inviteToken(){return crypto.randomUUID()+crypto.randomUUID()}
   function productionBase(){return (B.productionUrl||location.origin+'/').replace(/\/+$/,'/')}
   function currentInviteToken(){return new URL(location.href).searchParams.get(INVITE_PARAM)||''}
   function removeInviteParam(){const u=new URL(location.href);u.searchParams.delete(INVITE_PARAM);history.replaceState(null,'',u.pathname+(u.search||'')+(u.hash||''))}
@@ -73,12 +73,15 @@
     const q=await B.client.from('employees').select('id,email,auth_user_id,access_status,first_name,last_name').eq('id',dbId).single();if(q.error)return await window.SFDialog.alert(q.error.message);
     if(!q.data.email)return await window.SFDialog.alert('Bitte zuerst eine E-Mail-Adresse beim Mitarbeiter hinterlegen.');if(q.data.auth_user_id)return await window.SFDialog.alert('Für diesen Mitarbeiter besteht bereits ein aktiver Zugang.');
     const token=inviteToken(),hash=await sha256(token),expires=new Date(Date.now()+7*86400000).toISOString();
-    const up=await B.client.from('employee_access_invites').upsert({company_id:B.companyId,employee_id:dbId,email:q.data.email,token_hash:hash,expires_at:expires,claimed_at:null,claimed_by:null,created_by:B.user.id},{onConflict:'company_id,employee_id'});if(up.error)return await window.SFDialog.alert(up.error.message);
-    const eu=await B.client.from('employees').update({access_status:'INVITED'}).eq('id',dbId);if(eu.error)return await window.SFDialog.alert(eu.error.message);
-    const link=productionBase()+'?'+INVITE_PARAM+'='+encodeURIComponent(token);showInviteLink(`${q.data.first_name||''} ${q.data.last_name||''}`.trim(),q.data.email,link,expires);renderAccessControl(e);
+    const companyId=B.companyId;
+    const up=await B.client.rpc('manager_create_access_invite',{p_company_id:companyId,p_email:q.data.email,p_role:'EMPLOYEE',p_permissions:[],p_employee_id:dbId,p_token_hash:hash});
+    if(up.error)return await window.SFDialog.alert(up.error.message);
+    let sendOk=false;
+    try{const result=await B.client.functions.invoke('send-invitation',{body:{companyId,inviteId:up.data.id,kind:up.data.parameter,token}});sendOk=!result.error}catch(_){sendOk=false}
+    const link=productionBase()+'?'+INVITE_PARAM+'='+encodeURIComponent(token);showInviteLink(`${q.data.first_name||''} ${q.data.last_name||''}`.trim(),q.data.email,link,expires,sendOk);renderAccessControl(e);
   };
 
-  function showInviteLink(name,email,link,expires){css();document.getElementById('sfInviteLinkModal')?.remove();const m=document.createElement('div');m.id='sfInviteLinkModal';m.className='sf-link-modal';m.innerHTML=`<div class="sf-link-card"><div class="eyebrow">MITARBEITERZUGANG</div><h2>Einladung erstellt</h2><p>Der persönliche Registrierungslink für <b>${esc(name)}</b> (${esc(email)}) ist 7 Tage gültig. Teile ihn nur mit dieser Person.</p><div class="sf-link-row"><input id="sfInviteLinkValue" readonly value="${esc(link)}"><button class="primary" id="sfCopyInvite">Kopieren</button></div><p>Gültig bis: ${esc(fmtDate(expires))}</p><div style="display:flex;justify-content:flex-end"><button class="ghost" id="sfCloseInvite">Schließen</button></div></div>`;document.body.appendChild(m);m.querySelector('#sfCloseInvite').onclick=()=>m.remove();m.querySelector('#sfCopyInvite').onclick=async()=>{try{await navigator.clipboard.writeText(link);m.querySelector('#sfCopyInvite').textContent='✓ Kopiert'}catch{m.querySelector('#sfInviteLinkValue').select()}}}
+  function showInviteLink(name,email,link,expires,sendOk){css();document.getElementById('sfInviteLinkModal')?.remove();const m=document.createElement('div');m.id='sfInviteLinkModal';m.className='sf-link-modal';m.innerHTML=`<div class="sf-link-card"><div class="eyebrow">MITARBEITERZUGANG</div><h2>Einladung erstellt</h2><p>Der persönliche Registrierungslink für <b>${esc(name)}</b> (${esc(email)}) ist 7 Tage gültig. ${sendOk?'Die Einladung wurde zum Versand angenommen.':'Die E-Mail konnte nicht versendet werden. Bitte den Link persönlich weitergeben oder später eine neue Einladung erstellen.'}</p><div class="sf-link-row"><input id="sfInviteLinkValue" readonly value="${esc(link)}"><button class="primary" id="sfCopyInvite">Kopieren</button></div><p>Gültig bis: ${esc(fmtDate(expires))}</p><div style="display:flex;justify-content:flex-end"><button class="ghost" id="sfCloseInvite">Schließen</button></div></div>`;document.body.appendChild(m);m.querySelector('#sfCloseInvite').onclick=()=>m.remove();m.querySelector('#sfCopyInvite').onclick=async()=>{try{await navigator.clipboard.writeText(link);m.querySelector('#sfCopyInvite').textContent='✓ Kopiert'}catch{m.querySelector('#sfInviteLinkValue').select()}}}
 
   async function renderAccessControl(e){
     css();const box=document.getElementById('employeeSummary');if(!box||!e||!B.ready||!MANAGER_ROLES.has(B.role))return;box.querySelector('.sf-access-box')?.remove();const d=document.createElement('div');d.className='sf-access-box';d.innerHTML='<small>Zugang wird geprüft …</small>';box.appendChild(d);
