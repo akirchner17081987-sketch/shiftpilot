@@ -123,15 +123,19 @@
 
   async function respond(id,decision){
     if(!id||!B.client||B.role!=='EMPLOYEE')return;
+    const selectedScope=[B.user?.id,B.companyId,B.employeeDbId].join('|');
     const approve=decision==='APPROVED';
     const ok=await window.SFDialog.confirm(approve?'Diese Schicht\u00e4nderung verbindlich best\u00e4tigen?':'Diese Schicht\u00e4nderung ablehnen? Die bisherige Planung bleibt bestehen.');
     if(!ok)return;
+    if(B.__sfMultiEmployee&&selectedScope!==[B.user?.id,B.companyId,B.employeeDbId].join('|'))return;
     try{
       B.showLoading?.(approve?'Schicht\u00e4nderung wird best\u00e4tigt \u2026':'Schicht\u00e4nderung wird abgelehnt \u2026');
-      const {data,error}=await B.client.rpc('employee_respond_to_shift_change',{p_change_id:id,p_decision:decision,p_comment:''});
+      const {data,error}=B.__sfMultiEmployee?await B.client.rpc('employee_company_respond_shift_change',{p_company:B.companyId,p_change_id:id,p_decision:decision,p_comment:''}):await B.client.rpc('employee_respond_to_shift_change',{p_change_id:id,p_decision:decision,p_comment:''});
       if(error)throw error;
+      if(B.__sfMultiEmployee&&selectedScope!==[B.user?.id,B.companyId,B.employeeDbId].join('|')){B.hideLoading?.();return;}
       const result=Array.isArray(data)?data[0]:data;
       await B.hydrateEmployee();
+      if(B.__sfMultiEmployee&&selectedScope!==[B.user?.id,B.companyId,B.employeeDbId].join('|')){B.hideLoading?.();return;}
       if(B.client?.__sfDemoLocalClientV1){enhance();B.employeePortalNavigate?.('changes')}
       else B.openEmployeePortal();
       B.hideLoading?.();
@@ -149,4 +153,5 @@
   B.openEmployeePortal=function(){const r=base.apply(this,arguments);setTimeout(enhance,0);return r};
   setTimeout(enhance,0);
 })();
+
 
