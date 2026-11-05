@@ -96,7 +96,7 @@
   function editEmployeeCompanies(r,host){
     if(!r||r.kind!=='EMPLOYEE'||!r.employee_id||r.is_self||!canAdminister(r))return;
     const companyId=B.companyId;
-    modal(`<div class="eyebrow">TESTUMGEBUNG · MITARBEITERZUGANG</div><h2 id="sfUserDialogTitle">Unternehmen freigeben</h2><p>${esc(employeeName(r))} · ${esc(r.email)}</p><p>Bereits mit diesem Konto verknüpfte Profile können hier freigegeben oder gesperrt werden.</p><div id="qaEmployeeCompanies" aria-live="polite">Unternehmen werden geladen …</div><div id="sfUserMsg" class="sf-user-msg" role="status" aria-live="polite"></div><div class="sf-user-modal-actions"><button type="button" class="ghost" data-close>Schließen</button></div>`,m=>{
+    modal(`<div class="eyebrow">TESTUMGEBUNG · MITARBEITERZUGANG</div><h2 id="sfUserDialogTitle">Unternehmen freigeben</h2><p>${esc(employeeName(r))} · ${esc(r.email)}</p><p>Verknüpfte oder zur bestätigten E-Mail passende Mitarbeiterprofile können freigegeben oder gesperrt werden.</p><div id="qaEmployeeCompanies" aria-live="polite">Unternehmen werden geladen …</div><div id="sfUserMsg" class="sf-user-msg" role="status" aria-live="polite"></div><div class="sf-user-modal-actions"><button type="button" class="ghost" data-close>Schließen</button></div>`,m=>{
       const list=m.querySelector('#qaEmployeeCompanies');
       (async()=>{try{
         assertCompany(companyId);const q=await B.client.rpc('qa_managed_employee_profiles',{p_source:companyId,p_employee:r.employee_id});if(q.error)throw q.error;assertCompany(companyId);
