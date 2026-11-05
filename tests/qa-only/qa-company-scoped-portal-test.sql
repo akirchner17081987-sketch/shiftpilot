@@ -1,0 +1,41 @@
+do $test$
+declare u uuid:=gen_random_uuid(); outsider uuid:=gen_random_uuid(); a uuid:=gen_random_uuid(); b uuid:=gen_random_uuid(); c uuid:=gen_random_uuid(); ea uuid:=gen_random_uuid(); eb uuid:=gen_random_uuid(); ec uuid:=gen_random_uuid(); result jsonb; rejected boolean;
+begin
+ insert into auth.users(id,email,raw_user_meta_data) values(u,'qa-portal-'||u::text||'@example.invalid','{}'::jsonb),(outsider,'qa-other-'||outsider::text||'@example.invalid','{}'::jsonb);
+ insert into public.companies(id,name,created_by) values(a,'QA A',u),(b,'QA B',u),(c,'QA outsider',outsider);
+ insert into public.employees(id,company_id,first_name,last_name,personnel_no,auth_user_id,access_status) values(ea,a,'QA','A','QA-A',u,'ACTIVE'),(eb,b,'QA','B','QA-B',u,'ACTIVE'),(ec,c,'QA','C','QA-C',outsider,'ACTIVE');
+ perform set_config('request.jwt.claim.sub',u::text,true);
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'aal','aal1','role','authenticated')::text,true);
+ perform set_config('role','authenticated',true);
+ if (select count(*) from public.qa_employee_company_options())<>2 then raise exception 'Wrong company options'; end if;
+ result:=public.qa_employee_profile_scoped(a);
+ if result->'employee'->>'id'<>ea::text or result->'company'->>'id'<>a::text then raise exception 'Wrong profile A'; end if;
+ result:=public.qa_employee_profile_scoped(b);
+ if result->'employee'->>'id'<>eb::text or result->'company'->>'id'<>b::text then raise exception 'Wrong profile B'; end if;
+ result:=public.qa_employee_qr_bookings_scoped(a,current_date);
+ if result->>'employee_id'<>ea::text then raise exception 'Wrong QR profile A'; end if;
+ result:=public.qa_employee_qr_bookings_scoped(b,current_date);
+ if result->>'employee_id'<>eb::text then raise exception 'Wrong QR profile B'; end if;
+ result:=public.qa_employee_time_account_scoped(a,current_date);
+ if result->>'employee_id'<>ea::text then raise exception 'Wrong time account A'; end if;
+ result:=public.qa_employee_time_account_scoped(b,current_date);
+ if result->>'employee_id'<>eb::text then raise exception 'Wrong time account B'; end if;
+ rejected:=false;
+ begin perform public.qa_employee_profile_scoped(c); exception when insufficient_privilege then rejected:=true; end;
+ if not rejected then raise exception 'Foreign company profile accessible'; end if;
+ rejected:=false;
+ begin perform public.qa_employee_qr_bookings_scoped(c,current_date); exception when insufficient_privilege then rejected:=true; end;
+ if not rejected then raise exception 'Foreign company QR data accessible'; end if;
+ rejected:=false;
+ begin perform public.qa_employee_time_account_scoped(c,current_date); exception when insufficient_privilege then rejected:=true; end;
+ if not rejected then raise exception 'Foreign company time account accessible'; end if;
+ perform set_config('role','postgres',true);
+ update public.employees set access_status='DISABLED' where id=eb;
+ perform set_config('role','authenticated',true);
+ rejected:=false;
+ begin perform public.qa_employee_profile_scoped(b); exception when insufficient_privilege then rejected:=true; end;
+ if not rejected then raise exception 'Disabled profile accessible'; end if;
+ if (select count(*) from public.qa_employee_company_options())<>1 then raise exception 'Disabled company listed'; end if;
+ perform set_config('role','postgres',true);
+end $test$;
+
