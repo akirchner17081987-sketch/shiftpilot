@@ -163,7 +163,7 @@
   function workspaceReady() {
     const B = window.SFBackend;
     return !!B?.user && ((isVisible(document.getElementById('appShell')) && (B.ready || B.shellReady)) ||
-      (isVisible(document.getElementById('sfEmployeePortal')) && B.ready));
+      ((isVisible(document.getElementById('sfEmployeePortal')) || (B.__qaMultiEmployee && isVisible(document.getElementById('sfQaEmployeePortal')))) && B.ready));
   }
 
   // Keep the single real login form for its final fade; auth, roles and MFA stay authoritative.
@@ -319,7 +319,7 @@
     if (auxiliaryReady) { cancelWelcome(); root.inert = true; clearTimeout(slowTimer); return; }
     const auth = document.getElementById('sfAuthBackdrop');
     const manager = document.getElementById('appShell');
-    const employee = document.getElementById('sfEmployeePortal');
+    const employee = document.getElementById('sfEmployeePortal') || (window.SFBackend?.__qaMultiEmployee && document.getElementById('sfQaEmployeePortal'));
     const managerReady = isVisible(manager) && (!!window.SFBackend?.ready || !!window.SFBackend?.shellReady);
     const employeeReady = isVisible(employee) && !!window.SFBackend?.ready;
     if (managerReady || employeeReady) {
@@ -370,4 +370,6 @@
   // An unchanged startup still warns after 20 seconds. Readiness clears the timer.
   checkReady();
 })();
+
+
 
