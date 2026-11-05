@@ -1,0 +1,1 @@
+This branch stages a database read-policy migration only. It does not enable multi-company invitations or the full employee portal. Validate all remaining employee RPCs and release the frontend and database together before enabling company access. The regression SQL is for the isolated QA database, not production.
