@@ -43,7 +43,7 @@
     if(!employeeEntry&&(memberships.data||[]).some(x=>x.status==='ACTIVE'))return ensure.apply(this,arguments);
     const own=await B.client.from('employees').select('id,company_id').eq('auth_user_id',B.user.id);
     if(own.error)throw own.error;
-    if((own.data||[]).length<2)return ensure.apply(this,arguments);
+    if(!employeeEntry&&(own.data||[]).length<2)return ensure.apply(this,arguments);
     const available=await options();
     if(!available.length)throw fail('Für dieses Konto ist kein aktives Mitarbeiterprofil freigegeben.');
     const choice=available.find(x=>String(x.company_id)===readChoice())||available[0];
