@@ -64,3 +64,12 @@ Dies bestätigt ausschließlich die isolierte Datenbankintegration. Der End-to-E
 - `shift-change-response-company-candidate.sql` prüft das aktive Mitarbeiterprofil im Unternehmen der Dienstplanänderung vor einer Entscheidung.
 - Beide Entwürfe wurden in der QA-Datenbank unter der Datenbankrolle `authenticated` mit fiktiven Profilen in zwei Unternehmen geprüft: die Aktion im aktiven Unternehmen war erfolgreich, die Aktion im gesperrten Unternehmen wurde verweigert. Die Testtransaktionen wurden zurückgerollt.
 - Nicht durch diese Tests abgedeckt sind ein vollständiger Portalablauf, E-Mail, Login, die übrigen Portalaktionen und ein produktionsgleiches Schema. Die Entwürfe sind nicht produktiv installiert.
+
+
+## Weitere Tests: Tauschpartner und Störfallangebote
+
+- Die Tauschpartner-Suche prüft im Entwurf das aktive Profil im Unternehmen des Dienstes. Unter `authenticated` waren ein Aufruf für ein aktives und die Ablehnung für ein gesperrtes Profil erfolgreich; es wurden keine tatsächlichen Tauschpartner im positiven Ergebnis geprüft.
+- Für Antworten auf Störfallangebote wurde im Entwurf dieselbe Unternehmensprüfung ergänzt. Getestet wurden die erfolgreiche Ablehnung eines Angebots im aktiven Unternehmen und die verweigerte Antwort im gesperrten Unternehmen. Eine positive Übernahme wurde hierbei nicht geprüft.
+- Die Störfallliste hat einen Entwurf mit expliziter Unternehmensauswahl. Getestet: getrennte Angebotslisten zweier aktiver Profile, Ablehnung einer anonymen Ausführung und eines gesperrten Unternehmens, Ablehnung des mehrdeutigen Altaufrufs und funktionsfähiger Altaufruf bei einem verbleibenden aktiven Profil.
+- Das Portalmodul verwendet den neuen Listenaufruf nur bei aktiviertem Mehrunternehmens-Flag. Der Code ist im Vorbereitungsbranch, nicht produktiv.
+- Die Tests verwendeten fiktive Daten in zurückgerollten QA-Datenbanktransaktionen. Vollständiger Portal-, E-Mail-, Anmelde- und Rollentest bleiben offen.
