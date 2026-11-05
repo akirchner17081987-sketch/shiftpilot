@@ -41,6 +41,7 @@
     if(!B.__qaMultiEmployee)return fallbackOpen.apply(this,arguments);
     const result=B.__qaOriginalEmployeeOpen.apply(this,arguments),root=document.getElementById('sfEmployeePortal');
     if(!root)return result;
+    root.querySelectorAll('#qaFullCompanySwitch').forEach(node=>node.remove());
     const bar=document.createElement('section');bar.id='qaFullCompanySwitch';bar.style.cssText='padding:14px 6%;background:#103241;color:#fff';
     bar.innerHTML='<strong>TESTUMGEBUNG – Vollportal wird geprüft</strong><label style="display:block;margin-top:8px" for="qaFullCompany">Unternehmen wechseln</label><select id="qaFullCompany" style="padding:8px;min-width:220px"></select><p id="qaFullCompanyStatus" role="status" aria-live="polite"></p>';
     const select=bar.querySelector('select'),status=bar.querySelector('[role=status]');
