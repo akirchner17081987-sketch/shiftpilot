@@ -56,3 +56,11 @@ Vor einer Veröffentlichung:
 Der vorbereitete Kompatibilitätsweg wurde in der QA-Datenbank mit der produktiven Einladungs-Grundfunktion innerhalb zurückgerollter Transaktionen getestet. Erfolgreich: bestehendes Konto mit Mitarbeiter- bzw. Administrator-Einladung; Ablehnung unbestätigter und falscher Konten, erneuter Verwendung, widerrufener und abgelaufener Links. Der öffentliche Annahmeaufruf wurde auch unter der Datenbankrolle `authenticated` geprüft; `anon` hatte keine Ausführungsberechtigung. Fiktive Testdaten wurden zurückgerollt.
 
 Dies bestätigt ausschließlich die isolierte Datenbankintegration. Der End-to-End-Test mit echtem Versand, E-Mail-Bestätigung, Browser-Anmeldung und vollständigem Portal sowie die Produktionsfreigabe bleiben offen.
+
+
+## Unternehmensbezogene Sperren bei älteren Portalaktionen
+
+- `shift-swap-cancel-company-candidate.sql` prüft das aktive Mitarbeiterprofil im Unternehmen des Tauschangebots vor dessen Rücknahme.
+- `shift-change-response-company-candidate.sql` prüft das aktive Mitarbeiterprofil im Unternehmen der Dienstplanänderung vor einer Entscheidung.
+- Beide Entwürfe wurden in der QA-Datenbank unter der Datenbankrolle `authenticated` mit fiktiven Profilen in zwei Unternehmen geprüft: die Aktion im aktiven Unternehmen war erfolgreich, die Aktion im gesperrten Unternehmen wurde verweigert. Die Testtransaktionen wurden zurückgerollt.
+- Nicht durch diese Tests abgedeckt sind ein vollständiger Portalablauf, E-Mail, Login, die übrigen Portalaktionen und ein produktionsgleiches Schema. Die Entwürfe sind nicht produktiv installiert.
