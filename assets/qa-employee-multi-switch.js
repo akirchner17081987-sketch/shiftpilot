@@ -9,6 +9,7 @@
   const saveChoice=id=>{try{sessionStorage.setItem(key(),id)}catch{}};
   const fail=message=>Object.assign(new Error(message),{code:'employee_portal_disabled'});
   async function options(){const q=await B.client.rpc('qa_employee_company_options');if(q.error)throw q.error;return Array.isArray(q.data)?q.data:[]}
+  async function setSessionCompany(company){const q=await B.client.rpc('qa_set_employee_session_company',{p_company:company});if(q.error)throw q.error}
   async function profile(choice){
     const q=await B.client.rpc('qa_employee_profile_scoped',{p_company:choice.company_id});
     if(q.error)throw q.error;
@@ -48,6 +49,8 @@
     if(!available.length)throw fail('Für dieses Konto ist kein aktives Mitarbeiterprofil freigegeben.');
     const choice=available.find(x=>String(x.company_id)===readChoice())||available[0];
     const data=await profile(choice);
+    if(B.user?.id!==userId)throw fail('Die Anmeldung hat sich geändert. Bitte erneut anmelden.');
+    await setSessionCompany(choice.company_id);
     if(B.user?.id!==userId)throw fail('Die Anmeldung hat sich geändert. Bitte erneut anmelden.');
     B.__qaMultiEmployee=true;B.__qaMultiOptions=available;B.__qaMultiProfile=data;
     B.companyId=choice.company_id;B.employeeDbId=choice.employee_id;B.employeeRecord=data.employee;B.role='EMPLOYEE';
@@ -115,6 +118,8 @@
         const available=await options(),choice=available.find(x=>String(x.company_id)===requested);
         if(!choice)throw fail('Dieses Unternehmen ist nicht mehr freigegeben.');
         const [data,info]=await Promise.all([profile(choice),details(choice)]);
+        if(B.user?.id!==userId)throw fail('Die Anmeldung hat sich geändert. Bitte erneut anmelden.');
+        await setSessionCompany(choice.company_id);
         if(B.user?.id!==userId)throw fail('Die Anmeldung hat sich geändert. Bitte erneut anmelden.');
         B.__qaMultiOptions=available;B.__qaMultiProfile=data;B.__qaMultiDetails=info;B.companyId=choice.company_id;B.employeeDbId=choice.employee_id;B.employeeRecord=data.employee;B.accessProfileCompany=choice.company_id;B.employeePortalData={employee:data.employee,company:data.company};saveChoice(choice.company_id);render();root.querySelector('#qaAbsenceForm').reset();root.querySelector('#qaAbsenceStatus').textContent='';root.querySelector('#qaActionStatus').textContent='';status.textContent='Unternehmen gewechselt.';
       }catch(e){select.value=previous;status.textContent=e.message||'Unternehmen konnte nicht gewechselt werden.'}
