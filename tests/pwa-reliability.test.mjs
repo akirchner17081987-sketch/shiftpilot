@@ -63,7 +63,7 @@ test('a release change offers reload without interrupting open work',async()=>{
   r.setRemote('b'.repeat(20));await r.window.SFPwaRuntime.check();
   const banner=r.dom.document.getElementById('sfPwaStatus');assert.equal(banner.dataset.mode,'update');assert.equal(r.reloads,0);assert.match(banner.textContent,/speichere offene Änderungen/);
   banner.querySelector('button').click();assert.equal(r.reloads,1);
-  assert.ok(r.calls.every(c=>c.options.cache==='no-store'&&c.options.credentials==='omit'));
+  assert.ok(r.calls.every(c=>c.options.cache==='no-store'&&c.options.credentials==='same-origin'));
   await r.dom.happyDOM.close();
 });
 test('offline and unreachable states are visible globally; retry recovers and hidden apps do not poll',async()=>{
