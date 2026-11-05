@@ -115,7 +115,7 @@
         if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)){message(m,'Bitte eine gültige E-Mail-Adresse eingeben.');return}
         const selected=selectedPermissions(m),employee=m.querySelector('#sfAccessEmployee')?.value||null;if(chosen==='EMPLOYEE'&&!selected.length&&!employee){message(m,'Bitte das zugehörige Mitarbeiterprofil auswählen.');return}pending(m,true);
         try{
-          assertCompany(companyId);const chosenCompanies=['ADMIN','TEAM_LEAD'].includes(chosen)?[companyId,...Array.from(m.querySelectorAll('[data-qa-company]:checked:not(:disabled)'),x=>x.dataset.qaCompany)]:[companyId];
+          assertCompany(companyId);const chosenCompanies=['ADMIN','TEAM_LEAD'].includes(chosen)?[companyId,...Array.from(m.querySelectorAll('[data-qa-company]:checked'),x=>x.dataset.qaCompany).filter(id=>id!==companyId)]:[companyId];
           if(chosenCompanies.length>1&&employee){message(m,'Für mehrere Unternehmen kann noch kein Mitarbeiterprofil zugeordnet werden.');pending(m,false);return}
           const raw=newToken(),hash=await digest(raw);
           const q=chosenCompanies.length>1
