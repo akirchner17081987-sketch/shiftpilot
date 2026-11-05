@@ -83,15 +83,15 @@
     }
     render();
     select.onchange=async()=>{
-      const requested=select.value,previous=B.companyId,userId=B.user?.id;select.disabled=true;status.textContent='Unternehmen wird gewechselt …';
+      const requested=select.value,previous=B.companyId,userId=B.user?.id,fields=root.querySelector('#qaAbsenceFields');select.disabled=true;fields.disabled=true;status.textContent='Unternehmen wird gewechselt …';
       try{
         const available=await options(),choice=available.find(x=>String(x.company_id)===requested);
         if(!choice)throw fail('Dieses Unternehmen ist nicht mehr freigegeben.');
         const [data,info]=await Promise.all([profile(choice),details(choice)]);
         if(B.user?.id!==userId)throw fail('Die Anmeldung hat sich geändert. Bitte erneut anmelden.');
-        B.__qaMultiOptions=available;B.__qaMultiProfile=data;B.__qaMultiDetails=info;B.companyId=choice.company_id;B.employeeDbId=choice.employee_id;B.employeeRecord=data.employee;B.accessProfileCompany=choice.company_id;B.employeePortalData={employee:data.employee,company:data.company};saveChoice(choice.company_id);render();status.textContent='Unternehmen gewechselt.';
+        B.__qaMultiOptions=available;B.__qaMultiProfile=data;B.__qaMultiDetails=info;B.companyId=choice.company_id;B.employeeDbId=choice.employee_id;B.employeeRecord=data.employee;B.accessProfileCompany=choice.company_id;B.employeePortalData={employee:data.employee,company:data.company};saveChoice(choice.company_id);render();root.querySelector('#qaAbsenceForm').reset();root.querySelector('#qaAbsenceStatus').textContent='';status.textContent='Unternehmen gewechselt.';
       }catch(e){select.value=previous;status.textContent=e.message||'Unternehmen konnte nicht gewechselt werden.'}
-      finally{select.disabled=false}
+      finally{select.disabled=false;fields.disabled=false}
     };
     root.querySelector('#qaAbsenceForm').onsubmit=async event=>{
       event.preventDefault();const company=B.companyId,userId=B.user?.id,status=root.querySelector('#qaAbsenceStatus'),fields=root.querySelector('#qaAbsenceFields');
