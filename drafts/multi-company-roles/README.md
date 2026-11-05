@@ -43,3 +43,10 @@ Vor einer Veröffentlichung:
 - Die Tests verwendeten ausschließlich zurückgerollte fiktive Daten; die Zeitstempel fiktiver Buchungen wurden geändert, um die 20-Sekunden-Sperre für doppelte Buchungen ohne Wartezeit zu überwinden. Das ist kein QR-Kamera- oder Browser-Ende-zu-Ende-Test.
 - Die separate dienstplanunabhängige QR-Zeiterfassung mit PIN ist damit nicht getestet: Die Testdatenbank enthält die produktiven PIN-Tabellen und Endpunktversionen nicht. Sie darf nicht mit der älteren dienstplanbezogenen QR-Buchung verwechselt werden.
 - Das vollständige Portal ohne Testadapter, die übrigen Endpunkte und der Ablauf E-Mail-Bestätigung, Anmeldung und Rollenwechsel bleiben offen.
+
+## Fortschritt: PIN-Zeiterfassung und Mitarbeiterkonten
+
+- Die unabhängige QR-PIN-Zeiterfassung wurde mit Kopien der produktiven Funktionen in QA unter der Datenbankrolle `anon` geprüft. Weil das QA-Schema die PIN-Tabellen und mehrere Spalten nicht enthält, wurden diese Strukturen innerhalb derselben Testtransaktion vorübergehend nachgebildet und am Ende zurückgerollt. Die Testumgebung ist damit kein vollständiger Produktionsklon.
+- Geprüft wurden zwei Unternehmen mit gleicher Personalnummer und verschiedenen PINs: beide PIN-Anmeldungen, falsche Unternehmens-PIN, Ablehnung eines anderen Terminals für eine Sitzung, Kommen, Pause beginnen/beenden, Gehen, Wiederholungsschutz sowie Sitzungsablehnung nach Sperrung bei fortbestehendem Zugang im anderen Unternehmen. Keine Kamera, kein echter Browser und kein Live-Terminal waren beteiligt.
+- Lohnvorschau und Zeitkonto erhielten produktionsbasierte Entwürfe mit explizitem Unternehmen und Ablehnung mehrdeutiger Altaufrufe. Unter `authenticated` wurden zwei Profile, Fremdzugriff, gesperrtes Profil und der Altaufruf für ein einzelnes aktives Profil geprüft. Portalaufrufe bleiben bis zur vollständigen Integration hinter dem deaktivierten Mehrunternehmens-Flag.
+- Unverändert offen: vollständige Anbindung und Absicherung aller Portalaktionen, produktionsgleiches Testportal ohne Testadapter und der echte E-Mail-/Bestätigungs-/Anmelde-/Rollenwechsel im Browser.
