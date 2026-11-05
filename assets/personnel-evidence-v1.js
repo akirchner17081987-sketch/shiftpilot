@@ -44,11 +44,11 @@
   if(s.mode==='employee'){s.host.dataset.sfActionCount=String(count);const banner=$('sfEvidenceHome');if(banner)banner.querySelector('span').textContent=count?`${count} Nachweisanforderungen warten auf dich.`:'Nachweise einreichen und Rückmeldungen verfolgen.'}
  }
  async function load(s,more=false,openId){
-  if(!current(s)||s.busy||s.loading)return;s.loading=true;const n=++s.sequence;
+  if(!current(s)||s.busy||s.loading)return;s.loading=true;const n=++s.sequence,controls=[...s.host.querySelectorAll('button,input,select,textarea')].map(el=>[el,el.disabled]);controls.forEach(([el])=>el.disabled=true);
   message(s,'Nachweise werden geladen …');
-  try{const d=await rpc(s,'list',{offset:more?s.rows.length:0});if(!current(s)||n!==s.sequence)return;if(d?.company_id!==B.companyId||!Array.isArray(d.requests))throw Error('Unvollständige Antwort');s.rows=more?s.rows.concat(d.requests):d.requests;s.total=Number(d.total);draw(s,openId);message(s,'')}
+  try{const d=await rpc(s,'list',{offset:more?s.rows.length:0});if(!current(s)||n!==s.sequence)return;if(d?.company_id!==B.companyId||!Array.isArray(d.requests))throw Error('Unvollständige Antwort');s.rows=more?s.rows.concat(d.requests):d.requests;s.total=Number(d.total);draw(s,openId||s.host.querySelector('[data-evidence-request][open]')?.dataset.evidenceRequest);message(s,'')}
   catch(e){if(current(s)&&n===s.sequence)message(s,`Nachweise konnten nicht geladen werden. ${e.message}`)}
-  finally{if(n===s.sequence)s.loading=false}
+  finally{if(n===s.sequence){s.loading=false;controls.forEach(([el,wasDisabled])=>{if(el.isConnected)el.disabled=wasDisabled})}}
  }
  async function perform(s,task,openId,refresh=true){
   if(!current(s)||s.busy||s.loading)return;s.busy=true;
