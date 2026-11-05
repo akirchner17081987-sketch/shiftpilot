@@ -16,6 +16,21 @@
     if(!d||String(d.employee?.id)!==String(choice.employee_id)||String(d.company?.id)!==String(choice.company_id))throw fail('Das Mitarbeiterprofil stimmt nicht mit dem ausgewählten Unternehmen überein.');
     return d;
   }
+  async function details(choice){
+    const company=choice.company_id;
+    const requests=[
+      ['time','qa_employee_time_account_scoped',{p_company:company,p_month:null}],
+      ['qr','qa_employee_qr_bookings_scoped',{p_company:company,p_month:null}],
+      ['swaps','qa_employee_list_shift_swaps_scoped',{p_company:company}],
+      ['market','qa_employee_list_shift_marketplace_scoped',{p_company:company}],
+      ['offers','qa_employee_list_disruption_offers_scoped',{p_company:company}]
+    ];
+    const results=await Promise.allSettled(requests.map(async ([,name,args])=>{const q=await B.client.rpc(name,args);if(q.error)throw q.error;return q.data}));
+    const data={};
+    results.forEach((r,i)=>{data[requests[i][0]]=r.status==='fulfilled'?r.value:null});
+    for(const name of ['time','qr'])if(data[name]?.employee_id&&String(data[name].employee_id)!==String(choice.employee_id))throw fail('Die geladenen Zeitdaten gehören nicht zum ausgewählten Profil.');
+    return data;
+  }
   B.ensureCompany=async function(){
     B.__qaMultiEmployee=false;B.__qaMultiOptions=[];B.__qaMultiProfile=null;
     if(!B.client||!B.user)return ensure.apply(this,arguments);
@@ -39,13 +54,17 @@
   };
   B.hydrateEmployee=async function(){
     if(!B.__qaMultiEmployee)return hydrate.apply(this,arguments);
-    B.employeePortalData={employee:B.__qaMultiProfile.employee,company:B.__qaMultiProfile.company};
+    const userId=B.user?.id,company=B.companyId,choice=B.__qaMultiOptions.find(x=>String(x.company_id)===String(company));
+    if(!choice)throw fail('Das ausgewählte Unternehmen ist nicht mehr verfügbar.');
+    const data=await details(choice);
+    if(B.user?.id!==userId||B.companyId!==company)throw fail('Der Zugang wurde während des Ladens geändert.');
+    B.__qaMultiDetails=data;B.employeePortalData={employee:B.__qaMultiProfile.employee,company:B.__qaMultiProfile.company};
   };
   B.openEmployeePortal=function(){
     if(!B.__qaMultiEmployee)return open.apply(this,arguments);
     document.getElementById('sfQaEmployeePortal')?.remove();
     const root=document.createElement('div');root.id='sfQaEmployeePortal';
-    root.innerHTML='<header><strong>SchichtFunk</strong><button type="button" id="qaLogout">Abmelden</button></header><main><p class="qa-label">GETRENNTE TESTUMGEBUNG · LESEANSICHT</p><h1>Mitarbeiterportal</h1><p>Unternehmenswechsel und Profilzuordnung prüfen</p><label for="qaCompany">Unternehmen wechseln</label><select id="qaCompany"></select><p id="qaSwitchStatus" role="status" aria-live="polite"></p><section><h2>Mein Mitarbeiterprofil</h2><dl><dt>Unternehmen</dt><dd id="qaCompanyName"></dd><dt>Name</dt><dd id="qaPerson"></dd><dt>Personalnummer</dt><dd id="qaPersonnel"></dd></dl></section><p>Weitere Portalfunktionen werden für mehrere Profile noch geprüft.</p></main>';
+    root.innerHTML='<header><strong>SchichtFunk</strong><button type="button" id="qaLogout">Abmelden</button></header><main><p class="qa-label">GETRENNTE TESTUMGEBUNG · LESEANSICHT</p><h1>Mitarbeiterportal</h1><p>Unternehmenswechsel und Profilzuordnung prüfen</p><label for="qaCompany">Unternehmen wechseln</label><select id="qaCompany"></select><p id="qaSwitchStatus" role="status" aria-live="polite"></p><section><h2>Mein Mitarbeiterprofil</h2><dl><dt>Unternehmen</dt><dd id="qaCompanyName"></dd><dt>Name</dt><dd id="qaPerson"></dd><dt>Personalnummer</dt><dd id="qaPersonnel"></dd></dl></section><section><h2>Meine Zeiten</h2><p>Aktueller Monat</p><dl><dt>Sollzeit</dt><dd id="qaTarget"></dd><dt>Bestätigte Arbeitszeit</dt><dd id="qaWorked"></dd><dt>QR-Buchungen</dt><dd id="qaQrCount"></dd></dl></section><section><h2>Meine Anfragen</h2><dl><dt>Schichttausch</dt><dd id="qaSwapCount"></dd><dt>Schichtmarkt</dt><dd id="qaMarketCount"></dd><dt>Ersatzangebote</dt><dd id="qaOfferCount"></dd></dl></section><p>Weitere Portalfunktionen werden für mehrere Profile noch geprüft.</p></main>';
     const style=document.createElement('style');style.textContent='#sfQaEmployeePortal{position:fixed;inset:0;z-index:22000;overflow:auto;background:#071321;color:#edf8ff;font:16px system-ui,sans-serif}#sfQaEmployeePortal header{display:flex;justify-content:space-between;align-items:center;padding:18px 6%;background:#0c2031;border-bottom:1px solid #24475a}#sfQaEmployeePortal main{max-width:760px;margin:38px auto;padding:0 22px}#sfQaEmployeePortal h1{font-size:30px}#sfQaEmployeePortal .qa-label{color:#6ce0c9;font-weight:700;letter-spacing:.08em;font-size:12px}#sfQaEmployeePortal select,#sfQaEmployeePortal button{font:inherit;border:1px solid #47798a;border-radius:9px;padding:10px;color:#fff;background:#102f40}#sfQaEmployeePortal select{display:block;width:100%;margin-top:8px}#sfQaEmployeePortal section{margin-top:22px;padding:20px;border:1px solid #274a5c;border-radius:15px;background:#0d2131}#sfQaEmployeePortal dl{display:grid;grid-template-columns:160px 1fr;gap:14px;margin-bottom:0}#sfQaEmployeePortal dt{color:#a2bbca}#sfQaEmployeePortal dd{margin:0;overflow-wrap:anywhere}@media(max-width:480px){#sfQaEmployeePortal dl{grid-template-columns:1fr;gap:5px}#sfQaEmployeePortal dd{margin-bottom:10px}}';root.appendChild(style);
     document.body.appendChild(root);
     const select=root.querySelector('#qaCompany'),status=root.querySelector('#qaSwitchStatus');
@@ -53,6 +72,9 @@
       select.replaceChildren(...B.__qaMultiOptions.map(c=>{const o=document.createElement('option');o.value=c.company_id;o.textContent=c.company_name;return o}));
       select.value=B.companyId;
       const d=B.__qaMultiProfile;root.querySelector('#qaCompanyName').textContent=d.company.name||'–';root.querySelector('#qaPerson').textContent=[d.employee.first_name,d.employee.last_name].filter(Boolean).join(' ')||'–';root.querySelector('#qaPersonnel').textContent=d.employee.personnel_no||'–';
+      const info=B.__qaMultiDetails||{},hours=v=>v!==null&&v!==undefined&&Number.isFinite(Number(v))?(Number(v)/60).toLocaleString('de-DE',{maximumFractionDigits:2})+' Std.':'Nicht verfügbar',count=v=>Array.isArray(v)?String(v.length):'Nicht verfügbar';
+      root.querySelector('#qaTarget').textContent=info.time?hours(info.time.target_minutes):'Nicht verfügbar';root.querySelector('#qaWorked').textContent=info.time?hours(info.time.confirmed_work_minutes):'Nicht verfügbar';root.querySelector('#qaQrCount').textContent=count(info.qr?.rows);
+      root.querySelector('#qaSwapCount').textContent=count(info.swaps);root.querySelector('#qaMarketCount').textContent=count(info.market);root.querySelector('#qaOfferCount').textContent=count(info.offers);
     }
     render();
     select.onchange=async()=>{
@@ -60,9 +82,9 @@
       try{
         const available=await options(),choice=available.find(x=>String(x.company_id)===requested);
         if(!choice)throw fail('Dieses Unternehmen ist nicht mehr freigegeben.');
-        const data=await profile(choice);
+        const [data,info]=await Promise.all([profile(choice),details(choice)]);
         if(B.user?.id!==userId)throw fail('Die Anmeldung hat sich geändert. Bitte erneut anmelden.');
-        B.__qaMultiOptions=available;B.__qaMultiProfile=data;B.companyId=choice.company_id;B.employeeDbId=choice.employee_id;B.employeeRecord=data.employee;B.accessProfileCompany=choice.company_id;B.employeePortalData={employee:data.employee,company:data.company};saveChoice(choice.company_id);render();status.textContent='Unternehmen gewechselt.';
+        B.__qaMultiOptions=available;B.__qaMultiProfile=data;B.__qaMultiDetails=info;B.companyId=choice.company_id;B.employeeDbId=choice.employee_id;B.employeeRecord=data.employee;B.accessProfileCompany=choice.company_id;B.employeePortalData={employee:data.employee,company:data.company};saveChoice(choice.company_id);render();status.textContent='Unternehmen gewechselt.';
       }catch(e){select.value=previous;status.textContent=e.message||'Unternehmen konnte nicht gewechselt werden.'}
       finally{select.disabled=false}
     };
