@@ -23,3 +23,12 @@ Status: **Prüfentwurf, nicht für den Produktiveinsatz**. `unified-migration-re
 2. Die Entwürfe mit Supabase CLI in eine gültige Migration überführen und die integrierte Migration samt realem Index- und Triggerwechsel in produktionsgleichem Staging testen. Die Abbruchmarkierung darf nicht für einen Produktiveinsatz umgangen werden.
 3. Die integrierten Ergebnisse in produktionsgleichem Staging wiederholen; parallele Sitzungen, sämtliche relevanten Portal-RPCs sowie E-Mail-Versand, Bestätigung, Anmeldung und Rollenwechsel vollständig prüfen.
 4. Den Rückfallpfad für bereits entstandene Mehrfachprofile testen. Der alte globale Eindeutigkeitsindex lässt sich nach Anlage solcher Profile nicht blind wiederherstellen.
+
+
+## Nachprüfung Index und Registrierungstrigger
+
+- Der produktionsbasierte Signup-Test `production-signup-triggers-rollback-test.sql` wurde erneut erfolgreich ausgeführt: Der neue Trigger wurde innerhalb der Transaktion gelöscht und neu angelegt; Fälle mit Mitarbeiter- und Administratoranker, falscher E-Mail und wiederverwendetem Token wurden geprüft. Zwei ausschließlich in QA vorhandene Triggerfunktionen wurden für diesen Test vorübergehend neutralisiert; sämtliche Änderungen wurden zurückgerollt.
+- Die Abfrage in QA ergab fünf Konten mit mehreren Mitarbeiterprofilen. Daher kann der alte globale Produktivindex dort nicht ohne Änderung bestehender Testdaten nachgebildet werden. Die alte und die neue Eindeutigkeitsregel wurden stattdessen auf zwei isolierten temporären Tabellen geprüft: Die globale Regel lehnt ein zweites Unternehmensprofil ab, die neue erlaubt zwei Unternehmen, aber kein doppeltes Profil innerhalb desselben Unternehmens.
+- Der vorbereitete Test des tatsächlichen Indexwechsels auf einer isolierten Tabelle `isolated-index-swap-rollback-test.sql` konnte nicht ausgeführt werden, weil die Datenbankbestätigung ablief. Damit bleibt die konkrete Wechselreihenfolge ungeprüft.
+- Der Trigger-Test erstellt Datenbankkonten direkt und prüft weder den echten E-Mail-Versand noch den Login. Die ursprüngliche Triggerlogik verknüpft Profile bereits bei Erstellung eines noch nicht bestätigten Kontos; dass ein Zugriff vor Bestätigung verhindert wird, muss mit echter Authentifizierung nachgewiesen werden.
+- QA hatte den Branch-Status `MIGRATIONS_FAILED`; es ist kein vollständiger Produktionsklon. Der Wechsel auf echtem produktionsgleichem Schema sowie Rückfall- und echte Auth-Tests stehen aus.
