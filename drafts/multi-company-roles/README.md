@@ -50,3 +50,9 @@ Vor einer Veröffentlichung:
 - Geprüft wurden zwei Unternehmen mit gleicher Personalnummer und verschiedenen PINs: beide PIN-Anmeldungen, falsche Unternehmens-PIN, Ablehnung eines anderen Terminals für eine Sitzung, Kommen, Pause beginnen/beenden, Gehen, Wiederholungsschutz sowie Sitzungsablehnung nach Sperrung bei fortbestehendem Zugang im anderen Unternehmen. Keine Kamera, kein echter Browser und kein Live-Terminal waren beteiligt.
 - Lohnvorschau und Zeitkonto erhielten produktionsbasierte Entwürfe mit explizitem Unternehmen und Ablehnung mehrdeutiger Altaufrufe. Unter `authenticated` wurden zwei Profile, Fremdzugriff, gesperrtes Profil und der Altaufruf für ein einzelnes aktives Profil geprüft. Portalaufrufe bleiben bis zur vollständigen Integration hinter dem deaktivierten Mehrunternehmens-Flag.
 - Unverändert offen: vollständige Anbindung und Absicherung aller Portalaktionen, produktionsgleiches Testportal ohne Testadapter und der echte E-Mail-/Bestätigungs-/Anmelde-/Rollenwechsel im Browser.
+
+## Einzel-Einladungen: Kompatibilitätstest
+
+Der vorbereitete Kompatibilitätsweg wurde in der QA-Datenbank mit der produktiven Einladungs-Grundfunktion innerhalb zurückgerollter Transaktionen getestet. Erfolgreich: bestehendes Konto mit Mitarbeiter- bzw. Administrator-Einladung; Ablehnung unbestätigter und falscher Konten, erneuter Verwendung, widerrufener und abgelaufener Links. Der öffentliche Annahmeaufruf wurde auch unter der Datenbankrolle `authenticated` geprüft; `anon` hatte keine Ausführungsberechtigung. Fiktive Testdaten wurden zurückgerollt.
+
+Dies bestätigt ausschließlich die isolierte Datenbankintegration. Der End-to-End-Test mit echtem Versand, E-Mail-Bestätigung, Browser-Anmeldung und vollständigem Portal sowie die Produktionsfreigabe bleiben offen.
