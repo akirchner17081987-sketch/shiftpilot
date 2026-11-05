@@ -433,6 +433,7 @@ set local role authenticated;
 do $test$ declare x record; begin
  select * into x from sf_rls_test;
  
+if (public.employee_my_time_account_month(current_date)->>'employee_id')::uuid<>x.eb then raise exception 'single active profile legacy time account regression';end if;
 begin perform public.employee_my_wage_month_for_company(x.a,current_date);raise exception 'revoked wage profile accepted';exception when insufficient_privilege then null;end;
 begin perform public.employee_my_time_account_month_for_company(x.a,current_date);raise exception 'revoked time account accepted';exception when insufficient_privilege then null;end;
 if exists(select 1 from public.employees where id=x.ea) or exists(select 1 from public.shift_assignments where id=x.sa) or exists(select 1 from public.time_entries where assignment_id=x.sa) then raise exception 'revoked company data visible';end if;
