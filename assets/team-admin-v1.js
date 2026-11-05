@@ -92,6 +92,37 @@
   function pending(modal,busy){modal.dataset.busy=String(busy);modal.querySelectorAll('button,input,select').forEach(field=>field.disabled=busy)}
   async function refreshAfterWrite(host,companyId,label){try{await load(companyId);if(host.dataset.sfUsersCompany===companyId){draw(host);notice(host,label)}}catch(error){notice(host,'Änderung gespeichert. Die Liste konnte nicht aktualisiert werden: '+(error.message||error),true)}}
   async function update(r,role,status,host,companyId,permissions=r.permissions||[],personnelIds=null){assertCompany(companyId);if(r.kind==='INVITE'||r.role==='OWNER'||r.is_self)throw Error('Dieser Zugang ist geschützt.');const q=await B.client.rpc(personnelIds===null?'manager_set_access_profile':'manager_set_access_profile_with_personnel',{p_company_id:companyId,p_user_id:r.user_id,p_role:role,p_permissions:permissions,p_status:status,...(personnelIds===null?{}:{p_personnel_employee_ids:personnelIds})});if(q.error)throw q.error;await refreshAfterWrite(host,companyId,'Änderung für '+r.email+' gespeichert.');window.showSaveToast?.('Rechte gespeichert',r.email)}
+  function editEmployeeCompanies(r,host){
+    if(!r||r.kind!=='EMPLOYEE'||!r.employee_id||r.is_self||!canAdminister(r))return;
+    const companyId=B.companyId;
+    modal(`<div class="eyebrow">MITARBEITERZUGANG</div><h2 id="sfUserDialogTitle">Unternehmen freigeben</h2><p>${esc(employeeName(r))} · ${esc(r.email)}</p><p>Verknüpfte oder zur bestätigten E-Mail passende Mitarbeiterprofile können freigegeben oder gesperrt werden.</p><div id="sfEmployeeCompanies" aria-live="polite">Unternehmen werden geladen …</div><div id="sfUserMsg" class="sf-user-msg" role="status" aria-live="polite"></div><div class="sf-user-modal-actions"><button type="button" class="ghost" data-close>Schließen</button></div>`,m=>{
+      const list=m.querySelector('#sfEmployeeCompanies');
+      (async()=>{try{
+        assertCompany(companyId);const q=await B.client.rpc('manager_employee_company_profiles',{p_source:companyId,p_employee:r.employee_id});if(q.error)throw q.error;assertCompany(companyId);
+        const profiles=Array.isArray(q.data)?q.data:[];
+        list.innerHTML=profiles.length?profiles.map(p=>`<label class="sf-access-check"><input type="checkbox" data-company-profile="${esc(p.employee_id)}" ${p.enabled?'checked':''}> <span>${esc(p.company_name)}</span></label>`).join(''):'<p>Keine verwaltbaren verknüpften Profile gefunden.</p>';
+        list.querySelectorAll('[data-company-profile]').forEach(box=>box.onchange=async()=>{
+          const enabled=box.checked;pending(m,true);message(m,'Änderung wird gespeichert …',false);
+          try{assertCompany(companyId);const result=await B.client.rpc('manager_set_employee_company_access',{p_source:companyId,p_employee:r.employee_id,p_target:box.dataset.companyProfile,p_enabled:enabled});if(result.error)throw result.error;assertCompany(companyId);message(m,'Freigabe gespeichert.',false);if(host)await refreshAfterWrite(host,companyId,'Unternehmenszugang aktualisiert.')}
+          catch(error){box.checked=!enabled;message(m,error.message||'Freigabe konnte nicht gespeichert werden.')}
+          finally{pending(m,false)}
+        });
+      }catch(error){list.textContent='Unternehmen konnten nicht geladen werden.';message(m,error.message||'Bitte erneut versuchen.')}})();
+    });
+  }
+  B.openEmployeeCompanies=async employee=>{
+    if(B.__sfEmployeeMultiCompanyReady!==true)throw Error('Die Unternehmensfreigabe ist noch nicht verfügbar.');
+    const companyId=B.companyId,employeeId=employee?._dbId||B.empDb?.get(String(employee?.id));
+    if(!employeeId)throw Error('Bitte den Mitarbeiter zuerst speichern.');
+    assertCompany(companyId);await load(companyId);assertCompany(companyId);
+    const r=rows.find(x=>x.kind==='EMPLOYEE'&&String(x.employee_id)===String(employeeId));
+    if(!r){
+      const candidate=employeeChoices.find(x=>String(x.id)===String(employeeId));
+      if(!candidate)throw Error('Für diesen Mitarbeiter ist kein verfügbarer Mitarbeiterzugang vorhanden.');
+      invite(candidate.email||'','EMPLOYEE',document.createElement('div'),false,[],employeeId);return;
+    }
+    editEmployeeCompanies(r,null);
+  };
   function editRole(r,host){if(!r||r.role==='OWNER'||r.is_self||!canAdminister(r))return;const companyId=B.companyId;
     modal(`<div class="eyebrow">BENUTZER & RECHTE</div><h2 id="sfUserDialogTitle">Rolle ändern</h2><p>Benutzer: <b>${esc(employeeName(r))}</b><br>${esc(r.email)}</p><p>Aktuelle Rolle: <b>${esc(roles[r.role]?.[0]||r.role)}</b></p><label>Neue Rolle<select id="sfEditUserRole">${options(r.role)}</select></label><div id="sfSelectedRoleInfo"></div><div id="sfAccessExtraFields"></div><div id="sfUserMsg" class="sf-user-msg" role="status" aria-live="polite"></div><div class="sf-user-modal-actions"><button type="button" class="ghost" data-close>Abbrechen</button><button type="button" class="primary" id="sfSaveUserRole">Rolle speichern</button></div>`,m=>{
       const select=m.querySelector('#sfEditUserRole'),sync=()=>{m.querySelector('#sfSelectedRoleInfo').innerHTML=roleDetails(select.value);m.querySelector('#sfAccessExtraFields').innerHTML=extraFields(select.value,select.value===r.role?r.permissions:[],r.employee_id,select.value===r.role?r.personnel_employee_ids||[]:[]);bindExtras(m);};select.onchange=sync;sync();
