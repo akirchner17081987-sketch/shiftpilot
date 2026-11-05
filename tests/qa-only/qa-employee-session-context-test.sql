@@ -1,0 +1,34 @@
+do $test$
+declare u uuid:=gen_random_uuid(); other uuid:=gen_random_uuid(); s1 uuid:=gen_random_uuid(); s2 uuid:=gen_random_uuid(); foreign_session uuid:=gen_random_uuid(); a uuid:=gen_random_uuid(); b uuid:=gen_random_uuid(); ea uuid:=gen_random_uuid(); eb uuid:=gen_random_uuid(); denied boolean;
+begin
+ insert into auth.users(id,email,raw_user_meta_data) values(u,'qa-session-'||u::text||'@example.invalid','{}'),(other,'qa-session-other-'||other::text||'@example.invalid','{}');
+ insert into auth.sessions(id,user_id) values(s1,u),(s2,u),(foreign_session,other);
+ insert into public.companies(id,name,created_by) values(a,'QA A',u),(b,'QA B',u);
+ insert into public.employees(id,company_id,first_name,last_name,personnel_no,auth_user_id,access_status) values(ea,a,'QA','A','A',u,'ACTIVE'),(eb,b,'QA','B','B',u,'ACTIVE');
+ perform set_config('request.jwt.claim.sub',u::text,true);
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'session_id',s1,'aal','aal1','role','authenticated')::text,true);
+ perform set_config('role','authenticated',true);
+ if public.qa_get_employee_session_company() is not null then raise exception 'new session inherited a selection'; end if;
+ perform public.qa_set_employee_session_company(a);
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'session_id',s2,'aal','aal1','role','authenticated')::text,true);
+ if public.qa_get_employee_session_company() is not null then raise exception 'sessions share selected company'; end if;
+ perform public.qa_set_employee_session_company(b);
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'session_id',s1,'aal','aal1','role','authenticated')::text,true);
+ if public.qa_get_employee_session_company()<>a then raise exception 'first session selection changed'; end if;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'session_id',foreign_session,'aal','aal1','role','authenticated')::text,true);
+ denied:=false;begin perform public.qa_set_employee_session_company(a);exception when insufficient_privilege then denied:=true;end;
+ if not denied then raise exception 'foreign session accepted'; end if;
+ perform set_config('role','postgres',true);
+ update public.employees set access_status='DISABLED' where id=eb;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'session_id',s2,'aal','aal1','role','authenticated')::text,true);
+ perform set_config('role','authenticated',true);
+ denied:=false;begin perform public.qa_get_employee_session_company();exception when insufficient_privilege then denied:=true;end;
+ if not denied then raise exception 'revoked company remained selected'; end if;
+ perform set_config('role','postgres',true);
+ delete from auth.sessions where id=s1;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'session_id',s1,'aal','aal1','role','authenticated')::text,true);
+ perform set_config('role','authenticated',true);
+ denied:=false;begin perform public.qa_get_employee_session_company();exception when insufficient_privilege then denied:=true;end;
+ if not denied then raise exception 'deleted session accepted'; end if;
+ perform set_config('role','postgres',true);
+end $test$;
