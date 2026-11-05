@@ -71,7 +71,7 @@
   async function render(){if(B.role!=='EMPLOYEE'||!B.client)return;const who=scope(),month=selected();
     if(owner!==who){owner=who;data=null;dataMonth='';detailsOpen=false;loadRate()}else if(draftMonth!==month){loadRate()}
     const card=shell();if(!card)return;card.querySelector('.sf-wage-rate').value=draft;const request=++sequence;loading=true;error='';draw(card);
-    try{let value;if(B.client.__sfDemoLocalClientV1)value=await demoMonth(month);else{const result=await B.client.rpc('employee_my_wage_month',{p_month:month+'-01'});if(result.error)throw result.error;value=typeof result.data==='string'?JSON.parse(result.data):result.data}value=validate(value,month);
+    try{let value;if(B.client.__sfDemoLocalClientV1)value=await demoMonth(month);else{const result=await B.client.rpc(B.__sfEmployeeMultiCompanyReady===true?'employee_my_wage_month_for_company':'employee_my_wage_month',{...(B.__sfEmployeeMultiCompanyReady===true?{p_company_id:B.companyId}:{}),p_month:month+'-01'});if(result.error)throw result.error;value=typeof result.data==='string'?JSON.parse(result.data):result.data}value=validate(value,month);
       if(request!==sequence||who!==scope()||B.role!=='EMPLOYEE'||!card.isConnected)return;data=value;dataMonth=month;
     }catch(e){if(request!==sequence||who!==scope()||B.role!=='EMPLOYEE')return;error='Aktualisierung fehlgeschlagen. '+(data&&dataMonth===month?'Die zuletzt geladenen Werte bleiben sichtbar.':'Bitte erneut versuchen.');console.warn('Lohnvorschau konnte nicht geladen werden',e)}
     finally{if(request===sequence&&who===scope()&&B.role==='EMPLOYEE'&&card.isConnected){loading=false;draw(card)}}
