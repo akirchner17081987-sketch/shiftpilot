@@ -15,3 +15,6 @@ Still required: integrate selected company throughout the full employee portal; 
 
 
 2026-11-05 follow-up: Pending multi-profile invitations now reserve their selected QA profiles; additional invitations and account linking cannot reuse them. MFA and selection were tested through the authenticated RPC inside a rolled-back transaction with temporary grants. This is not a live email/browser test. IONOS production has historically used `codex/ionos-migration`; verify the active deployment before release. Do not merge the QA branch wholesale. The exposed multi-invitation RPC remains revoked in QA while the complete portal and production authorization behavior remain unverified.
+
+
+2026-11-05 session update: QA stores a verified company selection per Supabase auth session, with revocation and deleted-session checks; a device/session is not necessarily the same thing as a browser tab. Explicit company checks are still required for each operation, and network failures and concurrent tabs require further testing. New QA-only wrappers and SQL tests cover creating swaps, listing eligible colleagues, offering and claiming shifts with explicit company validation. These wrappers have not been integrated into the full employee portal or production.
