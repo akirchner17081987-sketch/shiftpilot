@@ -73,3 +73,11 @@ Dies bestätigt ausschließlich die isolierte Datenbankintegration. Der End-to-E
 - Die Störfallliste hat einen Entwurf mit expliziter Unternehmensauswahl. Getestet: getrennte Angebotslisten zweier aktiver Profile, Ablehnung einer anonymen Ausführung und eines gesperrten Unternehmens, Ablehnung des mehrdeutigen Altaufrufs und funktionsfähiger Altaufruf bei einem verbleibenden aktiven Profil.
 - Das Portalmodul verwendet den neuen Listenaufruf nur bei aktiviertem Mehrunternehmens-Flag. Der Code ist im Vorbereitungsbranch, nicht produktiv.
 - Die Tests verwendeten fiktive Daten in zurückgerollten QA-Datenbanktransaktionen. Vollständiger Portal-, E-Mail-, Anmelde- und Rollentest bleiben offen.
+
+
+## Gemeinsame Regression und Übernahmevorbereitung (06.11.2026)
+
+- `qa-regression-bundle.sql` enthält acht Tests und wurde in der QA-Datenbank als Paket erfolgreich ausgeführt. Jede Testtransaktion rollt ihre fiktiven Daten zurück.
+- Neu geprüft: gemeinsame Einladung mit Mitarbeiterrolle und Administratorrolle und anschließende Freigabe eines weiteren Mitarbeiterprofils; positiver Antrag und Planerfreigabe eines offenen Dienstes mit korrektem Mitarbeitereintrag sowie Ablehnung eines Dienstes aus dem anderen Unternehmen.
+- Die Tests benutzen QA-Funktionen und ein abweichendes QA-Schema. Sie belegen keine vollständige Integration auf produktionsgleichem Schema und keinen echten Auth-, E-Mail- oder Browserablauf.
+- `release-and-rollback-plan.md` dokumentiert den lesenden Produktionsabgleich, offene Freigabebedingungen und insbesondere, dass der globale Profilindex nach Anlegen von Mehrfachprofilen nicht blind zurückgesetzt werden kann.
