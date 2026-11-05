@@ -1,9 +1,9 @@
 # Draft: one invitation with company-specific roles
 
-**Do not deploy or apply.** This is an unfinished, disabled development checkpoint. The archive contains candidate files, local PostgreSQL mock fixtures and Playwright mock tests. It is not a production migration.
+**Not deployed.** This is an unfinished, disabled development checkpoint. The archive contains candidate files, local PostgreSQL fixtures and Playwright mock tests. It is deliberately outside active app and migration paths.
 
-Locally verified with synthetic data: one signup linked employee role in company A and administrator in B; MFA/manager permissions, unselected companies and a revoked target were checked; both UI role-switch directions passed mocked browser tests. The candidate was not tested with the real QA authentication service, mail delivery, existing accounts, full portal actions or real administrative MFA.
+Verified with synthetic data in local PostgreSQL: one signup assigns employee A and administrator B, company and owner permissions, MFA checks, unselected companies, atomic failure after revocation, acceptance by an existing account with a verified matching email, wrong or unconfirmed email rejection, single-use tokens, grouped cancellation, and atomic renewal preserving roles. Mock browser tests cover role selection, renewal, role switching and refusal after access revocation, existing-account login, and acceptance.
 
-The attempt to run the candidate schema change in the actual QA project was declined; the tool returned no reason. No QA or production schema change for this candidate was applied. A careful security review and a complete end-to-end QA run remain required. The current acceptance flow does not yet handle invitations to an existing account, and revocation/renewal semantics for groups require review.
+The prior attempt to run the schema change in the actual Supabase QA project was declined; no reason was supplied. The candidate has not been applied to QA or production. A complete end-to-end test with real Supabase authentication, email delivery, administrator MFA, production-equivalent portal actions and a security review are still required. The feature flags are not enabled.
 
-To inspect locally: extract the archive into a separate directory. It is deliberately kept outside active app and migration paths.
+The local fixtures reproduce necessary behavior for testing and do not constitute full parity with Supabase or the production database. Tests are not proof of release readiness. Extract the archive to inspect the candidate and tests.
