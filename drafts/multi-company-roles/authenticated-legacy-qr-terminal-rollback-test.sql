@@ -734,6 +734,17 @@ union all select qb,b,eb,tb,now() from sf_qr_test,sf_rls_test
 union all select qc,c,ec,tc,now() from sf_qr_test,sf_rls_test;
 
 update public.time_qr_terminals set pilot_mode=false,is_active=true where id in (select ta from sf_qr_test union all select tb from sf_qr_test union all select tc from sf_qr_test);
+
+create temporary table sf_pilot_test(other_b uuid,td uuid);
+insert into sf_pilot_test values(gen_random_uuid(),gen_random_uuid());
+grant select on sf_pilot_test to authenticated;
+insert into public.employees(id,company_id,first_name,last_name,personnel_no,auth_user_id,access_status)
+select other_b,b,'QA','Pilot','P-'||left(other_b::text,8),other_user,'ACTIVE' from sf_pilot_test,sf_rls_test;
+update public.time_qr_terminals set pilot_mode=true,pilot_employee_id=(select eb from sf_rls_test) where id=(select tb from sf_qr_test);
+insert into public.time_qr_pilot_employees(terminal_id,employee_id,company_id) select tb,eb,b from sf_qr_test,sf_rls_test;
+insert into public.time_qr_terminals(id,company_id,name,token_hash,is_active,pilot_mode,pilot_employee_id)
+select td,b,'Restricted pilot',extensions.digest(repeat('d',64),'sha256'),true,true,other_b from sf_pilot_test,sf_rls_test;
+insert into public.time_qr_pilot_employees(terminal_id,employee_id,company_id) select td,other_b,b from sf_pilot_test,sf_rls_test;
 create temporary table sf_terminal_test(sha uuid,shb uuid);
 insert into sf_terminal_test values(gen_random_uuid(),gen_random_uuid());
 grant select on sf_terminal_test to authenticated;
@@ -786,6 +797,12 @@ begin perform public.employee_my_qr_bookings_for_company(x.c,null);raise excepti
 
 if (public.employee_qr_time_status(repeat('a',64))->>'assignment_id')::uuid<>(select sha from sf_terminal_test) or (public.employee_qr_time_status(repeat('b',64))->>'assignment_id')::uuid<>(select shb from sf_terminal_test) then raise exception 'terminal resolved wrong company';end if;
 begin perform public.employee_qr_time_status(repeat('c',64));raise exception 'other company terminal accepted';exception when insufficient_privilege then null;end;
+begin
+ perform public.employee_qr_time_status(repeat('d',64));
+ raise exception 'unapproved pilot terminal accepted';
+exception when raise_exception then
+ if sqlerrm not like '%Pilot%' then raise;end if;
+end;
 if public.employee_clock_from_qr(repeat('a',64),'CLOCK_IN')->>'action'<>'CLOCK_IN' then raise exception 'QR clock-in failed';end if;
 if public.employee_qr_time_status(repeat('a',64))->>'state'<>'RUNNING' then raise exception 'QR clock-in not reflected';end if;
 if public.employee_clock_from_qr(repeat('b',64),'CLOCK_IN')->>'action'<>'CLOCK_IN' then raise exception 'company B QR clock-in failed';end if;
