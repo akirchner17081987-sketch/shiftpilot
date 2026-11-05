@@ -104,13 +104,21 @@
         list.innerHTML=profiles.length?profiles.map(p=>`<label class="sf-access-check"><input type="checkbox" data-qa-profile="${esc(p.employee_id)}" ${p.enabled?'checked':''}> <span>${esc(p.company_name)}</span></label>`).join(''):'<p>Keine verwaltbaren verknüpften Profile gefunden.</p>';
         list.querySelectorAll('[data-qa-profile]').forEach(box=>box.onchange=async()=>{
           const enabled=box.checked;pending(m,true);message(m,'Änderung wird gespeichert …',false);
-          try{assertCompany(companyId);const result=await B.client.rpc('qa_set_employee_profile_access',{p_source:companyId,p_employee:r.employee_id,p_target:box.dataset.qaProfile,p_enabled:enabled});if(result.error)throw result.error;assertCompany(companyId);message(m,'Freigabe gespeichert.',false);await refreshAfterWrite(host,companyId,'Unternehmenszugang aktualisiert.')}
+          try{assertCompany(companyId);const result=await B.client.rpc('qa_set_employee_profile_access',{p_source:companyId,p_employee:r.employee_id,p_target:box.dataset.qaProfile,p_enabled:enabled});if(result.error)throw result.error;assertCompany(companyId);message(m,'Freigabe gespeichert.',false);if(host)await refreshAfterWrite(host,companyId,'Unternehmenszugang aktualisiert.')}
           catch(error){box.checked=!enabled;message(m,error.message||'Freigabe konnte nicht gespeichert werden.')}
           finally{pending(m,false)}
         });
       }catch(error){list.textContent='Unternehmen konnten nicht geladen werden.';message(m,error.message||'Bitte erneut versuchen.')}})();
     });
   }
+  B.openQaEmployeeCompanies=async employee=>{
+    const companyId=B.companyId,employeeId=employee?._dbId||B.empDb?.get(String(employee?.id));
+    if(!employeeId)throw Error('Bitte den Mitarbeiter zuerst speichern.');
+    assertCompany(companyId);await load(companyId);assertCompany(companyId);
+    const r=rows.find(x=>x.kind==='EMPLOYEE'&&String(x.employee_id)===String(employeeId));
+    if(!r)throw Error('Für diesen Mitarbeiter ist noch kein Mitarbeiterkonto verknüpft.');
+    editEmployeeCompanies(r,null);
+  };
   function editRole(r,host){if(!r||r.role==='OWNER'||r.is_self||!canAdminister(r))return;const companyId=B.companyId;
     modal(`<div class="eyebrow">BENUTZER & RECHTE</div><h2 id="sfUserDialogTitle">Rolle ändern</h2><p>Benutzer: <b>${esc(employeeName(r))}</b><br>${esc(r.email)}</p><p>Aktuelle Rolle: <b>${esc(roles[r.role]?.[0]||r.role)}</b></p><label>Neue Rolle<select id="sfEditUserRole">${options(r.role)}</select></label><div id="sfSelectedRoleInfo"></div><div id="sfAccessExtraFields"></div><div id="sfUserMsg" class="sf-user-msg" role="status" aria-live="polite"></div><div class="sf-user-modal-actions"><button type="button" class="ghost" data-close>Abbrechen</button><button type="button" class="primary" id="sfSaveUserRole">Rolle speichern</button></div>`,m=>{
       const select=m.querySelector('#sfEditUserRole'),sync=()=>{m.querySelector('#sfSelectedRoleInfo').innerHTML=roleDetails(select.value);m.querySelector('#sfAccessExtraFields').innerHTML=extraFields(select.value,select.value===r.role?r.permissions:[],r.employee_id,select.value===r.role?r.personnel_employee_ids||[]:[]);bindExtras(m);};select.onchange=sync;sync();
