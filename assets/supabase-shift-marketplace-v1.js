@@ -118,7 +118,7 @@
     if (employeeBusy || B.role !== "EMPLOYEE") return;
     employeeBusy = true;
     try {
-      const [legacy, open] = await Promise.all([rpc("employee_list_shift_marketplace"), window.__sfDemoCloudAdapterV2 ? Promise.resolve([]) : rpc("employee_list_open_shift_market")]);
+      const [legacy, open] = await Promise.all([rpc(B.__sfEmployeeMultiCompanyReady === true ? "employee_list_shift_marketplace_for_company" : "employee_list_shift_marketplace", B.__sfEmployeeMultiCompanyReady === true ? {p_company_id:B.companyId} : {}), window.__sfDemoCloudAdapterV2 ? Promise.resolve([]) : rpc("employee_list_open_shift_market")]);
       const next = [...(legacy || []), ...(open || [])];
       const unchanged = JSON.stringify(next) === JSON.stringify(rows);
       rows = next;
