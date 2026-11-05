@@ -35,3 +35,11 @@ Vor einer Veröffentlichung:
 - Die Registrierung eines neuen Kontos wurde mit den produktiven Signup-Triggern und dem Mehrfach-Einladungsentwurf in QA getestet. Mitarbeiter- und Administratoranker, falsche E-Mail und erneute Tokenverwendung wurden abgedeckt. QA-spezifische Signup-Trigger wurden dafür nur innerhalb der zurückgerollten Testtransaktion neutralisiert.
 - Bei der Registrierung legt die vorhandene Triggerlogik aktive Datenbankzuordnungen bereits beim Erstellen des Kontos an. Ob die echte Auth-Konfiguration einen Zugriff vor E-Mail-Bestätigung zuverlässig verhindert, muss durch einen Auth-/Browser-Test nachgewiesen werden. Die Triggerprüfung allein beweist das nicht.
 - Noch offen: produktionsnahes Komplettportal ohne QA-Adapter, weitere alte Endpunkte und QR, positives Übernehmen offener Dienste, echte Authentifizierung/E-Mail-Bestätigung und E-Mail-Versand im Browser. Kein Produktiveinsatz erfolgt.
+
+## Fortschritt: QR-Übersicht und ältere QR-Buchung
+
+- Der Entwurf `qr-history-company-candidate.sql` ordnet die Buchungshistorie dem explizit ausgewählten Unternehmen zu. Das Portal verwendet die neue Schnittstelle nur bei aktiviertem Mehrunternehmens-Flag; diese Aktivierung bleibt offen.
+- Für die ältere dienstplanbezogene QR-Buchung bestimmt der Entwurf `legacy-qr-terminal-company-candidate.sql` das Mitarbeiterprofil anhand des Unternehmens des gescannten Terminals. In der Testdatenbank wurden unter der Datenbankrolle `authenticated` zwei Unternehmen, Kommen, Pause beginnen/beenden, Gehen, Pilotfreigabe, fremdes Terminal und gesperrter Zugang geprüft.
+- Die Tests verwendeten ausschließlich zurückgerollte fiktive Daten; die Zeitstempel fiktiver Buchungen wurden geändert, um die 20-Sekunden-Sperre für doppelte Buchungen ohne Wartezeit zu überwinden. Das ist kein QR-Kamera- oder Browser-Ende-zu-Ende-Test.
+- Die separate dienstplanunabhängige QR-Zeiterfassung mit PIN ist damit nicht getestet: Die Testdatenbank enthält die produktiven PIN-Tabellen und Endpunktversionen nicht. Sie darf nicht mit der älteren dienstplanbezogenen QR-Buchung verwechselt werden.
+- Das vollständige Portal ohne Testadapter, die übrigen Endpunkte und der Ablauf E-Mail-Bestätigung, Anmeldung und Rollenwechsel bleiben offen.
