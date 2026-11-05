@@ -8,7 +8,7 @@ const fs=require('fs');const assert=require('node:assert/strict');
  await page.evaluate(()=>{
   window.__options=[{company_id:'a',company_name:'Unternehmen A',employee_id:'ea'},{company_id:'b',company_name:'Unternehmen B',employee_id:'eb'}];
   window.__fault='';window.__calls=[];window.__baseline=0;
-  window.SFBackend={user:{id:'u1'},ensureCompany:async()=>{window.__baseline++},hydrateEmployee:async()=>{},openEmployeePortal:()=>{},client:{
+  window.SFBackend={user:{id:'u1'},accessRole:'ADMIN',accessPermissions:['manage_time'],personnelConversationEmployeeIds:['sensitive'],ensureCompany:async()=>{window.__baseline++},hydrateEmployee:async()=>{},openEmployeePortal:()=>{},client:{
    from:name=>({select:()=>({eq:async()=>({data:name==='company_members'?[]:[{id:'ea'},{id:'eb'}]})})}),
    rpc:async(name,args)=>{window.__calls.push({name,args});if(name==='qa_employee_company_options')return {data:window.__options};if(name==='qa_employee_profile_scoped')return window.__fault===args.p_company?{error:{message:'Kein Zugriff'}}:{data:{company:{id:args.p_company,name:'Unternehmen '+args.p_company.toUpperCase()},employee:{id:'e'+args.p_company,first_name:'Test',last_name:args.p_company.toUpperCase(),personnel_no:'PN-'+args.p_company}}};return {error:{message:'Unexpected call'}}},
    auth:{signOut:async()=>({error:null})}
@@ -18,6 +18,7 @@ const fs=require('fs');const assert=require('node:assert/strict');
  await page.evaluate(async()=>{await SFBackend.ensureCompany();await SFBackend.hydrateEmployee();SFBackend.openEmployeePortal()});
  assert.equal(await page.locator('#qaCompanyName').textContent(),'Unternehmen A');
  assert.equal(await page.locator('#qaPersonnel').textContent(),'PN-a');
+ assert.deepEqual(await page.evaluate(()=>[SFBackend.accessRole,SFBackend.accessPermissions,SFBackend.personnelConversationEmployeeIds]),['EMPLOYEE',[],[]]);
  await page.locator('#qaCompany').selectOption('b');
  await page.getByText('Unternehmen gewechselt.').waitFor();
  assert.equal(await page.locator('#qaCompanyName').textContent(),'Unternehmen B');
