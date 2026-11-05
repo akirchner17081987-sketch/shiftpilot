@@ -73,7 +73,7 @@
     host.querySelectorAll('[data-edit-role]').forEach(button=>button.onclick=()=>editRole(rowFor(button),host));
     host.querySelectorAll('[data-toggle]').forEach(button=>button.onclick=()=>toggleAccess(rowFor(button),host));
     host.querySelectorAll('[data-revoke]').forEach(button=>button.onclick=()=>revoke(rowFor(button),host));
-    host.querySelectorAll('[data-new]').forEach(button=>button.onclick=()=>{const r=rowFor(button);invite(r.email,r.role,host,true,r.permissions,r.employee_id)});
+    host.querySelectorAll('[data-new]').forEach(button=>button.onclick=()=>{const r=rowFor(button);invite(r.email,r.role,host,true,r.permissions,r.employee_id,r.record_id)});
   }
   B.renderUserManagement=async host=>{
     css();const request=++renderSequence,companyId=B.companyId;host.__sfUsersRequest=request;
@@ -102,9 +102,67 @@
     modal(`<div class="eyebrow">BENUTZER & RECHTE</div><h2 id="sfUserDialogTitle">${label}?</h2><p>Benutzer: <b>${esc(employeeName(r))}</b><br>${esc(r.email)}</p><p>${block?'Der Teamzugang zu diesem Unternehmen wird gesperrt. Seine vorhandenen Daten bleiben erhalten.':'Der Benutzer erhält wieder Zugriff mit seiner vorhandenen Rolle.'}</p><div id="sfUserMsg" class="sf-user-msg" role="status" aria-live="polite"></div><div class="sf-user-modal-actions"><button type="button" class="ghost" data-close>Abbrechen</button><button type="button" class="${block?'danger':'primary'}" id="sfConfirmUserAccess">${label}</button></div>`,m=>{m.querySelector('#sfConfirmUserAccess').onclick=async()=>{pending(m,true);try{await update(r,r.role,block?'DISABLED':'ACTIVE',host,companyId);m.__sfClose()}catch(error){message(m,error.message||'Der Zugang konnte nicht geändert werden.');pending(m,false)}}});
   }
   function revoke(r,host){if(!r||r.kind!=='INVITE')return;const companyId=B.companyId;
-    modal(`<div class="eyebrow">BENUTZER & RECHTE</div><h2 id="sfUserDialogTitle">Einladung zurückziehen?</h2><p>Einladung für <b>${esc(r.email)}</b>.</p><p>Der bisherige Einladungslink wird ungültig.</p><div id="sfUserMsg" class="sf-user-msg" role="status" aria-live="polite"></div><div class="sf-user-modal-actions"><button type="button" class="ghost" data-close>Abbrechen</button><button type="button" class="danger" id="sfConfirmRevoke">Einladung zurückziehen</button></div>`,m=>{m.querySelector('#sfConfirmRevoke').onclick=async()=>{pending(m,true);try{assertCompany(companyId);const q=await B.client.rpc('manager_revoke_access_invite',{p_company_id:companyId,p_invite_id:r.record_id});if(q.error)throw q.error;await refreshAfterWrite(host,companyId,'Einladung für '+r.email+' zurückgezogen.');m.__sfClose();window.showSaveToast?.('Einladung zurückgezogen','Der Link ist nicht mehr gültig.')}catch(error){message(m,error.message||'Die Einladung konnte nicht zurückgezogen werden.');pending(m,false)}}});
+    modal(`<div class="eyebrow">BENUTZER & RECHTE</div><h2 id="sfUserDialogTitle">Einladung zurückziehen?</h2><p>Einladung für <b>${esc(r.email)}</b>.</p><p>Der bisherige Einladungslink wird ungültig.</p><div id="sfUserMsg" class="sf-user-msg" role="status" aria-live="polite"></div><div class="sf-user-modal-actions"><button type="button" class="ghost" data-close>Abbrechen</button><button type="button" class="danger" id="sfConfirmRevoke">Einladung zurückziehen</button></div>`,m=>{m.querySelector('#sfConfirmRevoke').onclick=async()=>{pending(m,true);try{assertCompany(companyId);const q=await B.client.rpc(B.__sfMultiRoleInvitesReady===true?'manager_revoke_multi_or_single_invite':'manager_revoke_access_invite',{p_company_id:companyId,p_invite_id:r.record_id});if(q.error)throw q.error;await refreshAfterWrite(host,companyId,'Einladung für '+r.email+' zurückgezogen.');m.__sfClose();window.showSaveToast?.('Einladung zurückgezogen','Der Link ist nicht mehr gültig.')}catch(error){message(m,error.message||'Die Einladung konnte nicht zurückgezogen werden.');pending(m,false)}}});
   }
-  function invite(email='',role='EMPLOYEE',host,renew=false,permissions=[],employeeId=''){const companyId=B.companyId;
+  function multiInvite(email='',role='EMPLOYEE',host,employeeId='',renewId=null){
+    const source=B.companyId;
+    modal(`<div class="eyebrow">BENUTZER & RECHTE</div><h2 id="sfUserDialogTitle">Benutzer einladen</h2><p>Wähle die Unternehmen und die jeweilige Rolle. Eine persönliche Einladung gilt für die gesamte Auswahl.</p><label>E-Mail-Adresse<input id="sfInviteEmail" type="email" autocomplete="email" value="${esc(email)}" ${renewId?'readonly':''} placeholder="name@unternehmen.de"></label><div id="sfMultiInviteCompanies" aria-live="polite">Unternehmen werden geladen …</div><div id="sfUserMsg" class="sf-user-msg" role="status" aria-live="polite"></div><div class="sf-user-modal-actions"><button type="button" class="ghost" data-close>Abbrechen</button><button type="button" class="primary" id="sfCreateTeamInvite" disabled>Einladung erstellen</button></div>`,m=>{
+      const list=m.querySelector('#sfMultiInviteCompanies'),button=m.querySelector('#sfCreateTeamInvite');let options=[],sync=()=>{},snapshot=null;
+      const render=()=>{
+        list.innerHTML=options.map(item=>{
+          const current=item.company_id===source,chosen=current?role:'EMPLOYEE';
+          const staff=(item.employees||[]).map(e=>`<option value="${esc(e.id)}" ${current&&String(e.id)===String(employeeId)?'selected':''}>${esc(e.name)}${e.email?' · '+esc(e.email):''}</option>`).join('');
+          return `<fieldset data-multi-company="${esc(item.company_id)}"><legend>${esc(item.company_name)}</legend><label class="sf-access-check"><input type="checkbox" data-company-enabled ${current?'checked disabled':''}><span>${current?'Aktuelles Unternehmen (erforderlich)':'Zugang freigeben'}</span></label><label>Rolle<select data-company-role><option value="EMPLOYEE" ${chosen==='EMPLOYEE'?'selected':''}>Mitarbeiter</option><option value="TEAM_LEAD" ${chosen==='TEAM_LEAD'?'selected':''}>Teamleiter</option>${item.can_invite_admin?'<option value="ADMIN" '+(chosen==='ADMIN'?'selected':'')+'>Administrator</option>':''}</select></label><label data-employee-label>Mitarbeiterprofil<select data-company-employee><option value="">Bitte auswählen</option>${staff}</select></label></fieldset>`;
+        }).join('')||'<p>Keine verwaltbaren Unternehmen gefunden.</p>';
+        sync=()=>{for(const field of list.querySelectorAll('[data-multi-company]')){const active=field.querySelector('[data-company-enabled]').checked,roleField=field.querySelector('[data-company-role]'),label=field.querySelector('[data-employee-label]'),profile=field.querySelector('[data-company-employee]');field.querySelector('[data-company-enabled]').disabled=field.dataset.multiCompany===source;roleField.disabled=!active;label.hidden=roleField.value!=='EMPLOYEE';profile.disabled=!active||roleField.value!=='EMPLOYEE'}};
+        list.querySelectorAll('[data-company-enabled],[data-company-role]').forEach(el=>el.addEventListener('change',sync));sync();
+      };
+      (async()=>{try{
+        assertCompany(source);
+        if(renewId){
+          const saved=await B.client.rpc('manager_multi_invite_snapshot',{p_company_id:source,p_invite_id:renewId});if(saved.error)throw saved.error;assertCompany(source);
+          snapshot=saved.data;if(!snapshot){m.__sfClose();invite(email,role,host,true,[],employeeId,renewId,true);return}
+        }
+        const q=await B.client.rpc('manager_multi_invite_options');if(q.error)throw q.error;assertCompany(source);
+        options=Array.isArray(q.data)?q.data:[];if(!options.some(x=>x.company_id===source))throw Error('Das aktuelle Unternehmen ist nicht verfügbar.');
+        render();
+        if(snapshot){
+          for(const target of snapshot.targets||[]){
+            const field=[...list.querySelectorAll('[data-multi-company]')].find(x=>x.dataset.multiCompany===target.company_id);
+            if(!field)throw Error('Ein Unternehmen der Einladung ist nicht mehr verfügbar.');
+            field.querySelector('[data-company-enabled]').checked=true;
+            const select=field.querySelector('[data-company-role]');select.value=target.role;
+            if(select.value!==target.role)throw Error('Eine Rolle der Einladung ist nicht mehr verfügbar.');
+            if(target.employee_id){const employee=field.querySelector('[data-company-employee]');employee.value=target.employee_id;if(employee.value!==target.employee_id)throw Error('Ein Mitarbeiterprofil der Einladung ist nicht mehr verfügbar.')}
+          }
+          sync();
+        }
+        button.disabled=false;
+      }catch(error){list.textContent='Unternehmen konnten nicht geladen werden.';message(m,error.message||'Bitte erneut versuchen.')}})();
+      button.onclick=async()=>{
+        const mail=m.querySelector('#sfInviteEmail').value.trim().toLowerCase();
+        if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)){message(m,'Bitte eine gültige E-Mail-Adresse eingeben.');return}
+        const targets=[];
+        for(const field of list.querySelectorAll('[data-multi-company]')){
+          if(!field.querySelector('[data-company-enabled]').checked)continue;
+          const chosen=field.querySelector('[data-company-role]').value,profile=field.querySelector('[data-company-employee]').value;
+          if(chosen==='EMPLOYEE'&&!profile){message(m,'Bitte für jedes Unternehmen mit Mitarbeiterrolle ein Mitarbeiterprofil auswählen.');return}
+          targets.push({company_id:field.dataset.multiCompany,role:chosen,employee_id:chosen==='EMPLOYEE'?profile:null});
+        }
+        pending(m,true);
+        try{
+          assertCompany(source);const raw=newToken(),q=await B.client.rpc(renewId?'manager_renew_multi_access_invite':'manager_create_multi_access_invite',{p_source:source,...(renewId?{p_invite_id:renewId}:{}),p_email:mail,p_targets:targets,p_token_hash:await digest(raw)});if(q.error)throw q.error;
+          const link=base()+'?'+q.data.parameter+'='+encodeURIComponent(raw);
+          let sent=false;try{const result=await B.client.functions.invoke('send-invitation',{body:{companyId:source,inviteId:q.data.id,kind:q.data.parameter,token:raw}});sent=!result.error}catch(_){}
+          m.querySelector('.sf-user-card').innerHTML=`<div class="eyebrow">EINLADUNG ERSTELLT</div><h2 id="sfUserDialogTitle">Link sicher weitergeben</h2><p>Einladung für <b>${esc(mail)}</b> mit ${targets.length} Unternehmenszugang/Zugängen.</p><p>${sent?'Die Einladung wurde zum Versand angenommen.':'Die E-Mail konnte nicht versendet werden. Bitte den Link persönlich weitergeben.'}</p><label>Einladungslink</label><div class="sf-invite-link"><input id="sfTeamInviteValue" aria-label="Persönlicher Einladungslink" readonly value="${esc(link)}"><button type="button" class="primary" id="sfCopyTeamInvite">Link kopieren</button></div><div class="sf-user-modal-actions"><button type="button" class="ghost" data-close>Schließen</button></div>`;
+          m.dataset.busy='false';bindClose(m);m.querySelector('#sfCopyTeamInvite').onclick=async()=>{try{await navigator.clipboard.writeText(link);m.querySelector('#sfCopyTeamInvite').textContent='✓ Kopiert'}catch{m.querySelector('#sfTeamInviteValue').select()}};
+          m.querySelector('#sfCopyTeamInvite').focus();await refreshAfterWrite(host,source,'Einladung für '+mail+' erstellt.');
+        }catch(error){message(m,error.message||'Die Einladung konnte nicht erstellt werden.');pending(m,false);sync()}
+      };
+    });
+  }
+  function invite(email='',role='EMPLOYEE',host,renew=false,permissions=[],employeeId='',inviteId=null,forceLegacy=false){const companyId=B.companyId;
+    if(B.__sfMultiRoleInvitesReady===true&&!forceLegacy)return multiInvite(email,role,host,employeeId,renew?inviteId:null);
     modal(`<div class="eyebrow">BENUTZER & RECHTE</div><h2 id="sfUserDialogTitle">${renew?'Einladung erneuern':'Benutzer einladen'}</h2><p>${renew?'Ein neuer Link ersetzt den bisherigen Einladungslink. Du kannst dabei die Rolle ändern.':'Erstelle einen persönlichen Einladungslink für einen Teamzugang.'} Der Link ist sieben Tage gültig und wird per E-Mail versendet.</p><label>E-Mail-Adresse<input id="sfInviteEmail" type="email" autocomplete="email" value="${esc(email)}" ${renew?'readonly':''} placeholder="name@unternehmen.de"></label><label>Rolle<select id="sfInviteRole">${options(role)}</select></label><div id="sfSelectedRoleInfo"></div><div id="sfAccessExtraFields"></div><div id="sfUserMsg" class="sf-user-msg" role="status" aria-live="polite"></div><div class="sf-user-modal-actions"><button type="button" class="ghost" data-close>Abbrechen</button><button type="button" class="primary" id="sfCreateTeamInvite">${renew?'Neuen Link erstellen':'Einladung erstellen'}</button></div>`,m=>{
       const select=m.querySelector('#sfInviteRole'),sync=()=>{m.querySelector('#sfSelectedRoleInfo').innerHTML=roleDetails(select.value);m.querySelector('#sfAccessExtraFields').innerHTML=extraFields(select.value,select.value===role?permissions:[],employeeId);bindExtras(m);};select.onchange=sync;sync();
       m.querySelector('#sfCreateTeamInvite').onclick=async()=>{
@@ -133,7 +191,15 @@
     bindClose(m);ready?.(m);(m.querySelector('input:not([readonly]),select,button')||m.querySelector('.sf-user-card')).focus();
   }
   const bindClose=m=>m.querySelectorAll('[data-close]').forEach(button=>button.onclick=()=>m.__sfClose());
+  function registerMulti(raw){
+    if((B.ready||B.user)&&B.__sfMultiRoleInvitesReady===true&&typeof B.offerMultiCompanyInvitation==='function'){B.offerMultiCompanyInvitation();return}
+    if(B.ready||B.user){
+      modal('<div class="eyebrow">SCHICHTFUNK TEAMZUGANG</div><h2 id="sfUserDialogTitle">Einladung annehmen</h2><p>Du bist bereits mit einem anderen Zugang angemeldet.</p><p>Öffne den persönlichen Einladungslink in einem privaten Browserfenster, um den neuen Zugang mit der eingeladenen E-Mail-Adresse einzurichten.</p><div class="sf-user-modal-actions"><button type="button" class="ghost" data-close>Schließen</button></div>',m=>{m.dataset.sfInvitation='true'});
+      return;
+    }
+    modal(`<div class="eyebrow">SCHICHTFUNK TEAMZUGANG</div><h2 id="sfUserDialogTitle">Einladung annehmen</h2><p>Nutze genau die E-Mail-Adresse deiner Einladung.</p><label>E-Mail-Adresse<input id="sfTeamRegEmail" type="email"></label><label>Passwort<input id="sfTeamRegPassword" type="password" minlength="8"></label><div id="sfUserMsg" class="sf-user-msg"></div><div class="sf-user-modal-actions"><button class="ghost" data-close>Abbrechen</button><button class="ghost" id="sfTeamRegLogin">Ich habe bereits ein Konto</button><button class="primary" id="sfTeamRegSubmit">Zugang erstellen</button></div>`,m=>{m.dataset.sfInvitation='true';m.querySelector('#sfTeamRegLogin').onclick=()=>{m.__sfClose();B.authDialog?.('login')};m.querySelector('#sfTeamRegSubmit').onclick=async()=>{const email=m.querySelector('#sfTeamRegEmail').value.trim(),password=m.querySelector('#sfTeamRegPassword').value,msg=m.querySelector('#sfUserMsg');if(!email||password.length<8){msg.className='sf-user-msg show bad';msg.textContent='Bitte E-Mail und mindestens acht Passwortzeichen eingeben.';return}try{const {data,error}=await B.client.auth.signUp({email,password,options:{data:{sf_company_invite:raw},emailRedirectTo:base()+'#app'}});if(error)throw error;const u=new URL(location.href);u.searchParams.delete(PARAM);history.replaceState(null,'',u.pathname+(u.search||'')+(u.hash||''));if(data.session){m.remove();await B.boot(data.session)}else{msg.className='sf-user-msg show good';msg.textContent='Zugang erstellt. Bitte bestätige jetzt deine E-Mail.'}}catch(e){msg.className='sf-user-msg show bad';msg.textContent=B.friendlyAuthError?.(e,'Der Teamzugang konnte nicht erstellt werden. Bitte prüfe die Einladung und versuche es erneut.')||'Der Teamzugang konnte nicht erstellt werden.'}}})}
   function register(raw){
+    if(B.__sfMultiRoleInvitesReady===true){registerMulti(raw);return}
     if(B.ready||B.user){
       modal('<div class="eyebrow">SCHICHTFUNK TEAMZUGANG</div><h2 id="sfUserDialogTitle">Einladung annehmen</h2><p>Du bist bereits mit einem anderen Zugang angemeldet.</p><p>Öffne den persönlichen Einladungslink in einem privaten Browserfenster, um den neuen Zugang mit der eingeladenen E-Mail-Adresse einzurichten.</p><div class="sf-user-modal-actions"><button type="button" class="ghost" data-close>Schließen</button></div>',m=>{m.dataset.sfInvitation='true'});
       return;
@@ -144,3 +210,4 @@
   function hookInit(){if(initHooked)return;if(typeof B.init!=='function'){setTimeout(hookInit,120);return}initHooked=true;const init=B.init;B.init=async function(){const raw=new URL(location.href).searchParams.get(PARAM),r=await init.apply(this,arguments);B.showTeamInvitation(raw);return r}}
   B.roleLabels=roles;css();hookInit();
 })();
+
