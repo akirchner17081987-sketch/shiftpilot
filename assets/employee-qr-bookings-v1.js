@@ -48,7 +48,7 @@
     if(B.role!=='EMPLOYEE'||!B.client)return;const who=scope();
     if(owner!==who){owner=who;month=current();data=null;dataMonth='';source='qr';filter='all';visible=10;error=''}
     const card=shell();if(!card)return;const request=++sequence,requestedMonth=month;loading=true;error='';draw(card);
-    try{const result=B.client.__sfDemoLocalClientV1?{data:{employee_id:B.employeeDbId||B.employeePortalData?.employee?.id,month:requestedMonth+'-01',timezone:B.companyTimeZone||'Europe/Berlin',as_of:new Date().toISOString(),rows:[],demo:true}}:await B.client.rpc('employee_my_qr_bookings',{p_month:requestedMonth+'-01'});if(result.error)throw result.error;
+    try{const result=B.client.__sfDemoLocalClientV1?{data:{employee_id:B.employeeDbId||B.employeePortalData?.employee?.id,month:requestedMonth+'-01',timezone:B.companyTimeZone||'Europe/Berlin',as_of:new Date().toISOString(),rows:[],demo:true}}:B.__qaMultiEmployee?await B.client.rpc('qa_employee_qr_bookings_scoped',{p_company:B.companyId,p_month:requestedMonth+'-01'}):await B.client.rpc('employee_my_qr_bookings',{p_month:requestedMonth+'-01'});if(result.error)throw result.error;
       const value=typeof result.data==='string'?JSON.parse(result.data):result.data,employee=B.employeeDbId||B.employeePortalData?.employee?.id;
       if(!value||!Array.isArray(value.rows)||value.month!==requestedMonth+'-01'||!value.timezone||!value.as_of||(employee&&value.employee_id!==employee)||value.rows.some(r=>!r.started_at||!Array.isArray(r.breaks)))throw Error('Unvollständige QR-Buchungen');
       // Validate the database timezone before rendering stored timestamps.
