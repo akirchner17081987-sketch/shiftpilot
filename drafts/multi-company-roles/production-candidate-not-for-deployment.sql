@@ -302,3 +302,29 @@ revoke all on function public.manager_multi_invite_options() from public,anon; g
 revoke all on function public.manager_multi_invite_snapshot(uuid,uuid) from public,anon; grant execute on function public.manager_multi_invite_snapshot(uuid,uuid) to authenticated;
 revoke all on function public.manager_renew_multi_access_invite(uuid,uuid,text,jsonb,text) from public,anon; grant execute on function public.manager_renew_multi_access_invite(uuid,uuid,text,jsonb,text) to authenticated;
 revoke all on function public.manager_revoke_multi_or_single_invite(uuid,uuid) from public,anon; grant execute on function public.manager_revoke_multi_or_single_invite(uuid,uuid) to authenticated;
+
+-- Invitation email: return company names only after verifying access to every target.
+create or replace function private.multi_invite_email_companies(p_company_id uuid,p_invite_id uuid,p_kind text,p_hash text)
+returns text language plpgsql stable security definer set search_path='' as $fn$
+declare g private.multi_company_invitation_groups%rowtype; item jsonb; cid uuid; result text;
+begin
+ if auth.uid() is null or not private.can_manage_company_users(p_company_id) then raise exception 'Nicht berechtigt' using errcode='42501'; end if;
+ perform private.sf_assert_aal2('send_invitation_email');
+ select * into g from private.multi_company_invitation_groups where token_hash=p_hash and claimed_at is null and expires_at>now();
+ if not found then return null; end if;
+ if not exists(select 1 from jsonb_array_elements(g.entries) x where x->>'company_id'=p_company_id::text and x->>'id'=p_invite_id::text and x->>'kind'=p_kind and x->>'hash'=p_hash) then raise exception 'Einladung nicht verfügbar' using errcode='42501'; end if;
+ for item in select value from jsonb_array_elements(g.entries) loop
+  cid:=(item->>'company_id')::uuid;
+  if not private.can_manage_company_users(cid) then raise exception 'Nicht berechtigt' using errcode='42501'; end if;
+  if item->>'kind'='teamInvite' and exists(select 1 from public.company_member_invites i where i.id=(item->>'id')::uuid and i.company_id=cid and i.access_role='ADMIN')
+   and not exists(select 1 from public.company_members m where m.company_id=cid and m.user_id=auth.uid() and m.status='ACTIVE' and m.role='OWNER' and m.access_role='OWNER') then raise exception 'Nur der Inhaber darf Administratoren einladen' using errcode='42501'; end if;
+ end loop;
+ select string_agg(c.name,', ' order by c.name) into result from public.companies c where c.id in (select (x->>'company_id')::uuid from jsonb_array_elements(g.entries) x);
+ return result;
+end $fn$;
+create or replace function public.multi_invite_email_companies(p_company_id uuid,p_invite_id uuid,p_kind text,p_hash text)
+returns text language sql stable set search_path='' as $fn$ select private.multi_invite_email_companies(p_company_id,p_invite_id,p_kind,p_hash) $fn$;
+revoke all on function private.multi_invite_email_companies(uuid,uuid,text,text) from public,anon;
+revoke all on function public.multi_invite_email_companies(uuid,uuid,text,text) from public,anon;
+grant execute on function private.multi_invite_email_companies(uuid,uuid,text,text) to authenticated;
+grant execute on function public.multi_invite_email_companies(uuid,uuid,text,text) to authenticated;
