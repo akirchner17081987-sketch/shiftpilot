@@ -108,17 +108,37 @@
       }
     };
   }
+  let employeeOwner = '';
+  const employeeIdentity = () => [B.user?.id,B.companyId,B.employeeDbId,B.client].join('|');
   async function rpc(name, args = {}) {
     if (!B.client) throw Error("Cloud-Verbindung ist noch nicht bereit.");
+    if(B.__sfMultiEmployee && B.role==="EMPLOYEE" && name.startsWith("employee_")){
+      const p_company=B.companyId;if(!p_company)throw Error("Kein Unternehmen ausgewählt.");
+      const routes={
+        employee_list_shift_marketplace:["employee_company_list_marketplace",{}],
+        employee_list_open_shift_market:["employee_company_open_market",{p_action:"employee_list"}],
+        employee_offer_shift_marketplace:["employee_company_offer_market",{p_assignment:args.p_assignment_id,p_reason:args.p_reason}],
+        employee_claim_shift_marketplace:["employee_company_claim_market",{p_offer:args.p_offer_id,p_comment:args.p_comment}],
+        employee_claim_open_shift:["employee_company_open_market",{p_action:"employee_claim",p_id:args.p_offer_id,p_note:args.p_comment}],
+        employee_cancel_open_shift_claim:["employee_company_open_market",{p_action:"employee_cancel",p_id:args.p_claim_id}],
+        employee_cancel_shift_swap:["employee_company_cancel_swap",{p_swap:args.p_swap_id}]
+      };
+      const route=routes[name];if(!route)throw Error("Aktion nicht verfügbar.");
+      name=route[0];args={p_company,...route[1]};
+    }
     const q = await B.client.rpc(name, args);
     if (q.error) throw q.error;
     return q.data;
   }
   async function employeeLoad() {
-    if (employeeBusy || B.role !== "EMPLOYEE") return;
+    if (B.role !== "EMPLOYEE") return;
+    const current=employeeIdentity();
+    if(employeeOwner!==current){employeeOwner=current;rows=[];document.getElementById("sfMarketEmployee")?.remove();}
+    if(employeeBusy)return;
     employeeBusy = true;
     try {
       const [legacy, open] = await Promise.all([rpc("employee_list_shift_marketplace"), window.__sfDemoCloudAdapterV2 ? Promise.resolve([]) : rpc("employee_list_open_shift_market")]);
+      if(employeeOwner!==current||employeeIdentity()!==current||B.role!=="EMPLOYEE")return;
       const next = [...(legacy || []), ...(open || [])];
       const unchanged = JSON.stringify(next) === JSON.stringify(rows);
       rows = next;
@@ -127,10 +147,10 @@
       else
         addOfferButtons();
     } catch (e) {
-      console.warn("Marktplatz", e);
-      renderEmployeeError(e);
+      if(employeeOwner===current&&employeeIdentity()===current&&B.role==="EMPLOYEE"){console.warn("Marktplatz", e);renderEmployeeError(e)}
     } finally {
       employeeBusy = false;
+      if(B.role==="EMPLOYEE"&&employeeIdentity()!==current)setTimeout(employeeLoad,0);
     }
   }
   function upcoming() {
@@ -194,6 +214,7 @@
     });
   }
   function renderEmployee() {
+    if(B.__sfMultiEmployee&&employeeOwner!==employeeIdentity()){employeeOwner=employeeIdentity();rows=[];}
     const root = document.getElementById("sfEmployeePortal");
     if (!root) return;
     css();
