@@ -3,6 +3,8 @@
   const B=window.SFBackend=window.SFBackend||{};
   B.projectUrl='https://ifgemrtvnmyqaidlxgxb.supabase.co';
   B.publishableKey='sb_publishable_mU4Sl7MpBveN4HGOhZJ73Q_8Ey1hkak';
+  if(B.projectUrl!=='https://ifgemrtvnmyqaidlxgxb.supabase.co')throw new Error('QA project mismatch');
+  B.__sfMultiRoleInvitesReady=true;B.__sfEmployeeMultiCompanyReady=true;
   B.ready=false;B.user=null;B.companyId=null;B.role=null;B.client=null;B.pendingView='overview';B.pendingCompanyName=sessionStorage.getItem('sf_pending_company')||'Mein Unternehmen';
   // Temporary production gate: only existing, authenticated SchichtFunk accounts may enter.
   B.loginOnly=true;

@@ -59,7 +59,7 @@
     'assets/employee-shifts-month-v1.js',
     'assets/time-only-access-v1.js',
     'assets/access-profiles-v1.js',
-    'assets/qa-employee-multi-switch.js','assets/qa-full-employee-portal.js',
+    'assets/employee-company-switch-v1.js','assets/qa-full-employee-portal.js',
     'assets/supabase-time-month-close-v1.js',
     'assets/time-month-picker-v1.js',
     'assets/time-workspace-v2.js',
