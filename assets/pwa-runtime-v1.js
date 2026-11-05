@@ -35,7 +35,7 @@
     if(busy||document.hidden||navigator.onLine===false){paint();return}
     busy=true;paint();const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),8000);
     try{
-      const response=await fetch('/pwa-release.json',{cache:'no-store',credentials:'omit',signal:controller.signal});
+      const response=await fetch('/pwa-release.json',{cache:'no-store',credentials:'same-origin',signal:controller.signal});
       if(!response.ok){if(response.status>=500)throw new Error('service unavailable');failed=false;return;}
       const release=await response.json().catch(()=>null);
       // A missing/malformed version marker is not evidence of a connection outage.
