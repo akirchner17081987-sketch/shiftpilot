@@ -34,6 +34,7 @@
     if(B.user?.id!==userId)throw fail('Die Anmeldung hat sich geändert. Bitte erneut anmelden.');
     B.__qaMultiEmployee=true;B.__qaMultiOptions=available;B.__qaMultiProfile=data;
     B.companyId=choice.company_id;B.employeeDbId=choice.employee_id;B.employeeRecord=data.employee;B.role='EMPLOYEE';
+    B.accessRole='EMPLOYEE';B.accessPermissions=[];B.accessProfileCompany=choice.company_id;B.personnelConversationEmployeeIds=[];B.personnelConversationExcludedEmployeeIds=[];B.personnelConversationScope=null;
     saveChoice(choice.company_id);
   };
   B.hydrateEmployee=async function(){
@@ -61,7 +62,7 @@
         if(!choice)throw fail('Dieses Unternehmen ist nicht mehr freigegeben.');
         const data=await profile(choice);
         if(B.user?.id!==userId)throw fail('Die Anmeldung hat sich geändert. Bitte erneut anmelden.');
-        B.__qaMultiOptions=available;B.__qaMultiProfile=data;B.companyId=choice.company_id;B.employeeDbId=choice.employee_id;B.employeeRecord=data.employee;B.employeePortalData={employee:data.employee,company:data.company};saveChoice(choice.company_id);render();status.textContent='Unternehmen gewechselt.';
+        B.__qaMultiOptions=available;B.__qaMultiProfile=data;B.companyId=choice.company_id;B.employeeDbId=choice.employee_id;B.employeeRecord=data.employee;B.accessProfileCompany=choice.company_id;B.employeePortalData={employee:data.employee,company:data.company};saveChoice(choice.company_id);render();status.textContent='Unternehmen gewechselt.';
       }catch(e){select.value=previous;status.textContent=e.message||'Unternehmen konnte nicht gewechselt werden.'}
       finally{select.disabled=false}
     };
