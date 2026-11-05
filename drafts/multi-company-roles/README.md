@@ -81,3 +81,10 @@ Dies bestätigt ausschließlich die isolierte Datenbankintegration. Der End-to-E
 - Neu geprüft: gemeinsame Einladung mit Mitarbeiterrolle und Administratorrolle und anschließende Freigabe eines weiteren Mitarbeiterprofils; positiver Antrag und Planerfreigabe eines offenen Dienstes mit korrektem Mitarbeitereintrag sowie Ablehnung eines Dienstes aus dem anderen Unternehmen.
 - Die Tests benutzen QA-Funktionen und ein abweichendes QA-Schema. Sie belegen keine vollständige Integration auf produktionsgleichem Schema und keinen echten Auth-, E-Mail- oder Browserablauf.
 - `release-and-rollback-plan.md` dokumentiert den lesenden Produktionsabgleich, offene Freigabebedingungen und insbesondere, dass der globale Profilindex nach Anlegen von Mehrfachprofilen nicht blind zurückgesetzt werden kann.
+
+
+## Zusammengeführter Migrationsentwurf
+
+`unified-migration-review.sql` vereint die 22 SQL-Kandidaten und die zusätzliche Zugangsprüfung bei der Dienstfreigabe. Der Entwurf bricht absichtlich ab und ist nicht produktiv ausführbar. Die beiden mehrfach definierten Funktionen wurden auf jeweils eine Fassung bereinigt.
+
+Der kombinierte Installations- und der Einladungs-/Sperrungstest liefen in QA unter zurückgerollter Transaktion mit ausdrücklich dokumentierten Anpassungen an das abweichende QA-Schema. Der positive Dienstübernahmetest mit der Gesamtfassung wird durch die in QA fehlende produktive Funktion `private.sf_regional_day_allowed` blockiert. Einzelheiten und ausstehende Schritte stehen in `unified-migration-review-notes.md`.
