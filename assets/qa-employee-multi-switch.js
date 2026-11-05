@@ -21,6 +21,7 @@
     const requests=[
       ['time','qa_employee_time_account_scoped',{p_company:company,p_month:null}],
       ['qr','qa_employee_qr_bookings_scoped',{p_company:company,p_month:null}],
+      ['absences','qa_employee_absences_scoped',{p_company:company}],
       ['swaps','qa_employee_list_shift_swaps_scoped',{p_company:company}],
       ['market','qa_employee_list_shift_marketplace_scoped',{p_company:company}],
       ['offers','qa_employee_list_disruption_offers_scoped',{p_company:company}]
@@ -64,8 +65,9 @@
     if(!B.__qaMultiEmployee)return open.apply(this,arguments);
     document.getElementById('sfQaEmployeePortal')?.remove();
     const root=document.createElement('div');root.id='sfQaEmployeePortal';
-    root.innerHTML='<header><strong>SchichtFunk</strong><button type="button" id="qaLogout">Abmelden</button></header><main><p class="qa-label">GETRENNTE TESTUMGEBUNG · LESEANSICHT</p><h1>Mitarbeiterportal</h1><p>Unternehmenswechsel und Profilzuordnung prüfen</p><label for="qaCompany">Unternehmen wechseln</label><select id="qaCompany"></select><p id="qaSwitchStatus" role="status" aria-live="polite"></p><section><h2>Mein Mitarbeiterprofil</h2><dl><dt>Unternehmen</dt><dd id="qaCompanyName"></dd><dt>Name</dt><dd id="qaPerson"></dd><dt>Personalnummer</dt><dd id="qaPersonnel"></dd></dl></section><section><h2>Meine Zeiten</h2><p>Aktueller Monat</p><dl><dt>Sollzeit</dt><dd id="qaTarget"></dd><dt>Bestätigte Arbeitszeit</dt><dd id="qaWorked"></dd><dt>QR-Buchungen</dt><dd id="qaQrCount"></dd></dl></section><section><h2>Meine Anfragen</h2><dl><dt>Schichttausch</dt><dd id="qaSwapCount"></dd><dt>Schichtmarkt</dt><dd id="qaMarketCount"></dd><dt>Ersatzangebote</dt><dd id="qaOfferCount"></dd></dl></section><p>Weitere Portalfunktionen werden für mehrere Profile noch geprüft.</p></main>';
+    root.innerHTML='<header><strong>SchichtFunk</strong><button type="button" id="qaLogout">Abmelden</button></header><main><p class="qa-label">GETRENNTE TESTUMGEBUNG</p><h1>Mitarbeiterportal</h1><p>Bitte ausschließlich fiktive Testdaten verwenden.</p><label for="qaCompany">Unternehmen wechseln</label><select id="qaCompany"></select><p id="qaSwitchStatus" role="status" aria-live="polite"></p><section><h2>Mein Mitarbeiterprofil</h2><dl><dt>Unternehmen</dt><dd id="qaCompanyName"></dd><dt>Name</dt><dd id="qaPerson"></dd><dt>Personalnummer</dt><dd id="qaPersonnel"></dd></dl></section><section><h2>Meine Zeiten</h2><p>Aktueller Monat</p><dl><dt>Sollzeit</dt><dd id="qaTarget"></dd><dt>Bestätigte Arbeitszeit</dt><dd id="qaWorked"></dd><dt>QR-Buchungen</dt><dd id="qaQrCount"></dd></dl></section><section><h2>Abwesenheiten</h2><ul id="qaAbsenceList"></ul><form id="qaAbsenceForm"><fieldset id="qaAbsenceFields"><legend>Testantrag erstellen</legend><label for="qaAbsenceType">Art</label><select id="qaAbsenceType"><option>Urlaub</option><option>Frei</option><option>Fortbildung</option><option>Sonstiges</option></select><label for="qaAbsenceFrom">Von</label><input id="qaAbsenceFrom" type="date" required><label for="qaAbsenceTo">Bis</label><input id="qaAbsenceTo" type="date" required><button type="submit">Testantrag senden</button></fieldset><p id="qaAbsenceStatus" role="status" aria-live="polite"></p></form></section><section><h2>Meine Anfragen</h2><dl><dt>Schichttausch</dt><dd id="qaSwapCount"></dd><dt>Schichtmarkt</dt><dd id="qaMarketCount"></dd><dt>Ersatzangebote</dt><dd id="qaOfferCount"></dd></dl></section><p>Weitere Portalfunktionen werden für mehrere Profile noch geprüft.</p></main>';
     const style=document.createElement('style');style.textContent='#sfQaEmployeePortal{position:fixed;inset:0;z-index:22000;overflow:auto;background:#071321;color:#edf8ff;font:16px system-ui,sans-serif}#sfQaEmployeePortal header{display:flex;justify-content:space-between;align-items:center;padding:18px 6%;background:#0c2031;border-bottom:1px solid #24475a}#sfQaEmployeePortal main{max-width:760px;margin:38px auto;padding:0 22px}#sfQaEmployeePortal h1{font-size:30px}#sfQaEmployeePortal .qa-label{color:#6ce0c9;font-weight:700;letter-spacing:.08em;font-size:12px}#sfQaEmployeePortal select,#sfQaEmployeePortal button{font:inherit;border:1px solid #47798a;border-radius:9px;padding:10px;color:#fff;background:#102f40}#sfQaEmployeePortal select{display:block;width:100%;margin-top:8px}#sfQaEmployeePortal section{margin-top:22px;padding:20px;border:1px solid #274a5c;border-radius:15px;background:#0d2131}#sfQaEmployeePortal dl{display:grid;grid-template-columns:160px 1fr;gap:14px;margin-bottom:0}#sfQaEmployeePortal dt{color:#a2bbca}#sfQaEmployeePortal dd{margin:0;overflow-wrap:anywhere}@media(max-width:480px){#sfQaEmployeePortal dl{grid-template-columns:1fr;gap:5px}#sfQaEmployeePortal dd{margin-bottom:10px}}';root.appendChild(style);
+    style.textContent+='#sfQaEmployeePortal #qaAbsenceFields{display:grid;gap:9px;border:1px solid #274a5c;border-radius:10px;padding:14px}#sfQaEmployeePortal input{font:inherit;border:1px solid #47798a;border-radius:9px;padding:10px;color:#fff;background:#102f40}#sfQaEmployeePortal #qaAbsenceFields select{margin:0}#sfQaEmployeePortal #qaAbsenceFields button{margin-top:8px}';
     document.body.appendChild(root);
     const select=root.querySelector('#qaCompany'),status=root.querySelector('#qaSwitchStatus');
     function render(){
@@ -75,6 +77,9 @@
       const info=B.__qaMultiDetails||{},hours=v=>v!==null&&v!==undefined&&Number.isFinite(Number(v))?(Number(v)/60).toLocaleString('de-DE',{maximumFractionDigits:2})+' Std.':'Nicht verfügbar',count=v=>Array.isArray(v)?String(v.length):'Nicht verfügbar';
       root.querySelector('#qaTarget').textContent=info.time?hours(info.time.target_minutes):'Nicht verfügbar';root.querySelector('#qaWorked').textContent=info.time?hours(info.time.confirmed_work_minutes):'Nicht verfügbar';root.querySelector('#qaQrCount').textContent=count(info.qr?.rows);
       root.querySelector('#qaSwapCount').textContent=count(info.swaps);root.querySelector('#qaMarketCount').textContent=count(info.market);root.querySelector('#qaOfferCount').textContent=count(info.offers);
+      const list=root.querySelector('#qaAbsenceList');list.replaceChildren();
+      if(!Array.isArray(info.absences)||!info.absences.length){const li=document.createElement('li');li.textContent=Array.isArray(info.absences)?'Keine Abwesenheiten vorhanden.':'Abwesenheiten sind momentan nicht verfügbar.';list.append(li)}
+      else info.absences.forEach(a=>{const li=document.createElement('li');li.textContent=[a.absence_type,a.start_date===a.end_date?a.start_date:`${a.start_date} – ${a.end_date}`,a.status].filter(Boolean).join(' · ');list.append(li)});
     }
     render();
     select.onchange=async()=>{
@@ -87,6 +92,19 @@
         B.__qaMultiOptions=available;B.__qaMultiProfile=data;B.__qaMultiDetails=info;B.companyId=choice.company_id;B.employeeDbId=choice.employee_id;B.employeeRecord=data.employee;B.accessProfileCompany=choice.company_id;B.employeePortalData={employee:data.employee,company:data.company};saveChoice(choice.company_id);render();status.textContent='Unternehmen gewechselt.';
       }catch(e){select.value=previous;status.textContent=e.message||'Unternehmen konnte nicht gewechselt werden.'}
       finally{select.disabled=false}
+    };
+    root.querySelector('#qaAbsenceForm').onsubmit=async event=>{
+      event.preventDefault();const company=B.companyId,userId=B.user?.id,status=root.querySelector('#qaAbsenceStatus'),fields=root.querySelector('#qaAbsenceFields');
+      const from=root.querySelector('#qaAbsenceFrom').value,to=root.querySelector('#qaAbsenceTo').value,type=root.querySelector('#qaAbsenceType').value;
+      if(!from||!to||to<from){status.textContent='Bitte einen gültigen Zeitraum auswählen.';return}
+      fields.disabled=true;select.disabled=true;status.textContent='Testantrag wird gesendet …';let saved=false;
+      try{
+        const q=await B.client.rpc('qa_submit_absence_scoped',{p_company:company,p_absence_type:type,p_start_date:from,p_end_date:to,p_note:'',p_full_day:true,p_start_time:null,p_end_time:null,p_time_note:''});if(q.error)throw q.error;saved=true;
+        const choice=B.__qaMultiOptions.find(x=>String(x.company_id)===String(company));if(!choice||B.user?.id!==userId||B.companyId!==company)throw fail('Das Unternehmen wurde während des Speicherns gewechselt.');
+        const info=await details(choice);if(B.user?.id!==userId||B.companyId!==company)throw fail('Das Unternehmen wurde während des Ladens gewechselt.');
+        B.__qaMultiDetails=info;render();event.target.reset();status.textContent='Testantrag gespeichert.';
+      }catch(e){status.textContent=saved?'Testantrag gespeichert, aber die Übersicht konnte nicht aktualisiert werden.':(e.message||'Testantrag konnte nicht gespeichert werden.')}
+      finally{fields.disabled=false;select.disabled=false}
     };
     root.querySelector('#qaLogout').onclick=async event=>{const btn=event.currentTarget,storageKey=key();btn.disabled=true;try{const q=await B.client.auth.signOut();if(q.error)throw q.error;try{sessionStorage.removeItem(storageKey)}catch{}root.remove();location.reload()}catch(e){status.textContent=e.message||'Abmelden fehlgeschlagen.';btn.disabled=false}};
   };
