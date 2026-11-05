@@ -1,0 +1,30 @@
+do $test$
+declare u uuid:=gen_random_uuid(); other uuid:=gen_random_uuid(); a uuid:=gen_random_uuid(); b uuid:=gen_random_uuid(); c uuid:=gen_random_uuid(); ea uuid:=gen_random_uuid(); eb uuid:=gen_random_uuid(); oa uuid:=gen_random_uuid(); ob uuid:=gen_random_uuid(); ca uuid:=gen_random_uuid(); cb uuid:=gen_random_uuid(); rows jsonb; result jsonb; denied boolean;
+begin
+ insert into auth.users(id,email,raw_user_meta_data) values(u,'qa-market-'||u::text||'@example.invalid','{}'),(other,'qa-market-other-'||other::text||'@example.invalid','{}');
+ insert into public.companies(id,name,created_by) values(a,'QA A',u),(b,'QA B',u),(c,'QA C',other);
+ insert into public.employees(id,company_id,first_name,last_name,personnel_no,auth_user_id,access_status) values(ea,a,'QA','A','A',u,'ACTIVE'),(eb,b,'QA','B','B',u,'ACTIVE');
+ insert into public.open_shift_market_offers(id,company_id,work_date,shift_code,starts_at,ends_at,remaining_count,status,created_by) values(oa,a,'2030-01-01','O1','2030-01-01 08:00Z','2030-01-01 16:00Z',0,'FILLED',u),(ob,b,'2030-01-02','O1','2030-01-02 08:00Z','2030-01-02 16:00Z',0,'FILLED',u);
+ insert into public.open_shift_market_claims(id,offer_id,company_id,employee_id,requested_by) values(ca,oa,a,ea,u),(cb,ob,b,eb,u);
+ perform set_config('request.jwt.claim.sub',u::text,true);
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'aal','aal1','role','authenticated')::text,true);
+ perform set_config('role','authenticated',true);
+ rows:=public.qa_open_market_scoped(a,'employee_list');
+ if jsonb_array_length(rows)<>1 or rows->0->>'id'<>ca::text then raise exception 'Wrong company A market'; end if;
+ rows:=public.qa_open_market_scoped(b,'employee_list');
+ if jsonb_array_length(rows)<>1 or rows->0->>'id'<>cb::text then raise exception 'Wrong company B market'; end if;
+ denied:=false;begin perform public.qa_open_market_scoped(c,'employee_list');exception when insufficient_privilege then denied:=true;end;
+ if not denied then raise exception 'Foreign company market accessible'; end if;
+ denied:=false;begin perform public.qa_open_market_scoped(a,'review',ca);exception when insufficient_privilege then denied:=true;end;
+ if not denied then raise exception 'Manager action accepted'; end if;
+ result:=public.qa_open_market_scoped(b,'employee_cancel',cb);
+ if result->>'status'<>'CANCELLED' then raise exception 'Own claim cancellation failed'; end if;
+ perform set_config('role','postgres',true);
+ update public.employees set access_status='DISABLED' where id=eb;
+ perform set_config('role','authenticated',true);
+ denied:=false;begin perform public.qa_open_market_scoped(b,'employee_list');exception when insufficient_privilege then denied:=true;end;
+ if not denied then raise exception 'Disabled company market accessible'; end if;
+ rows:=public.employee_list_open_shift_market();
+ if jsonb_array_length(rows)<>1 or rows->0->>'id'<>ca::text then raise exception 'Legacy single active profile market failed'; end if;
+ perform set_config('role','postgres',true);
+end $test$;
