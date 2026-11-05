@@ -4,6 +4,7 @@
   const B=window.SFBackend;
   if(!B || typeof B.ensureCompany!=='function' || typeof B.hydrateEmployee!=='function' || typeof B.openEmployeePortal!=='function')return;
   const ensure=B.ensureCompany,hydrate=B.hydrateEmployee,open=B.openEmployeePortal;
+  B.__qaOriginalEmployeeHydrate=hydrate;B.__qaOriginalEmployeeOpen=open;
   const key=()=>`sfQaEmployeeCompany:${B.user?.id||''}`;
   const readChoice=()=>{try{return sessionStorage.getItem(key())||''}catch{return ''}};
   const saveChoice=id=>{try{sessionStorage.setItem(key(),id)}catch{}};
