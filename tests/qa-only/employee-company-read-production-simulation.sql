@@ -23,7 +23,7 @@ alter policy time_entries_select on public.time_entries using (
  where sa.id=time_entries.assignment_id and sa.company_id=time_entries.company_id and e.auth_user_id=(select auth.uid()) and e.status='active' and e.access_status='ACTIVE' and e.deleted_at is null)
 );
 
-alter policy sf_employee_active_read on public.employees using (private.sf_is_manager(company_id,false) or (auth_user_id=(select auth.uid()) and status='active' and access_status='ACTIVE' and deleted_at is null));
+alter policy sf_employee_active_read on public.employees using (private.sf_is_manager(company_id,false) or (auth_user_id=(select auth.uid()) and status='active' and access_status='ACTIVE' and deleted_at is null and not exists(select 1 from public.company_members m where m.company_id=employees.company_id and m.user_id=(select auth.uid()) and (m.status<>'ACTIVE' or m.role in ('VIEWER','TIME_TRACKING') or 'read_only'=any(m.extra_permissions)))));
 alter policy sf_assignment_active_read on public.shift_assignments using (private.sf_is_manager(company_id,false) or exists(select 1 from public.employees e where e.id=shift_assignments.employee_id and e.company_id=shift_assignments.company_id and e.auth_user_id=(select auth.uid()) and e.status='active' and e.access_status='ACTIVE' and e.deleted_at is null));
 alter policy sf_time_capability_read on public.time_entries using (private.sf_can_manage_time(company_id) or exists(select 1 from public.shift_assignments sa join public.employees e on e.id=sa.employee_id and e.company_id=sa.company_id where sa.id=time_entries.assignment_id and sa.company_id=time_entries.company_id and e.auth_user_id=(select auth.uid()) and e.status='active' and e.access_status='ACTIVE' and e.deleted_at is null));
 
@@ -43,6 +43,16 @@ begin
  select count(*) into n from public.employees where id in (ea,eb); if n<>2 then raise exception 'Both active profiles must be visible'; end if;
  select count(*) into n from public.shift_assignments where id in (sa,sb); if n<>2 then raise exception 'Both active company shifts must be visible'; end if;
  select count(*) into n from public.time_entries where assignment_id in (sa,sb); if n<>2 then raise exception 'Both active company time entries must be visible'; end if;
+ perform set_config('role','postgres',true);
+ insert into public.company_members(company_id,user_id,role,access_role,status,extra_permissions) values(b,u,'VIEWER','TEAM_LEAD','DISABLED',array['read_only']);
+ perform set_config('role','authenticated',true);
+ select count(*) into n from public.employees where id=eb; if n<>0 then raise exception 'Disabled membership exposed profile'; end if;
+ select count(*) into n from public.shift_assignments where id=sb; if n<>0 then raise exception 'Disabled membership exposed shift'; end if;
+ select count(*) into n from public.time_entries where assignment_id=sb; if n<>0 then raise exception 'Disabled membership exposed time'; end if;
+ perform set_config('role','postgres',true);
+ update public.company_members set status='ACTIVE' where company_id=b and user_id=u;
+ perform set_config('role','authenticated',true);
+ select count(*) into n from public.employees where id=eb; if n<>0 then raise exception 'Viewer membership exposed profile'; end if;
  perform set_config('role','postgres',true);
  update public.employees set access_status='DISABLED' where id=eb;
  perform set_config('role','authenticated',true);
