@@ -21,3 +21,6 @@ Still required: integrate selected company throughout the full employee portal; 
 
 
 QA full portal harness: `qa_vollportal=1` is an opt-in test path. Portal hydration stages data before committing the selected company; isolated browser tests with mocked services check late responses and rollback. Time submissions are routed through the company-scoped QA endpoint. Full end-to-end and production authorization coverage remain incomplete; do not use real personnel data or release this branch.
+
+
+Additional QA guards ensure legacy list and absence calls do not select a revoked profile. The employee-profile access button can open an invitation for a not-yet-linked employee. Multi-profile invitation RPC access remains revoked; do not enable until the complete portal and release checks are verified.

@@ -116,7 +116,11 @@
     if(!employeeId)throw Error('Bitte den Mitarbeiter zuerst speichern.');
     assertCompany(companyId);await load(companyId);assertCompany(companyId);
     const r=rows.find(x=>x.kind==='EMPLOYEE'&&String(x.employee_id)===String(employeeId));
-    if(!r)throw Error('Für diesen Mitarbeiter ist noch kein Mitarbeiterkonto verknüpft.');
+    if(!r){
+      const candidate=employeeChoices.find(x=>String(x.id)===String(employeeId));
+      if(!candidate)throw Error('Für diesen Mitarbeiter ist kein verfügbarer Mitarbeiterzugang vorhanden.');
+      invite(candidate.email||'','EMPLOYEE',document.createElement('div'),false,[],employeeId);return;
+    }
     editEmployeeCompanies(r,null);
   };
   function editRole(r,host){if(!r||r.role==='OWNER'||r.is_self||!canAdminister(r))return;const companyId=B.companyId;
