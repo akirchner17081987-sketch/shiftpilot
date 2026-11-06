@@ -46,7 +46,7 @@ begin
   elsif item->>'kind'='teamInvite' then
    select * into ci from public.company_member_invites where id=invite_id and company_id=company and token_hash=expected and lower(email)=mail and expires_at>now() and status='INVITED' for update;
    if not found then raise exception 'Ein Teamzugang der Einladung ist nicht mehr verfügbar'; end if;
-   if ci.role='ADMIN' then insert into private.sf_multi_claim_context(txid,user_id,company_id,invite_id) values(pg_catalog.txid_current(),uid_,company,ci.id); end if;
+   if ci.role='ADMIN' or (ci.access_role='TEAM_LEAD' and ci.employee_id is not null) then insert into private.sf_multi_claim_context(txid,user_id,company_id,invite_id) values(pg_catalog.txid_current(),uid_,company,ci.id); end if;
    insert into public.company_members(company_id,user_id,role,status,access_role,extra_permissions) values(company,uid_,ci.role,'ACTIVE',ci.access_role,ci.extra_permissions) on conflict do nothing;
    if not found then raise exception 'Für dieses Unternehmen besteht bereits ein Zugang'; end if;
    if ci.employee_id is not null then
