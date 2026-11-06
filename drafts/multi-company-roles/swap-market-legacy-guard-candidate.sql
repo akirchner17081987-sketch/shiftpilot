@@ -12,7 +12,6 @@ declare
   v_reason text;
   v_id uuid;
 begin
-  PERFORM private.sf_require_active_employee_access();
   if private.sf_has_time_only_login() then raise exception 'Dieser Zugang ist nur fuer die Zeiterfassung berechtigt'; end if;
   if v_uid is null then raise exception 'Nicht angemeldet'; end if;
   select * into a from public.shift_assignments where id=p_assignment_id for update;
@@ -51,7 +50,6 @@ CREATE OR REPLACE FUNCTION private.employee_offer_shift_marketplace_impl(p_assig
 AS $function$
 declare v_uid uuid:=auth.uid(); a public.shift_assignments%rowtype; e public.employees%rowtype; v_id uuid;
 begin
-  PERFORM private.sf_require_active_employee_access();
   if private.sf_has_time_only_login() then raise exception 'Dieser Zugang ist nur fuer die Zeiterfassung berechtigt'; end if;
   if v_uid is null then raise exception 'Nicht angemeldet'; end if;
   select * into a from public.shift_assignments where id=p_assignment_id for update;
@@ -80,13 +78,11 @@ CREATE OR REPLACE FUNCTION private.employee_claim_shift_marketplace_impl(p_offer
 AS $function$
 declare v_uid uuid:=auth.uid(); v_emp public.employees%rowtype; s public.shift_swap_requests%rowtype; a public.shift_assignments%rowtype; v_reason text;
 begin
-  PERFORM private.sf_require_active_employee_access();
   if private.sf_has_time_only_login() then raise exception 'Dieser Zugang ist nur fuer die Zeiterfassung berechtigt'; end if;
   if v_uid is null then raise exception 'Nicht angemeldet'; end if;
   select * into s from public.shift_swap_requests where id=p_offer_id for update;
   if s.id is null or s.status<>'MARKET_OPEN' then raise exception 'Dieses Angebot ist nicht mehr verfügbar'; end if;
-  perform private.sf_employee_identity_for_company(s.company_id);
-  select * into v_emp from public.employees where auth_user_id=v_uid and company_id=s.company_id and status='active' limit 1;
+  select * into v_emp from public.employees where id=private.sf_employee_identity_for_company(s.company_id) and company_id=s.company_id;
   if v_emp.id is null then raise exception 'Kein aktiver Mitarbeiterzugang gefunden'; end if;
   if v_emp.id=s.original_employee_id then raise exception 'Eigene Schichten können nicht übernommen werden'; end if;
   select * into a from public.shift_assignments where id=s.assignment_id for update;
@@ -117,7 +113,6 @@ declare
   v_reason text;
   v_status text;
 begin
-  PERFORM private.sf_require_active_employee_access();
   if private.sf_has_time_only_login() then raise exception 'Dieser Zugang ist nur fuer die Zeiterfassung berechtigt'; end if;
   if v_uid is null then raise exception 'Nicht angemeldet'; end if;
   if v_decision not in ('APPROVE','REJECT') then raise exception 'Ungültige Entscheidung'; end if;
