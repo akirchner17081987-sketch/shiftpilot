@@ -112,9 +112,9 @@
         list.innerHTML=options.map(item=>{
           const current=item.company_id===source,chosen=current?role:'EMPLOYEE';
           const staff=(item.employees||[]).map(e=>`<option value="${esc(e.id)}" ${current&&String(e.id)===String(employeeId)?'selected':''}>${esc(e.name)}${e.email?' · '+esc(e.email):''}</option>`).join('');
-          return `<fieldset data-multi-company="${esc(item.company_id)}"><legend>${esc(item.company_name)}</legend><label class="sf-access-check"><input type="checkbox" data-company-enabled ${current?'checked disabled':''}><span>${current?'Aktuelles Unternehmen (erforderlich)':'Zugang freigeben'}</span></label><label>Rolle<select data-company-role><option value="EMPLOYEE" ${chosen==='EMPLOYEE'?'selected':''}>Mitarbeiter</option><option value="TEAM_LEAD" ${chosen==='TEAM_LEAD'?'selected':''}>Teamleiter</option>${item.can_invite_admin?'<option value="ADMIN" '+(chosen==='ADMIN'?'selected':'')+'>Administrator</option>':''}</select></label><label data-employee-label>Mitarbeiterprofil<select data-company-employee><option value="">Bitte auswählen</option>${staff}</select></label></fieldset>`;
+          return `<fieldset data-multi-company="${esc(item.company_id)}"><legend>${esc(item.company_name)}</legend><label class="sf-access-check"><input type="checkbox" data-company-enabled ${current?'checked disabled':''}><span>${current?'Aktuelles Unternehmen (erforderlich)':'Zugang freigeben'}</span></label><label>Rolle<select data-company-role><option value="EMPLOYEE" ${chosen==='EMPLOYEE'?'selected':''}>Mitarbeiter</option><option value="TEAM_LEAD" ${chosen==='TEAM_LEAD'?'selected':''}>Teamleiter</option>${item.can_invite_admin?'<option value="ADMIN" '+(chosen==='ADMIN'?'selected':'')+'>Administrator</option>':''}</select></label><label data-employee-label><span data-employee-title>Mitarbeiterprofil</span><select data-company-employee><option value="">Bitte auswählen</option>${staff}</select></label></fieldset>`;
         }).join('')||'<p>Keine verwaltbaren Unternehmen gefunden.</p>';
-        sync=()=>{for(const field of list.querySelectorAll('[data-multi-company]')){const active=field.querySelector('[data-company-enabled]').checked,roleField=field.querySelector('[data-company-role]'),label=field.querySelector('[data-employee-label]'),profile=field.querySelector('[data-company-employee]');field.querySelector('[data-company-enabled]').disabled=field.dataset.multiCompany===source;roleField.disabled=!active;label.hidden=roleField.value!=='EMPLOYEE';profile.disabled=!active||roleField.value!=='EMPLOYEE'}};
+        sync=()=>{for(const field of list.querySelectorAll('[data-multi-company]')){const active=field.querySelector('[data-company-enabled]').checked,roleField=field.querySelector('[data-company-role]'),label=field.querySelector('[data-employee-label]'),profile=field.querySelector('[data-company-employee]');field.querySelector('[data-company-enabled]').disabled=field.dataset.multiCompany===source;roleField.disabled=!active;label.hidden=roleField.value==='ADMIN';profile.disabled=!active||roleField.value==='ADMIN';label.querySelector('[data-employee-title]').textContent=roleField.value==='TEAM_LEAD'?'Mitarbeiterprofil (optional)':'Mitarbeiterprofil'}};
         list.querySelectorAll('[data-company-enabled],[data-company-role]').forEach(el=>el.addEventListener('change',sync));sync();
       };
       (async()=>{try{
@@ -147,7 +147,7 @@
           if(!field.querySelector('[data-company-enabled]').checked)continue;
           const chosen=field.querySelector('[data-company-role]').value,profile=field.querySelector('[data-company-employee]').value;
           if(chosen==='EMPLOYEE'&&!profile){message(m,'Bitte für jedes Unternehmen mit Mitarbeiterrolle ein Mitarbeiterprofil auswählen.');return}
-          targets.push({company_id:field.dataset.multiCompany,role:chosen,employee_id:chosen==='EMPLOYEE'?profile:null});
+          targets.push({company_id:field.dataset.multiCompany,role:chosen,employee_id:chosen==='EMPLOYEE'||chosen==='TEAM_LEAD'?(profile||null):null});
         }
         pending(m,true);
         try{
