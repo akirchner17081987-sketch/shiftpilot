@@ -12,7 +12,7 @@ test('IONOS and Vercel enforce the same local-only script policy without inline/
  const apache=await read('.htaccess');assert.ok(apache.includes('Content-Security-Policy "'+policy+'"'));
  assert.deepEqual(directives['script-src'],["'self'"]);assert.deepEqual(directives['script-src-attr'],["'none'"]);assert.deepEqual(directives['base-uri'],["'none'"]);
  assert.equal(Object.keys(directives).filter(k=>k.startsWith('script-')).length,2);
- assert.deepEqual(directives['worker-src'],["'self'",'blob:']);assert.ok(directives['connect-src'].includes('https://zbvloohfjleadjnqhbbh.supabase.co'));
+ assert.deepEqual(directives['worker-src'],["'self'",'blob:']);assert.ok(directives['connect-src'].includes('https://ifgemrtvnmyqaidlxgxb.supabase.co'));
  assert.match(apache,/AddType application\/javascript \.mjs/);
 });
 test('all deployed pages contain only existing local script files; extracted module imports stay local',async()=>{

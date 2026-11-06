@@ -263,7 +263,10 @@ test('long auto-planning result lists scroll inside their cards', () => {
 test('private wage uses monthly local storage and sends only the selected month', () => {
   assert.match(employeeWagePreview, /sf_private_wage_month_v2_/);
   assert.match(employeeWagePreview, /localStorage\.setItem\(key\(owner,draftMonth\)/);
-  assert.match(employeeWagePreview, /rpc\('employee_my_wage_month',\{p_month:month\+'-01'\}\)/);
+  assert.match(employeeWagePreview, /employee_my_wage_month_for_company/);
+  assert.match(employeeWagePreview, /employee_my_wage_month/);
+  assert.match(employeeWagePreview, /p_company_id:B\.companyId/);
+  assert.match(employeeWagePreview, /p_month:month\+'-01'/);
 });
 
 const employeeAccess = read('assets/supabase-employee-access-v1.js');
@@ -302,7 +305,7 @@ test('production responses are protected by restrictive security headers', () =>
 
   assert.match(values['Content-Security-Policy'], /default-src 'self'/);
   assert.match(values['Content-Security-Policy'], /frame-ancestors 'none'/);
-  assert.match(values['Content-Security-Policy'], /connect-src 'self' https:\/\/zbvloohfjleadjnqhbbh\.supabase\.co wss:\/\/zbvloohfjleadjnqhbbh\.supabase\.co/);
+  assert.match(values['Content-Security-Policy'], /connect-src 'self' https:\/\/ifgemrtvnmyqaidlxgxb\.supabase\.co wss:\/\/ifgemrtvnmyqaidlxgxb\.supabase\.co/);
   assert.equal(values['X-Content-Type-Options'], 'nosniff');
   assert.equal(values['X-Frame-Options'], 'DENY');
   assert.equal(values['Referrer-Policy'], 'strict-origin-when-cross-origin');

@@ -16,7 +16,7 @@ function logoutHarness({demo=false, signOut=async()=>({})}={}) {
     nodes.set(id,node);
   }
   const message={className:'',textContent:''};
-  const context={window:{},document:{getElementById:id=>nodes.get(id),querySelector:selector=>selector==='#sfAuthMsg'?message:null},
+  const context={window:{},document:{addEventListener(){},getElementById:id=>nodes.get(id),querySelector:selector=>selector==='#sfAuthMsg'?message:null},
     sessionStorage:{getItem:key=>key==='sf_demo_session_v1'&&demo?'active':null,removeItem:key=>storageCleared.push(['session',key])},
     localStorage:{removeItem:key=>storageCleared.push(['local',key])},
     location:{pathname:'/',search:'?sfPerf=1',hash:'#app',replace(url){const B=context.window.SFBackend;navigations.push({url,ready:B.ready,user:B.user,companyId:B.companyId,role:B.role,appDisplay:nodes.get('appShell').style.values.display,cleared:storageCleared.length})}},
@@ -299,7 +299,7 @@ test('entry preserves the production page-ready and role-gated loader', () => {
   assert.match(loader, /if\(B\.role!=='EMPLOYEE'\)\{/);
   assert.match(loader, /await B\.prepareManagerModules\(\)/);
   assert.match(loader, /const result=await baseBoot\.apply\(this,arguments\)/);
-  assert.match(page, /rel="preconnect" href="https:\/\/zbvloohfjleadjnqhbbh\.supabase\.co"/);
+  assert.match(page, /rel="preconnect" href="https:\/\/ifgemrtvnmyqaidlxgxb\.supabase\.co"/);
 });
 
 

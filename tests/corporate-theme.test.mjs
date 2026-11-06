@@ -66,6 +66,6 @@ test('manager, dialogs, employee portal and mobile PWA surfaces use the tenant p
 test('PWA refreshes tenant branding and CSP permits only the private Supabase image origin',()=>{
   assert.match(serviceWorker,/schichtfunk-shell-v10-pwa/);
   assert.match(serviceWorker,/networkFirst=cspCritical/);
-  for(const policy of [apache,vercel])assert.match(policy,/img-src 'self' data: blob: https:\/\/zbvloohfjleadjnqhbbh\.supabase\.co/);
+  for(const policy of [apache,vercel])assert.match(policy,/img-src 'self' data: blob: https:\/\/ifgemrtvnmyqaidlxgxb\.supabase\.co/);
   assert.match(script,/delete root\.dataset\.sfGlobeAccents/);
 });

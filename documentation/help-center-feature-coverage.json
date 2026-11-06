@@ -3054,6 +3054,12 @@
       "area": "Unternehmensdesign",
       "category": "settings",
       "kind": "feature-or-support"
+    },
+    {
+      "source": "assets/employee-company-switch-v1.js",
+      "area": "Unternehmenswechsel im Mitarbeiterportal",
+      "category": "portal",
+      "kind": "feature-or-support"
     }
   ],
   "categoryCoverage": [
@@ -3727,7 +3733,7 @@
     "correctedArticleCount": 2,
     "articleCount": 285,
     "categoryCount": 22,
-    "assetJavaScriptCount": 242
+    "assetJavaScriptCount": 243
   },
   "incrementalUpdate": {
     "date": "2026-10-27",
