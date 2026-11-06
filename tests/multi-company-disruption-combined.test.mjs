@@ -1,0 +1,90 @@
+import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import {PGlite} from '@electric-sql/pglite';
+const read=p=>fs.readFileSync(p,'utf8');const migration=()=>read('supabase/migrations/'+fs.readdirSync('supabase/migrations').find(f=>f.endsWith('_disruption_replacement_workflow.sql')));
+function fn(s,name){const start=s.search(new RegExp('create(?: or replace)? function '+name.replaceAll('.','\\.')+'\\(', 'i')),rest=s.slice(start),m=rest.match(/\bas\s+(\$[A-Za-z_]*\$)/i),body=m.index+m[0].length,end=rest.indexOf(m[1],body);assert.ok(start>=0,name);return rest.slice(0,end+m[1].length).replace(/^create function/i,'create or replace function')+';';}
+const company='11111111-1111-4111-8111-111111111111',foreign='22222222-2222-4222-8222-222222222222',actor='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',original='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',target='cccccccc-cccc-4ccc-8ccc-cccccccccccc',portal='dddddddd-dddd-4ddd-8ddd-dddddddddddd',portalUser='eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
+async function setup(){const db=new PGlite();try{await db.exec(read('tests/sql/access-profiles-bootstrap.sql').replace('create extension pgcrypto with schema extensions;',''));await db.exec(read('tests/sql/manual-rhythm-bootstrap.sql'));
+ await db.exec(`alter table company_members add access_role text default 'OWNER',add extra_permissions text[] default '{}';alter table company_compliance_policy add works_council_enabled boolean default false;alter table absences add start_time time,add end_time time;alter table shift_assignments add rhythm_override jsonb;alter table shift_change_requests add primary key(id),add reason_code text,add reason_text text,add predictable text,add notice_minutes int,add requested_by uuid,add requested_at timestamptz default now(),add created_at timestamptz default now();alter table shift_change_approvals add id uuid default gen_random_uuid(),add company_id uuid,add required boolean,add decided_by uuid,add decided_at timestamptz,add comment text;
+ create table notifications(id uuid default gen_random_uuid(),company_id uuid,user_id uuid,employee_id uuid,kind text,title text,message text,link_view text,entity_type text,entity_id uuid,metadata jsonb,is_read boolean default false,read_at timestamptz,created_at timestamptz default now());
+ create function private.sf_require_active_employee_access() returns void language plpgsql as $$begin if not exists(select 1 from public.employees where auth_user_id=auth.uid() and status='active' and access_status='ACTIVE') then raise exception 'Inactive employee';end if;end $$;
+ create function private.sf_has_time_only_login() returns boolean language sql as $$select false$$;`);
+ await db.exec(fn(read('supabase/migrations/20261003152036_month_optimization_atomic_drafts.sql'),'private.sf_month_meta'));
+ await db.exec(fn(read('supabase/migrations/20261014071747_employee_fixed_monday_thursday_o3.sql'),'private.sf_fixed_weekly_roster'));
+ await db.exec(read('supabase/migrations/20260831162926_disruption_autopilot_v1.sql'));
+ await db.exec(fn(read('tests/sql/manual-rhythm-existing-functions.sql'),'private.sf_shift_scope_error'));
+ await db.exec(read('tests/sql/disruption-existing-functions.sql')); 
+ // Same permission predicate as publication, without auth profile/MFA unrelated to this workflow.
+ await db.exec(`create function private.sf_has_access_permission(c uuid,p text) returns boolean language sql stable as $$select exists(select 1 from public.company_members where company_id=c and user_id=auth.uid() and status='ACTIVE' and (access_role in('OWNER','ADMIN') or not('read_only'=any(extra_permissions)) and p=any(extra_permissions)))$$;
+ create trigger published_guard before update on shift_assignments for each row execute function protect_published_assignment();
+ create trigger standard_guard before insert or update on shift_assignments for each row execute function enforce_assignment_standard_rules();
+ create trigger rhythm_guard before insert or update on shift_assignments for each row execute function private.sf_normalize_manual_rhythm_override();
+ create trigger scope_guard before insert or update on shift_assignments for each row execute function enforce_shift_employee_scope();`);
+ await db.exec(migration());
+ await db.exec(read('supabase/migrations/20261027051422_fix_disruption_list_employee_alias.sql'));
+ await db.exec(read('supabase/migrations/20261028184359_disruption_offer_privacy.sql'));
+ await db.exec(`alter table shift_templates add site_id uuid;create table company_locations(id uuid primary key,company_id uuid,name text);create unique index notifications_dedupe on notifications(user_id,kind,entity_id);`);
+ for(const name of ['private.sf_put_notification','private.sf_notify_managers'])await db.exec(fn(read('supabase/migrations/20260829221839_schichtfunk_notifications_v1.sql'),name));
+ await db.exec('alter table company_compliance_policy add monthly_planning_max_hours numeric,add monthly_planning_max_shifts integer');
+ await db.exec(fn(read('supabase/migrations/20261014071747_employee_fixed_monday_thursday_o3.sql'),'private.sf_assert_month_planning_limits'));
+ await db.exec(read('supabase/migrations/20261028190138_disruption_completion_checks.sql'));
+ await db.query('insert into auth.users(id) values($1),($2)',[actor,portalUser]);await db.query("insert into companies(id,name,timezone) values($1,'Own','Europe/Berlin'),($2,'Other','Europe/Berlin')",[company,foreign]);
+ await db.query(`insert into company_members(company_id,user_id,role,status) values($1,$2,'OWNER','ACTIVE')`,[company,actor]);await db.query(`insert into company_compliance_policy(company_id,solid_planning_rules,standard_min_rest_hours,standard_max_shift_hours) values($1,'{}',11,10)`,[company]);
+ for(const [id,name,user] of [[original,'Original',null],[target,'Offline',null],[portal,'Portal',portalUser]])await db.query(`insert into employees(id,company_id,first_name,last_name,status,role,shift_permissions,auth_user_id,access_status,qualifications) values($1,$2,$3,'Test','active','Mitarbeiter',array['T'],$4,'ACTIVE','{}')`,[id,company,name,user]);
+ await db.query(`insert into shift_templates(id,company_id,code,active,default_start,default_end,strict_times) values(gen_random_uuid(),$1,'T',true,'06:00','14:00',false)`,[company]);
+ await db.query(`select set_config('request.jwt.claim.sub',$1,false)`,[actor]);return db;}catch(e){await db.close();throw e;}}
+async function source(db,{start='2027-02-01T05:00Z',end='2027-02-01T13:00Z',...patch}={}){return (await db.query(`insert into shift_assignments(company_id,employee_id,shift_code,starts_at,ends_at,break_minutes,note,status,published_at,version) values($1,$2,'T',$3,$4,0,'Original note','PUBLISHED',now(),1) returning *`,[company,original,start,end])).rows[0];}
+const commit=(db,id,patch={})=>db.query(`select manager_disruption_replacement($1,$2,$3) result`,[company,id,{action:'COMMIT',version:1,token:crypto.randomUUID(),mode:'WHOLE',employee_id:target,reason:'Ausfall vertreten',consent:'Telefonisch zugesagt',agreed:true,...patch}]).then(r=>r.rows[0].result);
+const one=(db,sql,args=[])=>db.query(sql,args).then(r=>r.rows[0]);
+test('multi-company employee accepts a disruption and the real shift-change candidate applies it',async()=>{
+ const db=await setup();
+ try{
+  // Install the reviewed draft functions together over the existing workflow fixture.
+  for(const file of ['company-options-candidate.sql','employee-company-identity-candidate.sql']) await db.exec(read('drafts/multi-company-roles/'+file));
+  await db.exec(fn(read('drafts/multi-company-roles/company-swap-list-candidate.sql'),'private.sf_single_active_employee_company'));
+  await db.exec(read('drafts/multi-company-roles/disruption-offers-company-candidate.sql'));
+  await db.exec(read('drafts/multi-company-roles/apply-shift-change-company-candidate.sql'));
+  const secondProfile=crypto.randomUUID();
+  await db.query(`insert into employees(id,company_id,first_name,last_name,status,role,shift_permissions,auth_user_id,access_status,qualifications) values($1,$2,'Second','Profile','active','Mitarbeiter',array['T'],$3,'ACTIVE','{}')`,[secondProfile,foreign,portalUser]);
+  const a=await source(db), incident=await one(db,`select manager_create_disruption($1,$2,'OTHER','Synthetic') id`,[company,a.id]);
+  await db.query('select manager_send_disruption_offers($1,$2)',[incident.id,[portal]]);
+  const offer=await one(db,'select id from disruption_offers where incident_id=$1',[incident.id]);
+  await db.query(`select set_config('request.jwt.claim.sub',$1,false)`,[portalUser]);
+  await db.exec('set role authenticated');
+  assert.equal((await db.query('select * from employee_list_disruption_offers_for_company($1)',[company])).rows.length,1);
+  assert.equal((await db.query('select * from employee_list_disruption_offers_for_company($1)',[foreign])).rows.length,0);
+  await assert.rejects(db.query('select * from employee_list_disruption_offers()'),/Unternehmen auswählen/);
+  await db.exec('reset role');
+  await db.query("update employees set access_status='DISABLED' where id=$1",[portal]);
+  await db.exec('set role authenticated');
+  await assert.rejects(db.query(`select * from employee_respond_disruption_offer($1,'ACCEPT','')`,[offer.id]),/Mitarbeiterzugang/);
+  await db.exec('reset role');
+  assert.equal((await one(db,'select employee_id from shift_assignments where id=$1',[a.id])).employee_id,original);
+  await db.query("update employees set access_status='ACTIVE' where id=$1",[portal]);
+  await db.exec('set role authenticated');
+  const result=await one(db,`select * from employee_respond_disruption_offer($1,'ACCEPT','Zugesagt')`,[offer.id]);
+  assert.equal(result.status,'ACCEPTED');
+  await db.exec('reset role');
+  assert.equal((await one(db,'select employee_id from shift_assignments where id=$1',[a.id])).employee_id,portal);
+  assert.equal((await one(db,'select status from disruption_incidents where id=$1',[incident.id])).status,'RESOLVED');
+  const originalB=crypto.randomUUID();
+  await db.query("insert into company_members(company_id,user_id,role,status) values($1,$2,'OWNER','ACTIVE')",[foreign,actor]);
+  await db.query("insert into company_compliance_policy(company_id,solid_planning_rules,standard_min_rest_hours,standard_max_shift_hours) values($1,'{}',11,10)",[foreign]);
+  await db.query("insert into employees(id,company_id,first_name,last_name,status,role,shift_permissions,access_status,qualifications) values($1,$2,'Original','B','active','Mitarbeiter',array['T'],'ACTIVE','{}')",[originalB,foreign]);
+  await db.query("insert into shift_templates(id,company_id,code,active,default_start,default_end,strict_times) values(gen_random_uuid(),$1,'T',true,'06:00','14:00',false)",[foreign]);
+  const b=await one(db,"insert into shift_assignments(company_id,employee_id,shift_code,starts_at,ends_at,break_minutes,note,status,published_at,version) values($1,$2,'T','2027-02-02T05:00Z','2027-02-02T13:00Z',0,'','PUBLISHED',now(),1) returning id",[foreign,originalB]);
+  await db.query(`select set_config('request.jwt.claim.sub',$1,false)`,[actor]);
+  const incidentB=await one(db,"select manager_create_disruption($1,$2,'OTHER','Synthetic B') id",[foreign,b.id]);
+  await db.query('select manager_send_disruption_offers($1,$2)',[incidentB.id,[secondProfile]]);
+  const offerB=await one(db,'select id from disruption_offers where incident_id=$1',[incidentB.id]);
+  await db.exec('set role authenticated');
+  await assert.rejects(db.query("select * from employee_respond_disruption_offer($1,'ACCEPT','')",[offerB.id]),/Mitarbeiterzugang/);
+  await db.exec('reset role');
+  assert.equal((await one(db,'select employee_id from shift_assignments where id=$1',[b.id])).employee_id,originalB);
+  await db.query(`select set_config('request.jwt.claim.sub',$1,false)`,[portalUser]);
+  await db.exec('set role authenticated');
+  assert.equal((await db.query('select * from employee_list_disruption_offers_for_company($1)',[foreign])).rows.length,1);
+  assert.equal((await one(db,"select * from employee_respond_disruption_offer($1,'ACCEPT','Zugesagt B')",[offerB.id])).status,'ACCEPTED');
+  await db.exec('reset role');
+  assert.equal((await one(db,'select employee_id from shift_assignments where id=$1',[b.id])).employee_id,secondProfile);
+  assert.equal((await one(db,'select status from disruption_incidents where id=$1',[incidentB.id])).status,'RESOLVED');
+ }finally{await db.close()}
+});
