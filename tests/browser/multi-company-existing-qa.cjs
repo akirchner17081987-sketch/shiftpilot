@@ -1,0 +1,21 @@
+const {chromium}=require('playwright'),fs=require('fs'),assert=require('node:assert/strict');
+(async()=>{
+ const b=await chromium.launch({headless:true,args:['--no-sandbox']});const page=await b.newPage();
+ await page.setContent('<html><head></head><body><div id="host"></div></body></html>');
+ await page.evaluate(()=>{window.__calls=[];window.SFBackend={role:'OWNER',companyId:'source',ready:true,init:async()=>{},client:{rpc:async(name,args)=>{window.__calls.push({name,args});if(name==='manager_list_access_users')return {data:{users:[{record_id:'target',user_id:'target',email:'lead@example.test',role:'TEAM_LEAD',permissions:['read_only'],status:'ACTIVE',kind:'MEMBER'}],employees:[],personnel_employees:[]}};if(name==='manager_existing_company_options')return {data:[{company_id:'one',company_name:'Unternehmen 1',assigned:false},{company_id:'two',company_name:'Unternehmen 2',assigned:false},{company_id:'old',company_name:'Bereits zugeordnet',assigned:true}]};if(name==='manager_grant_existing_companies')return {data:2};return {data:null}}}}});
+ await page.addScriptTag({content:fs.readFileSync('assets/team-admin-v1.js','utf8')});
+ await page.evaluate(()=>window.SFBackend.renderUserManagement(document.getElementById('host')));
+ await page.getByRole('button',{name:'Weitere Unternehmen'}).click();
+ await page.getByText('Unternehmen 1').waitFor();
+ assert.equal(await page.locator('[data-company-choice="old"]').isDisabled(),true);
+ await page.getByRole('button',{name:'Freigaben speichern'}).click();
+ await page.getByText('Bitte mindestens ein Unternehmen auswählen.').waitFor();
+ assert.equal((await page.evaluate(()=>window.__calls)).filter(c=>c.name==='manager_grant_existing_companies').length,0);
+ await page.locator('[data-company-choice="one"]').check();await page.locator('[data-company-choice="two"]').check();
+ await page.getByRole('button',{name:'Freigaben speichern'}).click();
+ await page.getByText('Weitere Unternehmensfreigaben für lead@example.test gespeichert.').waitFor();
+ const calls=await page.evaluate(()=>window.__calls);
+ const grant=calls.find(c=>c.name==='manager_grant_existing_companies');
+ assert.deepEqual(grant.args,{p_source_company_id:'source',p_target_user_id:'target',p_company_ids:['one','two']});
+ await b.close();console.log('PASS: existing access selector, disabled assigned company, exact selected company RPC');
+})().catch(e=>{console.error(e);process.exit(1)});
