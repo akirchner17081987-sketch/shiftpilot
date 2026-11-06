@@ -27,20 +27,29 @@
     return (q.data||[]).filter(x=>x.status==='ACTIVE');
   }
   function close(){dialog?.remove();dialog=null;trigger?.setAttribute('aria-expanded','false');trigger?.focus();}
-  B.switchCompany=async id=>{
+  B.switchCompany=async (id,mode='manager')=>{
     if(B.companySwitching)return false;
     B.companySwitching=true;
     try{
       const rows=await memberships();
-      const member=rows.find(x=>x.company_id===id);
+      let member=rows.find(x=>x.company_id===id);
+      if(mode==='employee'&&B.__sfMultiRoleInvitesReady===true){
+        const q=await B.client.rpc('multi_role_company_options');if(q.error)throw q.error;
+        member=(Array.isArray(q.data)?q.data:[]).find(x=>x.company_id===id&&x.mode==='employee');
+      }
       if(!member)throw new Error('Für dieses Unternehmen besteht kein aktiver Zugang.');
-      if(id===B.companyId){close();return false;}
+      if(id===B.companyId&&mode==='manager'){close();return false;}
       if(B.disruptionSaving||B.planningRulesSaving||B.companyProfileSaving||B.syncing||B.autoPlanApplying||B.openMarketPublishing||B.scheduleResetting||B.schedulePublishing||B.shiftModelSaving||B.teamRhythmSaving||B.employeeRemovalBusy||B.employeeStatusSaving||B.employeeStatusConfirming||B.bootPromise||B.employeeBootPromise)throw new Error('Daten werden noch gespeichert oder geladen. Bitte versuche es gleich erneut.');
       B.showLoading?.('Unternehmen wird gewechselt …');
       if(B.syncTimer){clearTimeout(B.syncTimer);B.syncTimer=null;await B.sync?.();if(B.lastSyncError)throw B.lastSyncError;}
       if(window.SFCompanyProfile?.hasUnsavedChanges()){
         if(!await window.SFDialog.confirm('Ungespeicherte Unternehmensdaten verwerfen und das Unternehmen wechseln?')){B.hideLoading?.();return false;}
         window.SFCompanyProfile.discardDraft();
+      }
+      if(mode==='employee'){
+        sessionStorage.setItem(`sfEmployeeCompany:${B.user.id}`,id);
+        const next=new URL(location.href);next.searchParams.set('bereich','mitarbeiter');next.hash='app';
+        B.clearCompanyPrivateConfiguration?.();B.ready=false;B.suppressSync=true;location.assign(next.href);return true;
       }
       remember(id);
       // Reload all modules and caches. Never change companyId while old requests run.
@@ -92,8 +101,12 @@
           :await B.client.from('companies').select('id,name').eq('id',member.company_id).single();
         if(q.error)throw q.error;
         const co=typeof q.data==='string'?JSON.parse(q.data):q.data;
-        return {...member,name:co?.name||'Unternehmen'};
+        return {...member,name:co?.name||'Unternehmen',mode:'manager'};
       }));
+      if(B.__sfMultiRoleInvitesReady===true){
+        const mixed=await B.client.rpc('multi_role_company_options');if(mixed.error)throw mixed.error;
+        for(const item of Array.isArray(mixed.data)?mixed.data:[])if(item.mode==='employee')options.push({company_id:item.company_id,name:item.company_name,role:'EMPLOYEE_PORTAL',mode:'employee'});
+      }
       options.sort((a,b)=>a.name.localeCompare(b.name,'de',{numeric:true,sensitivity:'base',ignorePunctuation:true}));
       if(dialog!==currentDialog)return;
       const list=dialog.querySelector('.sf-company-list');
@@ -107,7 +120,7 @@
       }catch(_){}
       if(dialog!==currentDialog)return;
       const groupLabels=[...new Set(options.map(o=>labelsByCompany.get(o.company_id)).filter(Boolean))];
-      const card=o=>`<button type="button" class="sf-company-option" data-company="${esc(o.company_id)}" aria-current="${o.company_id===B.companyId}"><span><b>${esc(o.name)}</b><small>${esc(roles[o.role]||o.role)}</small></span>${o.company_id===B.companyId?'✓':''}</button>`;
+      const card=o=>`<button type="button" class="sf-company-option" data-company="${esc(o.company_id)}" data-mode="${esc(o.mode)}" aria-current="${o.company_id===B.companyId&&o.mode==='manager'}"><span><b>${esc(o.name)}</b><small>${esc(o.mode==='employee'?'Mitarbeiterportal':roles[o.role]||o.role)}</small></span>${o.company_id===B.companyId&&o.mode==='manager'?'✓':''}</button>`;
       const grouped=groupLabels.map(label=>{
         const members=options.filter(o=>labelsByCompany.get(o.company_id)===label);
         return `<details class="sf-company-group" ${members.some(o=>o.company_id===B.companyId)?'open':''}><summary>${esc(label)}</summary><div class="sf-company-children">${members.map(card).join('')}</div></details>`;
@@ -117,7 +130,7 @@
       if(options.length<2)list.insertAdjacentHTML('beforeend','<p class="sf-company-note">Weitere Unternehmen erscheinen hier, sobald dein Zugang dafür freigeschaltet ist.</p>');
       list.querySelectorAll('[data-company]').forEach(button=>button.onclick=async()=>{
         list.querySelectorAll('button').forEach(b=>b.disabled=true);
-        try{await B.switchCompany(button.dataset.company);}
+        try{await B.switchCompany(button.dataset.company,button.dataset.mode);}
         catch(error){if(dialog===currentDialog){dialog.querySelector('.sf-company-error').textContent=error.message||'Unternehmen konnte nicht gewechselt werden.';list.querySelectorAll('button').forEach(b=>b.disabled=false);}}
       });
       (list.querySelector('.sf-company-group[open] [aria-current="true"]')||list.querySelector('.sf-company-group summary')||list.querySelector('[aria-current="true"]'))?.focus();
@@ -145,5 +158,7 @@
   });
   styles();bind();
 })();
+
+
 
 

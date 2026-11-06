@@ -113,7 +113,7 @@
     const identity=swapIdentity();
     if(swapOwner!==identity){swapOwner=identity;employeeSwaps=[];swapView='all';swapLimit=10;employeeError='';loadedAt=null}
     if(employeeBusy)return employeeSwaps;employeeBusy=true;
-    try{const q=await B.client.rpc('employee_list_shift_swaps');if(q.error)throw q.error;if(swapIdentity()===identity){employeeSwaps=q.data||[];employeeError='';loadedAt=new Date()}return employeeSwaps}
+    try{const q=await B.client.rpc(B.__sfEmployeeMultiCompanyReady===true?'employee_list_shift_swaps_for_company':'employee_list_shift_swaps',B.__sfEmployeeMultiCompanyReady===true?{p_company_id:B.companyId}:{});if(q.error)throw q.error;if(swapIdentity()===identity){employeeSwaps=q.data||[];employeeError='';loadedAt=new Date()}return employeeSwaps}
     catch(e){if(swapIdentity()===identity)employeeError=loadedAt?'Aktualisierung fehlgeschlagen. Angezeigt wird der zuletzt geladene Stand. Bitte erneut aktualisieren.':'Tauschanfragen konnten nicht geladen werden. Bitte erneut aktualisieren.';console.warn('Schichttausch konnte nicht geladen werden',e);return employeeSwaps}
     finally{employeeBusy=false}
   }

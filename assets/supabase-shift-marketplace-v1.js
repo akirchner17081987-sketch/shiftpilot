@@ -118,7 +118,7 @@
     if (employeeBusy || B.role !== "EMPLOYEE") return;
     employeeBusy = true;
     try {
-      const [legacy, open] = await Promise.all([rpc("employee_list_shift_marketplace"), window.__sfDemoCloudAdapterV2 ? Promise.resolve([]) : rpc("employee_list_open_shift_market")]);
+      const [legacy, open] = await Promise.all([rpc(B.__sfEmployeeMultiCompanyReady === true ? "employee_list_shift_marketplace_for_company" : "employee_list_shift_marketplace", B.__sfEmployeeMultiCompanyReady === true ? {p_company_id:B.companyId} : {}), window.__sfDemoCloudAdapterV2 ? Promise.resolve([]) : rpc(B.__sfEmployeeMultiCompanyReady === true ? "employee_list_open_shift_market_for_company" : "employee_list_open_shift_market", B.__sfEmployeeMultiCompanyReady === true ? {p_company_id:B.companyId} : {})]);
       const next = [...(legacy || []), ...(open || [])];
       const unchanged = JSON.stringify(next) === JSON.stringify(rows);
       rows = next;
@@ -231,7 +231,7 @@
             "Zur Prüfung einreichen",
             async (note) => {
               try {
-                await rpc(x.kind === 'OPEN_POSITION' ? "employee_claim_open_shift" : "employee_claim_shift_marketplace", {p_offer_id: x.id, p_comment: note});
+                await rpc(x.kind === 'OPEN_POSITION' ? (B.__sfEmployeeMultiCompanyReady === true ? "employee_claim_open_shift_for_company" : "employee_claim_open_shift") : "employee_claim_shift_marketplace", {p_offer_id: x.id, p_comment: note, ...(x.kind === 'OPEN_POSITION' && B.__sfEmployeeMultiCompanyReady === true ? {p_company_id:B.companyId} : {})});
               } catch (error) {
                 if (!/nicht mehr verfügbar|bereits vergeben/i.test(String(error?.message || error)))
                   throw error;
@@ -259,7 +259,7 @@
           b.disabled = true;
           try {
             const x = rows.find(r => r.id === b.closest('[data-id]').dataset.id);
-            await rpc(x.kind === 'OPEN_POSITION' ? 'employee_cancel_open_shift_claim' : 'employee_cancel_shift_swap', x.kind === 'OPEN_POSITION' ? {p_claim_id:x.id} : {p_swap_id:x.id});
+            await rpc(x.kind === 'OPEN_POSITION' ? (B.__sfEmployeeMultiCompanyReady === true ? 'employee_cancel_open_shift_claim_for_company' : 'employee_cancel_open_shift_claim') : 'employee_cancel_shift_swap', x.kind === 'OPEN_POSITION' ? {p_claim_id:x.id,...(B.__sfEmployeeMultiCompanyReady === true ? {p_company_id:B.companyId} : {})} : {p_swap_id:x.id});
             await employeeLoad();
           } catch(e) { showSaveToast?.('Anfrage nicht zurückgezogen', e.message || String(e)); b.disabled = false; }
         }),
