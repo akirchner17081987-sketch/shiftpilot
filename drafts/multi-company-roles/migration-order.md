@@ -15,4 +15,6 @@ Status: in Arbeit. Keine der Dateien ist als Produktionsmigration freigegeben.
 ## Bisher geprüft
 
 - `tests/multi-company-legacy-identity.test.mjs` prüft den isolierten Identitätsentwurf auf ein Profil, Mehrdeutigkeit, gesperrte/inaktive/gelöschte Profile und eingeschränkte Rollen.
+- `tests/multi-company-migration-combination.test.mjs` prüft Identitätsauswahl, restriktive Zugriffsregeln, Indexumstellung und die unternehmensbezogene Stundenberechnung gemeinsam in einer isolierten Testdatenbank mit gefüllten Daten. Der Test bildet das Schema nur ausschnittsweise nach.
+- `confirmed-work-minutes-company-candidate.sql` korrigiert die interne Stundenberechnung: Sie muss für den angefragten Mitarbeitenden und dessen Unternehmen prüfen. Ohne diese Änderung würde die abgesicherte alte Identitätsfunktion Mehrfachkonten beim Aufruf des Stundenkontos abweisen. Die aktuelle Produktivdefinition ist vor einer späteren Freigabe erneut mit dem Entwurf abzugleichen.
 - Die in `integration-status.md` dokumentierten QA- und Portaleinzeltests sind keine Prüfung der vollständigen Migrationskombination.
