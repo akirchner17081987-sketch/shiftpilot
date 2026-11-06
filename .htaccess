@@ -16,7 +16,7 @@ RewriteCond %{REQUEST_URI} !\.[^/]+$
 RewriteRule ^ /index.html [END]
 
 <IfModule mod_headers.c>
-  Header always set Content-Security-Policy "default-src 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://zbvloohfjleadjnqhbbh.supabase.co; media-src 'self' blob:; font-src 'self' data:; connect-src 'self' https://zbvloohfjleadjnqhbbh.supabase.co wss://zbvloohfjleadjnqhbbh.supabase.co; worker-src 'self' blob:; manifest-src 'self'; upgrade-insecure-requests"
+  Header always set Content-Security-Policy "default-src 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://ifgemrtvnmyqaidlxgxb.supabase.co; media-src 'self' blob:; font-src 'self' data:; connect-src 'self' https://ifgemrtvnmyqaidlxgxb.supabase.co wss://ifgemrtvnmyqaidlxgxb.supabase.co; worker-src 'self' blob:; manifest-src 'self'; upgrade-insecure-requests"
   Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains"
   Header always set X-Content-Type-Options "nosniff"
   Header always set X-Frame-Options "DENY"
