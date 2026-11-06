@@ -1,7 +1,7 @@
 // SchichtFunk – feste Supabase Auth-Weiterleitung auf Produktion
 (function(){
   const B=window.SFBackend=window.SFBackend||{};
-  B.productionUrl='https://schichtfunk.de/';
+  B.productionUrl=location.origin==='https://home-5021836522.app-ionos.space' ? location.origin+'/' : 'https://schichtfunk.de/';
   const baseInit=B.init;
   if(typeof baseInit!=='function') return;
   B.init=async function(){
