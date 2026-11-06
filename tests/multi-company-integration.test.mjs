@@ -47,3 +47,19 @@ test('management entry preserves the existing active management session',async()
   const {B,calls}=setup({employeeEntry:false,memberships:[{company_id:'b',status:'ACTIVE',role:'PLANNER'}],choices});
   assert.equal(await B.ensureCompany(),'legacy');assert.ok(calls.includes('legacy'));
 });
+
+test('link action stays hidden until the multi-company feature is enabled',()=>{
+  const source=readFileSync(new URL('../assets/team-admin-v1.js',import.meta.url),'utf8');
+  const start=source.indexOf('  function draw(host){'),end=source.indexOf('  B.renderUserManagement=');
+  assert.ok(start>=0&&end>start);
+  const drawFactory=new Function('rows','enabled',`const B={__sfMultiRoleInvitesReady:enabled},roles={TEAM_LEAD:['Teamleiter']},roleShort={},statusIcon={active:'ok'};
+    const esc=s=>String(s??''),employeeName=r=>r.email,statusKey=()=> 'active',state=()=> 'Aktiv',canAdminister=()=>true,roleDetails=()=>'';
+    const editRole=()=>{},linkExistingProfile=()=>{},toggleAccess=()=>{},revoke=()=>{},invite=()=>{};
+    ${source.slice(start,end)}
+    let list={innerHTML:''},count={textContent:''};const host={querySelector(q){if(q==='#sfUsersList')return list;if(q==='#sfUsersCount')return count;return null},querySelectorAll(){return []}};
+    draw(host);return list.innerHTML;`);
+  const row={record_id:'u',kind:'MEMBER',role:'TEAM_LEAD',status:'ACTIVE',employee_id:null,email:'qa@example.invalid',permissions:[]};
+  assert.doesNotMatch(drawFactory([row],false),/data-link-profile/);
+  assert.match(drawFactory([row],true),/data-link-profile/);
+  assert.doesNotMatch(drawFactory([{...row,employee_id:'existing'}],true),/data-link-profile/);
+});
