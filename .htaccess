@@ -1,3 +1,4 @@
+# Separate staging preview: test database only.
 Options -Indexes
 DirectoryIndex index.html
 
