@@ -17,7 +17,6 @@ CREATE OR REPLACE FUNCTION private.sf_list_shift_swaps_for_company(p_company_id 
 AS $function$
 declare v_uid uuid:=auth.uid(); v_employee_id uuid;
 begin
-  PERFORM private.sf_require_active_employee_access();
   if private.sf_has_time_only_login() then raise exception 'Dieser Zugang ist nur fuer die Zeiterfassung berechtigt'; end if;
   if v_uid is null then raise exception 'Nicht angemeldet'; end if;
   v_employee_id:=private.sf_employee_identity_for_company(p_company_id);
@@ -52,7 +51,6 @@ CREATE OR REPLACE FUNCTION private.sf_list_shift_marketplace_for_company(p_compa
 AS $function$
 declare v_uid uuid:=auth.uid(); v_emp public.employees%rowtype;
 begin
-  PERFORM private.sf_require_active_employee_access();
   if private.sf_has_time_only_login() then raise exception 'Dieser Zugang ist nur fuer die Zeiterfassung berechtigt'; end if;
   if v_uid is null then raise exception 'Nicht angemeldet'; end if;
   select e.* into v_emp
@@ -110,7 +108,6 @@ declare
   a public.shift_assignments%rowtype;
   req public.employees%rowtype;
 begin
-  PERFORM private.sf_require_active_employee_access();
   if private.sf_has_time_only_login() then raise exception 'Dieser Zugang ist nur fuer die Zeiterfassung berechtigt'; end if;
   if v_uid is null then raise exception 'Nicht angemeldet'; end if;
   select * into a from public.shift_assignments where id=p_assignment_id;
