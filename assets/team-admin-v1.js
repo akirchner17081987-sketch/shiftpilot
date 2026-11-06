@@ -41,7 +41,7 @@
   function css(){if(document.getElementById('sfUsersCss'))return;const link=document.createElement('link');link.id='sfUsersCss';link.rel='stylesheet';link.href='assets/users-permissions-v2.css?v=20261012-automatic-personnel1';document.head.appendChild(link)}
   const digest=async t=>{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')};
   const newToken=()=>crypto.randomUUID()+crypto.randomUUID();
-  const base=()=>String(B.productionUrl||location.origin+'/').replace(/\/+$/,'/');
+  const base=()=>String(location.origin==='https://home-5021836522.app-ionos.space'?location.origin+'/':(B.productionUrl||location.origin+'/')).replace(/\/+$/,'/');
   function options(value){return roleOrder.filter(k=>(k!=='OWNER'||value==='OWNER')&&(k!=='ADMIN'||B.role==='OWNER'||value==='ADMIN')).map(k=>`<option value="${k}" ${k===value?'selected':''}>${esc(roles[k][0])}</option>`).join('')}
   const state=r=>r.kind==='INVITE'?(r.status==='EXPIRED'?'Einladung abgelaufen':'Einladung ausstehend'):(r.status==='DISABLED'?'Gesperrt':'Aktiv');
   const statusKey=r=>r.kind==='INVITE'?(r.status==='EXPIRED'?'expired':'invited'):(r.status==='DISABLED'?'disabled':'active');
