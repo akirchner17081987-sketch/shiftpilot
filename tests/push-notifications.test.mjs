@@ -50,10 +50,13 @@ test('service worker and server registration remain wired for push', () => {
 });
 
 test('production PWA and push flows use the canonical SchichtFunk origin', () => {
-  for(const source of [authRedirect,passwordReset,dispatcher,playwright]){
+  for(const source of [authRedirect,dispatcher,playwright]){
     assert.match(source, /https:\/\/schichtfunk\.de/);
     assert.doesNotMatch(source, /shiftpilot-two\.vercel\.app/);
   }
+  // QA must return recovery links to the test host rather than production.
+  assert.match(passwordReset, /const PROD=location\.origin\+'\/'/);
+  assert.doesNotMatch(passwordReset, /https:\/\/schichtfunk\.de/);
   assert.match(push, /canonicalHost/);
   assert.match(push, /Push für schichtfunk\.de aktivieren/);
   assert.match(push, /Push-Abos der bisherigen Vorschau-Adresse können nicht übertragen werden/);
