@@ -1,7 +1,7 @@
 // SchichtFunk – Passwort vergessen / Passwort zurücksetzen V1
 (function(){
   const B=window.SFBackend=window.SFBackend||{};
-  const PROD='https://schichtfunk.de/';
+  const PROD=location.origin+'/'; // QA branch: keep recovery within the test deployment.
   const RESET_PARAM='passwordReset';
   function normalizeLegacyRecoveryUrl(){
     try{
@@ -101,9 +101,9 @@
     };
   };
 
-  B.passwordResetNewDialog=function(){
+  B.passwordResetNewDialog=function({recovery=false}={}){
     B.closeAuth?.();
-    const recoveryFlow=recoveryFromUrl();
+    const recoveryFlow=recovery;
     const accountFields=recoveryFlow?'':`<div class="sf-reset-field"><label for="sfCurrentPassword">Aktuelles Passwort</label><input id="sfCurrentPassword" type="password" minlength="8" autocomplete="current-password"></div><div class="sf-reset-field"><label for="sfPasswordNonce">Bestätigungscode (nur falls angefordert)</label><input id="sfPasswordNonce" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-stelliger Code"></div><button class="ghost" type="button" id="sfSendReauth">Bestätigungscode senden</button>`;
     const m=dialogShell('Neues Passwort setzen','Lege jetzt ein neues Passwort mit mindestens 8 Zeichen fest. Verwende ein einzigartiges Passwort, das du nirgendwo sonst nutzt.',`${accountFields}<div class="sf-reset-field"><label for="sfNewPassword">Neues Passwort</label><input id="sfNewPassword" type="password" minlength="8" autocomplete="new-password"></div><div class="sf-reset-field"><label for="sfNewPassword2">Passwort wiederholen</label><input id="sfNewPassword2" type="password" minlength="8" autocomplete="new-password"></div>`,`<button class="primary" id="sfSaveNewPassword">Passwort speichern</button>`);
     const msg=m.querySelector('#sfResetMsg');
@@ -173,7 +173,7 @@
     const r=await baseInit.apply(this,arguments);
     if(initialRecoveryHint){
       const {data}=await B.client.auth.getSession();
-      setTimeout(()=>data?.session?B.passwordResetNewDialog():B.passwordResetInvalidDialog(),60);
+      setTimeout(()=>data?.session?B.passwordResetNewDialog({recovery:true}):B.passwordResetInvalidDialog(),60);
     }
     return r;
   };
