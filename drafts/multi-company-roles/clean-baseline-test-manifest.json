@@ -33,6 +33,10 @@
     {
       "path": "productionlike-disruption-council-rollback-test.sql",
       "sha256": "1590c1f6fa7c9827b44606b137c8e2687389c82a75ab4e6404f8f0c8858634da"
+    },
+    {
+      "path": "clean-combined-portal-rollback-test.sql",
+      "sha256": "eef93da01ce93e0aba0de7e0372609b25e88de4c73e4b5d0eeae9eec57e71067"
     }
   ]
 }
