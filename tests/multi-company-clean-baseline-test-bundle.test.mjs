@@ -13,6 +13,9 @@ test('clean-baseline rehearsal combines index and isolated fixtures inside one r
  assert.match(output,/\nROLLBACK;\n$/);
  assert.equal((output.match(/^BEGIN;$/gm)||[]).length,1);
  assert.equal((output.match(/^ROLLBACK;$/gm)||[]).length,1);
+ assert.equal((output.match(/DO \$sf_fixture\$/g)||[]).length,2);
+ assert.ok(!output.includes('a.kirchner17081987+sfqa1105@gmail.com'));
+ assert.ok(!output.includes('a.kirchner17081987+sfgemeinsam1106@gmail.com'));
  const idx=output.indexOf(`-- ${manifest.index.path}`);
  assert.ok(idx>output.indexOf('-- disruption-offers-company-candidate.sql'));
  let last=idx;
