@@ -37,6 +37,7 @@ test('company selector opens accessible company cards from the portal header',()
   w.SFBackend=B;w.eval(code);B.openEmployeePortal();
   const bar=w.document.getElementById('sfEmployeeCompanySwitch');
   assert.ok(bar);assert.equal(bar.parentElement.className,'sf-portal-top');assert.equal(bar.querySelector('select').value,'a');
+  assert.ok(w.document.getElementById('sfEmployeePortal').classList.contains('sf-has-employee-company-switch'));
   const trigger=bar.querySelector('button');trigger.click();const menu=w.document.getElementById('sfEmployeeCompanyMenu');
   assert.ok(menu);assert.equal(menu.querySelectorAll('.sf-employee-company-option').length,2);
   assert.equal(menu.querySelector('[aria-current="true"] b').textContent,'QA A');
