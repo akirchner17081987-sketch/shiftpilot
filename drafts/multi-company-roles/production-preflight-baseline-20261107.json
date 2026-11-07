@@ -1,0 +1,105 @@
+{
+  "date": "2026-11-07",
+  "scope": "production read-only schema and aggregate baseline; repeat immediately before release",
+  "indexes": [
+    {
+      "indexdef": "CREATE UNIQUE INDEX employees_auth_user_id_uidx ON public.employees USING btree (auth_user_id) WHERE (auth_user_id IS NOT NULL)",
+      "indexname": "employees_auth_user_id_uidx"
+    }
+  ],
+  "linked_accounts": 3,
+  "linked_profiles": 3,
+  "latest_migrations": [
+    {
+      "name": "invitation_email_reservation",
+      "version": "20261104215039"
+    },
+    {
+      "name": "company_switcher_group_membership",
+      "version": "20261104192550"
+    },
+    {
+      "name": "company_branding_white_label",
+      "version": "20261103061027"
+    },
+    {
+      "name": "guard_location_deletion_with_mfa",
+      "version": "20261102175110"
+    },
+    {
+      "name": "delete_company_location",
+      "version": "20261102175024"
+    },
+    {
+      "name": "regional_day_staffing_all_companies",
+      "version": "20261101044014"
+    },
+    {
+      "name": "planner_decision_protection",
+      "version": "20261031061608"
+    },
+    {
+      "name": "confirmed_incomplete_draft",
+      "version": "20261031023511"
+    },
+    {
+      "name": "planner_staffing_exceptions",
+      "version": "20261031012230"
+    },
+    {
+      "name": "conversational_vocabulary",
+      "version": "20261030214409"
+    }
+  ],
+  "function_fingerprints": [
+    {
+      "nspname": "private",
+      "proname": "employee_list_disruption_offers_impl",
+      "arguments": "",
+      "definition_fingerprint": "07967a373567ed233240a876f5543970"
+    },
+    {
+      "nspname": "private",
+      "proname": "employee_respond_disruption_offer_impl",
+      "arguments": "p_offer_id uuid, p_decision text, p_comment text",
+      "definition_fingerprint": "3f688913a0a0facf10e2869d0f043aae"
+    },
+    {
+      "nspname": "private",
+      "proname": "sf_confirmed_work_minutes",
+      "arguments": "p_employee_id uuid, p_from date, p_to date",
+      "definition_fingerprint": "b6ff17a4f16af6710f91db08b91c3836"
+    },
+    {
+      "nspname": "private",
+      "proname": "sf_employee_id",
+      "arguments": "",
+      "definition_fingerprint": "2cba333641fb58ddab164c249c7b6ae8"
+    },
+    {
+      "nspname": "private",
+      "proname": "sf_guard_personnel_leadership_identity",
+      "arguments": "",
+      "definition_fingerprint": "95f62654401999f5fc572d3d089b06fa"
+    },
+    {
+      "nspname": "private",
+      "proname": "sf_normalize_access_profile",
+      "arguments": "",
+      "definition_fingerprint": "d80a494f19c3e95c46a98889baa992e0"
+    },
+    {
+      "nspname": "public",
+      "proname": "apply_shift_change",
+      "arguments": "p_change_id uuid",
+      "definition_fingerprint": "77b68b94a74825e57e0a4fb7105b941d"
+    },
+    {
+      "nspname": "public",
+      "proname": "employee_respond_to_shift_change",
+      "arguments": "p_change_id uuid, p_decision text, p_comment text",
+      "definition_fingerprint": "fa59b8e36de676feebd04f02237dfb44"
+    }
+  ],
+  "duplicate_company_user_pairs": 0
+}

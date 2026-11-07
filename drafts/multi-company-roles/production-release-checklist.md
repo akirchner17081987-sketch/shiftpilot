@@ -5,6 +5,7 @@ Status: Arbeits- und Prüfstand, keine Ausführungsvorlage und keine Produktions
 ## Nachgewiesen am 07.11.2026
 
 - Der IONOS-Zweig `codex/ionos-migration` war beim GitHub-Abgleich Vorfahr des Migrationsarbeitszweigs. Vor der Veröffentlichung erneut den tatsächlich bereitgestellten Quellstand und die aktuellen Zweigspitzen vergleichen.
+- `production-preflight-readonly.sql` liefert in einer einzelnen schreibfreien Abfrage aggregierte Konten-/Profilzahlen, Indexdefinitionen, die letzten Migrationsversionen und ausgewählte Funktionsfingerabdrücke. Die Vergleichswerte stehen in `production-preflight-baseline-20261107.json`; sie ersetzen nicht den vollständigen Schema- und Sicherheitsabgleich.
 - Produktion hat den globalen eindeutigen Index `employees_auth_user_id_uidx`; im isolierten Testzweig ist stattdessen der unternehmensbezogene Index aktiv. Ein Lesecheck in Produktion fand keine doppelten `(company_id, auth_user_id)`-Paare, auch nicht bei gelöschten Profilen. Diese Momentaufnahme muss unmittelbar vor der Migration wiederholt werden.
 - Echte Testeinladung, E-Mail-Bestätigung, 2FA und Wechsel zwischen zwei Mitarbeiterprofilen und Teamleiterrolle wurden auf dem isolierten Zweig und Testportal ausgeführt.
 - Ersatzangebote und tatsächliche Übernahme wurden in beiden Unternehmen unter `authenticated` in einer zurückgerollten Transaktion geprüft; der echte Portal-Annahmeweg wurde für ein fiktives Angebot in A geprüft. Details: `productionlike-test-status.md`.
