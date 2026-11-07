@@ -1,0 +1,9 @@
+# Gruppierung im Mitarbeiterportal – QA-Stand 07.11.2026
+
+Der Unternehmenswechsel zeigt Gruppen aus `companyGroupLabel` als aufklappbare Bereiche, ordnet Karten ohne Gruppe separat ein und übernimmt ausschließlich Unternehmen aus den bereits geladenen Zugangsoptionen. Die aktive Gruppe ist aufgeklappt. Daten aus dem Gruppenaufruf gewähren keinen Unternehmenszugang; beim Wechsel wird der Zugang erneut serverseitig geprüft.
+
+Der eigenständige SQL-Kandidat `employee-company-groups-candidate.sql` ergänzt die vorhandene, ausschließlich auf Verwaltungsmitgliedschaften bezogene Gruppenfunktion um eine Funktion für freigegebene Mitarbeiterprofile und aktive Verwaltungsmitgliedschaften. Er ist noch keine Produktionsmigration und nicht im bisherigen kombinierten Migrationsentwurf enthalten.
+
+Auf dem isolierten Testzweig `whthodedymxplgmaooov` wurde der Kandidat nach einem zurückgerollten Berechtigungstest zu Testzwecken zusätzlich dauerhaft eingespielt, ohne neuen Migrationseintrag. Die beiden fiktiven Testunternehmen erhielten das Label `QA Testgruppe`. Der Test bestätigte zwei zugeordnete Gruppen, Ausschluss eines fremden Unternehmens und eines gesperrten Profils sowie fehlendes `anon`-EXECUTE. Auch nach der dauerhaften Testinstallation bestätigte ein Datenbankaufruf die beiden Labels; `anon` kann die öffentliche Funktion nicht aufrufen. Die temporären Änderungen im zurückgerollten Negativtest wurden nicht übernommen.
+
+Die lokalen Menü-, Gruppierungs-, Verwaltungswechsel- und Mandantentrennungstests bestanden zusammen 19 Prüfungen. Eine Prüfung der Gruppendarstellung und des Klickablaufs im echten Testbrowser steht noch aus. Es existiert keine Produktionsfreigabe; Schemaabweichungen und der zusätzlich eingespielte Testkandidat müssen vor einer erneuten Migrationsprobe berücksichtigt werden.

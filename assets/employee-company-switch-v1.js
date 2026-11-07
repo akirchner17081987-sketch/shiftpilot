@@ -102,6 +102,7 @@
         .sf-employee-company-menu button{font:inherit;cursor:pointer}.sf-employee-company-close{min-width:42px;min-height:42px;border:1px solid var(--line,#294159);border-radius:9px;background:transparent;color:inherit}
         .sf-employee-company-option{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;text-align:left;background:transparent;border:1px solid var(--line,#294159);color:inherit;padding:12px;border-radius:10px;margin:8px 0}
         .sf-employee-company-option[aria-current=true]{border-color:var(--teal,#27d9d1);background:color-mix(in srgb,var(--teal,#27d9d1) 10%,transparent)}.sf-employee-company-option span{flex:1;min-width:0}.sf-employee-company-option b,.sf-employee-company-option small{display:block;overflow-wrap:anywhere}.sf-employee-company-option small{margin-top:4px;color:var(--muted,#9db3c7)}
+        .sf-employee-company-group{margin:8px 0 18px}.sf-employee-company-group summary{min-height:46px;box-sizing:border-box;display:flex;align-items:center;gap:10px;cursor:pointer;list-style:none;padding:12px;border:1px solid var(--line,#294159);border-radius:10px;font-weight:700}.sf-employee-company-group summary::-webkit-details-marker{display:none}.sf-employee-company-group summary::before{content:'▸';color:var(--teal,#27d9d1)}.sf-employee-company-group[open] summary::before{transform:rotate(90deg)}.sf-employee-company-children{padding-left:16px;border-left:1px solid var(--line,#294159);margin:8px 0 0 14px}.sf-employee-company-other{border-top:1px solid var(--line,#294159);padding-top:12px;margin-top:18px}
         #sfEmployeeCompanySwitch [role=status]:empty{display:none}
         #sfEmployeeCompanySwitch [role=status]{flex-basis:100%;margin:0;font-size:12px;color:var(--text,#eef7ff)}
         @media(max-width:820px){#sfEmployeeCompanySwitch{max-width:155px;margin:0 5px}#sfEmployeeCompanySwitch .sf-employee-company-trigger{min-height:44px;padding:5px}.sf-employee-company-shade{padding:70px 14px 14px}}
@@ -126,20 +127,31 @@
       shade.onkeydown=e=>{
         if(e.key==='Escape'){e.preventDefault();close();return}
         if(e.key==='Tab'){
-          const buttons=[...shade.querySelectorAll('button:not(:disabled)')],first=buttons[0],last=buttons.at(-1);
+          const buttons=[...shade.querySelectorAll('button:not(:disabled),summary')].filter(el=>!el.closest('details:not([open])')||el.tagName==='SUMMARY'),first=buttons[0],last=buttons.at(-1);
           if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus()}
           else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus()}
         }
       };
       const list=shade.querySelector('.sf-employee-company-options');
-      for(const option of select.options){
+      const card=option=>{
         const button=document.createElement('button'),label=document.createElement('span'),name=document.createElement('b'),role=document.createElement('small');
         button.type='button';button.className='sf-employee-company-option';button.setAttribute('aria-current',String(option.value===B.companyId));
         name.textContent=option.textContent;role.textContent=option.value.startsWith('manager:')?'Verwaltung':'Mitarbeiterportal';label.append(name,role);button.append(label);
         if(option.value===B.companyId){const check=document.createElement('span');check.textContent='✓';check.setAttribute('aria-hidden','true');button.append(check)}
-        button.onclick=()=>{if(option.value===B.companyId){close();return}select.value=option.value;close();select.dispatchEvent(new Event('change'))};list.append(button);
-      }
+        button.onclick=()=>{if(option.value===B.companyId){close();return}select.value=option.value;close();select.dispatchEvent(new Event('change'))};return button;
+      };
+      const renderGroups=rows=>{
+        if(!shade.isConnected)return;const allowed=new Set([...select.options].map(o=>o.value.replace(/^manager:/,''))),labels=new Map();
+        for(const row of Array.isArray(rows)?rows:[]){const label=typeof row.group_label==='string'?row.group_label.trim():'';if(allowed.has(String(row.company_id))&&label&&label.length<=120)labels.set(String(row.company_id),label)}
+        const options=[...select.options].sort((a,b)=>a.textContent.localeCompare(b.textContent,'de',{numeric:true,sensitivity:'base'}));
+        const groups=[...new Set(options.map(o=>labels.get(o.value.replace(/^manager:/,''))).filter(Boolean))];list.replaceChildren();
+        for(const group of groups){const members=options.filter(o=>labels.get(o.value.replace(/^manager:/,''))===group),details=document.createElement('details'),summary=document.createElement('summary'),children=document.createElement('div');details.className='sf-employee-company-group';details.open=members.some(o=>o.value===B.companyId);summary.textContent=group;children.className='sf-employee-company-children';for(const option of members)children.append(card(option));details.append(summary,children);list.append(details)}
+        const other=options.filter(o=>!labels.has(o.value.replace(/^manager:/,''))),ungrouped=document.createElement('div');if(groups.length&&other.length)ungrouped.className='sf-employee-company-other';for(const option of other)ungrouped.append(card(option));list.append(ungrouped);
+      };
       document.body.appendChild(shade);trigger.setAttribute('aria-expanded','true');shade.querySelector('.sf-employee-company-close').focus();
+      renderGroups([]);
+      const client=B.client,userId=B.user?.id;
+      if(client&&typeof client.rpc==='function')Promise.resolve(client.rpc('employee_company_switcher_groups')).then(q=>{if(!q.error&&B.client===client&&B.user?.id===userId)renderGroups(q.data)}).catch(()=>{});
     };
     if(B.__sfMultiRoleInvitesReady===true){
       const owner=identity(),client=B.client;

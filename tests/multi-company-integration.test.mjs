@@ -45,6 +45,19 @@ test('company selector opens accessible company cards from the portal header',()
   assert.equal(w.document.getElementById('sfEmployeeCompanyMenu'),null);assert.equal(trigger.getAttribute('aria-expanded'),'false');
   w.close();
 });
+test('employee company menu groups only authorized options and keeps ungrouped companies visible',async()=>{
+  const w=new Window({url:'https://qa.invalid/?bereich=mitarbeiter'});
+  const B={__sfEmployeeMultiCompanyReady:true,__sfMultiEmployee:true,__sfEmployeeOptions:choices,companyId:'a',user:{id:'qa'},
+    client:{rpc:async()=>({data:[{company_id:'a',group_label:'Testgruppe'},{company_id:'foreign',group_label:'Fremd'}],error:null})},
+    ensureCompany:async()=>{},hydrateEmployee:async()=>{},openEmployeePortal(){w.document.body.innerHTML='<div id="sfEmployeePortal"><header class="sf-portal-top"></header><main class="sf-portal-main"></main></div>'}};
+  w.SFBackend=B;w.eval(code);B.openEmployeePortal();w.document.querySelector('.sf-employee-company-trigger').click();
+  await new Promise(resolve=>setTimeout(resolve,0));
+  const menu=w.document.getElementById('sfEmployeeCompanyMenu');
+  assert.equal(menu.querySelector('summary').textContent,'Testgruppe');assert.equal(menu.querySelector('details').open,true);
+  assert.equal(menu.querySelectorAll('.sf-employee-company-option').length,2);
+  assert.equal(menu.querySelector('.sf-employee-company-other b').textContent,'QA B');
+  assert.doesNotMatch(menu.textContent,/Fremd/);w.close();
+});
 test('disabled switch delegates to existing portal',async()=>{
   const {B,calls}=setup({enabled:false,choices});assert.equal(await B.ensureCompany(),'legacy');assert.deepEqual(calls,['legacy']);
 });
