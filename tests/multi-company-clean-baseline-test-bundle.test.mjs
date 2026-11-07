@@ -25,6 +25,16 @@ test('clean-baseline rehearsal combines index and isolated fixtures inside one r
  }
 });
 
+test('the final invitation function is defined once before its public wrapper and grants',()=>{
+ const marker='CREATE OR REPLACE FUNCTION private.claim_multi_company_invite(p_token text)';
+ assert.equal(output.split(marker).length-1,1);
+ const source=readFileSync(new URL('../drafts/multi-company-roles/single-invite-claim-candidate.sql',import.meta.url),'utf8');
+ const final=source.slice(source.indexOf(marker)).trim();
+ assert.ok(output.includes(final));
+ assert.ok(output.indexOf(marker)<output.indexOf('CREATE OR REPLACE FUNCTION public.claim_multi_company_invite(p_token text)'));
+ assert.ok(output.indexOf(marker)<output.indexOf('revoke all on function private.claim_multi_company_invite(text)'));
+});
+
 test('rehearsal gate rejects missing opt-in and an already altered index baseline',async()=>{
  const gate=output.match(/DO \$gate\$[\s\S]*?END \$gate\$;/)?.[0];
  assert.ok(gate);

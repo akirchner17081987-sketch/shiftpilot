@@ -15,8 +15,21 @@ const readChecked=({path,sha256})=>{
  if(createHash('sha256').update(value).digest('hex')!==sha256) throw Error(`Rehearsal input changed: ${path}`);
  return value;
 };
-const existing=execFileSync(process.execPath,[join(dir,'build-multi-company-test-bundle.mjs')],{encoding:'utf8'});
+let existing=execFileSync(process.execPath,[join(dir,'build-multi-company-test-bundle.mjs')],{encoding:'utf8'});
 if(!existing.endsWith('\nROLLBACK;\n')) throw Error('Unexpected rollback bundle');
+// The public SQL wrapper requires the private function to exist when it is
+// created. Put the reviewed final definition at the earlier location instead
+// of creating an obsolete function and replacing it later.
+const start='CREATE OR REPLACE FUNCTION private.claim_multi_company_invite(p_token text)';
+const end=/end \$function\$\s*;/i;
+const first=existing.indexOf(start);
+const second=existing.indexOf(start,first+start.length);
+if(first<0||second<0||existing.indexOf(start,second+start.length)!==-1) throw Error('Unexpected invitation definitions');
+const oldEnd=end.exec(existing.slice(first));
+const newEnd=end.exec(existing.slice(second));
+if(!oldEnd||!newEnd) throw Error('Unable to delimit invitation definitions');
+const finalDefinition=existing.slice(second,second+newEnd.index+newEnd[0].length);
+existing=existing.slice(0,first)+finalDefinition+existing.slice(first+oldEnd.index+oldEnd[0].length,second)+existing.slice(second+newEnd.index+newEnd[0].length);
 const index=readChecked(manifest.index);
 const tests=manifest.tests.map((item,i)=>{
  const sql=readChecked(item);
