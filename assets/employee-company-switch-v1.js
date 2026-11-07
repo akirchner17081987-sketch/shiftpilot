@@ -92,7 +92,7 @@
     bar.innerHTML='<label style="display:block;margin-bottom:8px" for="sfEmployeeCompanySelect">Unternehmen wechseln</label><select id="sfEmployeeCompanySelect" style="padding:8px;min-width:220px"></select><p role="status" aria-live="polite"></p>';
     const select=bar.querySelector('select'),status=bar.querySelector('[role=status]');
     for(const item of B.__sfEmployeeOptions){const option=document.createElement('option');option.value=item.company_id;option.textContent=item.company_name;select.append(option)}
-    select.value=B.companyId;root.prepend(bar);
+    select.value=B.companyId;(root.querySelector('.sf-portal-main')||root).prepend(bar);
     if(B.__sfMultiRoleInvitesReady===true){
       const owner=identity(),client=B.client;
       client.rpc('multi_role_company_options').then(q=>{

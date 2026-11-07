@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
+import {Window} from 'happy-dom';
 
 const code=readFileSync(new URL('../assets/employee-company-switch-v1.js',import.meta.url),'utf8');
 
@@ -29,6 +30,15 @@ function setup({enabled=true,stored='',employeeEntry=true,memberships=[],choices
 }
 
 const choices=[{company_id:'a',employee_id:'ea',company_name:'QA A'},{company_id:'b',employee_id:'eb',company_name:'QA B'}];
+test('company selector is mounted in the visible portal content',()=>{
+  const w=new Window({url:'https://qa.invalid/?bereich=mitarbeiter'});
+  const B={__sfEmployeeMultiCompanyReady:true,__sfMultiEmployee:true,__sfEmployeeOptions:choices,companyId:'a',user:{id:'qa'},
+    ensureCompany:async()=>{},hydrateEmployee:async()=>{},openEmployeePortal(){w.document.body.innerHTML='<div id="sfEmployeePortal"><header class="sf-portal-top"></header><main class="sf-portal-main"></main></div>'}};
+  w.SFBackend=B;w.eval(code);B.openEmployeePortal();
+  const bar=w.document.getElementById('sfEmployeeCompanySwitch');
+  assert.ok(bar);assert.equal(bar.parentElement.className,'sf-portal-main');assert.equal(bar.querySelector('select').value,'a');
+  w.close();
+});
 test('disabled switch delegates to existing portal',async()=>{
   const {B,calls}=setup({enabled:false,choices});assert.equal(await B.ensureCompany(),'legacy');assert.deepEqual(calls,['legacy']);
 });
