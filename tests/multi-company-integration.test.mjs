@@ -30,13 +30,19 @@ function setup({enabled=true,stored='',employeeEntry=true,memberships=[],choices
 }
 
 const choices=[{company_id:'a',employee_id:'ea',company_name:'QA A'},{company_id:'b',employee_id:'eb',company_name:'QA B'}];
-test('company selector is mounted in the visible portal content',()=>{
+test('company selector opens accessible company cards from the portal header',()=>{
   const w=new Window({url:'https://qa.invalid/?bereich=mitarbeiter'});
   const B={__sfEmployeeMultiCompanyReady:true,__sfMultiEmployee:true,__sfEmployeeOptions:choices,companyId:'a',user:{id:'qa'},
     ensureCompany:async()=>{},hydrateEmployee:async()=>{},openEmployeePortal(){w.document.body.innerHTML='<div id="sfEmployeePortal"><header class="sf-portal-top"></header><main class="sf-portal-main"></main></div>'}};
   w.SFBackend=B;w.eval(code);B.openEmployeePortal();
   const bar=w.document.getElementById('sfEmployeeCompanySwitch');
-  assert.ok(bar);assert.equal(bar.parentElement.className,'sf-portal-main');assert.equal(bar.querySelector('select').value,'a');
+  assert.ok(bar);assert.equal(bar.parentElement.className,'sf-portal-top');assert.equal(bar.querySelector('select').value,'a');
+  const trigger=bar.querySelector('button');trigger.click();const menu=w.document.getElementById('sfEmployeeCompanyMenu');
+  assert.ok(menu);assert.equal(menu.querySelectorAll('.sf-employee-company-option').length,2);
+  assert.equal(menu.querySelector('[aria-current="true"] b').textContent,'QA A');
+  assert.equal(trigger.getAttribute('aria-expanded'),'true');
+  menu.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
+  assert.equal(w.document.getElementById('sfEmployeeCompanyMenu'),null);assert.equal(trigger.getAttribute('aria-expanded'),'false');
   w.close();
 });
 test('disabled switch delegates to existing portal',async()=>{

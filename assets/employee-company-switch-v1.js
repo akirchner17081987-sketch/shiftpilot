@@ -88,11 +88,59 @@
     if(!enabled()||!B.__sfMultiEmployee)return open.apply(this,arguments);
     const result=open.apply(this,arguments),root=document.getElementById('sfEmployeePortal');if(!root)return result;
     root.querySelectorAll('#sfEmployeeCompanySwitch').forEach(node=>node.remove());
-    const bar=document.createElement('section');bar.id='sfEmployeeCompanySwitch';bar.style.cssText='padding:14px 6%;background:#103241;color:#fff';
-    bar.innerHTML='<label style="display:block;margin-bottom:8px" for="sfEmployeeCompanySelect">Unternehmen wechseln</label><select id="sfEmployeeCompanySelect" style="padding:8px;min-width:220px"></select><p role="status" aria-live="polite"></p>';
+    if(!document.getElementById('sfEmployeeCompanySwitchStyle')){
+      const style=document.createElement('style');style.id='sfEmployeeCompanySwitchStyle';style.textContent=`
+        #sfEmployeeCompanySwitch{position:relative;flex:0 1 auto;min-width:0;max-width:230px;margin:0 12px}
+        #sfEmployeeCompanySwitch .sf-employee-company-trigger{display:flex;align-items:center;gap:10px;max-width:100%;min-height:52px;padding:7px 11px;border:1px solid var(--line,#294159);border-radius:12px;background:var(--panel,#0d1827);color:var(--text,#eef7ff);font:inherit;text-align:left;cursor:pointer}
+        #sfEmployeeCompanySwitch .sf-employee-company-icon{display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:9px;background:var(--teal,#27d9d1);color:#07111d;font-weight:800}
+        #sfEmployeeCompanySwitch .sf-employee-company-name{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:700}
+        #sfEmployeeCompanySwitch .sf-employee-company-sub{display:block;color:var(--muted,#9db3c7);font-size:11px;margin-top:3px}
+        #sfEmployeeCompanySwitch button:focus-visible,.sf-employee-company-shade button:focus-visible{outline:2px solid var(--teal,#27d9d1);outline-offset:3px}
+        .sf-employee-company-shade{position:fixed;inset:0;z-index:21000;background:rgba(0,0,0,.38);display:flex;align-items:flex-start;padding:88px 22px 22px}
+        .sf-employee-company-menu{box-sizing:border-box;width:min(370px,100%);max-height:calc(100dvh - 110px);overflow:auto;padding:16px;border:1px solid var(--line,#294159);border-radius:14px;background:var(--panel,#0d1827);color:var(--text,#eef7ff);box-shadow:0 18px 60px rgba(0,0,0,.35)}
+        .sf-employee-company-menu header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.sf-employee-company-menu h2{font-size:17px;margin:0}
+        .sf-employee-company-menu button{font:inherit;cursor:pointer}.sf-employee-company-close{min-width:42px;min-height:42px;border:1px solid var(--line,#294159);border-radius:9px;background:transparent;color:inherit}
+        .sf-employee-company-option{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;text-align:left;background:transparent;border:1px solid var(--line,#294159);color:inherit;padding:12px;border-radius:10px;margin:8px 0}
+        .sf-employee-company-option[aria-current=true]{border-color:var(--teal,#27d9d1);background:color-mix(in srgb,var(--teal,#27d9d1) 10%,transparent)}.sf-employee-company-option span{flex:1;min-width:0}.sf-employee-company-option b,.sf-employee-company-option small{display:block;overflow-wrap:anywhere}.sf-employee-company-option small{margin-top:4px;color:var(--muted,#9db3c7)}
+        #sfEmployeeCompanySwitch [role=status]:empty{display:none}
+        #sfEmployeeCompanySwitch [role=status]{flex-basis:100%;margin:0;font-size:12px;color:var(--text,#eef7ff)}
+        @media(max-width:820px){#sfEmployeeCompanySwitch{max-width:155px;margin:0 5px}#sfEmployeeCompanySwitch .sf-employee-company-trigger{min-height:44px;padding:5px}.sf-employee-company-shade{padding:70px 14px 14px}}
+      `;document.head.appendChild(style);
+    }
+    const bar=document.createElement('section');bar.id='sfEmployeeCompanySwitch';
+    bar.innerHTML='<button type="button" class="sf-employee-company-trigger" aria-haspopup="dialog" aria-expanded="false" aria-label="Unternehmen wechseln"><span class="sf-employee-company-icon" aria-hidden="true"></span><span class="sf-employee-company-label"><span class="sf-employee-company-name"></span><span class="sf-employee-company-sub">Mitarbeiterportal</span></span><span aria-hidden="true">⌄</span></button><select id="sfEmployeeCompanySelect" hidden tabindex="-1" aria-hidden="true"></select><p role="status" aria-live="polite"></p>';
     const select=bar.querySelector('select'),status=bar.querySelector('[role=status]');
     for(const item of B.__sfEmployeeOptions){const option=document.createElement('option');option.value=item.company_id;option.textContent=item.company_name;select.append(option)}
-    select.value=B.companyId;(root.querySelector('.sf-portal-main')||root).prepend(bar);
+    select.value=B.companyId;
+    const trigger=bar.querySelector('button'),current=B.__sfEmployeeOptions.find(item=>String(item.company_id)===String(B.companyId));
+    bar.querySelector('.sf-employee-company-name').textContent=current?.company_name||'Unternehmen';
+    bar.querySelector('.sf-employee-company-icon').textContent=(current?.company_name||'U').trim().slice(0,1).toUpperCase();
+    const header=root.querySelector('.sf-portal-top'),logo=header?.querySelector('.sf-portal-logo');
+    if(logo)logo.after(bar);else (header||root.querySelector('.sf-portal-main')||root).prepend(bar);
+    trigger.onclick=()=>{
+      document.getElementById('sfEmployeeCompanyMenu')?.remove();
+      const shade=document.createElement('div');shade.id='sfEmployeeCompanyMenu';shade.className='sf-employee-company-shade';
+      shade.innerHTML='<section class="sf-employee-company-menu" role="dialog" aria-modal="true" aria-labelledby="sfEmployeeCompanyMenuTitle"><header><h2 id="sfEmployeeCompanyMenuTitle">Unternehmen wechseln</h2><button class="sf-employee-company-close" type="button" aria-label="Unternehmensauswahl schließen">×</button></header><div class="sf-employee-company-options"></div></section>';
+      const close=()=>{shade.remove();trigger.setAttribute('aria-expanded','false');if(trigger.isConnected)trigger.focus()};
+      shade.querySelector('.sf-employee-company-close').onclick=close;shade.onclick=e=>{if(e.target===shade)close()};
+      shade.onkeydown=e=>{
+        if(e.key==='Escape'){e.preventDefault();close();return}
+        if(e.key==='Tab'){
+          const buttons=[...shade.querySelectorAll('button:not(:disabled)')],first=buttons[0],last=buttons.at(-1);
+          if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus()}
+          else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus()}
+        }
+      };
+      const list=shade.querySelector('.sf-employee-company-options');
+      for(const option of select.options){
+        const button=document.createElement('button'),label=document.createElement('span'),name=document.createElement('b'),role=document.createElement('small');
+        button.type='button';button.className='sf-employee-company-option';button.setAttribute('aria-current',String(option.value===B.companyId));
+        name.textContent=option.textContent;role.textContent=option.value.startsWith('manager:')?'Verwaltung':'Mitarbeiterportal';label.append(name,role);button.append(label);
+        if(option.value===B.companyId){const check=document.createElement('span');check.textContent='✓';check.setAttribute('aria-hidden','true');button.append(check)}
+        button.onclick=()=>{if(option.value===B.companyId){close();return}select.value=option.value;close();select.dispatchEvent(new Event('change'))};list.append(button);
+      }
+      document.body.appendChild(shade);trigger.setAttribute('aria-expanded','true');shade.querySelector('.sf-employee-company-close').focus();
+    };
     if(B.__sfMultiRoleInvitesReady===true){
       const owner=identity(),client=B.client;
       client.rpc('multi_role_company_options').then(q=>{
