@@ -1,0 +1,101 @@
+{
+  "status": "DRAFT_ONLY_NOT_FOR_PRODUCTION",
+  "checked_date": "2026-11-07",
+  "scope": "Ordered SQL candidates used together in a rollback-only test on an already modified isolated test branch. Not a clean-baseline migration or production release.",
+  "excluded": [
+    "employee-identity-index-candidate.sql: test branch already uses the company index; production index transition needs separate review and atomic execution."
+  ],
+  "overrides": [
+    "single-invite-claim-candidate.sql intentionally replaces private.claim_multi_company_invite from production-candidate-not-for-deployment.sql."
+  ],
+  "files": [
+    {
+      "path": "company-options-candidate.sql",
+      "sha256": "4fc39dc9daff30d5b73fd5307a64e50da8bcb21bcc70b916541caab5719325a8"
+    },
+    {
+      "path": "employee-company-identity-candidate.sql",
+      "sha256": "7c8543ee1a69c0e4bf9f3dde5096b7d657b75894222a44e4334cf11d5431dd67"
+    },
+    {
+      "path": "production-candidate-not-for-deployment.sql",
+      "sha256": "da923efa0db742fdf0276f1c6b611663160f41dd90906629fa4c3e3f141b323f"
+    },
+    {
+      "path": "single-invite-claim-candidate.sql",
+      "sha256": "cf63b3815717d24b454cd0b2cda966b7a47fcec1ebf9c718c22e77d18e928f11"
+    },
+    {
+      "path": "team-leader-invitation-guard-candidate.sql",
+      "sha256": "74ae6af7071dce991b8a3b8d583ca7e88395599552071a44ff88041d72b0d729"
+    },
+    {
+      "path": "link-existing-team-leader-profile-candidate.sql",
+      "sha256": "56d698383d129a2566fc1b965bcc7e369e07dd8245630e6acc2ec986a76ce83c"
+    },
+    {
+      "path": "company-rls-restrictive-candidate.sql",
+      "sha256": "4cb649f796b9b426ed0364e6f0462e1c35b63a0e18b2252a32cbd3709dadd225"
+    },
+    {
+      "path": "legacy-employee-identity-fail-closed-candidate.sql",
+      "sha256": "335633f3f4c96408cac97b640fdcac7cdcdec9038e076bfcb0dd3afc13ba00df"
+    },
+    {
+      "path": "employee-time-entry-candidate.sql",
+      "sha256": "f8251ebb001f35c774f77c7c586fedaafd42ab9901e5744ef29c73718a7c71b4"
+    },
+    {
+      "path": "absence-company-guard-candidate.sql",
+      "sha256": "46a4ff0380538170d19b4e6875a3b83dcc3ea7f37ba32dfc4b250f92abc4e0da"
+    },
+    {
+      "path": "company-summary-leave-guard-candidate.sql",
+      "sha256": "bf11da3c057914a5de979f573781b21ff74c298a5ec5fd4c454903a4f173ce2e"
+    },
+    {
+      "path": "employee-profile-company-candidate.sql",
+      "sha256": "343f66b712133b7a209f9cd6cc8160dbb4b90885e77ab0913bdfd78e7fd46fff"
+    },
+    {
+      "path": "company-swap-list-candidate.sql",
+      "sha256": "bd10131c9f4d002caee5bfb17b543a5fea9492714511193943c75791bffdcf8a"
+    },
+    {
+      "path": "swap-market-legacy-guard-candidate.sql",
+      "sha256": "3f42e323eead6c93d6b2c20ee22708bb93aeafe3d6f891760f4441c7ddc183fa"
+    },
+    {
+      "path": "legacy-employee-response-company-candidate.sql",
+      "sha256": "2f9ddd7d2ebb2c63e922ff49447daf9162f81e5be1a1d70a140faba31a14f12b"
+    },
+    {
+      "path": "open-market-company-candidate.sql",
+      "sha256": "20c3077e43bc6d79d7f5abb7ce5f128a6fc0bb933afefa27823a8c72f0ebb575"
+    },
+    {
+      "path": "qr-history-company-candidate.sql",
+      "sha256": "b1046267bf85ace14714b5e2c978b882f110b8ae4fccf2dea63b5d8793b1f692"
+    },
+    {
+      "path": "legacy-qr-terminal-company-candidate.sql",
+      "sha256": "a7d5436341f1a47542c8d24261d902eebf203bb74f86e7b4547b31ab766d0194"
+    },
+    {
+      "path": "employee-accounts-company-candidate.sql",
+      "sha256": "80a19ed055f40d5435087cd1cbd2d4a318c2806e9bf5a6558a59b498bd0741a9"
+    },
+    {
+      "path": "confirmed-work-minutes-company-candidate.sql",
+      "sha256": "b70c29adc395777eb9b9a0556df9a281be1667c82b5ff577122b9a0e2c4f364d"
+    },
+    {
+      "path": "apply-shift-change-company-candidate.sql",
+      "sha256": "df0442e8f6f04257b6cda734d72bd3b860eaf58feb0042d25f04c79330410234"
+    },
+    {
+      "path": "disruption-offers-company-candidate.sql",
+      "sha256": "07374952b4327a3ad518c37532c2db124ceb988a0f21c6898185066d4b9b8b3e"
+    }
+  ]
+}

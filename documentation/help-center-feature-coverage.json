@@ -1692,6 +1692,12 @@
       "kind": "feature-or-support"
     },
     {
+      "source": "assets/employee-company-switch-v1.js",
+      "area": "Benutzerrollen, Authentifizierung und Unternehmen",
+      "category": "access",
+      "kind": "feature-or-support"
+    },
+    {
       "source": "assets/compliance-core-v2.js",
       "area": "Dienstplan, Veröffentlichung, Konflikte, Import und Export",
       "category": "schedule",
@@ -3727,7 +3733,7 @@
     "correctedArticleCount": 2,
     "articleCount": 285,
     "categoryCount": 22,
-    "assetJavaScriptCount": 242
+    "assetJavaScriptCount": 243
   },
   "incrementalUpdate": {
     "date": "2026-10-27",
