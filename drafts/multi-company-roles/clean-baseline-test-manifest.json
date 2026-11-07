@@ -1,0 +1,38 @@
+{
+  "status": "ISOLATED_TEST_ONLY",
+  "scope": "Rehearsal on an independently verified clean production-like test database; not a production migration.",
+  "index": {
+    "path": "employee-identity-index-candidate.sql",
+    "sha256": "9e3c1bf16524cbad797232f1cfd81e9308807b7dd67f41a2b8bcca956c565622"
+  },
+  "tests": [
+    {
+      "path": "productionlike-invitation-creation-rollback-test.sql",
+      "sha256": "a490c37a2c10d564d124287697dfc6c229af62119eebaf2c64ac7f6842462b44"
+    },
+    {
+      "path": "productionlike-invitation-mixed-roles-rollback-test.sql",
+      "sha256": "356c65e35b92807952c11c05d72dd5ef280d47ef657363327b2c9d94ade9feeb"
+    },
+    {
+      "path": "productionlike-invitation-multiprofile-rollback-test.sql",
+      "sha256": "9fb03a9a2376acb850804f158a51973b028266423d64aeb8e83f60454ed89735"
+    },
+    {
+      "path": "productionlike-invitation-new-signup-rollback-test.sql",
+      "sha256": "cb8f5c313cec91d7d20cc269941c2defa9470e4cd280973cc7080070670afb03"
+    },
+    {
+      "path": "productionlike-multi-invite-lifecycle-rollback-test.sql",
+      "sha256": "4205ce2fb1c4de75c4844be594b54bc63faec3a5dd55e521933083e34dfbc635"
+    },
+    {
+      "path": "productionlike-disruption-response-rollback-test.sql",
+      "sha256": "8516aac466191044eef22ebafd72a7ec3b84252f62e3cd6032cf387063e176ab"
+    },
+    {
+      "path": "productionlike-disruption-council-rollback-test.sql",
+      "sha256": "1590c1f6fa7c9827b44606b137c8e2687389c82a75ab4e6404f8f0c8858634da"
+    }
+  ]
+}
